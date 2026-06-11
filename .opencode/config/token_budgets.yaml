@@ -1,0 +1,154 @@
+# .opencode/config/token_budgets.yaml
+# Presupuestos de tokens por skill y contexto
+# Optimiza equilibrio: tokens usados vs efectividad del prompt
+
+defaults:
+  # Presupuesto base para prompts (en tokens estimados)
+  base_budget: 2048
+  # Buffer reservado para respuesta del agente
+  response_buffer: 256
+  # Umbral para activar compresión agresiva
+  compression_threshold: 0.85
+
+# Presupuestos por rol (ajustar según complejidad)
+role_budgets:
+  project-manager:
+    budget: 2500
+    compression_level: low
+    include_principles: always
+    reason: "Necesita contexto completo del plan F.R.A.M.E."
+
+  quant-developer:
+    budget: 2048
+    compression_level: medium
+    include_principles: space_available
+    reason: "Código técnico requiere precisión, no redundancia"
+
+  quant-scientist:
+    budget: 2500
+    compression_level: low
+    include_principles: always
+    reason: "Validaciones estadísticas y experimentos requieren contexto completo"
+
+  risk-manager:
+    budget: 1800
+    compression_level: medium
+    include_principles: space_available
+    reason: "Reglas de riesgo son concisas por diseño"
+
+  backend-engineer:
+    budget: 2048
+    compression_level: medium
+    include_principles: space_available
+    reason: "APIs y schemas requieren claridad técnica"
+
+  devops-sre:
+    budget: 1800
+    compression_level: high
+    include_principles: minimal
+    reason: "Comandos y configs son auto-explicativos"
+
+  security-engineer:
+    budget: 2048
+    compression_level: low
+    include_principles: always
+    reason: "Seguridad no tolera ambigüedades"
+
+  qa-automation:
+    budget: 1800
+    compression_level: medium
+    include_principles: space_available
+    reason: "Tests siguen patrones repetitivos"
+
+  data-architect:
+    budget: 2048
+    compression_level: medium
+    include_principles: space_available
+    reason: "Schemas requieren precisión pero son estructurados"
+
+  frontend-engineer:
+    budget: 1800
+    compression_level: high
+    include_principles: minimal
+    reason: "UI/UX es visual, menos texto necesario"
+
+  mobile-engineer:
+    budget: 1800
+    compression_level: high
+    include_principles: minimal
+    reason: "Plataformas móviles tienen patrones establecidos"
+
+  trading-operations:
+    budget: 2048
+    compression_level: low
+    include_principles: always
+    reason: "Operaciones en vivo requieren contexto completo"
+
+  compliance-officer:
+    budget: 2200
+    compression_level: low
+    include_principles: always
+    reason: "Regulaciones requieren precisión legal"
+
+  documentation-specialist:
+    budget: 2500
+    compression_level: low
+    include_principles: always
+    reason: "Documentación debe ser exhaustiva"
+
+# Técnicas de compresión por nivel
+compression_levels:
+  low:
+    remove_redundant_phrases: false
+    abbreviate_terms: false
+    collapse_lists: false
+    remove_examples: false
+    
+  medium:
+    remove_redundant_phrases: true
+    abbreviate_terms: true
+    collapse_lists: true
+    remove_examples: false
+    
+  high:
+    remove_redundant_phrases: true
+    abbreviate_terms: true
+    collapse_lists: true
+    remove_examples: true
+    aggressive_truncate: true
+
+# Términos comunes para abreviar (ahorro ~30-50 tokens por uso)
+abbreviations:
+  "out-of-sample": "OOS"
+  "walk-forward validation": "WFV"
+  "deflated sharpe ratio": "DSR"
+  "combinatorially symmetric cross-validation": "CSR"
+  "mixture of experts": "MoE"
+  "combinatorial purged cross-validation": "CPCV"
+  "fractionally differentiated features": "FracDiff"
+  "combinatorially symmetric": "CS"
+  "purged cross-validation": "PCV"
+  "time series cross-validation": "TSCV"
+
+# Frases redundantes a eliminar (ahorro ~10-20 tokens por uso)
+redundant_phrases:
+  - "es decir"
+  - "en otras palabras"
+  - "dicho de otro modo"
+  - "cabe destacar que"
+  - "por favor"
+  - "te solicito"
+  - "como puedes ver"
+  - "como se mencionó anteriormente"
+  - "en resumen"
+  - "para concluir"
+
+# Monitor de uso de tokens (logging)
+monitoring:
+  enabled: true
+  log_threshold: 1800  # Logear si se usa >85% del budget
+  metrics:
+    - tokens_used
+    - compression_applied
+    - sections_truncated
+    - principles_included

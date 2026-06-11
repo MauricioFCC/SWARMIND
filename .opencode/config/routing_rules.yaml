@@ -1,0 +1,587 @@
+# Routing Rules Configuration v2.0
+# Enterprise-grade intent detection with security & architecture gates
+
+# =============================================================================
+# REGLAS DE ENRUTAMIENTO POR INTENT
+# =============================================================================
+routing_rules:
+  # =============================================================================
+  # ROUTING TYPE: Domain-first dispatch with intent-based fallback
+  # =============================================================================
+  routing_type: domain
+  domain_field: "domain"
+
+  # =============================================================================
+  # DOMAIN ROUTES (primary dispatch — matches skill metadata domain field)
+  # =============================================================================
+  domain_routes:
+    - domain: "quantitative-analysis"
+      agents: ["quant-developer", "quant-scientist"]
+      priority: 9
+    - domain: "risk-management"
+      agents: ["risk-manager"]
+      priority: 8
+    - domain: "trading"
+      agents: ["trading-operations"]
+      priority: 8
+    - domain: "architecture"
+      agents: ["enterprise-architect"]
+      priority: 9
+    - domain: "ai-ml"
+      agents: ["ai-engineer"]
+      priority: 8
+    - domain: "universal"
+      agents: ["software-engineer", "frontend-engineer", "data-architect", "devops-sre", "security-engineer", "mobile-engineer", "documentation-specialist", "project-manager", "requirements-analyst", "quality-gate", "enterprise-architect", "ai-engineer", "evolve"]
+      priority: 10
+
+  # =============================================================================
+  # INTENT-BASED ROUTING (keyword/regex matching per agent — fallback when
+  # domain metadata is absent or ambiguous)
+  # =============================================================================
+  intent_routing:
+
+    # --- UNIVERSAL SKILLS (domain: universal) ---
+
+    # Requirements Analyst — Feature & requirement analysis
+    - id: "RA-001"
+      keywords: ["feature", "requirement", "implement", "create", "add", "new functionality", "user story", "capability"]
+      regex_patterns:
+        - "(implement|create|add|build)\\s+(a|an|the)\\s+(feature|function|module)"
+        - "new\\s+(feature|functionality|capability)"
+        - "i\\s+(need|want|require)\\s+a"
+        - "user\\s+(story|requirement)"
+      target_agent: "requirements-analyst"
+      priority: 10
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: true
+      escalation_path: "project-manager"
+
+    # Requirements Analyst — Improvements & proposals
+    - id: "RA-002"
+      keywords: ["improve", "optimize", "refactor", "redesign", "enhance", "proposal", "suggestion"]
+      regex_patterns:
+        - "how\\s+(to|can\\s+I)\\s+(improve|optimize|refactor)"
+        - "proposal\\s+for\\s+improvement"
+        - "refactor\\s+\\w+"
+        - "suggest\\s+(improvement|change)"
+      target_agent: "requirements-analyst"
+      priority: 9
+      domain: "universal"
+      min_confidence: 0.5
+      requires_context: true
+      escalation_path: "project-manager"
+
+    # Project Manager — Planning & coordination
+    - id: "PM-001"
+      keywords: ["roadmap", "plan", "progress", "delegate", "next step", "phase", "schedule", "milestone", "timeline"]
+      regex_patterns:
+        - "(progress|status)\\s+(report|update|check)"
+        - "what[']?s\\s+(next|missing|left)"
+        - "work\\s+plan"
+        - "delegate\\s+@\\w+"
+        - "project\\s+(status|plan|roadmap)"
+      target_agent: "project-manager"
+      priority: 10
+      domain: "universal"
+      min_confidence: 0.5
+      requires_context: true
+      escalation_path: null
+
+    # Quality Gate — Commit / merge / release validation
+    - id: "QG-001"
+      keywords: ["commit", "quality gate", "validate", "pre-commit", "release", "merge", "review", "deploy check", "gate"]
+      regex_patterns:
+        - "commit\\s+(safe|secure|valid)"
+        - "quality\\s+gate"
+        - "validate\\s+(refactor|change|merge|release)"
+        - "make\\s+a\\s+commit"
+        - "merge\\s+(request|check|validation)"
+        - "release\\s+(gate|check|process)"
+      target_agent: "quality-gate"
+      priority: 10
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: true
+      escalation_path: "project-manager"
+
+    # Software Engineer — APIs, services, full-stack, server-side logic
+    - id: "SE-001"
+      keywords: ["api", "endpoint", "server", "database", "authentication", "authorization", "middleware", "service layer", "route", "full-stack", "microservice", "software"]
+      regex_patterns:
+        - "(fastapi|flask|django|express|spring|gin|actix|node|nestjs)"
+        - "api\\s+(endpoint|route|gateway|design)"
+        - "dockerfile|docker\\s+compose"
+        - "ci/cd|continuous\\s+(integration|delivery)"
+        - "backend\\s+(service|logic|layer)"
+        - "full.?stack\\s+(development|feature|app)"
+        - "software\\s+(development|engineering|design)"
+      target_agent: "software-engineer"
+      priority: 8
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Frontend Engineer — UI components & user interfaces
+    - id: "FE-001"
+      keywords: ["ui", "frontend", "component", "interface", "dashboard", "layout", "responsive", "css", "style", "user interface", "view"]
+      regex_patterns:
+        - "(react|vue|svelte|angular|next|nuxt|solid|qwik)"
+        - "frontend\\s+(component|page|view|app)"
+        - "ui\\s+(design|update|fix|component)"
+        - "responsive\\s+(layout|design|grid)"
+        - "component\\s+(library|tree|hierarchy)"
+      target_agent: "frontend-engineer"
+      priority: 8
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Data Architect — Schemas, models, migrations, data pipelines
+    - id: "DA-001"
+      keywords: ["schema", "model", "migration", "database design", "etl", "data pipeline", "sql", "nosql", "data integrity", "persistence"]
+      regex_patterns:
+        - "database\\s+(schema|model|design|migration)"
+        - "data\\s+(model|pipeline|migration|warehouse)"
+        - "(sqlalchemy|prisma|typeorm|sequelize|drizzle)"
+        - "etl\\s+(process|pipeline|job)"
+        - "schema\\s+(evolution|migration|design)"
+      target_agent: "data-architect"
+      priority: 8
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: false
+
+    # DevOps / SRE — Infrastructure, deployment, observability
+    - id: "DO-001"
+      keywords: ["deploy", "infrastructure", "ci/cd", "docker", "kubernetes", "terraform", "monitoring", "observability", "pipeline", "environment", "iac"]
+      regex_patterns:
+        - "(k8s|kubernetes|docker|terraform|ansible|pulumi)"
+        - "ci/cd\\s+(pipeline|workflow|setup)"
+        - "infrastructure\\s+as\\s+code"
+        - "deploy\\s+(strategy|plan|pipeline|automation)"
+        - "observability\\s+(stack|setup|monitoring)"
+      target_agent: "devops-sre"
+      priority: 8
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Security Engineer — AppSec, threat model, hardening, compliance
+    - id: "SEC-001"
+      keywords: ["security", "vulnerability", "penetration", "audit", "compliance", "gdpr", "secret", "encryption", "authentication", "owasp", "threat"]
+      regex_patterns:
+        - "sql\\s+injection"
+        - "xss|cross.site.script"
+        - "csrf|xsrf"
+        - "auth.*bypass"
+        - "secret.*(leak|scan|manage|rotation)"
+        - "owasp\\s+(top|risk)"
+      target_agent: "security-engineer"
+      priority: 10
+      domain: "universal"
+      min_confidence: 0.5
+      requires_context: false
+
+    # Mobile Engineer — iOS, Android, cross-platform apps
+    - id: "ME-001"
+      keywords: ["mobile", "ios", "android", "app", "push notification", "offline", "mobile ui", "react native", "flutter", "tablet"]
+      regex_patterns:
+        - "mobile\\s+(app|application|development|first)"
+        - "(react.native|flutter|swift|kotlin|jetpack)"
+        - "push\\s+notification"
+        - "offline\\s+(first|support|mode|sync)"
+        - "app\\s+(store|publish|review)"
+      target_agent: "mobile-engineer"
+      priority: 7
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Documentation Specialist — Technical writing & knowledge base
+    - id: "DS-001"
+      keywords: ["documentation", "readme", "wiki", "api doc", "user guide", "manual", "technical writing", "changelog", "diagram", "knowledge base"]
+      regex_patterns:
+        - "document(at|ation)\\s+(api|system|project|code)"
+        - "readme\\s+(file|update|create|write)"
+        - "user\\s+(guide|manual|documentation|handbook)"
+        - "technical\\s+(writing|documentation|reference)"
+        - "api\\s+(doc|reference|specification)"
+      target_agent: "documentation-specialist"
+      priority: 7
+      domain: "universal"
+      min_confidence: 0.5
+      requires_context: false
+
+    # --- DOMAIN-SPECIFIC SKILLS ---
+
+    # Quant Developer — Algorithms, signals, model execution (domain: quantitative-analysis)
+    - id: "QD-001"
+      keywords: ["strategy", "signal", "algorithm", "model inference", "execution", "backtest", "indicator", "position", "forecast", "alpha"]
+      regex_patterns:
+        - "(buy|sell|long|short|entry|exit)\\s+(signal|position|trigger)"
+        - "submit.*order|place.*order"
+        - "strategy.*implement|implement.*strategy"
+        - "backtest.*(result|run|analysis)"
+        - "algorithmic\\s+(trading|strategy)"
+      target_agent: "quant-developer"
+      priority: 9
+      domain: "quantitative-analysis"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Quant Scientist — Statistical validation, feature analysis, experiment design (domain: quantitative-analysis)
+    - id: "QS-001"
+      keywords: ["experiment", "a/b test", "hypothesis test", "power analysis", "causal", "bootstrap", "statistical significance", "effect size", "randomized", "overfitting", "validation", "statistical", "p-value", "hypothesis", "feature analysis", "correlation", "significance", "bias"]
+      regex_patterns:
+        - "validat\\w*\\s+(model|result|approach|method)"
+        - "train.*val.*split|validation.*set|test.*split"
+        - "walk.*forward|cross.*validation|k-fold"
+        - "statistical\\s+(test|significance|power)"
+        - "feature\\s+(importance|selection|engineering)"
+        - "a/b\\s+test|ab.test|split.test"
+        - "experiment\\s+(design|result|setup)"
+        - "causal\\s+(inference|relationship|effect)"
+        - "power\\s+analysis|sample\\s+size"
+        - "bootstrap\\s+(confidence|simulation)"
+      target_agent: "quant-scientist"
+      priority: 9
+      domain: "quantitative-analysis"
+      min_confidence: 0.7
+      requires_context: true
+
+    # Risk Manager — Exposure, limits, scenario analysis (domain: risk-management)
+    - id: "RM-001"
+      keywords: ["risk", "exposure", "limit", "position sizing", "drawdown", "volatility", "scenario", "stress test", "confidence", "buffer"]
+      regex_patterns:
+        - "risk\\s+(management|assessment|limit|profile)"
+        - "position\\s+(size|sizing|limit|management)"
+        - "max\\s+(drawdown|exposure|loss|risk)"
+        - "stress\\s+test|scenario\\s+analysis"
+        - "exposure\\s+(limit|tracking|report)"
+      target_agent: "risk-manager"
+      priority: 8
+      domain: "risk-management"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Enterprise Architect — Architecture, system design, ADR, strategy
+    - id: "EA-001"
+      keywords: ["architecture", "system design", "roadmap", "technology selection", "adr", "c4", "architectural decision", "trade-off", "solutions architect", "enterprise"]
+      regex_patterns:
+        - "architecture\\s+(decision|review|design|roadmap|pattern)"
+        - "system\\s+design\\s+(document|proposal|review)"
+        - "how\\s+should\\s+(we|i)\\s+(design|architect|structure)"
+        - "technology\\s+(stack|selection|choice|evaluation)"
+        - "(adr|architecture decision record)"
+        - "c4\\s+(model|diagram|documentation)"
+        - "cross.?domain\\s+(architecture|decision|design)"
+        - "technical\\s+(strategy|vision|roadmap)"
+      target_agent: "enterprise-architect"
+      priority: 9
+      domain: "architecture"
+      min_confidence: 0.6
+      requires_context: true
+
+    # AI/ML Engineer — Models, pipelines, LLMOps, inference
+    - id: "AI-001"
+      keywords: ["machine learning", "deep learning", "model", "training", "inference", "llm", "rag", "feature engineering", "pipeline", "neural network", "onnx", "pytorch", "tensorflow", "mlflow", "prompt", "fine-tuning"]
+      regex_patterns:
+        - "machine\\s+(learning|model|pipeline)"
+        - "train\\s+(model|network|classifier)"
+        - "inference\\s+(optimization|pipeline|speed|latency)"
+        - "llm\\s+(prompt|rag|fine.?tune|deploy)"
+        - "feature\\s+(engineering|store|pipeline)"
+        - "model\\s+(registry|version|deploy|monitor|drift)"
+        - "(onnx|tensorrt|mlflow|weights.and.biases)"
+        - "data\\s+(science|drift|pipeline)"
+      target_agent: "ai-engineer"
+      priority: 8
+      domain: "ai-ml"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Trading Operations — Live monitoring, connectivity, schedules (domain: trading)
+    - id: "TO-001"
+      keywords: ["live", "monitoring", "alert", "connectivity", "schedule", "market time", "operation", "run", "dashboard", "health"]
+      regex_patterns:
+        - "live\\s+(monitoring|operation|environment|status)"
+        - "alert\\s+(config|setup|notification|rule)"
+        - "schedule\\s+(management|setup|config)"
+        - "connectivity\\s+(check|issue|status|test)"
+        - "dashboard\\s+(monitor|setup|config)"
+      target_agent: "trading-operations"
+      priority: 7
+      domain: "trading"
+      min_confidence: 0.5
+      requires_context: false
+
+    # Evolve — Self-improvement meta-skill (domain: universal)
+    - id: "EV-001"
+      keywords: ["evolve", "self-improve", "auto-improve", "continuous improvement", "learn design experiment analyze", "cognition", "evolution loop", "asi-evolve", "mejora continua", "auto-mejora"]
+      regex_patterns:
+        - "!evolve\\s+\\w+"
+        - "evolve\\s+(loop|run|status|stop)"
+        - "self.?(improve|evolve|optimize)"
+        - "auto.?(improve|evolve|optimize|mejorar)"
+        - "continuous\\s+improvement"
+        - "cognition\\s+(store|add|search|list|seed)"
+        - "experiment\\s+(db|database|history|compare)"
+        - "fde\\s+(audit|report|delta|mission)"
+      target_agent: "evolve"
+      priority: 10
+      domain: "universal"
+      min_confidence: 0.5
+      requires_context: false
+      escalation_path: "project-manager"
+
+    # Fallback — Project Manager as coordinator
+    - id: "FB-001"
+      keywords: []
+      regex_patterns: [".*"]
+      target_agent: "project-manager"
+      priority: 1
+      domain: "universal"
+      min_confidence: 0.0
+      requires_context: false
+
+
+# =============================================================================
+# GATES DE SEGURIDAD, ARQUITECTURA Y COMMIT
+# =============================================================================
+# ⚡ Los principios universales están centralizados en:
+#   `.opencode/core/base_principles.md`
+#
+# 7 categorías (3 niveles cada una):
+#   ARQ (arquitectura) | SEG (seguridad) | DOC (documentación + idioma)
+#   TST (testing)      | OPS (resiliencia) | CMT (commits) | QLT (calidad)
+#
+# Este archivo contiene SOLO la configuración operativa (patrones regex,
+# umbrales numéricos). Las reglas conceptuales viven en base_principles.md.
+# =============================================================================
+
+security_gates:
+  enabled: true
+  secret_patterns:
+    - "(?i)(api[_-]?key|apikey)\\s*[:=]\\s*['\"][a-zA-Z0-9_\\-]{16,}['\"]"
+    - "(?i)(secret[_-]?key)\\s*[:=]\\s*['\"][a-zA-Z0-9_\\-]{16,}['\"]"
+    - "(?i)(password|passwd)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]"
+    - "(pk_live|sk_live|ghp_[a-zA-Z0-9]{36})"
+  pii_in_logs:
+    blocked_patterns:
+      - "logging\\.[^)]*['\"].*?(email|correo|account|tarjeta)['\"].*?\\+"
+      - "print\\([^)]*['\"].*?(password|clave|secret)['\"].*?\\)"
+    allowed_masking: true
+  sql_injection:
+    block_f_strings_in_queries: true
+    require_parametrized: true
+    allowed_libraries: ["sqlalchemy", "psycopg2", "asyncpg"]
+
+architecture_gates:
+  enabled: true
+  default_pattern: "hexagonal"
+  hexagonal:
+    require_ports: true
+    require_adapters: true
+    require_di: true
+  resilience:
+    require_timeouts: true
+    default_timeout_seconds: 30
+    require_retries: true
+    max_retries: 3
+    require_circuit_breaker: true
+
+commit_gates:
+  enabled: true
+  feature_flow:
+    require_ra_analysis: true
+    require_user_approval: true
+    escalate_to_pm_on_approval: true
+  refactor_flow:
+    require_qg_validation: true
+    gates_required: ["tests", "lint", "typecheck", "coverage", "security", "commit_message"]
+    auto_commit_on_pass: true
+  conventional_commits:
+    enabled: true
+    allowed_types: ["feat", "fix", "docs", "style", "refactor", "test", "chore", "build", "ci"]
+    require_scope: true
+    require_issue_reference: true
+    max_subject_length: 72
+  documentation:
+    require_docstrings_public_api: true
+    require_readme_update_on_interface_change: true
+    min_docstring_lines: 3
+    require_changelog_entry_on_feature: true
+  testing:
+    require_tests_for_new_features: true
+    min_coverage_percent: 80
+    allowed_to_skip: ["docs", "chore"]
+    require_integration_tests: true
+  post_refactor:
+    run_full_suite: true
+    check_no_regressions: true
+    update_coverage_report: true
+
+
+# =============================================================================
+# DEPARTAMENTOS Y RESPONSABILIDADES (Enterprise Org Chart)
+# =============================================================================
+departments:
+  producto:
+    head: requirements-analyst
+    funciones:
+      - "Analizar requerimientos del usuario"
+      - "Investigar viabilidad técnica"
+      - "Proponer mejoras en implementacion, accesibilidad, seguridad y codigo"
+      - "Escalar al PM tras aprobacion"
+  
+  direccion_proyectos:
+    head: project-manager
+    funciones:
+      - "Planificar y delegar tareas"
+      - "Gestionar el roadmap F.R.A.M.E."
+      - "Coordinar equipos multidisciplinarios"
+      - "Reportar progreso y blockers"
+  
+  evolucion:
+    head: evolve
+    funciones:
+      - "Orquestar el loop ASI-Evolve de auto-mejora"
+      - "Mantener cognition store con lecciones"
+      - "Evaluar y mejorar skills continuamente"
+      - "Asegurar principios FDE en todas las entregas"
+      - "Generar reportes de evolución del sistema"
+
+  arquitectura:
+    head: enterprise-architect
+    funciones:
+      - "Diseñar arquitectura de sistemas y roadmaps tecnológicos"
+      - "Evaluar alternativas técnicas con ADR"
+      - "Asegurar coherencia cross-domain"
+
+  desarrollo:
+    miembros: [software-engineer, quant-developer, quant-scientist, frontend-engineer]
+    funciones:
+      - "Implementar features según delegación del PM"
+      - "Mantener estándares de código (hexagonal, SOLID)"
+      - "Escribir tests automatizados"
+  
+  datos:
+    head: data-architect
+    funciones:
+      - "Diseñar schemas y modelos de datos"
+      - "Gestionar migraciones y ETL"
+      - "Optimizar queries y persistencia"
+  
+  inteligencia_artificial:
+    head: ai-engineer
+    funciones:
+      - "Modelos ML, pipelines y LLMOps"
+      - "Feature engineering y experiment tracking"
+      - "Optimización de inferencia y drift detection"
+  
+  calidad:
+    head: quality-gate
+    funciones:
+      - "Garantizar cobertura de tests ≥80%"
+      - "Ejecutar quality gates pre-commit"
+      - "Diseñar estrategias de prueba (pirámide 70/20/10)"
+      - "Prevenir regresiones"
+  
+  seguridad_compliance:
+    head: security-engineer
+    funciones:
+      - "Hardening de codigo y secretos"
+      - "Reglas de compliance y auditoria (adaptables por dominio)"
+      - "Auditoria y cumplimiento normativo"
+  
+  infraestructura:
+    head: devops-sre
+    funciones:
+      - "CI/CD, Docker, Kubernetes"
+      - "Monitoreo y observabilidad"
+      - "Auto-rollback y healthchecks"
+  
+  operaciones:
+    head: trading-operations
+    funciones:
+      - "Monitoreo de sistemas en produccion"
+      - "Alertas y notificaciones (canal configurable)"
+      - "Gestion de schedules y ventanas de operacion"
+  
+  riesgo:
+    head: risk-manager
+    funciones:
+      - "Position sizing y Kelly criterion"
+      - "Monte Carlo y drawdown tracking"
+      - "Circuit breakers"
+  
+  documentacion:
+    head: documentation-specialist
+    funciones:
+      - "Manuales técnicos y operativos"
+      - "Documentación de API y white papers"
+      - "Wiki del proyecto"
+
+
+# =============================================================================
+# OPTIMIZACIÓN DE TOKENS (Compresión y budgeting)
+# =============================================================================
+token_optimization:
+  enabled: true
+  
+  # Presupuesto por sección (tokens estimados)
+  budgets:
+    system_prompt: 512
+    skill_content: 1536
+    context: 1024
+    user_message: 512
+    response_format: 256
+    buffer: 256
+    total_max: 4096
+  
+  # Técnicas de compresión
+  compression:
+    remove_redundant_phrases: true
+    abbreviate_terms:
+      "out-of-sample": "OOS"
+      "walk-forward validation": "WFV"
+      "deflated sharpe ratio": "DSR"
+      "stop loss": "SL"
+      "take profit": "TP"
+      "risk-reward ratio": "RR"
+    collapse_lists: true
+    remove_examples_if_tight: true
+  
+  # Thresholds para decisiones de compresión
+  thresholds:
+    compress_if_usage_percent: 85
+    aggressive_compress_if_percent: 95
+    emergency_truncate_if_percent: 100
+
+
+# =============================================================================
+# CONFIGURACIÓN DE OBSERVABILIDAD
+# =============================================================================
+observability:
+  enabled: true
+  
+  # Trace IDs para debugging distribuido
+  trace_id:
+    enabled: true
+    header_name: "x-trace-id"
+    propagate_to_downstream: true
+  
+  # Métricas por skill/agent
+  metrics:
+    track_token_usage: true
+    track_execution_time: true
+    track_guardrail_results: true
+    track_routing_confidence: true
+  
+  # Logging estructurado
+  logging:
+    format: "json"
+    include_context: true
+    mask_sensitive_fields: true
+    sensitive_field_patterns: ["api_key", "secret", "password", "token", "email"]

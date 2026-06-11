@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Onyx Skill Schema v3 — FDE + EVOLVE",
+  "description": "Validación de estructura para skills reutilizables con FDE y ASI-Evolve integrados",
+  "type": "object",
+  "required": ["name", "description", "version"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Identificador único del skill (kebab-case)"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Descripción concisa del propósito del skill"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "description": "Versión semántica del skill (ej: 2.0.0)"
+    },
+    "project_agnostic": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si true, el skill puede usarse en cualquier proyecto, lenguaje o arquitectura"
+    },
+    "inherit": {
+      "oneOf": [
+        {"type": "string"},
+        {"type": "array", "items": {"type": "string"}}
+      ],
+      "description": "Ruta(s) relativa(s) a skill base(s) para herencia (array = multi-inheritance)"
+    },
+    "variables": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {"type": "string"},
+          {"type": "object", "patternProperties": {"^.*$": {"type": "string"}}}
+        ]
+      },
+      "description": "Lista de variables {{VARIABLE}} o pares clave:valor para inyección"
+    },
+    "fde": {
+      "type": "object",
+      "description": "Forward Deployment Engineering configuration",
+      "properties": {
+        "mission": {"type": "string"},
+        "stakeholder": {"type": "string"},
+        "success_metric": {"type": "string"},
+        "delta": {"type": "string"},
+        "day2_plan": {"type": "string"}
+      }
+    },
+    "evolve": {
+      "type": "object",
+      "description": "ASI-Evolve self-improvement configuration",
+      "properties": {
+        "enabled": {"type": "boolean", "default": true},
+        "max_rounds": {"type": "integer", "default": 50},
+        "patience": {"type": "integer", "default": 10},
+        "auto_seed_cognition": {"type": "boolean", "default": true}
+      }
+    },
+    "keywords": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Palabras clave para enrutamiento automático"
+    },
+    "regex_patterns": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Patrones regex para detección de intención"
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "default": 5,
+      "description": "Prioridad de enrutamiento (mayor = más prioritario)"
+    },
+    "requires_context": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si requiere contexto del proyecto para funcionar"
+    },
+    "token_budget": {
+      "type": "integer",
+      "default": 2048,
+      "description": "Límite máximo de tokens para este skill en prompts"
+    }
+  },
+  "additionalProperties": false
+}

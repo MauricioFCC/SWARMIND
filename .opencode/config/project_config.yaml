@@ -1,0 +1,115 @@
+# .opencode/config/project_config.yaml
+# =============================================================================
+# UNIVERSAL PROJECT CONFIG TEMPLATE
+# =============================================================================
+# Works for any domain: web, mobile, trading, IoT, robotics, data, AI/ML, etc.
+#
+# HOW TO USE:
+# 1. Copy this file to your project root (not .opencode/)
+# 2. Set PROJECT_NAME, DOMAIN, TECH_STACK, ARCH_PATTERN
+# 3. Configure FDE_MISSION with your stakeholder and metric
+# 4. Add domain-specific config under your DOMAIN key (e.g. TRADING:, WEB:, IOT:)
+# 5. Skills reference variables via {{VARIABLE_NAME}} — injected at runtime
+#
+# FDE + EVOLVE INTEGRATED: Every skill inherits Forward Deployment Engineering
+# principles and ASI-Evolve self-improvement loop. See core/fde_principles.md
+# and core/evolve_loop.py.
+
+# ── Universal Project Metadata ────────────────────────────────────────────────
+PROJECT_NAME: "{{PROJECT_NAME}}"             # REQUIRED: Your project name
+PROJECT_VERSION: "1.0.0"                     # SemVer
+DOMAIN: "{{DOMAIN}}"                         # REQUIRED: web, mobile, trading, iot, robotics, ml, data
+TECH_STACK: "{{TECH_STACK}}"                 # e.g. Python, TypeScript, Go, Rust
+ARCH_PATTERN: "hexagonal"                    # hexagonal, layered, event-driven, clean, ddd
+TEST_FRAMEWORKS: ["pytest"]                  # pytest, jest, playwright, vitest
+CI_PLATFORM: "github-actions"                # github-actions, gitlab-ci, jenkins
+DEPLOYMENT_TYPE: "docker"                    # docker, serverless, bare-metal, paas
+CURRENT_PHASE: "F"                           # F(oundation), R(esearch), A(rchitecture), M(odule), E(xecution)
+CURRENT_DAY: 1
+
+# ── Outputs / Artifact Warehouse ──────────────────────────────────────────────
+OUTPUTS_WAREHOUSE: "outputs/"
+OUTPUTS_DIRS:
+  workspace: "outputs/workspace/"
+  data: "outputs/data/"
+  models: "outputs/models/"
+  reports: "outputs/reports/"
+  logs: "outputs/logs/"
+
+# ── FDE / EVOLVE Config ───────────────────────────────────────────────────────
+FDE_MISSION: "{{FDE_MISSION}}"               # REQUIRED: Delta a cerrar entre producto y realidad
+FDE_STAKEHOLDER: "{{FDE_STAKEHOLDER}}"       # REQUIRED: Quien define el exito
+FDE_METRIC: "{{FDE_METRIC}}"                 # REQUIRED: Metrica de exito medible
+FDE_DAY2: "{{FDE_DAY2}}"                     # Plan post-entrega: quien mantiene, como escala
+FDE_DELTA: "{{FDE_DELTA}}"                   # Gap identificado a resolver
+
+EVOLVE_ENABLED: true
+EVOLVE_LOOP_DIR: ".opencode/loop"
+EVOLVE_MAX_ROUNDS: 50
+EVOLVE_SAMPLE_N: 3
+EVOLVE_PATIENCE: 10
+EVOLVE_BEST_SCORE: 0.0
+EVOLVE_LAST_ROUND: 0
+EVOLVE_COG_COUNT: 0
+
+# ── Token / Prompt Config (Universal) ─────────────────────────────────────────
+TOKEN_CONFIG:
+  default_budget: 2048
+  compression_level: "medium"                # low, medium, high
+  include_principles: "space_available"
+
+# ── Domain-Specific Config (examples) ─────────────────────────────────────────
+# Uncomment and customize the section matching your DOMAIN.
+# Remove sections for domains you don't use.
+
+# --- DOMAIN: web ---
+# WEB:
+#   framework: "nextjs"
+#   database: "postgresql"
+#   auth_provider: "clerk"
+#   hosting: "vercel"
+#   analytics: "posthog"
+
+# --- DOMAIN: mobile ---
+# MOBILE:
+#   platform: "react-native"
+#   deployment: "app-store-connect"
+#   push_notifications: "firebase"
+#   analytics: "mixpanel"
+
+# --- DOMAIN: trading (ONYX default) ---
+# TRADING:
+#   active_symbols: ["MNQ", "MGC", "ES"]
+#   platform: "alpaca"
+#   brokers: ["alpaca-py"]
+#   risk:
+#     max_position_size: 10
+#     risk_per_trade: 0.01
+#     max_daily_loss: 500
+#   validation:
+#     train_val_gap_max: 0.05
+#     walk_forward_embargo: 30
+#     monte_carlo_iterations: 1000
+
+# --- DOMAIN: iot ---
+# IOT:
+#   protocol: "mqtt"
+#   broker: "mosquitto"
+#   sensors: []
+#   actuators: []
+#   edge_compute: true
+
+# --- DOMAIN: robotics ---
+# ROBOTICS:
+#   controller: "ros2"
+#   kinematics: "6dof"
+#   safety_standard: "ISO-13849"
+#   realtime_loop_hz: 1000
+
+# --- DOMAIN: ml ---
+# ML:
+#   framework: "pytorch"
+#   deployment: "onnx"
+#   experiment_tracker: "wandb"
+#   model_registry: "mlflow"
+#   gpu_required: false
