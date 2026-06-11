@@ -63,6 +63,8 @@ QUALITY GATE  ←── @quality-gate (gates secuenciales)
 | Apps mobile | @mobile-engineer |
 | Documentación técnica, manuals, wikis | @documentation-specialist |
 | Quality Gate (validación pre-commit) | @quality-gate |
+| Optimización de contexto, prompts, compactación | @context-engineer |
+| Diseño y mantenimiento de herramientas MCP | @tool-mcp-engineer |
 | Dominio específico (trading, IoT, robotics, etc.) | @{{DOMAIN}}-especialistas |
 
 ---
@@ -91,6 +93,8 @@ Los roles del equipo Onyx se alinean con la taxonomía IT estándar según Human
 | **Datos** | data-architect → Data Architect / Data Engineer / Database Architect |
 | **Calidad** | quality-gate → QA Engineer / SDET / Test Automation Engineer |
 | **Documentación** | documentation-specialist → Technical Writer / Documentation Specialist |
+| **Contexto** | context-engineer → Context Engineer / Prompt Engineer |
+| **Herramientas** | tool-mcp-engineer → Tool Engineer / MCP Engineer |
 
 > Referencia: https://www.thehumancapitalhub.com/articles/it-job-titles-and-roles
 

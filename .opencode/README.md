@@ -6,8 +6,9 @@ Sistema de skills multi-agente con enrutamiento automático, FDE (Forward Deploy
 
 ```
 .opencode/
-├── agents/            # 19 agentes activos
+├── agents/            # 21 agentes activos
 │   ├── ai-engineer.md
+│   ├── context-engineer.md
 │   ├── data-architect.md
 │   ├── devops-sre.md
 │   ├── documentation-specialist.md
@@ -25,6 +26,7 @@ Sistema de skills multi-agente con enrutamiento automático, FDE (Forward Deploy
 │   ├── risk-manager.md
 │   ├── security-engineer.md
 │   ├── software-engineer.md
+│   ├── tool-mcp-engineer.md
 │   └── trading-operations.md
 ├── config/            # Configuración central
 │   ├── project_config.yaml    # Variables del proyecto
@@ -40,8 +42,9 @@ Sistema de skills multi-agente con enrutamiento automático, FDE (Forward Deploy
 │   ├── registry.py
 │   ├── router_v2.py           # Grafo de estado + A2A Protocol + multi-agent
 │   └── skill_schema.json      # Schema v3
-├── skills/            # 17 skills activos
+├── skills/            # 19 skills activos
 │   ├── ai-engineer/           # ML/AI engineering, LLMOps
+│   ├── context-engineer/      # Context curation, compaction, memory
 │   ├── data-architect/        # Data modeling, ETL, migrations
 │   ├── devops-sre/            # CI/CD, infra, Docker/K8s
 │   ├── documentation-specialist/
@@ -57,6 +60,7 @@ Sistema de skills multi-agente con enrutamiento automático, FDE (Forward Deploy
 │   ├── risk-manager/          # Position sizing, Monte Carlo
 │   ├── security-engineer/     # AppSec + compliance (merged compliance-officer)
 │   ├── software-engineer/     # Full-stack, APIs, services
+│   ├── tool-mcp-engineer/     # MCP tools, tool ecosystem
 │   └── trading-operations/    # Live monitoring, alerts
 └── .gitignore
 ```
@@ -78,7 +82,7 @@ Router v2 implementa un grafo de estado con nodos que definen transiciones condi
 ### Guardrail Pipeline
 Pre-checks (arquitectura + discovery) y post-checks (seguridad + commits + docs + three whys) con 3 severidades: BLOCK / WARN / INFO.
 
-## Skills Activos (17)
+## Skills Activos (19)
 
 | Skill | FDE Pillars | Routing Trigger |
 |-------|-------------|-----------------|
@@ -92,12 +96,14 @@ Pre-checks (arquitectura + discovery) y post-checks (seguridad + commits + docs 
 | devops-sre | RESILIENCE, GLUE, VALUE | ci/cd, kubernetes, monitoring, iac |
 | enterprise-architect | DELTA, GLUE, DIPLOMACY | arquitectura, system design, adr, roadmap |
 | ai-engineer | DELTA, EVOLVE, VALUE | ml, llm, modelo, inferencia, rag, pipeline |
+| context-engineer | VALUE, DIPLOMACY, EVOLVE | context, prompt, compaction, memoria, retrieval |
 | frontend-engineer | VALUE, DIPLOMACY, DELTA | dashboard, ui, componente, visualización |
 | quality-gate | GLUE, RESILIENCE, EVOLVE | validación, gate, test strategy, cobertura |
 | trading-operations | MISSION, VALUE, RESILIENCE | monitoreo, alerta, conexión, schedule |
 | mobile-engineer | VALUE, GLUE, DELTA | mobile, push notification, offline |
 | documentation-specialist | DIPLOMACY, MISSION, VALUE | documentación, manual, api docs |
 | evolve | EVOLVE, GLUE, VALUE | evolucion, mejora, aprender, optimizar |
+| tool-mcp-engineer | GLUE, VALUE, RESILIENCE | tool, mcp, herramienta, protocolo, tool call |
 | requirements-analyst | — | análisis, requerimientos, viabilidad |
 
 **Merged into active roles**: `backend-engineer` (→ software-engineer), `compliance-officer` (→ security-engineer), `qa-automation` (→ quality-gate).

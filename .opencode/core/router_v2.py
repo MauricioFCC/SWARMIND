@@ -611,6 +611,27 @@ ROUTING_RULES = [
         min_confidence=0.6
     ),
     
+    # Context Engineer - Optimización de contexto, prompts, compactación
+    RoutingRule(
+        id="CXT-001",
+        keywords=["context", "prompt", "token", "compaction", "memoria", "retrieval", "system prompt", "note taking", "context window", "attention budget"],
+        regex_patterns=[r"context\s+(engineering|optimization|curation)", r"prompt\s+(quality|section|structure)", r"compaction\s+(strategy|fidelity)", r"just.?in.?time\s+retrieval", r"token\s+budget"],
+        target_agent="context-engineer",
+        priority=7,
+        min_confidence=0.6,
+        requires_context=True
+    ),
+    
+    # Tool/MCP Engineer - Ecosistema de herramientas MCP
+    RoutingRule(
+        id="MCP-002",
+        keywords=["tool", "mcp", "tool set", "tool design", "tool overlap", "herramienta", "model context protocol", "tool call", "mcp server"],
+        regex_patterns=[r"tool\s+(design|set|overlap|bloat|selection)", r"mcp\s+(server|tool|connectivity|protocol)", r"model\s+context\s+protocol", r"few.?shot\s+examples?\s+(for|tool)"],
+        target_agent="tool-mcp-engineer",
+        priority=7,
+        min_confidence=0.6
+    ),
+    
     # Fallback - Project Manager como coordinator
     RoutingRule(
         id="FB-001",
@@ -723,6 +744,28 @@ ROUTING_GRAPH: Dict[str, RoutingNode] = {
             "needs_software": "software-engineer",
             "needs_validation": "quant-scientist",
             "snapshot_promoted": "project-manager",
+            "blocked": "project-manager",
+            "done": "project-manager"
+        },
+        fallback="project-manager"
+    ),
+    "context-engineer": RoutingNode(
+        agent="context-engineer",
+        transitions={
+            "needs_review": "quality-gate",
+            "needs_tool_design": "tool-mcp-engineer",
+            "implementation": "software-engineer",
+            "blocked": "project-manager",
+            "done": "project-manager"
+        },
+        fallback="project-manager"
+    ),
+    "tool-mcp-engineer": RoutingNode(
+        agent="tool-mcp-engineer",
+        transitions={
+            "needs_review": "quality-gate",
+            "needs_context": "context-engineer",
+            "implementation": "software-engineer",
             "blocked": "project-manager",
             "done": "project-manager"
         },

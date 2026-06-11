@@ -145,6 +145,31 @@ graph LR
 
 ---
 
+## 🧠 CONTEXT ENGINEERING LAYER — Optimización de Contexto
+
+Este skill hereda los principios de context engineering (Anthropic, Sep 2025). El contexto es un recurso finito: cada token nuevo consume del attention budget del modelo.
+
+### Principios de Context Engineering
+1. **Minimal Viable Tokens**: Usar el conjunto más pequeño de tokens de alta señal que maximice el comportamiento deseado
+2. **Sectioned Prompts**: Organizar instrucciones en secciones con XML tags o Markdown headers
+3. **Just-in-Time Retrieval**: Preferir exploración progresiva (glob, grep, head/tail) sobre pre-carga de datos completos
+4. **Tool Call Clearing**: Limpiar tool calls y resultados raw después de uso profundo en el historial
+5. **Structured Note-Taking**: Persistir notas fuera de context window (NOTES.md, to-do lists, agentic memory)
+6. **Compaction**: Resumir ventanas near el límite, preservando decisiones arquitectónicas y bugs activos
+7. **Token Budgeting**: Definir y monitorizar presupuesto de tokens por sección y por rol
+
+### Checklist de Contexto para este skill
+- [ ] System prompt seccionado (XML/Markdown), no hardcodeado
+- [ ] Tools: mínimo set viable, sin overlap funcional
+- [ ] Input params descriptivos con nombres y tipos
+- [ ] Ejemplos diversos (3-5) de uso correcto de herramientas
+- [ ] Tool calls limpiados después de profundidad > 5
+- [ ] Message history sin outputs raw redundantes
+- [ ] Structured notes persistentes para tareas multi-turno
+- [ ] Compaction strategy definida para tareas long-horizon
+
+---
+
 ## 📊 MÉTRICAS DE CALIDAD (Auto-evaluación)
 
 Antes de responder, verificar:
@@ -209,6 +234,6 @@ Cada tarea se procesa con 4 etapas obligatorias:
 - 🗜️ Optimizer: `.opencode/core/prompt_optimizer.py`
 - ⚙️ Config: `.opencode/config/project_config.yaml`
 - 🚀 FDE Principles: `.opencode/core/fde_principles.md`
-- 🔄 Evolve Loop: `.opencode/core/evolve_loop.py`
-- 🧠 Cognition: `.opencode/loop/cognition_data/`
-- 📊 Experiment DB: `.opencode/loop/experiment_data/`
+- ⚙️ Guardrails: `.opencode/core/guardrails.py`
+- 🧠 Context Engineering: `@context-engineer`
+- 🔧 Tool Engineering: `@tool-mcp-engineer`
