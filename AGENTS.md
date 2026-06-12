@@ -41,8 +41,8 @@ Este proyecto utiliza un sistema multi-agente orquestado por el **Harness**.
 
 - `@rol: mensaje` — Delegacion directa
 - `python harness/run.py "@rol: tarea"` — CLI entry point
-- `python scripts/init.py` — Bootstrap de nuevo proyecto
-- `python scripts/generate_llms_txt.py` — Generar /llms.txt
+- `python harness/scripts/init.py` — Bootstrap de nuevo proyecto
+- `python harness/scripts/generate_llms_txt.py` — Generar /llms.txt
 
 ## Fuentes de inspiracion
 

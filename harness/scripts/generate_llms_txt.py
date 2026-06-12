@@ -5,9 +5,10 @@ Concatenates key documentation files into a single LLM-friendly context file.
 import os
 from pathlib import Path
 
-DOCS_DIR = Path(__file__).parent.parent / "docs"
-LLMS_TXT = Path(__file__).parent.parent / "docs" / "llms.txt"
-LLMS_FULL_TXT = Path(__file__).parent.parent / "docs" / "llms-full.txt"
+ROOT = Path(__file__).parent.parent.parent
+DOCS_DIR = ROOT / "docs"
+LLMS_TXT = ROOT / "docs" / "llms.txt"
+LLMS_FULL_TXT = ROOT / "docs" / "llms-full.txt"
 
 KEY_FILES = [
     "index.md",

@@ -4,7 +4,7 @@
 
 **Portable, language-agnostic, self-evolving multi-agent system base.**
 
-Copia esta carpeta a cualquier proyecto y ejecuta `python scripts/init.py` para
+Copia esta carpeta a cualquier proyecto y ejecuta `python harness/scripts/init.py` para
 inicializar el entorno. El Harness orquesta agentes, gestiona memoria via
 LanceDB (con fallback en memoria), y evoluciona sus prompts automaticamente.
 
@@ -22,29 +22,29 @@ mi-proyecto/
 │   ├── memory_rag/              # Memoria vectorial (LanceDB + fallback)
 │   ├── evolve_loop/             # Auto-mejora C.A.S.E. + GEPA
 │   ├── tools_sandbox/           # Ejecucion segura de herramientas
-│   └── run.py                   # Punto de entrada CLI
-├── docs/                        # Documentacion tecnica
-├── scripts/                     # Utilidades
-│   ├── init.py                  # Bootstrap del proyecto
-│   └── generate_llms_txt.py     # Genera /llms.txt
-├── src/                         # Codigo fuente de tu proyecto
-├── tests/                       # Tests
-├── AGENTS.md                    # Manifest de agentes (estilo Hermes)
-├── mkdocs.yml                   # Configuracion de documentacion
-└── llms.txt                     # Contexto curado para LLMs externos
+│   ├── scripts/                  # Utilidades del Harness
+│   │   ├── init.py               # Bootstrap del proyecto
+│   │   └── generate_llms_txt.py  # Genera /llms.txt
+│   ├── mkdocs.yml                # Configuracion de documentacion
+│   └── run.py                    # Punto de entrada CLI
+├── docs/                         # Documentacion tecnica
+├── src/                          # Codigo fuente de tu proyecto
+├── tests/                        # Tests
+├── AGENTS.md                     # Manifest de agentes (estilo Hermes)
+└── llms.txt                      # Contexto curado para LLMs externos
 ```
 
 ## Uso rapido
 
 ```bash
 # Inicializar en un proyecto nuevo
-python scripts/init.py
+python harness/scripts/init.py
 
 # Delegar una tarea a un agente
 python harness/run.py "@software-engineer: Crea un endpoint REST"
 
 # Generar /llms.txt para consumo por LLMs externos
-python scripts/generate_llms_txt.py
+python harness/scripts/generate_llms_txt.py
 
 # Iniciar el bucle de auto-mejora
 python -c "from harness.evolve_loop.self_improver import SelfImprover; SelfImprover().run_round('software-engineer', rounds=3)"

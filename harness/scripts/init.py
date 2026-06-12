@@ -26,10 +26,10 @@ def create_structure(base: Path) -> None:
         "harness/memory_rag",
         "harness/evolve_loop",
         "harness/tools_sandbox",
+        "harness/scripts",
         "docs/arquitectura",
         "docs/dominios_negocio",
         "docs/manual_usuario",
-        "scripts",
         ".opencode/skills/auto",
         ".opencode/agents",
         "src",
@@ -57,6 +57,7 @@ def check_dependencies() -> None:
 def init_lancedb(base: Path) -> None:
     db_path = base / "harness" / "db" / "lancedb_store"
     try:
+        sys.path.insert(0, str(base))
         from harness.memory_rag.lance_vector_store import LanceVectorStore
 
         store = LanceVectorStore(str(db_path))
@@ -86,7 +87,7 @@ def init_project(project_path: str = "") -> str:
     banner(f"Directorio: {base}")
     banner("Comandos utiles:")
     banner("  python harness/run.py \"@project-manager: plan\"")
-    banner("  python scripts/generate_llms_txt.py")
+    banner("  python harness/scripts/generate_llms_txt.py")
 
     return str(base)
 

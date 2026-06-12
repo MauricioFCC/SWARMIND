@@ -2,6 +2,8 @@ site_name: Onyx Multi-Agent System
 site_description: Universal multi-agent framework with FDE, context engineering, and autonomous self-improvement
 repo_url: https://github.com/onyx-project/onyx
 
+docs_dir: ../docs
+
 theme:
   name: material
   features:
