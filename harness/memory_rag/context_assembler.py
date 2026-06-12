@@ -119,7 +119,7 @@ class ContextAssembler:
             message: The user's input message.
             agent_role: Role identifier (e.g. ``"quant_dev"``, ``"data_architect"``).
             max_tokens: Maximum token budget for the assembled context.
-            domain_filter: Optional domain to filter by (e.g. ``"farmacia"``, ``"facturacion"``).
+            domain_filter: Optional domain to filter by (e.g. ``"arquitectura"``, ``"seguridad"``).
             tipo_doc_filter: Optional doc type filter (e.g. ``"esquema_bd"``, ``"api_endpoint"``).
 
         Returns:

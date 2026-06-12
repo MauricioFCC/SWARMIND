@@ -74,7 +74,7 @@ class AgentBus:
 
         # Enviar mensaje
         msg_id = bus.post_message(
-            channel="#feature-facturacion",
+            channel="#feature-documentacion",
             from_agent="@software-engineer",
             to_agent="@quality-gate",
             message="Tests unitarios completados. Revisando cobertura...",
@@ -83,7 +83,7 @@ class AgentBus:
         )
 
         # Poll de mensajes no leidos
-        mensajes = bus.poll_channel("#feature-facturacion", "@quality-gate")
+        mensajes = bus.poll_channel("#feature-documentacion", "@quality-gate")
 
         # Marcar como entregado
         bus.mark_delivered(msg_id)
@@ -121,7 +121,7 @@ class AgentBus:
         """Publica un mensaje en un canal del bus de agentes.
 
         Args:
-            channel: Nombre del canal (ej. ``"#feature-facturacion"``).
+            channel: Nombre del canal (ej. ``"#feature-documentacion"``).
             from_agent: Agente que envia el mensaje (ej. ``"@software-engineer"``).
             to_agent: Agente destinatario (ej. ``"@quality-gate"``).
             message: Contenido del mensaje en texto plano.

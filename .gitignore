@@ -8,4 +8,9 @@ dist/
 build/
 .DS_Store
 Thumbs.db
+
+# Harness data (regenerable)
 harness/db/lancedb_store/
+harness/evolve_loop/prompt_archive/
+.opencode/skills/auto/
+harness/orchestrator/scheduler_jobs.yaml

@@ -1,14 +1,13 @@
-# Onyx Multi-Agent Harness
+# AGENTIC — Multi-Agent Evolutionary Harness
 
-**Template portable de sistema multi-agente autónomo** con LanceDB, RAG, y auto-mejora.
+**Template portable de sistema multi-agente autónomo con LanceDB, RAG, y auto-mejora.**
 
-Copia la carpeta `AGENTIC/` a cualquier proyecto como asistente de desarrollo inteligente.
-El Harness orquesta 21 agentes especializados, gestiona memoria vectorial via LanceDB,
-y evoluciona sus propios prompts automaticamente mediante el loop ASI-Evolve.
+> Copia las carpetas `harness/` y `.opencode/` a la raíz de tu proyecto.
+> Listo para usar en minutos.
 
 ---
 
-## Estructura (lo que se pega en tu proyecto)
+## Estructura
 
 ```
 tu-proyecto/
@@ -36,10 +35,7 @@ tu-proyecto/
 │   ├── run.py                   # Punto de entrada CLI
 │   ├── README.md                # Esta documentacion
 │   └── AGENTS.md                # Manifiesto completo de agentes
-├── docs/                         # Documentacion tecnica
-├── src/                          # Codigo fuente de tu proyecto
-├── tests/                        # Tests
-└── llms.txt                      # Contexto curado para LLMs externos
+└── llms.txt                     # Contexto curado para LLMs externos
 ```
 
 ---
@@ -48,24 +44,26 @@ tu-proyecto/
 
 - **Python 3.10+**
 - **LanceDB** (se instala automaticamente con `init.py` o manual: `pip install lancedb`)
-- Dependencias adicionales: `numpy`, `pyyaml`
+- Dependencias adicionales: `numpy`, `schedule`, `pyyaml`
 
 ---
 
-## Uso rapido
+## Inicio rapido
 
 ```bash
-# 1. Inicializar el entorno (instala LanceDB + crea estructura)
+# 1. Copiar a tu proyecto
+# cp -r AGENTIC/harness/   /tu-proyecto/harness/
+# cp -r AGENTIC/.opencode/ /tu-proyecto/.opencode/
+
+# 2. Inicializar el entorno
+cd /tu-proyecto/
 python harness/scripts/init.py
 
-# 2. Delegar una tarea a un agente
-python harness/run.py "@software-engineer: Crea un endpoint REST para usuarios"
+# 3. Iniciar el harness
+python harness/run.py "@project-manager: planificar proyecto"
 
-# 3. Generar /llms.txt para consumo por LLMs externos
-python harness/scripts/generate_llms_txt.py
-
-# 4. Iniciar el bucle de auto-mejora sobre un skill
-python -c "from harness.evolve_loop.self_improver import SelfImprover; SelfImprover().run_round('software-engineer', rounds=3)"
+# 4. (Opcional) Resetear estado para empezar limpio
+python harness/reset_state.py
 ```
 
 ---
@@ -100,6 +98,33 @@ Ver `harness/AGENTS.md` para el manifiesto detallado.
 
 ---
 
+## Comandos CLI
+
+```bash
+# Delegar tarea a un agente
+python harness/run.py "@software-engineer: Implementa <tu-tarea>"
+
+# Iniciar scheduler en background
+python harness/run.py --daemon
+
+# Modo gateway interactivo
+python harness/run.py --gateway cli
+
+# Programar job recurrente
+python harness/run.py '!schedule add daily-check --cron "0 9 * * 1-5" --task "@quality-gate: validar sistema"'
+
+# Listar jobs programados
+python harness/run.py '!schedule list'
+
+# Mutar y evolucionar prompt de un agente
+python harness/run.py '!evolve mutate @software-engineer "<tu-tarea-de-prueba>"'
+
+# Resetear estado del harness
+python harness/reset_state.py
+```
+
+---
+
 ## Arquitectura
 
 ### Memoria Vectorial (LanceDB)
@@ -108,7 +133,7 @@ Ver `harness/AGENTS.md` para el manifiesto detallado.
 - **Fallback in-memory**: Solo disponible con `LanceVectorStore(allow_fallback=True)` para emergencias/test.
 
 ### RAG (Retrieval-Augmented Generation)
-- Los documentos en `docs/`, `harness/`, y `.opencode/` se ingieren automaticamente.
+- Los documentos en `harness/`, y `.opencode/` se ingieren automaticamente.
 - Los chunks se vectorizan y almacenan en la coleccion `rag_chunks` de LanceDB.
 - El `ContextAssembler` recupera los chunks mas relevantes segun la tarea.
 
@@ -123,33 +148,10 @@ Ver `harness/AGENTS.md` para el manifiesto detallado.
 
 ---
 
-## Comandos
-
-```bash
-python harness/run.py "@rol:描述"          # Delegar tarea
-python harness/scripts/init.py              # Bootstrap
-python harness/scripts/generate_llms_txt.py # Generar contexto LLM
-```
-
-### Evolve Loop
-```bash
-python -c "from harness.evolve_loop.self_improver import SelfImprover; SelfImprover().run_round('software-engineer', rounds=3)"
-```
-
----
-
 ## Principios
 
 - **Portable:** Sin dependencias de sistema operativo. Windows, macOS y Linux.
 - **Agnostico:** Sin preferencia de lenguaje o framework. Se adapta a tu proyecto.
 - **Evolutivo:** GEPA mutation + C.A.S.E. evaluation + procedural memory.
-- **Memoria persistente:** LanceDB como unico storage default. Sin fallback silencioso.
+- **Memoria persistente:** LanceDB como unico storage default.
 - **Documentacion viva:** Toda decision tecnica se documenta en ADR.
-
----
-
-## Inspiracion
-
-- Hermes Agent (NousResearch) — memoria procedural, GEPA, /llms.txt
-- Arquitectura de Integracion Actualizada — harness + context + hermes
-- FDE (Forward Deployment Engineering) — 7 pilares para skills robustos

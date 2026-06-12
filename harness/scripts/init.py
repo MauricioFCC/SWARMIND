@@ -50,13 +50,8 @@ def create_structure(base: Path) -> None:
         "harness/evolve_loop",
         "harness/tools_sandbox",
         "harness/scripts",
-        "docs/arquitectura",
-        "docs/dominios_negocio",
-        "docs/manual_usuario",
         ".opencode/skills/auto",
         ".opencode/agents",
-        "src",
-        "tests",
     ]
     for d in dirs:
         ensure_dir(base / d)
