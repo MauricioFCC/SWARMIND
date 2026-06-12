@@ -1,0 +1,49 @@
+# Onyx Multi-Agent System
+## LLMs.txt — Contexto curado para LLMs
+
+> Generado automáticamente. Última actualización: ver git log.
+
+## Enlaces a documentación clave
+
+- [Onyx — Sistema Multi-Agente Universal](docs/index.md)
+- [Arquitectura del Sistema](docs/arquitectura/index.md)
+- [ADR-001: LanceDB como Almacenamiento Unificado](docs/arquitectura/adr-001-base-datos.md)
+- [Sistema Multi-Agente](docs/dominios_negocio/sistema-agentes.md)
+- [Context Engineering](docs/dominios_negocio/context-engineering.md)
+- [Guía de Agentes](docs/manual_usuario/agentes.md)
+- [Referencia CLI](docs/manual_usuario/cli.md)
+
+## Skills Activos (19)
+
+| Skill | Descripción |
+|-------|-------------|
+| @project-manager | Orquestación F.R.A.M.E. |
+| @context-engineer | Context curation, compactación, memoria |
+| @tool-mcp-engineer | Ecosistema de herramientas MCP |
+| @software-engineer | Full-stack, APIs, servicios |
+| @data-architect | Schemas, modelos, migraciones |
+| @devops-sre | CI/CD, Docker, infraestructura |
+| @security-engineer | Seguridad, compliance, hardening |
+| @frontend-engineer | UI/UX, dashboards, visualizaciones |
+| @mobile-engineer | Apps móviles |
+| @ai-engineer | ML/AI, pipelines, LLMOps |
+| @quality-gate | QA, test strategy, cobertura |
+| @documentation-specialist | Documentación técnica |
+| @requirements-analyst | Análisis de requerimientos |
+| @enterprise-architect | Arquitectura de sistemas, ADR |
+| @quant-developer | Estrategias cuantitativas |
+| @quant-scientist | Validación estadística, experimentos |
+| @risk-manager | Gestión de riesgo, position sizing |
+| @trading-operations | Operaciones en vivo, monitoreo |
+| @evolve | Meta-skill de auto-mejora |
+
+## Comandos Rápidos
+
+- `@rol: mensaje` — Delegación directa a un agente
+- `!evolve status` — Estado del loop de mejora
+- `!evolve run <skill> <rounds>` — Ejecutar mejora
+- `!evolve cognition add <title> <content>` — Añadir conocimiento
+- `!evolve cognition search <query>` — Buscar en memoria
+
+---
+*Powered by Onyx Multi-Agent Framework*

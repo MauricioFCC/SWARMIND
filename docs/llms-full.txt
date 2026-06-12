@@ -1,0 +1,1588 @@
+# === docs/index.md ===
+
+# Onyx — Sistema Multi-Agente Universal
+
+!!! tip "Framework de skills multi-agente con enrutamiento automático, FDE, ASI-Evolve y contexto adaptativo"
+
+    Onyx es un framework universal de agentes que combina **Forward Deployment Engineering (FDE)**,
+    un **bucle de auto-mejora ASI-Evolve**, enrutamiento inteligente por intención,
+    y un sistema de memoria basado en **LanceDB** con búsqueda vectorial híbrida.
+
+---
+
+## ¿Qué es Onyx?
+
+Onyx es un **sistema operativo para agentes de IA** que orquesta múltiples skills especializados
+a través de un grafo de enrutamiento con estado. Cada skill opera bajo principios universales
+(ARQ, SEG, DOC, TST, OPS, CMT, QLT, FDE, EVO) y puede ejecutarse de forma autónoma
+o bajo supervisión humana.
+
+El sistema está compuesto por tres capas fundamentales:
+
+| Capa | Directorio | Función |
+|------|-----------|---------|
+| **Cerebro** | `.opencode/` | Reglas, perfiles de agentes, principios FDE, configuración |
+| **Motor** | `harness/` | Entorno de ejecución: base de datos vectorial, orquestador, RAG, sandbox |
+| **Conocimiento** | `docs/` | Documentación técnica, manuales de usuario, ADRs |
+
+!!! note "Docs-as-Code"
+
+    Toda la documentación se escribe en Markdown y se compila con **Material for MkDocs**
+    para generar un portal web profesional. Los agentes pueden leer y escribir directamente
+    sobre los archivos `.md`, manteniendo la documentación siempre sincronizada con el código.
+
+---
+
+## Arquitectura
+
+El sistema sigue un patrón de **microservicios de agentes** con un **orquestador central** (`router_v2.py`)
+que implementa el **Protocolo A2A (Agent-to-Agent)** para descubrimiento y handoff formal entre agentes.
+
+```
+┌─────────────┐
+│   Usuario   │
+└──────┬──────┘
+       │ @rol / mensaje
+       ▼
+┌─────────────────────┐
+│  Project Manager    │ ← Punto de entrada y coordinación
+│  (Orquestador)      │
+└──────────┬──────────┘
+           │ delega
+           ▼
+┌──────────────────────────────────────────────┐
+│  ┌──────────┐ ┌──────────┐ ┌──────────────┐ │
+│  │ Quant    │ │ Software │ │ AI/ML        │ │
+│  │ Developer│ │ Engineer │ │ Engineer      │ │
+│  └──────────┘ └──────────┘ └──────────────┘ │
+│  ┌──────────┐ ┌──────────┐ ┌──────────────┐ │
+│  │ Security │ │ Data     │ │ Context      │ │
+│  │ Engineer │ │ Architect│ │ Engineer      │ │
+│  └──────────┘ └──────────┘ └──────────────┘ │
+│  ┌──────────┐ ┌──────────┐ ┌──────────────┐ │
+│  │ Quality  │ │ Evolve   │ │ ... (21      │ │
+│  │ Gate     │ │          │ │  agentes)    │ │
+│  └──────────┘ └──────────┘ └──────────────┘ │
+└──────────────────────┬───────────────────────┘
+                       ▼
+┌──────────────────────────────┐
+│         Harness              │
+│  ┌────────┐ ┌─────────────┐  │
+│  │ LanceDB│ │ Tools       │  │
+│  │ (Vector│ │ Sandbox     │  │
+│  │  Store)│ │ (MCP Exec)  │  │
+│  └────────┘ └─────────────┘  │
+└──────────────────────────────┘
+```
+
+### Componentes del Harness
+
+| Componente | Descripción |
+|------------|-------------|
+| **LanceDB Store** | Base de datos vectorial embebida (sin servidor). Almacena colecciones de tareas, chunks RAG y cognición. |
+| **Orchestrator** | Motor de delegación con grafo de estado. Implementa patrones sequential, parallel y loop. |
+| **Memory RAG** | Ensamblador de contexto contextual. Búsqueda semántica híbrida (vector + keyword). |
+| **Evolve Loop** | Bucle de auto-mejora ASI-Evolve: cognition store, experiment DB, UCB1 sampling. |
+| **Tools Sandbox** | Entorno de ejecución segura para MCP tools con circuit breaker. |
+
+---
+
+## Skills Activos (19)
+
+El framework cuenta con **19 skills especializados** que se asignan mediante enrutamiento por intención.
+
+| Skill | Rol FDE | Disparador de Enrutamiento |
+|-------|---------|---------------------------|
+| `project-manager` | MISSION, DIPLOMACY, VALUE | roadmap, plan, progreso, delegación @rol |
+| `quant-developer` | DELTA, GLUE, EVOLVE | estrategia, señal, broker, ONNX, backtest |
+| `quant-scientist` | EVOLVE, DELTA, VALUE | overfitting, sharpe, experimento, validación |
+| `risk-manager` | RESILIENCE, MISSION, DELTA | drawdown, position sizing, kelly, var |
+| `software-engineer` | GLUE, RESILIENCE, DELTA | api, endpoint, deploy, microservicios |
+| `security-engineer` | RESILIENCE, DIPLOMACY, MISSION | vulnerabilidad, compliance, sql injection |
+| `data-architect` | DELTA, GLUE, RESILIENCE | esquema, pipeline, migration, etl |
+| `devops-sre` | RESILIENCE, GLUE, VALUE | ci/cd, kubernetes, monitoring, iac |
+| `enterprise-architect` | DELTA, GLUE, DIPLOMACY | arquitectura, system design, adr |
+| `ai-engineer` | DELTA, EVOLVE, VALUE | ml, llm, modelo, inferencia, rag |
+| `context-engineer` | VALUE, DIPLOMACY, EVOLVE | context, prompt, compaction, memoria |
+| `frontend-engineer` | VALUE, DIPLOMACY, DELTA | dashboard, ui, componente, visualización |
+| `quality-gate` | GLUE, RESILIENCE, EVOLVE | validación, gate, test strategy, cobertura |
+| `trading-operations` | MISSION, VALUE, RESILIENCE | monitoreo, alerta, conexión, schedule |
+| `mobile-engineer` | VALUE, GLUE, DELTA | mobile, push notification, offline |
+| `documentation-specialist` | DIPLOMACY, MISSION, VALUE | documentación, manual, api docs |
+| `tool-mcp-engineer` | GLUE, VALUE, RESILIENCE | tool, mcp, herramienta, protocolo |
+| `requirements-analyst` | — | análisis, requerimientos, viabilidad |
+| `evolve` | EVOLVE, GLUE, VALUE | evolución, mejora, aprender, optimizar |
+
+!!! info "Roles fusionados"
+
+    Los siguientes roles se han fusionado en skills activos: `backend-engineer` → `software-engineer`,
+    `compliance-officer` → `security-engineer`, `qa-automation` → `quality-gate`.
+
+---
+
+## Agentes del Sistema (21)
+
+Cada skill tiene un **agente** asociado en `.opencode/agents/` con un perfil ejecutable:
+
+| # | Agente | Archivo |
+|---|--------|---------|
+| 1 | `ai-engineer` | `.opencode/agents/ai-engineer.md` |
+| 2 | `context-engineer` | `.opencode/agents/context-engineer.md` |
+| 3 | `data-architect` | `.opencode/agents/data-architect.md` |
+| 4 | `devops-sre` | `.opencode/agents/devops-sre.md` |
+| 5 | `documentation-specialist` | `.opencode/agents/documentation-specialist.md` |
+| 6 | `enterprise-architect` | `.opencode/agents/enterprise-architect.md` |
+| 7 | `evolve-analyzer` | `.opencode/agents/evolve-analyzer.md` |
+| 8 | `evolve-engineer` | `.opencode/agents/evolve-engineer.md` |
+| 9 | `evolve-researcher` | `.opencode/agents/evolve-researcher.md` |
+| 10 | `frontend-engineer` | `.opencode/agents/frontend-engineer.md` |
+| 11 | `mobile-engineer` | `.opencode/agents/mobile-engineer.md` |
+| 12 | `project-manager` | `.opencode/agents/project-manager.md` |
+| 13 | `quality-gate` | `.opencode/agents/quality-gate.md` |
+| 14 | `quant-developer` | `.opencode/agents/quant-developer.md` |
+| 15 | `quant-scientist` | `.opencode/agents/quant-scientist.md` |
+| 16 | `requirements-analyst` | `.opencode/agents/requirements-analyst.md` |
+| 17 | `risk-manager` | `.opencode/agents/risk-manager.md` |
+| 18 | `security-engineer` | `.opencode/agents/security-engineer.md` |
+| 19 | `software-engineer` | `.opencode/agents/software-engineer.md` |
+| 20 | `tool-mcp-engineer` | `.opencode/agents/tool-mcp-engineer.md` |
+| 21 | `trading-operations` | `.opencode/agents/trading-operations.md` |
+
+---
+
+## Cómo Empezar
+
+### 1. Instalación
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/onyx-project/onyx.git
+cd onyx
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Inicializar documentación (opcional)
+pip install mkdocs-material
+mkdocs serve
+```
+
+### 2. Configuración Inicial
+
+Editar `.opencode/config/project_config.yaml` con los datos de tu proyecto:
+
+```yaml
+PROJECT_NAME: "Mi Proyecto"
+DOMAIN: "web"  # o trading, mobile, ml, iot, robotics
+TECH_STACK: "Python"
+```
+
+### 3. Primeros Pasos con Agentes
+
+!!! example "Ejemplos de uso"
+
+    **Delegación directa:**
+    ```
+    @software-engineer: Implementa el endpoint POST /usuarios con validación.
+    ```
+
+    **Flujo multi-agente:**
+    ```
+    @project-manager: Planifica el módulo de autenticación, delega a
+    @security-engineer para revisión de seguridad.
+    ```
+
+    **Auto-mejora:**
+    ```
+    !evolve status
+    !evolve run software-engineer 5
+    ```
+
+### 4. Explorar la Documentación
+
+| Sección | Descripción |
+|---------|-------------|
+| [Arquitectura](arquitectura/index.md) | Visión general del sistema, componentes y decisiones arquitectónicas |
+| [ADR-001: Base de Datos](arquitectura/adr-001-base-datos.md) | Registro de decisión: LanceDB como almacenamiento unificado |
+| [Sistema Multi-Agente](dominios_negocio/sistema-agentes.md) | Catálogo completo de agentes, patrones de delegación |
+| [Context Engineering](dominios_negocio/context-engineering.md) | Guía de optimización de contexto y presupuesto de tokens |
+| [Guía de Agentes](manual_usuario/agentes.md) | Cómo usar `@rol`, lista completa de agentes |
+| [Referencia CLI](manual_usuario/cli.md) | Comandos del sistema, evolución y configuración |
+
+---
+
+!!! warning "Proyecto en Fase Foundation (F)"
+
+    Onyx se encuentra en sus etapas iniciales. La documentación y los componentes
+    están en evolución constante. Consulta el [CHANGELOG](CHANGELOG.md) para
+    ver el historial de cambios.
+
+Para contribuir o reportar issues, visita el [repositorio en GitHub](https://github.com/onyx-project/onyx).
+
+
+# === docs/arquitectura/index.md ===
+
+# Arquitectura del Sistema
+
+!!! abstract "Resumen"
+
+    Onyx utiliza una arquitectura de **microservicios de agentes** orquestados mediante
+    un grafo de estado con enrutamiento por intención. El sistema se divide en tres
+    capas: Cerebro (`.opencode/`), Motor (`harness/`) y Conocimiento (`docs/`).
+
+---
+
+## Diagrama de Contexto (C4 - Nivel 1)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SISTEMA ONYX                                  │
+│                                                                  │
+│  ┌──────────┐   @rol / mensaje   ┌───────────────────────────┐  │
+│  │ Usuario  │ ──────────────────▶│   Project Manager         │  │
+│  │ (Humano) │ ◀──────────────────│   (Orquestador Central)   │  │
+│  └──────────┘   respuesta        └───────────┬───────────────┘  │
+│                                              │                   │
+│                    ┌─────────────────────────┼──────────────┐    │
+│                    │      Specialized Agents  │              │    │
+│                    │                         │              │    │
+│  ┌─────────────────▼──┐  ┌───────────────────▼──────────┐   │    │
+│  │ Software Engineer  │  │ Quant Developer              │   │    │
+│  │ (APIs, servicios)  │  │ (Estrategias, ejecución)     │   │    │
+│  └─────────────────┬──┘  └───────────────────┬──────────┘   │    │
+│                    │                         │              │    │
+│  ┌─────────────────▼──┐  ┌───────────────────▼──────────┐   │    │
+│  │ Security Engineer  │  │ AI/ML Engineer               │   │    │
+│  │ (Hardening, audit) │  │ (Modelos, pipelines)         │   │    │
+│  └─────────────────┬──┘  └───────────────────┬──────────┘   │    │
+│                    │                         │              │    │
+│  ┌─────────────────▼──┐  ┌───────────────────▼──────────┐   │    │
+│  │ Data Architect     │  │ Context Engineer             │   │    │
+│  │ (Schemas, ETL)     │  │ (Prompt, memoria, JIT)       │   │    │
+│  └─────────────────┬──┘  └───────────────────┬──────────┘   │    │
+│                    │      ... (15+ agentes)  │              │    │
+│                    └─────────────────────────┼──────────────┘    │
+│                                              │                   │
+│                                              ▼                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │                    HARNESS (Motor)                        │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌────────────────┐ │   │
+│  │  │   LanceDB    │  │ Orchestrator │  │ Evolve Loop    │ │   │
+│  │  │  VectorStore │  │ (Router v2)  │  │ (ASI-Evolve)   │ │   │
+│  │  └──────────────┘  └──────────────┘  └────────────────┘ │   │
+│  │  ┌──────────────┐  ┌──────────────┐                     │   │
+│  │  │ Memory RAG   │  │ Tools        │                     │   │
+│  │  │ (Context)    │  │ Sandbox (MCP)│                     │   │
+│  │  └──────────────┘  └──────────────┘                     │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Componentes Core
+
+### 1. `.opencode/` — El Cerebro
+
+Directorio que contiene la inteligencia del sistema: reglas, perfiles de agentes, principios y configuración.
+
+| Subdirectorio | Contenido |
+|---------------|-----------|
+| `agents/` | 21 perfiles de agentes ejecutables (formato Markdown con frontmatter) |
+| `config/` | Configuración central: `project_config.yaml`, `routing_rules.yaml`, `token_budgets.yaml` |
+| `core/` | Módulos base del framework: principios, router, registry, guardrails, prompt optimizer |
+| `skills/` | 19 skills especializados con plantillas FDE + EVO + C.A.S.E. |
+
+### 2. `harness/` — El Motor
+
+Entorno de ejecución que orquesta agentes, gestiona memoria y ejecuta herramientas.
+
+| Módulo | Archivos Clave | Función |
+|--------|----------------|---------|
+| `db/lancedb_store/` | `(carpeta embebida)` | Base de datos vectorial LanceDB (sin servidor) |
+| `orchestrator/` | `__init__.py` | Motor de delegación con grafo de estado |
+| `memory_rag/` | *(en desarrollo)* | Ensamblador de contexto con búsqueda semántica híbrida |
+| `evolve_loop/` | *(en desarrollo)* | Bucle ASI-Evolve: cognition store, experiment DB |
+| `tools_sandbox/` | *(en desarrollo)* | Entorno de ejecución segura para MCP tools |
+
+### 3. `docs/` — El Conocimiento
+
+Documentación técnica en formato Markdown compilada con Material for MkDocs.
+
+| Ruta | Contenido |
+|------|-----------|
+| `index.md` | Página principal del portal de documentación |
+| `arquitectura/` | Visión general, ADRs, diagramas de arquitectura |
+| `dominios_negocio/` | Documentación por dominio de negocio |
+| `manual_usuario/` | Guías de usuario, referencia CLI |
+
+---
+
+## FDE — Forward Deployment Engineering
+
+El sistema se rige por **7 pilares FDE** que garantizan que cada skill opera con propósito, resiliencia y capacidad de evolución.
+
+| Pilar | Principio | Aplicación en Onyx |
+|-------|-----------|-------------------|
+| **DELTA** | Identificar el gap entre producto ideal y realidad | Cada misión comienza con un delta documentado |
+| **MISSION** | Stakeholder definido + métrica de éxito | Todo agente tiene un propósito medible |
+| **GLUE** | 50% del código es integración | A2A Protocol, adapters, contracts |
+| **VALUE** | Speed-to-value primero | MVA en <30 días, 80/20 scope |
+| **DIPLOMACY** | El problema técnico es 50% político | Champion + Blocker identificados |
+| **RESILIENCE** | Air-gap ready, zero-trust | Timeouts, retry, circuit breakers |
+| **EVOLVE** | Cada entrega genera cognition | ASI-Evolve: cognition store + experiment DB |
+
+!!! tip "Glosario FDE"
+
+    Consulta el [FDE Principles](https://github.com/onyx-project/onyx/blob/main/.opencode/core/fde_principles.md)
+    para el glosario completo de términos como C.A.S.E., MVA, Medallion Architecture,
+    Three Whys, A2A Protocol, RAG Triad, Inner/Outer Loop, Pairwise Evaluation, etc.
+
+---
+
+## Principios de Context Engineering
+
+Basados en el artículo de Anthropic (Sep 2025) sobre ingeniería de contexto para sistemas multi-agente:
+
+| Principio | Descripción |
+|-----------|-------------|
+| **Minimal Viable Tokens** | Usar solo los tokens necesarios para la tarea actual |
+| **Sectioned Prompts** | Prompts estructurados en secciones (XML/Markdown) |
+| **JIT Retrieval** | Recuperar contexto just-in-time, no pre-cargar todo |
+| **Compaction** | Compactar contexto preservando decisiones críticas |
+| **Structured Note-taking** | Notas persistentes para tareas multi-turno |
+| **Tool Call Clearing** | Limpiar resultados de tools después de profundidad >5 |
+
+!!! info "Más información"
+
+    Consulta la guía completa de [Context Engineering](../dominios_negocio/context-engineering.md)
+    para estrategias detalladas de optimización de tokens y gestión de contexto.
+
+---
+
+## Flujo de Ejecución Típico
+
+### Delegación Directa
+
+```
+Usuario: @software-engineer: Implementa endpoint POST /usuarios
+  ↓
+Router v2: Detecta intención → keywords ["api", "endpoint"]
+  ↓
+Orquestador: Enruta a software-engineer con confianza 0.8
+  ↓
+Agente: Ejecuta tarea, pasa por guardrails
+  ↓
+Respuesta: Código implementado + documentación actualizada
+```
+
+### Flujo Multi-Agente Secuencial
+
+```
+Usuario: @project-manager: Planifica módulo de autenticación
+  ↓
+PM: Desglosa en tareas → delega secuencialmente
+  ├─ @security-engineer: Diseña esquema de autenticación
+  ├─ @software-engineer: Implementa endpoints
+  └─ @quality-gate: Valida cobertura de tests
+```
+
+### Bucle de Auto-Mejora (ASI-Evolve)
+
+```
+Usuario: !evolve run software-engineer 5
+  ↓
+Evolve Loop: 3-agent pipeline
+  ├─ Researcher: Propone mejora basada en cognition store
+  ├─ Engineer: Ejecuta cambio con diff-based evolution
+  └─ Analyzer: Evalúa resultado y destila lección
+  ↓
+Resultado: Best snapshot promovido + cognition actualizada
+```
+
+---
+
+## Tecnologías Clave
+
+| Tecnología | Uso en Onyx |
+|------------|-------------|
+| **Python 3.11+** | Lenguaje principal del framework |
+| **LanceDB** | Base de datos vectorial embebida (Apache Arrow) |
+| **MkDocs + Material** | Portal de documentación |
+| **ONNX Runtime** | Inferencia de modelos cuantitativos |
+| **Pydantic** | Validación de schemas y datos |
+
+!!! warning "Estado del Desarrollo"
+
+    El proyecto se encuentra en **Fase Foundation (F)** del plan F.R.A.M.E.
+    Algunos módulos de `harness/` (memory_rag, evolve_loop, tools_sandbox)
+    están en diseño activo y pueden no ser funcionales aún.
+
+
+# === docs/arquitectura/adr-001-base-datos.md ===
+
+# ADR-001: LanceDB como Almacenamiento Unificado
+
+- **Estado:** Aceptado
+- **Fecha:** 2025-11-15
+- **Decisores:** Equipo de Arquitectura, Enterprise Architect
+- **Última actualización:** 2026-06-11
+
+---
+
+## Contexto
+
+El sistema multi-agente necesita un almacenamiento que cumpla con tres requisitos
+fundamentales:
+
+1. **Almacenamiento vectorial** para búsqueda semántica (RAG sobre memoria de agentes)
+2. **Metadatos estructurados** para esquemas de tareas, estados de ejecución y grafo de transiciones
+3. **Zero-configuration** para desarrollo local y despliegues ligeros
+
+Inicialmente se consideró **SQLite** para los metadatos, combinado con un índice vectorial
+separado (FAISS/Pinecone). Sin embargo, esta aproximación introducía complejidad operativa
+(sincronización entre motores, manejo de transacciones distribuidas) y sobrecarga de
+mantenimiento.
+
+### Problemas identificados con SQLite + FAISS
+
+| Problema | Impacto |
+|----------|---------|
+| Dos motores de almacenamiento | Mayor superficie de fallo |
+| Sincronización manual | Riesgo de inconsistencia de datos |
+| Sin búsqueda híbrida nativa | Consultas complejas requieren unión manual |
+| FAISS en memoria | Consumo de RAM innecesario |
+
+---
+
+## Decisión
+
+Se adopta **LanceDB** como almacenamiento unificado para todos los datos del sistema,
+reemplazando tanto SQLite como FAISS.
+
+### ¿Qué es LanceDB?
+
+LanceDB es una base de datos vectorial **embebida** (sin servidor) construida sobre
+el formato **Apache Lance**, que utiliza **Apache Arrow** para representación de datos
+en memoria. No requiere infraestructura externa — se almacena como una carpeta local.
+
+### Colecciones Implementadas
+
+| Colección | Propósito | Schema |
+|-----------|-----------|--------|
+| `tasks_board` | Estado de tareas y requerimientos | Metadatos (estado, agente, prioridad) + embedding semántico |
+| `rag_chunks` | Memoria del código base | Chunks de código/documentación + vectores |
+| `asi_cognition_store` | Aprendizaje del sistema | Lecciones, errores, métricas UCB1 |
+
+### Estructura en el Proyecto
+
+```
+harness/
+└── db/
+    └── lancedb_store/       ← Carpeta embebida de LanceDB
+        ├── tasks_board.lance
+        ├── rag_chunks.lance
+        └── asi_cognition_store.lance
+```
+
+!!! tip "Apache Arrow Nativo"
+
+    LanceDB permite cargar colecciones directamente como DataFrames de Pandas o Polars
+    **sin copias en memoria**, gracias a Apache Arrow. Esto es crítico para el `quant-scientist`
+    y `evolve-analyzer` que necesitan procesar grandes volúmenes de datos de cognición.
+
+---
+
+## Consecuencias
+
+### Positivas
+
+1.  **Zero-config**: No requiere servidor, demonio ni configuración de red. La carpeta
+    `lancedb_store/` se autogestiona.
+2.  **Apache Arrow nativo**: Las colecciones se pueden leer como DataFrames de Pandas/Polars
+    sin serialización intermedia. Ideal para agentes que procesan datos cuantitativos.
+3.  **Búsqueda híbrida**: LanceDB soporta filtrado por metadatos + búsqueda vectorial
+    en una sola consulta. Permite consultas como *"tráeme chunks de documentación sobre
+    facturación creados después de enero"*.
+4.  **Embedded**: No hay latencia de red. Todo corre en el mismo proceso.
+5.  **Versionado de datos**: El formato Lance soporta versionado nativo de tablas,
+    permitiendo rollback de cambios en la base de conocimiento.
+
+### Negativas
+
+1.  **No es una base de datos relacional**: Las consultas JOIN y transacciones ACID
+    complejas no son nativas. Para el `tasks_board` se usa una aproximación de
+    documento embebido (similar a MongoDB).
+2.  **Ecosistema más pequeño**: Comparado con SQLite o PostgreSQL, la comunidad y
+    herramientas disponibles son más limitadas.
+3.  **Lock-in de formato**: Migrar a otra base de datos vectorial requeriría exportar
+    los embeddings.
+
+### Neutrales
+
+- El almacenamiento embebido significa que no hay separación cliente-servidor.
+  Esto es adecuado para un sistema de agentes que corre en un solo proceso,
+  pero podría requerir reconsideración si se escala a múltiples nodos.
+
+---
+
+## Alternativas Consideradas
+
+### SQLite + FAISS (Descartada)
+
+| Aspecto | Evaluación |
+|---------|------------|
+| Ventaja | Madurez y familiaridad de SQLite |
+| Desventaja | Dos sistemas separados, sincronización manual, sin búsqueda híbrida |
+
+### PostgreSQL + pgvector (Descartada)
+
+| Aspecto | Evaluación |
+|---------|------------|
+| Ventaja | Soporte transaccional completo |
+| Desventaja | Requiere servidor PostgreSQL + extensión pgvector. Sobrecarga operativa innecesaria |
+
+### Pinecone / Weaviate (Descartada)
+
+| Aspecto | Evaluación |
+|---------|------------|
+| Ventaja | Búsqueda vectorial gestionada |
+| Desventaja | Costo recurrente, latencia de red, dependencia externa. Violación del principio de air-gap readiness (FDE-RESILIENCE) |
+
+---
+
+## Diagrama de Flujo de Datos
+
+```
+┌──────────────┐     ┌──────────────────────────────────────────────┐
+│   Agente     │     │              Harness                          │
+│ (Solicita    │     │                                              │
+│  contexto)   │────▶│  ┌────────────────┐     ┌─────────────────┐  │
+└──────────────┘     │  │ Context        │────▶│   LanceDB       │  │
+                     │  │ Assembler      │     │                 │  │
+┌──────────────┐     │  │ (memory_rag/)  │     │ ┌─────────────┐ │  │
+│   Agente     │     │  └────────────────┘     │ │ rag_chunks  │ │  │
+│ (Guarda      │     │                         │ │ tasks_board │ │  │
+│  cognición)  │────▶│  ┌────────────────┐     │ │ cognition   │ │  │
+└──────────────┘     │  │ Evolve Loop    │────▶│ │             │ │  │
+                     │  │ (evolve_loop/) │     │ └─────────────┘ │  │
+                     │  └────────────────┘     └─────────────────┘  │
+                     └──────────────────────────────────────────────┘
+```
+
+---
+
+## Referencias
+
+- [LanceDB Documentation](https://lancedb.github.io/lancedb/)
+- [Apache Arrow Format](https://arrow.apache.org/)
+- [FDE Principles - RESILIENCE Pillar](https://github.com/onyx-project/onyx/blob/main/.opencode/core/fde_principles.md)
+- [Arquitectura del Sistema](index.md)
+
+
+# === docs/dominios_negocio/sistema-agentes.md ===
+
+# Sistema Multi-Agente
+
+!!! abstract "Resumen"
+
+    Onyx implementa un sistema de **21 agentes especializados** que colaboran bajo la
+    orquestación de un grafo de estado con enrutamiento por intención. Cada agente tiene
+    un perfil definido, capacidades específicas y reglas de transición hacia otros agentes.
+
+---
+
+## Catálogo de Agentes
+
+### Agentes de Evolución (3)
+
+| Agente | Rol | Capacidades | Cuándo Usarlo |
+|--------|-----|-------------|---------------|
+| `@evolve-researcher` | Investigador de mejora continua | Propone mejoras basadas en cognition store, analiza patrones de fallo | Para identificar oportunidades de optimización en skills existentes |
+| `@evolve-engineer` | Ingeniero de auto-mejora | Ejecuta cambios mediante diff-based evolution, muta prompts genéticamente | Para aplicar mejoras aprobadas y generar nuevas versiones de skills |
+| `@evolve-analyzer` | Analista de resultados | Evalúa experiments, promueve best snapshots, destila lecciones | Para analizar resultados del evolve loop y actualizar cognition store |
+
+### Agentes de Desarrollo (5)
+
+| Agente | Rol | Capacidades | Cuándo Usarlo |
+|--------|-----|-------------|---------------|
+| `@software-engineer` | Ingeniero de software full-stack | APIs, microservicios, CI/CD, arquitectura hexagonal | Para implementar endpoints, servicios backend, o refactorizar código |
+| `@frontend-engineer` | Ingeniero frontend | Dashboards, UI, componentes React/Svelte/Vue, visualizaciones | Para crear interfaces de usuario o paneles de monitoreo |
+| `@mobile-engineer` | Ingeniero móvil | Apps iOS/Android, React Native/Flutter, offline-first, push notifications | Para desarrollar o mantener aplicaciones móviles |
+| `@data-architect` | Arquitecto de datos | Schemas, migraciones, ETL, pipelines, modelos de datos | Para diseñar bases de datos, migraciones o pipelines de datos |
+| `@devops-sre` | DevOps / SRE | Docker, Kubernetes, CI/CD, monitoreo, IaC | Para configurar infraestructura, pipelines de deploy o monitoreo |
+
+### Agentes de Seguridad y Calidad (3)
+
+| Agente | Rol | Capacidades | Cuándo Usarlo |
+|--------|-----|-------------|---------------|
+| `@security-engineer` | Ingeniero de seguridad | AppSec, hardening, compliance, threat modeling, secret scanning | Para auditorías de seguridad, revisión de vulnerabilidades o cumplimiento normativo |
+| `@quality-gate` | Guardián de calidad | Test strategy, cobertura, pre-commit gates, regresión | Para validar código antes de commit, diseñar estrategias de testing |
+| `@requirements-analyst` | Analista de requerimientos | Análisis de viabilidad, propuestas de mejora, user stories | Para analizar nuevas features, investigar viabilidad técnica |
+
+### Agentes Cuantitativos (3)
+
+| Agente | Rol | Capacidades | Cuándo Usarlo |
+|--------|-----|-------------|---------------|
+| `@quant-developer` | Desarrollador cuantitativo | Estrategias de trading, ejecución de órdenes, broker adapters, ONNX | Para implementar estrategias de trading o conectarse con brokers |
+| `@quant-scientist` | Científico cuantitativo | Validación estadística, experimentos, feature engineering, OOS testing | Para investigación, backtesting, análisis de overfitting |
+| `@risk-manager` | Gestor de riesgo | Position sizing, Kelly criterion, drawdown tracking, Monte Carlo | Para evaluar riesgo de cartera, calcular tamaño de posiciones |
+
+### Agentes Estratégicos (3)
+
+| Agente | Rol | Capacidades | Cuándo Usarlo |
+|--------|-----|-------------|---------------|
+| `@project-manager` | Gerente de proyecto | Orquestación, planificación, delegación, reporte de progreso | Para planificar proyectos, delegar tareas, coordinar equipos multi-agente |
+| `@enterprise-architect` | Arquitecto empresarial | System design, ADR, C4 modeling, roadmaps tecnológicos | Para decisiones arquitectónicas, diseño de sistemas, selección tecnológica |
+| `@documentation-specialist` | Especialista en documentación | Manuales técnicos, API docs, white papers, glosarios | Para crear o actualizar documentación técnica |
+
+### Agentes de IA y Contexto (3)
+
+| Agente | Rol | Capacidades | Cuándo Usarlo |
+|--------|-----|-------------|---------------|
+| `@ai-engineer` | Ingeniero de IA/ML | Modelos ML, pipelines, LLMOps, fine-tuning, RAG, ONNX | Para implementar modelos ML, optimizar inferencia, diseñar RAG |
+| `@context-engineer` | Ingeniero de contexto | Curación de prompts, compactación, JIT retrieval, token budgets | Para optimizar contexto, reducir tokens, diseñar memoria de agentes |
+| `@tool-mcp-engineer` | Ingeniero de herramientas MCP | Diseño de tools, MCP servers, tool call optimization | Para crear o mantener el ecosistema de herramientas que los agentes consumen |
+
+### Agente de Operaciones (1)
+
+| Agente | Rol | Capacidades | Cuándo Usarlo |
+|--------|-----|-------------|---------------|
+| `@trading-operations` | Operaciones de trading | Monitoreo en vivo, alertas, conectividad con brokers, schedules | Para monitorear bots en producción, configurar alertas, gestionar horarios de mercado |
+
+---
+
+## Patrones de Delegación
+
+El `Router v2` implementa tres patrones de ejecución multi-agente definidos en
+`MultiAgentPattern`:
+
+### 1. Secuencial (Chain)
+
+Los agentes se ejecutan en cadena: el output de uno es el input del siguiente.
+
+```
+@software-engineer → @security-engineer → @devops-sre
+     (codifica)         (audita)           (despliega)
+```
+
+**Predefinido:** `strategy_to_deploy`, `research_to_implement`, `secure_deploy`
+
+### 2. Paralelo (Fan-out)
+
+Varios agentes ejecutan simultáneamente. Los outputs se mergean según estrategia:
+
+| Estrategia | Comportamiento |
+|------------|----------------|
+| `concat` | Combina todos los outputs |
+| `vote` | Mayoría simple (aprueba/rechaza) |
+| `priority` | Toma el output del agente con mayor prioridad |
+
+**Predefinido:** `compliance_review` (security-engineer + risk-manager en paralelo)
+
+### 3. Loop (Iteración Controlada)
+
+Un agente se repite hasta que se cumple una condición de convergencia o se alcanza
+el máximo de iteraciones (circuit breaker).
+
+```
+evolve → evalúa → ¿mejoró? → sí → otra iteración
+                            → no  → convergió
+```
+
+**Predefinido:** `evolve_iteration` (max 10 iteraciones, condición de score_improvement < 0.01)
+
+!!! warning "Circuit Breaker"
+
+    Todos los loops tienen un `max_iterations` (por defecto 5) para evitar bucles
+    infinitos que consuman el presupuesto de tokens. Si el loop no converge, se
+    escala al `@project-manager` con un reporte del estado actual.
+
+---
+
+## Flujo de Quality Gate
+
+El `@quality-gate` implementa un pipeline de validación de dos niveles:
+
+### Inner Loop (<30s, pre-commit)
+
+Validación rápida en entorno de desarrollo:
+
+```
+IL-1: Lint (ruff / eslint)
+IL-2: Type narrow (mypy / TypeScript)
+IL-3: Tests unitarios (pytest / vitest)
+IL-4: Diff review (cambio mínimo)
+IL-5: Secrets scan (detectar credenciales)
+```
+
+### Outer Loop (CI/CD, pre-merge)
+
+Validación completa antes de fusionar:
+
+```
+OL-1: Full test suite
+OL-2: Full lint
+OL-3: Type check completo
+OL-4: Security scan (SAST)
+OL-5: Performance benchmark
+OL-6: Integration tests
+OL-7: Documentation check (docs 1:1)
+```
+
+### Evaluación de Respuestas
+
+El Quality Gate soporta dos modos de evaluación:
+
+- **Pointwise**: Scoring absoluto contra rúbrica fija (1-5) en groundedness, clarity, completeness, safety
+- **Pairwise**: Comparación candidate vs baseline con Model-as-a-Judge (correctness, efficiency, readability, security)
+
+---
+
+## ASI-Evolve: Auto-Mejora Continua
+
+El sistema de evolución autónoma sigue el pipeline de 3 agentes:
+
+```
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│  Researcher  │───▶│   Engineer   │───▶│   Analyzer   │
+│  (Propone)   │    │  (Ejecuta)   │    │  (Destila)   │
+└──────────────┘    └──────────────┘    └──────────────┘
+       │                    │                    │
+       ▼                    ▼                    ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│ Cognition    │    │ Experiment   │    │ Best         │
+│ Store        │    │ DB           │    │ Snapshot     │
+│ (lecciones)  │    │ (registros)  │    │ (promoción)  │
+└──────────────┘    └──────────────┘    └──────────────┘
+```
+
+### Características
+
+- **Diff-Based Evolution**: Evolución mediante parches SEARCH/REPLACE (no reescritura completa)
+- **Island Sampling**: Muestreo multi-isla con parámetros de migración y ratio exploración/explotación
+- **FAISS Index**: Índice vectorial (Inner Product, 384 dim, all-MiniLM-L6-v2) para búsqueda en cognition store
+- **Judge Model**: LLM externo para scoring final de candidatos
+
+### Comandos CLI
+
+| Comando | Función |
+|---------|---------|
+| `!evolve status` | Estado del loop de evolución |
+| `!evolve run <skill> <rounds>` | Ejecuta N rondas de mejora sobre un skill |
+| `!evolve cognition add <title> <content>` | Añade conocimiento al cognition store |
+| `!evolve cognition search <query>` | Busca en el cognition store |
+| `!evolve best <skill>` | Muestra el mejor snapshot de un skill |
+| `!evolve stats` | Estadísticas del sistema de evolución |
+
+!!! tip "Cognition Store"
+
+    El cognition store en LanceDB es el corazón del aprendizaje del sistema.
+    Cada lección, error y métrica se vectoriza y almacena para que los agentes
+    puedan consultarlo en futuras iteraciones. Es la memoria a largo plazo del sistema.
+
+---
+
+## Mapa de Transiciones (Routing Graph)
+
+El grafo de enrutamiento define las transiciones condicionales entre agentes:
+
+```
+project-manager ──→ quant-developer ──→ quant-scientist ──→ risk-manager
+      │                    │                   │                  │
+      │                    ▼                   ▼                  ▼
+      └──────────→ software-engineer ←── security-engineer ──→ enterprise-architect
+      │                    │                                      │
+      │                    ▼                                      ▼
+      └──────────→ ai-engineer ──────────→ evolve ───────────→ context-engineer
+                                                                     │
+                                                                     ▼
+                                                              tool-mcp-engineer
+```
+
+Cada nodo tiene:
+- `transitions`: mapa de condición → siguiente agente
+- `fallback`: agente por defecto si no hay transición (generalmente `project-manager`)
+- `max_retries`: reintentos antes de escalar
+- `timeout_seconds`: timeout de ejecución
+
+
+# === docs/dominios_negocio/context-engineering.md ===
+
+# Context Engineering
+
+!!! abstract "Resumen"
+
+    Basado en el artículo de Anthropic (Sep 2025) sobre ingeniería de contexto para
+    sistemas multi-agente. El Context Engineering es la disciplina de **curar, compactar
+    y optimizar el contexto** que reciben los agentes para maximizar la precisión de
+    sus respuestas minimizando el consumo de tokens.
+
+---
+
+## Principios Fundamentales
+
+### 1. Minimal Viable Tokens
+
+Usar **solo los tokens necesarios** para la tarea actual. Cada token adicional en el
+contexto diluye la atención del modelo y aumenta el costo.
+
+!!! tip "Regla práctica"
+
+    Si puedes resolver la tarea con 500 tokens, no uses 1000. El contexto extra no
+    mejora la calidad — la empeora por "atención diluida".
+
+**Estrategias:**
+- Eliminar instrucciones redundantes
+- Usar abreviaciones estándar (OOS, WFV, MVA, FDE)
+- Comprimir ejemplos a lo esencial
+
+### 2. Sectioned Prompts
+
+Estructurar los prompts en **secciones claramente delimitadas** (XML o Markdown).
+Esto permite que el agente navegue el contexto eficientemente y que el sistema
+pueda comprimir/eliminar secciones según el presupuesto de tokens.
+
+```markdown
+## Rol
+Eres un software engineer especializado en APIs REST.
+
+## Contexto del Proyecto
+Proyecto: Onyx
+Stack: Python + FastAPI
+
+## Tarea
+Implementa el endpoint POST /usuarios con:
+- Validación Pydantic
+- Autenticación JWT
+- Tests unitarios
+
+## Restricciones
+- Timeout: 30s
+- Retry: 3x backoff
+- Sin secrets hardcodeados
+```
+
+### 3. JIT Retrieval (Just-In-Time)
+
+Recuperar contexto **en el momento exacto** en que se necesita, no pre-cargar todo
+el contexto disponible.
+
+| Enfoque | Ventaja | Desventaja |
+|---------|---------|------------|
+| **Pre-loaded** | Rápido acceso | Consume tokens aunque no se use |
+| **JIT Retrieval** | Solo tokens necesarios | Latencia de recuperación |
+
+**Implementación en Onyx:**
+
+El `@context-engineer` utiliza el `memory_rag/` del harness para recuperar chunks
+relevantes de LanceDB justo antes de cada invocación de agente:
+
+1. El usuario envía un mensaje
+2. El router detecta la intención
+3. El context-engineer consulta LanceDB con búsqueda híbrida (vector + keyword)
+4. Recupera solo los 3-5 chunks más relevantes
+5. Ensambla el contexto final con esos chunks
+
+### 4. Compaction
+
+Compactar el contexto eliminando información redundante pero **preservando decisiones
+arquitectónicas, bugs activos y detalles críticos**.
+
+**Niveles de Compacción:**
+
+| Nivel | Acciones | Cuándo Usarlo |
+|-------|----------|---------------|
+| **Low** | Sin compresión, contexto completo | Tareas críticas de seguridad, compliance |
+| **Medium** | Eliminar frases redundantes, abreviar términos | Tareas técnicas generales |
+| **High** | Eliminar ejemplos, truncar agresivamente | Tareas simples, comandos, configs |
+
+**Técnicas de Compacción:**
+
+```yaml
+# .opencode/config/token_budgets.yaml
+compression:
+  remove_redundant_phrases: true
+  abbreviate_terms:
+    "out-of-sample": "OOS"
+    "walk-forward validation": "WFV"
+    "stop loss": "SL"
+  collapse_lists: true
+  remove_examples_if_tight: true
+```
+
+### 5. Structured Note-Taking
+
+Para tareas multi-turno, mantener **notas estructuradas persistentes** que acumulan
+información relevante sin repetir todo el historial del contexto.
+
+```markdown
+# Task Notes: Módulo de Facturación
+## Decisiones
+- DB: PostgreSQL con esquema de facturas
+- Auth: JWT con refresh tokens
+- API: REST en FastAPI
+
+## Bugs Activos
+- Bug #42: Timeout en POST /facturas cuando >100 items
+
+## Pendientes
+- [ ] Tests de integración para el endpoint de creación
+- [ ] Documentación de API
+```
+
+### 6. Tool Call Clearing
+
+Limpiar los resultados de tool calls después de una profundidad de anidamiento >5.
+Los resultados raw de herramientas consumen mucho contexto y rara vez son necesarios
+después de varios turnos.
+
+!!! warning "Tool Call Bloat"
+
+    Después de 5+ tool calls anidadas, el contexto puede contener kilobytes de
+    resultados de herramientas que ya no son relevantes. El `@context-engineer`
+    debe limpiar estos resultados, manteniendo solo un resumen.
+
+---
+
+## Optimización del Presupuesto de Tokens
+
+### Budgets por Rol
+
+Cada rol tiene un presupuesto de tokens definido en `token_budgets.yaml`:
+
+| Rol | Budget | Nivel Compresión | Incluir Principios |
+|-----|--------|-------------------|-------------------|
+| `project-manager` | 2500 | low | always |
+| `quant-developer` | 2048 | medium | space_available |
+| `quant-scientist` | 2500 | low | always |
+| `risk-manager` | 1800 | medium | space_available |
+| `software-engineer` | 2048 | medium | space_available |
+| `devops-sre` | 1800 | high | minimal |
+| `security-engineer` | 2048 | low | always |
+| `quality-gate` | 1800 | medium | space_available |
+| `data-architect` | 2048 | medium | space_available |
+| `frontend-engineer` | 1800 | high | minimal |
+| `mobile-engineer` | 1800 | high | minimal |
+| `trading-operations` | 2048 | low | always |
+| `documentation-specialist` | 2500 | low | always |
+| `ai-engineer` | 2048 | medium | space_available |
+| `context-engineer` | 2048 | medium | space_available |
+
+### Decisiones Técnicas (IF-THEN)
+
+El `@context-engineer` aplica estas reglas de decisión:
+
+| Condición | Acción |
+|-----------|--------|
+| `context_window > 80%` | Activar compactación |
+| `tool_call_depth > 5` | Limpiar resultados, mantener resumen |
+| `nuevo_agente` | Auditar prompt: seccionado + minimal + ejemplos canónicos |
+| `tool_overlap` | Fusionar tools o rediseñar |
+| `token_budget_exceeded` | Comprimir secciones no críticas |
+| `long_horizon_task` | Notas estructuradas + compactación periódica |
+| `context_rot` | Reducir contexto, priorizar alta señal |
+
+---
+
+## JIT vs Pre-loaded Context
+
+### Cuándo usar JIT Retrieval
+
+| Situación | Estrategia | Ejemplo |
+|-----------|------------|---------|
+| Documentación extensa | **JIT** | 10,000 líneas de docs — recuperar solo 3 chunks relevantes |
+| Código base grande | **JIT** | Buscar definiciones de funciones relacionadas |
+| Tareas específicas | **JIT** | "Agrega campo a la tabla usuarios" → solo schema relevante |
+
+### Cuándo usar Pre-loaded Context
+
+| Situación | Estrategia | Ejemplo |
+|-----------|------------|---------|
+| Reglas críticas de seguridad | **Pre-loaded** | Reglas de compliance, secretos prohibidos |
+| Configuración del proyecto | **Pre-loaded** | `project_config.yaml`, stack tecnológico |
+| Principios del sistema | **Pre-loaded** | FDE Principles, base_principles.md (versión compacta) |
+
+### Estrategia Híbrida (Recomendada)
+
+```
+Contexto Total = Pre-loaded (crítico) + JIT (bajo demanda)
+
+Pre-loaded (~20% del budget):
+- Rol del agente
+- Reglas críticas (seguridad, arquitectura)
+- Configuración del proyecto
+
+JIT Retrieval (~80% del budget):
+- Chunks de documentación relevantes
+- Código relacionado
+- Historial de tareas similares
+- Cognition store (lecciones aprendidas)
+```
+
+---
+
+## Implementación en Harness
+
+El `@context-engineer` orquesta la recuperación de contexto a través del
+`memory_rag/context_assembler.py`:
+
+```
+1. Recibir mensaje del usuario
+2. Extraer entidades e intención
+3. Consultar LanceDB (búsqueda híbrida):
+   - Vector embedding del mensaje
+   - Filtro por metadatos (dominio, tipo)
+4. Recuperar top-k chunks (k=3-5)
+5. Compactar según budget disponible
+6. Ensamblar contexto final:
+   [System Prompt] + [Pre-loaded] + [JIT Chunks] + [Mensaje Usuario]
+7. Validar contra guardrails (RAG Triad)
+```
+
+### RAG Triad (Guardrails)
+
+Tres validaciones sobre el contexto recuperado:
+
+| Check | Descripción | Código |
+|-------|-------------|--------|
+| **Groundedness** | El contexto está fundamentado en fuentes reales | `RAG-001` |
+| **Context Relevance** | El contexto recuperado es relevante para la consulta | `RAG-002` |
+| **Faithfulness** | La respuesta no alucina ni contradice el contexto | `RAG-003` |
+
+---
+
+## Referencias
+
+- [Artículo de Anthropic sobre Context Engineering (Sep 2025)](https://anthropic.com/)
+- [Configuración de Token Budgets](https://github.com/onyx-project/onyx/blob/main/.opencode/config/token_budgets.yaml)
+- [Agente Context Engineer](https://github.com/onyx-project/onyx/blob/main/.opencode/agents/context-engineer.md)
+- [FDE Principles - VALUE Pillar](https://github.com/onyx-project/onyx/blob/main/.opencode/core/fde_principles.md)
+
+
+# === docs/manual_usuario/agentes.md ===
+
+# Guía de Agentes
+
+!!! tip "Delegación Inteligente"
+
+    Los agentes de Onyx se activan mediante la sintaxis `@rol: mensaje`.
+    La delegación directa ahorra tokens al evitar que el sistema interprete
+    la intención mediante NLP — usas el enrutamiento explícito del grafo.
+
+---
+
+## Sintaxis de Delegación
+
+### Delegación Directa
+
+La forma más eficiente de interactuar con los agentes:
+
+```
+@<nombre-del-agente>: <tu-instrucción>
+```
+
+**Ejemplos:**
+
+```
+@software-engineer: Implementa el endpoint POST /usuarios con validación Pydantic
+@security-engineer: Revisa el módulo de autenticación por vulnerabilidades
+@risk-manager: Calcula position sizing para una cartera de 100k con Kelly criterion
+```
+
+!!! tip "Ahorro de Tokens"
+
+    Si ya sabes exactamente qué agente necesitas, **saltea al Project Manager**
+    y delega directamente al especialista. Esto ahorra ~500 tokens por consulta
+    que el PM gastaría en analizar y sub-delegar.
+
+### Delegación Multi-Agente
+
+Puedes encadenar agentes en una misma instrucción:
+
+```
+@project-manager: Planifica el módulo de pagos. Delega el schema a @data-architect,
+la implementación a @software-engineer, y la seguridad a @security-engineer.
+```
+
+### Delegación con Contexto C.A.S.E.
+
+Para obtener resultados más precisos, estructura tu instrucción siguiendo el
+formato C.A.S.E. (Clarify → Architect → Solve → Evaluate):
+
+```
+@software-engineer:
+C: Necesito un endpoint para crear usuarios con roles
+A: Usar FastAPI + Pydantic + JWT. Sin dependencias externas.
+S: Implementa solo el endpoint POST /usuarios y los tests unitarios
+E: Verifica cobertura >=80% y que pase los security gates
+```
+
+---
+
+## Lista Completa de Agentes con @rol
+
+### Agentes de Evolución
+
+| @rol | Descripción | Cuándo Usarlo |
+|------|-------------|---------------|
+| `@evolve-researcher` | Investiga oportunidades de mejora continua | Para analizar cognition store y proponer optimizaciones |
+| `@evolve-engineer` | Ejecuta mejoras mediante evolución genética | Para aplicar mutaciones y generar nuevas versiones de skills |
+| `@evolve-analyzer` | Evalúa resultados y destila lecciones | Para analizar experimentos y promover best snapshots |
+
+### Agentes de Desarrollo
+
+| @rol | Descripción | Cuándo Usarlo |
+|------|-------------|---------------|
+| `@software-engineer` | Desarrollo full-stack, APIs, servicios | Para implementar endpoints, refactorizar código, configurar CI/CD |
+| `@frontend-engineer` | Dashboards, UI, visualizaciones | Para crear interfaces de usuario o paneles de monitoreo |
+| `@mobile-engineer` | Apps iOS/Android, offline-first | Para desarrollar apps móviles o features específicas de mobile |
+| `@data-architect` | Schemas, modelos, ETL, migraciones | Para diseñar bases de datos o pipelines de datos |
+| `@devops-sre` | Infraestructura, Docker, K8s, CI/CD | Para configurar deploy, monitoreo, o infraestructura cloud |
+
+### Agentes de Seguridad y Calidad
+
+| @rol | Descripción | Cuándo Usarlo |
+|------|-------------|---------------|
+| `@security-engineer` | AppSec, hardening, compliance | Para auditorías de seguridad, revisión de vulnerabilidades |
+| `@quality-gate` | Testing, cobertura, pre-commit gates | Para validar código antes de commit o diseñar test strategy |
+| `@requirements-analyst` | Análisis de requerimientos | Para evaluar viabilidad de nuevas features o mejoras |
+
+### Agentes Cuantitativos
+
+| @rol | Descripción | Cuándo Usarlo |
+|------|-------------|---------------|
+| `@quant-developer` | Estrategias de trading, ejecución | Para implementar estrategias, conectar brokers, ejecutar señales |
+| `@quant-scientist` | Validación estadística, experimentos | Para investigación cuantitativa, feature engineering, backtesting |
+| `@risk-manager` | Gestión de riesgo, position sizing | Para calcular Kelly criterion, drawdown, o límites de exposición |
+
+### Agentes Estratégicos
+
+| @rol | Descripción | Cuándo Usarlo |
+|------|-------------|---------------|
+| `@project-manager` | Orquestación, planificación | Para planificar proyectos, delegar tareas, coordinar equipos |
+| `@enterprise-architect` | Arquitectura, ADR, roadmaps | Para decisiones arquitectónicas o diseño de sistemas |
+| `@documentation-specialist` | Documentación técnica | Para crear o actualizar manuales, API docs, white papers |
+
+### Agentes de IA y Herramientas
+
+| @rol | Descripción | Cuándo Usarlo |
+|------|-------------|---------------|
+| `@ai-engineer` | ML/AI, LLMOps, RAG | Para implementar modelos ML, optimizar inferencia, diseñar prompts |
+| `@context-engineer` | Optimización de contexto | Para compactar prompts, diseñar memoria, optimizar tokens |
+| `@tool-mcp-engineer` | Herramientas MCP | Para crear o mantener el ecosistema de tools de los agentes |
+
+### Agente de Operaciones
+
+| @rol | Descripción | Cuándo Usarlo |
+|------|-------------|---------------|
+| `@trading-operations` | Monitoreo en vivo, alertas | Para operaciones de trading en producción, schedules, conectividad |
+
+---
+
+## Tabla de Referencia Rápida
+
+### Por Tarea Común
+
+| Tarea | Agente Recomendado | Ejemplo |
+|-------|-------------------|---------|
+| Crear endpoint REST | `@software-engineer` | `@software-engineer: Crea POST /productos con validación` |
+| Diseñar schema DB | `@data-architect` | `@data-architect: Diseña esquema para módulo de ventas` |
+| Revisar seguridad | `@security-engineer` | `@security-engineer: Audita el módulo de pagos` |
+| Calcular riesgo | `@risk-manager` | `@risk-manager: Calcula posición para MNQ con Kelly 0.25` |
+| Validar estrategia | `@quant-scientist` | `@quant-scientist: Valida estrategia de momentum, OOS 30%` |
+| Crear dashboard | `@frontend-engineer` | `@frontend-engineer: Crea dashboard de monitoreo en vivo` |
+| Configurar CI/CD | `@devops-sre` | `@devops-sre: Configura pipeline de deploy automático` |
+| Documentar API | `@documentation-specialist` | `@documentation-specialist: Documenta endpoints de autenticación` |
+| Analizar feature | `@requirements-analyst` | `@requirements-analyst: Analiza viabilidad de módulo multi-moneda` |
+| Planificar proyecto | `@project-manager` | `@project-manager: Planifica release v2.0` |
+| Mejorar skill | `@evolve-researcher` | `@evolve-researcher: Encuentra mejoras para software-engineer` |
+
+### Por Prioridad de Tokens
+
+| Perfil de Uso | Estrategia | Ejemplo |
+|---------------|------------|---------|
+| **Budget ajustado** | Delegación directa al especialista | `@quant-developer: ...` (sin pasar por PM) |
+| **Budget normal** | Delegación con contexto C.A.S.E. | `@software-engineer: C:... A:... S:... E:...` |
+| **Budget amplio** | Flujo multi-agente con PM | `@project-manager: Planifica y delega...` |
+| **Tarea simple** | Máxima compresión, agente directo | `@devops-sre: docker-compose up -d` |
+
+---
+
+## Mejores Prácticas
+
+### 1. Sé Específico
+
+!!! example "Comparación"
+
+    **❌ Malo:** `@software-engineer: Hazme un backend`
+    
+    **✅ Bueno:** `@software-engineer: Implementa endpoint GET /productos/{id} con FastAPI,
+    que devuelva JSON con nombre, precio y stock. Incluye validación de que id sea UUID.`
+
+### 2. Incluye Restricciones
+
+Las restricciones evitan que el agente tome decisiones subóptimas:
+
+```
+@software-engineer: Implementa el módulo de facturación.
+REQUISITOS:
+- Usar SOLO librerías estándar de Python
+- Sin dependencias externas
+- Output en JSON
+- Timeout máximo 30s por request
+```
+
+### 3. Usa la Memoria del Sistema
+
+No repitas contexto que el sistema ya conoce:
+
+```
+# En lugar de explicar todo el proyecto:
+!evolve cognition search "facturación estructura"
+# Luego:
+@software-engineer: Basado en la cognition store, agrega validación fiscal al endpoint de facturas
+```
+
+### 4. Scaffolding Primero
+
+Para tareas grandes, genera el esqueleto antes del código completo:
+
+```
+@software-engineer: Genera SOLO las interfaces y firmas de métodos para el
+módulo de facturación. Sin implementación. Quiero validar la estructura primero.
+```
+
+### 5. Micro-Gestión para Budgets Ajustados
+
+En entornos con presupuesto limitado (planes free/zen), delega directamente
+al especialista sin pasar por el PM:
+
+| Tú quieres... | En lugar de... | Haz esto directo |
+|---------------|---------------|------------------|
+| Un schema DB | `@project-manager: Diseña la DB` | `@data-architect: Crea el schema` |
+| Un endpoint | `@project-manager: Implementa API` | `@software-engineer: Crea el endpoint` |
+| Un test | `@project-manager: Valida calidad` | `@quality-gate: Diseña tests` |
+
+---
+
+## Referencias
+
+- [Lista completa de agentes](../dominios_negocio/sistema-agentes.md)
+- [Referencia CLI](cli.md)
+- [Project Manager Agent](https://github.com/onyx-project/onyx/blob/main/.opencode/agents/project-manager.md)
+
+
+# === docs/manual_usuario/cli.md ===
+
+# Referencia CLI
+
+!!! abstract "Resumen"
+
+    Onyx expone una interfaz de línea de comandos (CLI) para interactuar con los agentes,
+    ejecutar el bucle de evolución y gestionar la configuración del sistema.
+    La CLI se utiliza dentro del entorno de desarrollo (OpenCode u otros agentes compatibles).
+
+---
+
+## Delegación de Agentes
+
+### Sintaxis General
+
+```
+@<agente>: <instrucción>
+```
+
+| Comando | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `@<agente>: <mensaje>` | Delegación directa a un agente | `@software-engineer: Implementa endpoint` |
+| `@<agente1> + @<agente2>: <mensaje>` | Delegación paralela | `@security-engineer + @risk-manager: Revisión de compliance` |
+
+### Delegación por Tipo de Tarea
+
+```
+@project-manager:               # Planificación y coordinación
+@software-engineer:             # APIs, servicios, backend
+@quant-developer:               # Estrategias de trading, brokers
+@quant-scientist:               # Investigación, validación estadística
+@risk-manager:                  # Gestión de riesgo, position sizing
+@security-engineer:             # Seguridad, compliance, hardening
+@data-architect:                # Schemas, migraciones, ETL
+@devops-sre:                    # CI/CD, infraestructura, monitoreo
+@frontend-engineer:             # UI, dashboards, visualizaciones
+@mobile-engineer:               # Apps móviles
+@ai-engineer:                   # ML/AI, LLMOps, RAG
+@context-engineer:              # Optimización de contexto
+@tool-mcp-engineer:             # Herramientas MCP
+@quality-gate:                  # Testing, calidad, pre-commit
+@requirements-analyst:          # Análisis de requerimientos
+@documentation-specialist:      # Documentación técnica
+@enterprise-architect:          # Arquitectura, ADR
+@trading-operations:            # Monitoreo en vivo
+@evolve-researcher:             # Investigación de mejora
+@evolve-engineer:               # Ejecución de mejora
+@evolve-analyzer:               # Análisis de resultados
+```
+
+---
+
+## Comandos de Evolución (ASI-Evolve)
+
+### `!evolve status`
+
+Muestra el estado actual del bucle de evolución.
+
+```
+!evolve status
+```
+
+**Salida típica:**
+
+```
+=== ASI-Evolve Status ===
+Status: ACTIVE
+Last Round: 7
+Best Score: 0.8432
+Cognition Items: 42
+Experiments: 156
+Active Skills: 19
+Loop Directory: .opencode/loop/
+```
+
+### `!evolve run <skill> <rounds>`
+
+Ejecuta N rondas de mejora sobre un skill específico.
+
+```
+!evolve run software-engineer 5
+```
+
+| Parámetro | Descripción | Ejemplo |
+|-----------|-------------|---------|
+| `skill` | Nombre del skill a mejorar | `software-engineer`, `quant-developer`, `all` |
+| `rounds` | Número de rondas de evolución | `5`, `10`, `50` (max configurable) |
+
+!!! warning "Consumo de Tokens"
+
+    Cada ronda de evolución ejecuta el pipeline completo de 3 agentes
+    (Researcher → Engineer → Analyzer). Monitorea tu presupuesto de tokens
+    antes de ejecutar rondas masivas.
+
+### `!evolve cognition add <title> <content>`
+
+Añade una entrada al cognition store (memoria persistente del sistema).
+
+```
+!evolve cognition add "Error Común Facturación" "El endpoint POST /facturas falla
+con timeout cuando el payload supera 100 items. Solución: implementar paginación
+con límite de 50 items por request."
+```
+
+| Parámetro | Descripción |
+|-----------|-------------|
+| `title` | Título descriptivo de la entrada |
+| `content` | Contenido detallado (lección, error, solución) |
+
+### `!evolve cognition search <query>`
+
+Busca entradas en el cognition store mediante búsqueda semántica.
+
+```
+!evolve cognition search "facturación timeout"
+```
+
+**Salida típica:**
+
+```
+=== Cognition Search Results ===
+Query: facturación timeout
+Results:
+1. "Error Común Facturación" (score: 0.89)
+   El endpoint POST /facturas falla con timeout...
+2. "Optimización Batch Facturas" (score: 0.72)
+   Para lotes grandes, usar procesamiento asíncrono...
+3. "Paginación API REST" (score: 0.65)
+   Estándar: limit=50, offset=cursor. Documentado en ADR-003.
+```
+
+### `!evolve best <skill>`
+
+Muestra el mejor snapshot registrado para un skill.
+
+```
+!evolve best software-engineer
+```
+
+**Salida típica:**
+
+```
+=== Best Snapshot: software-engineer ===
+Version: 3.2.1
+Score: 0.921
+Round: 12
+Date: 2026-06-10
+Changes:
+- Optimized prompt structure (sectioned)
+- Added security first principle
+- Reduced token usage by 24%
+```
+
+### `!evolve stats`
+
+Estadísticas completas del sistema de evolución.
+
+```
+!evolve stats
+```
+
+**Salida típica:**
+
+```
+=== Evolve Statistics ===
+Total Experiments: 156
+Total Cognitions: 42
+Best Overall Score: 0.943 (quant-developer)
+Active Skills: 19
+Skills with Evolution: 12
+
+By Skill:
+  software-engineer: 34 experiments, best 0.921
+  quant-developer: 28 experiments, best 0.943
+  security-engineer: 18 experiments, best 0.887
+  ...
+```
+
+### `!evolve mutate <agent>`
+
+Activa la mutación genética de prompts para un agente (experimental).
+
+```
+!evolve mutate @software-engineer
+```
+
+Crea 3 variantes del perfil del agente, las prueba en el sandbox y promueve
+la versión ganadora.
+
+---
+
+## Configuración del Entorno
+
+### Variables de Entorno
+
+| Variable | Descripción | Obligatoria |
+|----------|-------------|-------------|
+| `OPENAI_API_KEY` | API key para modelos LLM | Sí |
+| `LANCEDB_PATH` | Ruta al store de LanceDB (default: `harness/db/lancedb_store/`) | No |
+
+### Archivo `.env`
+
+```bash
+# .env
+OPENAI_API_KEY=sk-...
+LANCEDB_PATH=./harness/db/lancedb_store/
+```
+
+---
+
+## Configuración del Proyecto
+
+### `project_config.yaml`
+
+Archivo central de configuración en `.opencode/config/project_config.yaml`.
+
+```yaml
+# ── Universal Project Metadata ──
+PROJECT_NAME: "Onyx"
+PROJECT_VERSION: "1.0.0"
+DOMAIN: "universal"
+TECH_STACK: "Python"
+ARCH_PATTERN: "hexagonal"
+TEST_FRAMEWORKS: ["pytest"]
+CI_PLATFORM: "github-actions"
+DEPLOYMENT_TYPE: "docker"
+CURRENT_PHASE: "F"  # F(oundation), R(esearch), A(rchitecture), M(odule), E(xecution)
+CURRENT_DAY: 1
+
+# ── FDE / EVOLVE Config ──
+FDE_MISSION: "Universal multi-agent framework"
+FDE_STAKEHOLDER: "Development team"
+FDE_METRIC: "Task completion rate"
+FDE_DAY2: "Team maintains via documentation"
+
+EVOLVE_ENABLED: true
+EVOLVE_MAX_ROUNDS: 50
+EVOLVE_PATIENCE: 10
+EVOLVE_BEST_SCORE: 0.0
+EVOLVE_LAST_ROUND: 0
+
+# ── Token / Prompt Config ──
+TOKEN_CONFIG:
+  default_budget: 2048
+  compression_level: "medium"
+  include_principles: "space_available"
+```
+
+### `routing_rules.yaml`
+
+Reglas de enrutamiento por intención en `.opencode/config/routing_rules.yaml`.
+
+Define keywords y patrones regex que determinan qué agente recibe cada mensaje.
+Incluye configuración de:
+- Security gates (secret scanning, SQL injection)
+- Architecture gates (hexagonal pattern, resilience)
+- Commit gates (conventional commits, documentation)
+- Token optimization (budgets, compression)
+- Observability (tracing, metrics)
+
+### `token_budgets.yaml`
+
+Presupuestos de tokens por rol en `.opencode/config/token_budgets.yaml`.
+
+Configura:
+- Budget base (default: 2048 tokens)
+- Budget por rol (ajustable según complejidad)
+- Nivel de compresión (low / medium / high)
+- Términos abreviables
+- Frases redundantes a eliminar
+
+---
+
+## Instalación y Servicio de Documentación
+
+### MkDocs (Portal de Documentación)
+
+```bash
+# Instalar
+pip install mkdocs-material
+
+# Servir en local (hot-reload)
+mkdocs serve
+# → http://localhost:8000
+
+# Construir sitio estático
+mkdocs build
+# → site/ (puedes servir con cualquier servidor web estático)
+```
+
+### Comandos Útiles
+
+```bash
+# Ver estructura de documentación
+mkdocs build --strict
+
+# Validar enlaces rotos
+mkdocs build --strict 2>&1 | grep "WARNING"
+
+# Desplegar a GitHub Pages
+mkdocs gh-deploy
+```
+
+---
+
+## Referencias
+
+- [Guía de Agentes](agentes.md)
+- [Sistema Multi-Agente](../dominios_negocio/sistema-agentes.md)
+- [Project Config](https://github.com/onyx-project/onyx/blob/main/.opencode/config/project_config.yaml)
+- [Routing Rules](https://github.com/onyx-project/onyx/blob/main/.opencode/config/routing_rules.yaml)
+- [Token Budgets](https://github.com/onyx-project/onyx/blob/main/.opencode/config/token_budgets.yaml)

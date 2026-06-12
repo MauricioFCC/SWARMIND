@@ -1,0 +1,397 @@
+"""
+Context assembly for agents.
+
+The ``ContextAssembler`` takes a user message and agent role, searches the
+vector store for relevant RAG chunks, fetches recent task history, and
+produces a structured context dict that fits within a token budget.
+"""
+from __future__ import annotations
+
+import logging
+import re
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+
+from harness.memory_rag.lance_vector_store import LanceVectorStore
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+# Rough token estimation: ~4 chars per token for English text
+_CHARS_PER_TOKEN = 4.0
+
+# Default embedding model dimension for fallback random vectors
+_EMBEDDING_DIM = 384
+
+# ---------------------------------------------------------------------------
+# Data types
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class ContextAssembly:
+    """The final assembled context delivered to an agent."""
+
+    instructions: str = ""
+    relevant_docs: List[Dict[str, Any]] = field(default_factory=list)
+    task_context: List[Dict[str, Any]] = field(default_factory=list)
+    conversation_history: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialise to a plain dict (JSON-friendly)."""
+        return {
+            "instructions": self.instructions,
+            "relevant_docs": self.relevant_docs,
+            "task_context": self.task_context,
+            "conversation_history": self.conversation_history,
+            "metadata": self.metadata,
+        }
+
+
+# ---------------------------------------------------------------------------
+# ContextAssembler
+# ---------------------------------------------------------------------------
+
+
+class ContextAssembler:
+    """
+    Assembles structured context for agents by fusing RAG results,
+    task history, and conversation state.
+
+    Typical usage::
+
+        store = LanceVectorStore()
+        assembler = ContextAssembler(store)
+        ctx = assembler.assemble(
+            message="What is the current market regime?",
+            agent_role="quant_analyst",
+            max_tokens=2000,
+        )
+    """
+
+    def __init__(
+        self,
+        vector_store: Optional[LanceVectorStore] = None,
+        embedding_fn: Optional[callable] = None,
+    ) -> None:
+        """
+        Args:
+            vector_store: A ``LanceVectorStore`` instance.  If ``None``, a
+                default one is created.
+            embedding_fn: Optional callable that maps ``str -> np.ndarray``.
+                If omitted, a simple TF-IDF-like bag-of-characters fallback
+                is used so that the assembler works without an external model.
+        """
+        self.store = vector_store or LanceVectorStore()
+        self._embedding_fn = embedding_fn or self._default_embedding
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def assemble(
+        self,
+        message: str,
+        agent_role: str,
+        max_tokens: int = 2000,
+    ) -> ContextAssembly:
+        """
+        Build a structured context from a user message and agent role.
+
+        The assembly pipeline:
+
+        1. Extract keywords from the message.
+        2. Build a query embedding and search ``rag_chunks``.
+        3. Fetch recent task context (from the vector store's ``tasks_board``).
+        4. Compose instructions tailored to the agent role.
+        5. Apply token-budget truncation (oldest / lowest-score first).
+
+        Args:
+            message: The user's input message.
+            agent_role: Role identifier (e.g. ``"quant_dev"``, ``"data_architect"``).
+            max_tokens: Maximum token budget for the assembled context.
+
+        Returns:
+            A ``ContextAssembly`` instance.
+        """
+        # 1. Extract search terms
+        keywords = self.extract_keywords(message)
+
+        # 2. Build query embedding & search
+        query_vec = self._make_query_vector(message, keywords)
+        raw_chunks = self._search_rag_chunks(query_vec, keywords)
+
+        # 3. Prioritise / re-rank chunks by agent role
+        ranked_chunks = self.prioritize_chunks(raw_chunks, agent_role)
+
+        # 4. Fetch recent task context
+        task_context = self._fetch_task_context(agent_role, top_k=10)
+
+        # 5. Build role-specific instructions
+        instructions = self._build_instructions(agent_role, message)
+
+        # 6. Assemble
+        assembly = ContextAssembly(
+            instructions=instructions,
+            relevant_docs=ranked_chunks,
+            task_context=task_context,
+            metadata={
+                "agent_role": agent_role,
+                "keywords": keywords,
+                "max_tokens": max_tokens,
+                "total_chunks_retrieved": len(raw_chunks),
+            },
+        )
+
+        # 7. Truncate to budget
+        assembly = self._apply_token_budget(assembly, max_tokens)
+
+        return assembly
+
+    def extract_keywords(self, message: str) -> List[str]:
+        """
+        Extract meaningful keywords from a message.
+
+        Performs basic cleaning, removes stopwords, and returns unique
+        lower-cased terms longer than 2 characters.
+        """
+        STOPWORDS = {
+            "the", "a", "an", "is", "are", "was", "were", "be", "been",
+            "being", "have", "has", "had", "do", "does", "did", "will",
+            "would", "could", "should", "may", "might", "shall", "can",
+            "to", "of", "in", "for", "on", "with", "at", "by", "from",
+            "as", "into", "through", "during", "before", "after", "above",
+            "below", "between", "out", "off", "over", "under", "again",
+            "further", "then", "once", "here", "there", "when", "where",
+            "why", "how", "all", "each", "every", "both", "few", "more",
+            "most", "other", "some", "such", "no", "nor", "not", "only",
+            "own", "same", "so", "than", "too", "very", "just", "because",
+            "but", "and", "or", "if", "while", "about", "up", "it", "its",
+            "this", "that", "these", "those", "i", "me", "my", "we", "you",
+            "he", "she", "they", "him", "her", "his", "their", "them",
+        }
+
+        # Lowercase and split on non-alphanumeric
+        tokens = re.findall(r"[a-zA-Z]\w{2,}", message.lower())
+        keywords = sorted({t for t in tokens if t not in STOPWORDS})
+        return keywords
+
+    def prioritize_chunks(
+        self,
+        chunks: List[Dict[str, Any]],
+        agent_role: str,
+    ) -> List[Dict[str, Any]]:
+        """
+        Re-rank chunks by relevance to a specific agent role.
+
+        A simple scoring heuristic boosts chunks whose metadata ``domain`` or
+        ``tags`` match terms extracted from the agent role string.
+
+        Args:
+            chunks: List of result dicts from the vector store.
+            agent_role: Agent role identifier.
+
+        Returns:
+            Re-ranked list of result dicts.
+        """
+        if not chunks:
+            return chunks
+
+        role_terms = set(
+            re.findall(r"[a-zA-Z]\w*", agent_role.lower().replace("_", " "))
+        )
+
+        def _role_score(chunk: Dict[str, Any]) -> float:
+            meta = chunk.get("metadata", {})
+            domain = str(meta.get("domain", "")).lower()
+            tags = [str(t).lower() for t in meta.get("tags", [])]
+            chunk_text = f"{domain} {' '.join(tags)}"
+            matches = sum(1 for term in role_terms if term in chunk_text)
+            return matches / max(len(role_terms), 1)
+
+        # Blend: 70 % vector score + 30 % role-match score
+        scored = []
+        for c in chunks:
+            vector_score = c.get("score", 0.0)
+            role_score = _role_score(c)
+            scored.append((c, 0.7 * vector_score + 0.3 * role_score))
+
+        scored.sort(key=lambda x: x[1], reverse=True)
+        return [s[0] for s in scored]
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _default_embedding(self, text: str) -> np.ndarray:
+        """
+        Fallback embedding: character-level frequency vector.
+
+        This is *not* semantically meaningful but ensures the assembler
+        works without any ML model installed.  It produces a fixed-size
+        vector derived from printable-ASCII character counts.
+        """
+        vec = np.zeros(_EMBEDDING_DIM, dtype=np.float32)
+        for i, ch in enumerate(text.encode("utf-8", errors="replace")):
+            idx = (i * 7 + ch) % _EMBEDDING_DIM
+            vec[idx] += 1.0
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            vec /= norm
+        return vec
+
+    def _make_query_vector(
+        self, message: str, keywords: List[str]
+    ) -> np.ndarray:
+        """Build a single query embedding from message + keywords."""
+        text = f"{message} {' '.join(keywords)}"
+        return self._embedding_fn(text)
+
+    def _search_rag_chunks(
+        self,
+        query_vec: np.ndarray,
+        keywords: List[str],
+        top_k: int = 20,
+    ) -> List[Dict[str, Any]]:
+        """Search ``rag_chunks`` collection; fall back gracefully if empty."""
+        try:
+            # Try hybrid search first (with keyword boost)
+            kw = " ".join(keywords) if keywords else ""
+            if kw.strip():
+                results = self.store.hybrid_search(
+                    "rag_chunks", query_vec, kw, top_k=top_k
+                )
+            else:
+                results = self.store.search(
+                    "rag_chunks", query_vec, top_k=top_k
+                )
+            return results
+        except Exception:
+            logger.exception("RAG chunk search failed; returning empty.")
+            return []
+
+    def _fetch_task_context(
+        self,
+        agent_role: str,
+        top_k: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """Fetch recent task assignments for the given agent role."""
+        try:
+            filters = {"agent": agent_role} if agent_role else None
+            results = self.store.search(
+                "tasks_board",
+                query_vector=np.zeros(_EMBEDDING_DIM, dtype=np.float32),
+                top_k=top_k,
+                filters=filters,
+            )
+            return results
+        except Exception:
+            logger.debug("Task context fetch returned no results.")
+            return []
+
+    def _build_instructions(
+        self, agent_role: str, message: str
+    ) -> str:
+        """Build role-specific system instructions."""
+        role_prompts = {
+            "quant_dev": (
+                "You are a quantitative developer implementing trading strategies. "
+                "Use Python, ONNX, and broker APIs.  Ensure orders always include "
+                "bracket OCO (stop loss + take profit).  Log context_score in every signal."
+            ),
+            "quant_analyst": (
+                "You are a quantitative analyst designing market models. "
+                "Evaluate signal quality, context scores, and regime detection. "
+                "Base your analysis on the retrieved context below."
+            ),
+            "data_architect": (
+                "You are a data architect designing database schemas and ETL pipelines. "
+                "Use Pydantic for validation, PostgreSQL for persistence, and Redis for caching."
+            ),
+            "devops_sre": (
+                "You are a DevOps/SRE engineer ensuring system reliability. "
+                "Configure Docker, CI/CD, monitoring, and auto-recovery. "
+                "Focus on observability and deployment automation."
+            ),
+            "security_engineer": (
+                "You are a security engineer hardening the trading system. "
+                "Enforce AppSec, DevSecOps, threat modeling, and regulatory compliance."
+            ),
+            "project_manager": (
+                "You are a project manager orchestrating multi-agent work. "
+                "Track progress, identify blockers, and ensure timely delivery using "
+                "the F.R.A.M.E. framework."
+            ),
+        }
+
+        base = role_prompts.get(
+            agent_role,
+            "You are an expert AI agent in the Onyx-Quan system. "
+            "Respond accurately using the provided context.",
+        )
+
+        return f"{base}\n\nUser request: {message}"
+
+    def _apply_token_budget(
+        self,
+        assembly: ContextAssembly,
+        max_tokens: int,
+    ) -> ContextAssembly:
+        """
+        Truncate the assembled context so it fits within the token budget.
+
+        Strategy: remove lowest-score documents first, then truncate
+        conversation history from the oldest entry.
+        """
+        used = self._estimate_tokens(assembly.instructions)
+
+        # --- Docs ---
+        kept_docs: List[Dict[str, Any]] = []
+        for doc in sorted(
+            assembly.relevant_docs,
+            key=lambda d: d.get("score", 0.0),
+            reverse=True,
+        ):
+            doc_tokens = self._estimate_tokens(str(doc.get("metadata", {})))
+            if used + doc_tokens > max_tokens:
+                continue
+            kept_docs.append(doc)
+            used += doc_tokens
+
+        assembly.relevant_docs = kept_docs
+
+        # --- Task context ---
+        kept_tasks: List[Dict[str, Any]] = []
+        for task in assembly.task_context:
+            task_tokens = self._estimate_tokens(str(task.get("metadata", {})))
+            if used + task_tokens > max_tokens:
+                break
+            kept_tasks.append(task)
+            used += task_tokens
+
+        assembly.task_context = kept_tasks
+
+        # --- Conversation history (oldest first removed) ---
+        kept_history: List[str] = []
+        for entry in assembly.conversation_history:
+            entry_tokens = self._estimate_tokens(entry)
+            if used + entry_tokens > max_tokens:
+                break
+            kept_history.append(entry)
+            used += entry_tokens
+
+        assembly.conversation_history = kept_history
+
+        assembly.metadata["total_tokens_used"] = used
+        return assembly
+
+    @staticmethod
+    def _estimate_tokens(text: str) -> int:
+        """Rough token estimation (~4 chars per token)."""
+        return max(1, len(text) // _CHARS_PER_TOKEN)
