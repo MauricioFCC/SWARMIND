@@ -100,6 +100,8 @@ class ContextAssembler:
         message: str,
         agent_role: str,
         max_tokens: int = 2000,
+        domain_filter: Optional[str] = None,
+        tipo_doc_filter: Optional[str] = None,
     ) -> ContextAssembly:
         """
         Build a structured context from a user message and agent role.
@@ -108,14 +110,17 @@ class ContextAssembler:
 
         1. Extract keywords from the message.
         2. Build a query embedding and search ``rag_chunks``.
-        3. Fetch recent task context (from the vector store's ``tasks_board``).
-        4. Compose instructions tailored to the agent role.
-        5. Apply token-budget truncation (oldest / lowest-score first).
+        3. Prioritise / re-rank chunks by agent role.
+        4. Fetch recent task context (from the vector store's ``tasks_board``).
+        5. Compose instructions tailored to the agent role.
+        6. Apply token-budget truncation.
 
         Args:
             message: The user's input message.
             agent_role: Role identifier (e.g. ``"quant_dev"``, ``"data_architect"``).
             max_tokens: Maximum token budget for the assembled context.
+            domain_filter: Optional domain to filter by (e.g. ``"farmacia"``, ``"facturacion"``).
+            tipo_doc_filter: Optional doc type filter (e.g. ``"esquema_bd"``, ``"api_endpoint"``).
 
         Returns:
             A ``ContextAssembly`` instance.
@@ -123,12 +128,17 @@ class ContextAssembler:
         # 1. Extract search terms
         keywords = self.extract_keywords(message)
 
-        # 2. Build query embedding & search
+        # 2. Build query embedding & search with optional metadata filters
         query_vec = self._make_query_vector(message, keywords)
-        raw_chunks = self._search_rag_chunks(query_vec, keywords)
+        filters = {}
+        if domain_filter:
+            filters["domain"] = domain_filter
+        if tipo_doc_filter:
+            filters["tipo_doc"] = tipo_doc_filter
+        raw_chunks = self._search_rag_chunks(query_vec, keywords, filters=filters)
 
         # 3. Prioritise / re-rank chunks by agent role
-        ranked_chunks = self.prioritize_chunks(raw_chunks, agent_role)
+        ranked_chunks = self.prioritize_chunks(raw_chunks, agent_role, filters=filters)
 
         # 4. Fetch recent task context
         task_context = self._fetch_task_context(agent_role, top_k=10)
@@ -146,6 +156,8 @@ class ContextAssembler:
                 "keywords": keywords,
                 "max_tokens": max_tokens,
                 "total_chunks_retrieved": len(raw_chunks),
+                "domain_filter": domain_filter,
+                "tipo_doc_filter": tipo_doc_filter,
             },
         )
 
@@ -186,16 +198,19 @@ class ContextAssembler:
         self,
         chunks: List[Dict[str, Any]],
         agent_role: str,
+        filters: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, Any]]:
         """
         Re-rank chunks by relevance to a specific agent role.
 
-        A simple scoring heuristic boosts chunks whose metadata ``domain`` or
-        ``tags`` match terms extracted from the agent role string.
+        Boosts chunks whose metadata ``domain`` or ``tags`` match terms
+        extracted from the agent role string. If ``filters`` are provided,
+        chunks that match the filter values get an additional boost.
 
         Args:
             chunks: List of result dicts from the vector store.
             agent_role: Agent role identifier.
+            filters: Optional metadata filters used during search.
 
         Returns:
             Re-ranked list of result dicts.
@@ -207,13 +222,19 @@ class ContextAssembler:
             re.findall(r"[a-zA-Z]\w*", agent_role.lower().replace("_", " "))
         )
 
+        filter_values = set((filters or {}).values())
+
         def _role_score(chunk: Dict[str, Any]) -> float:
             meta = chunk.get("metadata", {})
             domain = str(meta.get("domain", "")).lower()
+            tipo = str(meta.get("tipo_doc", "")).lower()
             tags = [str(t).lower() for t in meta.get("tags", [])]
-            chunk_text = f"{domain} {' '.join(tags)}"
+            chunk_text = f"{domain} {tipo} {' '.join(tags)}"
             matches = sum(1 for term in role_terms if term in chunk_text)
-            return matches / max(len(role_terms), 1)
+            base = matches / max(len(role_terms), 1)
+            if filter_values and (domain in filter_values or tipo in filter_values):
+                base += 0.2
+            return min(base, 1.0)
 
         # Blend: 70 % vector score + 30 % role-match score
         scored = []
@@ -258,10 +279,25 @@ class ContextAssembler:
         query_vec: np.ndarray,
         keywords: List[str],
         top_k: int = 20,
+        filters: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, Any]]:
-        """Search ``rag_chunks`` collection; fall back gracefully if empty."""
+        """Search ``rag_chunks`` collection with optional metadata filters."""
         try:
-            # Try hybrid search first (with keyword boost)
+            if filters:
+                kw = " ".join(keywords) if keywords else ""
+                results = self.store.search(
+                    "rag_chunks", query_vec, top_k=top_k, filters=filters
+                )
+                if kw.strip():
+                    hybrid = self.store.hybrid_search(
+                        "rag_chunks", query_vec, kw, top_k=top_k
+                    )
+                    existing_ids = {r["id"] for r in results}
+                    for h in hybrid:
+                        if h["id"] not in existing_ids:
+                            results.append(h)
+                return results
+
             kw = " ".join(keywords) if keywords else ""
             if kw.strip():
                 results = self.store.hybrid_search(

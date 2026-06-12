@@ -123,7 +123,9 @@ class TaskManager:
     The connection path defaults to harness/db/lancedb_store/.
     """
 
-    def __init__(self, db_path: str = "") -> None:
+    def __init__(self, db_path: str = "", vector_store: Any = None) -> None:
+        if vector_store is not None:
+            db_path = getattr(vector_store, 'db_path', db_path)
         if not db_path:
             db_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__))),

@@ -1,0 +1,261 @@
+"""
+Document chunker and ingester for RAG pipelines.
+Reads .md/.py files, chunks into 20-30 line blocks, auto-tags metadata,
+vectorizes, and inserts into LanceVectorStore rag_chunks collection.
+"""
+from __future__ import annotations
+
+import logging
+import os
+import re
+import uuid
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Domain / tipo_doc auto-detection patterns
+# ---------------------------------------------------------------------------
+
+DOMAIN_PATTERNS: List[Tuple[str, str]] = [
+    (r"docs[/\\\\]dominios_negocio[/\\\\](.*?)\..*", lambda m: _slug(m.group(1))),
+    (r"docs[/\\\\]arquitectura[/\\\\]", "arquitectura"),
+    (r"docs[/\\\\]manual_usuario[/\\\\]", "manual_usuario"),
+    (r"harness[/\\\\]orchestrator[/\\\\]", "orquestacion"),
+    (r"harness[/\\\\]memory_rag[/\\\\]", "memoria_rag"),
+    (r"harness[/\\\\]evolve_loop[/\\\\]", "evolucion"),
+    (r"harness[/\\\\]tools_sandbox[/\\\\]", "sandbox"),
+    (r"\.opencode[/\\\\]agents[/\\\\]", "agentes"),
+    (r"\.opencode[/\\\\]skills[/\\\\]", "skills"),
+    (r"\.opencode[/\\\\]core[/\\\\]", "core"),
+    (r"\.opencode[/\\\\]config[/\\\\]", "configuracion"),
+]
+
+TIPO_DOC_PATTERNS: List[Tuple[str, str]] = [
+    (r"(adr|architecture decision record)", "adr"),
+    (r"(schema|tabla|columna|base de datos|entidad)", "esquema_bd"),
+    (r"(api|endpoint|ruta|route|http)", "api_endpoint"),
+    (r"(regla|rule|norma|debe|must|requisito)", "regla_negocio"),
+    (r"(interfaz|ui|componente|pantalla|widget)", "interfaz_ui"),
+    (r"(test|prueba|spec|assert)", "test"),
+    (r"(clase|class|def |funcion|metodo)", "codigo_fuente"),
+    (r"(config|configuracion|setting|yml|yaml|json)", "configuracion"),
+]
+
+DEFAULT_TIPO_DOC = "documentacion"
+DEFAULT_DOMAIN = "general"
+
+_EXTENSION_TIPO: Dict[str, str] = {
+    ".py": "codigo_fuente",
+    ".md": "documentacion",
+    ".yml": "configuracion",
+    ".yaml": "configuracion",
+    ".json": "configuracion",
+}
+
+
+def _slug(text: str) -> str:
+    return re.sub(r"[^a-z0-9_]", "_", text.lower().strip())
+
+
+@dataclass
+class Chunk:
+    text: str
+    source_file: str
+    start_line: int
+    end_line: int
+    domain: str = ""
+    tipo_doc: str = ""
+    tags: List[str] = field(default_factory=list)
+    vector: Optional[np.ndarray] = None
+
+    def to_metadata(self) -> Dict[str, Any]:
+        return {
+            "source_file": self.source_file,
+            "start_line": self.start_line,
+            "end_line": self.end_line,
+            "domain": self.domain,
+            "tipo_doc": self.tipo_doc,
+            "tags": self.tags,
+        }
+
+
+class DocumentChunker:
+    """
+    Splits text files into overlapping chunks of configurable size.
+    """
+
+    def __init__(
+        self,
+        chunk_size: int = 25,
+        overlap: int = 3,
+        embedding_fn=None,
+    ) -> None:
+        self.chunk_size = chunk_size
+        self.overlap = overlap
+        self._embedding_fn = embedding_fn or self._default_embedding
+
+    def chunk_file(self, filepath: str) -> List[Chunk]:
+        """
+        Read a file and split it into chunks.
+        Returns list of Chunk objects with auto-detected metadata.
+        """
+        path = Path(filepath)
+        if not path.is_file():
+            logger.warning("File not found: %s", filepath)
+            return []
+
+        ext = path.suffix.lower()
+        tipo_doc = _EXTENSION_TIPO.get(ext, DEFAULT_TIPO_DOC)
+        domain = self._detect_domain(str(path))
+        tags = [domain, tipo_doc]
+
+        try:
+            with open(filepath, encoding="utf-8") as f:
+                lines = f.readlines()
+        except Exception as exc:
+            logger.warning("Cannot read %s: %s", filepath, exc)
+            return []
+
+        if not lines:
+            return []
+
+        chunks: List[Chunk] = []
+        num_lines = len(lines)
+        i = 0
+        while i < num_lines:
+            end = min(i + self.chunk_size, num_lines)
+            chunk_text = "".join(lines[i:end]).strip()
+            if not chunk_text:
+                i += self.chunk_size - self.overlap
+                continue
+
+            # Refine tipo_doc from content
+            content_tipo = self._detect_tipo_doc(chunk_text)
+            effective_tipo = content_tipo if content_tipo != DEFAULT_TIPO_DOC else tipo_doc
+
+            chunk = Chunk(
+                text=chunk_text,
+                source_file=str(path),
+                start_line=i + 1,
+                end_line=end,
+                domain=domain,
+                tipo_doc=effective_tipo,
+                tags=list(set(tags + [effective_tipo])),
+            )
+            chunks.append(chunk)
+            i += self.chunk_size - self.overlap
+
+        return chunks
+
+    def chunk_and_vectorize(self, filepath: str) -> List[Chunk]:
+        """Chunk a file and compute embeddings for each chunk."""
+        chunks = self.chunk_file(filepath)
+        for chunk in chunks:
+            chunk.vector = self._embedding_fn(chunk.text)
+        return chunks
+
+    @staticmethod
+    def _detect_domain(filepath: str) -> str:
+        for pattern, result in DOMAIN_PATTERNS:
+            m = re.search(pattern, filepath, re.IGNORECASE)
+            if m:
+                return result(m) if callable(result) else result
+        return DEFAULT_DOMAIN
+
+    @staticmethod
+    def _detect_tipo_doc(text: str) -> str:
+        text_lower = text.lower()[:2000]
+        for pattern, tipo in TIPO_DOC_PATTERNS:
+            if re.search(pattern, text_lower):
+                return tipo
+        return DEFAULT_TIPO_DOC
+
+    @staticmethod
+    def _default_embedding(text: str) -> np.ndarray:
+        dim = 384
+        vec = np.zeros(dim, dtype=np.float32)
+        for i, ch in enumerate(text.encode("utf-8", errors="replace")):
+            idx = (i * 7 + ch) % dim
+            vec[idx] += 1.0
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            vec /= norm
+        return vec
+
+
+def ingest_directory(
+    store,
+    root_dirs: List[str],
+    chunker: Optional[DocumentChunker] = None,
+) -> Dict[str, int]:
+    """
+    Ingest all .md and .py files from directories into rag_chunks.
+
+    Args:
+        store: LanceVectorStore instance.
+        root_dirs: List of directory paths relative to project root.
+        chunker: DocumentChunker instance (default creates one).
+
+    Returns:
+        Dict with keys: files_processed, chunks_inserted, errors.
+    """
+    if chunker is None:
+        chunker = DocumentChunker()
+
+    project_root = Path(__file__).parent.parent.parent  # harness/memory_rag/ -> project root
+    stats = {"files_processed": 0, "chunks_inserted": 0, "errors": 0}
+
+    for rel_dir in root_dirs:
+        abs_dir = project_root / rel_dir
+        if not abs_dir.is_dir():
+            logger.warning("Directory not found: %s", abs_dir)
+            continue
+
+        for fpath in sorted(abs_dir.rglob("*")):
+            if fpath.suffix.lower() not in (".md", ".py"):
+                continue
+            if fpath.name == ".gitkeep":
+                continue
+
+            try:
+                chunks = chunker.chunk_and_vectorize(str(fpath))
+                stats["files_processed"] += 1
+
+                if not chunks:
+                    continue
+
+                vectors = np.array([c.vector for c in chunks if c.vector is not None])
+                metadata_list = [c.to_metadata() for c in chunks if c.vector is not None]
+
+                if vectors.size == 0:
+                    continue
+
+                store.insert("rag_chunks", vectors, metadata_list)
+                stats["chunks_inserted"] += len(chunks)
+
+            except Exception as exc:
+                logger.error("Error processing %s: %s", fpath, exc)
+                stats["errors"] += 1
+
+    return stats
+
+
+if __name__ == "__main__":
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+    from harness.memory_rag.lance_vector_store import LanceVectorStore
+
+    store = LanceVectorStore()
+    chunker = DocumentChunker(chunk_size=25, overlap=3)
+
+    dirs_to_scan = ["docs", "harness", ".opencode"]
+    print(f"Ingestando documentos desde: {dirs_to_scan}")
+    stats = ingest_directory(store, dirs_to_scan, chunker)
+    print(f"Resultados: {stats}")

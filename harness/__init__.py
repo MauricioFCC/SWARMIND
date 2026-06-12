@@ -11,6 +11,7 @@ from harness.evolve_loop.gepa_mutator import GEPAMutator
 from harness.evolve_loop.procedural_memory import ProceduralMemory
 from harness.tools_sandbox.mcp_executor import MCPExecutor
 from harness.scheduler import TaskScheduler
+from harness.memory_rag.doc_ingester import DocumentChunker, ingest_directory
 
 __all__ = [
     "TaskManager",
@@ -24,4 +25,6 @@ __all__ = [
     "ProceduralMemory",
     "MCPExecutor",
     "TaskScheduler",
+    "DocumentChunker",
+    "ingest_directory",
 ]
