@@ -116,6 +116,43 @@ def main():
     print(f"[Harness] Tarea enrutada a @{target_agent}")
     print(f"[Harness] Para ejecutar: invoca @{target_agent} con el contexto ensamblado")
 
+    # ------------------------------------------------------------------
+    # Si el target_agent es @software-engineer, iniciar SandboxLoop
+    # ------------------------------------------------------------------
+    if target_agent == "software-engineer" and new_task:
+        from harness.orchestrator.sandbox_loop import SandboxLoop
+        from harness.orchestrator.agent_bus import AgentBus
+
+        task_id = getattr(new_task, 'id', 'N/A')
+        print(f"\n[Harness] [Sandbox] Iniciando SandboxLoop para task_id={task_id}")
+
+        sandbox = SandboxLoop(vector_store=store)
+        channel = "#swe-sandbox"
+
+        # Mensaje de bienvenida en el canal del sandbox
+        bus = AgentBus(vector_store=store)
+        bus.post_message(
+            channel=channel,
+            from_agent="@harness",
+            to_agent="@software-engineer",
+            message=(
+                f"🔄 Tarea creada: **{task[:80]}**\n"
+                f"Task ID: `{task_id}`\n\n"
+                f"El SandboxLoop esta listo para ejecutar el bucle autonomo.\n"
+                f"Cuando el codigo este listo, ejecuta:\n"
+                f"```\n"
+                f"python -c \"from harness.orchestrator.sandbox_loop import SandboxLoop; "
+                f"loop = SandboxLoop(); "
+                f"loop.run_autonomous('{task_id}', code='<tu-codigo>', test_command='pytest')\"\n"
+                f"```"
+            ),
+            message_type="notification",
+            task_id=task_id,
+        )
+        print(f"[Harness] SandboxLoop listo en canal {channel}")
+        print(f"[Harness] Para activar el bucle autonomo con codigo:")
+        print(f"[Harness]   SandboxLoop().run_autonomous('{task_id}', code='...', test_command='pytest')")
+
 
 if __name__ == "__main__":
     main()

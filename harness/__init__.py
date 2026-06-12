@@ -2,6 +2,8 @@
 
 from harness.orchestrator.task_manager import TaskManager
 from harness.orchestrator.delegation_engine import DelegationEngine
+from harness.orchestrator.agent_bus import AgentBus
+from harness.orchestrator.sandbox_loop import SandboxLoop
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 from harness.memory_rag.context_assembler import ContextAssembler
 from harness.evolve_loop.evaluator import CASEEvaluator
@@ -16,6 +18,8 @@ from harness.memory_rag.doc_ingester import DocumentChunker, ingest_directory
 __all__ = [
     "TaskManager",
     "DelegationEngine",
+    "AgentBus",
+    "SandboxLoop",
     "LanceVectorStore",
     "ContextAssembler",
     "CASEEvaluator",

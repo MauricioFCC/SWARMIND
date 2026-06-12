@@ -65,6 +65,25 @@ DEFAULT_COLLECTIONS = {
             "created_at": "string",
         },
     },
+    "agent_workspace_logs": {
+        "description": "Message bus / Slack channels for inter-agent communication",
+        "schema": {
+            "id": "string",
+            "channel": "string",
+            "thread_id": "string",
+            "from_agent": "string",
+            "to_agent": "string",
+            "message": "string",
+            "message_type": "string",
+            "status": "string",
+            "task_id": "string",
+            "iteration": "int",
+            "attachments": "list<string>",
+            "vector": "list<float>",
+            "metadata": "dict",
+            "created_at": "string",
+        },
+    },
 }
 
 
@@ -310,6 +329,127 @@ class LanceVectorStore:
                 last_updated=datetime.now(timezone.utc).isoformat(),
             )
         return self._mem_collections[name]
+
+    # ------------------------------------------------------------------
+    # Update
+    # ------------------------------------------------------------------
+
+    def update_records(
+        self,
+        collection: str,
+        filters: Dict[str, Any],
+        updates: Dict[str, Any],
+    ) -> int:
+        """
+        Actualiza registros que coinciden con los filtros en una coleccion.
+
+        Args:
+            collection: Nombre de la coleccion.
+            filters: Dict de campo -> valor para seleccionar registros.
+            updates: Dict de campo -> valor con los cambios a aplicar.
+
+        Returns:
+            Numero de registros actualizados.
+        """
+        if self._lancedb_available and self._db is not None:
+            return self._update_records_lancedb(collection, filters, updates)
+        return self._update_records_memory(collection, filters, updates)
+
+    def _update_records_lancedb(
+        self,
+        collection: str,
+        filters: Dict[str, Any],
+        updates: Dict[str, Any],
+    ) -> int:
+        try:
+            tbl = self._db.open_table(collection)
+        except Exception as exc:
+            raise CollectionNotFoundError(
+                f"Collection '{collection}' not found in LanceDB: {exc}"
+            ) from exc
+
+        # Construir clausula WHERE desde los filtros
+        conditions = []
+        for k, v in filters.items():
+            if isinstance(v, str):
+                conditions.append(f"{k} = '{v}'")
+            else:
+                conditions.append(f"{k} = {v}")
+        where_clause = " AND ".join(conditions)
+
+        # Leer registros existentes para actualizar metadata JSON
+        try:
+            existing = tbl.search().where(where_clause).to_list()
+        except Exception:
+            existing = []
+
+        for record in existing:
+            record_id = record.get("id")
+            if not record_id:
+                continue
+
+            # Actualizar metadata JSON si existe
+            meta_raw = record.get("metadata", "{}")
+            if isinstance(meta_raw, str):
+                try:
+                    meta = json.loads(meta_raw)
+                except (json.JSONDecodeError, TypeError):
+                    meta = {}
+            elif isinstance(meta_raw, dict):
+                meta = meta_raw
+            else:
+                meta = {}
+
+            meta.update(updates)
+
+            # Actualizar: top-level + metadata JSON
+            update_values = {
+                "metadata": json.dumps(meta),
+                **updates,
+            }
+
+            # Limpiar claves que no deben estar en top-level
+            for key in ("metadata", "vector"):
+                update_values.pop(key, None)
+
+            try:
+                tbl.update(where=f"id = '{record_id}'", values=update_values)
+            except Exception as exc:
+                logger.warning(
+                    "Failed to update record %s in '%s': %s",
+                    record_id, collection, exc,
+                )
+
+        return len(existing)
+
+    def _update_records_memory(
+        self,
+        collection: str,
+        filters: Dict[str, Any],
+        updates: Dict[str, Any],
+    ) -> int:
+        if collection not in self._mem_collections:
+            raise CollectionNotFoundError(
+                f"Collection '{collection}' not found in memory store."
+            )
+
+        col = self._mem_collections[collection]
+        count = 0
+        now = datetime.now(timezone.utc).isoformat()
+
+        for item in col.items.values():
+            match = all(
+                item.metadata.get(k) == v for k, v in filters.items()
+            )
+            if match:
+                item.metadata.update(updates)
+                item.metadata["updated_at"] = now
+                count += 1
+
+        if count > 0:
+            col.last_updated = now
+
+        return count
 
     # ------------------------------------------------------------------
     # Search
