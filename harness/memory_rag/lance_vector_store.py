@@ -1,7 +1,8 @@
 """
 Unified vector store interface for RAG and metadata search using LanceDB.
 Supports three core collections: tasks_board, rag_chunks, asi_cognition_store.
-Graceful fallback to in-memory dict + numpy when LanceDB is unavailable.
+LanceDB es OBLIGATORIO. Si no esta disponible, se lanza un error claro.
+El fallback in-memory solo se activa con allow_fallback=True (emergencias/test).
 """
 from __future__ import annotations
 
@@ -130,19 +131,26 @@ class _Collection:
 
 class LanceVectorStore:
     """
-    Unified vector store that wraps LanceDB with an in-memory fallback.
+    Unified vector store that wraps LanceDB.
 
-    Collections are auto-created on first use.  When LanceDB is not installed
-    or the database path is unavailable all operations degrade to pure-numpy
-    dict-backed stores, keeping the same public API.
+    LanceDB es OBLIGATORIO. Si no esta instalado, se lanza ImportError.
+    El fallback in-memory (dict + numpy) solo se activa si allow_fallback=True,
+    tipicamente para entornos de test o emergencias controladas.
+
+    Collections are auto-created on first use.
     """
 
-    def __init__(self, db_path: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        db_path: Optional[str] = None,
+        allow_fallback: bool = False,
+    ) -> None:
         self.db_path = db_path or LANCEDB_ROOT
         self._lancedb_available = False
         self._db: Any = None  # LanceDB connection or None
         self._mem_collections: Dict[str, _Collection] = {}
         self._embedding_dim: int = 384  # default; adjusted on first insert
+        self._allow_fallback = allow_fallback
 
         self._init_storage()
 
@@ -151,7 +159,7 @@ class LanceVectorStore:
     # ------------------------------------------------------------------
 
     def _init_storage(self) -> None:
-        """Attempt to open LanceDB; fall back to in-memory if it fails."""
+        """Attempt to open LanceDB; fail with clear error if unavailable."""
         # Try LanceDB first
         lancedb = self._try_import_lancedb()
         if lancedb is not None:
@@ -164,11 +172,41 @@ class LanceVectorStore:
                 return
             except Exception as exc:
                 logger.warning(
-                    "LanceDB connect failed (%s); using in-memory fallback.", exc
+                    "LanceDB connect failed: %s", exc,
                 )
+                if self._allow_fallback:
+                    logger.warning(
+                        "Usando fallback in-memory (allow_fallback=True). "
+                        "NO RECOMENDADO para produccion."
+                    )
+                else:
+                    raise RuntimeError(
+                        f"LanceDB no pudo conectarse en {self.db_path}: {exc}\n"
+                        "Verifica que LanceDB este instalado y la ruta sea valida.\n"
+                        "  pip install lancedb\n"
+                        "  python harness/scripts/init.py"
+                    ) from exc
 
-        # Fallback
-        logger.info("LanceVectorStore using in-memory dict fallback.")
+        else:
+            # lancedb import failed
+            msg = (
+                "LanceDB no esta instalado. Es OBLIGATORIO para el funcionamiento.\n"
+                "  pip install lancedb\n"
+                "  python harness/scripts/init.py"
+            )
+            if self._allow_fallback:
+                logger.warning(
+                    "LanceDB no instalado. Usando fallback in-memory "
+                    "(allow_fallback=True). NO RECOMENDADO para produccion."
+                )
+            else:
+                raise ImportError(msg)
+
+        # Fallback in-memory (solo si allow_fallback=True)
+        logger.warning(
+            "LanceVectorStore usando fallback in-memory (dict + numpy). "
+            "Rendimiento limitado y sin persistencia."
+        )
         self._lancedb_available = False
         self._db = None
         for name, info in DEFAULT_COLLECTIONS.items():
@@ -188,15 +226,98 @@ class LanceVectorStore:
             return None
 
     def _ensure_lancedb_collections(self) -> None:
-        """Create default tables in LanceDB if they don't exist."""
+        """Create default tables in LanceDB if they don't exist.
+
+        LanceDB 0.33+ requires schema to be defined at creation time.
+        We use a comprehensive sample row (with all fields that _insert_lancedb
+        may spread) and then remove the placeholder.  This mirrors the approach
+        used by TaskManager._initialize().
+        """
         if not self._lancedb_available or self._db is None:
             return
+        existing = set(self._db.table_names())
         for name in DEFAULT_COLLECTIONS:
+            if name in existing:
+                continue
+            sample = self._sample_row_for_collection(name)
             try:
-                self._db.create_table(name, data=[], mode="exist_ok")
-            except Exception:
-                # Table may already exist with data; that is fine
-                pass
+                self._db.create_table(name, data=[sample], mode="create")
+                tbl = self._db.open_table(name)
+                tbl.delete("id = 'init'")
+                logger.info("Created LanceDB table '%s' with full schema", name)
+            except Exception as exc:
+                logger.warning("Could not create table '%s': %s", name, exc)
+
+    @staticmethod
+    def _sample_row_for_collection(name: str) -> Dict[str, Any]:
+        """Return a sample row that covers all columns a collection may need.
+
+        _insert_lancedb spreads metadata keys as top-level columns alongside
+        'id', 'vector', 'metadata' (JSON), and 'created_at'.  The sample row
+        must include every field that could appear for this collection.
+
+        ``_serialize_for_schema`` converts non-primitive values (dicts, lists)
+        to JSON strings, so all columns are primitive types (Utf8, Int64,
+        Float64) — no List(Null) or Struct mismatches.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        dim = 384  # default embedding dimension
+
+        # Common columns always present
+        base: Dict[str, Any] = {
+            "id": "init",
+            "vector": [0.0] * dim,
+            "metadata": "{}",
+            "created_at": now,
+        }
+
+        # Collection-specific fields (metadata keys that _insert_lancedb spreads)
+        # All complex values (dicts, lists) are stored as JSON strings
+        specific: Dict[str, Any] = {}
+        if name == "rag_chunks":
+            specific = {
+                "source_file": "",
+                "start_line": 0,
+                "end_line": 0,
+                "domain": "",
+                "tipo_doc": "",
+                "tags": "[]",  # JSON string after serialization
+            }
+        elif name == "asi_cognition_store":
+            specific = {
+                "title": "",
+                "content": "",
+                "domain": "",
+                "tags": "[]",  # JSON string after serialization
+                "metrics": "{}",  # JSON string after serialization
+                "access_count": 0,
+                "last_accessed": "",
+            }
+        elif name == "agent_workspace_logs":
+            specific = {
+                "channel": "",
+                "thread_id": "",
+                "from_agent": "",
+                "to_agent": "",
+                "message": "",
+                "message_type": "",
+                "status": "sent",
+                "task_id": "",
+                "iteration": 0,
+                "attachments": "[]",
+            }
+        elif name == "tasks_board":
+            specific = {
+                "title": "",
+                "description": "",
+                "agent_assigned": "",
+                "status": "pending",
+                "priority": 0,
+                "updated_at": "",
+                "transition_history": "[]",
+            }
+
+        return {**base, **specific}
 
     # ------------------------------------------------------------------
     # Collection management
@@ -270,6 +391,18 @@ class LanceVectorStore:
 
         return ids
 
+    @staticmethod
+    def _serialize_for_schema(value: Any) -> Any:
+        """Convert non-primitive values to JSON strings for LanceDB schema compatibility.
+
+        LanceDB requires a strict schema.  Dicts, lists-of-dicts, and nested
+        structures are serialised to JSON strings so the table schema only
+        needs primitive columns (string, float, int, list<utf8>).
+        """
+        if isinstance(value, (dict, list)) and not isinstance(value, str):
+            return json.dumps(value)
+        return value
+
     def _insert_lancedb(
         self,
         collection: str,
@@ -283,15 +416,18 @@ class LanceVectorStore:
         for i in range(vectors.shape[0]):
             rid = str(uuid.uuid4())
             ids.append(rid)
-            rows.append(
-                {
-                    "id": rid,
-                    "vector": vectors[i].tolist(),
-                    "metadata": json.dumps(metadata[i]),
-                    "created_at": now,
-                    **{k: v for k, v in metadata[i].items() if k != "metadata"},
-                }
-            )
+            # Build row with serialized metadata fields for schema compatibility
+            row: Dict[str, Any] = {
+                "id": rid,
+                "vector": vectors[i].tolist(),
+                "metadata": json.dumps(metadata[i]),
+                "created_at": now,
+            }
+            for k, v in metadata[i].items():
+                if k == "metadata":
+                    continue
+                row[k] = self._serialize_for_schema(v)
+            rows.append(row)
         tbl.add(rows)
         return ids
 

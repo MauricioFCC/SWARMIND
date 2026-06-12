@@ -189,6 +189,23 @@ class DocumentChunker:
         return vec
 
 
+def _ensure_lancedb() -> None:
+    """Verify LanceDB is available before ingesting documents."""
+    try:
+        import lancedb  # noqa: F401
+    except ImportError:
+        print("=" * 60)
+        print("  LanceDB REQUERIDO para ingestion de documentos.")
+        print("=" * 60)
+        print()
+        print("  Ejecuta:  pip install lancedb")
+        print("  O bien:   python harness/scripts/init.py")
+        print("=" * 60)
+        raise ImportError(
+            "LanceDB no instalado. Es requerido para ingest_directory()."
+        )
+
+
 def ingest_directory(
     store,
     root_dirs: List[str],
@@ -205,6 +222,7 @@ def ingest_directory(
     Returns:
         Dict with keys: files_processed, chunks_inserted, errors.
     """
+    _ensure_lancedb()
     if chunker is None:
         chunker = DocumentChunker()
 

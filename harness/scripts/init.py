@@ -4,12 +4,35 @@ Creates the directory structure and initializes LanceDB storage.
 Runs on Windows, macOS, and Linux (pure Python, no shell dependencies).
 """
 import os
+import subprocess
 import sys
 from pathlib import Path
 
 
 def banner(text: str) -> None:
     print(f"[init] {text}")
+
+
+def check_lancedb() -> bool:
+    """Check if lancedb is installed; attempt auto-install if missing."""
+    try:
+        import lancedb  # noqa: F401
+        banner("LanceDB detectado.")
+        return True
+    except ImportError:
+        banner("LanceDB NO detectado. Intentando instalar...")
+        try:
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", "lancedb"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            banner("LanceDB instalado correctamente.")
+            return True
+        except Exception as exc:
+            banner(f"ERROR: No se pudo instalar LanceDB: {exc}")
+            banner("Instala manualmente: pip install lancedb")
+            return False
 
 
 def ensure_dir(path: Path) -> None:
@@ -47,8 +70,13 @@ def check_dependencies() -> None:
     except ImportError:
         missing.append("numpy")
 
+    # LanceDB es obligatorio, no opcional
+    if not check_lancedb():
+        banner("LanceDB es OBLIGATORIO. El sistema no puede funcionar sin el.")
+        sys.exit(1)
+
     if missing:
-        banner(f"Dependencias opcionales no encontradas: {', '.join(missing)}")
+        banner(f"Dependencias adicionales no encontradas: {', '.join(missing)}")
         banner("Instala con: pip install " + " ".join(missing))
     else:
         banner("Dependencias basicas satisfechas.")
@@ -63,8 +91,13 @@ def init_lancedb(base: Path) -> None:
         store = LanceVectorStore(str(db_path))
         colls = store.list_collections()
         banner(f"LanceDB inicializado. Colecciones disponibles: {colls}")
+    except ImportError as exc:
+        banner(f"ERROR: LanceDB no disponible: {exc}")
+        banner("Ejecuta: pip install lancedb  o  python harness/scripts/init.py")
+        sys.exit(1)
     except Exception as exc:
-        banner(f"LanceDB no disponible (in-memory fallback activo): {exc}")
+        banner(f"ERROR al inicializar LanceDB: {exc}")
+        sys.exit(1)
 
 
 def init_project(project_path: str = "") -> str:

@@ -4,11 +4,11 @@ Entry point for the agent orchestration system with LanceDB memory.
 Usage: python harness/run.py "@rol: describe tu tarea"
 
 Flujo completo:
-  1. Inicializa LanceDB + TaskManager + DelegationEngine + ContextAssembler + CognitionSync
+  1. Verifica LanceDB disponible → inicializa TaskManager + DelegationEngine + ContextAssembler + CognitionSync
   2. Rutea el mensaje al agente target via @rol o intent matching
   3. Ensambla contexto RAG desde rag_chunks (con filtro por dominio si aplica)
   4. Ejecuta guardrails pre-check sobre el contexto
-  5. Crea tarea en tasks_board (LanceDB con fallback SQLite)
+  5. Crea tarea en tasks_board (LanceDB)
   6. Si guardrails pre OK, registra leccion en asi_cognition_store
   7. Muestra ruteo final para que opencode invoque al agente
 """
@@ -17,6 +17,27 @@ import os
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# ---------------------------------------------------------------------------
+# Verificar LanceDB antes de cualquier otra operacion
+# ---------------------------------------------------------------------------
+try:
+    import lancedb  # noqa: F401
+except ImportError:
+    print("=" * 60)
+    print("  LanceDB REQUERIDO — No se encontro instalado.")
+    print("=" * 60)
+    print()
+    print("  Ejecuta uno de estos comandos:")
+    print()
+    print("    pip install lancedb")
+    print("    python harness/scripts/init.py")
+    print()
+    print("  El sistema NO puede funcionar sin LanceDB.")
+    print("  (El fallback in-memory solo para emergencias con")
+    print("   LanceVectorStore(allow_fallback=True))")
+    print("=" * 60)
+    sys.exit(1)
 
 from harness.orchestrator.task_manager import TaskManager
 from harness.orchestrator.delegation_engine import DelegationEngine
@@ -36,7 +57,7 @@ def main():
     task = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else None
     if not task:
         print("Uso: python harness/run.py \"<descripcion de la tarea>\"")
-        print("Ej: python harness/run.py \"@software-engineer: Implementa endpoint de facturacion\"")
+        print("Ej: python harness/run.py \"@software-engineer: Implementa endpoint de API\"")
         sys.exit(1)
 
     print("[Harness] Inicializando...")
