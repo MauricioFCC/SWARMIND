@@ -15,6 +15,7 @@ Flujo completo:
 import sys
 import os
 from pathlib import Path
+from typing import Any, Dict
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -53,11 +54,275 @@ except ImportError:
     HAS_GUARDRAILS = False
 
 
+# ---------------------------------------------------------------------------
+# Argument parsing
+# ---------------------------------------------------------------------------
+
+
+def _parse_args() -> Dict[str, Any]:
+    """Parse CLI arguments, extracting flags and the task string."""
+    args = sys.argv[1:]
+    parsed: Dict[str, Any] = {
+        "daemon": False,
+        "gateway": None,
+        "task": None,
+        "command": None,
+    }
+
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg == "--daemon":
+            parsed["daemon"] = True
+            i += 1
+        elif arg == "--gateway" and i + 1 < len(args):
+            parsed["gateway"] = args[i + 1]
+            i += 2
+        elif arg.startswith("!"):
+            parsed["command"] = arg
+            i += 1
+        else:
+            parsed["task"] = arg
+            i += 1
+
+    return parsed
+
+
+# ---------------------------------------------------------------------------
+# Command handlers
+# ---------------------------------------------------------------------------
+
+
+def _handle_evolve_mutate(store: LanceVectorStore, cmd: str) -> None:
+    """
+    Handle ``!evolve mutate @<agent> "<task>"``.
+    """
+    import shlex
+
+    parts = shlex.split(cmd)
+    # parts[0] = "!evolve", parts[1] = "mutate", parts[2] = "@agent", parts[3] = "task"
+    if len(parts) < 4:
+        print("[Harness] Uso: !evolve mutate @<agent> \"<task>\"")
+        return
+
+    agent_arg = parts[2].lstrip("@")
+    task_arg = parts[3]
+
+    # Find agent profile
+    agent_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),
+        ".opencode", "agents", f"{agent_arg}.md"
+    )
+    if not os.path.exists(agent_path):
+        print(f"[Harness] Agente '{agent_arg}' no encontrado en {agent_path}")
+        return
+
+    from harness.evolve_loop.prompt_evolver import PromptEvolver
+
+    evolver = PromptEvolver(vector_store=store)
+    print(f"[Harness] Mutando prompt de @{agent_arg}...")
+    mutants = evolver.mutate_prompt(agent_path)
+
+    if not mutants:
+        print("[Harness] No se generaron mutantes.")
+        return
+
+    print(f"[Harness] Mutantes generados ({len(mutants)}):")
+    for m in mutants:
+        print(f"  - {m}")
+
+    print(f"\n[Harness] Evaluando mutantes con tarea: {task_arg[:80]}...")
+    scores = evolver.evaluate_mutants(agent_path, mutants, task_arg)
+
+    print("\n[Harness] Resultados de evaluacion:")
+    for label, result in sorted(scores.items(), key=lambda x: -x[1].get("score", 0)):
+        print(
+            f"  {label}: tokens={result.get('tokens')} "
+            f"success={result.get('success')} "
+            f"time={result.get('time', 0):.3f}s "
+            f"score={result.get('score', 0):.1f}"
+        )
+
+    # Find winner (highest score, excluding original)
+    best_label = "original"
+    best_score = -9999
+    for label, result in scores.items():
+        if label != "original" and result.get("score", -9999) > best_score:
+            best_score = result.get("score", -9999)
+            best_label = label
+
+    if best_label != "original" and best_score > scores.get("original", {}).get("score", 0):
+        winner = next(
+            (m for m in mutants if best_label in m),
+            None,
+        )
+        if winner:
+            print(f"\n[Harness] Promoviendo ganador: {best_label}")
+            promoted = evolver.promote_winner(winner)
+            if promoted:
+                print(f"[Harness] Prompt de @{agent_arg} actualizado exitosamente.")
+        else:
+            print("[Harness] No se pudo determinar el ganador.")
+    else:
+        print(f"[Harness] Original conservado (ningun mutante supero el score original).")
+
+
+def _handle_schedule_add(store: LanceVectorStore, cmd: str) -> None:
+    """
+    Handle ``!schedule add <name> --cron "<cron>" --task "<cmd>"``
+    or ``--interval "30 minutes"`` or ``--once "2026-01-01T00:00:00"``.
+    """
+    import shlex
+
+    parts = shlex.split(cmd)
+    # parts[0] = "!schedule", parts[1] = "add", parts[2] = <name>
+    if len(parts) < 5:
+        print("[Harness] Uso: !schedule add <name> --cron \"<cron>\" --task \"<cmd>\"")
+        print("[Harness]   O: !schedule add <name> --interval \"30 minutes\" --task \"<cmd>\"")
+        print("[Harness]   O: !schedule add <name> --once \"2026-01-01T00:00:00\" --task \"<cmd>\"")
+        return
+
+    name = parts[2]
+    trigger = ""
+    trigger_value = ""
+    command = ""
+
+    j = 3
+    while j < len(parts):
+        if parts[j] == "--cron" and j + 1 < len(parts):
+            trigger = "cron"
+            trigger_value = parts[j + 1]
+            j += 2
+        elif parts[j] == "--interval" and j + 1 < len(parts):
+            trigger = "interval"
+            trigger_value = parts[j + 1]
+            j += 2
+        elif parts[j] == "--once" and j + 1 < len(parts):
+            trigger = "once"
+            trigger_value = parts[j + 1]
+            j += 2
+        elif parts[j] == "--task" and j + 1 < len(parts):
+            command = parts[j + 1]
+            j += 2
+        else:
+            j += 1
+
+    if not trigger or not command:
+        print("[Harness] Error: se requiere --cron/--interval/--once y --task")
+        return
+
+    from harness.orchestrator.scheduler import Scheduler
+
+    scheduler = Scheduler(vector_store=store)
+    job = scheduler.add_job(
+        name=name,
+        trigger=trigger,
+        trigger_value=trigger_value,
+        command=command,
+    )
+    print(f"[Harness] Job programado: {job.name} ({job.trigger}: {job.trigger_value})")
+
+
+def _handle_schedule_list(store: LanceVectorStore) -> None:
+    """Handle ``!schedule list``."""
+    from harness.orchestrator.scheduler import Scheduler
+
+    scheduler = Scheduler(vector_store=store)
+    jobs = scheduler.list_jobs()
+    if not jobs:
+        print("[Harness] No hay jobs programados.")
+        return
+
+    print(f"[Harness] Jobs programados ({len(jobs)}):")
+    for job in jobs:
+        status = "activo" if job.enabled else "inactivo"
+        print(
+            f"  - {job.name}: {job.trigger} = {job.trigger_value} "
+            f"[{status}] ultimo: {job.last_run or 'nunca'}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+
 def main():
-    task = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else None
+    parsed = _parse_args()
+
+    # --- Gateway mode ---
+    if parsed["gateway"]:
+        from harness.gateway.gateway import GatewayManager, Message, load_gateway_config
+
+        config = load_gateway_config()
+        # Override active gateways if specified
+        if parsed["gateway"] not in config.get("active_gateways", []):
+            config["active_gateways"] = [parsed["gateway"]]
+
+        manager = GatewayManager(config)
+        print(f"[Harness] Gateway mode: {parsed['gateway']}")
+        print(f"[Harness] Gateways activas: {manager.list_active_gateways()}")
+
+        # If CLI gateway, start interactive loop
+        cli_gw = manager.get_gateway("cli")
+        if cli_gw and cli_gw.is_active():
+            print("[Harness] CLI gateway activa. Escribe mensajes o 'exit' para salir.")
+            try:
+                while True:
+                    line = input("> ").strip()
+                    if line.lower() in ("exit", "quit", "q"):
+                        break
+                    if line:
+                        msg = Message(role="user", content=line, channel="cli")
+                        manager.send_all(msg)
+            except (EOFError, KeyboardInterrupt):
+                pass
+        return
+
+    # --- Daemon mode ---
+    if parsed["daemon"]:
+        from harness.orchestrator.scheduler import Scheduler
+        import time
+
+        print("[Harness] Daemon mode — iniciando scheduler en background...")
+        store = LanceVectorStore()
+        scheduler = Scheduler(vector_store=store)
+        scheduler.run_scheduler()
+        print("[Harness] Scheduler corriendo. Presiona Ctrl+C para detener.")
+        try:
+            while True:
+                time.sleep(10)
+        except KeyboardInterrupt:
+            scheduler.stop()
+            print("\n[Harness] Scheduler detenido.")
+        return
+
+    # --- Command mode ---
+    cmd = parsed.get("command")
+    if cmd:
+        store = LanceVectorStore()
+        if cmd.startswith("!evolve mutate"):
+            _handle_evolve_mutate(store, cmd)
+        elif cmd.startswith("!schedule add"):
+            _handle_schedule_add(store, cmd)
+        elif cmd.startswith("!schedule list"):
+            _handle_schedule_list(store)
+        else:
+            print(f"[Harness] Comando desconocido: {cmd}")
+        return
+
+    # --- Standard task routing (existing behavior) ---
+    task = parsed.get("task")
     if not task:
         print("Uso: python harness/run.py \"<descripcion de la tarea>\"")
         print("Ej: python harness/run.py \"@software-engineer: Implementa endpoint de API\"")
+        print()
+        print("Flags:")
+        print("  --daemon                    Inicia scheduler en background")
+        print("  --gateway <type>            Modo gateway (cli, slack, telegram)")
+        print("  !evolve mutate @<a> \"<t>\"   Evolucion de prompts")
+        print("  !schedule add <n> ...       Programar job")
+        print("  !schedule list              Listar jobs")
         sys.exit(1)
 
     print("[Harness] Inicializando...")
@@ -157,7 +422,7 @@ def main():
             from_agent="@harness",
             to_agent="@software-engineer",
             message=(
-                f"🔄 Tarea creada: **{task[:80]}**\n"
+                f"Tarea creada: **{task[:80]}**\n"
                 f"Task ID: `{task_id}`\n\n"
                 f"El SandboxLoop esta listo para ejecutar el bucle autonomo.\n"
                 f"Cuando el codigo este listo, ejecuta:\n"

@@ -85,7 +85,58 @@ DEFAULT_COLLECTIONS = {
             "created_at": "string",
         },
     },
+    "procedural_skills": {
+        "description": "Auto-generated procedural skills from successful multi-step tasks",
+        "schema": {
+            "id": "string",
+            "name": "string",
+            "domain": "string",
+            "agent": "string",
+            "trigger": "string",
+            "steps_text": "string",
+            "vector": "list<float>",
+            "metadata": "dict",
+            "created_at": "string",
+        },
+    },
+    "prompt_evolution_log": {
+        "description": "History of prompt mutations and promotions from the PromptEvolver",
+        "schema": {
+            "id": "string",
+            "agent": "string",
+            "mutation_type": "string",
+            "test_task": "string",
+            "tokens_before": "int",
+            "tokens_after": "int",
+            "success": "bool",
+            "promoted": "bool",
+            "timestamp": "string",
+            "vector": "list<float>",
+            "metadata": "dict",
+            "created_at": "string",
+        },
+    },
+    "scheduler_log": {
+        "description": "Execution log for scheduled jobs",
+        "schema": {
+            "id": "string",
+            "job_name": "string",
+            "trigger": "string",
+            "status": "string",
+            "duration_ms": "int",
+            "error": "string",
+            "timestamp": "string",
+            "vector": "list<float>",
+            "metadata": "dict",
+            "created_at": "string",
+        },
+    },
 }
+
+# Collection name constants for external consumption
+COLLECTION_PROCEDURAL_SKILLS = "procedural_skills"
+COLLECTION_PROMPT_EVOLUTION_LOG = "prompt_evolution_log"
+COLLECTION_SCHEDULER_LOG = "scheduler_log"
 
 
 # ---------------------------------------------------------------------------
@@ -315,6 +366,34 @@ class LanceVectorStore:
                 "priority": 0,
                 "updated_at": "",
                 "transition_history": "[]",
+            }
+        elif name == "procedural_skills":
+            specific = {
+                "name": "",
+                "domain": "",
+                "agent": "",
+                "trigger": "",
+                "steps_text": "",
+            }
+        elif name == "prompt_evolution_log":
+            specific = {
+                "agent": "",
+                "mutation_type": "",
+                "test_task": "",
+                "tokens_before": 0,
+                "tokens_after": 0,
+                "success": True,
+                "promoted": False,
+                "timestamp": now,
+            }
+        elif name == "scheduler_log":
+            specific = {
+                "job_name": "",
+                "trigger": "",
+                "status": "",
+                "duration_ms": 0,
+                "error": "",
+                "timestamp": now,
             }
 
         return {**base, **specific}

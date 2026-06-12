@@ -70,6 +70,16 @@ def check_dependencies() -> None:
     except ImportError:
         missing.append("numpy")
 
+    try:
+        import yaml  # noqa: F401
+    except ImportError:
+        missing.append("pyyaml")
+
+    try:
+        import schedule  # noqa: F401
+    except ImportError:
+        missing.append("schedule")
+
     # LanceDB es obligatorio, no opcional
     if not check_lancedb():
         banner("LanceDB es OBLIGATORIO. El sistema no puede funcionar sin el.")
@@ -77,7 +87,18 @@ def check_dependencies() -> None:
 
     if missing:
         banner(f"Dependencias adicionales no encontradas: {', '.join(missing)}")
-        banner("Instala con: pip install " + " ".join(missing))
+        banner("Instalando automaticamente...")
+        try:
+            import subprocess
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install"] + missing,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            banner(f"Dependencias instaladas: {', '.join(missing)}")
+        except Exception as exc:
+            banner(f"ERROR: No se pudieron instalar dependencias: {exc}")
+            banner("Instala manualmente: pip install " + " ".join(missing))
     else:
         banner("Dependencias basicas satisfechas.")
 
@@ -128,6 +149,14 @@ def init_project(project_path: str = "") -> str:
 def main() -> None:
     project_path = sys.argv[1] if len(sys.argv) > 1 else ""
     init_project(project_path)
+
+    # Generate LLMs documentation index
+    try:
+        from harness.scripts.generate_llms_txt import generate_llms_txt, generate_llms_full_txt
+        generate_llms_txt()
+        generate_llms_full_txt()
+    except Exception as exc:
+        banner(f"No se pudo generar llms.txt: {exc}")
 
 
 if __name__ == "__main__":

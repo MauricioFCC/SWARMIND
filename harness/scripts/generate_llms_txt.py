@@ -1,103 +1,221 @@
 """
 Generate /llms.txt and /llms-full.txt for LLM consumption (Hermes-inspired standard).
-Concatenates key documentation files into a single LLM-friendly context file.
+
+Scans ``harness/`` and ``.opencode/`` recursively, building a curated index
+(llms.txt) and a full concatenation (llms-full.txt) capped at ~100K tokens.
 """
+
+from __future__ import annotations
+
 import os
 from pathlib import Path
+from typing import Dict, List, Optional
 
-ROOT = Path(__file__).parent.parent.parent
-DOCS_DIR = ROOT / "docs"
-LLMS_TXT = ROOT / "docs" / "llms.txt"
-LLMS_FULL_TXT = ROOT / "docs" / "llms-full.txt"
+ROOT = Path(__file__).resolve().parent.parent.parent  # AGENTIC/
+DOCS_DIR = ROOT / "harness" / "docs"
+LLMS_TXT = DOCS_DIR / "llms.txt"
+LLMS_FULL_TXT = DOCS_DIR / "llms-full.txt"
 
-KEY_FILES = [
-    "index.md",
-    "arquitectura/index.md",
-    "arquitectura/adr-001-base-datos.md",
-    "dominios_negocio/sistema-agentes.md",
-    "dominios_negocio/context-engineering.md",
-    "manual_usuario/agentes.md",
-    "manual_usuario/cli.md",
-]
+MAX_CHARS = 133_333  # ~100K tokens (chars * 0.75)
 
-def generate_llms_txt():
-    lines = []
-    lines.append("# Onyx Multi-Agent System")
-    lines.append("## LLMs.txt — Contexto curado para LLMs")
-    lines.append("")
-    lines.append("> Generado automáticamente. Última actualización: ver git log.")
-    lines.append("")
-    lines.append("## Enlaces a documentación clave")
-    lines.append("")
-    for f in KEY_FILES:
-        path = DOCS_DIR / f
-        if path.exists():
-            relative = f"docs/{f}"
-            with open(path, encoding="utf-8") as fp:
-                content = fp.read()
-            title_line = content.split("\n")[0] if content else f
-            lines.append(f"- [{title_line.strip('# ')}]({relative})")
-    lines.append("")
-    lines.append("## Skills Activos (19)")
-    lines.append("")
-    lines.append("| Skill | Descripción |")
-    lines.append("|-------|-------------|")
-    skills = [
-        ("project-manager", "Orquestación F.R.A.M.E."),
-        ("context-engineer", "Context curation, compactación, memoria"),
-        ("tool-mcp-engineer", "Ecosistema de herramientas MCP"),
-        ("software-engineer", "Full-stack, APIs, servicios"),
-        ("data-architect", "Schemas, modelos, migraciones"),
-        ("devops-sre", "CI/CD, Docker, infraestructura"),
-        ("security-engineer", "Seguridad, compliance, hardening"),
-        ("frontend-engineer", "UI/UX, dashboards, visualizaciones"),
-        ("mobile-engineer", "Apps móviles"),
-        ("ai-engineer", "ML/AI, pipelines, LLMOps"),
-        ("quality-gate", "QA, test strategy, cobertura"),
-        ("documentation-specialist", "Documentación técnica"),
-        ("requirements-analyst", "Análisis de requerimientos"),
-        ("enterprise-architect", "Arquitectura de sistemas, ADR"),
-        ("quant-developer", "Estrategias cuantitativas"),
-        ("quant-scientist", "Validación estadística, experimentos"),
-        ("risk-manager", "Gestión de riesgo, position sizing"),
-        ("trading-operations", "Operaciones en vivo, monitoreo"),
-        ("evolve", "Meta-skill de auto-mejora"),
+
+# ---------------------------------------------------------------------------
+# File scanning
+# ---------------------------------------------------------------------------
+
+
+def _scan_files(directory: Path, extensions: Optional[List[str]] = None) -> List[Path]:
+    """Recursively scan a directory for files (excluding __pycache__ and binaries)."""
+    if extensions is None:
+        extensions = [".py", ".md", ".yaml", ".yml", ".json", ".cfg", ".ini", ".txt"]
+
+    results: List[Path] = []
+    if not directory.exists():
+        return results
+
+    for item in directory.rglob("*"):
+        if not item.is_file():
+            continue
+        rel = item.relative_to(ROOT)
+        parts = rel.parts
+        # Skip __pycache__, .git, __pycache__ etc.
+        if any(p.startswith("__pycache__") or p == ".git" or p.startswith(".") and p != ".opencode" for p in parts):
+            continue
+        if item.suffix in extensions:
+            results.append(item)
+
+    return sorted(results)
+
+
+# ---------------------------------------------------------------------------
+# Categorisation
+# ---------------------------------------------------------------------------
+
+
+def _categorise(path: Path) -> str:
+    """Assign a category based on file path."""
+    rel = str(path.relative_to(ROOT)).lower()
+
+    if rel.startswith(".opencode/skills"):
+        return "Skills"
+    if rel.startswith(".opencode/agents"):
+        return "Agents"
+    if rel.startswith("harness/orchestrator"):
+        return "Orchestrator"
+    if rel.startswith("harness/memory_rag"):
+        return "Memory"
+    if rel.startswith("harness/evolve_loop"):
+        return "Evolve"
+    if rel.startswith("harness/gateway"):
+        return "Gateway"
+    if rel.startswith("harness/scripts"):
+        return "Scripts"
+    if rel.startswith("harness/tools_sandbox"):
+        return "Tools"
+    if rel.startswith("harness/"):
+        return "Core"
+    if rel.startswith("docs/"):
+        return "Documentation"
+    if rel.startswith(".opencode/"):
+        return "OpenCode Config"
+    return "Other"
+
+
+# ---------------------------------------------------------------------------
+# llms.txt — curated index
+# ---------------------------------------------------------------------------
+
+
+def generate_llms_txt() -> str:
+    """Generate the curated llms.txt index."""
+    files = _scan_files(ROOT)
+    categorised: Dict[str, List[Path]] = {}
+    for f in files:
+        cat = _categorise(f)
+        categorised.setdefault(cat, []).append(f)
+
+    # Sort categories
+    category_order = [
+        "Core", "Agents", "Skills", "Orchestrator", "Memory",
+        "Evolve", "Gateway", "Scripts", "Tools", "Documentation",
+        "OpenCode Config", "Other",
     ]
-    for name, desc in skills:
-        lines.append(f"| @{name} | {desc} |")
+
+    lines: List[str] = [
+        "# AGENTIC Harness",
+        "> LLMs.txt — contexto curado para LLMs (generado automaticamente)",
+        "",
+        "## Core",
+    ]
+
+    for cat in category_order:
+        if cat not in categorised:
+            continue
+        lines.append(f"## {cat}")
+        lines.append("")
+        for f in categorised[cat]:
+            rel = str(f.relative_to(ROOT)).replace("\\", "/")
+            # Get first heading as title
+            title = _get_title(f) or rel
+            lines.append(f"- [{title}]({rel})")
+        lines.append("")
+
+    # Add quick reference
+    lines.append("## Quick Reference")
     lines.append("")
-    lines.append("## Comandos Rápidos")
+    lines.append("| Comando | Descripcion |")
+    lines.append("|---------|-------------|")
+    lines.append("| `@rol: mensaje` | Delegacion directa a un agente |")
+    lines.append("| `!evolve mutate @<a> \"<t>\"` | Mutar y evaluar prompt de agente |")
+    lines.append("| `!schedule add <n> --cron \"<c>\" --task \"<t>\"` | Programar job cron |")
+    lines.append("| `!schedule add <n> --interval \"30 min\" --task \"<t>\"` | Programar job por intervalo |")
+    lines.append("| `!schedule list` | Listar jobs programados |")
+    lines.append("| `--daemon` | Iniciar scheduler en background |")
+    lines.append("| `--gateway cli` | Modo gateway interactivo |")
+    lines.append("| `python harness/scripts/init.py` | Bootstrap del proyecto |")
     lines.append("")
-    lines.append("- `@rol: mensaje` — Delegación directa a un agente")
-    lines.append("- `!evolve status` — Estado del loop de mejora")
-    lines.append("- `!evolve run <skill> <rounds>` — Ejecutar mejora")
-    lines.append("- `!evolve cognition add <title> <content>` — Añadir conocimiento")
-    lines.append("- `!evolve cognition search <query>` — Buscar en memoria")
-    lines.append("")
-    lines.append("---")
-    lines.append("*Powered by Onyx Multi-Agent Framework*")
-    
+
     content = "\n".join(lines)
-    with open(LLMS_TXT, "w", encoding="utf-8") as f:
+
+    DOCS_DIR.mkdir(parents=True, exist_ok=True)
+    with open(str(LLMS_TXT), "w", encoding="utf-8") as f:
         f.write(content)
     print(f"[OK] {LLMS_TXT} — {len(content)} caracteres")
 
-def generate_llms_full_txt():
-    sections = []
-    for f in KEY_FILES:
-        path = DOCS_DIR / f
-        if path.exists():
-            with open(path, encoding="utf-8") as fp:
-                content = fp.read()
-            sections.append(f"# === docs/{f} ===\n\n{content}")
-    
-    content = "\n\n".join(sections)
-    with open(LLMS_FULL_TXT, "w", encoding="utf-8") as f:
-        f.write(content)
-    print(f"[OK] {LLMS_FULL_TXT} — {len(content)} caracteres, ~{len(content)//4} tokens estimados")
+    return content
+
+
+# ---------------------------------------------------------------------------
+# llms-full.txt — full content
+# ---------------------------------------------------------------------------
+
+
+def generate_llms_full_txt() -> str:
+    """Generate the full concatenation of all scanned files (capped at MAX_CHARS)."""
+    files = _scan_files(ROOT)
+    sections: List[str] = []
+    total_chars = 0
+
+    for filepath in files:
+        rel = str(filepath.relative_to(ROOT)).replace("\\", "/")
+        header = f"\n--- FILE: {rel} ---\n\n"
+
+        try:
+            content = filepath.read_text(encoding="utf-8")
+        except Exception:
+            content = f"[ERROR: could not read {rel}]"
+
+        section = f"{header}{content}"
+        section_chars = len(section)
+
+        if total_chars + section_chars > MAX_CHARS:
+            remaining = MAX_CHARS - total_chars
+            if remaining > 200:
+                sections.append(section[:remaining])
+            break
+
+        sections.append(section)
+        total_chars += section_chars
+
+    full = "".join(sections)
+    estimated_tokens = len(full) // 4
+
+    DOCS_DIR.mkdir(parents=True, exist_ok=True)
+    with open(str(LLMS_FULL_TXT), "w", encoding="utf-8") as f:
+        f.write(full)
+    print(f"[OK] {LLMS_FULL_TXT} — {len(full)} caracteres, ~{estimated_tokens} tokens estimados")
+
+    return full
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _get_title(filepath: Path) -> str:
+    """Try to extract the first heading/title from a file."""
+    try:
+        content = filepath.read_text(encoding="utf-8", errors="replace")
+        for line in content.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("# ") or stripped.startswith("#skill:"):
+                return stripped.lstrip("# ").lstrip("skill:").strip()
+            if stripped.startswith("#"):
+                return stripped.lstrip("#").strip()
+        return ""
+    except Exception:
+        return ""
+
+
+# ---------------------------------------------------------------------------
+# CLI entry
+# ---------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
-    print("Generando /llms.txt y /llms-full.txt...")
+    print("Generando docs/llms.txt y docs/llms-full.txt...")
+    print(f"Escaneando: {ROOT}")
     generate_llms_txt()
     generate_llms_full_txt()
-    print("Done. Los LLMs externos pueden consumir docs/llms.txt")
+    print("Done.")

@@ -1,0 +1,10 @@
+active_gateways:
+  - cli
+slack:
+  enabled: false
+  token: ""
+  channel: "#dev"
+telegram:
+  enabled: false
+  token: ""
+  chat_id: ""
