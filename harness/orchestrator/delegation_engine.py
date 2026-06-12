@@ -267,7 +267,6 @@ class DelegationEngine:
             "project-manager": "project-manager",
             "quant": "quant-developer",
             "quant_developer": "quant-developer",
-            "quant_developer": "quant-developer",
             "quant_scientist": "quant-scientist",
             "scientist": "quant-scientist",
             "risk_manager": "risk-manager",

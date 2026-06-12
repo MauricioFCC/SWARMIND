@@ -1,6 +1,7 @@
 """
-Harness — Onyx Multi-Agent Execution Engine
+Harness — Multi-Agent Execution Engine (portable base)
 Entry point for the agent orchestration system with LanceDB memory.
+Usage: python harness/run.py "@rol: describe tu tarea"
 """
 import sys
 import os
@@ -17,26 +18,25 @@ from harness.memory_rag.lance_vector_store import LanceVectorStore
 def main():
     task = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else None
     if not task:
-        print("Uso: python harness/run.py \"<descripción de la tarea>\"")
-        print("Ej: python harness/run.py \"@software-engineer: Implementa endpoint de facturación\"")
+        print("Uso: python harness/run.py \"<descripcion de la tarea>\"")
+        print("Ej: python harness/run.py \"@software-engineer: Implementa endpoint de facturacion\"")
         sys.exit(1)
 
-    print(f"⚡ Inicializando Harness...")
-    
+    print("[Harness] Inicializando...")
+
     store = LanceVectorStore()
     tm = TaskManager()
     engine = DelegationEngine()
     assembler = ContextAssembler(store)
-    
-    result = engine.route_message(task)
-    target_agent = result.get("agent", "project-manager")
-    
-    print(f"  → Ruteando a @{target_agent}")
-    
-    context = assembler.assemble(task, target_agent)
-    if context.get("relevant_chunks"):
-        print(f"  → Contexto ensamblado: {len(context['relevant_chunks'])} chunks, {context.get('token_estimate', 0)} tokens")
-    
+
+    target_agent = engine.route_message(task)
+
+    print(f"[Harness] Ruteando a @{target_agent}")
+
+    ctx = assembler.assemble(task, target_agent)
+    if ctx.relevant_docs:
+        print(f"[Harness] Contexto: {len(ctx.relevant_docs)} chunks, {ctx.metadata.get('total_tokens_used', 0)} tokens")
+
     new_task = tm.create_task(
         title=task[:80],
         description=task,
@@ -44,10 +44,12 @@ def main():
         priority=5
     )
     if new_task:
-        print(f"  → Tarea creada: {new_task.get('id', 'N/A')} (estado: {new_task.get('status', 'pending')})")
+        task_id = getattr(new_task, 'id', 'N/A')
+        task_status = getattr(new_task, 'status', 'pending')
+        print(f"[Harness] Tarea creada: {task_id} (estado: {task_status})")
 
-    print(f"\n✅ Tarea enrutada a @{target_agent}")
-    print(f"📋 Para ejecutar: invoca @{target_agent} con el contexto ensamblado")
+    print(f"[Harness] Tarea enrutada a @{target_agent}")
+    print(f"[Harness] Para ejecutar: invoca @{target_agent} con el contexto ensamblado")
 
 
 if __name__ == "__main__":
