@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 LANCEDB_ROOT = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "db",
-    "lancedb_store",
+    "lancedb",
 )
 
 DEFAULT_COLLECTIONS = {
@@ -126,6 +126,20 @@ DEFAULT_COLLECTIONS = {
             "duration_ms": "int",
             "error": "string",
             "timestamp": "string",
+            "vector": "list<float>",
+            "metadata": "dict",
+            "created_at": "string",
+        },
+    },
+    "hitl_approval_log": {
+        "description": "Human-in-the-Loop approval decisions for destructive actions",
+        "schema": {
+            "id": "string",
+            "agent_role": "string",
+            "action": "string",
+            "approved": "bool",
+            "user_feedback": "string",
+            "mode": "string",
             "vector": "list<float>",
             "metadata": "dict",
             "created_at": "string",
@@ -394,6 +408,14 @@ class LanceVectorStore:
                 "duration_ms": 0,
                 "error": "",
                 "timestamp": now,
+            }
+        elif name == "hitl_approval_log":
+            specific = {
+                "agent_role": "",
+                "action": "",
+                "approved": True,
+                "user_feedback": "",
+                "mode": "hitl",
             }
 
         return {**base, **specific}

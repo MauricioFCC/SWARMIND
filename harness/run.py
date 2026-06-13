@@ -1,16 +1,29 @@
 """
 Harness — Multi-Agent Execution Engine (portable base)
 Entry point for the agent orchestration system with LanceDB memory.
-Usage: python harness/run.py "@rol: describe tu tarea"
 
-Flujo completo:
-  1. Verifica LanceDB disponible → inicializa TaskManager + DelegationEngine + ContextAssembler + CognitionSync
-  2. Rutea el mensaje al agente target via @rol o intent matching
-  3. Ensambla contexto RAG desde rag_chunks (con filtro por dominio si aplica)
-  4. Ejecuta guardrails pre-check sobre el contexto
-  5. Crea tarea en tasks_board (LanceDB)
-  6. Si guardrails pre OK, registra leccion en asi_cognition_store
-  7. Muestra ruteo final para que opencode invoque al agente
+Usage:
+    python harness/run.py "@rol: describe tu tarea"
+    python harness/run.py --force-cloud "@software-engineer: crear API"
+    python harness/run.py --auto-pilot "@data-architect: migrar DB"
+    python harness/run.py --hitl-sensitive "@devops-sre: deploy"
+
+Features:
+    - ModelRouter: Hybrid local/cloud model routing (Ollama + Cloud API)
+    - HITLGuard: Human-in-the-Loop for destructive actions
+    - MCP Client: Universal JSON-RPC tool execution
+    - LanceDB memory with RAG context assembly
+    - SandboxLoop for autonomous code execution
+
+Flags:
+    --daemon                Inicia scheduler en background
+    --gateway <type>        Modo gateway (cli, slack, telegram)
+    --force-cloud           Override ModelRouter → siempre cloud
+    --auto-pilot            Desactiva HITL (solo entornos de confianza)
+    --hitl-sensitive        HITL solo para acciones críticas
+    !evolve mutate @<a> ".." Evolucion de prompts
+    !schedule add <n> ...   Programar job
+    !schedule list          Listar jobs
 """
 import sys
 import os
@@ -35,8 +48,6 @@ except ImportError:
     print("    python harness/scripts/init.py")
     print()
     print("  El sistema NO puede funcionar sin LanceDB.")
-    print("  (El fallback in-memory solo para emergencias con")
-    print("   LanceVectorStore(allow_fallback=True))")
     print("=" * 60)
     sys.exit(1)
 
@@ -46,6 +57,10 @@ from harness.memory_rag.context_assembler import ContextAssembler
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 from harness.evolve_loop.cognition_sync import CognitionSync
 from harness.memory_rag.doc_ingester import DocumentChunker, ingest_directory
+
+# New modules
+from harness.model_router.router import ModelRouter
+from harness.orchestrator.hitl_guard import HITLGuard
 
 try:
     from opencode.core.guardrails import run_full_pipeline
@@ -65,6 +80,9 @@ def _parse_args() -> Dict[str, Any]:
     parsed: Dict[str, Any] = {
         "daemon": False,
         "gateway": None,
+        "force_cloud": False,
+        "auto_pilot": False,
+        "hitl_sensitive": False,
         "task": None,
         "command": None,
     }
@@ -78,6 +96,15 @@ def _parse_args() -> Dict[str, Any]:
         elif arg == "--gateway" and i + 1 < len(args):
             parsed["gateway"] = args[i + 1]
             i += 2
+        elif arg == "--force-cloud":
+            parsed["force_cloud"] = True
+            i += 1
+        elif arg == "--auto-pilot":
+            parsed["auto_pilot"] = True
+            i += 1
+        elif arg == "--hitl-sensitive":
+            parsed["hitl_sensitive"] = True
+            i += 1
         elif arg.startswith("!"):
             parsed["command"] = arg
             i += 1
@@ -100,7 +127,6 @@ def _handle_evolve_mutate(store: LanceVectorStore, cmd: str) -> None:
     import shlex
 
     parts = shlex.split(cmd)
-    # parts[0] = "!evolve", parts[1] = "mutate", parts[2] = "@agent", parts[3] = "task"
     if len(parts) < 4:
         print("[Harness] Uso: !evolve mutate @<agent> \"<task>\"")
         return
@@ -108,7 +134,6 @@ def _handle_evolve_mutate(store: LanceVectorStore, cmd: str) -> None:
     agent_arg = parts[2].lstrip("@")
     task_arg = parts[3]
 
-    # Find agent profile
     agent_path = os.path.join(
         os.path.dirname(os.path.dirname(__file__)),
         ".opencode", "agents", f"{agent_arg}.md"
@@ -143,7 +168,6 @@ def _handle_evolve_mutate(store: LanceVectorStore, cmd: str) -> None:
             f"score={result.get('score', 0):.1f}"
         )
 
-    # Find winner (highest score, excluding original)
     best_label = "original"
     best_score = -9999
     for label, result in scores.items():
@@ -168,18 +192,14 @@ def _handle_evolve_mutate(store: LanceVectorStore, cmd: str) -> None:
 
 
 def _handle_schedule_add(store: LanceVectorStore, cmd: str) -> None:
-    """
-    Handle ``!schedule add <name> --cron "<cron>" --task "<cmd>"``
-    or ``--interval "30 minutes"`` or ``--once "2026-01-01T00:00:00"``.
-    """
+    """Handle ``!schedule add <name> --cron "<cron>" --task "<cmd>"``."""
     import shlex
 
     parts = shlex.split(cmd)
-    # parts[0] = "!schedule", parts[1] = "add", parts[2] = <name>
     if len(parts) < 5:
         print("[Harness] Uso: !schedule add <name> --cron \"<cron>\" --task \"<cmd>\"")
-        print("[Harness]   O: !schedule add <name> --interval \"30 minutes\" --task \"<cmd>\"")
-        print("[Harness]   O: !schedule add <name> --once \"2026-01-01T00:00:00\" --task \"<cmd>\"")
+        print("[Harness]   O: !schedule add <name> --interval \"30m\" --task \"<cmd>\"")
+        print("[Harness]   O: !schedule add <name> --once \"ISO\" --task \"<cmd>\"")
         return
 
     name = parts[2]
@@ -243,6 +263,69 @@ def _handle_schedule_list(store: LanceVectorStore) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Model Routing
+# ---------------------------------------------------------------------------
+
+
+def _apply_model_routing(task: str, target_agent: str, force_cloud: bool = False) -> str:
+    """
+    Apply ModelRouter to determine local vs cloud execution.
+
+    Returns the routing source ("local" or "cloud") for logging.
+    """
+    router = ModelRouter()
+
+    if force_cloud:
+        print(f"[ROUTER] @{target_agent} → cloud (--force-cloud override)")
+        return "cloud"
+
+    decision = router.route(task, target_agent)
+    model_name = decision.model
+    provider = decision.provider
+    source = decision.source
+    reason = decision.reason
+
+    print(f"[ROUTER] @{target_agent} → {source} ({provider}/{model_name}) [{reason}]")
+
+    # If local and Ollama not available, show helpful message
+    if source == "local":
+        if not router._is_ollama_available():
+            print(f"[ROUTER] ⚠️  Ollama no detectado. Modelo local '{model_name}' no disponible.")
+            if router.config.get("local", {}).get("fallback_to_cloud", True):
+                print(f"[ROUTER] ⚠️  Fallback a cloud automatico activado.")
+            else:
+                print(f"[ROUTER] 💡 Instala Ollama: https://ollama.com")
+                print(f"[ROUTER] 💡 O usa --force-cloud para modo cloud")
+
+    return source
+
+
+# ---------------------------------------------------------------------------
+# HITL Guard
+# ---------------------------------------------------------------------------
+
+
+def _check_hitl(action: str, agent_role: str, guard: HITLGuard) -> bool:
+    """
+    Check if an action needs human approval and handle it.
+
+    Returns True if action is approved/safe, False if blocked.
+    """
+    if guard.mode == "auto_pilot":
+        return True
+
+    # Only check if the action looks destructive
+    check = guard.check_action(action, agent_role)
+    if check["approved"]:
+        return True
+
+    print(f"[HITL] @{agent_role} propone accion que requiere aprobacion:")
+    print(f"[HITL]   {action[:200]}")
+
+    return guard.request_approval(action, agent_role)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -255,7 +338,6 @@ def main():
         from harness.gateway.gateway import GatewayManager, Message, load_gateway_config
 
         config = load_gateway_config()
-        # Override active gateways if specified
         if parsed["gateway"] not in config.get("active_gateways", []):
             config["active_gateways"] = [parsed["gateway"]]
 
@@ -263,7 +345,6 @@ def main():
         print(f"[Harness] Gateway mode: {parsed['gateway']}")
         print(f"[Harness] Gateways activas: {manager.list_active_gateways()}")
 
-        # If CLI gateway, start interactive loop
         cli_gw = manager.get_gateway("cli")
         if cli_gw and cli_gw.is_active():
             print("[Harness] CLI gateway activa. Escribe mensajes o 'exit' para salir.")
@@ -311,7 +392,7 @@ def main():
             print(f"[Harness] Comando desconocido: {cmd}")
         return
 
-    # --- Standard task routing (existing behavior) ---
+    # --- Standard task routing ---
     task = parsed.get("task")
     if not task:
         print("Uso: python harness/run.py \"<descripcion de la tarea>\"")
@@ -320,6 +401,9 @@ def main():
         print("Flags:")
         print("  --daemon                    Inicia scheduler en background")
         print("  --gateway <type>            Modo gateway (cli, slack, telegram)")
+        print("  --force-cloud               Override: todas las tareas a cloud API")
+        print("  --auto-pilot                Desactiva HITL (entornos de confianza)")
+        print("  --hitl-sensitive            HITL solo para acciones criticas")
         print("  !evolve mutate @<a> \"<t>\"   Evolucion de prompts")
         print("  !schedule add <n> ...       Programar job")
         print("  !schedule list              Listar jobs")
@@ -335,6 +419,26 @@ def main():
 
     target_agent = engine.route_message(task)
     print(f"[Harness] Ruteando a @{target_agent}")
+
+    # ── ModelRouter: determinar local vs cloud ──
+    force_cloud = parsed.get("force_cloud", False)
+    routing_source = _apply_model_routing(task, target_agent, force_cloud)
+
+    # ── HITL Guard: inicializar ──
+    hitl_mode = "hitl"
+    if parsed.get("auto_pilot"):
+        hitl_mode = "auto_pilot"
+    elif parsed.get("hitl_sensitive"):
+        hitl_mode = "hitl_sensitive"
+
+    guard = HITLGuard(vector_store=store, mode=hitl_mode)
+    if hitl_mode != "hitl":
+        print(f"[HITL] Modo: {hitl_mode}")
+
+    # ── HITL: check task for destructive actions ──
+    if not _check_hitl(task, target_agent, guard):
+        print("[HITL] Accion rechazada por el usuario. Cancelando.")
+        sys.exit(1)
 
     ctx = assembler.assemble(task, target_agent)
     if ctx.relevant_docs:
@@ -356,6 +460,7 @@ def main():
             "task_description": task,
             "rag_chunks": len(ctx.relevant_docs),
             "token_budget": ctx.metadata.get("total_tokens_used", 0),
+            "routing_source": routing_source,
         }
         result = run_full_pipeline(task, "", pre_context)
         if not result.get("allowed", True):
@@ -385,21 +490,23 @@ def main():
             content=(
                 f"Tarea enrutada a @{target_agent}.\n"
                 f"Descripcion: {task}\n"
+                f"Routing: {routing_source}\n"
                 f"Chunks RAG recuperados: {len(ctx.relevant_docs)}\n"
                 f"Tokens de contexto: {ctx.metadata.get('total_tokens_used', 0)}"
             ),
             domain="harness.routing",
-            tags=["routing", target_agent, "harness"],
+            tags=["routing", target_agent, routing_source, "harness"],
             metrics={
                 "rag_chunks": len(ctx.relevant_docs),
                 "token_estimate": ctx.metadata.get("total_tokens_used", 0),
+                "routing_source": routing_source,
             },
         )
         print(f"[Harness] Leccion registrada en cognition: {lesson.id}")
     except Exception as exc:
         print(f"[Harness] Cognition store no disponible: {exc}")
 
-    print(f"[Harness] Tarea enrutada a @{target_agent}")
+    print(f"[Harness] Tarea enrutada a @{target_agent} ({routing_source})")
     print(f"[Harness] Para ejecutar: invoca @{target_agent} con el contexto ensamblado")
 
     # ------------------------------------------------------------------
@@ -415,7 +522,6 @@ def main():
         sandbox = SandboxLoop(vector_store=store)
         channel = "#swe-sandbox"
 
-        # Mensaje de bienvenida en el canal del sandbox
         bus = AgentBus(vector_store=store)
         bus.post_message(
             channel=channel,
@@ -423,7 +529,8 @@ def main():
             to_agent="@software-engineer",
             message=(
                 f"Tarea creada: **{task[:80]}**\n"
-                f"Task ID: `{task_id}`\n\n"
+                f"Task ID: `{task_id}`\n"
+                f"Routing: `{routing_source}`\n\n"
                 f"El SandboxLoop esta listo para ejecutar el bucle autonomo.\n"
                 f"Cuando el codigo este listo, ejecuta:\n"
                 f"```\n"

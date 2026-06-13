@@ -76,8 +76,13 @@ def main() -> None:
     banner("[Harness reset] Limpiando estado...")
     print()
 
-    # 1. Vector database
-    rm_dir(project_root / "harness" / "db" / "lancedb_store")
+    # 1. Vector database (new name)
+    rm_dir(project_root / "harness" / "db" / "lancedb")
+    # Legacy path cleanup
+    legacy_db = project_root / "harness" / "db" / "lancedb_store"
+    if legacy_db.exists():
+        shutil.rmtree(legacy_db)
+        banner(f"Eliminado (legacy): {legacy_db}")
 
     # 2. Prompt archive (backups de prompts evolucionados)
     rm_dir(project_root / "harness" / "evolve_loop" / "prompt_archive")

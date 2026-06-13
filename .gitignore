@@ -10,7 +10,8 @@ build/
 Thumbs.db
 
 # Harness data (regenerable)
-harness/db/lancedb_store/
+harness/db/lancedb/
+harness/db/lancedb_store/  # legacy name (removed in future)
 harness/evolve_loop/prompt_archive/
 .opencode/skills/auto/
 harness/orchestrator/scheduler_jobs.yaml
