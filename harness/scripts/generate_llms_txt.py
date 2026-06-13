@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 ROOT = Path(__file__).resolve().parent.parent.parent  # AGENTIC/
 DOCS_DIR = ROOT / "harness" / "docs"
@@ -18,14 +18,60 @@ LLMS_FULL_TXT = DOCS_DIR / "llms-full.txt"
 
 MAX_CHARS = 133_333  # ~100K tokens (chars * 0.75)
 
+# Directorios y patrones a excluir completamente
+EXCLUDED_DIRS: Set[str] = {
+    "__pycache__",
+    ".git",
+    "lancedb",      # datos binarios LanceDB
+    "import",       # BDs legacy para migrar
+    "_archived",    # colecciones archivadas
+    "_backup",      # backups automáticos
+    ".lance",       # datos internos LanceDB
+}
+
+EXCLUDED_FILE_SUFFIXES: Set[str] = {
+    ".txn",
+    ".manifest",
+    ".lance",
+}
+
+EXCLUDED_FILE_NAMES: Set[str] = {
+    "latest_version_hint.json",
+}
+
 
 # ---------------------------------------------------------------------------
 # File scanning
 # ---------------------------------------------------------------------------
 
 
+def _should_exclude(path: Path) -> bool:
+    """Check if a file should be excluded from scanning."""
+    rel = path.relative_to(ROOT)
+    parts = rel.parts
+
+    # Excluir directorios completos
+    for part in parts[:-1]:  # todas excepto el nombre del archivo
+        if part in EXCLUDED_DIRS:
+            return True
+        if part.startswith("_backup") or part.startswith("__pycache__"):
+            return True
+        if part == ".git":
+            return True
+
+    # Excluir archivos por sufijo
+    if path.suffix in EXCLUDED_FILE_SUFFIXES:
+        return True
+
+    # Excluir archivos por nombre
+    if path.name in EXCLUDED_FILE_NAMES:
+        return True
+
+    return False
+
+
 def _scan_files(directory: Path, extensions: Optional[List[str]] = None) -> List[Path]:
-    """Recursively scan a directory for files (excluding __pycache__ and binaries)."""
+    """Recursively scan a directory for files (excluding __pycache__, binaries, and DB data)."""
     if extensions is None:
         extensions = [".py", ".md", ".yaml", ".yml", ".json", ".cfg", ".ini", ".txt"]
 
@@ -36,10 +82,7 @@ def _scan_files(directory: Path, extensions: Optional[List[str]] = None) -> List
     for item in directory.rglob("*"):
         if not item.is_file():
             continue
-        rel = item.relative_to(ROOT)
-        parts = rel.parts
-        # Skip __pycache__, .git, __pycache__ etc.
-        if any(p.startswith("__pycache__") or p == ".git" or p.startswith(".") and p != ".opencode" for p in parts):
+        if _should_exclude(item):
             continue
         if item.suffix in extensions:
             results.append(item)
@@ -54,24 +97,30 @@ def _scan_files(directory: Path, extensions: Optional[List[str]] = None) -> List
 
 def _categorise(path: Path) -> str:
     """Assign a category based on file path."""
-    rel = str(path.relative_to(ROOT)).lower()
+    rel = str(path.relative_to(ROOT)).lower().replace("\\", "/")
 
     if rel.startswith(".opencode/skills"):
         return "Skills"
     if rel.startswith(".opencode/agents"):
-        return "Agents"
+        return "Agents (.opencode/)"
+    if rel.startswith("harness/orchestrator/hitl"):
+        return "Orchestrator"
     if rel.startswith("harness/orchestrator"):
         return "Orchestrator"
     if rel.startswith("harness/memory_rag"):
-        return "Memory"
+        return "Memory & RAG"
+    if rel.startswith("harness/model_router"):
+        return "Model Router"
     if rel.startswith("harness/evolve_loop"):
-        return "Evolve"
+        return "Evolve Loop"
     if rel.startswith("harness/gateway"):
         return "Gateway"
     if rel.startswith("harness/scripts"):
         return "Scripts"
     if rel.startswith("harness/tools_sandbox"):
-        return "Tools"
+        return "Tools & MCP"
+    if rel.startswith("harness/db/"):
+        return "DB & Migrations"
     if rel.startswith("harness/"):
         return "Core"
     if rel.startswith("docs/"):
@@ -96,8 +145,9 @@ def generate_llms_txt() -> str:
 
     # Sort categories
     category_order = [
-        "Core", "Agents", "Skills", "Orchestrator", "Memory",
-        "Evolve", "Gateway", "Scripts", "Tools", "Documentation",
+        "Core", "Agents (.opencode/)", "Skills", "Orchestrator",
+        "Memory & RAG", "Evolve Loop", "Model Router", "Tools & MCP",
+        "Gateway", "DB & Migrations", "Scripts", "Documentation",
         "OpenCode Config", "Other",
     ]
 
@@ -130,9 +180,18 @@ def generate_llms_txt() -> str:
     lines.append("| `!schedule add <n> --cron \"<c>\" --task \"<t>\"` | Programar job cron |")
     lines.append("| `!schedule add <n> --interval \"30 min\" --task \"<t>\"` | Programar job por intervalo |")
     lines.append("| `!schedule list` | Listar jobs programados |")
+    lines.append("| `!db migrate` | Migrar BDs desde `harness/db/import/` |")
+    lines.append("| `!db migrate --path <ruta>` | Migrar BD especifica |")
+    lines.append("| `!db list-imports` | Listar BDs disponibles para importar |")
+    lines.append("| `!db stats` | Estadisticas de la BD activa |")
+    lines.append("| `!db rollback <backup>` | Restaurar desde backup |")
     lines.append("| `--daemon` | Iniciar scheduler en background |")
+    lines.append("| `--force-cloud` | Override: forzar modo cloud en ModelRouter |")
+    lines.append("| `--auto-pilot` | Desactivar HITL (entornos de confianza) |")
+    lines.append("| `--hitl-sensitive` | HITL solo para acciones criticas |")
     lines.append("| `--gateway cli` | Modo gateway interactivo |")
     lines.append("| `python harness/scripts/init.py` | Bootstrap del proyecto |")
+    lines.append("| `python harness/scripts/check_ollama.py` | Health check de Ollama |")
     lines.append("")
 
     content = "\n".join(lines)
@@ -194,15 +253,25 @@ def generate_llms_full_txt() -> str:
 
 
 def _get_title(filepath: Path) -> str:
-    """Try to extract the first heading/title from a file."""
+    """Try to extract the first meaningful heading/title from a file."""
     try:
         content = filepath.read_text(encoding="utf-8", errors="replace")
         for line in content.splitlines():
             stripped = line.strip()
+            # Skip separator lines
+            if stripped in ("---", "___", "===") or stripped.startswith("---") or stripped.startswith("===") or stripped.startswith("___"):
+                continue
             if stripped.startswith("# ") or stripped.startswith("#skill:"):
                 return stripped.lstrip("# ").lstrip("skill:").strip()
-            if stripped.startswith("#"):
+            if stripped.startswith("#") and not stripped.startswith("##"):
                 return stripped.lstrip("#").strip()
+        # Fallback: first non-empty line
+        for line in content.splitlines():
+            stripped = line.strip()
+            if stripped and stripped not in ("---", "___", "==="):
+                if len(stripped) < 120:
+                    return stripped
+                return stripped[:120] + "..."
         return ""
     except Exception:
         return ""

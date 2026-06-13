@@ -1,107 +1,88 @@
 # AGENTIC Harness
-> LLMs.txt — contexto curado para LLMs (generado automaticamente)
+> LLMs.txt — contexto curado para LLMs (generado automáticamente)
 
 ## Core
-## Other
 
-- [.opencode/agents/ai-engineer.md](.opencode/agents/ai-engineer.md)
-- [.opencode/agents/context-engineer.md](.opencode/agents/context-engineer.md)
-- [.opencode/agents/data-architect.md](.opencode/agents/data-architect.md)
-- [.opencode/agents/devops-sre.md](.opencode/agents/devops-sre.md)
-- [📚 Estructura de Documentación Recomendada](.opencode/agents/documentation-specialist.md)
-- [.opencode/agents/enterprise-architect.md](.opencode/agents/enterprise-architect.md)
+- [README](harness/README.md)
+- [AGENTS](harness/AGENTS.md)
+
+## Orchestrator
+
+- [Agent Bus](harness/orchestrator/agent_bus.py)
+- [Agent Dispatcher](harness/orchestrator/agent_dispatcher.py)
+- [Scheduler](harness/orchestrator/scheduler.py)
+- [HITL Guard](harness/orchestrator/hitl_guard.py)
+- [Sandbox Loop](harness/orchestrator/sandbox_loop.py)
+- [Task Manager](harness/orchestrator/task_manager.py)
+- [Delegation Engine](harness/orchestrator/delegation_engine.py)
+- [HITL Config](harness/orchestrator/hitl/hitl_config.yaml)
+
+## Memory & RAG
+
+- [Lance Vector Store](harness/memory_rag/lance_vector_store.py)
+- [Doc Ingester](harness/memory_rag/doc_ingester.py)
+- [Context Assembler](harness/memory_rag/context_assembler.py)
+
+## Evolve Loop
+
+- [Self Improver](harness/evolve_loop/self_improver.py)
+- [Skill Generator](harness/evolve_loop/skill_generator.py)
+- [Prompt Evolver (GEPA)](harness/evolve_loop/prompt_evolver.py)
+- [Procedural Memory](harness/evolve_loop/procedural_memory.py)
+- [GEPA Mutator](harness/evolve_loop/gepa_mutator.py)
+- [Cognition Sync](harness/evolve_loop/cognition_sync.py)
+- [Evaluator](harness/evolve_loop/evaluator.py)
+
+## Model Router
+
+- [Router](harness/model_router/router.py)
+- [Config](harness/model_router/router_config.yaml)
+
+## Tools & MCP
+
+- [MCP Client](harness/tools_sandbox/mcp_client.py)
+- [MCP Manager](harness/tools_sandbox/mcp_manager.py)
+- [MCP Servers Config](harness/tools_sandbox/mcp_servers.yaml)
+- [MCP Executor](harness/tools_sandbox/mcp_executor.py)
+
+## Gateway
+
+- [Gateway](harness/gateway/gateway.py)
+- [Gateway Config](harness/gateway/gateway_config.yaml)
+
+## DB & Migrations
+
+- [Migrate DB](harness/db/migrate_db.py)
+
+## Scripts
+
+- [Init](harness/scripts/init.py)
+- [Generate LLMs](harness/scripts/generate_llms_txt.py)
+- [Check Ollama](harness/scripts/check_ollama.py)
+
+## Agents (.opencode/)
+
+- [AI Engineer](.opencode/agents/ai-engineer.md)
+- [Context Engineer](.opencode/agents/context-engineer.md)
+- [Data Architect](.opencode/agents/data-architect.md)
+- [DevOps SRE](.opencode/agents/devops-sre.md)
+- [Documentation Specialist](.opencode/agents/documentation-specialist.md)
+- [Enterprise Architect](.opencode/agents/enterprise-architect.md)
 - [Evolve Analyzer](.opencode/agents/evolve-analyzer.md)
 - [Evolve Engineer](.opencode/agents/evolve-engineer.md)
 - [Evolve Researcher](.opencode/agents/evolve-researcher.md)
-- [.opencode/agents/frontend-engineer.md](.opencode/agents/frontend-engineer.md)
-- [.opencode/agents/mobile-engineer.md](.opencode/agents/mobile-engineer.md)
+- [Frontend Engineer](.opencode/agents/frontend-engineer.md)
+- [Mobile Engineer](.opencode/agents/mobile-engineer.md)
 - [Project Manager](.opencode/agents/project-manager.md)
-- [Quality Gate Engineer](.opencode/agents/quality-gate.md)
-- [.opencode/agents/quant-developer.md](.opencode/agents/quant-developer.md)
-- [.opencode/agents/quant-scientist.md](.opencode/agents/quant-scientist.md)
+- [Quality Gate](.opencode/agents/quality-gate.md)
+- [Quant Developer](.opencode/agents/quant-developer.md)
+- [Quant Scientist](.opencode/agents/quant-scientist.md)
 - [Requirements Analyst](.opencode/agents/requirements-analyst.md)
-- [.opencode/agents/risk-manager.md](.opencode/agents/risk-manager.md)
-- [.opencode/agents/security-engineer.md](.opencode/agents/security-engineer.md)
-- [.opencode/agents/software-engineer.md](.opencode/agents/software-engineer.md)
-- [.opencode/agents/tool-mcp-engineer.md](.opencode/agents/tool-mcp-engineer.md)
-- [.opencode/agents/trading-operations.md](.opencode/agents/trading-operations.md)
-- [.opencode/config/project_config.yaml](.opencode/config/project_config.yaml)
-- [Routing Rules Configuration v2.0](.opencode/config/routing_rules.yaml)
-- [.opencode/config/token_budgets.yaml](.opencode/config/token_budgets.yaml)
-- [.opencode/core/__init__.py](.opencode/core/__init__.py)
-- [PRINCIPIOS UNIVERSALES | Multi-nivel](.opencode/core/base_principles.md)
-- [Variables parametrizables (definir en config/project_config.yaml)](.opencode/core/base_skill_template.md)
-- [FDE PRINCIPIOS UNIVERSALES | Forward Deployment Engineering](.opencode/core/fde_principles.md)
-- [=============================================================================](.opencode/core/guardrails.py)
-- [Técnicas de compresión configurables](.opencode/core/prompt_optimizer.py)
-- [Validar versión SemVer](.opencode/core/registry.py)
-- [Puntuación por keywords](.opencode/core/router_v2.py)
-- [.opencode/core/skill_schema.json](.opencode/core/skill_schema.json)
-- [.opencode System — Universal Multi-Agent Framework](.opencode/README.md)
-- [AI/ML ENGINEER | {{PROJECT_NAME}}](.opencode/skills/ai-engineer/SKILL.md)
-- [CONTEXT ENGINEER](.opencode/skills/context-engineer/SKILL.md)
-- [CUANDO ACTIVAR](.opencode/skills/data-architect/SKILL.md)
-- [CUANDO ACTIVAR](.opencode/skills/devops-sre/SKILL.md)
-- [DOCUMENTATION SPECIALIST | {{PROJECT_NAME}}](.opencode/skills/documentation-specialist/SKILL.md)
-- [ENTERPRISE ARCHITECT | {{PROJECT_NAME}}](.opencode/skills/enterprise-architect/SKILL.md)
-- [EVOLVE | Meta-Skill de Auto-Me jora Continua](.opencode/skills/evolve/SKILL.md)
-- [CUANDO ACTIVAR](.opencode/skills/frontend-engineer/SKILL.md)
-- [CUANDO ACTIVAR](.opencode/skills/mobile-engineer/SKILL.md)
-- [PROJECT MANAGER | {{PROJECT_NAME}}](.opencode/skills/project-manager/SKILL.md)
-- [QUALITY GATE | {{PROJECT_NAME}}](.opencode/skills/quality-gate/SKILL.md)
-- [QUANT DEVELOPER | {{PROJECT_NAME}}](.opencode/skills/quant-developer/SKILL.md)
-- [QUANT SCIENTIST | {{PROJECT_NAME}}](.opencode/skills/quant-scientist/SKILL.md)
-- [REQUIREMENTS ANALYST | {{PROJECT_NAME}}](.opencode/skills/requirements-analyst/SKILL.md)
-- [RISK MANAGER | {{PROJECT_NAME}}](.opencode/skills/risk-manager/SKILL.md)
-- [SECURITY & COMPLIANCE ENGINEER](.opencode/skills/security-engineer/SKILL.md)
-- [.opencode/skills/skills_registry.yaml](.opencode/skills/skills_registry.yaml)
-- [SOFTWARE ENGINEER | {{PROJECT_NAME}}](.opencode/skills/software-engineer/SKILL.md)
-- [TOOL / MCP ENGINEER](.opencode/skills/tool-mcp-engineer/SKILL.md)
-- [CUANDO ACTIVAR](.opencode/skills/trading-operations/SKILL.md)
-- [harness/__init__.py](harness/__init__.py)
-- [AGENTS.md — Onyx Multi-Agent System (Hermes-style manifest)](harness/AGENTS.md)
-- [harness/db/lancedb_store/__manifest/_versions/latest_version_hint.json](harness/db/lancedb_store/__manifest/_versions/latest_version_hint.json)
-- [harness/db/lancedb_store/agent_workspace_logs.lance/_versions/latest_version_hint.json](harness/db/lancedb_store/agent_workspace_logs.lance/_versions/latest_version_hint.json)
-- [harness/db/lancedb_store/asi_cognition_store.lance/_versions/latest_version_hint.json](harness/db/lancedb_store/asi_cognition_store.lance/_versions/latest_version_hint.json)
-- [harness/db/lancedb_store/procedural_skills.lance/_versions/latest_version_hint.json](harness/db/lancedb_store/procedural_skills.lance/_versions/latest_version_hint.json)
-- [harness/db/lancedb_store/prompt_evolution_log.lance/_versions/latest_version_hint.json](harness/db/lancedb_store/prompt_evolution_log.lance/_versions/latest_version_hint.json)
-- [harness/db/lancedb_store/rag_chunks.lance/_versions/latest_version_hint.json](harness/db/lancedb_store/rag_chunks.lance/_versions/latest_version_hint.json)
-- [harness/db/lancedb_store/scheduler_log.lance/_versions/latest_version_hint.json](harness/db/lancedb_store/scheduler_log.lance/_versions/latest_version_hint.json)
-- [harness/db/lancedb_store/tasks_board.lance/_versions/latest_version_hint.json](harness/db/lancedb_store/tasks_board.lance/_versions/latest_version_hint.json)
-- [📚 Estructura de Documentación Recomendada](harness/docs/llms-full.txt)
-- [AGENTIC Harness](harness/docs/llms.txt)
-- [harness/evolve_loop/__init__.py](harness/evolve_loop/__init__.py)
-- [---------------------------------------------------------------------------](harness/evolve_loop/cognition_sync.py)
-- [---------------------------------------------------------------------------](harness/evolve_loop/evaluator.py)
-- [Strategy 1: Reorder paragraphs](harness/evolve_loop/gepa_mutator.py)
-- [Avoid overwriting](harness/evolve_loop/procedural_memory.py)
-- [---------------------------------------------------------------------------](harness/evolve_loop/prompt_evolver.py)
-- [---------------------------------------------------------------------------](harness/evolve_loop/self_improver.py)
-- [---------------------------------------------------------------------------](harness/evolve_loop/skill_generator.py)
-- [harness/gateway/__init__.py](harness/gateway/__init__.py)
-- [---------------------------------------------------------------------------](harness/gateway/gateway.py)
-- [harness/gateway/gateway_config.yaml](harness/gateway/gateway_config.yaml)
-- [harness/memory_rag/__init__.py](harness/memory_rag/__init__.py)
-- [---------------------------------------------------------------------------](harness/memory_rag/context_assembler.py)
-- [---------------------------------------------------------------------------](harness/memory_rag/doc_ingester.py)
-- [---------------------------------------------------------------------------](harness/memory_rag/lance_vector_store.py)
-- [harness/mkdocs.yml](harness/mkdocs.yml)
-- [harness/orchestrator/__init__.py](harness/orchestrator/__init__.py)
-- [---------------------------------------------------------------------------](harness/orchestrator/agent_bus.py)
-- [---------------------------------------------------------------------------](harness/orchestrator/agent_dispatcher.py)
-- [harness/orchestrator/delegation_engine.py](harness/orchestrator/delegation_engine.py)
-- [---------------------------------------------------------------------------](harness/orchestrator/sandbox_loop.py)
-- [---------------------------------------------------------------------------](harness/orchestrator/scheduler.py)
-- [harness/orchestrator/scheduler_jobs.yaml](harness/orchestrator/scheduler_jobs.yaml)
-- [harness/orchestrator/task_manager.py](harness/orchestrator/task_manager.py)
-- [AGENTIC — Multi-Agent Evolutionary Harness](harness/README.md)
-- [1. Vector database](harness/reset_state.py)
-- [---------------------------------------------------------------------------](harness/run.py)
-- [harness/scheduler.py](harness/scheduler.py)
-- [---------------------------------------------------------------------------](harness/scripts/generate_llms_txt.py)
-- [LanceDB es obligatorio, no opcional](harness/scripts/init.py)
-- [harness/tools_sandbox/__init__.py](harness/tools_sandbox/__init__.py)
-- [---------------------------------------------------------------------------](harness/tools_sandbox/mcp_executor.py)
+- [Risk Manager](.opencode/agents/risk-manager.md)
+- [Security Engineer](.opencode/agents/security-engineer.md)
+- [Software Engineer](.opencode/agents/software-engineer.md)
+- [Tool MCP Engineer](.opencode/agents/tool-mcp-engineer.md)
+- [Trading Operations](.opencode/agents/trading-operations.md)
 
 ## Quick Reference
 
@@ -112,6 +93,15 @@
 | `!schedule add <n> --cron "<c>" --task "<t>"` | Programar job cron |
 | `!schedule add <n> --interval "30 min" --task "<t>"` | Programar job por intervalo |
 | `!schedule list` | Listar jobs programados |
+| `!db migrate` | Migrar BDs desde `harness/db/import/` |
+| `!db migrate --path <ruta>` | Migrar BD especifica |
+| `!db list-imports` | Listar BDs disponibles para importar |
+| `!db stats` | Estadisticas de la BD activa |
+| `!db rollback <backup>` | Restaurar desde backup |
 | `--daemon` | Iniciar scheduler en background |
+| `--force-cloud` | Override: forzar modo cloud en ModelRouter |
+| `--auto-pilot` | Desactivar HITL (entornos de confianza) |
+| `--hitl-sensitive` | HITL solo para acciones criticas |
 | `--gateway cli` | Modo gateway interactivo |
 | `python harness/scripts/init.py` | Bootstrap del proyecto |
+| `python harness/scripts/check_ollama.py` | Health check de Ollama |

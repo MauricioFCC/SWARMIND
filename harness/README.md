@@ -1,6 +1,6 @@
 # AGENTIC — Multi-Agent Evolutionary Harness
 
-**Template portable de sistema multi-agente autónomo con LanceDB, RAG, y auto-mejora.**
+**Template portable de sistema multi-agente evolutivo con LanceDB, RAG, auto-mejora, enrutamiento híbrido local/cloud, supervisión humana (HITL) y conectividad MCP universal.**
 
 > Copia las carpetas `harness/` y `.opencode/` a la raíz de tu proyecto.
 > Listo para usar en minutos.
@@ -18,21 +18,49 @@ tu-proyecto/
 │   ├── core/                    # Router v2, guardrails, registry
 │   └── config/                  # Reglas de enrutamiento, budgets
 ├── harness/                     # Motor de ejecucion (ESTE DIRECTORIO)
-│   ├── orchestrator/            # Planificador, delegacion, sandbox
+│   ├── orchestrator/            # Planificador, delegacion, sandbox, HITL
+│   │   ├── agent_bus.py
+│   │   ├── agent_dispatcher.py
+│   │   ├── scheduler.py
+│   │   ├── task_manager.py
+│   │   ├── delegation_engine.py
+│   │   ├── sandbox_loop.py
+│   │   ├── hitl_guard.py        # Human-in-the-Loop
+│   │   └── hitl/                # Config HITL
 │   ├── memory_rag/              # Memoria vectorial LanceDB
-│   │   ├── lance_vector_store.py  # Interface unificada con LanceDB
-│   │   ├── doc_ingester.py        # Ingesta de documentos para RAG
-│   │   └── context_assembler.py   # Ensamblador de contexto RAG
+│   │   ├── lance_vector_store.py
+│   │   ├── doc_ingester.py
+│   │   └── context_assembler.py
+│   ├── model_router/            # Enrutamiento hibrido local/cloud
+│   │   ├── router.py
+│   │   └── router_config.yaml
 │   ├── evolve_loop/             # Auto-mejora ASI-Evolve
-│   │   ├── self_improver.py       # Loop de mejora continua
-│   │   └── cognition_sync.py      # Sincronizacion de cognicion
-│   ├── tools_sandbox/           # Ejecucion segura de herramientas
-│   ├── scripts/                 # Utilidades del Harness
-│   │   ├── init.py               # Bootstrap del proyecto
-│   │   └── generate_llms_txt.py  # Genera /llms.txt para LLMs externos
+│   │   ├── self_improver.py
+│   │   ├── skill_generator.py
+│   │   ├── prompt_evolver.py
+│   │   ├── procedural_memory.py
+│   │   ├── gepa_mutator.py
+│   │   ├── cognition_sync.py
+│   │   └── evaluator.py
+│   ├── tools_sandbox/           # MCP Client + Executor
+│   │   ├── mcp_client.py        # Cliente MCP universal (JSON-RPC 2.0)
+│   │   ├── mcp_manager.py       # Pool de conexiones MCP
+│   │   ├── mcp_servers.yaml     # Servidores MCP preconfigurados
+│   │   └── mcp_executor.py      # Ejecucion sandboxeada de herramientas
+│   ├── gateway/                 # Gateways (CLI, Slack, Telegram)
+│   │   ├── gateway.py
+│   │   └── gateway_config.yaml
 │   ├── db/                      # Datos persistentes
-│   │   └── lancedb_store/        # Base vectorial LanceDB
+│   │   ├── lancedb/             # Base vectorial LanceDB
+│   │   ├── import/              # BDs Legacy para migrar
+│   │   ├── _archived/           # Colecciones archivadas
+│   │   └── migrate_db.py        # Migrador automatico
+│   ├── scripts/                 # Utilidades del Harness
+│   │   ├── init.py              # Bootstrap del proyecto
+│   │   ├── generate_llms_txt.py # Genera /llms.txt para LLMs externos
+│   │   └── check_ollama.py      # Health check de Ollama
 │   ├── run.py                   # Punto de entrada CLI
+│   ├── reset_state.py
 │   ├── README.md                # Esta documentacion
 │   └── AGENTS.md                # Manifiesto completo de agentes
 └── llms.txt                     # Contexto curado para LLMs externos
@@ -44,7 +72,8 @@ tu-proyecto/
 
 - **Python 3.10+**
 - **LanceDB** (se instala automaticamente con `init.py` o manual: `pip install lancedb`)
-- Dependencias adicionales: `numpy`, `schedule`, `pyyaml`
+- **Ollama** (opcional, para modo local) — [https://ollama.com](https://ollama.com)
+- Dependencias adicionales: `numpy`, `schedule`, `pyyaml`, `requests`
 
 ---
 
@@ -62,8 +91,11 @@ python harness/scripts/init.py
 # 3. Iniciar el harness
 python harness/run.py "@project-manager: planificar proyecto"
 
-# 4. (Opcional) Resetear estado para empezar limpio
-python harness/reset_state.py
+# 4. (Opcional) Verificar Ollama para modo local
+python harness/scripts/check_ollama.py
+
+# 5. (Opcional) Forzar modo cloud
+python harness/run.py --force-cloud "@software-engineer: implementar API"
 ```
 
 ---
@@ -101,56 +133,210 @@ Ver `harness/AGENTS.md` para el manifiesto detallado.
 ## Comandos CLI
 
 ```bash
-# Delegar tarea a un agente
+# ─── Delegacion directa ───
 python harness/run.py "@software-engineer: Implementa <tu-tarea>"
 
-# Iniciar scheduler en background
-python harness/run.py --daemon
+# ─── Flags de enrutamiento ───
+python harness/run.py --force-cloud "@software-engineer: crear API"     # Override: siempre cloud
+python harness/run.py --auto-pilot "@data-architect: migrar DB"        # Desactiva HITL
+python harness/run.py --hitl-sensitive "@devops-sre: deploy"           # HITL solo critico
 
-# Modo gateway interactivo
-python harness/run.py --gateway cli
-
-# Programar job recurrente
+# ─── Scheduler ───
+python harness/run.py --daemon                                          # Iniciar en background
 python harness/run.py '!schedule add daily-check --cron "0 9 * * 1-5" --task "@quality-gate: validar sistema"'
-
-# Listar jobs programados
 python harness/run.py '!schedule list'
 
-# Mutar y evolucionar prompt de un agente
+# ─── Gateway interactivo ───
+python harness/run.py --gateway cli
+
+# ─── Evolucion de prompts ───
 python harness/run.py '!evolve mutate @software-engineer "<tu-tarea-de-prueba>"'
 
-# Resetear estado del harness
-python harness/reset_state.py
+# ─── Migracion de BD ───
+python harness/run.py '!db migrate'                                    # Migrar todas las BDs
+python harness/run.py '!db migrate --path <ruta>'                       # Migrar BD especifica
+python harness/run.py '!db list-imports'                                # Listar BDs disponibles
+python harness/run.py '!db stats'                                       # Estadisticas de BD activa
+python harness/run.py '!db rollback <backup>'                           # Restaurar desde backup
+
+# ─── Utilidades ───
+python harness/reset_state.py                                           # Resetear estado
+python harness/scripts/check_ollama.py                                  # Health check Ollama
 ```
+
+### Tabla de comandos
+
+| Comando | Descripcion |
+|---------|-------------|
+| `@rol: mensaje` | Delegacion directa a un agente |
+| `--force-cloud` | Override: fuerza todas las tareas a cloud API |
+| `--auto-pilot` | Desactiva HITL (solo entornos de confianza) |
+| `--hitl-sensitive` | HITL solo para acciones criticas |
+| `--daemon` | Inicia scheduler en background |
+| `--gateway <type>` | Modo gateway (cli, slack, telegram) |
+| `!db migrate` | Migra BDs desde `harness/db/import/` |
+| `!db migrate --path <ruta>` | Migra una BD especifica |
+| `!db list-imports` | Lista las BDs disponibles para importar |
+| `!db stats` | Muestra estadisticas de la BD activa |
+| `!db rollback <backup>` | Restaura desde un backup pre-migracion |
+| `!evolve mutate @<a> "<t>"` | Muta y evalua prompt de un agente |
+| `!schedule add <n> --cron "<c>" --task "<t>"` | Programa job recurrente (cron) |
+| `!schedule add <n> --interval "30m" --task "<t>"` | Programa job por intervalo |
+| `!schedule list` | Lista jobs programados |
 
 ---
 
 ## Arquitectura
 
+### Model Router: Enrutamiento Híbrido Local/Nube
+
+El `ModelRouter` decide automaticamente si una tarea se ejecuta localmente (Ollama, gratis) o en cloud (API externa, paga).
+
+**Logica de decision (prioridad):**
+
+1. **Keywords destructivas** → cloud (seguridad): `DROP`, `DELETE`, `rm -rf`, `terraform destroy`, `format C:`, `dd if=`, `kubectl delete --force`
+2. **Default del rol** → configurable: roles complejos van a cloud, roles simples van a local
+3. **Tarea corta** (< 200 chars) → local (eficiente para consultas simples)
+4. **Wildcard `*`** → local (default para roles no listados)
+
+**Tabla de ruteo por defecto:**
+
+| Rol | Destino | Motivo |
+|-----|---------|--------|
+| @software-engineer | ☁️ cloud | Codigo complejo |
+| @enterprise-architect | ☁️ cloud | Documentacion tecnica |
+| @quant-developer | ☁️ cloud | Estrategias cuantitativas |
+| @ai-engineer | ☁️ cloud | ML/AI pipelines |
+| @security-engineer | ☁️ cloud | Hardening, compliance |
+| @data-architect | ☁️ cloud | Schemas, migraciones |
+| @devops-sre | ☁️ cloud | CI/CD, infraestructura |
+| @evolve-researcher | ☁️ cloud | Investigacion |
+| @evolve-engineer | ☁️ cloud | Ejecucion de mejoras |
+| @context-engineer | 🖥️ local | RAG, curacion contexto |
+| @documentation-specialist | 🖥️ local | Documentacion |
+| @tool-mcp-engineer | 🖥️ local | Herramientas MCP |
+| @quality-gate | 🖥️ local | QA, tests |
+| *otros* | 🖥️ local | Default |
+
+**Flags:**
+- `--force-cloud`: Override total → todas las tareas a cloud
+- Fallback automatico: si local falla → cloud (configurable)
+
+**Health check:**
+```bash
+python harness/scripts/check_ollama.py
+```
+
+---
+
+### MCP: Conexión Universal a Herramientas (Model Context Protocol)
+
+`tools_sandbox` ahora funciona como **cliente MCP universal** que se conecta a servidores MCP comunitarios via JSON-RPC 2.0.
+
+**Componentes:**
+- `mcp_client.py` — Cliente MCP individual: connect, list_tools, execute_tool
+- `mcp_manager.py` — Pool de conexiones: registra servers, descubre herramientas, ejecuta
+- `mcp_servers.yaml` — Configuracion de servidores (todos deshabilitados por defecto)
+- `mcp_executor.py` — Ejecutor sandboxeado con timeouts, whitelist, y validacion de schemas
+
+**Servidores preconfigurados:**
+
+| Servidor | URL | Tools | Instalacion |
+|----------|-----|-------|-------------|
+| filesystem | localhost:3100 | read_file, write_file, list_directory | `npx @modelcontextprotocol/server-filesystem` |
+| github | localhost:3101 | get_repo, list_issues, create_pr, search_code | `npx @modelcontextprotocol/server-github` |
+| postgres | localhost:3102 | query, list_tables, describe_table | `npx @modelcontextprotocol/server-postgres` |
+| memory | localhost:3104 | store_memory, recall_memory, list_memories | `npx @modelcontextprotocol/server-memory` |
+| brave_search | localhost:3105 | web_search, web_fetch | `npx @modelcontextprotocol/server-brave-search` |
+
+**Uso:**
+```bash
+# 1. Instalar un servidor MCP comunitario
+npx @modelcontextprotocol/server-filesystem
+
+# 2. Habilitarlo en mcp_servers.yaml
+#    (cambiar enabled: false → enabled: true)
+
+# 3. El MCPManager lo conecta automaticamente al iniciar el harness
+```
+
+Ver: [https://github.com/modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers)
+
+---
+
+### HITL: Supervisión Humana en Acciones Críticas
+
+El `HITLGuard` (Human-in-the-Loop) intercepta acciones destructivas y requiere aprobacion humana antes de ejecutarlas.
+
+**3 modos de operacion:**
+
+| Modo | Flag | Comportamiento |
+|------|------|----------------|
+| `hitl` | *(default)* | Pregunta para TODA accion destructiva |
+| `auto_pilot` | `--auto-pilot` | Salta todos los chequeos (solo entornos de confianza) |
+| `hitl_sensitive` | `--hitl-sensitive` | Solo bloquea acciones de severidad `critical` |
+
+**18 patrones destructivos configurables** en `harness/orchestrator/hitl/hitl_config.yaml`:
+
+| Categoria | Patrones | Severidad |
+|-----------|----------|-----------|
+| Base de datos | DROP TABLE, DELETE sin WHERE, TRUNCATE, ALTER DROP | critical/high |
+| Filesystem | rm -rf, mkfs/format, dd if=, > /dev/ | critical |
+| Infraestructura | terraform apply/destroy, kubectl delete --force, docker rm -f | critical/high |
+| Git/Deploy | git push --force, npm publish, pip --no-verify | high/medium |
+| Sistema | kill -9, > /etc/, sudo | medium/high |
+
+**Timeout fail-safe:** 300 segundos (5 min). Si no respondes, la accion se **deniega automaticamente**.
+
+**Comportamiento:**
+```
+  ⚠️  HUMAN-IN-THE-LOOP — Accion Destructiva Detectada
+
+  Agente: @data-architect
+  Accion propuesta:
+    | DROP TABLE users
+
+  Opciones:
+    [Y] Aprobar — Permitir la ejecucion
+    [N] Rechazar — Bloquear + feedback opcional al agente
+    [S] Saltar — No preguntar mas en esta sesion
+
+  Timeout: 300s (denegado automaticamente)
+```
+
+---
+
 ### Memoria Vectorial (LanceDB)
+
 - **LanceDB** es el nucleo de memoria del sistema: almacena vectores de embedding, metadatos, y permite busqueda semantica.
 - **Obligatorio**: El sistema falla con un mensaje claro si LanceDB no esta instalado.
 - **Fallback in-memory**: Solo disponible con `LanceVectorStore(allow_fallback=True)` para emergencias/test.
+- **Nuevo nombre**: La base se almacena en `harness/db/lancedb/` (el directorio legacy se migra automaticamente durante `init.py` si usaba el nombre anterior).
 
 ### RAG (Retrieval-Augmented Generation)
+
 - Los documentos en `harness/`, y `.opencode/` se ingieren automaticamente.
 - Los chunks se vectorizan y almacenan en la coleccion `rag_chunks` de LanceDB.
 - El `ContextAssembler` recupera los chunks mas relevantes segun la tarea.
 
 ### Auto-mejora (ASI-Evolve)
+
 - El loop `SelfImprover` ejecuta rondas de mejora sobre cualquier skill.
 - Usa GEPA mutation + C.A.S.E. evaluation + procedural memory.
 - Los resultados se almacenan en `asi_cognition_store`.
 
 ### Enrutamiento Multi-Agente
+
 - Router v2 con grafo de estado: single-agent, secuencial, paralelo, o loop.
 - Guardrails pre/post con 19 checks de seguridad y calidad.
 
 ---
 
-## 🔄 Migración de Base de Datos
+## Migración de Base de Datos
 
 Al actualizar el harness en un proyecto existente (ej. copias un nuevo `harness/` sobre uno viejo), tus datos de LanceDB pueden necesitar migración si la estructura de colecciones cambió entre versiones.
+
+**Nota:** El directorio de la BD ahora es `harness/db/lancedb/`. Si tenés una BD del esquema anterior (con el nombre de directorio legacy), el `init.py` la migra automaticamente al nuevo nombre.
 
 ### Flujo recomendado
 
@@ -171,7 +357,7 @@ python harness/run.py "!db migrate"
 python harness/run.py "!db stats"
 
 # 4. Rollback (si algo falla):
-python harness/run.py "!db rollback harness/db/import/_backup_20260101_120000/"
+python harness/run.py "!db rollback harness/db/_backup_20260101_120000/"
 ```
 
 ### Comandos disponibles
@@ -229,4 +415,7 @@ python harness/run.py "!db stats"
 - **Agnostico:** Sin preferencia de lenguaje o framework. Se adapta a tu proyecto.
 - **Evolutivo:** GEPA mutation + C.A.S.E. evaluation + procedural memory.
 - **Memoria persistente:** LanceDB como unico storage default.
+- **Hibrido:** Enrutamiento inteligente local/cloud para optimizar costos.
+- **Seguro:** HITL Guard intercepta acciones destructivas antes de ejecutarlas.
+- **Extensible:** Cliente MCP universal para conectar cualquier herramienta del ecosistema.
 - **Documentacion viva:** Toda decision tecnica se documenta en ADR.
