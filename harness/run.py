@@ -120,6 +120,108 @@ def _parse_args() -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+def _handle_db_migrate(store: LanceVectorStore, cmd: str) -> None:
+    """
+    Handle ``!db migrate [--path <ruta>]``.
+    """
+    from harness.db.migrate_db import DBMigrator
+
+    migrator = DBMigrator()
+
+    parts = cmd.split()
+    if "--path" in parts:
+        idx = parts.index("--path")
+        custom_path = parts[idx + 1] if idx + 1 < len(parts) else None
+        if custom_path:
+            result = migrator.migrate(custom_path)
+        else:
+            print("[DB] Especifica una ruta: !db migrate --path <ruta>")
+            return
+    else:
+        imports = migrator.scan_imports()
+        if not imports:
+            print("[DB] No hay bases para migrar.")
+            return
+        for imp in imports:
+            print(f"[DB] Migrando '{imp['name']}'...")
+            result = migrator.migrate(imp["path"])
+
+    # Print results
+    if result.get("migrated_collections"):
+        print("[DB] Migradas: {}".format(", ".join(result["migrated_collections"])))
+    if result.get("created"):
+        print("[DB] Creadas: {}".format(", ".join(result["created"])))
+    for s in result.get("skipped", []):
+        print("[DB] SKIP: {}".format(s))
+    for e in result.get("errors", []):
+        print("[DB] ERROR: {}".format(e))
+    if result.get("backup_path"):
+        print("[DB] Backup: {}".format(result["backup_path"]))
+
+
+def _handle_db_list_imports() -> None:
+    """
+    Handle ``!db list-imports``.
+    """
+    from harness.db.migrate_db import DBMigrator
+
+    migrator = DBMigrator()
+    imports = migrator.scan_imports()
+    if imports:
+        print("\n[DB] Bases detectadas ({}):".format(len(imports)))
+        for imp in imports:
+            colls = ", ".join(imp["collections"])
+            print("  * {}: {} ({})".format(imp["name"], colls, imp["estimated_size_human"]))
+    else:
+        print("[DB] No se detectaron bases de datos en import/")
+
+
+def _handle_db_stats(store: LanceVectorStore) -> None:
+    """
+    Handle ``!db stats``.
+    """
+    from harness.db.migrate_db import DBMigrator
+
+    migrator = DBMigrator()
+    stats = migrator.get_stats()
+    print("\n[DB] Estadisticas de BD activa:")
+    print("  Path:   {}".format(stats.get("path", "N/A")))
+    print("  Chunks: {}".format(stats["total_chunks"]))
+    print("  Tamano: {}".format(stats.get("size_human", "N/A")))
+    print("  Ultima mod: {}".format(stats.get("last_modified", "N/A")))
+    print("  Colecciones:")
+    for coll in stats["collections"]:
+        count = coll["count"]
+        if count >= 0:
+            print("  * {}: {} registros".format(coll["name"], count))
+        else:
+            print("  * {}: ERROR {}".format(coll["name"], coll.get("error", "")))
+
+
+def _handle_db_rollback(cmd: str) -> None:
+    """
+    Handle ``!db rollback <backup_path>``.
+    """
+    from harness.db.migrate_db import DBMigrator
+
+    parts = cmd.split(maxsplit=2)
+    if len(parts) < 2:
+        print("[DB] Uso: !db rollback <ruta_del_backup>")
+        return
+
+    backup_path = parts[2] if len(parts) > 2 else ""
+    if not backup_path:
+        print("[DB] Uso: !db rollback <ruta_del_backup>")
+        return
+
+    migrator = DBMigrator()
+    success = migrator.rollback(backup_path)
+    if success:
+        print("[DB] Base restaurada desde: {}".format(backup_path))
+    else:
+        print("[DB] Error al restaurar desde: {}".format(backup_path))
+
+
 def _handle_evolve_mutate(store: LanceVectorStore, cmd: str) -> None:
     """
     Handle ``!evolve mutate @<agent> "<task>"``.
@@ -388,6 +490,14 @@ def main():
             _handle_schedule_add(store, cmd)
         elif cmd.startswith("!schedule list"):
             _handle_schedule_list(store)
+        elif cmd.startswith("!db migrate"):
+            _handle_db_migrate(store, cmd)
+        elif cmd.startswith("!db list-imports"):
+            _handle_db_list_imports()
+        elif cmd.startswith("!db stats"):
+            _handle_db_stats(store)
+        elif cmd.startswith("!db rollback"):
+            _handle_db_rollback(cmd)
         else:
             print(f"[Harness] Comando desconocido: {cmd}")
         return
@@ -407,6 +517,11 @@ def main():
         print("  !evolve mutate @<a> \"<t>\"   Evolucion de prompts")
         print("  !schedule add <n> ...       Programar job")
         print("  !schedule list              Listar jobs")
+        print("  !db migrate                 Migrar BD desde import/")
+        print("  !db migrate --path <ruta>   Migrar BD especifica")
+        print("  !db list-imports            Listar BDs disponibles")
+        print("  !db stats                   Estadisticas de BD activa")
+        print("  !db rollback <backup>       Restaurar desde backup")
         sys.exit(1)
 
     print("[Harness] Inicializando...")

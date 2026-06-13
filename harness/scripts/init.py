@@ -231,6 +231,10 @@ def init_project(project_path: str = "") -> str:
 
     check_dependencies()
     init_lancedb(base)
+
+    # ── Migración automática de BD legacy ──
+    _auto_migrate(base)
+
     setup_mcp_servers(base)
 
     banner("Inicializacion completa.")
@@ -241,6 +245,49 @@ def init_project(project_path: str = "") -> str:
     banner("  python harness/scripts/generate_llms_txt.py")
 
     return str(base)
+
+
+def _auto_migrate(base: Path) -> None:
+    """Detecta bases de datos legacy en import/ y ofrece migrarlas."""
+    import_dir = base / "harness" / "db" / "import"
+    if not import_dir.exists():
+        return
+
+    # Solo import si hay algo que migrar
+    from harness.db.migrate_db import DBMigrator
+
+    migrator = DBMigrator()
+    imports = migrator.scan_imports()
+    if not imports:
+        return
+
+    banner("Se detectaron {} base(s) de datos para importar:".format(len(imports)))
+    for imp in imports:
+        banner("  * {}: {} colecciones, {}".format(
+            imp["name"], len(imp["collections"]), imp["estimated_size_human"]
+        ))
+
+    try:
+        choice = input("  Migrar ahora? [Y/n]: ").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        choice = "y"
+
+    if choice == "n":
+        banner("Migracion omitida. Pods migrar luego con: python harness/run.py '!db migrate'")
+        return
+
+    for imp in imports:
+        banner("Migrando '{}'...".format(imp["name"]))
+        result = migrator.migrate(imp["path"])
+        if result["migrated_collections"]:
+            banner("[OK] Migradas: {}".format(", ".join(result["migrated_collections"])))
+        if result["created"]:
+            banner("[NEW] Creadas: {}".format(", ".join(result["created"])))
+        if result["errors"]:
+            for e in result["errors"]:
+                banner("[ERROR] {}".format(e))
+        if result.get("backup_path"):
+            banner("[BACKUP] {}".format(result["backup_path"]))
 
 
 def main() -> None:

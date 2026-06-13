@@ -148,6 +148,81 @@ python harness/reset_state.py
 
 ---
 
+## 🔄 Migración de Base de Datos
+
+Al actualizar el harness en un proyecto existente (ej. copias un nuevo `harness/` sobre uno viejo), tus datos de LanceDB pueden necesitar migración si la estructura de colecciones cambió entre versiones.
+
+### Flujo recomendado
+
+```bash
+# 1. Backup: Copia tu BD actual a la carpeta de import
+cp -r harness/db/lancedb/ harness/db/import/mi-proyecto-v1/
+
+# O si ya sobrescribiste el harness y la BD está en la ubicación vieja:
+mv harness/db/lancedb/ harness/db/import/mi-proyecto-v1/
+
+# 2. Migrar: Ejecuta init.py (lo detecta automáticamente)
+python harness/scripts/init.py
+
+# O manualmente:
+python harness/run.py "!db migrate"
+
+# 3. Verificar:
+python harness/run.py "!db stats"
+
+# 4. Rollback (si algo falla):
+python harness/run.py "!db rollback harness/db/import/_backup_20260101_120000/"
+```
+
+### Comandos disponibles
+
+| Comando | Descripción |
+|---------|-------------|
+| `!db migrate` | Migra todas las BDs encontradas en `harness/db/import/` |
+| `!db migrate --path <ruta>` | Migra una BD específica |
+| `!db list-imports` | Lista las BDs disponibles para importar |
+| `!db stats` | Muestra estadísticas de la BD activa |
+| `!db rollback <backup>` | Restaura desde un backup pre-migración |
+
+### ¿Qué maneja el migrador?
+
+- ✅ **Colecciones con schema exacto** → copia directa de datos
+- ✅ **Colecciones con schema modificado** → transformación automática de campos (rellena defaults, renombra si es necesario)
+- ✅ **Nuevas colecciones** → creadas vacías automáticamente
+- ✅ **Colecciones obsoletas** → archivadas como JSON con advertencia
+- ✅ **Vectores de distinta dimensión** → truncado/padding automático
+- ✅ **Backups automáticos** → cada migración genera un backup en `_backup_<timestamp>/`
+- ✅ **Rollback** → restaurar desde backup si algo sale mal
+
+### Ejemplo de migración
+
+```bash
+# Preparar BD de prueba (simula BD vieja)
+mkdir -p harness/db/import/vieja/
+python -c "
+from harness.memory_rag.lance_vector_store import LanceVectorStore
+store = LanceVectorStore('harness/db/import/vieja/')
+import numpy as np
+store.insert('rag_chunks', np.random.rand(3, 384), [
+    {'id': '1', 'domain': 'test', 'chunk': 'test data', 'source': 'old'},
+    {'id': '2', 'domain': 'test', 'chunk': 'more data', 'source': 'old'},
+    {'id': '3', 'domain': 'test', 'chunk': 'extra data', 'source': 'old'},
+])
+print('BD de prueba creada en import/')
+"
+
+# Listar imports disponibles
+python harness/run.py "!db list-imports"
+
+# Migrar
+python harness/run.py "!db migrate"
+
+# Verificar datos migrados
+python harness/run.py "!db stats"
+```
+
+---
+
 ## Principios
 
 - **Portable:** Sin dependencias de sistema operativo. Windows, macOS y Linux.
