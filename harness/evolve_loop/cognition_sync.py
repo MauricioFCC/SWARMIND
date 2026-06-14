@@ -47,6 +47,7 @@ class CognitionLesson:
     last_accessed: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
+        """To dict."""
         return {
             "id": self.id,
             "title": self.title,
@@ -61,6 +62,7 @@ class CognitionLesson:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> CognitionLesson:
+        """From dict."""
         return cls(
             id=data.get("id", ""),
             title=data.get("title", ""),

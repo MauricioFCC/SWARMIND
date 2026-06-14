@@ -33,21 +33,25 @@ TaskStatus = Literal["pending", "in_progress", "done", "blocked"]
 
 @dataclass
 class TransitionEntry:
+    """TransitionEntry."""
     from_status: str
     to_status: str
     timestamp: str
     reason: str
 
     def to_dict(self) -> Dict[str, Any]:
+        """To dict."""
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TransitionEntry":
+        """From dict."""
         return cls(**data)
 
 
 @dataclass
 class Task:
+    """Task."""
     id: str = ""
     title: str = ""
     description: str = ""
@@ -59,16 +63,19 @@ class Task:
     transition_history: List[Dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
+        """To dict."""
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Task":
+        """From dict."""
         return cls(**data)
 
 
 if HAS_PYDANTIC:
 
     class PydanticTask(BaseModel):
+        """PydanticTask."""
         id: str = Field(default_factory=lambda: uuid.uuid4().hex[:12])
         title: str = ""
         description: str = ""
@@ -84,10 +91,12 @@ if HAS_PYDANTIC:
         transition_history: List[Dict[str, Any]] = Field(default_factory=list)
 
         def to_dict(self) -> Dict[str, Any]:
+            """To dict."""
             return self.model_dump()
 
         @classmethod
         def from_dict(cls, data: Dict[str, Any]) -> "PydanticTask":
+            """From dict."""
             return cls(**data)
 
     _TaskModel = PydanticTask
@@ -98,6 +107,7 @@ else:
         """Placeholder when pydantic is not installed — never instantiated."""
         @classmethod
         def from_dict(cls, data: Dict[str, Any]) -> Task:
+            """From dict."""
             return Task.from_dict(data)
 
 
@@ -124,6 +134,7 @@ class TaskManager:
     """
 
     def __init__(self, db_path: str = "", vector_store: Any = None) -> None:
+        """Inicializa la instancia de la clase."""
         if vector_store is not None:
             db_path = getattr(vector_store, 'db_path', db_path)
         if not db_path:
@@ -184,6 +195,7 @@ class TaskManager:
 
     @property
     def db_path(self) -> str:
+        """Db path."""
         return self._db_path
 
     def _serialize_task(self, task: _TaskModel) -> Dict[str, Any]:

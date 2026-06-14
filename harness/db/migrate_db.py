@@ -60,6 +60,7 @@ class DBMigrator:
         target_dir: Optional[str] = None,
         archive_dir: Optional[str] = None,
     ) -> None:
+        """Inicializa el migrador con directorios de import, target y archive."""
         self.import_dir = import_dir or DEFAULT_IMPORT_DIR
         self.target_dir = target_dir or DEFAULT_TARGET_DIR
         self.archive_dir = archive_dir or DEFAULT_ARCHIVE_DIR
@@ -726,17 +727,17 @@ def main() -> None:
     if args.scan:
         imports = migrator.scan_imports()
         if imports:
-            print("\n[DB] Bases de datos detectadas ({}):".format(len(imports)))
+            logger.info("\n[DB] Bases de datos detectadas ({}):".format(len(imports)))
             for imp in imports:
-                print(
+                logger.info(
                     "  * {}: {} colecciones, {}".format(
                         imp["name"], len(imp["collections"]), imp["estimated_size_human"]
                     )
                 )
                 for coll in imp["collections"]:
-                    print("    - {}".format(coll))
+                    logger.info("    - {}".format(coll))
         else:
-            print("\n[DB] No se detectaron bases de datos en import/")
+            logger.info("\n[DB] No se detectaron bases de datos en import/")
         return
 
     # --- migrate ---
@@ -744,14 +745,14 @@ def main() -> None:
         if args.migrate == "all":
             imports = migrator.scan_imports()
             if not imports:
-                print("\n[DB] No hay bases para migrar.")
+                logger.info("\n[DB] No hay bases para migrar.")
                 return
             for imp in imports:
-                print("\n[DB] Migrando: {}...".format(imp["name"]))
+                logger.info("\n[DB] Migrando: {}...".format(imp["name"]))
                 result = migrator.migrate(imp["path"])
                 _print_result(result)
         else:
-            print("\n[DB] Migrando: {}...".format(args.migrate))
+            logger.info("\n[DB] Migrando: {}...".format(args.migrate))
             result = migrator.migrate(args.migrate)
             _print_result(result)
         return
@@ -760,39 +761,39 @@ def main() -> None:
     if args.stats is not None:
         db_path = args.stats if args.stats else None
         stats = migrator.get_stats(db_path)
-        print("\n[DB] Estadisticas de BD:")
-        print("  Path:   {}".format(stats.get("path", "N/A")))
-        print("  Chunks: {}".format(stats["total_chunks"]))
-        print("  Tamano: {}".format(stats.get("size_human", "N/A")))
-        print("  Ultima mod: {}".format(stats.get("last_modified", "N/A")))
-        print("  Colecciones:")
+        logger.info("\n[DB] Estadisticas de BD:")
+        logger.info("  Path:   {}".format(stats.get("path", "N/A")))
+        logger.info("  Chunks: {}".format(stats["total_chunks"]))
+        logger.info("  Tamano: {}".format(stats.get("size_human", "N/A")))
+        logger.info("  Ultima mod: {}".format(stats.get("last_modified", "N/A")))
+        logger.info("  Colecciones:")
         for coll in stats["collections"]:
             if coll["count"] >= 0:
-                print("    * {}: {} registros".format(coll["name"], coll["count"]))
+                logger.info("    * {}: {} registros".format(coll["name"], coll["count"]))
             else:
-                print("    * {}: ERROR {}".format(coll["name"], coll.get("error", "")))
+                logger.info("    * {}: ERROR {}".format(coll["name"], coll.get("error", "")))
         if "error" in stats:
-            print("  [ERROR] {}".format(stats["error"]))
+            logger.info("  [ERROR] {}".format(stats["error"]))
         return
 
     # --- rollback ---
     if args.rollback:
         success = migrator.rollback(args.rollback)
         if success:
-            print("\n[DB] Base restaurada desde: {}".format(args.rollback))
+            logger.info("\n[DB] Base restaurada desde: {}".format(args.rollback))
         else:
-            print("\n[DB] Error al restaurar desde: {}".format(args.rollback))
+            logger.info("\n[DB] Error al restaurar desde: {}".format(args.rollback))
         return
 
     # --- detect ---
     if args.detect:
         info = migrator.detect_format(args.detect)
-        print("\n[DB] Formato: {}".format(info["status"]))
-        print("  Colecciones ({}): {}".format(len(info["collections"]), ", ".join(info["collections"])))
+        logger.info("\n[DB] Formato: {}".format(info["status"]))
+        logger.info("  Colecciones ({}): {}".format(len(info["collections"]), ", ".join(info["collections"])))
         if info["differences"]:
-            print("  Diferencias ({}):".format(len(info["differences"])))
+            logger.info("  Diferencias ({}):".format(len(info["differences"])))
             for d in info["differences"]:
-                print("    {}".format(d))
+                logger.info("    {}".format(d))
         return
 
     parser.print_help()
@@ -801,17 +802,17 @@ def main() -> None:
 def _print_result(result: Dict[str, Any]) -> None:
     """Pretty-print resultado de migracion."""
     if result["migrated_collections"]:
-        print("  [OK] Migradas: {}".format(", ".join(result["migrated_collections"])))
+        logger.info("  [OK] Migradas: {}".format(", ".join(result["migrated_collections"])))
     if result["created"]:
-        print("  [NEW] Creadas: {}".format(", ".join(result["created"])))
+        logger.info("  [NEW] Creadas: {}".format(", ".join(result["created"])))
     if result["skipped"]:
         for s in result["skipped"]:
-            print("  [SKIP] {}".format(s))
+            logger.info("  [SKIP] {}".format(s))
     if result["errors"]:
         for e in result["errors"]:
-            print("  [ERROR] {}".format(e))
+            logger.info("  [ERROR] {}".format(e))
     if result.get("backup_path"):
-        print("  [BACKUP] {}".format(result["backup_path"]))
+        logger.info("  [BACKUP] {}".format(result["backup_path"]))
 
 
 if __name__ == "__main__":

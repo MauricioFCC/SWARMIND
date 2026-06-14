@@ -64,6 +64,7 @@ class ModelRouter:
     """
 
     def __init__(self, config_path: Optional[str] = None):
+        """Inicializa la instancia de la clase."""
         self.config = self._load_config(config_path)
         self._ollama_available: Optional[bool] = None  # lazy check
 

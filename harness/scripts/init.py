@@ -12,10 +12,13 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+import logging
+logger = logging.getLogger(__name__)
 
 
 def banner(text: str) -> None:
-    print(f"[init] {text}")
+    """Banner."""
+    logger.info(f"[init] {text}")
 
 
 def check_lancedb() -> bool:
@@ -62,6 +65,7 @@ def check_ollama() -> bool:
 
 
 def check_dependencies() -> None:
+    """Check dependencies."""
     missing: list[str] = []
     try:
         import numpy  # noqa: F401
@@ -125,6 +129,7 @@ def _ask_yes_no(prompt: str) -> bool:
 
 
 def ensure_dir(path: Path) -> None:
+    """Ensure dir."""
     path.mkdir(parents=True, exist_ok=True)
     gitkeep = path / ".gitkeep"
     if not gitkeep.exists():
@@ -132,6 +137,7 @@ def ensure_dir(path: Path) -> None:
 
 
 def create_structure(base: Path) -> None:
+    """Create structure."""
     dirs = [
         "harness/db/lancedb",           # renamed from lancedb_store
         "harness/db/lancedb_store",     # legacy (kept for migration)
@@ -151,6 +157,7 @@ def create_structure(base: Path) -> None:
 
 
 def init_lancedb(base: Path) -> None:
+    """Init lancedb."""
     db_path = base / "harness" / "db" / "lancedb"
     try:
         sys.path.insert(0, str(base))
@@ -170,21 +177,21 @@ def init_lancedb(base: Path) -> None:
 
 def setup_mcp_servers(base: Path) -> None:
     """Interactive MCP server setup."""
-    print()
+    logger.info()
     banner("🔌 MCP Client activo. El sistema soporta servidores MCP comunitarios.")
     banner("   Ver: https://github.com/modelcontextprotocol/servers")
-    print()
+    logger.info()
 
     if _ask_yes_no("¿Querés habilitar algún servidor MCP ahora?"):
-        print()
-        print("  Servidores disponibles:")
-        print("    1. filesystem — Acceso a archivos (read/write/list)")
-        print("    2. github     — API de GitHub (issues, PRs, repos)")
-        print("    3. postgres   — Consultas PostgreSQL")
-        print("    4. memory     — Memoria persistente / grafo de conocimiento")
-        print("    5. brave_search — Busqueda web")
-        print("    6. none       — No habilitar ninguno ahora")
-        print()
+        logger.info()
+        logger.info("  Servidores disponibles:")
+        logger.info("    1. filesystem — Acceso a archivos (read/write/list)")
+        logger.info("    2. github     — API de GitHub (issues, PRs, repos)")
+        logger.info("    3. postgres   — Consultas PostgreSQL")
+        logger.info("    4. memory     — Memoria persistente / grafo de conocimiento")
+        logger.info("    5. brave_search — Busqueda web")
+        logger.info("    6. none       — No habilitar ninguno ahora")
+        logger.info()
 
         try:
             choice = input("  Selecciona un numero (1-6): ").strip()
@@ -209,6 +216,7 @@ def setup_mcp_servers(base: Path) -> None:
 
 
 def init_project(project_path: str = "") -> str:
+    """Init project."""
     if project_path:
         base = Path(project_path).resolve()
     else:
@@ -291,6 +299,7 @@ def _auto_migrate(base: Path) -> None:
 
 
 def main() -> None:
+    """Main."""
     project_path = sys.argv[1] if len(sys.argv) > 1 else ""
     init_project(project_path)
 

@@ -39,6 +39,7 @@ class ImprovementRound:
     timestamp: str = ""
 
     def __post_init__(self) -> None:
+        """Post init."""
         if not self.timestamp:
             self.timestamp = datetime.now(timezone.utc).isoformat()
 

@@ -12,7 +12,7 @@ Usage:
     if not check["approved"]:
         approved = guard.request_approval("DROP TABLE users", "data-architect")
         if not approved:
-            print("Action rejected by user.")
+            logger.info("Action rejected by user.")
 """
 
 from __future__ import annotations
@@ -152,26 +152,26 @@ class HITLGuard:
         """
         effective_timeout = timeout or self.config.get("timeout", DEFAULT_TIMEOUT)
 
-        print()
-        print("=" * 65)
-        print("  ⚠️  HUMAN-IN-THE-LOOP — Accion Destructiva Detectada")
-        print("=" * 65)
-        print()
-        print(f"  Agente: @{agent_role}")
-        print(f"  Accion propuesta:")
-        print()
+        logger.info()
+        logger.info("=" * 65)
+        logger.info("  ⚠️  HUMAN-IN-THE-LOOP — Accion Destructiva Detectada")
+        logger.info("=" * 65)
+        logger.info()
+        logger.info(f"  Agente: @{agent_role}")
+        logger.info(f"  Accion propuesta:")
+        logger.info()
         for line in action.strip().split("\n"):
-            print(f"    | {line}")
-        print()
-        print("-" * 65)
-        print("  Opciones:")
-        print("    [Y] Aprobar — Permitir la ejecucion")
-        print("    [N] Rechazar — Bloquear + feedback opcional al agente")
-        print("    [S] Saltar — No preguntar mas en esta sesion")
-        print()
-        print(f"  Timeout: {effective_timeout}s (denegado automaticamente)")
-        print("=" * 65)
-        print()
+            logger.info(f"    | {line}")
+        logger.info()
+        logger.info("-" * 65)
+        logger.info("  Opciones:")
+        logger.info("    [Y] Aprobar — Permitir la ejecucion")
+        logger.info("    [N] Rechazar — Bloquear + feedback opcional al agente")
+        logger.info("    [S] Saltar — No preguntar mas en esta sesion")
+        logger.info()
+        logger.info(f"  Timeout: {effective_timeout}s (denegado automaticamente)")
+        logger.info("=" * 65)
+        logger.info()
 
         # Read user input with timeout
         start = time.time()
@@ -200,14 +200,14 @@ class HITLGuard:
 
         if answer == "y":
             approved = True
-            print("  ✅ Accion APROBADA.")
+            logger.info("  ✅ Accion APROBADA.")
         elif answer == "s":
             self._skip_all = True
             approved = True
-            print("  ⏭️  Modo 'Saltar sesion' activado. No se preguntara mas.")
+            logger.info("  ⏭️  Modo 'Saltar sesion' activado. No se preguntara mas.")
         elif answer == "n":
             approved = False
-            print("  ❌ Accion RECHAZADA.")
+            logger.info("  ❌ Accion RECHAZADA.")
             try:
                 user_feedback = input("  Feedback opcional para el agente: ").strip()
             except (EOFError, KeyboardInterrupt):
@@ -215,7 +215,7 @@ class HITLGuard:
         else:
             # Timeout or invalid input → deny (fail-safe)
             approved = False
-            print("  ⏰ Timeout o entrada invalida. Accion DENEGADA (fail-safe).")
+            logger.info("  ⏰ Timeout o entrada invalida. Accion DENEGADA (fail-safe).")
 
         # Log to vector store
         self._log_approval(action, agent_role, approved, user_feedback)
@@ -388,6 +388,7 @@ except ImportError:
     class _SelectFallback:
         @staticmethod
         def select(rlist, wlist, xlist, timeout):
+            """Select."""
             return [], [], []
 
     select = _SelectFallback()

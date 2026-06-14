@@ -43,10 +43,12 @@ class Message:
     timestamp: str = ""
 
     def __post_init__(self) -> None:
+        """Post init."""
         if not self.timestamp:
             self.timestamp = datetime.now(timezone.utc).isoformat()
 
     def to_dict(self) -> Dict[str, str]:
+        """To dict."""
         return {
             "role": self.role,
             "content": self.content,
@@ -92,13 +94,14 @@ class CliGateway(MessageGateway):
     """
 
     def __init__(self) -> None:
+        """Inicializa la instancia de la clase."""
         self._buffer: List[Message] = []
 
     def send(self, message: Message) -> bool:
         """Write a message to stdout."""
         try:
             prefix = f"[{message.channel}] {message.role}:"
-            print(f"{prefix} {message.content}", file=sys.stdout, flush=True)
+            logger.info(f"{prefix} {message.content}", file=sys.stdout, flush=True)
             return True
         except OSError as exc:
             logger.error("CLI send failed: %s", exc)
@@ -123,6 +126,7 @@ class CliGateway(MessageGateway):
         return []
 
     def is_active(self) -> bool:
+        """Is active."""
         return True
 
 
@@ -139,6 +143,7 @@ class SlackGateway(MessageGateway):
     """
 
     def __init__(self, token: str = "", channel: str = "#dev") -> None:
+        """Inicializa la instancia de la clase."""
         self._token = token
         self._channel = channel
         self._client: Any = None
@@ -174,6 +179,7 @@ class SlackGateway(MessageGateway):
             self._active = False
 
     def send(self, message: Message) -> bool:
+        """Send."""
         if not self._active or self._client is None:
             return False
         try:
@@ -188,6 +194,7 @@ class SlackGateway(MessageGateway):
             return False
 
     def receive(self) -> List[Message]:
+        """Receive."""
         if not self._active or self._client is None:
             return []
         try:
@@ -210,6 +217,7 @@ class SlackGateway(MessageGateway):
             return []
 
     def is_active(self) -> bool:
+        """Is active."""
         return self._active
 
 
@@ -226,6 +234,7 @@ class TelegramGateway(MessageGateway):
     """
 
     def __init__(self, token: str = "", chat_id: str = "") -> None:
+        """Inicializa la instancia de la clase."""
         self._token = token
         self._chat_id = chat_id
         self._active = bool(token) and bool(chat_id)
@@ -243,6 +252,7 @@ class TelegramGateway(MessageGateway):
             )
 
     def send(self, message: Message) -> bool:
+        """Send."""
         if not self._active:
             return False
         try:
@@ -267,6 +277,7 @@ class TelegramGateway(MessageGateway):
             return False
 
     def receive(self) -> List[Message]:
+        """Receive."""
         if not self._active:
             return []
         try:
@@ -295,6 +306,7 @@ class TelegramGateway(MessageGateway):
             return []
 
     def is_active(self) -> bool:
+        """Is active."""
         return self._active
 
 
@@ -379,6 +391,7 @@ class GatewayManager:
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        """Inicializa la instancia de la clase."""
         self._config = config or load_gateway_config()
         self._gateways: Dict[str, MessageGateway] = {}
         self._init_gateways()

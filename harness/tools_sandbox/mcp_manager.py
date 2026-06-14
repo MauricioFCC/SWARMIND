@@ -69,6 +69,7 @@ class MCPManager:
     """
 
     def __init__(self):
+        """Inicializa la instancia de la clase."""
         self._servers: Dict[str, MCPServerConfig] = {}
         self._clients: Dict[str, MCPClient] = {}
         self._tool_index: Dict[str, MCPTool] = {}  # tool_name -> MCPTool

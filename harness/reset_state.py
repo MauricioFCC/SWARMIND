@@ -14,13 +14,17 @@ import os
 import shutil
 import sys
 from pathlib import Path
+import logging
+logger = logging.getLogger(__name__)
 
 
 def banner(msg: str) -> None:
-    print(f"  {msg}")
+    """Banner."""
+    logger.info(f"  {msg}")
 
 
 def rm_dir(path: Path) -> None:
+    """Rm dir."""
     if path.exists() and path.is_dir():
         shutil.rmtree(path)
         banner(f"Eliminado: {path}")
@@ -29,6 +33,7 @@ def rm_dir(path: Path) -> None:
 
 
 def rm_file(path: Path) -> None:
+    """Rm file."""
     if path.exists() and path.is_file():
         path.unlink()
         banner(f"Eliminado: {path}")
@@ -70,11 +75,12 @@ def clean_pycache(root: Path) -> None:
 
 
 def main() -> None:
+    """Main."""
     project_root = Path(__file__).resolve().parent.parent  # AGENTIC/
 
-    print()
+    logger.info()
     banner("[Harness reset] Limpiando estado...")
-    print()
+    logger.info()
 
     # 1. Vector database (new name)
     rm_dir(project_root / "harness" / "db" / "lancedb")
@@ -105,12 +111,12 @@ def main() -> None:
     clean_pycache(project_root / "harness")
     clean_pycache(project_root / ".opencode")
 
-    print()
+    logger.info()
     banner("[OK] Harness resetado. Listo para pegar en nuevo proyecto.")
-    print()
+    logger.info()
     banner("Proximo paso: copia harness/ y .opencode/ a tu proyecto")
     banner("y ejecuta: python harness/scripts/init.py")
-    print()
+    logger.info()
 
 
 if __name__ == "__main__":

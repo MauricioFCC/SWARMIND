@@ -21,6 +21,7 @@ class TokenBudget:
     
     @property
     def available_for_content(self) -> int:
+        """Available for content."""
         return self.total - self.buffer - sum([
             self.system_prompt, self.context, 
             self.user_message, self.response_format
@@ -392,7 +393,7 @@ def _load_principles_from_file() -> Tuple[Dict[str, List[str]], Dict[str, List[s
 # Cache para evitar re-lectura
 _PRINCIPLES_CACHE: Optional[Tuple] = None
 
-def _get_principles_cached():
+def _get_principles_cached() -> Any:
     global _PRINCIPLES_CACHE
     if _PRINCIPLES_CACHE is None:
         _PRINCIPLES_CACHE = _load_principles_from_file()

@@ -32,6 +32,7 @@ _DEFAULT_JOBS_PATH = os.path.join(
 
 @dataclass
 class ScheduledJob:
+    """ScheduledJob."""
     name: str
     cron_expr: str
     task_description: str
@@ -44,10 +45,12 @@ class ScheduledJob:
     )
 
     def to_dict(self) -> Dict[str, Any]:
+        """To dict."""
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ScheduledJob":
+        """From dict."""
         return cls(**data)
 
 
@@ -59,6 +62,7 @@ class TaskScheduler:
     """
 
     def __init__(self, jobs_path: str = "") -> None:
+        """Inicializa la instancia de la clase."""
         self._jobs_path: str = jobs_path or _DEFAULT_JOBS_PATH
         self._jobs: Dict[str, ScheduledJob] = {}
         self._running: bool = False

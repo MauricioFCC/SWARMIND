@@ -54,6 +54,7 @@ class SkillGenerator:
     """
 
     def __init__(self, vector_store: Optional[LanceVectorStore] = None) -> None:
+        """Inicializa la instancia de la clase."""
         self._vector_store = vector_store
         os.makedirs(str(AUTO_SKILLS_DIR), exist_ok=True)
 

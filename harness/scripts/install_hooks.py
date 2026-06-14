@@ -21,6 +21,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
+import logging
+logger = logging.getLogger(__name__)
 
 HERE = Path(__file__).resolve().parent
 HARNESS_ROOT = HERE.parent
@@ -63,7 +65,7 @@ def _run_pre_commit():
     # Path to the end_of_iteration script
     eoi_script = _PROJECT_ROOT / "harness" / "scripts" / "end_of_iteration.py"
     if not eoi_script.exists():
-        print("[pre-commit] end_of_iteration.py not found, skipping.")
+        logger.info("[pre-commit] end_of_iteration.py not found, skipping.")
         return 0
 
     # Run the pre-commit pipeline
@@ -76,28 +78,28 @@ def _run_pre_commit():
             cwd=str(_PROJECT_ROOT),
         )
     except subprocess.TimeoutExpired:
-        print("[pre-commit] Timeout (>5s). Allowing commit.")
-        print("[pre-commit] Run `python harness/scripts/end_of_iteration.py` separately.")
+        logger.info("[pre-commit] Timeout (>5s). Allowing commit.")
+        logger.info("[pre-commit] Run `python harness/scripts/end_of_iteration.py` separately.")
         return 0
     elapsed = time.time() - start
 
     # Print output (but not excessively)
     for line in result.stdout.splitlines():
-        print("[pre-commit]", line)
+        logger.info("[pre-commit]", line)
     for line in result.stderr.splitlines():
-        print("[pre-commit]", line)
+        logger.info("[pre-commit]", line)
 
     if result.returncode == 0:
-        print("[pre-commit] OK ({:.2f}s)".format(elapsed))
+        logger.info("[pre-commit] OK ({:.2f}s)".format(elapsed))
         return 0
     elif result.returncode == 2:
         # Warnings only - allow commit
-        print("[pre-commit] Warnings found ({:.2f}s). Use --no-verify to skip.".format(elapsed))
+        logger.info("[pre-commit] Warnings found ({:.2f}s). Use --no-verify to skip.".format(elapsed))
         return 0
     else:
         # Critical issues - abort
-        print("[pre-commit] CRITICAL issues found ({:.2f}s). Aborting commit.".format(elapsed))
-        print("[pre-commit] Fix issues or use `git commit --no-verify` to skip.")
+        logger.info("[pre-commit] CRITICAL issues found ({:.2f}s). Aborting commit.".format(elapsed))
+        logger.info("[pre-commit] Fix issues or use `git commit --no-verify` to skip.")
         return 1
 
 if __name__ == "__main__":
@@ -105,7 +107,7 @@ if __name__ == "__main__":
         exit_code = _run_pre_commit()
         sys.exit(exit_code)
     except Exception as e:
-        print("[pre-commit] Error: {}. Allowing commit.".format(e))
+        logger.info("[pre-commit] Error: {}. Allowing commit.".format(e))
         sys.exit(0)
 '''
 
@@ -141,7 +143,7 @@ def _cyan(msg: str) -> str:
 def _safe_print(*args, **kwargs) -> None:
     """Print with Unicode fallback: replaces non-encodable chars."""
     try:
-        print(*args, **kwargs)
+        logger.info(*args, **kwargs)
     except UnicodeEncodeError:
         safe_args = []
         for arg in args:
@@ -157,7 +159,7 @@ def _safe_print(*args, **kwargs) -> None:
                        .replace("\u2026", "...")
                        .replace("\u00a0", " "))
             safe_args.append(arg)
-        print(*safe_args, **kwargs)
+        logger.info(*safe_args, **kwargs)
 
 
 def _is_git_repo() -> bool:
@@ -211,7 +213,7 @@ def _get_last_run_info() -> Optional[str]:
 def install_hook() -> bool:
     """Install the pre-commit hook."""
     if not _is_git_repo():
-        print(f"  {_err('[ERROR]')} No es un repositorio Git: {PROJECT_ROOT}")
+        logger.info(f"  {_err('[ERROR]')} No es un repositorio Git: {PROJECT_ROOT}")
         return False
 
     # Ensure hooks directory exists
@@ -253,7 +255,7 @@ def install_hook() -> bool:
 def uninstall_hook() -> bool:
     """Uninstall the pre-commit hook and restore backup if available."""
     if not _is_git_repo():
-        print(f"  {_err('[ERROR]')} No es un repositorio Git: {PROJECT_ROOT}")
+        logger.info(f"  {_err('[ERROR]')} No es un repositorio Git: {PROJECT_ROOT}")
         return False
 
     if not HOOK_PATH.exists() and not BACKUP_PATH.exists():
@@ -302,7 +304,7 @@ def show_status() -> None:
     backup_exists = BACKUP_PATH.exists()
     is_git = _is_git_repo()
 
-    print()
+    logger.info()
     _safe_print(f"  {_bold('Estado del Hook Pre-Commit')}")
     _safe_print(f"  {'-' * 50}")
 
@@ -344,6 +346,7 @@ def show_status() -> None:
 
 
 def main() -> None:
+    """Main."""
     parser = argparse.ArgumentParser(
         description="Install/Uninstall/Check Git pre-commit hook for Agentic Harness",
     )

@@ -65,6 +65,7 @@ def _slug(text: str) -> str:
 
 @dataclass
 class Chunk:
+    """Chunk."""
     text: str
     source_file: str
     start_line: int
@@ -75,6 +76,7 @@ class Chunk:
     vector: Optional[np.ndarray] = None
 
     def to_metadata(self) -> Dict[str, Any]:
+        """To metadata."""
         return {
             "source_file": self.source_file,
             "start_line": self.start_line,
@@ -96,6 +98,7 @@ class DocumentChunker:
         overlap: int = 3,
         embedding_fn=None,
     ) -> None:
+        """Inicializa el chunker con tamano de chunk y solapamiento."""
         self.chunk_size = chunk_size
         self.overlap = overlap
         self._embedding_fn = embedding_fn or self._default_embedding
@@ -194,13 +197,13 @@ def _ensure_lancedb() -> None:
     try:
         import lancedb  # noqa: F401
     except ImportError:
-        print("=" * 60)
-        print("  LanceDB REQUERIDO para ingestion de documentos.")
-        print("=" * 60)
-        print()
-        print("  Ejecuta:  pip install lancedb")
-        print("  O bien:   python harness/scripts/init.py")
-        print("=" * 60)
+        logger.info("=" * 60)
+        logger.info("  LanceDB REQUERIDO para ingestion de documentos.")
+        logger.info("=" * 60)
+        logger.info()
+        logger.info("  Ejecuta:  pip install lancedb")
+        logger.info("  O bien:   python harness/scripts/init.py")
+        logger.info("=" * 60)
         raise ImportError(
             "LanceDB no instalado. Es requerido para ingest_directory()."
         )
@@ -274,6 +277,6 @@ if __name__ == "__main__":
     chunker = DocumentChunker(chunk_size=25, overlap=3)
 
     dirs_to_scan = ["docs", "harness", ".opencode"]
-    print(f"Ingestando documentos desde: {dirs_to_scan}")
+    logger.info(f"Ingestando documentos desde: {dirs_to_scan}")
     stats = ingest_directory(store, dirs_to_scan, chunker)
-    print(f"Resultados: {stats}")
+    logger.info(f"Resultados: {stats}")

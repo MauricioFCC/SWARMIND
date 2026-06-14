@@ -8,6 +8,8 @@ from __future__ import annotations
 import sys
 import subprocess
 from typing import Optional
+import logging
+logger = logging.getLogger(__name__)
 
 
 def check_ollama() -> bool:
@@ -26,19 +28,19 @@ def check_ollama() -> bool:
             timeout=5,
         )
         if result.returncode != 0:
-            print("❌ Ollama CLI encontrado pero no responde correctamente.")
+            logger.info("❌ Ollama CLI encontrado pero no responde correctamente.")
             return False
         version = result.stdout.strip()
-        print(f"✅ Ollama CLI detectado: {version}")
+        logger.info(f"✅ Ollama CLI detectado: {version}")
     except FileNotFoundError:
-        print("❌ Ollama no encontrado en el PATH.")
-        print("   Instalalo desde: https://ollama.com")
+        logger.info("❌ Ollama no encontrado en el PATH.")
+        logger.info("   Instalalo desde: https://ollama.com")
         return False
     except subprocess.TimeoutExpired:
-        print("❌ Ollama CLI no respondio en 5s.")
+        logger.info("❌ Ollama CLI no respondio en 5s.")
         return False
     except Exception as exc:
-        print(f"❌ Error al verificar Ollama: {exc}")
+        logger.info(f"❌ Error al verificar Ollama: {exc}")
         return False
 
     # Step 2: Check if Ollama service is running (API accessible)
@@ -50,31 +52,31 @@ def check_ollama() -> bool:
             data = resp.json()
             models = data.get("models", [])
             if models:
-                print(f"✅ Ollama API activa — {len(models)} modelo(s) disponible(s):")
+                logger.info(f"✅ Ollama API activa — {len(models)} modelo(s) disponible(s):")
                 for m in models:
                     name = m.get("name", "?")
                     size = m.get("size", 0)
                     size_mb = size / (1024 * 1024)
-                    print(f"   • {name} ({size_mb:.1f} MB)")
+                    logger.info(f"   • {name} ({size_mb:.1f} MB)")
             else:
-                print("✅ Ollama API activa — No hay modelos descargados.")
-                print("   Descarga uno: ollama pull llama3")
+                logger.info("✅ Ollama API activa — No hay modelos descargados.")
+                logger.info("   Descarga uno: ollama pull llama3")
             return True
         else:
-            print(f"❌ Ollama API respondio con codigo {resp.status_code}")
+            logger.info(f"❌ Ollama API respondio con codigo {resp.status_code}")
             return False
     except ImportError:
-        print("⚠️  requests no instalado. No se puede verificar API Ollama.")
-        print("   Instala: pip install requests")
+        logger.info("⚠️  requests no instalado. No se puede verificar API Ollama.")
+        logger.info("   Instala: pip install requests")
         # CLI check passed, assume API is up
         return True
     except requests.ConnectionError:
-        print("❌ Ollama API no accesible en http://localhost:11434")
-        print("   ¿El servicio de Ollama esta corriendo?")
-        print("   Ejecuta: ollama serve")
+        logger.info("❌ Ollama API no accesible en http://localhost:11434")
+        logger.info("   ¿El servicio de Ollama esta corriendo?")
+        logger.info("   Ejecuta: ollama serve")
         return False
     except Exception as exc:
-        print(f"❌ Error al verificar API Ollama: {exc}")
+        logger.info(f"❌ Error al verificar API Ollama: {exc}")
         return False
 
     return True
@@ -96,23 +98,23 @@ def list_local_models() -> list[str]:
 
 def main() -> None:
     """CLI entry point."""
-    print()
-    print("=" * 50)
-    print("  Ollama Health Check")
-    print("=" * 50)
-    print()
+    logger.info()
+    logger.info("=" * 50)
+    logger.info("  Ollama Health Check")
+    logger.info("=" * 50)
+    logger.info()
 
     available = check_ollama()
 
-    print()
+    logger.info()
     if available:
-        print("✅ Estado: OLLAMA DISPONIBLE")
-        print("   El ModelRouter puede usar modo LOCAL.")
+        logger.info("✅ Estado: OLLAMA DISPONIBLE")
+        logger.info("   El ModelRouter puede usar modo LOCAL.")
     else:
-        print("❌ Estado: OLLAMA NO DISPONIBLE")
-        print("   El ModelRouter usara solo modo CLOUD.")
-        print("   Para modo local: https://ollama.com")
-    print()
+        logger.info("❌ Estado: OLLAMA NO DISPONIBLE")
+        logger.info("   El ModelRouter usara solo modo CLOUD.")
+        logger.info("   Para modo local: https://ollama.com")
+    logger.info()
 
     return 0 if available else 1
 

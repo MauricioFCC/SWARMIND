@@ -77,6 +77,7 @@ class ScheduledJob:
         last_run: str = "",
         next_run: str = "",
     ) -> None:
+        """Inicializa el job con nombre, trigger y comando."""
         self.name = name
         self.trigger = trigger
         self.trigger_value = trigger_value
@@ -87,6 +88,7 @@ class ScheduledJob:
         self.next_run = next_run
 
     def to_dict(self) -> Dict[str, Any]:
+        """To dict."""
         return {
             "name": self.name,
             "trigger": self.trigger,
@@ -100,6 +102,7 @@ class ScheduledJob:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> ScheduledJob:
+        """From dict."""
         return cls(
             name=data.get("name", ""),
             trigger=data.get("trigger", ""),
@@ -126,6 +129,7 @@ class Scheduler:
     """
 
     def __init__(self, vector_store: Optional[LanceVectorStore] = None) -> None:
+        """Inicializa la instancia de la clase."""
         self._vector_store = vector_store
         self._jobs: Dict[str, ScheduledJob] = {}
         self._running = False

@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MutantPrompt:
+    """MutantPrompt."""
     id: str
     source_agent: str
     original_prompt: str
@@ -30,6 +31,7 @@ class MutantPrompt:
     created_at: str = ""
 
     def __post_init__(self):
+        """Post init."""
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
 
@@ -63,6 +65,7 @@ class GEPAMutator:
     """
 
     def __init__(self, seed: Optional[int] = None) -> None:
+        """Inicializa la instancia de la clase."""
         self.rng = random.Random(seed)
         self._mutation_log: List[Dict[str, Any]] = []
 
@@ -315,4 +318,5 @@ class GEPAMutator:
         )
 
     def get_mutation_log(self) -> List[Dict[str, Any]]:
+        """Get mutation log."""
         return list(self._mutation_log)

@@ -20,7 +20,7 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Constants
+# Constants & Schemas (extracted to lance_schemas.py for file size)
 # ---------------------------------------------------------------------------
 
 LANCEDB_ROOT = os.path.join(
@@ -29,123 +29,7 @@ LANCEDB_ROOT = os.path.join(
     "lancedb",
 )
 
-DEFAULT_COLLECTIONS = {
-    "tasks_board": {
-        "description": "Task assignments, statuses, and agent routing records",
-        "schema": {
-            "id": "string",
-            "agent": "string",
-            "task": "string",
-            "status": "string",
-            "vector": "list<float>",
-            "metadata": "dict",
-            "created_at": "string",
-        },
-    },
-    "rag_chunks": {
-        "description": "Knowledge chunks retrieved for RAG-enhanced inference",
-        "schema": {
-            "id": "string",
-            "domain": "string",
-            "chunk": "string",
-            "vector": "list<float>",
-            "metadata": "dict",
-            "created_at": "string",
-        },
-    },
-    "asi_cognition_store": {
-        "description": "Lessons, insights, and cognition artifacts from evolve loops",
-        "schema": {
-            "id": "string",
-            "title": "string",
-            "content": "string",
-            "domain": "string",
-            "tags": "list<string>",
-            "metrics": "dict",
-            "vector": "list<float>",
-            "created_at": "string",
-        },
-    },
-    "agent_workspace_logs": {
-        "description": "Message bus / Slack channels for inter-agent communication",
-        "schema": {
-            "id": "string",
-            "channel": "string",
-            "thread_id": "string",
-            "from_agent": "string",
-            "to_agent": "string",
-            "message": "string",
-            "message_type": "string",
-            "status": "string",
-            "task_id": "string",
-            "iteration": "int",
-            "attachments": "list<string>",
-            "vector": "list<float>",
-            "metadata": "dict",
-            "created_at": "string",
-        },
-    },
-    "procedural_skills": {
-        "description": "Auto-generated procedural skills from successful multi-step tasks",
-        "schema": {
-            "id": "string",
-            "name": "string",
-            "domain": "string",
-            "agent": "string",
-            "trigger": "string",
-            "steps_text": "string",
-            "vector": "list<float>",
-            "metadata": "dict",
-            "created_at": "string",
-        },
-    },
-    "prompt_evolution_log": {
-        "description": "History of prompt mutations and promotions from the PromptEvolver",
-        "schema": {
-            "id": "string",
-            "agent": "string",
-            "mutation_type": "string",
-            "test_task": "string",
-            "tokens_before": "int",
-            "tokens_after": "int",
-            "success": "bool",
-            "promoted": "bool",
-            "timestamp": "string",
-            "vector": "list<float>",
-            "metadata": "dict",
-            "created_at": "string",
-        },
-    },
-    "scheduler_log": {
-        "description": "Execution log for scheduled jobs",
-        "schema": {
-            "id": "string",
-            "job_name": "string",
-            "trigger": "string",
-            "status": "string",
-            "duration_ms": "int",
-            "error": "string",
-            "timestamp": "string",
-            "vector": "list<float>",
-            "metadata": "dict",
-            "created_at": "string",
-        },
-    },
-    "hitl_approval_log": {
-        "description": "Human-in-the-Loop approval decisions for destructive actions",
-        "schema": {
-            "id": "string",
-            "agent_role": "string",
-            "action": "string",
-            "approved": "bool",
-            "user_feedback": "string",
-            "mode": "string",
-            "vector": "list<float>",
-            "metadata": "dict",
-            "created_at": "string",
-        },
-    },
-}
+from .lance_schemas import DEFAULT_COLLECTIONS  # noqa: E402
 
 # Collection name constants for external consumption
 COLLECTION_PROCEDURAL_SKILLS = "procedural_skills"
@@ -210,6 +94,7 @@ class LanceVectorStore:
         db_path: Optional[str] = None,
         allow_fallback: bool = False,
     ) -> None:
+        """Inicializa el vector store con conexion a LanceDB."""
         self.db_path = db_path or LANCEDB_ROOT
         self._lancedb_available = False
         self._db: Any = None  # LanceDB connection or None

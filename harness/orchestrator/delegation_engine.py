@@ -122,6 +122,7 @@ class DelegationEngine:
     """
 
     def __init__(self, task_manager: Optional[TaskManager] = None) -> None:
+        """Inicializa la instancia de la clase."""
         self._task_manager: Optional[TaskManager] = task_manager
         self._routing_rules: Dict[str, Any] = {}
         self._intent_map: Dict[str, str] = dict(_DEFAULT_INTENT_AGENTS)

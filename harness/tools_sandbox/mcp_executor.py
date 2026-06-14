@@ -42,6 +42,7 @@ class SandboxResult:
     exit_code: int = -1
 
     def to_dict(self) -> Dict[str, Any]:
+        """To dict."""
         return {
             "success": self.success,
             "output": self.output,
@@ -72,7 +73,7 @@ class MCPExecutor:
             {"test_path": "tests/test_foo.py", "args": ["-v"]},
         )
         if result.success:
-            print(result.output)
+            logger.info(result.output)
     """
 
     def __init__(

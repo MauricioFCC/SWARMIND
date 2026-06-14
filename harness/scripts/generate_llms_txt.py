@@ -10,6 +10,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Dict, List, Optional, Set
+import logging
+logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parent.parent.parent  # AGENTIC/
 DOCS_DIR = ROOT / "harness" / "docs"
@@ -199,7 +201,7 @@ def generate_llms_txt() -> str:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     with open(str(LLMS_TXT), "w", encoding="utf-8") as f:
         f.write(content)
-    print(f"[OK] {LLMS_TXT} — {len(content)} caracteres")
+    logger.info(f"[OK] {LLMS_TXT} — {len(content)} caracteres")
 
     return content
 
@@ -242,7 +244,7 @@ def generate_llms_full_txt() -> str:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     with open(str(LLMS_FULL_TXT), "w", encoding="utf-8") as f:
         f.write(full)
-    print(f"[OK] {LLMS_FULL_TXT} — {len(full)} caracteres, ~{estimated_tokens} tokens estimados")
+    logger.info(f"[OK] {LLMS_FULL_TXT} — {len(full)} caracteres, ~{estimated_tokens} tokens estimados")
 
     return full
 
@@ -283,8 +285,8 @@ def _get_title(filepath: Path) -> str:
 
 
 if __name__ == "__main__":
-    print("Generando docs/llms.txt y docs/llms-full.txt...")
-    print(f"Escaneando: {ROOT}")
+    logger.info("Generando docs/llms.txt y docs/llms-full.txt...")
+    logger.info(f"Escaneando: {ROOT}")
     generate_llms_txt()
     generate_llms_full_txt()
-    print("Done.")
+    logger.info("Done.")

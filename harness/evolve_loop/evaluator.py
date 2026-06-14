@@ -185,6 +185,7 @@ class FullEvaluation:
     overall: float  # average of the four scores
 
     def to_dict(self) -> Dict[str, any]:
+        """To dict."""
         return {
             "clarify": {
                 "score": self.clarify.score,
@@ -224,6 +225,7 @@ class CASEEvaluator:
     """
 
     def __init__(self) -> None:
+        """Inicializa la instancia de la clase."""
         self._clarify_markers = _CLARIFY_MARKERS
         self._architect_markers = _ARCHITECT_MARKERS
         self._solve_markers = _SOLVE_MARKERS

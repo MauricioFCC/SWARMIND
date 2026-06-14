@@ -27,6 +27,7 @@ AUTO_SKILLS_DIR = os.path.join(
 
 @dataclass
 class ProceduralSkill:
+    """ProceduralSkill."""
     name: str
     description: str
     steps: List[str]
@@ -37,10 +38,12 @@ class ProceduralSkill:
     version: int = 1
 
     def __post_init__(self):
+        """Post init."""
         if not self.created_at:
             self.created_at = datetime.now(timezone.utc).isoformat()
 
     def to_markdown(self) -> str:
+        """To markdown."""
         lines = [
             f"# {self.name}",
             f"",
@@ -70,6 +73,7 @@ class ProceduralMemory:
     """
 
     def __init__(self, skills_dir: str = "") -> None:
+        """Inicializa la instancia de la clase."""
         self._skills_dir = skills_dir or AUTO_SKILLS_DIR
         os.makedirs(self._skills_dir, exist_ok=True)
         self._skills: Dict[str, ProceduralSkill] = {}
@@ -177,9 +181,11 @@ class ProceduralMemory:
         return None
 
     def list_skills(self) -> List[ProceduralSkill]:
+        """List skills."""
         return list(self._skills.values())
 
     def get_skills_for_agent(self, agent: str) -> List[ProceduralSkill]:
+        """Get skills for agent."""
         return [s for s in self._skills.values() if s.agent == agent]
 
     def should_auto_register(self, tool_call_count: int, success: bool) -> bool:

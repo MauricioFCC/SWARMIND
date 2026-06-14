@@ -3,13 +3,14 @@ Skill Registry with semantic versioning, contracts & dependency tracking.
 Enterprise pattern for managing AI agent skills with validation.
 """
 from dataclasses import dataclass, field
-from typing import Dict, Optional, List, Any
+from typing import Dict, Optional, List, Any, Set
 from enum import Enum
 import json
 import re
 
 
 class SkillStatus(Enum):
+    """SkillStatus."""
     ACTIVE = "active"
     DEPRECATED = "deprecated"
     EXPERIMENTAL = "experimental"
@@ -59,6 +60,7 @@ class SkillRegistry:
     """Registro centralizado de skills con validación de contratos y versionado."""
     
     def __init__(self, schema_path: Optional[str] = None):
+        """Inicializa la instancia de la clase."""
         self._skills: Dict[str, SkillContract] = {}
         self._versions: Dict[str, List[str]] = {}
         self._schema_path = schema_path
@@ -198,22 +200,32 @@ class SkillRegistry:
         return isinstance(value, expected_type)
     
     def get_dependency_graph(self, skill_name: str) -> Dict[str, List[str]]:
-        """Obtiene el grafo de dependencias para un skill."""
-        graph = {}
-        visited = set()
-        
-        def _traverse(name: str):
-            if name in visited:
-                return
-            visited.add(name)
-            contract = self.get(name)
-            if contract:
-                graph[name] = contract.dependencies
-                for dep in contract.dependencies:
-                    _traverse(dep)
-        
-        _traverse(skill_name)
+        """Obtiene el grafo de dependencias para un skill.
+
+        Returns un diccionario con las dependencias transitivas del skill
+        especificado. Si el skill no existe, retorna un dict vacio.
+        """
+        graph: Dict[str, List[str]] = {}
+        visited: Set[str] = set()
+        self._traverse_deps(skill_name, graph, visited)
         return graph
+
+    def _traverse_deps(self, name: str, graph: Dict[str, List[str]], visited: Set[str]) -> None:
+        """Recorre recursivamente las dependencias de un skill.
+
+        Args:
+            name: Nombre del skill a recorrer.
+            graph: Diccionario acumulador del grafo de dependencias.
+            visited: Conjunto de skills ya visitados (evita ciclos).
+        """
+        if name in visited:
+            return
+        visited.add(name)
+        contract = self.get(name)
+        if contract:
+            graph[name] = contract.dependencies
+            for dep in contract.dependencies:
+                self._traverse_deps(dep, graph, visited)
 
 
 # Instancia global del registry

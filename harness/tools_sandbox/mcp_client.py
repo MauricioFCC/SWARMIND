@@ -98,6 +98,7 @@ class MCPClient:
     """
 
     def __init__(self, default_timeout: int = DEFAULT_TIMEOUT):
+        """Inicializa la instancia de la clase."""
         self._server_url: Optional[str] = None
         self._connected: bool = False
         self._default_timeout = default_timeout
