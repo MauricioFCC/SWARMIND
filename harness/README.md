@@ -159,6 +159,27 @@ python harness/run.py '!db list-imports'                                # Listar
 python harness/run.py '!db stats'                                       # Estadisticas de BD activa
 python harness/run.py '!db rollback <backup>'                           # Restaurar desde backup
 
+# ─── Fin de Iteracion ───
+python harness/run.py '!iteration end'                                  # Pipeline completo
+python harness/run.py '!iteration end --dry-run'                        # Simulacion
+python harness/run.py '!iteration end --skip-bugs'                      # Salta bug hunting
+python harness/run.py '!iteration end --skip-sec'                       # Salta security
+python harness/run.py '!iteration end --skip-docs'                      # Salta docs
+python harness/run.py '!iteration report'                               # Ultimo reporte
+python harness/scripts/end_of_iteration.py                              # Directo (sin run.py)
+python harness/scripts/end_of_iteration.py --dry-run                    # Directo dry-run
+python harness/scripts/end_of_iteration.py --report                     # Directo reporte
+python harness/scripts/end_of_iteration.py --pre-commit                 # Modo pre-commit (staged files)
+python harness/scripts/end_of_iteration.py --watch                      # Modo watch (fases 1,2,4)
+
+# --- Pre-commit Hook ---
+python harness/run.py '!hooks install'                                  # Instala pre-commit hook
+python harness/run.py '!hooks uninstall'                                # Desinstala pre-commit hook
+python harness/run.py '!hooks status'                                   # Muestra estado del hook
+
+# --- Watch Mode ---
+python harness/run.py --watch                                           # Monitorea cambios en tiempo real
+
 # ─── Utilidades ───
 python harness/reset_state.py                                           # Resetear estado
 python harness/scripts/check_ollama.py                                  # Health check Ollama
@@ -173,6 +194,7 @@ python harness/scripts/check_ollama.py                                  # Health
 | `--auto-pilot` | Desactiva HITL (solo entornos de confianza) |
 | `--hitl-sensitive` | HITL solo para acciones criticas |
 | `--daemon` | Inicia scheduler en background |
+| `--watch` | Monitorea cambios en `harness/` y `.opencode/` en tiempo real |
 | `--gateway <type>` | Modo gateway (cli, slack, telegram) |
 | `!db migrate` | Migra BDs desde `harness/db/import/` |
 | `!db migrate --path <ruta>` | Migra una BD especifica |
@@ -183,6 +205,199 @@ python harness/scripts/check_ollama.py                                  # Health
 | `!schedule add <n> --cron "<c>" --task "<t>"` | Programa job recurrente (cron) |
 | `!schedule add <n> --interval "30m" --task "<t>"` | Programa job por intervalo |
 | `!schedule list` | Lista jobs programados |
+| `!iteration end` | Pipeline fin de iteracion (bugs, security, docs, tokens, commit) |
+| `!iteration end --dry-run` | Simulacion del pipeline |
+| `!iteration end --skip-bugs` | Salta bug hunting |
+| `!iteration end --skip-sec` | Salta security review |
+| `!iteration end --skip-docs` | Salta docs update |
+| `!iteration report` | Muestra ultimo reporte de iteracion |
+| `!hooks install` | Instala pre-commit hook con pipeline automatico |
+| `!hooks uninstall` | Desinstala pre-commit hook |
+| `!hooks status` | Muestra estado del pre-commit hook |
+
+---
+
+## Workflow de Fin de Iteración
+
+El pipeline `!iteration end` automatiza el cierre de cada ciclo de desarrollo,
+ejecutando 5 fases secuenciales sobre los archivos modificados desde el último commit.
+
+### Uso
+
+```bash
+# Pipeline completo (bugs → security → docs → tokens → commit)
+python harness/run.py '!iteration end'
+
+# Simulación (no modifica nada)
+python harness/run.py '!iteration end --dry-run'
+
+# Saltar fases específicas
+python harness/run.py '!iteration end --skip-bugs'
+python harness/run.py '!iteration end --skip-sec'
+python harness/run.py '!iteration end --skip-docs'
+
+# Ver el último reporte guardado
+python harness/run.py '!iteration report'
+```
+
+O directamente:
+
+```bash
+python harness/scripts/end_of_iteration.py
+python harness/scripts/end_of_iteration.py --dry-run
+python harness/scripts/end_of_iteration.py --skip-bugs
+python harness/scripts/end_of_iteration.py --report
+```
+
+### Fases del Pipeline
+
+| Fase | Acción | Descripción |
+|------|--------|-------------|
+| 🔍 Bug Hunting | Escanea `git diff` en busca de bugs comunes | `except: pass`, `print()` en vez de logging, `TODO`/`FIXME`/`HACK`, funciones sin docstring/type hints, archivos >500 líneas |
+| 🛡️ Security Review | Revisa seguridad en archivos modificados | API keys/tokens hardcodeados, `eval()`/`exec()`, `shell=True`, HTTP URLs, `os.system()` |
+| 📄 Docs Update | Actualiza documentación según cambios | `memory_rag/` → regenera `llms.txt`, `model_router/` u `orchestrator/` → avisa actualizar `README.md`, `.opencode/agents/` → avisa actualizar `AGENTS.md` |
+| 💰 Token Report | Reporta consumo estimado de tokens | Líneas diff → tokens (~4 chars/token), ahorro por routing (~65%), ahorro por skills (~60%), costo estimado ($0 si todo local) |
+| 📝 Commit Seguro | Prepara commit con mensaje estructurado | Verifica `.env` no en staging, verifica sin secretos en diff, muestra mensaje, pregunta `¿Commit? [Y/n/--edit]` |
+
+### Formato del mensaje de commit
+
+```
+<tipo>: <resumen>
+
+- Bug fixes: X corregidos, Y pendientes
+- Security: Z hallazgos (0 critical)
+- Docs: actualizados [lista]
+- Tokens: ~X input / ~Y output
+```
+
+**Tipos:** `feat`, `fix`, `refactor`, `docs`, `security`, `chore`, `style`
+
+### Reportes
+
+Cada ejecución guarda un reporte JSON en `harness/db/iteration_reports/`:
+
+```
+harness/db/iteration_reports/
+├── report_20260613_120000_iter0001.json
+├── report_20260613_123000_iter0002.json
+└── ...
+```
+
+Para ver el último reporte:
+
+```bash
+python harness/run.py '!iteration report'
+```
+
+### Comandos disponibles
+
+| Comando | Descripción |
+|---------|-------------|
+| `!iteration end` | Ejecuta pipeline completo |
+| `!iteration end --dry-run` | Muestra qué haría sin modificar nada |
+| `!iteration end --skip-bugs` | Salta bug hunting |
+| `!iteration end --skip-sec` | Salta security review |
+| `!iteration end --skip-docs` | Salta docs update |
+| `!iteration report` | Muestra el último reporte guardado |
+
+---
+
+## Pre-commit Hook Automático
+
+El pre-commit hook ejecuta el pipeline de fin de iteración **automáticamente en cada commit**,
+revisando solo los archivos staged (los que vas a commitear).
+
+### Instalación
+
+```bash
+# Instalar hook (crea .git/hooks/pre-commit)
+python harness/run.py '!hooks install'
+
+# Verificar estado
+python harness/run.py '!hooks status'
+```
+
+### ¿Qué hace el hook?
+
+Cuando haces `git commit`, el hook ejecuta 3 fases rápidas (<5 segundos):
+
+| Fase | Acción | ¿Bloquea? |
+|------|--------|-----------|
+| 🔍 Bug Hunting | Escanea staged files en `harness/` y `.opencode/` | ❌ CRITICAL bugs → aborta commit |
+| 🛡️ Security Scan | Busca secrets hardcodeados | ❌ Secrets encontrados → aborta commit |
+| 💰 Token Report | Estima tokens input/output | No bloquea |
+
+### Comportamiento
+
+- **Si encuentra CRITICAL bugs o SECRETS**: el commit se aborta con instrucciones para corregir
+- **Si encuentra issues menores (MAJOR/MINOR)**: permite el commit con una advertencia
+- **Timeout de 5 segundos**: si el hook tarda más, permite el commit y loguea un warning
+- **Saltar el hook**: `git commit --no-verify`
+
+### Desinstalación
+
+```bash
+python harness/run.py '!hooks uninstall'
+```
+
+Restaura el hook original (si existía) o elimina el hook de Agentic.
+
+### Alcance del hook
+
+| Revisa | No revisa |
+|--------|-----------|
+| `harness/` — todos los .py, .md, .yaml | `harness/db/` — datos persistentes |
+| `.opencode/` — agentes, skills, config | `__pycache__/` — caché de Python |
+| | `.git/` — metadatos de git |
+
+---
+
+## Watch Mode (Monitoreo en Tiempo Real)
+
+El modo `--watch` monitorea cambios en `harness/` y `.opencode/` y ejecuta
+automáticamente el pipeline de calidad cuando detecta modificaciones.
+
+### Uso
+
+```bash
+python harness/run.py --watch
+```
+
+### Comportamiento
+
+1. Escanea cada 2 segundos usando `os.stat()` para detectar cambios
+2. Cuando detecta archivos .py, .md, .yaml modificados:
+   - Espera 3 segundos de inactividad (evita ejecutar mientras se sigue escribiendo)
+   - Ejecuta `end_of_iteration.py --watch` (solo fases 1, 2, 4)
+   - Muestra resumen en consola
+   - Vuelve a esperar cambios
+3. Presiona `Ctrl+C` para detener
+
+### Ejemplo de salida
+
+```
+[Harness] Watch mode activado — monitoreando:
+  - C:\proyecto\harness
+  - C:\proyecto\.opencode
+  Excluyendo: harness/db/, __pycache__/, .git/
+
+  [WATCH] Waiting for changes...
+
+  [2026-06-13 20:00] change detected: harness/run.py
+  [2026-06-13 20:00] Running check...
+    🔍 Bug hunting: 0 issues
+    🛡️ Security scan: 0 issues
+    💰 Tokens: ~1,200 input / ~400 output
+    Done in 0.34s
+  [WATCH] Waiting for changes...
+```
+
+### Diferencia con `--daemon`
+
+| Flag | Propósito | Frecuencia |
+|------|-----------|------------|
+| `--daemon` | Scheduler en background para tareas programadas | Cada 60s (jobs cron) |
+| `--watch` | Monitoreo de cambios para development loop | Cada 2s (polling) |
 
 ---
 

@@ -17,6 +17,7 @@ Features:
 
 Flags:
     --daemon                Inicia scheduler en background
+    --watch                 Modo watch: monitorea cambios en harness/ y .opencode/
     --gateway <type>        Modo gateway (cli, slack, telegram)
     --force-cloud           Override ModelRouter → siempre cloud
     --auto-pilot            Desactiva HITL (solo entornos de confianza)
@@ -24,13 +25,24 @@ Flags:
     !evolve mutate @<a> ".." Evolucion de prompts
     !schedule add <n> ...   Programar job
     !schedule list          Listar jobs
+    !iteration end          Pipeline fin de iteracion (bugs, security, docs, tokens, commit)
+    !iteration end --dry-run    Simulacion del pipeline
+    !iteration end --skip-bugs  Salta bug hunting
+    !iteration end --skip-sec   Salta security review
+    !iteration end --skip-docs  Salta docs update
+    !iteration report       Muestra ultimo reporte de iteracion
+    !hooks install          Instala pre-commit hook (auto-pipeline en commits)
+    !hooks uninstall        Desinstala pre-commit hook
+    !hooks status           Muestra estado del pre-commit hook
 """
 import sys
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+HARNESS_ROOT = Path(__file__).resolve().parent
 
 # ---------------------------------------------------------------------------
 # Verificar LanceDB antes de cualquier otra operacion
@@ -79,6 +91,7 @@ def _parse_args() -> Dict[str, Any]:
     args = sys.argv[1:]
     parsed: Dict[str, Any] = {
         "daemon": False,
+        "watch": False,
         "gateway": None,
         "force_cloud": False,
         "auto_pilot": False,
@@ -92,6 +105,9 @@ def _parse_args() -> Dict[str, Any]:
         arg = args[i]
         if arg == "--daemon":
             parsed["daemon"] = True
+            i += 1
+        elif arg == "--watch":
+            parsed["watch"] = True
             i += 1
         elif arg == "--gateway" and i + 1 < len(args):
             parsed["gateway"] = args[i + 1]
@@ -220,6 +236,105 @@ def _handle_db_rollback(cmd: str) -> None:
         print("[DB] Base restaurada desde: {}".format(backup_path))
     else:
         print("[DB] Error al restaurar desde: {}".format(backup_path))
+
+
+# ── Iteration End ───────────────────────────────────────────────────
+
+
+def _parse_iteration_flags(cmd: str) -> dict:
+    """Parse flags from a !iteration end command."""
+    flags = {
+        "skip_bugs": False,
+        "skip_sec": False,
+        "skip_docs": False,
+        "dry_run": False,
+    }
+    parts = cmd.split()
+    if "--dry-run" in parts:
+        flags["dry_run"] = True
+    if "--skip-bugs" in parts:
+        flags["skip_bugs"] = True
+    if "--skip-sec" in parts:
+        flags["skip_sec"] = True
+    if "--skip-docs" in parts:
+        flags["skip_docs"] = True
+    return flags
+
+
+def _handle_iteration_end(cmd: str) -> None:
+    """
+    Handle ``!iteration end [--dry-run] [--skip-bugs] [--skip-sec] [--skip-docs]``.
+    """
+    flags = _parse_iteration_flags(cmd)
+
+    print(f"[Harness] Iniciando pipeline de fin de iteracion...")
+    if flags["dry_run"]:
+        print(f"[Harness] Modo DRY-RUN — no se modificaran archivos")
+    if any([flags["skip_bugs"], flags["skip_sec"], flags["skip_docs"]]):
+        skips = []
+        if flags["skip_bugs"]:
+            skips.append("bugs")
+        if flags["skip_sec"]:
+            skips.append("security")
+        if flags["skip_docs"]:
+            skips.append("docs")
+        print(f"[Harness] Fases saltadas: {', '.join(skips)}")
+
+    # Inject harness root into path so we can import
+    sys.path.insert(0, str(HARNESS_ROOT.parent))
+
+    from harness.scripts.end_of_iteration import run_pipeline
+
+    run_pipeline(
+        skip_bugs=flags["skip_bugs"],
+        skip_security=flags["skip_sec"],
+        skip_docs=flags["skip_docs"],
+        dry_run=flags["dry_run"],
+    )
+
+
+def _handle_iteration_report() -> None:
+    """
+    Handle ``!iteration report`` — shows the last saved iteration report.
+    """
+    from harness.scripts.end_of_iteration import print_last_report
+
+    print_last_report()
+
+
+# ── Hooks ────────────────────────────────────────────────────────────
+
+
+def _handle_hooks_install() -> None:
+    """
+    Handle ``!hooks install`` — installs the pre-commit hook.
+    """
+    from harness.scripts.install_hooks import install_hook
+
+    print("[Harness] Instalando hook pre-commit...")
+    install_hook()
+
+
+def _handle_hooks_uninstall() -> None:
+    """
+    Handle ``!hooks uninstall`` — uninstalls the pre-commit hook.
+    """
+    from harness.scripts.install_hooks import uninstall_hook
+
+    print("[Harness] Desinstalando hook pre-commit...")
+    uninstall_hook()
+
+
+def _handle_hooks_status() -> None:
+    """
+    Handle ``!hooks status`` — shows hook installation status.
+    """
+    from harness.scripts.install_hooks import show_status
+
+    show_status()
+
+
+# ── Evolve ──────────────────────────────────────────────────────────
 
 
 def _handle_evolve_mutate(store: LanceVectorStore, cmd: str) -> None:
@@ -427,6 +542,204 @@ def _check_hitl(action: str, agent_role: str, guard: HITLGuard) -> bool:
     return guard.request_approval(action, agent_role)
 
 
+# ANSI colours for terminal output
+_RED = "\033[91m"
+_GREEN = "\033[92m"
+_YELLOW = "\033[93m"
+_CYAN = "\033[96m"
+_BOLD = "\033[1m"
+_RESET = "\033[0m"
+
+
+def _ok(msg: str) -> str:
+    return f"{_GREEN}{msg}{_RESET}"
+
+
+def _warn(msg: str) -> str:
+    return f"{_YELLOW}{msg}{_RESET}"
+
+
+def _err(msg: str) -> str:
+    return f"{_RED}{msg}{_RESET}"
+
+
+def _bold(msg: str) -> str:
+    return f"{_BOLD}{msg}{_RESET}"
+
+
+def _cyan(msg: str) -> str:
+    return f"{_CYAN}{msg}{_RESET}"
+
+
+def _safe_print(*args, **kwargs) -> None:
+    """Print with Unicode fallback: replaces non-encodable chars."""
+    try:
+        print(*args, **kwargs)
+    except UnicodeEncodeError:
+        safe_args = []
+        for arg in args:
+            if isinstance(arg, str):
+                arg = (arg.replace("\u2014", "--")
+                       .replace("\u2013", "-")
+                       .replace("\u2500", "-")
+                       .replace("\u2502", "|")
+                       .replace("\u2018", "'")
+                       .replace("\u2019", "'")
+                       .replace("\u201c", '"')
+                       .replace("\u201d", '"')
+                       .replace("\u2026", "...")
+                       .replace("\u00a0", " "))
+            safe_args.append(arg)
+        print(*safe_args, **kwargs)
+
+
+# ---------------------------------------------------------------------------
+# Watch mode
+# ---------------------------------------------------------------------------
+
+
+def _get_files_to_watch() -> dict:
+    """Get file modification times for harness/ and .opencode/."""
+    import stat as _stat
+    import time as _time
+
+    snapshots = {}
+    watch_dirs = [
+        str(HARNESS_ROOT),
+        str(HARNESS_ROOT.parent / ".opencode"),
+    ]
+    exclude_patterns = [
+        "__pycache__",
+        "harness/db/",
+        ".git/",
+        ".git",
+    ]
+
+    for watch_dir in watch_dirs:
+        if not os.path.isdir(watch_dir):
+            continue
+        for root, dirs, files in os.walk(watch_dir):
+            # Skip excluded directories
+            dirs[:] = [
+                d for d in dirs
+                if not any(p in os.path.join(root, d) for p in exclude_patterns)
+            ]
+            for fname in files:
+                # Only watch .py, .md, .yaml, .yml, .json
+                if not any(fname.endswith(ext) for ext in (".py", ".md", ".yaml", ".yml", ".json")):
+                    continue
+                fpath = os.path.join(root, fname)
+                try:
+                    st = os.stat(fpath)
+                    snapshots[fpath] = st.st_mtime
+                except (FileNotFoundError, OSError):
+                    pass
+    return snapshots
+
+
+def _handle_watch_mode() -> None:
+    """
+    Handle ``--watch`` flag — monitors harness/ and .opencode/ for changes.
+
+    Uses polling every 2 seconds with os.stat() to compare modification times.
+    When changes are detected, waits 3 seconds of inactivity then runs the
+    end_of_iteration pipeline in quick mode (--watch).
+    """
+    import time as _time
+    from datetime import datetime as _datetime
+
+    print("[Harness] Watch mode activado — monitoreando:")
+    print(f"  - {HARNESS_ROOT}")
+    print(f"  - {HARNESS_ROOT.parent / '.opencode'}")
+    print(f"  Excluyendo: harness/db/, __pycache__/, .git/")
+    print()
+
+    # Quick check: ensure end_of_iteration.py exists
+    eoi_script = HARNESS_ROOT / "scripts" / "end_of_iteration.py"
+    if not eoi_script.exists():
+        print(f"[Harness] {_err('[ERROR]')} No se encontro: {eoi_script}")
+        return
+
+    # Initial snapshot
+    last_snapshot = _get_files_to_watch()
+    idle_since: Optional[float] = None
+    debounce_seconds = 3.0
+
+    _safe_print(f"  {_cyan('[WATCH]')} Waiting for changes...")
+    _safe_print(f"  Press Ctrl+C to stop.")
+    _safe_print()
+
+    try:
+        while True:
+            _time.sleep(2)
+            now = _time.time()
+
+            new_snapshot = _get_files_to_watch()
+            changed_files = []
+
+            # Check for new/modified files
+            for fpath, mtime in new_snapshot.items():
+                old_mtime = last_snapshot.get(fpath)
+                if old_mtime is None or mtime > old_mtime:
+                    changed_files.append(fpath)
+
+            # Check for deleted files
+            for fpath in last_snapshot:
+                if fpath not in new_snapshot:
+                    changed_files.append(fpath)
+
+            if not changed_files:
+                idle_since = None
+                continue
+
+            if idle_since is None:
+                idle_since = now
+                continue
+
+            # Wait for inactivity (debounce)
+            if now - idle_since < debounce_seconds:
+                continue
+
+            # Change detected + inactive for debounce_seconds -> run pipeline
+            timestamp = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            for f in changed_files[:5]:
+                rel = os.path.relpath(f, str(HARNESS_ROOT.parent))
+                _safe_print(f"  [{timestamp}] change detected: {rel}")
+            if len(changed_files) > 5:
+                _safe_print(f"  [{timestamp}] ... and {len(changed_files) - 5} more")
+
+            # Run pipeline in watch mode
+            _safe_print(f"  [{timestamp}] Running check...")
+            try:
+                import subprocess as _subprocess
+                result = _subprocess.run(
+                    [sys.executable, str(eoi_script), "--watch"],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                    cwd=str(HARNESS_ROOT.parent),
+                )
+                for line in result.stdout.splitlines():
+                    _safe_print(f"  {line}")
+                if result.stderr.strip():
+                    for line in result.stderr.splitlines():
+                        _safe_print(f"  {_warn('[STDERR]')} {line}")
+            except _subprocess.TimeoutExpired:
+                _safe_print(f"  {_warn('[WARN]')} Pipeline timeout (>30s)")
+            except Exception as exc:
+                _safe_print(f"  {_err('[ERROR]')} Pipeline failed: {exc}")
+
+            # Reset snapshot
+            last_snapshot = new_snapshot.copy()
+            idle_since = None
+            _safe_print(f"  {_cyan('[WATCH]')} Waiting for changes...")
+            print()
+
+    except KeyboardInterrupt:
+        _safe_print(f"\n  {_cyan('[WATCH]')} Watch mode detenido.")
+        return
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -480,6 +793,11 @@ def main():
             print("\n[Harness] Scheduler detenido.")
         return
 
+    # --- Watch mode ---
+    if parsed["watch"]:
+        _handle_watch_mode()
+        return
+
     # --- Command mode ---
     cmd = parsed.get("command")
     if cmd:
@@ -498,6 +816,16 @@ def main():
             _handle_db_stats(store)
         elif cmd.startswith("!db rollback"):
             _handle_db_rollback(cmd)
+        elif cmd.startswith("!iteration end"):
+            _handle_iteration_end(cmd)
+        elif cmd.startswith("!iteration report"):
+            _handle_iteration_report()
+        elif cmd.startswith("!hooks install"):
+            _handle_hooks_install()
+        elif cmd.startswith("!hooks uninstall"):
+            _handle_hooks_uninstall()
+        elif cmd.startswith("!hooks status"):
+            _handle_hooks_status()
         else:
             print(f"[Harness] Comando desconocido: {cmd}")
         return
@@ -510,6 +838,7 @@ def main():
         print()
         print("Flags:")
         print("  --daemon                    Inicia scheduler en background")
+        print("  --watch                     Modo watch (monitorea cambios)")
         print("  --gateway <type>            Modo gateway (cli, slack, telegram)")
         print("  --force-cloud               Override: todas las tareas a cloud API")
         print("  --auto-pilot                Desactiva HITL (entornos de confianza)")
@@ -522,6 +851,15 @@ def main():
         print("  !db list-imports            Listar BDs disponibles")
         print("  !db stats                   Estadisticas de BD activa")
         print("  !db rollback <backup>       Restaurar desde backup")
+        print("  !iteration end              Pipeline fin de iteracion")
+        print("  !iteration end --dry-run    Simulacion del pipeline")
+        print("  !iteration end --skip-bugs  Salta bug hunting")
+        print("  !iteration end --skip-sec   Salta security review")
+        print("  !iteration end --skip-docs  Salta docs update")
+        print("  !iteration report           Muestra ultimo reporte")
+        print("  !hooks install              Instala pre-commit hook")
+        print("  !hooks uninstall            Desinstala pre-commit hook")
+        print("  !hooks status               Muestra estado del hook")
         sys.exit(1)
 
     print("[Harness] Inicializando...")

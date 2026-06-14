@@ -17,3 +17,5 @@ harness/db/_archived/
 harness/evolve_loop/prompt_archive/
 .opencode/skills/auto/
 harness/orchestrator/scheduler_jobs.yaml
+harness/db/iteration_reports/
+harness/db/.hook_status.json
