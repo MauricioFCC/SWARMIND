@@ -65,3 +65,4 @@ error: null
 - Si el candidato tiene errores de sintaxis, reportar score 0
 - Timeout máximo: 1800 segundos
 - Documentar cualquier error de validación
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas

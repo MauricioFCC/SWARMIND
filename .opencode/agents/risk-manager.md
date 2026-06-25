@@ -14,6 +14,7 @@ mode: subagent
 - [ ] Monte Carlo: permutaciones para estimar cola de pérdidas
 - [ ] VaR paramétrico e histórico (95%/99%) actualizado periódicamente
 - [ ] Circuit breaker: si DD diario > umbral definido → pausar operativa
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (volatilidad_alta) → Reducir tamaño de posición proporcionalmente
 Si (racha_perdedora) → Reducción geométrica de riesgo hasta recuperación

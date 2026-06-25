@@ -17,6 +17,7 @@ mode: subagent
 - [ ] Riesgos arquitectónicos identificados con plan de mitigación
 - [ ] Stack tecnológico justificado (lenguaje, framework, base de datos, infra)
 - [ ] Costo estimado (infra, mantenimiento, licensing vs valor de negocio)
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (nuevo_sistema) → C4 Model primero → ADR → Prototipo → Validación stakeholders
 Si (decisión_crítica) → Evaluar 2+ alternativas con matriz de trade-offs (costo, complejidad, mantenibilidad, escalabilidad)

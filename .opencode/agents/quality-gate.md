@@ -93,3 +93,4 @@ Ambos modos generan un score de calidad que se registra en el **Cognition Store*
 - **Pairwise/Pointwise** se ejecutan post-merge para el Cognition Store
 - **Diseña la estrategia de tests antes de codificar** para nuevas features
 - `sleep()` hardcodeado prohibido • Aserciones visuales sin baseline prohibidas
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas

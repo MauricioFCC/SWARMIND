@@ -2,7 +2,7 @@
 Harness reset — clean all runtime state for a fresh start.
 
 Removes:
-  - Vector database (harness/db/lancedb_store/)
+  - Vector database (harness/db/lancedb/)
   - Prompt archives (harness/evolve_loop/prompt_archive/)
   - Auto-generated skills (.opencode/skills/auto/)
   - Scheduled jobs (harness/orchestrator/scheduler_jobs.yaml)

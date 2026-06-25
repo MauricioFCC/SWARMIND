@@ -67,3 +67,4 @@ Escribir una lección transferible que incluya:
 - Documentar tanto éxitos como fracasos
 - Si el resultado es ambiguo, reportar incertidumbre
 - Las lecciones deben ser accionables
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas

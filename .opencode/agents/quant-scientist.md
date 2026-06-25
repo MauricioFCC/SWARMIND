@@ -21,6 +21,7 @@ mode: subagent
 - [ ] Power analysis completado (N suficiente para MDE)
 - [ ] Feature importance consistente entre folds
 - [ ] Report: effect size + CI 95% + p-value (nunca solo p-value)
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (autocorrelación > 0.3) → Diehard-Mariano (no t-test ni Mann-Whitney)
 Si (n_samples < 1000) → warn_insufficient_power + bootstrap

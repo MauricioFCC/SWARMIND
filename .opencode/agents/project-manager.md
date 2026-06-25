@@ -63,6 +63,7 @@ Cada fase o hito del proyecto tiene sus propias gates de validación. **No avanz
 - [ ] Métricas de éxito verificadas
 - [ ] Post-mortem de issues documentado
 - [ ] Lecciones registradas en cognition store
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 
 ### 4. Reportar Progreso
 Mantén registro de:

@@ -15,6 +15,7 @@ mode: subagent
 - [ ] UI nativa: gestos, safe-areas, tipografía, accesibilidad (VoiceOver/TalkBack)
 - [ ] Performance: ≥60fps, <150MB RAM idle, lazy-load, cache de imágenes/media
 - [ ] Seguridad: Keychain/Keystore • Cert pinning • 0 secrets en código/assets
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (cross_platform) → Usar channels/plug-ins para trabajo nativo pesado • Evitar over-bridge serialización
 Si (offline_critico) → DB local + cola de sync con retry exponencial

@@ -14,6 +14,7 @@ mode: subagent
 - [ ] Logs: JSON estructurado + correlation ID + nivel ajustable en runtime
 - [ ] Secrets: Vault/Env inyectado • 0 hardcode • Rotación documentada
 - [ ] Cost: Right-sizing + Auto-scale thresholds + alerts budget burn rate
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (stateful_service) → Volumes persistentes + backup frecuente + affinity rules
 Si (alta_concurrencia) → Connection pooling + HPA basado en custom metrics

@@ -15,6 +15,7 @@ mode: subagent
 - [ ] Dashboard: P&L, drawdown, posiciones, broker activo, context_score promedio
 - [ ] Logging: heartbeat, orden, error, alerta con timestamp + correlation ID + plataforma
 - [ ] Símbolos activos sincronizados con ContractSpecs.ACTIVE_SYMBOLS
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (conexión_caída) → Failover a otro adapter del Registry → si no, backoff + alerta
 Si (drawdown_crítico) → Kill switch + cierre posiciones + notificación

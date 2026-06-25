@@ -16,6 +16,7 @@ mode: subagent
 - [ ] Healthcheck `/ready` y `/health` con dependencias reales
 - [ ] Type hints en toda interfaz pública • Tests unitarios + integración
 - [ ] Docs 1:1: cambios en API/interfaz tienen documentación actualizada
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (lectura_frecuente) → Cache LRU/Redis con TTL + invalidación en write
 Si (escritura_crítica) → Idempotency-Key + Exactly-once o at-least-once con compensación

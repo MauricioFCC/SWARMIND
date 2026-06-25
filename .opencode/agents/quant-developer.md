@@ -17,6 +17,7 @@ mode: subagent
 - [ ] Logging: timestamp, precio, slippage, status, context_score, plataforma
 - [ ] Precisión decimal: MNQ=0.25, MGC=0.10
 - [ ] Timeout + circuit breaker en llamadas al broker
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (broker_inestable) → Reconexión + cola + state file
 Si (multi_plataforma) → create_broker(platform, env) desde Registry

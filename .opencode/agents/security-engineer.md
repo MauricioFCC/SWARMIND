@@ -17,6 +17,7 @@ mode: subagent
 - [ ] Dependencias: Lock files + SCA • CVEs críticas parcheadas
 - [ ] Compliance rules check: límites, políticas, auditoría (si aplica según dominio)
 - [ ] Auditoría: reglas documentadas y versionadas, audit trail completo
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (input_externo) → Validar → Sanitizar → Encode output context
 Si (datos_sensibles) → Encrypt at rest (AES-256-GCM) + in transit (TLS 1.3) + key rotation

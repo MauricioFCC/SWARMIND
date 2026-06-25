@@ -69,3 +69,4 @@ Siempre mantener:
 - No degradar métricas existentes
 - Documentar el razonamiento en la hipótesis
 - Si no hay mejora clara, reportar "stall" en lugar de forzar cambio
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas

@@ -29,6 +29,7 @@ docs/
 - [ ] OPERATIONAL_MANUAL.md: troubleshooting actualizado con errores conocidos
 - [ ] Glosario (KEYWORDS.md) actualizado con nuevos conceptos
 - [ ] Changelog con fecha, versión y cambios
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 
 ## 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (nuevo_módulo) → Crear docstring de módulo + sección en TECHNICAL_MANUAL.md + ejemplo en OPERATIONAL_MANUAL.md

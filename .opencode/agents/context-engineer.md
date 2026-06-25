@@ -18,6 +18,7 @@ mode: subagent
 - [ ] Structured notes persistentes para tareas multi-turno
 - [ ] JIT retrieval configurado (glob, grep, head/tail, stored queries)
 - [ ] Hybrid strategy: crítico pre-cargado, resto JIT
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (context_window > 80%) → trigger compaction
 Si (tool_call_depth > 5) → clear results, keep summary

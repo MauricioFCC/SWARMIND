@@ -19,6 +19,7 @@ mode: subagent
 - [ ] Prompt engineering documentado (si LLM-based): system prompt, ejemplos few-shot, temperatura
 - [ ] Model Registry actualizado: versión, stage (staging/production), métricas baseline
 - [ ] Docs 1:1: API del modelo, schema input/output, límites de uso
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (modelo_llm) → Prompt engineering + few-shot → Evaluar con RAG Triad → Fine-tuning si necesario
 Si (inferencia_en_producción) → Optimizar con ONNX/TensorRT → Cuantización → Batching → Caching

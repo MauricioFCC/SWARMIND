@@ -373,7 +373,13 @@ def main() -> None:
     logger.info("[Harness] Inicializando...")
 
     store = LanceVectorStore()
+    if store is None:
+        logger.warning("LanceVectorStore no inicializado. Intentando crear...")
+        store = LanceVectorStore()
+
     tm = TaskManager(vector_store=store)
+    if not os.path.exists(os.path.join(HARNESS_ROOT, "db", "lancedb")):
+        logger.warning("harness/db/lancedb/ no existe. Los datos se perderán al reiniciar.")
     engine = DelegationEngine()
     assembler = ContextAssembler(store)
     cognition = CognitionSync(store)

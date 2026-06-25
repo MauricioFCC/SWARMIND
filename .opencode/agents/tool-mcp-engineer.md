@@ -18,6 +18,7 @@ mode: subagent
 - [ ] Sin tool bloat (auditar si hay tools no usadas)
 - [ ] Logging con trace_id para debugging
 - [ ] Circuit breaker para herramientas externas
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (tool_overlap) → merge o eliminar la menos específica
 Si (selection_accuracy < 80%) → mejorar descripciones + ejemplos

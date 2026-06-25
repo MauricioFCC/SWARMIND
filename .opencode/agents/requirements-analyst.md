@@ -64,3 +64,4 @@ Prioridad: [Alta/Media/Baja]
 - **Sé conciso** — reportes claros, accionables, sin relleno
 - **Prioriza la seguridad** — si hay riesgo de seguridad, márcalo como blocker
 - **Users first** — las mejoras deben aportar valor al usuario final
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas

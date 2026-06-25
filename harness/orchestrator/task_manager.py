@@ -130,7 +130,7 @@ class TaskManager:
     """Manages tasks using LanceDB with automatic fallback to SQLite.
 
     All tasks are stored in a 'tasks_board' collection/table.
-    The connection path defaults to harness/db/lancedb_store/.
+    The connection path defaults to harness/db/lancedb/.
     """
 
     def __init__(self, db_path: str = "", vector_store: Any = None) -> None:
@@ -141,7 +141,7 @@ class TaskManager:
             db_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                 "db",
-                "lancedb_store",
+                "lancedb",
             )
         self._db_path: str = db_path
         self._table_name: str = "tasks_board"
@@ -152,6 +152,8 @@ class TaskManager:
         self._initialize()
 
     def _initialize(self) -> None:
+        if not os.path.exists(os.path.dirname(self._db_path)):
+            os.makedirs(os.path.dirname(self._db_path), exist_ok=True)
         if HAS_LANCEDB:
             try:
                 self._conn_lancedb = lancedb.connect(self._db_path)

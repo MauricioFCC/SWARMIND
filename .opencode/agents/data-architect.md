@@ -14,6 +14,7 @@ mode: subagent
 - [ ] Dinero/tiempo en enteros/timestamps UTC • Formateo solo en borde
 - [ ] Prepared statements • Cero string concat en SQL
 - [ ] Backup strategy documentada + punto de recuperación
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (lectura_pesada/escritura_ligera) → Denormalización controlada + vistas materializadas
 Si (auditoría_obligatoria) → Tablas shadow o CDC en lugar de triggers lentos
