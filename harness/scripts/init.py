@@ -9,6 +9,7 @@ Now with:
   - Renamed DB: lancedb_store → lancedb
 """
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -149,6 +150,7 @@ def create_structure(base: Path) -> None:
         "harness/tools_sandbox",
         "harness/scripts",
         ".opencode/skills/auto",
+        ".opencode/skills/domain",
         ".opencode/agents",
     ]
     for d in dirs:
@@ -298,6 +300,151 @@ def _auto_migrate(base: Path) -> None:
             banner("[BACKUP] {}".format(result["backup_path"]))
 
 
+def _auto_ingest_project() -> None:
+    """Escanea el proyecto e ingiere codigo fuente como RAG.
+
+    Detecta automaticamente directorios con archivos fuente fuera de
+    ``harness/`` y ``.opencode/``, y ofrece ingerirlos como chunks RAG.
+    """
+    import time as _time
+
+    from harness.memory_rag.doc_ingester import (
+        RAG_EXTENSIONS,
+        RAG_EXCLUDE,
+        ingest_project_directory,
+    )
+
+    project_root = Path(__file__).resolve().parent.parent.parent  # raiz del proyecto
+    harness_dir = project_root / "harness"
+    opencode_dir = project_root / ".opencode"
+
+    # Detectar archivos relevantes fuera de harness/ y .opencode/
+    source_dirs: list[tuple[str, int]] = []
+    for item in sorted(project_root.iterdir()):
+        if item.name.startswith("."):
+            continue
+        if item.name == "harness" or item.name == ".opencode":
+            continue
+        if not item.is_dir():
+            continue
+        # Contar archivos fuente
+        count = 0
+        for f in item.rglob("*"):
+            if not f.is_file():
+                continue
+            if f.suffix.lower() not in RAG_EXTENSIONS:
+                continue
+            if any(part in RAG_EXCLUDE for part in f.parts):
+                continue
+            if any(part.startswith(".") for part in f.parts):
+                continue
+            count += 1
+        if count > 0:
+            source_dirs.append((item.name, count))
+
+    if not source_dirs:
+        logger.info("  No se encontraron archivos fuente fuera del harness.")
+        return
+
+    logger.info("\n  Se detectaron %d directorios con codigo fuente:", len(source_dirs))
+    for name, count in sorted(source_dirs, key=lambda x: -x[1])[:10]:
+        logger.info("     - %s/ (%d archivos)", name, count)
+
+    total = sum(c for _, c in source_dirs)
+    logger.info("  Total aproximado: %d archivos", total)
+
+    try:
+        choice = input("\n  \u00bfIngerir codigo fuente como RAG? [Y/n]: ").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        choice = "y"
+
+    if choice == "n":
+        logger.info("  Omitido. Puedes ejecutar RAG ingest manualmente despues:")
+        logger.info("    python harness/scripts/rag_ingest.py")
+        logger.info("    python harness/run.py \"!rag ingest\"")
+        return
+
+    logger.info("  Ingestando codigo fuente... (esto puede tomar unos segundos)")
+    start = _time.time()
+    try:
+        stats = ingest_project_directory(str(project_root))
+        elapsed = _time.time() - start
+        logger.info(
+            "  \u2705 RAG ingest completado en %.1fs: %d archivos, %d chunks",
+            elapsed,
+            stats.get("files_processed", 0),
+            stats.get("chunks_inserted", 0),
+        )
+        if stats.get("errors", 0):
+            logger.warning("  \u26a0\ufe0f  %d errores durante la ingestion", stats["errors"])
+    except Exception as e:
+        logger.error("  \u274c Error en RAG ingest: %s", e)
+
+
+def _load_domain_skills() -> None:
+    """Carga skills específicos del dominio según TECH_STACK en project_config.yaml.
+
+    Escanea ``.opencode/config/project_config.yaml``, determina el skill de
+    dominio que corresponde al ``TECH_STACK`` y lo copia a
+    ``.opencode/skills/domain/`` como skill complementario.
+    """
+    import yaml
+
+    config_path = (
+        Path(__file__).resolve().parent.parent.parent
+        / ".opencode" / "config" / "project_config.yaml"
+    )
+    if not config_path.exists():
+        logger.info("  No se encontro project_config.yaml — saltando skills de dominio.")
+        return
+
+    with open(config_path, encoding="utf-8") as f:
+        config = yaml.safe_load(f)
+
+    tech_stack = config.get("TECH_STACK", "") or ""
+    domain = config.get("DOMAIN", "") or ""
+
+    # Mapeo tech-stack → nombre de skill (ordenado por especificidad)
+    skill_map: list[tuple[str, str]] = [
+        ("Rust", "rust-leptos"),
+        ("Go", "go-web"),
+        ("Python", "python-web"),
+        ("TypeScript", "typescript-web"),
+        ("Node", "typescript-web"),
+    ]
+
+    # Si el stack es Rust + trading -> rust-trading
+    if "Rust" in tech_stack and "trading" in domain.lower():
+        skill_name = "rust-trading"
+    else:
+        skill_name = None
+        for key, val in skill_map:
+            if key in tech_stack:
+                skill_name = val
+                break
+
+    if not skill_name:
+        logger.info(f"  No hay skill de dominio para: TECH_STACK={tech_stack!r}")
+        return
+
+    skill_src = (
+        Path(__file__).resolve().parent.parent
+        / "skills" / "domain" / f"{skill_name}.md"
+    )
+    if not skill_src.exists():
+        logger.info(f"  Skill de dominio {skill_name!r} no encontrado en skills/domain/")
+        return
+
+    target_dir = (
+        Path(__file__).resolve().parent.parent.parent
+        / ".opencode" / "skills" / "domain"
+    )
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target = target_dir / f"{skill_name}.md"
+    shutil.copy2(str(skill_src), str(target))
+    logger.info(f"  ✅ Skill de dominio cargado: {skill_name} ({tech_stack})")
+
+
 def main() -> None:
     """Main."""
     project_path = sys.argv[1] if len(sys.argv) > 1 else ""
@@ -310,6 +457,12 @@ def main() -> None:
         generate_llms_full_txt()
     except Exception as exc:
         banner(f"No se pudo generar llms.txt: {exc}")
+
+    # RAG ingest automático al primer uso
+    _auto_ingest_project()
+
+    # Skills de dominio según TECH_STACK
+    _load_domain_skills()
 
 
 if __name__ == "__main__":

@@ -14,6 +14,65 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+# ── RAG Commands ─────────────────────────────────────────────────────
+
+def _handle_rag_ingest(store, cmd: str) -> None:
+    """Handle ``!rag ingest [--dir <path>]``."""
+    from harness.memory_rag.doc_ingester import ingest_project_directory
+    import time
+
+    parts = cmd.split()
+    target_dir = None
+    if "--dir" in parts:
+        idx = parts.index("--dir")
+        target_dir = parts[idx + 1] if idx + 1 < len(parts) else None
+
+    if target_dir:
+        directory = Path(target_dir).resolve()
+    else:
+        # Default: project root (excluye harness/ y .opencode/ por RAG_EXCLUDE)
+        directory = Path(__file__).resolve().parent.parent.parent
+
+    if not directory.is_dir():
+        logger.info("[RAG] Directorio no encontrado: %s", directory)
+        return
+
+    logger.info("[RAG] Ingestando desde: %s", directory)
+    start = time.time()
+    try:
+        stats = ingest_project_directory(str(directory), show_progress=True)
+        elapsed = time.time() - start
+        logger.info(
+            "[RAG] \u2705 Completado: %d archivos, %d chunks en %.1fs",
+            stats.get("files_processed", 0),
+            stats.get("chunks_inserted", 0),
+            elapsed,
+        )
+        if stats.get("errors", 0):
+            logger.warning("[RAG] \u26a0\ufe0f %d errores", stats["errors"])
+    except Exception as e:
+        logger.error("[RAG] \u274c Error: %s", e)
+
+
+def _handle_rag_stats(store) -> None:
+    """Handle ``!rag stats`` — muestra estadisticas de la BD RAG."""
+    colls = store.list_collections()
+    logger.info("")
+    logger.info("[RAG] Colecciones disponibles: %s", colls)
+    if "rag_chunks" in colls:
+        try:
+            stats = store.get_collection_stats("rag_chunks")
+            logger.info("[RAG] Coleccion 'rag_chunks':")
+            logger.info("  Items: %d", stats.get("item_count", 0))
+            logger.info("  Ultima actualizacion: %s", stats.get("last_updated", "N/A"))
+        except Exception as exc:
+            logger.info("[RAG] Coleccion 'rag_chunks' existe (error al obtener stats: %s)", exc)
+            logger.info("  (Esto es normal si la BD esta vacia o es una version reciente de LanceDB)")
+    else:
+        logger.info("[RAG] Coleccion 'rag_chunks' no existe. Ejecuta '!rag ingest'.")
+    logger.info("")
+
+
 # ── DB Commands ──────────────────────────────────────────────────────
 
 def _handle_db_migrate(store, cmd: str) -> None:

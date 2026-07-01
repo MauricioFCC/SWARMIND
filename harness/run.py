@@ -35,6 +35,9 @@ Flags:
     !hooks install          Instala pre-commit hook (auto-pipeline en commits)
     !hooks uninstall        Desinstala pre-commit hook
     !hooks status           Muestra estado del pre-commit hook
+    !rag ingest             Ingiere codigo fuente como RAG
+    !rag ingest --dir <p>   Ingiere solo un directorio
+    !rag stats              Estadisticas de la BD RAG
 """
 import sys
 import os
@@ -150,6 +153,13 @@ def _check_first_run() -> bool:
         config_path.write_text(config_content, encoding="utf-8")
         logger.info(f"  project_config.yaml actualizado: {project_name} ({tech_stack}, {domain})")
 
+        # Cargar skill de dominio según TECH_STACK
+        try:
+            from harness.scripts.init import _load_domain_skills
+            _load_domain_skills()
+        except Exception as exc:
+            logger.info(f"  (No se pudo cargar skill de dominio: {exc})")
+
     # Paso 5: Ejecutar init.py
     logger.info("")
     logger.info("  Ejecutando init.py para completar la configuracion...")
@@ -157,7 +167,35 @@ def _check_first_run() -> bool:
 
     _subprocess.run([sys.executable, str(Path(HARNESS_ROOT) / "scripts" / "init.py")], cwd=HARNESS_ROOT.parent)
 
-    # Paso 6: Crear marker
+    # Paso 6: Resumen RAG (init.py ya pregunto dentro del subprocess)
+    logger.info("")
+    logger.info("  Paso 6: RAG Ingest")
+    logger.info("  Durante init.py ya se ofrecio la ingestion de codigo fuente.")
+    logger.info("  Si lo omitiste, podes hacerlo ahora o despues con:")
+    logger.info("    python harness/scripts/rag_ingest.py")
+    logger.info("    python harness/run.py \"!rag ingest\"")
+    try:
+        rag = input("  \u00bfIngerir ahora? [y/N]: ").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        rag = ""
+    if rag == "y":
+        logger.info("  Ingestando codigo fuente...")
+        try:
+            from harness.memory_rag.doc_ingester import ingest_project_directory
+            import time as _t
+            _start = _t.time()
+            _stats = ingest_project_directory(str(HARNESS_ROOT.parent))
+            _elapsed = _t.time() - _start
+            logger.info(
+                "  \u2705 RAG ingest: %d archivos, %d chunks en %.1fs",
+                _stats.get("files_processed", 0),
+                _stats.get("chunks_inserted", 0),
+                _elapsed,
+            )
+        except Exception as exc:
+            logger.info("  (RAG ingest difiere: %s)", exc)
+
+    # Paso 7: Crear marker
     marker_file.write_text(f"initialized: {datetime.now().isoformat()}\nproject: {project_name}\n")
     logger.info("")
     logger.info("  Harness configurado. Listo para usar!")
@@ -200,6 +238,9 @@ def _show_usage() -> None:
     logger.info("  !hooks install              Instala pre-commit hook")
     logger.info("  !hooks uninstall            Desinstala pre-commit hook")
     logger.info("  !hooks status               Muestra estado del hook")
+    logger.info("  !rag ingest                 Ingiere codigo fuente como RAG")
+    logger.info("  !rag ingest --dir <path>    Ingiere solo un directorio")
+    logger.info("  !rag stats                  Estadisticas de la BD RAG")
 
 
 # ---------------------------------------------------------------------------
@@ -266,6 +307,7 @@ from harness.run_commands import (
     _parse_iteration_flags, _handle_iteration_end, _handle_iteration_report,
     _handle_hooks_install, _handle_hooks_uninstall, _handle_hooks_status,
     _handle_evolve_mutate, _handle_schedule_add, _handle_schedule_list,
+    _handle_rag_ingest, _handle_rag_stats,
     _apply_model_routing, _check_hitl, _get_files_to_watch, _ok, _warn, _err, _bold, _cyan, _safe_print,
 )
 
@@ -468,6 +510,10 @@ def main() -> None:
             _handle_hooks_uninstall()
         elif cmd.startswith("!hooks status"):
             _handle_hooks_status()
+        elif cmd.startswith("!rag ingest"):
+            _handle_rag_ingest(store, cmd)
+        elif cmd.startswith("!rag stats"):
+            _handle_rag_stats(store)
         else:
             logger.info(f"[Harness] Comando desconocido: {cmd}")
         return

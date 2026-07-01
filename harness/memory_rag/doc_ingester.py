@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -265,6 +266,137 @@ def ingest_directory(
                 stats["errors"] += 1
 
     return stats
+
+
+# ---------------------------------------------------------------------------
+# High-level convenience: scan a directory tree and ingest everything
+# ---------------------------------------------------------------------------
+
+# Source file extensions recognised for RAG ingestion
+RAG_EXTENSIONS: set = {
+    ".py", ".rs", ".go", ".ts", ".tsx", ".js", ".jsx",
+    ".md", ".yaml", ".yml", ".toml", ".json", ".sql",
+}
+
+# Directories always excluded from ingestion
+# (harness/ y .opencode/ se ingieren por separado; el scan automatico los omite)
+RAG_EXCLUDE: set = {
+    "node_modules", "target", ".git", "__pycache__",
+    ".venv", "venv", "env", ".env", "dist", "build",
+    "harness",  # ya ingerido por el sistema
+}
+
+
+def ingest_project_directory(
+    directory: str,
+    extensions: Optional[set] = None,
+    exclude_dirs: Optional[set] = None,
+    chunk_size: int = 25,
+    overlap: int = 3,
+    show_progress: bool = True,
+) -> Dict[str, Any]:
+    """
+    High-level convenience: scan *directory* recursively, chunk every
+    relevant source file, vectorise, and insert into the ``rag_chunks``
+    LanceDB collection.
+
+    Creates its own ``LanceVectorStore`` and ``DocumentChunker``, so the
+    caller does not need to manage infrastructure.
+
+    Args:
+        directory: Root path of the project to scan.
+        extensions: Set of file extensions to include (default: RAG_EXTENSIONS).
+        exclude_dirs: Set of directory *names* to skip (default: RAG_EXCLUDE).
+        chunk_size: Lines per chunk (default 25).
+        overlap: Line overlap between consecutive chunks (default 3).
+        show_progress: Log per-file progress (default True).
+
+    Returns:
+        Dict with keys: files_processed, chunks_inserted, errors, elapsed_s.
+    """
+    _ensure_lancedb()
+
+    exts = extensions or RAG_EXTENSIONS
+    skip_dirs = exclude_dirs or RAG_EXCLUDE
+
+    root = Path(directory).resolve()
+    if not root.is_dir():
+        raise NotADirectoryError(f"Directory not found: {root}")
+
+    from harness.memory_rag.lance_vector_store import LanceVectorStore
+
+    store = LanceVectorStore()
+    chunker = DocumentChunker(chunk_size=chunk_size, overlap=overlap)
+
+    stats: Dict[str, Any] = {
+        "files_processed": 0,
+        "chunks_inserted": 0,
+        "errors": 0,
+    }
+    start = time.time()
+
+    # Collect all matching files, excluding skip_dirs
+    files: list[Path] = []
+    for fpath in sorted(root.rglob("*")):
+        # Skip excluded directories
+        if any(part in skip_dirs for part in fpath.parts):
+            continue
+        # Skip hidden files / dirs
+        if any(part.startswith(".") for part in fpath.parts):
+            continue
+        if not fpath.is_file():
+            continue
+        if fpath.suffix.lower() not in exts:
+            continue
+        if fpath.name == ".gitkeep":
+            continue
+        files.append(fpath)
+
+    if not files:
+        logger.info("  No se encontraron archivos fuente para ingerir.")
+        stats["elapsed_s"] = time.time() - start
+        return stats
+
+    total = len(files)
+    for idx, fpath in enumerate(files, start=1):
+        try:
+            chunks = chunker.chunk_and_vectorize(str(fpath))
+            stats["files_processed"] += 1
+
+            if not chunks:
+                continue
+
+            vectors = np.array([c.vector for c in chunks if c.vector is not None])
+            metadata_list = [c.to_metadata() for c in chunks if c.vector is not None]
+
+            if vectors.size == 0:
+                continue
+
+            store.insert("rag_chunks", vectors, metadata_list)
+            stats["chunks_inserted"] += len(chunks)
+
+            if show_progress:
+                logger.info(
+                    "  [%d/%d] %s → chunk %d",
+                    idx, total,
+                    _relpath(fpath, root),
+                    stats["chunks_inserted"],
+                )
+
+        except Exception as exc:
+            logger.error("  Error processing %s: %s", fpath, exc)
+            stats["errors"] += 1
+
+    stats["elapsed_s"] = round(time.time() - start, 2)
+    return stats
+
+
+def _relpath(path: Path, anchor: Path) -> str:
+    """Return a short relative path string for display."""
+    try:
+        return str(path.relative_to(anchor))
+    except ValueError:
+        return path.name
 
 
 if __name__ == "__main__":
