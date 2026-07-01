@@ -455,6 +455,23 @@ def main() -> None:
             _handle_rag_ingest(store, cmd)
         elif cmd.startswith("!rag stats"):
             _handle_rag_stats(store)
+        elif cmd.startswith("!agent evolve"):
+            from harness.evolve_loop.agent_builder import run_agent_evolution
+            dry_run = "--dry-run" in cmd
+            result = run_agent_evolution(dry_run=dry_run)
+            logger.info("[AgentEvolve] Built: %s | Pruned: %s | Stats: %s",
+                         result["built"], result["pruned"], result["builder_stats"])
+        elif cmd.startswith("!agent build"):
+            from harness.evolve_loop.agent_builder import AgentBuilder
+            builder = AgentBuilder()
+            built = builder.build_agents_from_cognition()
+            logger.info("[AgentBuild] Created: %s", built)
+        elif cmd.startswith("!agent prune"):
+            from harness.evolve_loop.agent_builder import AgentPruner
+            dry_run = "--dry-run" in cmd
+            pruner = AgentPruner()
+            pruned = pruner.prune_underperforming(dry_run=dry_run)
+            logger.info("[AgentPrune] Removed: %s", pruned)
         elif cmd.startswith("!hermes"):
             _handle_hermes(cmd)
         else:
