@@ -10,8 +10,9 @@ build/
 .DS_Store
 Thumbs.db
 
-# Pre-compiled skill versions (regenerable via compile_skills.py)
-.opencode/skills/*/SKILL.min.md
+# Auto-generated agents (regenerable via agent evolution)
+.opencode/agents/auto/
+.opencode/agents/auto/*.agent.min.md
 
 # Onboarding marker (regenerable)
 harness/.harness_initialized

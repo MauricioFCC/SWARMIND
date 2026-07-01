@@ -27,27 +27,34 @@ logger = logging.getLogger(__name__)
 # Tokens de salida cuestan 3-5x más que input, por lo que usamos valores
 # conservadores: la mayoría de agentes responden en <512 tokens.
 MAX_TOKENS_BY_AGENT: Dict[str, int] = {
-    "project-manager": 512,       # Coordinación, respuestas cortas
-    "context-engineer": 1024,     # Contexto, necesita más espacio
-    "tool-mcp-engineer": 768,     # Tool descriptions
-    "software-engineer": 1024,    # Código + explicación
-    "data-architect": 768,        # Schemas, no muy largo
-    "devops-sre": 768,            # Config, comandos
-    "security-engineer": 512,     # Findings concisos
-    "frontend-engineer": 1024,    # UI code
-    "mobile-engineer": 1024,      # Mobile code
-    "ai-engineer": 1024,          # ML pipelines
-    "quality-gate": 512,          # Checklist, approve/reject
-    "documentation-specialist": 1536,  # Docs largos
-    "requirements-analyst": 768,  # Análisis
-    "enterprise-architect": 1024, # ADR, C4
-    "quant-developer": 1024,      # Estrategias cuantitativas
-    "quant-scientist": 1024,      # Análisis estadístico
-    "risk-manager": 512,          # Reports numéricos
-    "trading-operations": 512,    # Alertas, monitoreo
-    "evolve-researcher": 1024,    # Investigación
-    "evolve-engineer": 768,       # Evaluación
-    "evolve-analyzer": 768,       # Análisis de resultados
+    # 5 roles universales
+    "coordinator": 512,            # Entry point, auto-delega
+    "builder": 1024,               # Implementación multi-stack
+    "scientist": 1024,             # Investigación, AI/ML, patrones
+    "guardian": 512,               # Calidad, seguridad, docs, ops
+    "evolve": 768,                 # Auto-mejora del sistema
+    # Compatibilidad con roles antiguos (mapean a universales)
+    "project-manager": 512,
+    "context-engineer": 1024,
+    "software-engineer": 1024,
+    "data-architect": 768,
+    "devops-sre": 768,
+    "security-engineer": 512,
+    "frontend-engineer": 1024,
+    "mobile-engineer": 1024,
+    "ai-engineer": 1024,
+    "quality-gate": 512,
+    "documentation-specialist": 1536,
+    "requirements-analyst": 768,
+    "enterprise-architect": 1024,
+    "quant-developer": 1024,
+    "quant-scientist": 1024,
+    "risk-manager": 512,
+    "trading-operations": 512,
+    "tool-mcp-engineer": 768,
+    "evolve-researcher": 1024,
+    "evolve-engineer": 768,
+    "evolve-analyzer": 768,
     "*": 512,                     # Default seguro
 }
 

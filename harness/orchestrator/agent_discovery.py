@@ -394,26 +394,56 @@ def build_alias_map(agents: Dict[str, Dict[str, Any]]) -> Dict[str, str]:
         if primary != name and primary not in alias_map:
             alias_map[primary] = name
     
-    # Aliases hardcodeados para compatibilidad (nunca deben faltar)
+    # Aliases hardcodeados para compatibilidad con @roles antiguos.
+    # Ahora apuntan a los 5 roles universales (los viejos agentes se eliminaron).
     hardcoded_aliases = {
-        "pm": "project-manager",
-        "swe": "software-engineer",
-        "sec": "security-engineer",
-        "qa": "quality-gate",
-        "data": "data-architect",
-        "devops": "devops-sre",
-        "frontend": "frontend-engineer",
-        "mobile": "mobile-engineer",
-        "ai": "ai-engineer",
-        "docs": "documentation-specialist",
-        "ra": "requirements-analyst",
-        "architect": "enterprise-architect",
-        "quant": "quant-developer",
-        "scientist": "quant-scientist",
-        "risk": "risk-manager",
-        "ops": "trading-operations",
-        "context": "context-engineer",
-        "mcp": "tool-mcp-engineer",
+        # Coordinator
+        "pm": "coordinator",
+        "coordinator": "coordinator",
+        "orchestrator": "coordinator",
+        "project-manager": "coordinator",
+        "context-engineer": "coordinator",
+        "requirements-analyst": "coordinator",
+        "tool-mcp-engineer": "coordinator",
+        # Builder
+        "swe": "builder",
+        "builder": "builder",
+        "dev": "builder",
+        "software-engineer": "builder",
+        "frontend-engineer": "builder",
+        "frontend": "builder",
+        "mobile-engineer": "builder",
+        "mobile": "builder",
+        "data-architect": "builder",
+        "data": "builder",
+        "devops-sre": "builder",
+        "devops": "builder",
+        "quant-developer": "builder",
+        "quant": "builder",
+        "ai-engineer": "builder",
+        "ai": "builder",
+        "enterprise-architect": "builder",
+        "architect": "builder",
+        # Scientist
+        "scientist": "scientist",
+        "quant-scientist": "scientist",
+        # Guardian
+        "qa": "guardian",
+        "guardian": "guardian",
+        "sec": "guardian",
+        "security-engineer": "guardian",
+        "risk-manager": "guardian",
+        "risk": "guardian",
+        "docs": "guardian",
+        "documentation-specialist": "guardian",
+        "trading-operations": "guardian",
+        "ops": "guardian",
+        "quality-gate": "guardian",
+        # Evolve
+        "evolve": "evolve",
+        "evolve-researcher": "evolve",
+        "evolve-engineer": "evolve",
+        "evolve-analyzer": "evolve",
     }
     for alias, name in hardcoded_aliases.items():
         if alias not in alias_map:
