@@ -1,7 +1,15 @@
-"""Delegation engine for the project-manager agent.
+"""Delegation engine with UNIVERSAL auto-routing.
 
-Reads tasks from TaskManager, maps task types to agent roles,
-and routes messages using @rol syntax or YAML routing rules.
+CONSOLIDACIÓN: 21 agentes especializados → 5 roles universales:
+  - @coordinator (entry point, auto-detecta y delega)
+  - @builder     (toda implementación: Rust, Go, Python, Web, Mobile, Trading, Infra)
+  - @scientist   (investigación, papers, AI/ML, arquitectura, patrones)
+  - @guardian    (calidad, seguridad, riesgo, docs, operaciones)
+  - @evolve      (auto-mejora del sistema)
+
+No requiere @: si escribes "implementa una API en Rust", se detecta
+automáticamente y se enruta a @builder. El @ solo es necesario si
+quieres forzar un rol específico.
 
 REFACTOR: Reemplaza ~200 líneas de mappings hardcodeados con
 descubrimiento recursivo de agentes desde .opencode/agents/*.md.
@@ -179,7 +187,7 @@ class DelegationEngine:
         if agent:
             return agent
 
-        return "project-manager"
+        return "coordinator"
 
     def _match_intent(self, text: str) -> str:
         for keyword, agent in sorted(
@@ -189,12 +197,91 @@ class DelegationEngine:
                 return agent
         return ""
 
-    def route_message(self, message: str) -> str:
-        """Parse a message for @rol syntax and find the target agent.
-
-        Supports both '@agent-name' and '@agent name' syntax.
-        Falls back to Router v2 if imported, or intent matching.
+    def auto_route(self, message: str) -> str:
         """
+        Auto-detecta el rol universal a partir del contenido del mensaje.
+        
+        NO requiere @. Analiza keywords y enruta al rol universal apropiado.
+        Si no hay match, el coordinador maneja la tarea directamente.
+        
+        Orden de precedencia:
+          1. Evolve (auto-mejora del sistema)
+          2. Scientist (investigación, papers, AI/ML, patrones)
+          3. Guardian (calidad, seguridad, riesgo, docs)
+          4. Builder (toda implementación: Rust, Go, Python, Web, Mobile, Trading)
+          5. Coordinator (default — analiza y delega)
+        """
+        text = message.lower()
+        
+        # Universal role routing by intent keywords
+        # Ordenado por especificidad: los más específicos primero
+        
+        # @evolve: auto-mejora del sistema
+        evolve_patterns = ["!evolve", "evolve", "skill improvement", "cognition",
+                          "self-improve", "auto-improve"]
+        for pat in evolve_patterns:
+            if pat in text:
+                return "evolve"
+        
+        # @scientist: investigación, arquitectura, AI/ML, patrones
+        scientist_patterns = ["research", "paper", "architecture", "pattern",
+                             "methodology", "algorithm", "study", "ml model",
+                             "deep learning", "neural", "train model",
+                             "experiment design", "statistical", "causal",
+                             "literature", "survey", "novel approach",
+                             "system design", "trade-off", "capacity plan",
+                             "arquitectura", "investigacion", "patron de diseno",
+                             "modelo ml", "modelo ia", "entrenar modelo",
+                             "analisis", "experimento", "validacion"]
+        for pat in scientist_patterns:
+            if pat in text:
+                return "scientist"
+        
+        # @guardian: calidad, seguridad, riesgo, docs
+        # NOTA: va ANTES que builder para que "documentacion" no sea atrapado por "api"
+        guardian_patterns = ["test", "testing", "security", "audit", "risk",
+                            "documentation", "documentacion", "monitor", "monitoring",
+                            "quality gate", "code review", "lint", "coverage",
+                            "hardening", "compliance", "observability", "alert",
+                            "calidad", "seguridad", "auditoria", "riesgo",
+                            "cobertura", "revision de codigo"]
+        for pat in guardian_patterns:
+            if pat in text:
+                return "guardian"
+        
+        # @builder: toda implementación
+        builder_patterns = ["implement", "build", "create", "develop", "code",
+                           "api", "endpoint", "rust", "go lang", "golang",
+                           "python", "typescript", "web", "frontend", "backend",
+                           "fullstack", "mobile", "android", "ios", "app",
+                           "server", "database", "sql", "deploy", "docker",
+                           "kubernetes", "ci/cd", "trading", "strategy",
+                           "algorithm", "library", "refactor", "migrate",
+                           "cli tool", "microservice", "rest api", "graphql"]
+        for pat in builder_patterns:
+            if pat in text:
+                return "builder"
+        
+        # Default: coordinator (analiza y delega)
+        return "coordinator"
+
+    def route_message(self, message: str) -> str:
+        """
+        Enruta un mensaje al agente apropiado.
+        
+        Soporta:
+          - @rol: mensaje (ruteo explícito)
+          - mensaje sin @ (auto-detección por contenido)
+          - !comandos (comandos del sistema)
+        
+        La auto-detección mapea a 5 roles universales:
+        coordinator, builder, scientist, guardian, evolve.
+        """
+        # !comandos van al coordinator (que los procesa directamente)
+        if message.startswith("!"):
+            return "coordinator"
+        
+        # @rol: mensaje — ruteo explícito (backward compatible)
         mentions = re.findall(r"@(\w[\w-]*)", message)
         if mentions:
             for mention in mentions:
@@ -206,12 +293,14 @@ class DelegationEngine:
             try:
                 result = self._router_v2.route_message(message)
                 if isinstance(result, dict):
-                    return result.get("agent", "project-manager")
-                return result
+                    return result.get("agent", "coordinator")
+                if isinstance(result, str) and result:
+                    return result
             except Exception:
                 pass
 
-        return self._match_intent(message.lower()) or "project-manager"
+        # Auto-detección por contenido (NO requiere @)
+        return self.auto_route(message)
 
     def _resolve_agent_name(self, name: str) -> str:
         """Resuelve alias (@pm, @swe) a nombre canónico usando descubrimiento recursivo.

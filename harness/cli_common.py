@@ -114,23 +114,47 @@ def _safe_print(*args, **kwargs) -> None:
 def parse_message(task: str) -> Tuple[Optional[str], str]:
     """
     Parsea un mensaje extrayendo @rol: y !comandos.
+    
+    AHORA CON AUTO-DETECCIÓN: si no hay @ explícito, detecta el rol
+    automáticamente por el contenido del mensaje usando los roles universales:
+      - @builder: implementación (Rust, Go, Python, Web, Mobile, Trading, Infra)
+      - @scientist: investigación, papers, AI/ML, patrones
+      - @guardian: calidad, seguridad, riesgo, docs, operaciones
+      - @evolve: auto-mejora del sistema
+      - @coordinator: default (analiza y delega)
 
     Args:
-        task: Texto de entrada (e.g., "@software-engineer: haz X" o "!iteration end")
+        task: Texto de entrada (e.g., "@builder: haz X", "!iteration end", o "implementa una API en Rust")
 
     Returns:
-        Tuple de (rol o None, texto limpio)
+        Tuple de (rol detectado o None para !comandos, texto limpio)
     """
     # !comandos retornan (None, texto original)
     if task.startswith("!"):
         return None, task
 
-    # @rol: texto
+    # @rol: texto — ruteo explícito (backward compatible)
     match = re.match(r"@(\w[\w-]*)\s*:\s*(.*)", task.strip())
     if match:
         return match.group(1), match.group(2).strip()
 
-    return None, task.strip()
+    # @rol texto (sin dos puntos)
+    match = re.match(r"@(\w[\w-]*)\s+(.*)", task.strip())
+    if match:
+        return match.group(1), match.group(2).strip()
+
+    # Auto-detección: sin @, detectar rol por contenido
+    # Delegamos a DelegationEngine.auto_route()
+    try:
+        from harness.orchestrator.delegation_engine import DelegationEngine
+        engine = DelegationEngine()
+        detected = engine.auto_route(task)
+        return detected, task.strip()
+    except Exception:
+        pass
+
+    # Fallback: coordinator como default
+    return "coordinator", task.strip()
 
 
 def format_task_with_role(role: str, task: str) -> str:

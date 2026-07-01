@@ -112,8 +112,14 @@ def _show_usage() -> None:
     logger.info("  --force-cloud               Override: todas las tareas a cloud API")
     logger.info("  --auto-pilot                Desactiva HITL (entornos de confianza)")
     logger.info("  --hitl-sensitive            HITL solo para acciones criticas")
-    logger.info("  -s, --simplified            Entrada simplificada (detecta rol automaticamente)")
     logger.info("  --help                      Muestra esta ayuda")
+    logger.info("")
+    logger.info("Roles universales (auto-deteccion SIN @):")
+    logger.info("  @coordinator   - Entry point, analiza y delega (default)")
+    logger.info("  @builder       - Implementacion: Rust, Go, Python, Web, Mobile, Trading, Infra")
+    logger.info("  @scientist     - Investigacion: papers, AI/ML, arquitectura, patrones")
+    logger.info("  @guardian      - Calidad: testing, seguridad, riesgo, docs, operaciones")
+    logger.info("  @evolve        - Auto-mejora del sistema")
     logger.info("  !evolve mutate @<a> \"<t>\"   Evolucion de prompts")
     logger.info("  !schedule add <n> ...       Programar job")
     logger.info("  !schedule list              Listar jobs")
@@ -159,7 +165,6 @@ def _parse_args() -> Dict[str, Any]:
         "force_cloud": False,
         "auto_pilot": False,
         "hitl_sensitive": False,
-        "simplified": False,
         "task": None,
         "command": None,
     }
@@ -187,9 +192,6 @@ def _parse_args() -> Dict[str, Any]:
             i += 1
         elif arg == "--hitl-sensitive":
             parsed["hitl_sensitive"] = True
-            i += 1
-        elif arg in ("--simplified", "-s"):
-            parsed["simplified"] = True
             i += 1
         elif arg.startswith("!"):
             parsed["command"] = arg
@@ -459,24 +461,21 @@ def main() -> None:
             logger.info("[Harness] Comando desconocido: %s", cmd)
         return
 
-    # --- Simplified mode (auto-detect role) ---
+    # --- Auto-detección universal (no requiere @) ---
     task = parsed.get("task")
-    if parsed.get("simplified") and task:
-        if not task.startswith("@"):
+    if task:
+        # Si ya tiene @ explícito, usarlo; si no, auto-detectar
+        if not re.match(r"@\w", task):
             try:
                 from harness.orchestrator.delegation_engine import DelegationEngine
                 engine = DelegationEngine()
-                detected = engine.route_message(task)
-                if detected:
-                    task = f"@{detected}: {task}"
-                    logger.info("[Harness] Simplified: rol detectado @%s", detected)
-                else:
-                    logger.info("[Harness] Simplified: no se pudo detectar rol, usando @project-manager")
-                    task = f"@project-manager: {task}"
+                detected = engine.auto_route(task)
+                logger.info("[Harness] Rol auto-detectado: @%s", detected)
             except Exception as exc:
-                logger.info("[Harness] Simplified: error en deteccion: %s", exc)
-                logger.info("[Harness] Simplified: usando @project-manager por defecto")
-                task = f"@project-manager: {task}"
+                logger.info("[Harness] Auto-deteccion: %s, usando @coordinator", exc)
+                detected = "coordinator"
+        else:
+            detected = None  # se resuelve via route_message abajo
         parsed["task"] = task
 
     # --- Standard task routing ---
