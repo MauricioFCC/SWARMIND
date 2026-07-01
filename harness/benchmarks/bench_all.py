@@ -78,7 +78,17 @@ def compare(results: List[Dict]):
                 print(f"  {name}.{k}: {cv} ({'+' if d>0 else ''}{d:.1f}, {pct:+.1f}%)")
 
 
+def _run_single(name: str, fn) -> List[Dict]:
+    """Run a single benchmark by name."""
+    return [fn()]
+
+
 def main():
+    from harness.benchmarks.bench_routing import bench_routing
+    from harness.benchmarks.bench_memory import bench_memory
+    from harness.benchmarks.bench_cache import bench_cache
+    from harness.benchmarks.bench_compression import bench_compression
+
     p = argparse.ArgumentParser()
     p.add_argument("--routing", action="store_true")
     p.add_argument("--memory", action="store_true")
@@ -88,19 +98,15 @@ def main():
     p.add_argument("--compare", action="store_true")
     args = p.parse_args()
     
-    mapping = {
-        "routing": (args.routing, lambda: [__import__("harness.benchmarks.bench_routing", fromlist=["bench_routing"]).bench_routing()]),
-        "memory": (args.memory, lambda: [__import__("harness.benchmarks.bench_memory", fromlist=["bench_memory"]).bench_memory()]),
-        "cache": (args.cache, lambda: [__import__("harness.benchmarks.bench_cache", fromlist=["bench_cache"]).bench_cache()]),
-        "compression": (args.compression, lambda: [__import__("harness.benchmarks.bench_compression", fromlist=["bench_compression"]).bench_compression()]),
-    }
-    
-    selected = []
-    for key, (flag, fn) in mapping.items():
-        if flag:
-            selected = fn()
-            break
-    if not selected:
+    if args.routing:
+        selected = _run_single("Routing", bench_routing)
+    elif args.memory:
+        selected = _run_single("Memory", bench_memory)
+    elif args.cache:
+        selected = _run_single("Cache", bench_cache)
+    elif args.compression:
+        selected = _run_single("Compression", bench_compression)
+    else:
         selected = run_all()
     
     if args.json:
