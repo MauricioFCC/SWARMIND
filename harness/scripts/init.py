@@ -177,13 +177,13 @@ def init_lancedb(base: Path) -> None:
 
 def setup_mcp_servers(base: Path) -> None:
     """Interactive MCP server setup."""
-    logger.info()
+    logger.info("")
     banner("🔌 MCP Client activo. El sistema soporta servidores MCP comunitarios.")
     banner("   Ver: https://github.com/modelcontextprotocol/servers")
-    logger.info()
+    logger.info("")
 
     if _ask_yes_no("¿Querés habilitar algún servidor MCP ahora?"):
-        logger.info()
+        logger.info("")
         logger.info("  Servidores disponibles:")
         logger.info("    1. filesystem — Acceso a archivos (read/write/list)")
         logger.info("    2. github     — API de GitHub (issues, PRs, repos)")
@@ -191,7 +191,7 @@ def setup_mcp_servers(base: Path) -> None:
         logger.info("    4. memory     — Memoria persistente / grafo de conocimiento")
         logger.info("    5. brave_search — Busqueda web")
         logger.info("    6. none       — No habilitar ninguno ahora")
-        logger.info()
+        logger.info("")
 
         try:
             choice = input("  Selecciona un numero (1-6): ").strip()

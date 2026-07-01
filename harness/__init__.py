@@ -1,5 +1,6 @@
 """Harness — Multi-agent orchestration engine with LanceDB memory, C.A.S.E. evaluation, GEPA mutation, and procedural memory."""
 
+from harness.run import main as run
 from harness.orchestrator.task_manager import TaskManager
 from harness.orchestrator.delegation_engine import DelegationEngine
 from harness.orchestrator.agent_bus import AgentBus

@@ -78,9 +78,9 @@ def main() -> None:
     """Main."""
     project_root = Path(__file__).resolve().parent.parent  # AGENTIC/
 
-    logger.info()
+    logger.info("")
     banner("[Harness reset] Limpiando estado...")
-    logger.info()
+    logger.info("")
 
     # 1. Vector database (new name)
     rm_dir(project_root / "harness" / "db" / "lancedb")
@@ -111,12 +111,12 @@ def main() -> None:
     clean_pycache(project_root / "harness")
     clean_pycache(project_root / ".opencode")
 
-    logger.info()
+    logger.info("")
     banner("[OK] Harness resetado. Listo para pegar en nuevo proyecto.")
-    logger.info()
+    logger.info("")
     banner("Proximo paso: copia harness/ y .opencode/ a tu proyecto")
     banner("y ejecuta: python harness/scripts/init.py")
-    logger.info()
+    logger.info("")
 
 
 if __name__ == "__main__":

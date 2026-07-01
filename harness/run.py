@@ -40,6 +40,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 import logging
+from datetime import datetime
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
@@ -56,12 +57,12 @@ except ImportError:
     logger.info("=" * 60)
     logger.info("  LanceDB REQUERIDO — No se encontro instalado.")
     logger.info("=" * 60)
-    logger.info()
+    logger.info("")
     logger.info("  Ejecuta uno de estos comandos:")
-    logger.info()
+    logger.info("")
     logger.info("    pip install lancedb")
     logger.info("    python harness/scripts/init.py")
-    logger.info()
+    logger.info("")
     logger.info("  El sistema NO puede funcionar sin LanceDB.")
     logger.info("=" * 60)
     sys.exit(1)
@@ -85,6 +86,121 @@ except ImportError:
 
 
 # ---------------------------------------------------------------------------
+# First-run onboarding
+# ---------------------------------------------------------------------------
+
+
+def _check_first_run() -> bool:
+    """Detecta si es primera ejecucion del harness en este proyecto."""
+    marker_file = Path(HARNESS_ROOT) / ".harness_initialized"
+    if marker_file.exists():
+        return False
+
+    logger.info("=" * 60)
+    logger.info("  \U0001F680 AGENTIC Harness -- Primera ejecucion detectada")
+    logger.info("=" * 60)
+    logger.info("")
+    logger.info("  Vamos a configurar tu proyecto paso a paso.")
+    logger.info("")
+
+    # Paso 1: Nombre del proyecto
+    try:
+        project_name = input("  1. Nombre del proyecto [default: mi-proyecto]: ").strip()
+    except (EOFError, KeyboardInterrupt):
+        project_name = ""
+    if not project_name:
+        project_name = "mi-proyecto"
+
+    # Paso 2: Stack tecnologico
+    print(f"\n  2. Stack tecnologico:")
+    print(f"     a) Python")
+    print(f"     b) Rust")
+    print(f"     c) Go")
+    print(f"     d) Node/TypeScript")
+    print(f"     e) Otro")
+    try:
+        stack = input("     Selecciona tu stack [a]: ").strip().lower() or "a"
+    except (EOFError, KeyboardInterrupt):
+        stack = "a"
+    stack_map = {"a": "Python", "b": "Rust", "c": "Go", "d": "Node/TypeScript", "e": "Otro"}
+    tech_stack = stack_map.get(stack, "Python")
+
+    # Paso 3: Dominio
+    print(f"\n  3. Dominio del proyecto:")
+    print(f"     a) Web")
+    print(f"     b) Trading")
+    print(f"     c) CLI/Herramienta")
+    print(f"     d) API/Microservicio")
+    print(f"     e) Otro")
+    try:
+        dom = input("     Selecciona el dominio [a]: ").strip().lower() or "a"
+    except (EOFError, KeyboardInterrupt):
+        dom = "a"
+    dom_map = {"a": "web", "b": "trading", "c": "cli", "d": "api", "e": "otro"}
+    domain = dom_map.get(dom, "web")
+
+    # Paso 4: Auto-configurar project_config.yaml
+    config_path = Path(HARNESS_ROOT).parent / ".opencode" / "config" / "project_config.yaml"
+    if config_path.exists():
+        config_content = config_path.read_text(encoding="utf-8")
+        config_content = config_content.replace('PROJECT_NAME: ""', f'PROJECT_NAME: "{project_name}"')
+        config_content = config_content.replace('DOMAIN: ""', f'DOMAIN: "{domain}"')
+        config_content = config_content.replace('TECH_STACK: ""', f'TECH_STACK: "{tech_stack}"')
+        config_path.write_text(config_content, encoding="utf-8")
+        logger.info(f"  project_config.yaml actualizado: {project_name} ({tech_stack}, {domain})")
+
+    # Paso 5: Ejecutar init.py
+    logger.info("")
+    logger.info("  Ejecutando init.py para completar la configuracion...")
+    import subprocess as _subprocess
+
+    _subprocess.run([sys.executable, str(Path(HARNESS_ROOT) / "scripts" / "init.py")], cwd=HARNESS_ROOT.parent)
+
+    # Paso 6: Crear marker
+    marker_file.write_text(f"initialized: {datetime.now().isoformat()}\nproject: {project_name}\n")
+    logger.info("")
+    logger.info("  Harness configurado. Listo para usar!")
+    logger.info("")
+    logger.info("  Proximos pasos:")
+    logger.info(f"    python harness/run.py \"@project-manager: planificar {project_name}\"")
+    logger.info("    python harness/run.py --watch")
+    logger.info("")
+    return True
+
+
+def _show_usage() -> None:
+    """Show usage information."""
+    logger.info("Uso: python harness/run.py \"<descripcion de la tarea>\"")
+    logger.info("Ej: python harness/run.py \"@software-engineer: Implementa endpoint de API\"")
+    logger.info("")
+    logger.info("Flags:")
+    logger.info("  --daemon                    Inicia scheduler en background")
+    logger.info("  --watch                     Modo watch (monitorea cambios)")
+    logger.info("  --gateway <type>            Modo gateway (cli, slack, telegram)")
+    logger.info("  --force-cloud               Override: todas las tareas a cloud API")
+    logger.info("  --auto-pilot                Desactiva HITL (entornos de confianza)")
+    logger.info("  --hitl-sensitive            HITL solo para acciones criticas")
+    logger.info("  --help                      Muestra esta ayuda")
+    logger.info("  !evolve mutate @<a> \"<t>\"   Evolucion de prompts")
+    logger.info("  !schedule add <n> ...       Programar job")
+    logger.info("  !schedule list              Listar jobs")
+    logger.info("  !db migrate                 Migrar BD desde import/")
+    logger.info("  !db migrate --path <ruta>   Migrar BD especifica")
+    logger.info("  !db list-imports            Listar BDs disponibles")
+    logger.info("  !db stats                   Estadisticas de BD activa")
+    logger.info("  !db rollback <backup>       Restaurar desde backup")
+    logger.info("  !iteration end              Pipeline fin de iteracion")
+    logger.info("  !iteration end --dry-run    Simulacion del pipeline")
+    logger.info("  !iteration end --skip-bugs  Salta bug hunting")
+    logger.info("  !iteration end --skip-sec   Salta security review")
+    logger.info("  !iteration end --skip-docs  Salta docs update")
+    logger.info("  !iteration report           Muestra ultimo reporte")
+    logger.info("  !hooks install              Instala pre-commit hook")
+    logger.info("  !hooks uninstall            Desinstala pre-commit hook")
+    logger.info("  !hooks status               Muestra estado del hook")
+
+
+# ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
 
@@ -93,6 +209,7 @@ def _parse_args() -> Dict[str, Any]:
     """Parse CLI arguments, extracting flags and the task string."""
     args = sys.argv[1:]
     parsed: Dict[str, Any] = {
+        "help": False,
         "daemon": False,
         "watch": False,
         "gateway": None,
@@ -106,7 +223,10 @@ def _parse_args() -> Dict[str, Any]:
     i = 0
     while i < len(args):
         arg = args[i]
-        if arg == "--daemon":
+        if arg == "--help":
+            parsed["help"] = True
+            i += 1
+        elif arg == "--daemon":
             parsed["daemon"] = True
             i += 1
         elif arg == "--watch":
@@ -159,7 +279,7 @@ def _handle_watch_mode() -> None:
     logger.info(f"  - {HARNESS_ROOT}")
     logger.info(f"  - {HARNESS_ROOT.parent / '.opencode'}")
     logger.info(f"  Excluyendo: harness/db/, __pycache__/, .git/")
-    logger.info()
+    logger.info("")
 
     # Quick check: ensure end_of_iteration.py exists
     eoi_script = HARNESS_ROOT / "scripts" / "end_of_iteration.py"
@@ -240,7 +360,7 @@ def _handle_watch_mode() -> None:
             last_snapshot = new_snapshot.copy()
             idle_since = None
             _safe_print(f"  {_cyan('[WATCH]')} Waiting for changes...")
-            logger.info()
+            logger.info("")
 
     except KeyboardInterrupt:
         _safe_print(f"\n  {_cyan('[WATCH]')} Watch mode detenido.")
@@ -255,6 +375,14 @@ def _handle_watch_mode() -> None:
 def main() -> None:
     """Main."""
     parsed = _parse_args()
+
+    # --- Handle --help immediately (before first-run check) ---
+    if parsed.get("help"):
+        _show_usage()
+        return
+
+    # --- First-run onboarding (before any command processing) ---
+    _check_first_run()
 
     # --- Gateway mode ---
     if parsed["gateway"]:
@@ -341,33 +469,7 @@ def main() -> None:
     # --- Standard task routing ---
     task = parsed.get("task")
     if not task:
-        logger.info("Uso: python harness/run.py \"<descripcion de la tarea>\"")
-        logger.info("Ej: python harness/run.py \"@software-engineer: Implementa endpoint de API\"")
-        logger.info()
-        logger.info("Flags:")
-        logger.info("  --daemon                    Inicia scheduler en background")
-        logger.info("  --watch                     Modo watch (monitorea cambios)")
-        logger.info("  --gateway <type>            Modo gateway (cli, slack, telegram)")
-        logger.info("  --force-cloud               Override: todas las tareas a cloud API")
-        logger.info("  --auto-pilot                Desactiva HITL (entornos de confianza)")
-        logger.info("  --hitl-sensitive            HITL solo para acciones criticas")
-        logger.info("  !evolve mutate @<a> \"<t>\"   Evolucion de prompts")
-        logger.info("  !schedule add <n> ...       Programar job")
-        logger.info("  !schedule list              Listar jobs")
-        logger.info("  !db migrate                 Migrar BD desde import/")
-        logger.info("  !db migrate --path <ruta>   Migrar BD especifica")
-        logger.info("  !db list-imports            Listar BDs disponibles")
-        logger.info("  !db stats                   Estadisticas de BD activa")
-        logger.info("  !db rollback <backup>       Restaurar desde backup")
-        logger.info("  !iteration end              Pipeline fin de iteracion")
-        logger.info("  !iteration end --dry-run    Simulacion del pipeline")
-        logger.info("  !iteration end --skip-bugs  Salta bug hunting")
-        logger.info("  !iteration end --skip-sec   Salta security review")
-        logger.info("  !iteration end --skip-docs  Salta docs update")
-        logger.info("  !iteration report           Muestra ultimo reporte")
-        logger.info("  !hooks install              Instala pre-commit hook")
-        logger.info("  !hooks uninstall            Desinstala pre-commit hook")
-        logger.info("  !hooks status               Muestra estado del hook")
+        _show_usage()
         sys.exit(1)
 
     logger.info("[Harness] Inicializando...")

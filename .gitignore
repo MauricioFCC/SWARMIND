@@ -9,6 +9,9 @@ build/
 .DS_Store
 Thumbs.db
 
+# Onboarding marker (regenerable)
+harness/.harness_initialized
+
 # Harness data (regenerable)
 harness/db/lancedb/
 harness/db/lancedb_store/  # legacy name (removed in future)
