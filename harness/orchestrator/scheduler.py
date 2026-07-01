@@ -352,18 +352,23 @@ class Scheduler:
         error_msg = ""
 
         try:
-            # Execute the command
+            # SECURITY: Execute the command using list form (no shell=True).
+            # shell=True is avoided to prevent command injection.
+            import shlex as _shlex
+            import subprocess as _subprocess
+
             if job.command.startswith("python "):
-                import subprocess
-                result = subprocess.run(
-                    job.command, shell=True, capture_output=True, text=True, timeout=300
-                )
-                if result.returncode != 0:
-                    status = "failed"
-                    error_msg = result.stderr[-500:] if result.stderr else "exit code != 0"
+                # Parse the command safely into a list (shlex handles quoting)
+                cmd_list = _shlex.split(job.command)
             else:
-                # For non-python commands, simulate execution
-                logger.info("Simulating execution of: %s", job.command)
+                cmd_list = _shlex.split(job.command)
+
+            result = _subprocess.run(
+                cmd_list, capture_output=True, text=True, timeout=300,
+            )
+            if result.returncode != 0:
+                status = "failed"
+                error_msg = result.stderr[-500:] if result.stderr else "exit code != 0"
         except Exception as exc:
             status = "failed"
             error_msg = str(exc)

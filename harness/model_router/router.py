@@ -325,7 +325,15 @@ class ModelRouter:
 
     def _execute_zenfree(self, prompt: str, model: str, agent_role: str = "*") -> ExecutionResult:
         """Execute via ZenFree API (or similar OpenAI-compatible)."""
-        api_key = os.environ.get("ZENFREE_API_KEY") or os.environ.get("API_KEY", "")
+        api_key = os.environ.get("ZENFREE_API_KEY") or ""
+        if not api_key:
+            # Fallback to generic API_KEY with deprecation warning
+            api_key = os.environ.get("API_KEY", "")
+            if api_key:
+                logger.warning(
+                    "Using generic API_KEY env var. Set ZENFREE_API_KEY for better "
+                    "isolation between providers."
+                )
         if not api_key:
             return ExecutionResult(
                 success=False,
@@ -333,7 +341,7 @@ class ModelRouter:
                 source="cloud",
                 model=model,
                 duration_ms=0,
-                error="No API key found. Set ZENFREE_API_KEY or API_KEY env var.",
+                error="No API key found. Set ZENFREE_API_KEY env var.",
             )
 
         try:
@@ -384,7 +392,15 @@ class ModelRouter:
 
     def _execute_openai_compat(self, prompt: str, model: str, agent_role: str = "*") -> ExecutionResult:
         """Execute via any OpenAI-compatible API."""
-        api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("API_KEY", "")
+        api_key = os.environ.get("OPENAI_API_KEY") or ""
+        if not api_key:
+            # Fallback to generic API_KEY with deprecation warning
+            api_key = os.environ.get("API_KEY", "")
+            if api_key:
+                logger.warning(
+                    "Using generic API_KEY env var. Set OPENAI_API_KEY for better "
+                    "isolation between providers."
+                )
         base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
 
         if not api_key:

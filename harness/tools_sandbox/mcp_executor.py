@@ -9,10 +9,12 @@ from __future__ import annotations
 import json
 import logging
 import subprocess
+import tempfile
 import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -253,24 +255,31 @@ class MCPExecutor:
         Returns:
             ``SandboxResult`` with execution details.
         """
-        if test_type == "pytest":
-            params = {
-                "test_path": "-",  # stdin-based execution not supported;
-                "code": code,      # we pass code as a param for logging
-                "args": ["-x", "--tb=short"],
-            }
-            # In a real implementation this would write `code` to a temp file
-            # and run pytest against that file.
-            return self.execute_tool("python", {
-                "script": "-c",
-                "args": [f"import pytest; exec({code!r})"],
-            }, timeout=timeout)
+        # SECURITY: Use temp files instead of eval/exec to prevent code injection.
+        # This also enables pytest discovery and proper tracebacks.
+        try:
+            tmp_dir = Path(tempfile.mkdtemp(prefix="mcp_sandbox_"))
+            tmp_file = tmp_dir / "test_code.py"
+            tmp_file.write_text(code, encoding="utf-8")
 
-        # Default: run as plain Python
-        return self.execute_tool("python", {
-            "script": "-c",
-            "args": [code],
-        }, timeout=timeout)
+            if test_type == "pytest":
+                return self.execute_tool("pytest", {
+                    "test_path": str(tmp_file),
+                    "args": ["-x", "--tb=short"],
+                }, timeout=timeout)
+
+            # Default: run as plain Python
+            return self.execute_tool("python", {
+                "script": str(tmp_file),
+                "args": [],
+            }, timeout=timeout)
+        finally:
+            # Clean up temp file (best-effort)
+            try:
+                import shutil
+                shutil.rmtree(str(tmp_dir), ignore_errors=True)
+            except Exception:
+                pass
 
     def get_execution_log(
         self,

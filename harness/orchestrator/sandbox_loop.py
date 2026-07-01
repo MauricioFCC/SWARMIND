@@ -423,7 +423,8 @@ class SandboxLoop:
         # Obtener ultimo mensaje relacionado
         ultimo = None
         try:
-            dummy = __import__("numpy").zeros(384, dtype=__import__("numpy").float32)
+            import numpy as np  # noqa: F811 — safe direct import
+            dummy = np.zeros(384, dtype=np.float32)
             results = self.bus.store.search(
                 "agent_workspace_logs", dummy, top_k=1,
                 filters={"task_id": task_id},

@@ -47,6 +47,8 @@ Flags:
     !rag ingest             Ingiere codigo fuente como RAG
     !rag ingest --dir <p>   Ingiere solo un directorio
     !rag stats              Estadisticas de la BD RAG
+    !hermes sync            Sincronizacion bidireccional AGENTIC <-> Hermes_Memory_Proyects
+    !hermes stats           Estadisticas del puente Hermes
 """
 import sys
 import os
@@ -259,6 +261,8 @@ def _show_usage() -> None:
     logger.info("  !rag ingest                 Ingiere codigo fuente como RAG")
     logger.info("  !rag ingest --dir <path>    Ingiere solo un directorio")
     logger.info("  !rag stats                  Estadisticas de la BD RAG")
+    logger.info("  !hermes sync                Sync bidireccional AGENTIC <-> Hermes_Memory_Proyects")
+    logger.info("  !hermes stats               Estadisticas del puente Hermes")
 
 
 # ---------------------------------------------------------------------------
@@ -330,6 +334,7 @@ from harness.run_commands import (
     _handle_rag_ingest, _handle_rag_stats,
     _apply_model_routing, _check_hitl, _get_files_to_watch, _ok, _warn, _err, _bold, _cyan, _safe_print,
 )
+from harness.hermes_bridge import HermesBridge
 
 
 def _handle_watch_mode() -> None:
@@ -433,6 +438,30 @@ def _handle_watch_mode() -> None:
     except KeyboardInterrupt:
         _safe_print(f"\n  {_cyan('[WATCH]')} Watch mode detenido.")
         return
+
+
+# ---------------------------------------------------------------------------
+# Hermes commands
+# ---------------------------------------------------------------------------
+
+
+def _handle_hermes(cmd: str) -> None:
+    """Handle ``!hermes sync`` and ``!hermes stats``."""
+    sub = cmd[len("!hermes"):].strip()
+    if sub == "sync":
+        bridge = HermesBridge()
+        result = bridge.sync_all()
+        logger.info(f"[Hermes] Sync complete: {result}")
+    elif sub == "stats":
+        bridge = HermesBridge()
+        stats = bridge.get_stats()
+        logger.info(f"[Hermes] Bridge stats: {stats}")
+    elif sub in ("", "help"):
+        logger.info("[Hermes] Commands:")
+        logger.info("  !hermes sync    — Bidirectional sync AGENTIC <-> Hermes_Memory_Proyects")
+        logger.info("  !hermes stats   — Show bridge statistics")
+    else:
+        logger.info(f"[Hermes] Unknown subcommand: '{sub}'. Try '!hermes sync' or '!hermes stats'.")
 
 
 # ---------------------------------------------------------------------------
@@ -542,6 +571,8 @@ def main() -> None:
             _handle_rag_ingest(store, cmd)
         elif cmd.startswith("!rag stats"):
             _handle_rag_stats(store)
+        elif cmd.startswith("!hermes"):
+            _handle_hermes(cmd)
         else:
             logger.info(f"[Harness] Comando desconocido: {cmd}")
         return
@@ -575,9 +606,6 @@ def main() -> None:
     logger.info("[Harness] Inicializando...")
 
     store = LanceVectorStore()
-    if store is None:
-        logger.warning("LanceVectorStore no inicializado. Intentando crear...")
-        store = LanceVectorStore()
 
     tm = TaskManager(vector_store=store)
     if not os.path.exists(os.path.join(HARNESS_ROOT, "db", "lancedb")):

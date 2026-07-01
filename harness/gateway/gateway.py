@@ -101,7 +101,7 @@ class CliGateway(MessageGateway):
         """Write a message to stdout."""
         try:
             prefix = f"[{message.channel}] {message.role}:"
-            logger.info(f"{prefix} {message.content}", file=sys.stdout, flush=True)
+            print(f"{prefix} {message.content}", flush=True)
             return True
         except OSError as exc:
             logger.error("CLI send failed: %s", exc)
@@ -358,6 +358,23 @@ def create_gateway(gateway_type: str, config: Optional[Dict[str, Any]] = None) -
 # ---------------------------------------------------------------------------
 
 
+def _resolve_gateway_env_vars(config: Any) -> Any:
+    """Recursively resolve ${VAR} or ${VAR:-default} patterns in config values."""
+    if isinstance(config, str):
+        if config.startswith("${") and config.endswith("}"):
+            inner = config[2:-1]
+            if ":-" in inner:
+                var_name, default = inner.split(":-", 1)
+                return os.environ.get(var_name, default)
+            return os.environ.get(inner, "")
+        return config
+    if isinstance(config, dict):
+        return {k: _resolve_gateway_env_vars(v) for k, v in config.items()}
+    if isinstance(config, list):
+        return [_resolve_gateway_env_vars(item) for item in config]
+    return config
+
+
 def load_gateway_config() -> Dict[str, Any]:
     """Load gateway configuration from gateway_config.yaml."""
     if not GATEWAY_CONFIG_PATH.exists():
@@ -370,7 +387,8 @@ def load_gateway_config() -> Dict[str, Any]:
     try:
         with open(str(GATEWAY_CONFIG_PATH), "r", encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
-        return config
+        # Resolve env vars in strings like ${SLACK_BOT_TOKEN}
+        return _resolve_gateway_env_vars(config)
     except Exception as exc:
         logger.warning("Failed to load gateway config: %s. Using defaults.", exc)
         return {

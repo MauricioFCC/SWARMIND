@@ -1,257 +1,381 @@
 #!/usr/bin/env python3
 """
-Hermes Bridge — Integration between AGENTIC harness and Hermes Agent.
+hermes_bridge.py — Puente bidireccional AGENTIC ↔ Hermes_Memory_Proyects.
 
-Provides:
-- Skills synchronization (AGENTIC ↔ Hermes format)
-- MCP server registration
-- Memory bridge for cognition lessons
-- Delegation integration
+Sincroniza la cognition store (asi_cognition_store) del harness AGENTIC
+con el sistema de memoria externo Hermes_Memory_Proyects.
+
+Flujo:
+  - sync_to_hermes(): Exporta entries de asi_cognition_store → Hermes syntheses/ + knowledge/
+  - sync_from_hermes(): Importa entries de Hermes → asi_cognition_store
+
+Formato de archivos en Hermes:
+  syntheses/{slug}.md  →  YAML frontmatter (title, domain, tags, date) + markdown body
+  knowledge/{slug}.md  →  Similar estructura
+
+Compatibilidad: Hermes usa lancedb_data como vector store propio.
+
+Uso:
+    bridge = HermesBridge()
+    bridge.sync_to_hermes()       # Exporta cognition store → archivos .md
+    bridge.sync_from_hermes()     # Importa archivos .md → cognition store
+    bridge.sync_all()             # Bidireccional completo
 """
 
 from __future__ import annotations
 
-import argparse
 import json
+import logging
 import os
-import subprocess
-import sys
+import re
+import shutil
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+import numpy as np
+import yaml
 
-try:
-    import yaml
-    HAS_YAML = True
-except ImportError:
-    HAS_YAML = False
+from harness.memory_rag.lance_vector_store import LanceVectorStore
 
-HERMES_HOME = Path.home() / ".hermes"
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-AGENTIC_SKILLS_DIR = PROJECT_ROOT / ".opencode" / "skills" / "auto"
-HERMES_SKILLS_DIR = HERMES_HOME / "skills"
+logger = logging.getLogger(__name__)
 
-def is_hermes_installed() -> bool:
-    """Check if Hermes CLI is installed and available in PATH."""
-    try:
-        subprocess.run(["hermes", "--version"], capture_output=True, timeout=5)
-        return True
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        return False
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
 
-def sync_skill_formats() -> Dict[str, Any]:
-    """Convert AGENTIC skills to Hermes format with frontmatter."""
-    results = {"synced": 0, "errors": [], "skipped": 0}
-    
-    # Ensure directories exist
-    HERMES_SKILLS_DIR.mkdir(parents=True, exist_ok=True)
-    AGENTIC_SKILLS_DIR.mkdir(parents=True, exist_ok=True)
-    
-    for skill_file in AGENTIC_SKILLS_DIR.glob("*.md"):
-        try:
-            content = skill_file.read_text(encoding="utf-8")
-            
-            # Check if already has frontmatter
-            if content.startswith("---\n"):
-                results["skipped"] += 1
-                continue
-            
-            # Parse AGENTIC format (# skill: name, **Dominio**, etc.)
-            lines = content.split("\n")
-            skill_name = skill_file.stem
-            domain = "general"
-            trigger = ""
-            
-            for line in lines[:10]:
-                if line.startswith("# skill:"):
-                    skill_name = line.split(":", 1)[1].strip()
-                elif "**Dominio**:" in line:
-                    domain = line.split(":", 1)[1].strip()
-                elif "**Trigger**:" in line:
-                    trigger = line.split(":", 1)[1].strip()
-            
-            # Build Hermes frontmatter
-            frontmatter = {
-                "name": skill_name,
-                "description": f"Auto-generated from AGENTIC: {skill_name}",
-                "domain": domain,
-                "trigger": trigger[:100],
-                "agent": "software-engineer",
-                "version": "1.0.0",
-            }
-            
-            # Write Hermes format
-            hermes_content = f"---\n{yaml.dump(frontmatter, default_flow_style=False, allow_unicode=True)}---\n\n{content}\n"
-            hermes_file = HERMES_SKILLS_DIR / skill_file.name
-            hermes_file.write_text(hermes_content, encoding="utf-8")
-            results["synced"] += 1
-            
-        except Exception as e:
-            results["errors"].append(f"{skill_file}: {e}")
-    
-    return results
+# Hermes root (external repo) — set via env var HERMES_ROOT or config
+DEFAULT_HERMES_ROOT = Path(
+    os.environ.get("HERMES_ROOT", "")
+    or os.environ.get("HERMES_HOME", "")
+    or ""
+)
 
-def list_hermes_mcp_servers() -> List[Dict[str, Any]]:
-    """List MCP servers configured in Hermes."""
-    results = []
-    mcp_config = HERMES_HOME / "mcp_servers.json"
-    
-    if mcp_config.exists():
-        try:
-            data = json.loads(mcp_config.read_text())
-            servers = data.get("mcp_servers", {})
-            for name, config in servers.items():
-                results.append({
-                    "name": name,
-                    "command": config.get("command", ""),
-                    "url": config.get("url", ""),
-                    "enabled": config.get("enabled", True),
-                })
-        except Exception:
-            pass
-    
-    return results
+# Hermes subdirectories
+HERMES_SYNTHESES_DIR = "syntheses"
+HERMES_KNOWLEDGE_DIR = "knowledge"
+HERMES_SKILLS_DIR = "skills"
+HERMES_PROJECTS_DIR = "projects"
+HERMES_LANCEDB_DIR = "99_Hermes_Brain/lancedb_data"
 
-def register_agentic_servers_with_hermes(force: bool = False) -> Dict[str, Any]:
-    """Register AGENTIC's MCP server config with Hermes."""
-    results = {"registered": 0, "already_registered": 0}
-    
-    agentic_config = PROJECT_ROOT / "harness" / "tools_sandbox" / "mcp_servers.yaml"
-    if not agentic_config.exists():
-        return {"error": "mcp_servers.yaml not found"}
-    
-    try:
-        data = yaml.safe_load(agentic_config.read_text())
-        servers = data.get("servers", [])
-        
-        hermes_mcp_path = HERMES_HOME / "mcp_servers.json"
-        hermes_mcp = json.loads(hermes_mcp_path.read_text()) if hermes_mcp_path.exists() else {"mcp_servers": {}}
-        
-        for server in servers:
-            name = f"agentic-{server['name']}"
-            if name in hermes_mcp.get("mcp_servers", {}):
-                if not force:
-                    results["already_registered"] += 1
-                    continue
-            
-            # Register with Hermes via CLI
-            subprocess.run(
-                ["hermes", "mcp", "add", name, "--url", server['url']],
-                capture_output=True,
-                timeout=30
+# AGENTIC collections
+ASI_COLLECTION = "asi_cognition_store"
+RAG_COLLECTION = "rag_chunks"
+
+
+class HermesBridge:
+    """
+    Puente bidireccional AGENTIC ↔ Hermes_Memory_Proyects.
+
+    Uso:
+        bridge = HermesBridge()
+        bridge.sync_to_hermes()       # Exporta cognition store → archivos .md
+        bridge.sync_from_hermes()     # Importa archivos .md → cognition store
+        bridge.sync_all()             # Bidireccional completo
+    """
+
+    def __init__(
+        self,
+        hermes_root: Optional[Path] = None,
+        vector_store: Optional[LanceVectorStore] = None,
+    ):
+        self.hermes_root = Path(hermes_root or DEFAULT_HERMES_ROOT)
+        self._store = vector_store or LanceVectorStore()
+        self._stats: Dict[str, Any] = {
+            "exported": 0,
+            "imported": 0,
+            "errors": 0,
+        }
+
+        if not self.hermes_root or not str(self.hermes_root):
+            logger.warning(
+                "Hermes root is empty. Set HERMES_ROOT or HERMES_HOME env var to enable sync."
             )
-            results["registered"] += 1
-            
-    except Exception as e:
-        results["error"] = str(e)
-    
-    return results
+        elif not self.hermes_root.exists():
+            logger.warning(
+                "Hermes root not found: %s. Set HERMES_ROOT or HERMES_HOME env var.",
+                self.hermes_root,
+            )
 
-def bridge_cognition_to_hermes(top_k: int = 10) -> Dict[str, Any]:
-    """Export AGENTIC cognition lessons to Hermes memory format."""
-    from harness.memory_rag.lance_vector_store import LanceVectorStore
-    
-    # Use correct collection name from lance_schemas.py
-    COGNITION_COLLECTION = "asi_cognition_store"
-    
-    results = {"exported": 0, "errors": []}
-    
-    try:
-        store = LanceVectorStore()
-        import numpy as np
-        dummy = np.zeros(384, dtype=np.float32)
-        lessons = store.search(COGNITION_COLLECTION, dummy, top_k=top_k)
-        
-        for lesson in lessons:
-            try:
-                meta = lesson.get("metadata", {})
-                title = meta.get("title", "")
-                content = meta.get("content", "")
-                domain = meta.get("domain", "general")
-                
-                # In Hermes context, would call memory tool
-                results["exported"] += 1
-            except Exception as e:
-                results["errors"].append(str(e))
-                
-    except Exception as e:
-        results["error"] = str(e)
-    
-    return results
+    # ------------------------------------------------------------------
+    # Export: AGENTIC → Hermes
+    # ------------------------------------------------------------------
 
-def main():
-    parser = argparse.ArgumentParser(description="Hermes-AGENTIC Bridge")
-    parser.add_argument("--sync-skills", action="store_true", help="Sync AGENTIC skills to Hermes format")
-    parser.add_argument("--register-mcp", action="store_true", help="Register AGENTIC MCP servers with Hermes")
-    parser.add_argument("--bridge-memory", action="store_true", help="Export cognition to Hermes memory")
-    parser.add_argument("--all", action="store_true", help="Run all sync operations")
-    parser.add_argument("--setup", action="store_true", help="Set up Hermes for AGENTIC (requires Hermes installed)")
-    parser.add_argument("--check", action="store_true", help="Check the Hermes-AGENTIC integration setup")
-    
-    args = parser.parse_args()
+    def sync_to_hermes(self, max_entries: int = 50) -> Dict[str, Any]:
+        """
+        Export cognition entries from AGENTIC asi_cognition_store
+        to Hermes syntheses/ and knowledge/ as .md files.
 
-    if args.setup:
-        if not is_hermes_installed():
-            print("Error: Hermes is not installed. Please install Hermes first.")
-            sys.exit(1)
-        print("[Bridge] Setting up Hermes for AGENTIC...")
-        # Sync skills
-        sync_result = sync_skill_formats()
-        print(f"  Skills synced: {sync_result['synced']}, Skipped: {sync_result['skipped']}, Errors: {len(sync_result['errors'])}")
-        # Register MCP servers
-        register_result = register_agentic_servers_with_hermes()
-        if "error" in register_result:
-            print(f"  Error registering MCP servers: {register_result['error']}")
-        else:
-            print(f"  MCP servers registered: {register_result['registered']}, Already registered: {register_result['already_registered']}")
-        # Optionally bridge memory if --bridge-memory is also set
-        if args.bridge_memory:
-            print("[Bridge] Bridging cognition memory...")
-            memory_result = bridge_cognition_to_hermes()
-            if "error" in memory_result:
-                print(f"  Error bridging memory: {memory_result['error']}")
+        Returns dict with export stats.
+        """
+        if not self.hermes_root.exists():
+            logger.error("Cannot export: Hermes root %s not found", self.hermes_root)
+            return {"error": "Hermes root not found"}
+
+        # 1. Pull entries from LanceDB
+        entries = self._get_cognition_entries(max_entries)
+
+        # 2. Classify entries by domain/content
+        syntheses, knowledge = self._classify_entries(entries)
+
+        # 3. Write .md files
+        syn_count = self._write_hermes_files(syntheses, HERMES_SYNTHESES_DIR, "synthesis")
+        know_count = self._write_hermes_files(knowledge, HERMES_KNOWLEDGE_DIR, "knowledge")
+
+        self._stats["exported"] = syn_count + know_count
+
+        logger.info(
+            "Exported %d entries to Hermes (%d syntheses, %d knowledge)",
+            self._stats["exported"], syn_count, know_count,
+        )
+        return {
+            "syntheses": syn_count,
+            "knowledge": know_count,
+            "total": self._stats["exported"],
+        }
+
+    def _get_cognition_entries(self, max_entries: int) -> List[Dict[str, Any]]:
+        """Retrieve entries from asi_cognition_store."""
+        try:
+            # Use search with zero vector to get recent entries
+            dummy = np.zeros(384, dtype=np.float32)
+            results = self._store.search(
+                ASI_COLLECTION, dummy, top_k=max_entries
+            )
+            return results
+        except Exception as exc:
+            logger.warning("Failed to get cognition entries: %s", exc)
+            return []
+
+    @staticmethod
+    def _classify_entries(
+        entries: List[Dict[str, Any]],
+    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """Classify entries into syntheses (insights) vs knowledge (reference)."""
+        syntheses = []
+        knowledge = []
+
+        for entry in entries:
+            meta = entry.get("metadata", {})
+            domain = str(meta.get("domain", "")).lower()
+            content = str(meta.get("content", "")).lower()
+
+            # Heuristic: syntheses contain "learn", "insight", "conclusion"
+            # knowledge contains "reference", "schema", "api", "definition"
+            synthesis_keywords = ["learn", "insight", "conclusion", "summary",
+                                  "finding", "result", "observation"]
+            knowledge_keywords = ["reference", "schema", "api", "definition",
+                                  "config", "setup", "guide", "manual"]
+
+            syn_score = sum(1 for kw in synthesis_keywords if kw in content)
+            know_score = sum(1 for kw in knowledge_keywords if kw in content)
+
+            if syn_score >= know_score:
+                syntheses.append(entry)
             else:
-                print(f"  Lessons exported to memory: {memory_result['exported']}")
-        return
-    elif args.check:
-        if not is_hermes_installed():
-            print("Error: Hermes is not installed.")
-            sys.exit(1)
-        print("[Bridge] Checking Hermes-AGENTIC integration...")
-        # Check skills: count of Hermes skills that have the AGENTIC auto-generated mark
-        hermes_skills = list(HERMES_SKILLS_DIR.glob("*.md"))
-        agentic_skill_count = 0
-        for skill_file in hermes_skills:
-            try:
-                content = skill_file.read_text(encoding="utf-8")
-                if "Auto-generated from AGENTIC" in content:
-                    agentic_skill_count += 1
-            except Exception:
-                pass
-        print(f"  AGENTIC skills in Hermes: {agentic_skill_count}/{len(hermes_skills)}")
-        # Check MCP servers: list the agentic-* servers in Hermes
-        mcp_result = list_hermes_mcp_servers()
-        agentic_mcp_count = sum(1 for s in mcp_result if s['name'].startswith('agentic-'))
-        print(f"  AGENTIC MCP servers in Hermes: {agentic_mcp_count}/{len(mcp_result)}")
-        print("  Check complete.")
-        return
-    
-    if args.all or args.sync_skills:
-        print("[Bridge] Syncing skills...")
-        result = sync_skill_formats()
-        print(f"  Synced: {result['synced']}, Skipped: {result['skipped']}, Errors: {len(result['errors'])}")
-    
-    if args.all or args.register_mcp:
-        print("[Bridge] Registering MCP servers...")
-        result = list_hermes_mcp_servers()
-        print(f"  Hermes MCP servers found: {len(result)}")
-    
-    if args.all or args.bridge_memory:
-        print("[Bridge] Bridging cognition memory...")
-        result = bridge_cognition_to_hermes()
-        print(f"  Exported lessons: {result['exported']}")
+                knowledge.append(entry)
 
-if __name__ == "__main__":
-    main()
+        # Balance: ensure both lists get entries
+        if not syntheses and entries:
+            syntheses = entries[:len(entries)//2]
+            knowledge = entries[len(entries)//2:]
+        elif not syntheses:
+            syntheses = []
+        elif not knowledge:
+            knowledge = []
+
+        return syntheses, knowledge
+
+    def _write_hermes_files(
+        self,
+        entries: List[Dict[str, Any]],
+        subdir: str,
+        entry_type: str,
+    ) -> int:
+        """Write entries as .md files in Hermes subdirectory."""
+        target_dir = self.hermes_root / subdir
+        os.makedirs(str(target_dir), exist_ok=True)
+
+        count = 0
+        for entry in entries:
+            meta = entry.get("metadata", {})
+            title = meta.get("title", meta.get("name", f"untitled_{count}"))
+            domain = meta.get("domain", "general")
+            content = meta.get("content", meta.get("description", ""))
+            tags = meta.get("tags", [])
+
+            # Generate slug
+            slug = re.sub(r"[^a-z0-9]+", "_", title.lower()).strip("_")[:50]
+            if not slug:
+                slug = f"{entry_type}_{count}"
+
+            # Create .md with YAML frontmatter
+            frontmatter = {
+                "title": title,
+                "type": entry_type,
+                "domain": domain,
+                "tags": tags if isinstance(tags, list) else [tags],
+                "source": "AGENTIC",
+                "date": meta.get("created_at", datetime.now(timezone.utc).isoformat()),
+                "original_id": entry.get("id", ""),
+            }
+
+            md_content = (
+                "---\n"
+                f"{yaml.dump(frontmatter, default_flow_style=False, allow_unicode=True)}"
+                "---\n\n"
+                f"# {title}\n\n"
+                f"{content}\n\n"
+                f"---\n*Exported from AGENTIC via HermesBridge*\n"
+            )
+
+            filepath = target_dir / f"{slug}.md"
+            # Avoid overwriting existing files
+            if filepath.exists():
+                filepath = target_dir / f"{slug}_{count}.md"
+
+            try:
+                filepath.write_text(md_content, encoding="utf-8")
+                count += 1
+            except Exception as exc:
+                logger.error("Failed to write %s: %s", filepath, exc)
+
+        return count
+
+    # ------------------------------------------------------------------
+    # Import: Hermes → AGENTIC
+    # ------------------------------------------------------------------
+
+    def sync_from_hermes(self, max_files: int = 50) -> Dict[str, Any]:
+        """
+        Import .md files from Hermes syntheses/ and knowledge/
+        into AGENTIC asi_cognition_store.
+
+        Returns dict with import stats.
+        """
+        if not self.hermes_root.exists():
+            return {"error": "Hermes root not found"}
+
+        imported = 0
+        errors = 0
+
+        # Read .md files from syntheses/ and knowledge/
+        for subdir in (HERMES_SYNTHESES_DIR, HERMES_KNOWLEDGE_DIR):
+            source_dir = self.hermes_root / subdir
+            if not source_dir.exists():
+                continue
+
+            md_files = sorted(source_dir.glob("*.md"))[:max_files]
+
+            for md_file in md_files:
+                try:
+                    entry = self._parse_hermes_md(md_file)
+                    if entry:
+                        self._store_cognition_entry(entry)
+                        imported += 1
+                except Exception as exc:
+                    logger.error("Failed to import %s: %s", md_file, exc)
+                    errors += 1
+
+        self._stats["imported"] = imported
+        self._stats["errors"] = errors
+
+        logger.info(
+            "Imported %d entries from Hermes (%d errors)",
+            imported, errors,
+        )
+        return {"imported": imported, "errors": errors}
+
+    @staticmethod
+    def _parse_hermes_md(filepath: Path) -> Optional[Dict[str, Any]]:
+        """Parse a Hermes .md file with YAML frontmatter."""
+        content = filepath.read_text(encoding="utf-8")
+
+        # Extract YAML frontmatter
+        if content.startswith("---"):
+            parts = content.split("---", 2)
+            if len(parts) >= 3:
+                try:
+                    frontmatter = yaml.safe_load(parts[1]) or {}
+                    body = parts[2].strip()
+                except yaml.YAMLError:
+                    frontmatter = {}
+                    body = content
+            else:
+                frontmatter = {}
+                body = content
+        else:
+            frontmatter = {}
+            body = content
+
+        title = frontmatter.get("title", filepath.stem)
+        domain = frontmatter.get("domain", "general")
+        tags = frontmatter.get("tags", [])
+        entry_type = frontmatter.get("type", "knowledge")
+
+        return {
+            "title": title,
+            "content": body,
+            "domain": domain,
+            "tags": tags if isinstance(tags, list) else [tags],
+            "entry_type": entry_type,
+            "source_file": str(filepath),
+            "source": "Hermes_Memory_Proyects",
+        }
+
+    def _store_cognition_entry(self, entry: Dict[str, Any]) -> None:
+        """Store a parsed entry into asi_cognition_store."""
+        vec = self._make_embedding(entry.get("title", "") + " " + entry.get("content", ""))
+
+        metadata = {
+            "title": entry.get("title", ""),
+            "content": entry.get("content", ""),
+            "domain": entry.get("domain", "general"),
+            "tags": entry.get("tags", []),
+            "source": entry.get("source", "Hermes_Memory_Proyects"),
+            "source_file": entry.get("source_file", ""),
+            "entry_type": entry.get("entry_type", "knowledge"),
+            "access_count": 0,
+            "last_accessed": datetime.now(timezone.utc).isoformat(),
+        }
+
+        try:
+            self._store.insert(ASI_COLLECTION, vec.reshape(1, -1), [metadata])
+        except Exception as exc:
+            logger.warning("Failed to store cognition entry: %s", exc)
+
+    # ------------------------------------------------------------------
+    # Full sync
+    # ------------------------------------------------------------------
+
+    def sync_all(self) -> Dict[str, Any]:
+        """Full bidirectional sync: export then import."""
+        exported = self.sync_to_hermes()
+        imported = self.sync_from_hermes()
+
+        return {
+            "exported": exported,
+            "imported": imported,
+            "stats": dict(self._stats),
+        }
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Return bridge statistics."""
+        return dict(self._stats)
+
+    # ------------------------------------------------------------------
+    # Embedding helper
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _make_embedding(text: str) -> np.ndarray:
+        """Deterministic fallback embedding (no ML model required)."""
+        dim = 384
+        vec = np.zeros(dim, dtype=np.float32)
+        for i, ch in enumerate(text.encode("utf-8", errors="replace")):
+            idx = (i * 7 + ch) % dim
+            vec[idx] += 1.0
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            vec /= norm
+        return vec

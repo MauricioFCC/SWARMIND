@@ -3,11 +3,15 @@ __pycache__/
 *.pyo
 .env
 .env.*
+!.env.example
 *.egg-info/
 dist/
 build/
 .DS_Store
 Thumbs.db
+
+# Pre-compiled skill versions (regenerable via compile_skills.py)
+.opencode/skills/*/SKILL.min.md
 
 # Onboarding marker (regenerable)
 harness/.harness_initialized
