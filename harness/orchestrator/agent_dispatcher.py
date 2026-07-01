@@ -240,3 +240,66 @@ class AgentDispatcher:
             "skill_matches": 0,
             "no_skill_matches": 0,
         }
+
+    # ------------------------------------------------------------------
+    # Async API
+    # ------------------------------------------------------------------
+
+    async def dispatch_async(
+        self,
+        agent_role: str,
+        task_description: str,
+        vector_store: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        """
+        Version ASYNC de dispatch(). Ejecuta en PARALELO:
+        1. Busqueda de skill en LanceDB
+        2. Contexto RAG
+        3. Mensajes recientes del agent_bus
+        """
+        import asyncio
+        from harness.memory_rag.context_assembler import ContextAssembler
+        from harness.orchestrator.agent_bus import AgentBus
+
+        store = vector_store or LanceVectorStore()
+        assembler = ContextAssembler(store)
+        bus = AgentBus(vector_store=store)
+
+        skill_task = asyncio.to_thread(self.find_skill_for_task, task_description)
+        context_task = asyncio.to_thread(
+            assembler.assemble, task_description, agent_role
+        )
+        messages_task = asyncio.to_thread(
+            bus.get_channel_history, f"@{agent_role}", 10
+        )
+
+        skill_result, context_result, messages = await asyncio.gather(
+            skill_task, context_task, messages_task
+        )
+
+        return {
+            "agent": agent_role,
+            "task": task_description,
+            "used_skill": skill_result is not None,
+            "skill_context": skill_result.get("content", "") if skill_result else "",
+            "rag_context": context_result,
+            "recent_messages": messages,
+            "reasoning_mode": "guided_by_skill" if skill_result else "from_scratch",
+        }
+
+    async def dispatch_batch(
+        self,
+        tasks: List[Tuple[str, str]],
+        vector_store: Optional[Any] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Dispatch MULTIPLE tareas en PARALELO.
+        Args:
+            tasks: Lista de (agent_role, task_description)
+        """
+        import asyncio
+        coros = [
+            self.dispatch_async(role, task, vector_store)
+            for role, task in tasks
+        ]
+        return await asyncio.gather(*coros)

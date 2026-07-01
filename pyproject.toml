@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentic-harness"
+version = "0.1.0"
+description = "Multi-Agent Evolutionary Harness"
+requires-python = ">=3.10"
+dependencies = [
+    "lancedb>=0.33",
+    "numpy>=1.24",
+    "pyyaml>=6.0",
+    "requests>=2.31",
+    "schedule>=1.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "pytest-mock>=3",
+    "ruff>=0.4",
+    "mypy>=1.8",
+]
+test = ["pytest>=8", "pytest-cov>=5", "pytest-mock>=3"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["harness/tests"]
+python_files = ["test_*.py"]
+
+[tool.coverage.run]
+source = ["harness"]
+omit = ["harness/tests/*", "harness/scripts/*"]
+
+[tool.coverage.report]
+fail_under = 30

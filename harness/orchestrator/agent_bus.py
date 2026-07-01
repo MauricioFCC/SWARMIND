@@ -704,3 +704,29 @@ class AgentBus:
         if norm > 0:
             vec /= norm
         return vec
+
+    # ------------------------------------------------------------------
+    # Async API
+    # ------------------------------------------------------------------
+
+    async def post_message_async(
+        self, channel: str, from_agent: str, to_agent: str,
+        message: str, message_type: str = "notification",
+        task_id: Optional[str] = None,
+    ) -> str:
+        """Version async de post_message."""
+        import asyncio
+        return await asyncio.to_thread(
+            self.post_message,
+            channel, from_agent, to_agent, message,
+            message_type, task_id=task_id,
+        )
+
+    async def poll_channel_async(
+        self, channel: str, agent_name: str, limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        """Version async de poll_channel."""
+        import asyncio
+        return await asyncio.to_thread(
+            self.poll_channel, channel, agent_name, limit=limit
+        )
