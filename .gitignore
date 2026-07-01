@@ -10,7 +10,8 @@ build/
 .DS_Store
 Thumbs.db
 
-# Auto-generated agents (regenerable via agent evolution)
+# Regenerable: pre-compiled skills and auto-generated agents
+.opencode/skills/*/SKILL.min.md
 .opencode/agents/auto/
 .opencode/agents/auto/*.agent.min.md
 
