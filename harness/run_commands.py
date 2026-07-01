@@ -164,7 +164,10 @@ def _handle_db_rollback(cmd: str) -> None:
 
 def _parse_iteration_flags(cmd: str) -> dict:
     """Parse flags from a !iteration end command."""
-    flags = {"skip_bugs": False, "skip_sec": False, "skip_docs": False, "dry_run": False}
+    flags = {
+        "skip_bugs": False, "skip_sec": False, "skip_docs": False,
+        "dry_run": False, "quick": False, "auto": False,
+    }
     parts = cmd.split()
     if "--dry-run" in parts:
         flags["dry_run"] = True
@@ -174,12 +177,25 @@ def _parse_iteration_flags(cmd: str) -> dict:
         flags["skip_sec"] = True
     if "--skip-docs" in parts:
         flags["skip_docs"] = True
+    if "--quick" in parts:
+        flags["quick"] = True
+    if "--auto" in parts:
+        flags["auto"] = True
     return flags
 
 
 def _handle_iteration_end(cmd: str, harness_root) -> None:
-    """Handle ``!iteration end [--dry-run] [--skip-bugs] [--skip-sec] [--skip-docs]``."""
+    """Handle ``!iteration end [--dry-run] [--skip-bugs] [--skip-sec] [--skip-docs] [--quick] [--auto]``."""
     flags = _parse_iteration_flags(cmd)
+
+    # Redirect to quick/auto mode if flagged
+    if flags["quick"]:
+        _handle_iteration_quick(cmd, harness_root)
+        return
+    if flags["auto"]:
+        _handle_iteration_auto(cmd, harness_root)
+        return
+
     logger.info(f"[Harness] Iniciando pipeline de fin de iteracion...")
     if flags["dry_run"]:
         logger.info(f"[Harness] Modo DRY-RUN — no se modificaran archivos")
@@ -200,10 +216,64 @@ def _handle_iteration_end(cmd: str, harness_root) -> None:
     )
 
 
+def _handle_iteration_quick(cmd: str = "", harness_root=None) -> None:
+    """Handle ``!iteration quick`` or ``!iteration end --quick``.
+
+    Modo rápido: solo bugs + tokens, salta security y docs.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+    from harness.scripts.end_of_iteration import run_quick_pipeline
+    run_quick_pipeline()
+
+
+def _handle_iteration_auto(cmd: str = "", harness_root=None) -> None:
+    """Handle ``!iteration auto`` or ``!iteration end --auto``.
+
+    Modo automático: pipeline completo + commit si no hay criticals.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+    from harness.scripts.end_of_iteration import run_auto_pipeline
+    run_auto_pipeline()
+
+
 def _handle_iteration_report() -> None:
     """Handle ``!iteration report`` — shows the last saved iteration report."""
     from harness.scripts.end_of_iteration import print_last_report
     print_last_report()
+
+
+def _handle_iteration_history(cmd: str) -> None:
+    """Handle ``!iteration history [--all]`` — muestra timeline de iteraciones."""
+    from harness.scripts.end_of_iteration import show_iteration_history
+    parts = cmd.split()
+    if "--all" in parts:
+        show_iteration_history(limit=0)  # 0 = sin límite
+    else:
+        show_iteration_history(limit=10)
+
+
+def _handle_iteration_diff(cmd: str) -> None:
+    """Handle ``!iteration diff [--last] [--n <num>]`` — muestra detalle de iteración.
+
+    Ejemplos:
+        !iteration diff            → última iteración
+        !iteration diff --last     → última iteración
+        !iteration diff --n 2      → penúltima iteración
+        !iteration diff --n 3      → antepenúltima iteración
+    """
+    from harness.scripts.end_of_iteration import show_iteration_diff
+    parts = cmd.split()
+
+    n = 1  # default: última
+    if "--n" in parts:
+        idx = parts.index("--n")
+        if idx + 1 < len(parts):
+            try:
+                n = max(1, int(parts[idx + 1]))
+            except (ValueError, IndexError):
+                n = 1
+    # --last también es 1 (default)
+    show_iteration_diff(n=n)
 
 
 # ── Hooks ────────────────────────────────────────────────────────────

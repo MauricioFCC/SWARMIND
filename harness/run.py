@@ -31,7 +31,16 @@ Flags:
     !iteration end --skip-bugs  Salta bug hunting
     !iteration end --skip-sec   Salta security review
     !iteration end --skip-docs  Salta docs update
+    !iteration end --quick      Modo rapido (bugs + tokens, <2s)
+    !iteration end --auto       Modo automatico (full pipeline + commit si OK)
+    !iteration quick        Modo rapido (bugs + tokens, salta security y docs)
+    !iteration auto         Modo automatico (full pipeline + commit si no hay criticals)
     !iteration report       Muestra ultimo reporte de iteracion
+    !iteration history      Muestra timeline de iteraciones (ultimas 10)
+    !iteration history --all   Muestra todas las iteraciones
+    !iteration diff         Muestra detalle de la ultima iteracion
+    !iteration diff --last  Muestra detalle de la ultima iteracion
+    !iteration diff --n 3   Muestra detalle de la iteracion #3
     !hooks install          Instala pre-commit hook (auto-pipeline en commits)
     !hooks uninstall        Desinstala pre-commit hook
     !hooks status           Muestra estado del pre-commit hook
@@ -234,7 +243,16 @@ def _show_usage() -> None:
     logger.info("  !iteration end --skip-bugs  Salta bug hunting")
     logger.info("  !iteration end --skip-sec   Salta security review")
     logger.info("  !iteration end --skip-docs  Salta docs update")
+    logger.info("  !iteration end --quick      Modo rapido (bugs+tokens, <2s)")
+    logger.info("  !iteration end --auto       Modo automatico (full pipeline+commit)")
+    logger.info("  !iteration quick            Modo rapido directo")
+    logger.info("  !iteration auto             Modo automatico directo")
     logger.info("  !iteration report           Muestra ultimo reporte")
+    logger.info("  !iteration history          Muestra timeline (ultimas 10)")
+    logger.info("  !iteration history --all    Muestra todas las iteraciones")
+    logger.info("  !iteration diff             Muestra detalle ultima iteracion")
+    logger.info("  !iteration diff --last      Muestra detalle ultima iteracion")
+    logger.info("  !iteration diff --n <num>   Muestra detalle iteracion #num")
     logger.info("  !hooks install              Instala pre-commit hook")
     logger.info("  !hooks uninstall            Desinstala pre-commit hook")
     logger.info("  !hooks status               Muestra estado del hook")
@@ -305,6 +323,8 @@ def _parse_args() -> Dict[str, Any]:
 from harness.run_commands import (
     _handle_db_migrate, _handle_db_list_imports, _handle_db_stats, _handle_db_rollback,
     _parse_iteration_flags, _handle_iteration_end, _handle_iteration_report,
+    _handle_iteration_quick, _handle_iteration_auto,
+    _handle_iteration_history, _handle_iteration_diff,
     _handle_hooks_install, _handle_hooks_uninstall, _handle_hooks_status,
     _handle_evolve_mutate, _handle_schedule_add, _handle_schedule_list,
     _handle_rag_ingest, _handle_rag_stats,
@@ -502,6 +522,14 @@ def main() -> None:
             _handle_db_rollback(cmd)
         elif cmd.startswith("!iteration end"):
             _handle_iteration_end(cmd, HARNESS_ROOT)
+        elif cmd.startswith("!iteration quick"):
+            _handle_iteration_quick(cmd, HARNESS_ROOT)
+        elif cmd.startswith("!iteration auto"):
+            _handle_iteration_auto(cmd, HARNESS_ROOT)
+        elif cmd.startswith("!iteration history"):
+            _handle_iteration_history(cmd)
+        elif cmd.startswith("!iteration diff"):
+            _handle_iteration_diff(cmd)
         elif cmd.startswith("!iteration report"):
             _handle_iteration_report()
         elif cmd.startswith("!hooks install"):
