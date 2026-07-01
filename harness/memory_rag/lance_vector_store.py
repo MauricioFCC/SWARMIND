@@ -793,14 +793,23 @@ class LanceVectorStore:
             raise CollectionNotFoundError(
                 f"Collection '{name}' not found: {exc}"
             ) from exc
-        data = tbl.to_list()
+        # Usar count_rows() para item_count y to_arrow() para datos
+        item_count = tbl.count_rows()
         schema = DEFAULT_COLLECTIONS.get(name, {}).get("schema", {})
         last_up = ""
-        if data:
-            last_up = data[-1].get("created_at", "")
+        if item_count > 0:
+            try:
+                # Obtener solo la última fila para timestamp
+                arrow_table = tbl.to_arrow()
+                if arrow_table.num_rows > 0:
+                    last_row = arrow_table.slice(arrow_table.num_rows - 1, 1)
+                    if "created_at" in arrow_table.column_names:
+                        last_up = str(last_row.column("created_at")[0].as_py())
+            except Exception:
+                last_up = ""
         return {
             "name": name,
-            "item_count": len(data),
+            "item_count": item_count,
             "schema": schema,
             "last_updated": last_up,
         }

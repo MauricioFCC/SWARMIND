@@ -73,6 +73,19 @@ DEFAULT_COLLECTIONS = {
             "vector": "list<float>", "metadata": "dict", "created_at": "string",
         },
     },
+    "semantic_cache": {
+        "description": "Semantic cache for LLM responses",
+        "schema": {
+            "prompt_hash": "string",
+            "prompt_text_short": "string",
+            "response": "string",
+            "agent_role": "string",
+            "hit_count": "int",
+            "created_at": "string",
+            "last_accessed": "string",
+            "ttl_seconds": "int",
+        },
+    },
     "iteration_reports": {
         "description": "End-of-iteration pipeline reports",
         "schema": {

@@ -88,7 +88,15 @@ def _safe_print(*args, **kwargs) -> None:
                        .replace("\u00ed", "i")
                        .replace("\u00f3", "o")
                        .replace("\u00fa", "u")
-                       .replace("\u00f1", "n"))
+                        .replace("\u00f1", "n")
+                        .replace("\u26a1", "!")         # ⚡ -> !
+                        .replace("\U0001f50d", "[SEARCH]")  # 🔍 -> [SEARCH]
+                        .replace("\U0001f4b0", "[MONEY]")   # 💰 -> [MONEY]
+                        .replace("\u2705", "[OK]")           # ✅ -> [OK]
+                        .replace("\u274c", "[X]")            # ❌ -> [X]
+                        .replace("\U0001f4cb", "[LIST]")     # 📋 -> [LIST]
+                        .replace("\U0001f4dd", "[NOTE]")     # 📝 -> [NOTE]
+                        .replace("\U0001f916", "[AI]"))      # 🤖 -> [AI]
             safe_args.append(arg)
         print(*safe_args, **kwargs)
 
@@ -158,6 +166,8 @@ class IterationReport:
     """Complete report for one iteration end."""
     timestamp: str = ""
     bugs_found: int = 0
+    bugs_critical: int = 0
+    bugs_major: int = 0
     bugs_fixed: int = 0
     bugs_needs_review: int = 0
     security_issues: int = 0

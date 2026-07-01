@@ -22,6 +22,7 @@ mode: subagent
 - [ ] Prompt engineering documentado (si LLM-based): system prompt, ejemplos few-shot, temperatura
 - [ ] Model Registry actualizado: versión, stage (staging/production), métricas baseline
 - [ ] Docs 1:1: API del modelo, schema input/output, límites de uso
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (modelo_llm) → Prompt engineering + few-shot → Evaluar con RAG Triad → Fine-tuning si necesario
 Si (inferencia_en_producción) → Optimizar con ONNX/TensorRT → Cuantización → Batching → Caching
@@ -52,6 +53,7 @@ mode: subagent
 - [ ] Structured notes persistentes para tareas multi-turno
 - [ ] JIT retrieval configurado (glob, grep, head/tail, stored queries)
 - [ ] Hybrid strategy: crítico pre-cargado, resto JIT
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (context_window > 80%) → trigger compaction
 Si (tool_call_depth > 5) → clear results, keep summary
@@ -81,6 +83,7 @@ mode: subagent
 - [ ] Dinero/tiempo en enteros/timestamps UTC • Formateo solo en borde
 - [ ] Prepared statements • Cero string concat en SQL
 - [ ] Backup strategy documentada + punto de recuperación
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (lectura_pesada/escritura_ligera) → Denormalización controlada + vistas materializadas
 Si (auditoría_obligatoria) → Tablas shadow o CDC en lugar de triggers lentos
@@ -105,6 +108,7 @@ mode: subagent
 - [ ] Logs: JSON estructurado + correlation ID + nivel ajustable en runtime
 - [ ] Secrets: Vault/Env inyectado • 0 hardcode • Rotación documentada
 - [ ] Cost: Right-sizing + Auto-scale thresholds + alerts budget burn rate
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (stateful_service) → Volumes persistentes + backup frecuente + affinity rules
 Si (alta_concurrencia) → Connection pooling + HPA basado en custom metrics
@@ -144,6 +148,7 @@ docs/
 - [ ] OPERATIONAL_MANUAL.md: troubleshooting actualizado con errores conocidos
 - [ ] Glosario (KEYWORDS.md) actualizado con nuevos conceptos
 - [ ] Changelog con fecha, versión y cambios
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 
 ## 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (nuevo_módulo) → Crear docstring de módulo + sección en TECHNICAL_MANUAL.md + ejemplo en OPERATIONAL_MANUAL.md
@@ -180,6 +185,7 @@ mode: subagent
 - [ ] Riesgos arquitectónicos identificados con plan de mitigación
 - [ ] Stack tecnológico justificado (lenguaje, framework, base de datos, infra)
 - [ ] Costo estimado (infra, mantenimiento, licensing vs valor de negocio)
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (nuevo_sistema) → C4 Model primero → ADR → Prototipo → Validación stakeholders
 Si (decisión_crítica) → Evaluar 2+ alternativas con matriz de trade-offs (costo, complejidad, mantenibilidad, escalabilidad)
@@ -259,6 +265,7 @@ Escribir una lección transferible que incluya:
 - Documentar tanto éxitos como fracasos
 - Si el resultado es ambiguo, reportar incertidumbre
 - Las lecciones deben ser accionables
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 
 --- FILE: .opencode/agents/evolve-engineer.md ---
 
@@ -329,6 +336,7 @@ error: null
 - Si el candidato tiene errores de sintaxis, reportar score 0
 - Timeout máximo: 1800 segundos
 - Documentar cualquier error de validación
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 
 --- FILE: .opencode/agents/evolve-researcher.md ---
 
@@ -403,6 +411,7 @@ Siempre mantener:
 - No degradar métricas existentes
 - Documentar el razonamiento en la hipótesis
 - Si no hay mejora clara, reportar "stall" en lugar de forzar cambio
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 
 --- FILE: .opencode/agents/frontend-engineer.md ---
 
@@ -422,6 +431,7 @@ mode: subagent
 - [ ] `aria-*`, `role`, labels visibles • Focus trap en modales
 - [ ] Code splitting/lazy load por ruta/feature > 50KB
 - [ ] Mocks de API para dev + Contract testing básico
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (estado_compartido_global) → Context/Store inmutable + derivaciones
 Si (lista_larga) → Virtualización + `key` estable + pagination infinite
@@ -447,6 +457,7 @@ mode: subagent
 - [ ] UI nativa: gestos, safe-areas, tipografía, accesibilidad (VoiceOver/TalkBack)
 - [ ] Performance: ≥60fps, <150MB RAM idle, lazy-load, cache de imágenes/media
 - [ ] Seguridad: Keychain/Keystore • Cert pinning • 0 secrets en código/assets
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (cross_platform) → Usar channels/plug-ins para trabajo nativo pesado • Evitar over-bridge serialización
 Si (offline_critico) → DB local + cola de sync con retry exponencial
@@ -522,6 +533,7 @@ Cada fase o hito del proyecto tiene sus propias gates de validación. **No avanz
 - [ ] Métricas de éxito verificadas
 - [ ] Post-mortem de issues documentado
 - [ ] Lecciones registradas en cognition store
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 
 ### 4. Reportar Progreso
 Mantén registro de:
@@ -635,6 +647,7 @@ Ambos modos generan un score de calidad que se registra en el **Cognition Store*
 - **Pairwise/Pointwise** se ejecutan post-merge para el Cognition Store
 - **Diseña la estrategia de tests antes de codificar** para nuevas features
 - `sleep()` hardcodeado prohibido • Aserciones visuales sin baseline prohibidas
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 
 --- FILE: .opencode/agents/quant-developer.md ---
 
@@ -657,6 +670,7 @@ mode: subagent
 - [ ] Logging: timestamp, precio, slippage, status, context_score, plataforma
 - [ ] Precisión decimal: MNQ=0.25, MGC=0.10
 - [ ] Timeout + circuit breaker en llamadas al broker
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (broker_inestable) → Reconexión + cola + state file
 Si (multi_plataforma) → create_broker(platform, env) desde Registry
@@ -691,6 +705,7 @@ mode: subagent
 - [ ] Power analysis completado (N suficiente para MDE)
 - [ ] Feature importance consistente entre folds
 - [ ] Report: effect size + CI 95% + p-value (nunca solo p-value)
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (autocorrelación > 0.3) → Diehard-Mariano (no t-test ni Mann-Whitney)
 Si (n_samples < 1000) → warn_insufficient_power + bootstrap
@@ -777,6 +792,7 @@ Prioridad: [Alta/Media/Baja]
 - **Sé conciso** — reportes claros, accionables, sin relleno
 - **Prioriza la seguridad** — si hay riesgo de seguridad, márcalo como blocker
 - **Users first** — las mejoras deben aportar valor al usuario final
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 
 --- FILE: .opencode/agents/risk-manager.md ---
 
@@ -796,6 +812,7 @@ mode: subagent
 - [ ] Monte Carlo: permutaciones para estimar cola de pérdidas
 - [ ] VaR paramétrico e histórico (95%/99%) actualizado periódicamente
 - [ ] Circuit breaker: si DD diario > umbral definido → pausar operativa
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (volatilidad_alta) → Reducir tamaño de posición proporcionalmente
 Si (racha_perdedora) → Reducción geométrica de riesgo hasta recuperación
@@ -824,6 +841,7 @@ mode: subagent
 - [ ] Dependencias: Lock files + SCA • CVEs críticas parcheadas
 - [ ] Compliance rules check: límites, políticas, auditoría (si aplica según dominio)
 - [ ] Auditoría: reglas documentadas y versionadas, audit trail completo
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (input_externo) → Validar → Sanitizar → Encode output context
 Si (datos_sensibles) → Encrypt at rest (AES-256-GCM) + in transit (TLS 1.3) + key rotation
@@ -854,6 +872,7 @@ mode: subagent
 - [ ] Healthcheck `/ready` y `/health` con dependencias reales
 - [ ] Type hints en toda interfaz pública • Tests unitarios + integración
 - [ ] Docs 1:1: cambios en API/interfaz tienen documentación actualizada
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (lectura_frecuente) → Cache LRU/Redis con TTL + invalidación en write
 Si (escritura_crítica) → Idempotency-Key + Exactly-once o at-least-once con compensación
@@ -883,6 +902,7 @@ mode: subagent
 - [ ] Sin tool bloat (auditar si hay tools no usadas)
 - [ ] Logging con trace_id para debugging
 - [ ] Circuit breaker para herramientas externas
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (tool_overlap) → merge o eliminar la menos específica
 Si (selection_accuracy < 80%) → mejorar descripciones + ejemplos
@@ -913,6 +933,7 @@ mode: subagent
 - [ ] Dashboard: P&L, drawdown, posiciones, broker activo, context_score promedio
 - [ ] Logging: heartbeat, orden, error, alerta con timestamp + correlation ID + plataforma
 - [ ] Símbolos activos sincronizados con ContractSpecs.ACTIVE_SYMBOLS
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
 📐 DECISIONES TÉCNICAS (IF-THEN)
 Si (conexión_caída) → Failover a otro adapter del Registry → si no, backoff + alerta
 Si (drawdown_crítico) → Kill switch + cierre posiciones + notificación
@@ -2420,6 +2441,9 @@ VALUE: speed-to-value > feature-complete
 """
 Guardrail Pipeline: Pre & Post execution checks for architecture, security, commits & docs.
 Enterprise-grade validation for AI-generated code and decisions.
+
+Las funciones de chequeo individuales se encuentran en ``guardrails_checks.py``
+para mantener este archivo por debajo del limite de 500 lineas.
 """
 import re
 import json
@@ -2427,53 +2451,39 @@ from typing import Callable, Dict, Any, Tuple, List, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 
-
-class GuardrailSeverity(Enum):
-    BLOCK = "block"      # Detener ejecución inmediatamente
-    WARN = "warn"        # Advertir pero continuar
-    INFO = "info"        # Solo registrar para observabilidad
-
-
-@dataclass
-class GuardrailResult:
-    """Resultado de una verificación de guardrail."""
-    passed: bool
-    severity: GuardrailSeverity
-    message: str
-    suggestion: Optional[str] = None
-    rule_id: str = ""
-    
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "passed": self.passed,
-            "severity": self.severity.value,
-            "message": self.message,
-            "suggestion": self.suggestion,
-            "rule_id": self.rule_id
-        }
+from .guardrails_base import GuardrailSeverity, GuardrailResult
+from .guardrails_checks import (
+    check_architecture_pattern, check_dependency_injection, check_resilience_patterns,
+    check_no_secrets, check_no_pii_in_logs, check_sql_injection_safe,
+    check_conventional_commit, check_docs_for_public_api, check_tests_for_new_features,
+    check_discovery_admin, check_discovery_data, check_discovery_infra,
+    check_cost_budget, check_cost_usage, check_mcp_connectivity,
+    check_three_whys_diagnostic, check_rag_groundedness, check_rag_context_relevance,
+    check_rag_faithfulness,
+)
 
 
 class GuardrailPipeline:
     """Pipeline ejecutable de guardrails con soporte para pre/post checks."""
-    
+
     def __init__(self):
+        """Inicializa la instancia de la clase."""
         self._pre_checks: List[Tuple[str, Callable]] = []
         self._post_checks: List[Tuple[str, Callable]] = []
         self._results: List[GuardrailResult] = []
-    
+
     def add_pre(self, rule_id: str, fn: Callable[[Dict], GuardrailResult]):
-        """Añade un check pre-ejecución."""
+        """Anade un check pre-ejecucion."""
         self._pre_checks.append((rule_id, fn))
-    
+
     def add_post(self, rule_id: str, fn: Callable[[str, Dict], GuardrailResult]):
-        """Añade un check post-ejecución."""
+        """Anade un check post-ejecucion."""
         self._post_checks.append((rule_id, fn))
-    
+
     def run_pre(self, context: Dict[str, Any]) -> Tuple[bool, List[GuardrailResult]]:
-        """Ejecuta todos los checks pre-ejecución."""
+        """Ejecuta todos los checks pre-ejecucion."""
         self._results = []
         blocked = False
-        
         for rule_id, check_fn in self._pre_checks:
             try:
                 result = check_fn(context)
@@ -2483,19 +2493,15 @@ class GuardrailPipeline:
                     blocked = True
             except Exception as e:
                 self._results.append(GuardrailResult(
-                    passed=False,
-                    severity=GuardrailSeverity.WARN,
-                    message=f"Error ejecutando {rule_id}: {str(e)}",
-                    rule_id=rule_id
+                    passed=False, severity=GuardrailSeverity.WARN,
+                    message=f"Error ejecutando {rule_id}: {str(e)}", rule_id=rule_id
                 ))
-        
         return not blocked, self._results
-    
+
     def run_post(self, output: str, context: Dict[str, Any]) -> Tuple[bool, List[GuardrailResult]]:
-        """Ejecuta todos los checks post-ejecución."""
+        """Ejecuta todos los checks post-ejecucion."""
         results = []
         blocked = False
-        
         for rule_id, check_fn in self._post_checks:
             try:
                 result = check_fn(output, context)
@@ -2505,22 +2511,19 @@ class GuardrailPipeline:
                     blocked = True
             except Exception as e:
                 results.append(GuardrailResult(
-                    passed=False,
-                    severity=GuardrailSeverity.WARN,
-                    message=f"Error ejecutando {rule_id}: {str(e)}",
-                    rule_id=rule_id
+                    passed=False, severity=GuardrailSeverity.WARN,
+                    message=f"Error ejecutando {rule_id}: {str(e)}", rule_id=rule_id
                 ))
-        
         self._results.extend(results)
         return not blocked, results
-    
+
     def get_summary(self) -> Dict[str, Any]:
         """Obtiene resumen de resultados para logging/observabilidad."""
         return {
             "total_checks": len(self._results),
             "passed": sum(1 for r in self._results if r.passed),
             "failed": sum(1 for r in self._results if not r.passed),
-            "blocked": any(r.severity == GuardrailSeverity.BLOCK and not r.passed 
+            "blocked": any(r.severity == GuardrailSeverity.BLOCK and not r.passed
                           for r in self._results),
             "by_severity": {
                 s.value: sum(1 for r in self._results if r.severity == s and not r.passed)
@@ -2531,308 +2534,333 @@ class GuardrailPipeline:
 
 
 # =============================================================================
-# CHECKS DE ARQUITECTURA
+# PIPELINE INSTANCIA GLOBAL
+# =============================================================================
+
+guardrails = GuardrailPipeline()
+
+# Registrar checks pre-ejecucion (arquitectura + discovery + cost + mcp)
+guardrails.add_pre("ARCH-001", check_architecture_pattern)
+guardrails.add_pre("ARCH-002", check_dependency_injection)
+guardrails.add_pre("ARCH-003", check_resilience_patterns)
+guardrails.add_pre("DISC-ADMIN-001", check_discovery_admin)
+guardrails.add_pre("DISC-DATA-001", check_discovery_data)
+guardrails.add_pre("DISC-INFRA-001", check_discovery_infra)
+guardrails.add_pre("COST-001", check_cost_budget)
+guardrails.add_pre("MCP-001", check_mcp_connectivity)
+
+# Registrar checks post-ejecucion (seguridad, commits, docs, cost, whys, rag)
+guardrails.add_post("SEC-001", check_no_secrets)
+guardrails.add_post("SEC-002", check_no_pii_in_logs)
+guardrails.add_post("SEC-003", check_sql_injection_safe)
+guardrails.add_post("COMMIT-001", check_conventional_commit)
+guardrails.add_post("DOCS-001", check_docs_for_public_api)
+guardrails.add_post("TEST-001", check_tests_for_new_features)
+guardrails.add_post("COST-002", check_cost_usage)
+guardrails.add_post("WHYS-001", check_three_whys_diagnostic)
+guardrails.add_post("RAG-001", check_rag_groundedness)
+guardrails.add_post("RAG-002", check_rag_context_relevance)
+guardrails.add_post("RAG-003", check_rag_faithfulness)
+
+
+def run_full_pipeline(user_message: str, generated_code: str, context: Dict) -> Dict[str, Any]:
+    """Ejecuta el pipeline completo de guardrails.
+
+    Returns:
+        Dict con: allowed, pre_results, post_results, summary
+    """
+    ctx = {**context, "generated_code": generated_code, "user_message": user_message}
+
+    pre_ok, pre_results = guardrails.run_pre(ctx)
+    if not pre_ok:
+        return {
+            "allowed": False, "blocked_at": "pre",
+            "results": [r.to_dict() for r in pre_results],
+            "summary": guardrails.get_summary()
+        }
+
+    post_ok, post_results = guardrails.run_post(generated_code, ctx)
+    return {
+        "allowed": post_ok,
+        "blocked_at": None if post_ok else "post",
+        "pre_results": [r.to_dict() for r in pre_results],
+        "post_results": [r.to_dict() for r in post_results],
+        "summary": guardrails.get_summary()
+    }
+
+--- FILE: .opencode/core/guardrails_base.py ---
+
+"""
+Base types for the guardrails system.
+Extracted from guardrails.py to break circular imports with guardrails_checks.py.
+"""
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+
+class GuardrailSeverity(Enum):
+    """Niveles de severidad para resultados de guardrails."""
+    BLOCK = "block"      # Detener ejecucion inmediatamente
+    WARN = "warn"        # Advertir pero continuar
+    INFO = "info"        # Solo registrar para observabilidad
+
+
+@dataclass
+class GuardrailResult:
+    """Resultado de una verificacion de guardrail."""
+    passed: bool
+    severity: GuardrailSeverity
+    message: str
+    suggestion: Optional[str] = None
+    rule_id: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convierte el resultado a diccionario para serializacion."""
+        return {
+            "passed": self.passed,
+            "severity": self.severity.value,
+            "message": self.message,
+            "suggestion": self.suggestion,
+            "rule_id": self.rule_id
+        }
+
+--- FILE: .opencode/core/guardrails_checks.py ---
+
+"""
+Guardrail check functions — extracted from guardrails.py for file size compliance.
+Each function is a standalone check that returns a GuardrailResult.
+"""
+import re
+from typing import Dict, Any, Tuple
+
+from .guardrails_base import GuardrailResult, GuardrailSeverity
+
+
+# =============================================================================
+# ARCHITECTURE CHECKS
 # =============================================================================
 
 def check_architecture_pattern(context: Dict) -> GuardrailResult:
-    """Verifica que el código siga el patrón arquitectónico requerido."""
+    """Verifica que el codigo siga el patron arquitectonico requerido."""
     pattern = context.get("required_pattern", "hexagonal")
     code = context.get("generated_code", "")
-    
     if pattern == "hexagonal":
-        # Verificar presencia de ports/adapters
         has_ports = bool(re.search(r"(class\s+\w+Port|Protocol|ABC|@abstractmethod)", code, re.I))
         has_adapters = bool(re.search(r"(class\s+\w+Adapter|implements|extends)", code, re.I))
-        
         if not has_ports and not has_adapters:
             return GuardrailResult(
-                passed=False,
-                severity=GuardrailSeverity.WARN,
-                message="Código no evidencia patrón Hexagonal (ports/adapters)",
+                passed=False, severity=GuardrailSeverity.WARN,
+                message="Codigo no evidencia patron Hexagonal (ports/adapters)",
                 suggestion="Define interfaces (Ports) y sus implementaciones (Adapters)",
                 rule_id="ARCH-001"
             )
-    
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message=f"✅ Patrón {pattern} verificado",
-        rule_id="ARCH-001"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message=f"✅ Patron {pattern} verificado", rule_id="ARCH-001"
     )
 
 
 def check_dependency_injection(context: Dict) -> GuardrailResult:
-    """Verifica uso de inyección de dependencias en lugar de hardcoding."""
+    """Verifica uso de inyeccion de dependencias en lugar de hardcoding."""
     code = context.get("generated_code", "")
-    
-    # Buscar instanciación directa de servicios críticos
     dangerous_patterns = [
         r"Broker\(\)", r"Database\(\)", r"APIClient\(\)",
         r"requests\.get\(", r"httpx\.request\("
     ]
-    
     violations = []
     for pattern in dangerous_patterns:
         if re.search(pattern, code):
-            # Verificar si está dentro de __init__ con parámetros (aceptable)
             if not re.search(r"def\s+__init__\s*\([^)]*:\s*\w+(Port|Protocol|Client)?", code):
                 violations.append(pattern)
-    
     if violations:
         return GuardrailResult(
-            passed=False,
-            severity=GuardrailSeverity.WARN,
+            passed=False, severity=GuardrailSeverity.WARN,
             message=f"Posible hardcoding de dependencias: {violations}",
-            suggestion="Usa inyección de dependencias: def __init__(self, broker: BrokerPort)",
+            suggestion="Usa inyeccion de dependencias: def __init__(self, broker: BrokerPort)",
             rule_id="ARCH-002"
         )
-    
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message="✅ Inyección de dependencias aplicada",
-        rule_id="ARCH-002"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Inyeccion de dependencias aplicada", rule_id="ARCH-002"
     )
 
 
 def check_resilience_patterns(context: Dict) -> GuardrailResult:
     """Verifica patrones de resiliencia en operaciones I/O."""
     code = context.get("generated_code", "")
-    
-    # Operaciones que deberían tener resiliencia
     io_operations = ["request", "execute", "submit", "fetch", "query", "connect"]
     has_io = any(op in code.lower() for op in io_operations)
-    
     if has_io:
-        # Buscar patrones de resiliencia
         resilience_patterns = [
             r"timeout\s*=", r"retry", r"Retry", r"backoff",
             r"circuit_breaker", r"CircuitBreaker", r"max_attempts"
         ]
         has_resilience = any(re.search(p, code, re.I) for p in resilience_patterns)
-        
         if not has_resilience:
             return GuardrailResult(
-                passed=False,
-                severity=GuardrailSeverity.WARN,
+                passed=False, severity=GuardrailSeverity.WARN,
                 message="Operaciones I/O sin patrones de resiliencia detectados",
-                suggestion="Añade timeout, retries con backoff, o circuit breaker",
+                suggestion="Anade timeout, retries con backoff, o circuit breaker",
                 rule_id="ARCH-003"
             )
-    
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message="✅ Resiliencia verificada",
-        rule_id="ARCH-003"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Resiliencia verificada", rule_id="ARCH-003"
     )
 
 
 # =============================================================================
-# CHECKS DE SEGURIDAD (CRÍTICOS)
+# SECURITY CHECKS (CRITICAL)
 # =============================================================================
 
 def check_no_secrets(output: str, context: Dict) -> GuardrailResult:
-    """🚫 Bloquea código con secrets hardcodeados."""
-    # Patrones de secrets comunes
+    """Bloquea codigo con secrets hardcodeados."""
     secret_patterns = [
         r"(?i)(api[_-]?key|apikey)\s*[:=]\s*['\"][a-zA-Z0-9_\-]{16,}['\"]",
         r"(?i)(secret[_-]?key|secretkey)\s*[:=]\s*['\"][a-zA-Z0-9_\-]{16,}['\"]",
         r"(?i)(password|passwd|pwd)\s*[:=]\s*['\"][^'\"]{8,}['\"]",
         r"(?i)(token|auth_token|access_token)\s*[:=]\s*['\"][a-zA-Z0-9_\-\.]{20,}['\"]",
         r"(pk_live|sk_live|ghp_[a-zA-Z0-9]{36}|xox[bprso]-[a-zA-Z0-9\-]+)",
-        r"(?i)BASIC\s+[A-Za-z0-9+/]{20,}={0,2}",  # Basic auth encoded
+        r"(?i)BASIC\s+[A-Za-z0-9+/]{20,}={0,2}",
     ]
-    
     for pattern in secret_patterns:
         if re.search(pattern, output):
             return GuardrailResult(
-                passed=False,
-                severity=GuardrailSeverity.BLOCK,
-                message="🚫 SECRETO DETECTADO en el código generado",
-                suggestion="Usa os.getenv('VAR_NAME') y añade la variable a .env.example",
+                passed=False, severity=GuardrailSeverity.BLOCK,
+                message="SECRETO DETECTADO en el codigo generado",
+                suggestion="Usa os.getenv('VAR_NAME') y anade la variable a .env.example",
                 rule_id="SEC-001"
             )
-    
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message="✅ Sin secrets hardcodeados",
-        rule_id="SEC-001"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Sin secrets hardcodeados", rule_id="SEC-001"
     )
 
 
 def check_no_pii_in_logs(output: str, context: Dict) -> GuardrailResult:
     """Verifica que no se expongan datos personales en logs."""
-    # Patrones de PII que no deberían aparecer en logs
     pii_patterns = [
         r"logging\.[^)]*['\"].*?(email|correo|correo_electronico)['\"].*?\+",
         r"logging\.[^)]*['\"].*?(account|cuenta|tarjeta)['\"].*?\+",
         r"print\([^)]*['\"].*?(password|clave|secret)['\"].*?\)",
     ]
-    
     for pattern in pii_patterns:
         if re.search(pattern, output, re.I):
             return GuardrailResult(
-                passed=False,
-                severity=GuardrailSeverity.BLOCK,
-                message="🚫 Posible exposición de PII en logs",
+                passed=False, severity=GuardrailSeverity.BLOCK,
+                message="Posible exposicion de PII en logs",
                 suggestion="Usa logging con masking: logger.info(f'User {user_id[:4]}***')",
                 rule_id="SEC-002"
             )
-    
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message="✅ Logs seguros (sin PII)",
-        rule_id="SEC-002"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Logs seguros (sin PII)", rule_id="SEC-002"
     )
 
 
 def check_sql_injection_safe(output: str, context: Dict) -> GuardrailResult:
-    """Verifica que las queries SQL usen parámetros, no string formatting."""
+    """Verifica que las queries SQL usen parametros, no string formatting."""
     if "SELECT" not in output.upper() and "INSERT" not in output.upper():
         return GuardrailResult(
-            passed=True,
-            severity=GuardrailSeverity.INFO,
-            message="✅ No se detectaron queries SQL",
-            rule_id="SEC-003"
+            passed=True, severity=GuardrailSeverity.INFO,
+            message="✅ No se detectaron queries SQL", rule_id="SEC-003"
         )
-    
-    # Patrones peligrosos
     dangerous = [
-        r"execute\s*\(\s*f['\"]",  # f-string en execute
-        r"execute\s*\(\s*['\"].*?\{",  # .format() implícito
-        r"cursor\.execute\s*\([^,]+%\s*\(",  # % formatting
+        r"execute\s*\(\s*f['\"]",
+        r"execute\s*\(\s*['\"].*?\{",
+        r"cursor\.execute\s*\([^,]+%\s*\(",
     ]
-    
     for pattern in dangerous:
         if re.search(pattern, output, re.I):
             return GuardrailResult(
-                passed=False,
-                severity=GuardrailSeverity.BLOCK,
-                message="🚫 Query SQL vulnerable a inyección",
-                suggestion="Usa parámetros: cursor.execute('SELECT * FROM t WHERE id=%s', (id,))",
+                passed=False, severity=GuardrailSeverity.BLOCK,
+                message="Query SQL vulnerable a inyeccion",
+                suggestion="Usa parametros: cursor.execute('SELECT * FROM t WHERE id=%s', (id,))",
                 rule_id="SEC-003"
             )
-    
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message="✅ Queries SQL parametrizadas",
-        rule_id="SEC-003"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Queries SQL parametrizadas", rule_id="SEC-003"
     )
 
 
 # =============================================================================
-# CHECKS DE COMMIT SEGURO
+# COMMIT CHECKS
 # =============================================================================
 
 def check_conventional_commit(output: str, context: Dict) -> GuardrailResult:
     """Verifica que los mensajes de commit sigan Conventional Commits."""
     if "git commit" not in output.lower() and "commit" not in context.get("action", ""):
         return GuardrailResult(
-            passed=True,
-            severity=GuardrailSeverity.INFO,
-            message="✅ No es operación de commit",
-            rule_id="COMMIT-001"
+            passed=True, severity=GuardrailSeverity.INFO,
+            message="✅ No es operacion de commit", rule_id="COMMIT-001"
         )
-    
-    # Patrones de tipos válidos
     valid_types = ["feat", "fix", "docs", "style", "refactor", "test", "chore", "build", "ci"]
     commit_pattern = rf"^\s*({'|'.join(valid_types)})"
-    
     if not re.search(commit_pattern, output, re.I | re.M):
         return GuardrailResult(
-            passed=False,
-            severity=GuardrailSeverity.WARN,
-            message="📝 Mensaje de commit sin tipo Conventional",
-            suggestion="Usa: feat(scope): descripción #ISSUE",
+            passed=False, severity=GuardrailSeverity.WARN,
+            message="Mensaje de commit sin tipo Conventional",
+            suggestion="Usa: feat(scope): descripcion #ISSUE",
             rule_id="COMMIT-001"
         )
-    
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message="✅ Commit sigue Conventional Commits",
-        rule_id="COMMIT-001"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Commit sigue Conventional Commits", rule_id="COMMIT-001"
     )
 
 
 def check_docs_for_public_api(output: str, context: Dict) -> GuardrailResult:
-    """Verifica que funciones/clases públicas tengan docstrings."""
-    # Buscar definiciones públicas
+    """Verifica que funciones/clases publicas tengan docstrings."""
     public_defs = re.findall(r"^(?:async\s+)?def\s+([a-z][a-zA-Z0-9_]*)\s*\(", output, re.M)
     public_classes = re.findall(r"^class\s+([A-Z][a-zA-Z0-9_]*)\s*[:\(]", output, re.M)
-    
-    # Filtrar privados
     public_defs = [d for d in public_defs if not d.startswith("_")]
     public_classes = [c for c in public_classes if not c.startswith("_")]
-    
     if not public_defs and not public_classes:
         return GuardrailResult(
-            passed=True,
-            severity=GuardrailSeverity.INFO,
-            message="✅ No se detectaron APIs públicas nuevas",
-            rule_id="DOCS-001"
+            passed=True, severity=GuardrailSeverity.INFO,
+            message="✅ No se detectaron APIs publicas nuevas", rule_id="DOCS-001"
         )
-    
-    # Verificar docstrings
     has_docstrings = bool(re.search(r'("""|\'\'\')', output))
-    
     if not has_docstrings and (public_defs or public_classes):
         return GuardrailResult(
-            passed=False,
-            severity=GuardrailSeverity.WARN,
-            message="📖 APIs públicas sin docstrings",
-            suggestion="Añade docstring con descripción, args, returns y raises",
+            passed=False, severity=GuardrailSeverity.WARN,
+            message="APIs publicas sin docstrings",
+            suggestion="Anade docstring con descripcion, args, returns y raises",
             rule_id="DOCS-001"
         )
-    
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message="✅ APIs documentadas",
-        rule_id="DOCS-001"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ APIs documentadas", rule_id="DOCS-001"
     )
 
 
 def check_tests_for_new_features(output: str, context: Dict) -> GuardrailResult:
-    """Sugiere añadir tests para nuevas funcionalidades."""
-    # Detectar si se está añadiendo lógica nueva
+    """Sugiere anadir tests para nuevas funcionalidades."""
     new_logic_patterns = [r"def\s+(?!test_)\w+\(", r"class\s+\w+\(", r"if\s+.*:"]
     has_new_logic = any(re.search(p, output) for p in new_logic_patterns)
-    
     if not has_new_logic:
         return GuardrailResult(
-            passed=True,
-            severity=GuardrailSeverity.INFO,
-            message="✅ Sin nueva lógica que requiera tests",
-            rule_id="TEST-001"
+            passed=True, severity=GuardrailSeverity.INFO,
+            message="✅ Sin nueva logica que requiera tests", rule_id="TEST-001"
         )
-    
-    # Verificar si hay tests asociados
     has_tests = bool(re.search(r"def\s+test_\w+\(", output) or "pytest" in output.lower())
-    
     if not has_tests:
         return GuardrailResult(
-            passed=True,  # No bloquear, solo advertir
-            severity=GuardrailSeverity.WARN,
-            message="⚠️ Nueva funcionalidad sin tests asociados",
-            suggestion="Considera añadir tests en tests/test_*.py para la nueva lógica",
+            passed=True, severity=GuardrailSeverity.WARN,
+            message="Nueva funcionalidad sin tests asociados",
+            suggestion="Considera anadir tests en tests/test_*.py para la nueva logica",
             rule_id="TEST-001"
         )
-    
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message="✅ Tests incluidos para nueva funcionalidad",
-        rule_id="TEST-001"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Tests incluidos para nueva funcionalidad", rule_id="TEST-001"
     )
 
 
 # =============================================================================
-# DISCOVERY CHECKLIST — FDE Pre-Flight Gate (Admin, Data, Infra)
+# DISCOVERY CHECKS — FDE Pre-Flight Gate
 # =============================================================================
 
 def check_discovery_admin(context: Dict) -> GuardrailResult:
@@ -2841,17 +2869,14 @@ def check_discovery_admin(context: Dict) -> GuardrailResult:
     has_rules = bool(rules) or bool(context.get("domain"))
     if not has_rules:
         return GuardrailResult(
-            passed=False,
-            severity=GuardrailSeverity.WARN,
+            passed=False, severity=GuardrailSeverity.WARN,
             message="FDE Discovery: Business rules / SLAs no definidos",
             suggestion="Define reglas de negocio, SLAs y contexto de dominio antes de implementar",
             rule_id="DISC-ADMIN-001"
         )
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message="✅ Discovery Admin: reglas de negocio presentes",
-        rule_id="DISC-ADMIN-001"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Discovery Admin: reglas de negocio presentes", rule_id="DISC-ADMIN-001"
     )
 
 
@@ -2861,17 +2886,14 @@ def check_discovery_data(context: Dict) -> GuardrailResult:
     has_schemas = bool(context.get("data_schema"))
     if not has_sources or not has_schemas:
         return GuardrailResult(
-            passed=False,
-            severity=GuardrailSeverity.WARN,
+            passed=False, severity=GuardrailSeverity.WARN,
             message="FDE Discovery: Data sources / schemas no definidos",
             suggestion="Identifica fuentes de datos, define schemas y verifica calidad antes de codificar",
             rule_id="DISC-DATA-001"
         )
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message="✅ Discovery Data: fuentes y schemas definidos",
-        rule_id="DISC-DATA-001"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Discovery Data: fuentes y schemas definidos", rule_id="DISC-DATA-001"
     )
 
 
@@ -2881,61 +2903,51 @@ def check_discovery_infra(context: Dict) -> GuardrailResult:
     has_deps = bool(context.get("dependencies"))
     if not has_target:
         return GuardrailResult(
-            passed=False,
-            severity=GuardrailSeverity.WARN,
+            passed=False, severity=GuardrailSeverity.WARN,
             message="FDE Discovery: Deploy target / dependencias no definidos",
             suggestion="Define target de despliegue, dependencias externas y requisitos de red",
             rule_id="DISC-INFRA-001"
         )
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message="✅ Discovery Infra: target y dependencias presentes",
-        rule_id="DISC-INFRA-001"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Discovery Infra: target y dependencias presentes", rule_id="DISC-INFRA-001"
     )
 
 
 # =============================================================================
-# COST GUARDRAILS — Budget & Token Usage Enforcement
+# COST GUARDRAILS — Budget & Token Usage
 # =============================================================================
-# Inspired by Agent Cost Guardrails (github.com/sapph1re/agent-cost-guardrails)
 
 def check_cost_budget(context: Dict) -> GuardrailResult:
     """Verifica que la solicitud tenga un presupuesto de tokens/costo definido."""
     budget = context.get("cost_budget") or context.get("token_budget")
     if budget is None:
         return GuardrailResult(
-            passed=False,
-            severity=GuardrailSeverity.WARN,
-            message="No se definió presupuesto de costo/tokens",
+            passed=False, severity=GuardrailSeverity.WARN,
+            message="No se definio presupuesto de costo/tokens",
             suggestion="Define cost_budget o token_budget en el contexto de la solicitud. "
                        "Ej: {'cost_budget': {'max_cost_usd': 0.50, 'currency': 'USD'}}",
             rule_id="COST-001"
         )
-    # Validar estructura del budget
     if isinstance(budget, dict):
         max_val = budget.get("max_cost_usd") or budget.get("max_tokens")
         if max_val is None or max_val <= 0:
             return GuardrailResult(
-                passed=False,
-                severity=GuardrailSeverity.WARN,
-                message="Presupuesto definido pero sin límite válido (max_cost_usd o max_tokens)",
-                suggestion="Asegúrate de incluir max_cost_usd o max_tokens > 0 en cost_budget",
+                passed=False, severity=GuardrailSeverity.WARN,
+                message="Presupuesto definido pero sin limite valido (max_cost_usd o max_tokens)",
+                suggestion="Asegurate de incluir max_cost_usd o max_tokens > 0 en cost_budget",
                 rule_id="COST-001"
             )
     elif not isinstance(budget, (int, float)) or budget <= 0:
         return GuardrailResult(
-            passed=False,
-            severity=GuardrailSeverity.WARN,
-            message="Presupuesto definido pero con formato inválido",
-            suggestion="Usa un número positivo (int/float) o un dict con max_cost_usd/max_tokens",
+            passed=False, severity=GuardrailSeverity.WARN,
+            message="Presupuesto definido pero con formato invalido",
+            suggestion="Usa un numero positivo (int/float) o un dict con max_cost_usd/max_tokens",
             rule_id="COST-001"
         )
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message=f"✅ Presupuesto definido: {budget}",
-        rule_id="COST-001"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message=f"✅ Presupuesto definido: {budget}", rule_id="COST-001"
     )
 
 
@@ -2944,23 +2956,17 @@ def check_cost_usage(output: str, context: Dict) -> GuardrailResult:
     budget = context.get("cost_budget") or context.get("token_budget")
     if budget is None:
         return GuardrailResult(
-            passed=True,
-            severity=GuardrailSeverity.INFO,
-            message="✅ Sin presupuesto definido, saltando verificación de uso",
-            rule_id="COST-002"
+            passed=True, severity=GuardrailSeverity.INFO,
+            message="✅ Sin presupuesto definido, saltando verificacion de uso", rule_id="COST-002"
         )
-    # Intentar extraer costo total o uso de tokens del output
     max_budget = None
     if isinstance(budget, dict):
         max_budget = budget.get("max_cost_usd") or budget.get("max_tokens")
     else:
         max_budget = float(budget)
 
-    # Buscar métricas de costo en el output
-    # Patrones: "total_cost: 0.05", "token_usage: 1500", "cost": 0.03, etc.
     total_cost = None
     token_usage = None
-
     cost_patterns = [
         r'(?:total_)?cost[\s_:=]+\$?([0-9]+\.?[0-9]*)',
         r'(?:total_)?cost[\s_:=]+([0-9]+\.?[0-9]*)\s*(?:USD|usd|\$)',
@@ -2978,126 +2984,34 @@ def check_cost_usage(output: str, context: Dict) -> GuardrailResult:
 
     if total_cost is None and token_usage is None:
         return GuardrailResult(
-            passed=True,
-            severity=GuardrailSeverity.INFO,
-            message="✅ No se detectaron métricas de costo/uso en el output",
-            rule_id="COST-002"
+            passed=True, severity=GuardrailSeverity.INFO,
+            message="✅ No se detectaron metricas de costo/uso en el output", rule_id="COST-002"
         )
-
-    # Verificar contra el presupuesto
     if total_cost is not None and max_budget is not None and total_cost > max_budget:
         return GuardrailResult(
-            passed=False,
-            severity=GuardrailSeverity.WARN,
-            message=f"⚠️ Costo total (${total_cost:.4f}) excede presupuesto (${max_budget:.4f})",
+            passed=False, severity=GuardrailSeverity.WARN,
+            message=f"Costo total (${total_cost:.4f}) excede presupuesto (${max_budget:.4f})",
             suggestion="Revisa el consumo del modelo o reduce la longitud de las respuestas",
             rule_id="COST-002"
         )
     if token_usage is not None and max_budget is not None and token_usage > max_budget:
         return GuardrailResult(
-            passed=False,
-            severity=GuardrailSeverity.WARN,
-            message=f"⚠️ Token usage ({token_usage}) excede presupuesto ({int(max_budget)})",
-            suggestion="Reduce el contexto o usa un modelo más eficiente",
+            passed=False, severity=GuardrailSeverity.WARN,
+            message=f"Token usage ({token_usage}) excede presupuesto ({int(max_budget)})",
+            suggestion="Reduce el contexto o usa un modelo mas eficiente",
             rule_id="COST-002"
         )
-
     detail_parts = []
     if total_cost is not None:
         detail_parts.append(f"costo=${total_cost:.4f}")
     if token_usage is not None:
         detail_parts.append(f"tokens={token_usage}")
     return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message=f"✅ Uso dentro de presupuesto: {', '.join(detail_parts)}",
-        rule_id="COST-002"
+        passed=True, severity=GuardrailSeverity.INFO,
+        message=f"✅ Uso dentro de presupuesto: {', '.join(detail_parts)}", rule_id="COST-002"
     )
 
 
 # =============================================================================
-# MCP INTEGRATION — External Tool Connectivity Checks
-# =============================================================================
-
-def check_mcp_connectivity(context: Dict) -> GuardrailResult:
-    """Verifica que servidores MCP estén configurados si la tarea requiere tools externas."""
-    task = context.get("user_message", "") or context.get("task", "")
-    has_mcp_tools_context = bool(context.get("mcp_tools") or context.get("mcp_servers"))
-    task_needs_external = bool(
-        re.search(
-            r"(search|fetch|scrape|lookup|query\s+api|external|tool|browse|web)",
-            task,
-            re.I,
-        )
-    )
-
-    if not task_needs_external and not has_mcp_tools_context:
-        return GuardrailResult(
-            passed=True,
-            severity=GuardrailSeverity.INFO,
-            message="✅ MCP: tarea sin necesidad de herramientas externas",
-            rule_id="MCP-001"
-        )
-
-    # Si la tarea necesita herramientas externas, verificar configuración MCP
-    mcp_servers = context.get("mcp_servers", [])
-    mcp_tools = context.get("mcp_tools", [])
-
-    if not mcp_servers and not mcp_tools:
-        return GuardrailResult(
-            passed=False,
-            severity=GuardrailSeverity.WARN,
-            message="Tarea requiere herramientas externas pero no hay servidores MCP configurados",
-            suggestion="Configura MCP servers en mcp_servers o mcp_tools del contexto. "
-                       "Ej: {'mcp_servers': ['pulsemcp', 'mcpso'], 'mcp_tools': ['web-search', 'fetch-page']}",
-            rule_id="MCP-001"
-        )
-
-    # Verificar que los servidores tengan endpoints válidos
-    invalid_servers = []
-    for server in mcp_servers:
-        if isinstance(server, dict):
-            if not server.get("url") and not server.get("endpoint"):
-                invalid_servers.append(str(server))
-        elif isinstance(server, str):
-            if not server.startswith(("http", "https", "mcp:")):
-                invalid_servers.append(server)
-
-    if invalid_servers:
-        return GuardrailResult(
-            passed=False,
-            severity=GuardrailSeverity.WARN,
-            message=f"Servidores MCP con configuración inválida: {invalid_servers}",
-            suggestion="Cada servidor debe tener url/endpoint válido. Ej: "
-                       "{'name': 'pulsemcp', 'url': 'https://mcp.pulsemcp.com'}",
-            rule_id="MCP-001"
-        )
-    return GuardrailResult(
-        passed=True,
-        severity=GuardrailSeverity.INFO,
-        message=f"✅ MCP conectividad verificada: {len(mcp_servers)} servidor(es)",
-        rule_id="MCP-001"
-    )
-
-
-# =============================================================================
-# THREE WHYS — Root Cause Diagnostic (Post-Execution)
-# =============================================================================
-
-def check_three_whys_diagnostic(output: str, context: Dict) -> GuardrailResult:
-    """Verifica que outputs de post-mortem/error incluyan análisis Three Whys."""
-    if "fail" not in output.lower() and "error" not in output.lower() and "issue" not in output.lower():
-        return GuardrailResult(
-            passed=True,
-            severity=GuardrailSeverity.INFO,
-            message="✅ Three Whys: no aplica (no es análisis de fallo)",
-            rule_id="WHYS-001"
-        )
-    # Buscar patrón de 3 whys
-    why_pattern = r"(why\s+\d|1st why|2nd why|3rd why|cause.*cause.*cause|root because)"
-    has_three_whys = bool(re.search(why_pattern, output, re.I))
-    if not has_three_whys:
-        return GuardrailResult(
-            passed=False,
-            severity=GuardrailSeverity.WARN,
-            messa
+# MCP INTEGRATION CHECKS
+# =========================================

@@ -22,6 +22,36 @@ from typing import Any, Dict, Optional
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Output token budget per agent role
+# ---------------------------------------------------------------------------
+# Tokens de salida cuestan 3-5x más que input, por lo que usamos valores
+# conservadores: la mayoría de agentes responden en <512 tokens.
+MAX_TOKENS_BY_AGENT: Dict[str, int] = {
+    "project-manager": 512,       # Coordinación, respuestas cortas
+    "context-engineer": 1024,     # Contexto, necesita más espacio
+    "tool-mcp-engineer": 768,     # Tool descriptions
+    "software-engineer": 1024,    # Código + explicación
+    "data-architect": 768,        # Schemas, no muy largo
+    "devops-sre": 768,            # Config, comandos
+    "security-engineer": 512,     # Findings concisos
+    "frontend-engineer": 1024,    # UI code
+    "mobile-engineer": 1024,      # Mobile code
+    "ai-engineer": 1024,          # ML pipelines
+    "quality-gate": 512,          # Checklist, approve/reject
+    "documentation-specialist": 1536,  # Docs largos
+    "requirements-analyst": 768,  # Análisis
+    "enterprise-architect": 1024, # ADR, C4
+    "quant-developer": 1024,      # Estrategias cuantitativas
+    "quant-scientist": 1024,      # Análisis estadístico
+    "risk-manager": 512,          # Reports numéricos
+    "trading-operations": 512,    # Alertas, monitoreo
+    "evolve-researcher": 1024,    # Investigación
+    "evolve-engineer": 768,       # Evaluación
+    "evolve-analyzer": 768,       # Análisis de resultados
+    "*": 512,                     # Default seguro
+}
+
+# ---------------------------------------------------------------------------
 # Types
 # ---------------------------------------------------------------------------
 
@@ -48,6 +78,7 @@ class ExecutionResult:
     model: str
     duration_ms: float
     error: Optional[str] = None
+    tokens_used: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -147,7 +178,7 @@ class ModelRouter:
         start = time.perf_counter()
 
         if decision.source == "local":
-            result = self._try_execute_local(task)
+            result = self._try_execute_local(task, agent_role=agent_role)
             if result.success:
                 elapsed = (time.perf_counter() - start) * 1000
                 return ExecutionResult(
@@ -168,7 +199,7 @@ class ModelRouter:
                     "Local execution failed, falling back to cloud: %s",
                     result.error,
                 )
-                cloud_result = self._execute_cloud(task)
+                cloud_result = self._execute_cloud(task, agent_role=agent_role)
                 elapsed = (time.perf_counter() - start) * 1000
                 return ExecutionResult(
                     success=cloud_result.success,
@@ -190,7 +221,7 @@ class ModelRouter:
             )
 
         # Cloud execution
-        result = self._execute_cloud(task)
+        result = self._execute_cloud(task, agent_role=agent_role)
         elapsed = (time.perf_counter() - start) * 1000
         return ExecutionResult(
             success=result.success,
@@ -205,7 +236,7 @@ class ModelRouter:
     # Local (Ollama) execution
     # ------------------------------------------------------------------
 
-    def _try_execute_local(self, prompt: str) -> ExecutionResult:
+    def _try_execute_local(self, prompt: str, agent_role: str = "*") -> ExecutionResult:
         """Try executing a prompt on local Ollama."""
         if not self._is_ollama_available():
             return ExecutionResult(
@@ -223,6 +254,7 @@ class ModelRouter:
             endpoint = self._local_endpoint().rstrip("/")
             model = self._local_model()
             timeout = self.config.get("local", {}).get("timeout", 120)
+            max_tokens = MAX_TOKENS_BY_AGENT.get(agent_role, MAX_TOKENS_BY_AGENT["*"])
 
             payload = {
                 "model": model,
@@ -230,7 +262,7 @@ class ModelRouter:
                 "stream": False,
                 "options": {
                     "temperature": 0.3,
-                    "num_predict": 2048,
+                    "num_predict": max_tokens,
                 },
             }
 
@@ -280,18 +312,18 @@ class ModelRouter:
     # Cloud execution
     # ------------------------------------------------------------------
 
-    def _execute_cloud(self, prompt: str) -> ExecutionResult:
+    def _execute_cloud(self, prompt: str, agent_role: str = "*") -> ExecutionResult:
         """Execute a prompt on the configured cloud API."""
         provider = self._cloud_provider()
         model = self._cloud_model()
 
         if provider == "zenfree":
-            return self._execute_zenfree(prompt, model)
+            return self._execute_zenfree(prompt, model, agent_role=agent_role)
 
         # Generic OpenAI-compatible fallback
-        return self._execute_openai_compat(prompt, model)
+        return self._execute_openai_compat(prompt, model, agent_role=agent_role)
 
-    def _execute_zenfree(self, prompt: str, model: str) -> ExecutionResult:
+    def _execute_zenfree(self, prompt: str, model: str, agent_role: str = "*") -> ExecutionResult:
         """Execute via ZenFree API (or similar OpenAI-compatible)."""
         api_key = os.environ.get("ZENFREE_API_KEY") or os.environ.get("API_KEY", "")
         if not api_key:
@@ -309,12 +341,13 @@ class ModelRouter:
 
             endpoint = "https://api.zenfree.com/v1/chat/completions"  # example; adjust as needed
             timeout = 60
+            max_tokens = MAX_TOKENS_BY_AGENT.get(agent_role, MAX_TOKENS_BY_AGENT["*"])
 
             payload = {
                 "model": model,
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.3,
-                "max_tokens": 4096,
+                "max_tokens": max_tokens,
             }
             headers = {
                 "Authorization": f"Bearer {api_key}",
@@ -349,7 +382,7 @@ class ModelRouter:
                 error=f"Cloud API error: {exc}",
             )
 
-    def _execute_openai_compat(self, prompt: str, model: str) -> ExecutionResult:
+    def _execute_openai_compat(self, prompt: str, model: str, agent_role: str = "*") -> ExecutionResult:
         """Execute via any OpenAI-compatible API."""
         api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("API_KEY", "")
         base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
@@ -368,11 +401,12 @@ class ModelRouter:
             import requests
 
             timeout = 60
+            max_tokens = MAX_TOKENS_BY_AGENT.get(agent_role, MAX_TOKENS_BY_AGENT["*"])
             payload = {
                 "model": model,
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.3,
-                "max_tokens": 4096,
+                "max_tokens": max_tokens,
             }
             headers = {
                 "Authorization": f"Bearer {api_key}",

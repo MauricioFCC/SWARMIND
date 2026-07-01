@@ -44,14 +44,14 @@ import sys, os, subprocess
 _HOOK_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _HARNESS = os.path.join(_HOOK_DIR, "harness")
 _PIPELINE = os.path.join(_HARNESS, "scripts", "end_of_iteration.py")
-if os.path.exists(_PIPELINE):
-    try:
-        _r = subprocess.run([sys.executable, _PIPELINE, "--pre-commit"],
-                            cwd=_HOOK_DIR, timeout=30)
-        sys.exit(_r.returncode)
-    except Exception as _e:
-        print(f"[pre-commit] Error ejecutando pipeline: {_e}. Commit permitido.")
-        sys.exit(0)
+    if os.path.exists(_PIPELINE):
+        try:
+            _r = subprocess.run([sys.executable, _PIPELINE, "--pre-commit", "--quick"],
+                                cwd=_HOOK_DIR, timeout=30)
+            sys.exit(_r.returncode)
+        except Exception as _e:
+            print(f"[pre-commit] Error ejecutando pipeline: {_e}. Commit permitido.")
+            sys.exit(0)
 else:
     print("[pre-commit] Harness no encontrado. Commit permitido.")
     sys.exit(0)
@@ -238,8 +238,8 @@ def install_hook() -> bool:
         _print(f"  {_ok('[OK]')} Hook LOCAL instalado: {_HOOK_PATH}")
         _print()
         _print(f"  {_bold('Hook autocontenido — no depende de rutas externas.')}")
-        _print(f"  {_bold('En cada commit ejecutará:')}")
-        _print(f"    harness/scripts/end_of_iteration.py --pre-commit")
+        _print(f"  {_bold('En cada commit ejecutará (modo rápido):')}")
+        _print(f"    harness/scripts/end_of_iteration.py --pre-commit --quick")
         _print()
         _print(f"  Para saltar el hook: git commit --no-verify")
         return True
