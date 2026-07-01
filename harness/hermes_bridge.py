@@ -34,7 +34,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-import yaml
 
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 
@@ -193,6 +192,8 @@ class HermesBridge:
         entry_type: str,
     ) -> int:
         """Write entries as .md files in Hermes subdirectory."""
+        import yaml  # lazy import
+
         target_dir = self.hermes_root / subdir
         os.makedirs(str(target_dir), exist_ok=True)
 
@@ -289,6 +290,8 @@ class HermesBridge:
     @staticmethod
     def _parse_hermes_md(filepath: Path) -> Optional[Dict[str, Any]]:
         """Parse a Hermes .md file with YAML frontmatter."""
+        import yaml  # lazy import
+
         content = filepath.read_text(encoding="utf-8")
 
         # Extract YAML frontmatter

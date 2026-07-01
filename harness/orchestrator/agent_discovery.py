@@ -60,11 +60,14 @@ def _try_import_yaml():
         return None
 
 
+@functools.lru_cache(maxsize=128)
 def _parse_frontmatter(content: str, filename: str) -> Optional[Dict[str, Any]]:
     """
     Parsea frontmatter YAML entre marcadores ---.
     
     Si no hay frontmatter o falla el parseo, retorna None.
+    
+    Cacheado por (content, filename) — cada archivo se parsea una sola vez.
     """
     content_stripped = content.lstrip()
     if not content_stripped.startswith("---"):
@@ -271,8 +274,9 @@ def parse_agent_profile(md_file: Path) -> Optional[Dict[str, Any]]:
     """
     Parsea un archivo .md de agente y extrae su perfil.
     
-    Primero intenta leer frontmatter YAML; si no existe, infiere desde
-    filename y contenido.
+    Primero intenta leer el perfil pre-compilado (.agent.min.md) si existe,
+    que ahorra ~40-60% de tokens. Si no, lee el archivo .md completo.
+    Luego parsea frontmatter YAML; si no existe, infiere desde filename y contenido.
     
     Args:
         md_file: Ruta al archivo .md del agente
@@ -284,8 +288,15 @@ def parse_agent_profile(md_file: Path) -> Optional[Dict[str, Any]]:
     if not md_file.exists() or md_file.suffix.lower() != ".md":
         return None
 
+    # Prefer pre-compiled agent prompt (.agent.min.md) si existe
+    compiled_path = md_file.with_suffix('.agent.min.md')
+    if compiled_path.exists():
+        source_path = compiled_path
+    else:
+        source_path = md_file
+
     try:
-        content = md_file.read_text(encoding="utf-8")
+        content = source_path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
         return None
 
@@ -342,7 +353,10 @@ def discover_agents_recursive(agents_dir: Optional[str] = None) -> Dict[str, Dic
         return agents
     
     # RECURSIVO: rglob encuentra todos los .md recursivamente
+    # NOTA: Saltamos archivos .agent.min.md porque se cargan via el .md original
     for md_file in sorted(search_path.rglob("*.md")):
+        if md_file.name.endswith(".agent.min.md"):
+            continue
         agent = parse_agent_profile(md_file)
         if agent and agent.get("name"):
             agents[agent["name"]] = agent

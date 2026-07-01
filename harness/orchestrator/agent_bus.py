@@ -106,6 +106,117 @@ class AgentBus:
     # API publica: Envio de mensajes
     # ------------------------------------------------------------------
 
+    def post_message_batch(self, messages: List[Dict[str, Any]]) -> List[str]:
+        """
+        Publica MULTIPLES mensajes en UNA SOLA llamada batch a LanceDB.
+
+        Cada dict en ``messages`` debe tener las mismas keys que
+        ``post_message()`` acepta como kwargs:
+            channel, from_agent, to_agent, message, message_type,
+            task_id, iteration, attachments, thread_id.
+
+        Returns:
+            Lista de IDs de los mensajes creados (en el mismo orden).
+
+        Raises:
+            InvalidMessageError: Si algun mensaje no es valido.
+
+        Uso tipico::
+
+            bus = AgentBus()
+            ids = bus.post_message_batch([
+                {
+                    "channel": "#feature-x",
+                    "from_agent": "@swe",
+                    "to_agent": "@qa",
+                    "message": "Tests listos",
+                    "message_type": "notification",
+                },
+                {
+                    "channel": "#feature-x",
+                    "from_agent": "@qa",
+                    "to_agent": "@pm",
+                    "message": "Cobertura validada",
+                    "message_type": "notification",
+                },
+            ])
+        """
+        if not messages:
+            return []
+
+        vectors_list: List[np.ndarray] = []
+        metadata_list: List[Dict[str, Any]] = []
+        msg_ids: List[str] = []
+
+        for msg_data in messages:
+            # Extraer parametros con defaults
+            channel = msg_data.get("channel", "")
+            from_agent = msg_data.get("from_agent", "")
+            to_agent = msg_data.get("to_agent", "")
+            message = msg_data.get("message", "")
+            message_type = msg_data.get("message_type", "notification")
+            task_id = msg_data.get("task_id")
+            iteration = msg_data.get("iteration", 0)
+            attachments = msg_data.get("attachments")
+            thread_id = msg_data.get("thread_id")
+
+            # Validar parametros
+            self._validate_message_params(
+                channel, from_agent, to_agent, message, message_type,
+            )
+
+            # Generar IDs y timestamps
+            msg_id = str(uuid.uuid4())
+            now = datetime.now(timezone.utc).isoformat()
+            tid = thread_id or str(uuid.uuid4())
+
+            # Normalizar nombres de agente
+            from_agent = self._normalize_agent(from_agent)
+            to_agent = self._normalize_agent(to_agent)
+
+            # Construir metadata
+            metadata: Dict[str, Any] = {
+                "id": msg_id,
+                "channel": channel,
+                "thread_id": tid,
+                "from_agent": from_agent,
+                "to_agent": to_agent,
+                "message": message,
+                "message_type": message_type,
+                "status": "sent",
+                "task_id": task_id or "",
+                "iteration": iteration,
+                "attachments": json.dumps(attachments or []),
+                "created_at": now,
+            }
+
+            # Generar embedding
+            text_for_embedding = f"{channel} {from_agent} {to_agent} {message}"
+            vector = self._embedding_fn(text_for_embedding)
+
+            vectors_list.append(vector)
+            metadata_list.append(metadata)
+            msg_ids.append(msg_id)
+
+        if not vectors_list:
+            return []
+
+        # Batch insert: todos los vectores en una sola llamada
+        vectors = np.array(vectors_list)
+        try:
+            self.store.insert(_COLLECTION, vectors, metadata_list)
+            logger.info(
+                "Batch: %d mensajes publicados en %s",
+                len(msg_ids), _COLLECTION,
+            )
+        except Exception as exc:
+            raise AgentBusError(
+                f"Error al insertar batch de {len(msg_ids)} mensajes "
+                f"en {_COLLECTION}: {exc}"
+            ) from exc
+
+        return msg_ids
+
     def post_message(
         self,
         channel: str,

@@ -7,13 +7,13 @@ in the dispatch context if the match is strong enough (>70% similarity).
 
 from __future__ import annotations
 
+import functools
 import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-import yaml
 
 from harness.evolve_loop.skill_generator import REGISTRY_PATH, SkillGenerator
 from harness.memory_rag.lance_vector_store import (
@@ -69,6 +69,9 @@ class AgentDispatcher:
             The best-matching skill dict with keys (name, path, domain, agent,
             trigger, content, similarity), or ``None``.
         """
+        # Lazy import: yaml solo se necesita si hay registro YAML que leer
+        import yaml  # noqa: F401
+
         query_lower = task_description.lower()
 
         # --- 1. Check YAML registry ---
@@ -202,12 +205,22 @@ class AgentDispatcher:
         }
 
     @staticmethod
+    @functools.lru_cache(maxsize=64)
     def _read_skill_md(path: str) -> str:
-        """Read a skill .md file, return empty string on failure."""
+        """
+        Read a skill .md file, prefer pre-compiled .min.md version.
+
+        Si existe el archivo .min.md (pre-compilado), lo usa para ahorrar
+        tokens (~40-60% menos). Si no, cae en el .md original.
+        """
         try:
             p = Path(path)
+            # Prefer pre-compiled version (SKILL.min.md)
+            min_p = p.with_suffix('.min.md')
+            if min_p.exists():
+                return min_p.read_text(encoding='utf-8')
             if p.exists():
-                return p.read_text(encoding="utf-8")
+                return p.read_text(encoding='utf-8')
         except Exception:
             pass
         return ""
