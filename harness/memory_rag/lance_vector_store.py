@@ -1,19 +1,21 @@
 """
 Unified vector store interface for RAG and metadata search using LanceDB.
-Supports three core collections: tasks_board, rag_chunks, asi_cognition_store.
 LanceDB es OBLIGATORIO. Si no esta disponible, se lanza un error claro.
 El fallback in-memory solo se activa con allow_fallback=True (emergencias/test).
+
+REFACTOR: Usa _infer_schema_recursive() desde lance_migration.py para
+inferir schemas recursivamente, eliminando ~100 líneas de if/elif anidados
+en _sample_row_for_collection().
 """
 from __future__ import annotations
 
 import json
 import logging
 import os
-import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
@@ -30,6 +32,7 @@ LANCEDB_ROOT = os.path.join(
 )
 
 from .lance_schemas import DEFAULT_COLLECTIONS  # noqa: E402
+from .lance_migration import generate_sample_row, serialize_for_schema  # noqa: E402
 
 # Collection name constants for external consumption
 COLLECTION_PROCEDURAL_SKILLS = "procedural_skills"
@@ -179,9 +182,8 @@ class LanceVectorStore:
         """Create default tables in LanceDB if they don't exist.
 
         LanceDB 0.33+ requires schema to be defined at creation time.
-        We use a comprehensive sample row (with all fields that _insert_lancedb
-        may spread) and then remove the placeholder.  This mirrors the approach
-        used by TaskManager._initialize().
+        Uses generate_sample_row() from lance_migration.py (que a su vez
+        usa _infer_schema_recursive() para inferencia recursiva de tipos).
         """
         if not self._lancedb_available or self._db is None:
             return
@@ -189,7 +191,7 @@ class LanceVectorStore:
         for name in DEFAULT_COLLECTIONS:
             if name in existing:
                 continue
-            sample = self._sample_row_for_collection(name)
+            sample = generate_sample_row(name)
             try:
                 self._db.create_table(name, data=[sample], mode="create")
                 tbl = self._db.open_table(name)
@@ -197,113 +199,6 @@ class LanceVectorStore:
                 logger.info("Created LanceDB table '%s' with full schema", name)
             except Exception as exc:
                 logger.warning("Could not create table '%s': %s", name, exc)
-
-    @staticmethod
-    def _sample_row_for_collection(name: str) -> Dict[str, Any]:
-        """Return a sample row that covers all columns a collection may need.
-
-        _insert_lancedb spreads metadata keys as top-level columns alongside
-        'id', 'vector', 'metadata' (JSON), and 'created_at'.  The sample row
-        must include every field that could appear for this collection.
-
-        ``_serialize_for_schema`` converts non-primitive values (dicts, lists)
-        to JSON strings, so all columns are primitive types (Utf8, Int64,
-        Float64) — no List(Null) or Struct mismatches.
-        """
-        now = datetime.now(timezone.utc).isoformat()
-        dim = 384  # default embedding dimension
-
-        # Common columns always present
-        base: Dict[str, Any] = {
-            "id": "init",
-            "vector": [0.0] * dim,
-            "metadata": "{}",
-            "created_at": now,
-        }
-
-        # Collection-specific fields (metadata keys that _insert_lancedb spreads)
-        # All complex values (dicts, lists) are stored as JSON strings
-        specific: Dict[str, Any] = {}
-        if name == "rag_chunks":
-            specific = {
-                "source_file": "",
-                "start_line": 0,
-                "end_line": 0,
-                "domain": "",
-                "tipo_doc": "",
-                "tags": "[]",  # JSON string after serialization
-            }
-        elif name == "asi_cognition_store":
-            specific = {
-                "title": "",
-                "content": "",
-                "domain": "",
-                "tags": "[]",  # JSON string after serialization
-                "metrics": "{}",  # JSON string after serialization
-                "access_count": 0,
-                "last_accessed": "",
-            }
-        elif name == "agent_workspace_logs":
-            specific = {
-                "channel": "",
-                "thread_id": "",
-                "from_agent": "",
-                "to_agent": "",
-                "message": "",
-                "message_type": "",
-                "status": "sent",
-                "task_id": "",
-                "iteration": 0,
-                "attachments": "[]",
-            }
-        elif name == "tasks_board":
-            specific = {
-                "title": "",
-                "description": "",
-                "agent_assigned": "",
-                "status": "pending",
-                "priority": 0,
-                "updated_at": "",
-                "transition_history": "[]",
-            }
-        elif name == "procedural_skills":
-            specific = {
-                "name": "",
-                "domain": "",
-                "agent": "",
-                "trigger": "",
-                "steps_text": "",
-            }
-        elif name == "prompt_evolution_log":
-            specific = {
-                "agent": "",
-                "mutation_type": "",
-                "test_task": "",
-                "tokens_before": 0,
-                "tokens_after": 0,
-                "success": True,
-                "promoted": False,
-                "timestamp": now,
-            }
-        elif name == "scheduler_log":
-            specific = {
-                "job_name": "",
-                "trigger": "",
-                "status": "",
-                "duration_ms": 0,
-                "error": "",
-                "timestamp": now,
-            }
-        elif name == "hitl_approval_log":
-            specific = {
-                "agent_role": "",
-                "action": "",
-                "approved": True,
-                "user_feedback": "",
-                "mode": "hitl",
-            }
-
-        return {**base, **specific}
 
     # ------------------------------------------------------------------
     # Collection management
@@ -377,18 +272,6 @@ class LanceVectorStore:
 
         return ids
 
-    @staticmethod
-    def _serialize_for_schema(value: Any) -> Any:
-        """Convert non-primitive values to JSON strings for LanceDB schema compatibility.
-
-        LanceDB requires a strict schema.  Dicts, lists-of-dicts, and nested
-        structures are serialised to JSON strings so the table schema only
-        needs primitive columns (string, float, int, list<utf8>).
-        """
-        if isinstance(value, (dict, list)) and not isinstance(value, str):
-            return json.dumps(value)
-        return value
-
     def _insert_lancedb(
         self,
         collection: str,
@@ -412,7 +295,7 @@ class LanceVectorStore:
             for k, v in metadata[i].items():
                 if k == "metadata":
                     continue
-                row[k] = self._serialize_for_schema(v)
+                row[k] = serialize_for_schema(v)
             rows.append(row)
         tbl.add(rows)
         return ids
@@ -618,6 +501,15 @@ class LanceVectorStore:
         query_list = query_vector.tolist()
         results = tbl.search(query_list).limit(top_k).to_list()
 
+        # Convert metadata from JSON string to dict for filtering
+        for r in results:
+            m = r.get("metadata", r)
+            if isinstance(m, str):
+                try:
+                    r["metadata"] = json.loads(m)
+                except (json.JSONDecodeError, TypeError):
+                    r["metadata"] = {}
+
         # Apply post-filtering for metadata fields if LanceDB doesn't natively support them
         if filters:
             results = [
@@ -632,11 +524,6 @@ class LanceVectorStore:
         out: List[Dict[str, Any]] = []
         for r in results:
             meta = r.get("metadata", {})
-            if isinstance(meta, str):
-                try:
-                    meta = json.loads(meta)
-                except (json.JSONDecodeError, TypeError):
-                    meta = {}
             out.append(
                 {
                     "id": r.get("id", ""),

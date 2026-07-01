@@ -80,10 +80,6 @@ def main():
 
     hermes -p agentic chat -q "@software-engineer: implementar API FastAPI"
 
-  Or use the AGENTIC runner with Hermes:
-
-    python harness/run_hermes.py "@software-engineer: implementar API FastAPI"
-
   To sync skills:
 
     python harness/hermes_bridge.py --sync-skills

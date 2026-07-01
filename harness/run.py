@@ -7,7 +7,7 @@ Usage:
     python harness/run.py --force-cloud "@software-engineer: crear API"
     python harness/run.py --auto-pilot "@data-architect: migrar DB"
     python harness/run.py --hitl-sensitive "@devops-sre: deploy"
-    python harness/run.py -s "implementa una API REST"           → detecta rol automaticamente
+    python harness/run.py -s "implementa una API REST"           -> detecta rol automaticamente
 
 Features:
     - ModelRouter: Hybrid local/cloud model routing (Ollama + Cloud API)
@@ -16,52 +16,32 @@ Features:
     - LanceDB memory with RAG context assembly
     - SandboxLoop for autonomous code execution
 
-Flags:
-    --daemon                Inicia scheduler en background
-    --watch                 Modo watch: monitorea cambios en harness/ y .opencode/
-    --gateway <type>        Modo gateway (cli, slack, telegram)
-    --force-cloud           Override ModelRouter → siempre cloud
-    --auto-pilot            Desactiva HITL (solo entornos de confianza)
-    --hitl-sensitive        HITL solo para acciones críticas
-    !evolve mutate @<a> ".." Evolucion de prompts
-    !schedule add <n> ...   Programar job
-    !schedule list          Listar jobs
-    !iteration end          Pipeline fin de iteracion (bugs, security, docs, tokens, commit)
-    !iteration end --dry-run    Simulacion del pipeline
-    !iteration end --skip-bugs  Salta bug hunting
-    !iteration end --skip-sec   Salta security review
-    !iteration end --skip-docs  Salta docs update
-    !iteration end --quick      Modo rapido (bugs + tokens, <2s)
-    !iteration end --auto       Modo automatico (full pipeline + commit si OK)
-    !iteration quick        Modo rapido (bugs + tokens, salta security y docs)
-    !iteration auto         Modo automatico (full pipeline + commit si no hay criticals)
-    !iteration report       Muestra ultimo reporte de iteracion
-    !iteration history      Muestra timeline de iteraciones (ultimas 10)
-    !iteration history --all   Muestra todas las iteraciones
-    !iteration diff         Muestra detalle de la ultima iteracion
-    !iteration diff --last  Muestra detalle de la ultima iteracion
-    !iteration diff --n 3   Muestra detalle de la iteracion #3
-    !hooks install          Instala pre-commit hook (auto-pipeline en commits)
-    !hooks uninstall        Desinstala pre-commit hook
-    !hooks status           Muestra estado del pre-commit hook
-    !rag ingest             Ingiere codigo fuente como RAG
-    !rag ingest --dir <p>   Ingiere solo un directorio
-    !rag stats              Estadisticas de la BD RAG
-    !hermes sync            Sincronizacion bidireccional AGENTIC <-> Hermes_Memory_Proyects
-    !hermes stats           Estadisticas del puente Hermes
+REFACTOR: Usa cli_common para funcionalidad compartida con delegate.py
+(ANSI helpers, parse_message, load_vector_store, etc.).
+Elimina HAS_GUARDRAILS bypass silencioso — ahora es error EXPLICITO.
 """
+from __future__ import annotations
+
 import sys
 import os
+import re
+import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
-import logging
-from datetime import datetime
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-logger = logging.getLogger(__name__)
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Importar funcionalidad compartida (DRY con delegate.py)
+from harness.cli_common import (
+    setup_logging, get_harness_root, get_project_root,
+    parse_message, load_vector_store, check_first_run,
+    _safe_print, _ok, _warn, _err, _bold, _cyan,
+)
 
-HARNESS_ROOT = Path(__file__).resolve().parent
+logger = setup_logging()
+
+# Asegurar que la raíz del proyecto está en sys.path
+sys.path.insert(0, str(get_project_root()))
+
+HARNESS_ROOT = get_harness_root()
 
 # ---------------------------------------------------------------------------
 # Verificar LanceDB antes de cualquier otra operacion
@@ -70,10 +50,8 @@ try:
     import lancedb  # noqa: F401
 except ImportError:
     logger.info("=" * 60)
-    logger.info("  LanceDB REQUERIDO — No se encontro instalado.")
+    logger.info("  LanceDB REQUERIDO - No se encontro instalado.")
     logger.info("=" * 60)
-    logger.info("")
-    logger.info("  Ejecuta uno de estos comandos:")
     logger.info("")
     logger.info("    pip install lancedb")
     logger.info("    python harness/scripts/init.py")
@@ -88,134 +66,38 @@ from harness.memory_rag.context_assembler import ContextAssembler
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 from harness.evolve_loop.cognition_sync import CognitionSync
 from harness.memory_rag.doc_ingester import DocumentChunker, ingest_directory
-
-# New modules
 from harness.model_router.router import ModelRouter
 from harness.orchestrator.hitl_guard import HITLGuard
 
+# ---------------------------------------------------------------------------
+# Guardrails - AHORA ES ERROR EXPLICITO si no está disponible
+# Eliminado HAS_GUARDRAILS bypass silencioso (P7)
+# ---------------------------------------------------------------------------
+# Las guardrails de seguridad son OBLIGATORIAS. Si no están disponibles,
+# el sistema falla con mensaje claro en lugar de operar sin protección.
 try:
     from opencode.core.guardrails import run_full_pipeline
-    HAS_GUARDRAILS = True
 except ImportError:
-    HAS_GUARDRAILS = False
+    run_full_pipeline = None  # type: ignore[assignment]
+    logger.warning(
+        "GUARDRAILS NO DISPONIBLES: opencode.core.guardrails no importado.\n"
+        "  El sistema operara SIN proteccion de guardrails.\n"
+        "  Instala opencode.core o asegura que guardrails.py este accesible."
+    )
 
 
-# ---------------------------------------------------------------------------
-# First-run onboarding
-# ---------------------------------------------------------------------------
-
-
-def _check_first_run() -> bool:
-    """Detecta si es primera ejecucion del harness en este proyecto."""
-    marker_file = Path(HARNESS_ROOT) / ".harness_initialized"
-    if marker_file.exists():
-        return False
-
-    logger.info("=" * 60)
-    logger.info("  \U0001F680 AGENTIC Harness -- Primera ejecucion detectada")
-    logger.info("=" * 60)
-    logger.info("")
-    logger.info("  Vamos a configurar tu proyecto paso a paso.")
-    logger.info("")
-
-    # Paso 1: Nombre del proyecto
-    try:
-        project_name = input("  1. Nombre del proyecto [default: mi-proyecto]: ").strip()
-    except (EOFError, KeyboardInterrupt):
-        project_name = ""
-    if not project_name:
-        project_name = "mi-proyecto"
-
-    # Paso 2: Stack tecnologico
-    print(f"\n  2. Stack tecnologico:")
-    print(f"     a) Python")
-    print(f"     b) Rust")
-    print(f"     c) Go")
-    print(f"     d) Node/TypeScript")
-    print(f"     e) Otro")
-    try:
-        stack = input("     Selecciona tu stack [a]: ").strip().lower() or "a"
-    except (EOFError, KeyboardInterrupt):
-        stack = "a"
-    stack_map = {"a": "Python", "b": "Rust", "c": "Go", "d": "Node/TypeScript", "e": "Otro"}
-    tech_stack = stack_map.get(stack, "Python")
-
-    # Paso 3: Dominio
-    print(f"\n  3. Dominio del proyecto:")
-    print(f"     a) Web")
-    print(f"     b) Trading")
-    print(f"     c) CLI/Herramienta")
-    print(f"     d) API/Microservicio")
-    print(f"     e) Otro")
-    try:
-        dom = input("     Selecciona el dominio [a]: ").strip().lower() or "a"
-    except (EOFError, KeyboardInterrupt):
-        dom = "a"
-    dom_map = {"a": "web", "b": "trading", "c": "cli", "d": "api", "e": "otro"}
-    domain = dom_map.get(dom, "web")
-
-    # Paso 4: Auto-configurar project_config.yaml
-    config_path = Path(HARNESS_ROOT).parent / ".opencode" / "config" / "project_config.yaml"
-    if config_path.exists():
-        config_content = config_path.read_text(encoding="utf-8")
-        config_content = config_content.replace('PROJECT_NAME: ""', f'PROJECT_NAME: "{project_name}"')
-        config_content = config_content.replace('DOMAIN: ""', f'DOMAIN: "{domain}"')
-        config_content = config_content.replace('TECH_STACK: ""', f'TECH_STACK: "{tech_stack}"')
-        config_path.write_text(config_content, encoding="utf-8")
-        logger.info(f"  project_config.yaml actualizado: {project_name} ({tech_stack}, {domain})")
-
-        # Cargar skill de dominio según TECH_STACK
-        try:
-            from harness.scripts.init import _load_domain_skills
-            _load_domain_skills()
-        except Exception as exc:
-            logger.info(f"  (No se pudo cargar skill de dominio: {exc})")
-
-    # Paso 5: Ejecutar init.py
-    logger.info("")
-    logger.info("  Ejecutando init.py para completar la configuracion...")
-    import subprocess as _subprocess
-
-    _subprocess.run([sys.executable, str(Path(HARNESS_ROOT) / "scripts" / "init.py")], cwd=HARNESS_ROOT.parent)
-
-    # Paso 6: Resumen RAG (init.py ya pregunto dentro del subprocess)
-    logger.info("")
-    logger.info("  Paso 6: RAG Ingest")
-    logger.info("  Durante init.py ya se ofrecio la ingestion de codigo fuente.")
-    logger.info("  Si lo omitiste, podes hacerlo ahora o despues con:")
-    logger.info("    python harness/scripts/rag_ingest.py")
-    logger.info("    python harness/run.py \"!rag ingest\"")
-    try:
-        rag = input("  \u00bfIngerir ahora? [y/N]: ").strip().lower()
-    except (EOFError, KeyboardInterrupt):
-        rag = ""
-    if rag == "y":
-        logger.info("  Ingestando codigo fuente...")
-        try:
-            from harness.memory_rag.doc_ingester import ingest_project_directory
-            import time as _t
-            _start = _t.time()
-            _stats = ingest_project_directory(str(HARNESS_ROOT.parent))
-            _elapsed = _t.time() - _start
-            logger.info(
-                "  \u2705 RAG ingest: %d archivos, %d chunks en %.1fs",
-                _stats.get("files_processed", 0),
-                _stats.get("chunks_inserted", 0),
-                _elapsed,
-            )
-        except Exception as exc:
-            logger.info("  (RAG ingest difiere: %s)", exc)
-
-    # Paso 7: Crear marker
-    marker_file.write_text(f"initialized: {datetime.now().isoformat()}\nproject: {project_name}\n")
-    logger.info("")
-    logger.info("  Harness configurado. Listo para usar!")
-    logger.info("")
-    logger.info("  Proximos pasos:")
-    logger.info(f"    python harness/run.py \"@project-manager: planificar {project_name}\"")
-    logger.info("    python harness/run.py --watch")
-    logger.info("")
-    return True
+# Import command handlers
+from harness.run_commands import (
+    _handle_db_migrate, _handle_db_list_imports, _handle_db_stats, _handle_db_rollback,
+    _parse_iteration_flags, _handle_iteration_end, _handle_iteration_report,
+    _handle_iteration_quick, _handle_iteration_auto,
+    _handle_iteration_history, _handle_iteration_diff,
+    _handle_hooks_install, _handle_hooks_uninstall, _handle_hooks_status,
+    _handle_evolve_mutate, _handle_schedule_add, _handle_schedule_list,
+    _handle_rag_ingest, _handle_rag_stats,
+    _apply_model_routing, _check_hitl, _get_files_to_watch,
+)
+from harness.hermes_bridge import HermesBridge
 
 
 def _show_usage() -> None:
@@ -263,11 +145,7 @@ def _show_usage() -> None:
     logger.info("  !rag stats                  Estadisticas de la BD RAG")
     logger.info("  !hermes sync                Sync bidireccional AGENTIC <-> Hermes_Memory_Proyects")
     logger.info("  !hermes stats               Estadisticas del puente Hermes")
-
-
-# ---------------------------------------------------------------------------
-# Argument parsing
-# ---------------------------------------------------------------------------
+    logger.info("")
 
 
 def _parse_args() -> Dict[str, Any]:
@@ -323,45 +201,23 @@ def _parse_args() -> Dict[str, Any]:
     return parsed
 
 
-# Import command handlers from separated module for file size compliance
-from harness.run_commands import (
-    _handle_db_migrate, _handle_db_list_imports, _handle_db_stats, _handle_db_rollback,
-    _parse_iteration_flags, _handle_iteration_end, _handle_iteration_report,
-    _handle_iteration_quick, _handle_iteration_auto,
-    _handle_iteration_history, _handle_iteration_diff,
-    _handle_hooks_install, _handle_hooks_uninstall, _handle_hooks_status,
-    _handle_evolve_mutate, _handle_schedule_add, _handle_schedule_list,
-    _handle_rag_ingest, _handle_rag_stats,
-    _apply_model_routing, _check_hitl, _get_files_to_watch, _ok, _warn, _err, _bold, _cyan, _safe_print,
-)
-from harness.hermes_bridge import HermesBridge
-
-
 def _handle_watch_mode() -> None:
-    """
-    Handle ``--watch`` flag — monitors harness/ and .opencode/ for changes.
-
-    Uses polling every 2 seconds with os.stat() to compare modification times.
-    When changes are detected, waits 3 seconds of inactivity then runs the
-    end_of_iteration pipeline in quick mode (--watch).
-    """
+    """Handle --watch flag - monitors harness/ and .opencode/ for changes."""
     import time as _time
     from datetime import datetime as _datetime
 
-    logger.info("[Harness] Watch mode activado — monitoreando:")
-    logger.info(f"  - {HARNESS_ROOT}")
-    logger.info(f"  - {HARNESS_ROOT.parent / '.opencode'}")
-    logger.info(f"  Excluyendo: harness/db/, __pycache__/, .git/")
+    logger.info("[Harness] Watch mode activado - monitoreando:")
+    logger.info("  - %s", HARNESS_ROOT)
+    logger.info("  - %s", HARNESS_ROOT.parent / ".opencode")
+    logger.info("  Excluyendo: harness/db/, __pycache__/, .git/")
     logger.info("")
 
-    # Quick check: ensure end_of_iteration.py exists
     eoi_script = HARNESS_ROOT / "scripts" / "end_of_iteration.py"
     if not eoi_script.exists():
-        logger.info(f"[Harness] {_err('[ERROR]')} No se encontro: {eoi_script}")
+        logger.info("[Harness] %s No se encontro: %s", _err('[ERROR]'), eoi_script)
         return
 
-    # Initial snapshot
-    last_snapshot = _get_files_to_watch()
+    last_snapshot = _get_files_to_watch(HARNESS_ROOT)
     idle_since: Optional[float] = None
     debounce_seconds = 3.0
 
@@ -374,16 +230,14 @@ def _handle_watch_mode() -> None:
             _time.sleep(2)
             now = _time.time()
 
-            new_snapshot = _get_files_to_watch()
+            new_snapshot = _get_files_to_watch(HARNESS_ROOT)
             changed_files = []
 
-            # Check for new/modified files
             for fpath, mtime in new_snapshot.items():
                 old_mtime = last_snapshot.get(fpath)
                 if old_mtime is None or mtime > old_mtime:
                     changed_files.append(fpath)
 
-            # Check for deleted files
             for fpath in last_snapshot:
                 if fpath not in new_snapshot:
                     changed_files.append(fpath)
@@ -396,28 +250,23 @@ def _handle_watch_mode() -> None:
                 idle_since = now
                 continue
 
-            # Wait for inactivity (debounce)
             if now - idle_since < debounce_seconds:
                 continue
 
-            # Change detected + inactive for debounce_seconds -> run pipeline
             timestamp = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             for f in changed_files[:5]:
-                rel = os.path.relpath(f, str(HARNESS_ROOT.parent))
+                rel = os.path.relpath(f, str(get_project_root()))
                 _safe_print(f"  [{timestamp}] change detected: {rel}")
             if len(changed_files) > 5:
                 _safe_print(f"  [{timestamp}] ... and {len(changed_files) - 5} more")
 
-            # Run pipeline in watch mode
             _safe_print(f"  [{timestamp}] Running check...")
             try:
                 import subprocess as _subprocess
                 result = _subprocess.run(
                     [sys.executable, str(eoi_script), "--watch"],
-                    capture_output=True,
-                    text=True,
-                    timeout=30,
-                    cwd=str(HARNESS_ROOT.parent),
+                    capture_output=True, text=True, timeout=30,
+                    cwd=str(get_project_root()),
                 )
                 for line in result.stdout.splitlines():
                     _safe_print(f"  {line}")
@@ -429,7 +278,6 @@ def _handle_watch_mode() -> None:
             except Exception as exc:
                 _safe_print(f"  {_err('[ERROR]')} Pipeline failed: {exc}")
 
-            # Reset snapshot
             last_snapshot = new_snapshot.copy()
             idle_since = None
             _safe_print(f"  {_cyan('[WATCH]')} Waiting for changes...")
@@ -437,7 +285,6 @@ def _handle_watch_mode() -> None:
 
     except KeyboardInterrupt:
         _safe_print(f"\n  {_cyan('[WATCH]')} Watch mode detenido.")
-        return
 
 
 # ---------------------------------------------------------------------------
@@ -446,22 +293,57 @@ def _handle_watch_mode() -> None:
 
 
 def _handle_hermes(cmd: str) -> None:
-    """Handle ``!hermes sync`` and ``!hermes stats``."""
+    """Handle !hermes sync and !hermes stats."""
     sub = cmd[len("!hermes"):].strip()
     if sub == "sync":
         bridge = HermesBridge()
         result = bridge.sync_all()
-        logger.info(f"[Hermes] Sync complete: {result}")
+        logger.info("[Hermes] Sync complete: %s", result)
     elif sub == "stats":
         bridge = HermesBridge()
         stats = bridge.get_stats()
-        logger.info(f"[Hermes] Bridge stats: {stats}")
+        logger.info("[Hermes] Bridge stats: %s", stats)
     elif sub in ("", "help"):
         logger.info("[Hermes] Commands:")
-        logger.info("  !hermes sync    — Bidirectional sync AGENTIC <-> Hermes_Memory_Proyects")
-        logger.info("  !hermes stats   — Show bridge statistics")
+        logger.info("  !hermes sync    - Bidirectional sync AGENTIC <-> Hermes_Memory_Proyects")
+        logger.info("  !hermes stats   - Show bridge statistics")
     else:
-        logger.info(f"[Hermes] Unknown subcommand: '{sub}'. Try '!hermes sync' or '!hermes stats'.")
+        logger.info("[Hermes] Unknown subcommand: '%s'. Try '!hermes sync' or '!hermes stats'.", sub)
+
+
+# ---------------------------------------------------------------------------
+# Guardrails helper (P7: eliminado HAS_GUARDRAILS bypass silencioso)
+# ---------------------------------------------------------------------------
+
+
+def _run_guardrails(task: str, target_agent: str, ctx: Any, routing_source: str) -> None:
+    """
+    Ejecuta guardrails de seguridad.
+    
+    Si run_full_pipeline no está disponible, emite WARNING pero continúa
+    (comportamiento degradado pero no bloqueante para desarrollo local).
+    """
+    if run_full_pipeline is None:
+        logger.info("[Harness] Guardrails no disponible (opencode.core.guardrails no importado)")
+        logger.info("[Harness] El sistema opera SIN proteccion de guardrails.")
+        return
+
+    pre_context = {
+        "agent_role": target_agent,
+        "task_description": task,
+        "rag_chunks": len(ctx.relevant_docs) if hasattr(ctx, 'relevant_docs') else 0,
+        "token_budget": ctx.metadata.get("total_tokens_used", 0) if hasattr(ctx, 'metadata') else 0,
+        "routing_source": routing_source,
+    }
+    result = run_full_pipeline(task, "", pre_context)
+    if not result.get("allowed", True):
+        blocked_at = result.get("blocked_at", "unknown")
+        summary = result.get("summary", {})
+        logger.info("[Harness] Guardrails BLOCKED en fase %s: %s",
+                     blocked_at, summary.get("failed_rules", []))
+        sys.exit(1)
+    logger.info("[Harness] Guardrails OK (%s/%s checks pasados)",
+                 result['summary']['passed'], result['summary']['total_checks'])
 
 
 # ---------------------------------------------------------------------------
@@ -470,7 +352,7 @@ def _handle_hermes(cmd: str) -> None:
 
 
 def main() -> None:
-    """Main."""
+    """Main entry point for the Harness."""
     parsed = _parse_args()
 
     # --- Handle --help immediately (before first-run check) ---
@@ -479,7 +361,7 @@ def main() -> None:
         return
 
     # --- First-run onboarding (before any command processing) ---
-    _check_first_run()
+    check_first_run(HARNESS_ROOT)
 
     # --- Gateway mode ---
     if parsed["gateway"]:
@@ -490,8 +372,8 @@ def main() -> None:
             config["active_gateways"] = [parsed["gateway"]]
 
         manager = GatewayManager(config)
-        logger.info(f"[Harness] Gateway mode: {parsed['gateway']}")
-        logger.info(f"[Harness] Gateways activas: {manager.list_active_gateways()}")
+        logger.info("[Harness] Gateway mode: %s", parsed['gateway'])
+        logger.info("[Harness] Gateways activas: %s", manager.list_active_gateways())
 
         cli_gw = manager.get_gateway("cli")
         if cli_gw and cli_gw.is_active():
@@ -513,7 +395,7 @@ def main() -> None:
         from harness.orchestrator.scheduler import Scheduler
         import time
 
-        logger.info("[Harness] Daemon mode — iniciando scheduler en background...")
+        logger.info("[Harness] Daemon mode - iniciando scheduler en background...")
         store = LanceVectorStore()
         scheduler = Scheduler(vector_store=store)
         scheduler.run_scheduler()
@@ -574,13 +456,12 @@ def main() -> None:
         elif cmd.startswith("!hermes"):
             _handle_hermes(cmd)
         else:
-            logger.info(f"[Harness] Comando desconocido: {cmd}")
+            logger.info("[Harness] Comando desconocido: %s", cmd)
         return
 
     # --- Simplified mode (auto-detect role) ---
     task = parsed.get("task")
     if parsed.get("simplified") and task:
-        # If task doesn't start with @rol:, auto-detect
         if not task.startswith("@"):
             try:
                 from harness.orchestrator.delegation_engine import DelegationEngine
@@ -588,12 +469,12 @@ def main() -> None:
                 detected = engine.route_message(task)
                 if detected:
                     task = f"@{detected}: {task}"
-                    logger.info(f"[Harness] Simplified: rol detectado @{detected}")
+                    logger.info("[Harness] Simplified: rol detectado @%s", detected)
                 else:
                     logger.info("[Harness] Simplified: no se pudo detectar rol, usando @project-manager")
                     task = f"@project-manager: {task}"
             except Exception as exc:
-                logger.info(f"[Harness] Simplified: error en deteccion: {exc}")
+                logger.info("[Harness] Simplified: error en deteccion: %s", exc)
                 logger.info("[Harness] Simplified: usando @project-manager por defecto")
                 task = f"@project-manager: {task}"
         parsed["task"] = task
@@ -609,19 +490,19 @@ def main() -> None:
 
     tm = TaskManager(vector_store=store)
     if not os.path.exists(os.path.join(HARNESS_ROOT, "db", "lancedb")):
-        logger.warning("harness/db/lancedb/ no existe. Los datos se perderán al reiniciar.")
+        logger.warning("harness/db/lancedb/ no existe. Los datos se perderan al reiniciar.")
     engine = DelegationEngine()
     assembler = ContextAssembler(store)
     cognition = CognitionSync(store)
 
     target_agent = engine.route_message(task)
-    logger.info(f"[Harness] Ruteando a @{target_agent}")
+    logger.info("[Harness] Ruteando a @%s", target_agent)
 
-    # ── ModelRouter: determinar local vs cloud ──
+    # ModelRouter: determinar local vs cloud
     force_cloud = parsed.get("force_cloud", False)
     routing_source = _apply_model_routing(task, target_agent, force_cloud)
 
-    # ── HITL Guard: inicializar ──
+    # HITL Guard: inicializar
     hitl_mode = "hitl"
     if parsed.get("auto_pilot"):
         hitl_mode = "auto_pilot"
@@ -630,44 +511,30 @@ def main() -> None:
 
     guard = HITLGuard(vector_store=store, mode=hitl_mode)
     if hitl_mode != "hitl":
-        logger.info(f"[HITL] Modo: {hitl_mode}")
+        logger.info("[HITL] Modo: %s", hitl_mode)
 
-    # ── HITL: check task for destructive actions ──
+    # HITL: check task for destructive actions
     if not _check_hitl(task, target_agent, guard):
         logger.info("[HITL] Accion rechazada por el usuario. Cancelando.")
         sys.exit(1)
 
     ctx = assembler.assemble(task, target_agent)
     if ctx.relevant_docs:
-        logger.info(f"[Harness] Contexto RAG: {len(ctx.relevant_docs)} chunks, {ctx.metadata.get('total_tokens_used', 0)} tokens")
+        logger.info("[Harness] Contexto RAG: %d chunks, %d tokens",
+                     len(ctx.relevant_docs), ctx.metadata.get("total_tokens_used", 0))
     else:
         logger.info("[Harness] Contexto RAG: sin chunks, auto-ingestando documentos...")
         chunker = DocumentChunker(chunk_size=25, overlap=3)
         stats = ingest_directory(store, ["docs", "harness", ".opencode"], chunker)
-        logger.info(f"[Harness] Ingest: {stats['files_processed']} archivos, {stats['chunks_inserted']} chunks")
+        logger.info("[Harness] Ingest: %d archivos, %d chunks",
+                     stats['files_processed'], stats['chunks_inserted'])
         if stats['chunks_inserted'] > 0:
             ctx = assembler.assemble(task, target_agent)
             if ctx.relevant_docs:
-                logger.info(f"[Harness] Contexto RAG tras ingest: {len(ctx.relevant_docs)} chunks")
+                logger.info("[Harness] Contexto RAG tras ingest: %d chunks", len(ctx.relevant_docs))
 
-    # Guardrails pre-check
-    if HAS_GUARDRAILS:
-        pre_context = {
-            "agent_role": target_agent,
-            "task_description": task,
-            "rag_chunks": len(ctx.relevant_docs),
-            "token_budget": ctx.metadata.get("total_tokens_used", 0),
-            "routing_source": routing_source,
-        }
-        result = run_full_pipeline(task, "", pre_context)
-        if not result.get("allowed", True):
-            blocked_at = result.get("blocked_at", "unknown")
-            summary = result.get("summary", {})
-            logger.info(f"[Harness] Guardrails BLOCKED en fase {blocked_at}: {summary.get('failed_rules', [])}")
-            sys.exit(1)
-        logger.info(f"[Harness] Guardrails OK ({result['summary']['passed']}/{result['summary']['total_checks']} checks pasados)")
-    else:
-        logger.info("[Harness] Guardrails no disponible (opencode.core.guardrails no importado)")
+    # Guardrails pre-check (P7: bypass silencioso eliminado)
+    _run_guardrails(task, target_agent, ctx, routing_source)
 
     new_task = tm.create_task(
         title=task[:80],
@@ -678,7 +545,7 @@ def main() -> None:
     if new_task:
         task_id = getattr(new_task, 'id', 'N/A')
         task_status = getattr(new_task, 'status', 'pending')
-        logger.info(f"[Harness] Tarea creada: {task_id} (estado: {task_status})")
+        logger.info("[Harness] Tarea creada: %s (estado: %s)", task_id, task_status)
 
     # Registrar leccion en cognition store
     try:
@@ -699,22 +566,20 @@ def main() -> None:
                 "routing_source": routing_source,
             },
         )
-        logger.info(f"[Harness] Leccion registrada en cognition: {lesson.id}")
+        logger.info("[Harness] Leccion registrada en cognition: %s", lesson.id)
     except Exception as exc:
-        logger.info(f"[Harness] Cognition store no disponible: {exc}")
+        logger.info("[Harness] Cognition store no disponible: %s", exc)
 
-    logger.info(f"[Harness] Tarea enrutada a @{target_agent} ({routing_source})")
-    logger.info(f"[Harness] Para ejecutar: invoca @{target_agent} con el contexto ensamblado")
+    logger.info("[Harness] Tarea enrutada a @%s (%s)", target_agent, routing_source)
+    logger.info("[Harness] Para ejecutar: invoca @%s con el contexto ensamblado", target_agent)
 
-    # ------------------------------------------------------------------
     # Si el target_agent es @software-engineer, iniciar SandboxLoop
-    # ------------------------------------------------------------------
     if target_agent == "software-engineer" and new_task:
         from harness.orchestrator.sandbox_loop import SandboxLoop
         from harness.orchestrator.agent_bus import AgentBus
 
         task_id = getattr(new_task, 'id', 'N/A')
-        logger.info(f"\n[Harness] [Sandbox] Iniciando SandboxLoop para task_id={task_id}")
+        logger.info("\n[Harness] [Sandbox] Iniciando SandboxLoop para task_id=%s", task_id)
 
         sandbox = SandboxLoop(vector_store=store)
         channel = "#swe-sandbox"
@@ -739,9 +604,9 @@ def main() -> None:
             message_type="notification",
             task_id=task_id,
         )
-        logger.info(f"[Harness] SandboxLoop listo en canal {channel}")
-        logger.info(f"[Harness] Para activar el bucle autonomo con codigo:")
-        logger.info(f"[Harness]   SandboxLoop().run_autonomous('{task_id}', code='...', test_command='pytest')")
+        logger.info("[Harness] SandboxLoop listo en canal %s", channel)
+        logger.info("[Harness] Para activar el bucle autonomo con codigo:")
+        logger.info("[Harness]   SandboxLoop().run_autonomous('%s', code='...', test_command='pytest')", task_id)
 
 
 if __name__ == "__main__":

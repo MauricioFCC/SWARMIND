@@ -3,10 +3,14 @@
 Delegate — Entry point simplificado para el harness multi-agente.
 
 Uso:
-    python harness/delegate.py "haz X"                          → detecta rol automáticamente
-    python harness/delegate.py "@software-engineer: crea API"   → delegación explícita
+    python harness/delegate.py "haz X"                          → detecta rol automaticamente
+    python harness/delegate.py "@software-engineer: crea API"   → delegacion explicita
     python harness/delegate.py --list                           → lista roles disponibles
     python harness/delegate.py --interactive                    → modo chat
+
+REFACTOR: Elimina ~150 líneas de registros duplicados e intent mapping.
+Ahora usa agent_discovery (descubrimiento recursivo desde .opencode/agents/*.md)
+y cli_common (funcionalidad compartida con run.py).
 """
 
 from __future__ import annotations
@@ -19,95 +23,67 @@ import logging
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-logger = logging.getLogger(__name__)
+# Importar funcionalidad compartida
+from harness.cli_common import (
+    setup_logging, get_harness_root, get_project_root,
+    parse_message, _safe_print, _ok, _warn, _err, _bold,
+)
 
-# Ensure harness root is on sys.path
-HARNESS_ROOT = Path(__file__).resolve().parent
-if str(HARNESS_ROOT.parent) not in sys.path:
-    sys.path.insert(0, str(HARNESS_ROOT.parent))
+# Importar descubrimiento recursivo de agentes
+# (reemplaza AGENTS list y _INTENT_AGENTS hardcodeados)
+from harness.orchestrator.agent_discovery import (
+    discover_agents_recursive,
+    build_intent_map,
+    resolve_agent_name as discovery_resolve_agent,
+    list_agents,
+)
 
-# ── Agent registry (copied from AGENTS.md for independence) ──────────
+logger = setup_logging()
+HARNESS_ROOT = get_harness_root()
 
-AGENTS: List[Tuple[str, str, str]] = [
-    ("project-manager", "Orquestacion F.R.A.M.E., planificacion", "@pm"),
-    ("context-engineer", "Curation de contexto, token budget, RAG", "@context"),
-    ("tool-mcp-engineer", "Ecosistema MCP, herramientas", "@mcp"),
-    ("software-engineer", "APIs, servicios, full-stack", "@swe"),
-    ("data-architect", "Schemas, modelos, migraciones", "@data"),
-    ("devops-sre", "CI/CD, Docker, infraestructura", "@devops"),
-    ("security-engineer", "Seguridad, compliance, hardening", "@sec"),
-    ("frontend-engineer", "UI/UX, dashboards", "@frontend"),
-    ("mobile-engineer", "Apps iOS/Android", "@mobile"),
-    ("ai-engineer", "ML/AI, pipelines, LLMOps", "@ai"),
-    ("quality-gate", "QA, tests, cobertura", "@qa"),
-    ("documentation-specialist", "Documentacion tecnica", "@docs"),
-    ("requirements-analyst", "Analisis de requerimientos", "@ra"),
-    ("enterprise-architect", "Arquitectura de sistemas, ADR", "@architect"),
-    ("quant-developer", "Estrategias cuantitativas, brokers", "@quant"),
-    ("quant-scientist", "Validacion estadistica, experimentos", "@scientist"),
-    ("risk-manager", "Gestion de riesgo, position sizing", "@risk"),
-    ("trading-operations", "Monitoreo en vivo, alertas", "@ops"),
-    ("evolve-researcher", "Investigacion de mejoras", "!evolve run"),
-    ("evolve-engineer", "Ejecucion de mejoras", "!evolve run"),
-    ("evolve-analyzer", "Analisis de resultados", "!evolve run"),
-]
+# Asegurar que la raíz del proyecto está en sys.path
+if str(get_project_root()) not in sys.path:
+    sys.path.insert(0, str(get_project_root()))
 
-# ── Role detection ────────────────────────────────────────────────────
-
-# Intent mapping (lightweight version of DelegationEngine's intent map)
-_INTENT_AGENTS: dict[str, str] = {
-    "api": "software-engineer",
-    "endpoint": "software-engineer",
-    "implementar": "software-engineer",
-    "codigo": "software-engineer",
-    "refactor": "software-engineer",
-    "test": "quality-gate",
-    "ui": "frontend-engineer",
-    "frontend": "frontend-engineer",
-    "dashboard": "frontend-engineer",
-    "schema": "data-architect",
-    "migracion": "data-architect",
-    "base de datos": "data-architect",
-    "deploy": "devops-sre",
-    "docker": "devops-sre",
-    "ci/cd": "devops-sre",
-    "seguridad": "security-engineer",
-    "vulnerabilidad": "security-engineer",
-    "mobile": "mobile-engineer",
-    "ios": "mobile-engineer",
-    "android": "mobile-engineer",
-    "documentacion": "documentation-specialist",
-    "readme": "documentation-specialist",
-    "estrategia": "quant-developer",
-    "trading": "quant-developer",
-    "backtest": "quant-developer",
-    "riesgo": "risk-manager",
-    "arquitectura": "enterprise-architect",
-    "machine learning": "ai-engineer",
-    "modelo": "ai-engineer",
-    "plan": "project-manager",
-    "planificar": "project-manager",
-    "requerimiento": "requirements-analyst",
-    "analisis": "requirements-analyst",
-    "monitoreo": "trading-operations",
-    "alerta": "trading-operations",
-    "evolucion": "evolve-engineer",
-    "mejora": "evolve-engineer",
-    "contexto": "context-engineer",
-    "prompt": "context-engineer",
-    "mcp": "tool-mcp-engineer",
-    "herramienta": "tool-mcp-engineer",
-}
+# Cache de agentes descubiertos (se carga una vez)
+_AGENTS_CACHE = None
 
 
-def _detect_role(task: str) -> str | None:
-    """Detect the best agent role for a task using intent matching.
+def _get_agents():
+    """Retorna agentes descubiertos, con cache."""
+    global _AGENTS_CACHE
+    if _AGENTS_CACHE is None:
+        _AGENTS_CACHE = discover_agents_recursive()
+    return _AGENTS_CACHE
 
-    Falls back to DelegationEngine if available, otherwise uses
-    a built-in lightweight intent map.
+
+def _get_agent_list() -> List[Tuple[str, str, str]]:
     """
-    # Try to use DelegationEngine first (more comprehensive)
+    Construye lista de (nombre, descripcion, alias) desde agentes descubiertos.
+    Reemplaza la lista AGETS hardcodeada de ~30 líneas.
+    """
+    agents = _get_agents()
+    result: List[Tuple[str, str, str]] = []
+    for name, info in sorted(agents.items()):
+        aliases = info.get("aliases", [])
+        alias_str = f"@{aliases[0]}" if aliases else ""
+        result.append((name, info.get("description", ""), alias_str))
+    return result
+
+
+def _detect_role(task: str) -> Optional[str]:
+    """Detecta el mejor rol para una tarea usando intent matching.
+
+    Reemplaza _INTENT_AGENTS hardcodeado (~40 líneas) con el mapa
+    construido dinámicamente desde los triggers de cada agente.
+
+    Args:
+        task: Descripción de la tarea
+
+    Returns:
+        Nombre del agente o None si no se puede detectar.
+    """
+    # Intentar usar DelegationEngine primero (más completo, incluye Router v2)
     try:
         from harness.orchestrator.delegation_engine import DelegationEngine
         engine = DelegationEngine()
@@ -119,13 +95,14 @@ def _detect_role(task: str) -> str | None:
     except Exception:
         pass
 
-    # Built-in fallback: keyword matching
+    # Fallback: intent matching desde agent discovery
+    agents = _get_agents()
+    intent_map = build_intent_map(agents)
     task_lower = task.lower()
-    best_match: tuple[int, str] = (0, "")
 
-    for keyword, agent in _INTENT_AGENTS.items():
+    best_match: Tuple[int, str] = (0, "")
+    for keyword, agent in intent_map.items():
         if keyword in task_lower:
-            # Longer keyword = better match (more specific)
             score = len(keyword)
             if score > best_match[0]:
                 best_match = (score, agent)
@@ -133,12 +110,11 @@ def _detect_role(task: str) -> str | None:
     if best_match[1]:
         return best_match[1]
 
-    # Try ModelRouter as last resort for role detection
+    # Último recurso: ModelRouter
     try:
         from harness.model_router.router import ModelRouter
         router = ModelRouter()
         decision = router.route(task, "*")
-        # If routed to cloud for complexity, default to software-engineer
         if decision.source == "cloud":
             return "software-engineer"
     except ImportError:
@@ -149,11 +125,25 @@ def _detect_role(task: str) -> str | None:
     return None
 
 
-def _parse_mention(task: str) -> tuple[str | None, str]:
-    """Extract @rol: prefix from task text.
+def resolve_role(role_alias: str) -> Optional[str]:
+    """Resuelve un alias a su nombre canónico de agente.
+
+    Args:
+        role_alias: Alias (@pm, @swe) o nombre parcial
 
     Returns:
-        Tuple of (role or None, remaining text).
+        Nombre canónico o None si no se encuentra.
+    """
+    agents = _get_agents()
+    canonical = discovery_resolve_agent(role_alias, agents)
+    return canonical if canonical else None
+
+
+def _parse_mention(task: str) -> Tuple[Optional[str], str]:
+    """Extrae @rol: prefix del texto de la tarea.
+
+    Returns:
+        Tuple de (rol o None, texto restante).
     """
     match = re.match(r"@(\w[\w-]*)\s*:\s*(.*)", task.strip())
     if match:
@@ -161,70 +151,45 @@ def _parse_mention(task: str) -> tuple[str | None, str]:
     return None, task.strip()
 
 
-def resolve_role(role_alias: str) -> str | None:
-    """Resolve a role alias/shortname to its canonical agent name."""
-    alias_map: dict[str, str] = {
-        "pm": "project-manager",
-        "context": "context-engineer",
-        "mcp": "tool-mcp-engineer",
-        "swe": "software-engineer",
-        "data": "data-architect",
-        "devops": "devops-sre",
-        "sec": "security-engineer",
-        "frontend": "frontend-engineer",
-        "mobile": "mobile-engineer",
-        "ai": "ai-engineer",
-        "qa": "quality-gate",
-        "docs": "documentation-specialist",
-        "ra": "requirements-analyst",
-        "architect": "enterprise-architect",
-        "quant": "quant-developer",
-        "scientist": "quant-scientist",
-        "risk": "risk-manager",
-        "ops": "trading-operations",
-    }
-    canonical = role_alias.lower().replace("_", "-")
-    return alias_map.get(canonical, canonical if any(canonical == a[0] for a in AGENTS) else None)
-
-
 # ── Core function ─────────────────────────────────────────────────────
 
 
-def delegate_task(task_text: str, extra_args: list[str] | None = None) -> int:
-    """Parse task text, detect role if needed, and delegate to run.py.
+def delegate_task(task_text: str, extra_args: Optional[List[str]] = None) -> int:
+    """Parsea la tarea, detecta rol si es necesario, y delega a run.py.
 
     Args:
-        task_text: The raw task description (may include @rol: prefix).
-        extra_args: Additional CLI flags to pass to run.py.
+        task_text: Texto de la tarea (puede incluir @rol: prefix).
+        extra_args: Flags adicionales para run.py.
 
     Returns:
-        Exit code from the subprocess.
+        Código de salida del subprocess.
     """
     extra_args = extra_args or []
     role, clean_task = _parse_mention(task_text)
 
     if role:
-        # Explicit @rol: prefix — resolve alias if needed
+        # @rol explícito — resolver alias
         resolved = resolve_role(role)
         if not resolved:
-            logger.info(f"[Delegate] Rol desconocido: @{role}")
-            logger.info(f"[Delegate] Usa --list para ver los roles disponibles.")
+            logger.info("[Delegate] Rol desconocido: @%s", role)
+            agents = _get_agent_list()
+            logger.info("[Delegate] Roles disponibles: %s", ", ".join(a[0] for a in agents))
             return 1
         role = resolved
     else:
-        # Auto-detect role
+        # Auto-detección de rol
         detected = _detect_role(task_text)
         if detected:
             role = detected
-            logger.info(f"[Delegate] Rol detectado: @{role}")
+            logger.info("[Delegate] Rol detectado: @%s", role)
         else:
-            # Can't detect — ask user
+            # No se pudo detectar — preguntar al usuario
             logger.info("[Delegate] No se pudo detectar el rol automaticamente.")
             logger.info("[Delegate] Selecciona un rol para esta tarea:")
-            agents_sorted = sorted(AGENTS, key=lambda x: x[0])
+            agents_sorted = sorted(_get_agent_list(), key=lambda x: x[0])
             for i, (name, desc, _) in enumerate(agents_sorted, 1):
-                logger.info(f"  {i:2d}. @{name:<25s} {desc}")
-            logger.info(f"  {len(agents_sorted) + 1:2d}. project-manager (default)")
+                logger.info("  %2d. @%-25s %s", i, name, desc)
+            logger.info("  %2d. project-manager (default)", len(agents_sorted) + 1)
             try:
                 choice = input(f"\nSelecciona un rol [1-{len(agents_sorted) + 1}]: ").strip()
             except (EOFError, KeyboardInterrupt):
@@ -237,17 +202,17 @@ def delegate_task(task_text: str, extra_args: list[str] | None = None) -> int:
                     role = "project-manager"
             else:
                 role = "project-manager"
-            logger.info(f"[Delegate] Usando rol: @{role}")
+            logger.info("[Delegate] Usando rol: @%s", role)
 
-    # Build the task string for run.py
+    # Construir string de tarea para run.py
     full_task = f"@{role}: {clean_task}"
 
-    # Invoke run.py
+    # Invocar run.py
     run_py = HARNESS_ROOT / "run.py"
     cmd = [sys.executable, str(run_py), full_task] + extra_args
 
-    logger.info(f"[Delegate] Ejecutando: python harness/run.py \"{full_task}\"")
-    result = subprocess.run(cmd, cwd=str(HARNESS_ROOT.parent))
+    logger.info("[Delegate] Ejecutando: python harness/run.py \"%s\"", full_task)
+    result = subprocess.run(cmd, cwd=str(get_project_root()))
     return result.returncode
 
 
@@ -255,15 +220,16 @@ def delegate_task(task_text: str, extra_args: list[str] | None = None) -> int:
 
 
 def _list_agents() -> None:
-    """Print all available agents with descriptions."""
+    """Muestra todos los agentes disponibles con descripciones."""
+    agents = _get_agent_list()
     logger.info("=" * 72)
-    logger.info("  AGENTES DISPONIBLES (21 roles)")
+    logger.info("  AGENTES DISPONIBLES (%d roles)", len(agents))
     logger.info("=" * 72)
     logger.info("")
-    logger.info(f"  {'Rol':<28s} {'Dominio':<40s} {'Alias':<12s}")
-    logger.info(f"  {'---':<28s} {'------':<40s} {'-----':<12s}")
-    for name, desc, alias in AGENTS:
-        logger.info(f"  @{name:<25s} {desc:<40s} {alias:<12s}")
+    logger.info("  %-28s %-40s %-12s", "Rol", "Dominio", "Alias")
+    logger.info("  %-28s %-40s %-12s", "---", "------", "-----")
+    for name, desc, alias in agents:
+        logger.info("  @%-25s %-40s %-12s", name, desc[:38], alias)
     logger.info("")
     logger.info("  Uso: python harness/delegate.py \"@rol: tu tarea aqui\"")
     logger.info("  Uso: python harness/delegate.py \"tu tarea aqui\"       (deteccion automatica)")
@@ -271,11 +237,11 @@ def _list_agents() -> None:
 
 
 def _interactive_mode() -> None:
-    """Continuous chat mode with readline history support."""
+    """Modo chat continuo con historial."""
     try:
-        import readline  # noqa: F401 — enables arrow key history on Unix
+        import readline  # noqa: F401
     except ImportError:
-        pass  # Windows: arrow keys won't have history, but input() still works
+        pass
 
     logger.info("=" * 72)
     logger.info("  Modo interactivo — Escribe tu tarea o 'exit' para salir.")
@@ -312,8 +278,8 @@ def _interactive_mode() -> None:
         history.append(line)
         exit_code = delegate_task(line)
         if exit_code != 0:
-            logger.info(f"[Delegate] La tarea termino con codigo {exit_code}")
-        logger.info("")  # Blank line for readability
+            logger.info("[Delegate] La tarea termino con codigo %d", exit_code)
+        logger.info("")
 
 
 # ── Main ──────────────────────────────────────────────────────────────
@@ -338,21 +304,18 @@ def main() -> int:
         _interactive_mode()
         return 0
 
-    # Everything else is the task (possibly with extra flags)
-    # Find where the task ends and extra flags begin
+    # Todo lo demás es la tarea (posiblemente con flags extra)
     task_parts: list[str] = []
     extra_flags: list[str] = []
     found_task = False
 
     for arg in args:
         if not found_task and arg.startswith("-") and not task_parts:
-            # Flags before the task (e.g. --auto-pilot)
             extra_flags.append(arg)
         elif not found_task:
             task_parts.append(arg)
             found_task = True
         else:
-            # After the task starts, collect remaining as extra args
             extra_flags.append(arg)
 
     task_text = " ".join(task_parts).strip()

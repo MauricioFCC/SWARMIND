@@ -1,0 +1,49 @@
+# Pre-commit configuration for AGENTIC project
+# Versionado para que install_hooks.py pueda referenciarlo.
+# See https://pre-commit.com for more information
+
+repos:
+  - repo: local
+    hooks:
+      - id: compile-check
+        name: Python Compile Check
+        description: Verifica que todos los archivos Python compilan sin errores de sintaxis
+        entry: python -c "import sys, py_compile; files = sys.argv[1:]; [py_compile.compile(f, doraise=True) for f in files]"
+        language: system
+        types: [python]
+        stages: [commit]
+
+      - id: secret-scan
+        name: Secret Scanner
+        description: Escanea archivos staged en busca de secretos hardcodeados
+        entry: python -m harness.scripts.end_of_iteration.phase5_commit
+        language: system
+        types: [python]
+        stages: [commit]
+        pass_filenames: false
+
+      - id: ruff-lint
+        name: Ruff Lint
+        description: Corre ruff como linter rapido
+        entry: ruff check --select=E9,F --force-exclude
+        language: system
+        types: [python]
+        stages: [commit]
+        pass_filenames: false
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim Trailing Whitespace
+        stages: [commit]
+      - id: end-of-file-fixer
+        name: Fix End of Files
+        stages: [commit]
+      - id: check-yaml
+        name: Check YAML
+        stages: [commit]
+      - id: check-added-large-files
+        name: Check for Large Files
+        args: ["--maxkb=1024"]
+        stages: [commit]
