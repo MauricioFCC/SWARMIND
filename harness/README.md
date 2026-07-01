@@ -98,7 +98,47 @@ python harness/scripts/check_ollama.py
 python harness/run.py --force-cloud "@software-engineer: implementar API"
 ```
 
+### Entrada Rápida (Delegate)
+
+El módulo `delegate.py` reduce la fricción de entrada: no necesitas escribir `@rol:` manualmente.
+
+```bash
+# Detección automática de rol según la tarea
+python harness/delegate.py "implementa una API REST"
+# → detecta @software-engineer automáticamente
+
+# Delegación explícita (igual que run.py)
+python harness/delegate.py "@software-engineer: crea un endpoint"
+
+# Listar roles disponibles
+python harness/delegate.py --list
+
+# Modo chat interactivo
+python harness/delegate.py --interactive
+
+# Usando -m harness (entrypoint directo)
+python -m harness "implementa API"
+```
+
+**También disponible en `run.py`** con el flag `--simplified` / `-s`:
+
+```bash
+python harness/run.py -s "implementa una API REST"
+# Internamente: detecta rol, envía como @rol: X
+
+python harness/run.py --simplified "migrar base de datos"
+# → detecta @data-architect automáticamente
+```
+
+**Comportamiento:**
+- Si el texto empieza con `@rol:`, se envía directamente a ese rol
+- Si NO empieza con `@rol:`, el sistema detecta el mejor rol según la tarea
+- Si no puede detectar el rol, pregunta al usuario
+- Modo `--interactive`: chat continuo con historial (flechas arriba/abajo)
+
 ---
+
+
 
 ## Agentes Disponibles (21)
 
@@ -135,6 +175,13 @@ Ver `harness/AGENTS.md` para el manifiesto detallado.
 ```bash
 # ─── Delegacion directa ───
 python harness/run.py "@software-engineer: Implementa <tu-tarea>"
+
+# ─── Entrada simplificada (Delegate) ───
+python harness/delegate.py "implementa una API REST"                    # Detecta rol automaticamente
+python harness/delegate.py "@swe: crea un endpoint"                    # Delegacion explicita con alias
+python harness/delegate.py --list                                      # Lista roles disponibles
+python harness/delegate.py --interactive                                # Modo chat interactivo
+python harness/run.py -s "implementa una API REST"                      # Simplified flag en run.py
 
 # ─── Flags de enrutamiento ───
 python harness/run.py --force-cloud "@software-engineer: crear API"     # Override: siempre cloud
@@ -201,6 +248,7 @@ python harness/scripts/check_ollama.py                                  # Health
 | `!db list-imports` | Lista las BDs disponibles para importar |
 | `!db stats` | Muestra estadisticas de la BD activa |
 | `!db rollback <backup>` | Restaura desde un backup pre-migracion |
+| `-s, --simplified` | Entrada simplificada: detecta rol automaticamente |
 | `!evolve mutate @<a> "<t>"` | Muta y evalua prompt de un agente |
 | `!schedule add <n> --cron "<c>" --task "<t>"` | Programa job recurrente (cron) |
 | `!schedule add <n> --interval "30m" --task "<t>"` | Programa job por intervalo |
