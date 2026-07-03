@@ -112,7 +112,7 @@ def _show_usage() -> None:
     logger.info("  --force-cloud               Override: todas las tareas a cloud API")
     logger.info("  --auto-pilot                Desactiva HITL (entornos de confianza)")
     logger.info("  --hitl-sensitive            HITL solo para acciones criticas")
-    logger.info("  --async                     Modo async (procesamiento paralelo)")
+    logger.info("  (dispatch paralelo por defecto, no requiere flags)")
     logger.info("  --help                      Muestra esta ayuda")
     logger.info("")
     logger.info("Roles universales (auto-deteccion SIN @):")
@@ -166,10 +166,10 @@ def _parse_args() -> Dict[str, Any]:
         "force_cloud": False,
         "auto_pilot": False,
         "hitl_sensitive": False,
-        "async_mode": False,
         "task": None,
         "command": None,
     }
+
 
     i = 0
     while i < len(args):
@@ -194,9 +194,6 @@ def _parse_args() -> Dict[str, Any]:
             i += 1
         elif arg == "--hitl-sensitive":
             parsed["hitl_sensitive"] = True
-            i += 1
-        elif arg == "--async":
-            parsed["async_mode"] = True
             i += 1
         elif arg.startswith("!"):
             parsed["command"] = arg
@@ -516,24 +513,23 @@ def main() -> None:
     assembler = ContextAssembler(store)
     cognition = CognitionSync(store)
 
-    # Si modo async, ejecutar dispatch paralelo
-    if parsed.get("async_mode"):
-        import asyncio
-        from harness.orchestrator.agent_dispatcher import AgentDispatcher
-        dispatcher = AgentDispatcher(vector_store=store)
-
-        async def run_async():
-            result = await dispatcher.dispatch_async(target_agent, task)
-            logger.info("[Harness] Async dispatch: skill=%s, chunks=%d",
-                         result["used_skill"],
-                         len(result.get("rag_context", {}).get("relevant_docs", [])),
-            )
-            return result
-
-        asyncio.run(run_async())
-
     target_agent = engine.route_message(task)
     logger.info("[Harness] Ruteando a @%s", target_agent)
+
+    # Dispatch PARALELO por defecto (async nativo via asyncio.gather)
+    # Busca skill + contexto RAG + mensajes recientes simultaneamente
+    import asyncio
+    from harness.orchestrator.agent_dispatcher import AgentDispatcher
+    dispatcher = AgentDispatcher(vector_store=store)
+
+    async def run_async():
+        result = await dispatcher.dispatch_async(target_agent, task)
+        logger.info("[Harness] Dispatch paralelo: skill=%s, chunks=%d",
+                     result["used_skill"],
+                     len(result.get("rag_context", {}).get("relevant_docs", [])),
+        )
+
+    asyncio.run(run_async())
 
     # ModelRouter: determinar local vs cloud
     force_cloud = parsed.get("force_cloud", False)
