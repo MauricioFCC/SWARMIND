@@ -325,3 +325,81 @@ class DelegationEngine:
     def set_task_manager(self, task_manager: TaskManager) -> None:
         """Attach a TaskManager instance after construction."""
         self._task_manager = task_manager
+
+    # ------------------------------------------------------------------
+    # Plan-and-Execute integration
+    # ------------------------------------------------------------------
+
+    def plan_task(self, message: str) -> "TaskPlan":
+        """
+        Decompose a user message into a structured execution plan.
+
+        Uses TaskPlanner to produce a DAG of subtasks with dependencies,
+        agent assignments, and expected outputs.
+
+        Args:
+            message: The user's request.
+
+        Returns:
+            A TaskPlan with subtasks organized by dependency level.
+        """
+        from harness.orchestrator.task_planner import TaskPlanner
+        planner = TaskPlanner()
+        return planner.decompose(message)
+
+    def route_with_plan(self, message: str) -> Dict:
+        """
+        Route a message AND return a structured execution plan.
+
+        This is the main entry point for Plan-and-Execute. Instead of just
+        returning an agent name, it returns:
+          - target_agent: primary agent for this dispatch
+          - plan: full TaskPlan with subtasks and DAG levels
+          - current_level: subtasks ready for immediate execution
+          - plan_summary: human-readable plan overview
+
+        Args:
+            message: The user's message.
+
+        Returns:
+            Dict with routing + plan information.
+        """
+        from harness.orchestrator.task_planner import TaskPlanner
+        planner = TaskPlanner()
+        plan = planner.decompose(message)
+        next_level = plan.get_next_level()
+
+        target_agent = self.auto_route(message)
+
+        current_level = []
+        for st in next_level:
+            current_level.append({
+                "id": st.id,
+                "agent": st.agent,
+                "description": st.description,
+                "expected_output": st.expected_output,
+                "dependencies": st.dependencies,
+            })
+
+        return {
+            "target_agent": target_agent,
+            "plan": plan,
+            "current_level": current_level,
+            "plan_summary": plan.get_summary(),
+            "session_id": plan.session_id,
+        }
+
+    def get_plan_summary(self, message: str) -> str:
+        """
+        Get a human-readable plan summary without executing anything.
+
+        Useful for showing the user what the system plans to do.
+
+        Args:
+            message: The user's request.
+
+        Returns:
+            Formatted string with the execution plan.
+        """
+        plan = self.plan_task(message)
+        return plan.get_summary()

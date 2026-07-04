@@ -480,24 +480,8 @@ def main() -> None:
             logger.info("[Harness] Comando desconocido: %s", cmd)
         return
 
-    # --- Auto-detección universal (no requiere @) ---
+    # --- Plan-and-Execute Orchestrator (reemplaza auto-detección simple) ---
     task = parsed.get("task")
-    if task:
-        # Si ya tiene @ explícito, usarlo; si no, auto-detectar
-        if not re.match(r"@\w", task):
-            try:
-                from harness.orchestrator.delegation_engine import DelegationEngine
-                engine = DelegationEngine()
-                detected = engine.auto_route(task)
-                logger.info("[Harness] Rol auto-detectado: @%s", detected)
-            except Exception as exc:
-                logger.info("[Harness] Auto-deteccion: %s, usando @coordinator", exc)
-                detected = "coordinator"
-        else:
-            detected = None  # se resuelve via route_message abajo
-        parsed["task"] = task
-
-    # --- Standard task routing ---
     if not task:
         _show_usage()
         sys.exit(1)
@@ -505,28 +489,92 @@ def main() -> None:
     logger.info("[Harness] Inicializando...")
 
     store = LanceVectorStore()
-
-    tm = TaskManager(vector_store=store)
     if not os.path.exists(os.path.join(HARNESS_ROOT, "db", "lancedb")):
         logger.warning("harness/db/lancedb/ no existe. Los datos se perderan al reiniciar.")
-    engine = DelegationEngine()
-    assembler = ContextAssembler(store)
-    cognition = CognitionSync(store)
 
-    target_agent = engine.route_message(task)
-    logger.info("[Harness] Ruteando a @%s", target_agent)
+    # --- NEW: TaskOrchestrator (Plan-and-Execute) ---
+    # Descompone la peticion en un DAG de subtareas, preserva contexto,
+    # paraleliza niveles independientes, secuencializa los dependientes.
+    from harness.orchestrator.task_orchestrator import TaskOrchestrator
 
-    # Dispatch PARALELO por defecto (async nativo via asyncio.gather)
-    # Busca skill + contexto RAG + mensajes recientes simultaneamente
+    orchestrator = TaskOrchestrator(vector_store=store)
+    orch_result = orchestrator.process_message(
+        message=task,
+        force_agent=None,  # se auto-detecta
+    )
+
+    # --- Mostrar plan al usuario ---
+    if orch_result.is_new_plan:
+        _safe_print()
+        _safe_print(f"  {_cyan('📋 PLAN DE EJECUCIÓN')}")
+        _safe_print(f"  {'─' * 50}")
+        _safe_print(f"  Sesión: {orch_result.session_id}")
+        _safe_print(f"  Tarea: {task[:100]}")
+        _safe_print()
+
+        for level_idx, level in enumerate(orch_result.plan.get_levels()):
+            is_parallel = len(level) > 1
+            mode = "⚡ PARALELO" if is_parallel else "→ SECUENCIAL"
+            _safe_print(f"  Nivel {level_idx} ({mode}):")
+            for s in level:
+                deps = f" [espera: {', '.join(s.dependencies)}]" if s.dependencies else ""
+                _safe_print(f"    ▸ [{s.agent}] {s.description}{deps}")
+            _safe_print()
+        _safe_print(f"  {'─' * 50}")
+        _safe_print()
+
+    # Si hay un nivel actual listo, mostrar qué se ejecuta ahora
+    if orch_result.current_level:
+        if len(orch_result.current_level) == 1:
+            st = orch_result.current_level[0]
+            _safe_print(
+                f"  {_cyan(f'▶ Ejecutando:')} [{st['agent']}] {st['description']}"
+            )
+        else:
+            agents = {st['agent'] for st in orch_result.current_level}
+            _safe_print(
+                f"  {_cyan(f'▶ Ejecutando {len(orch_result.current_level)} subtareas en PARALELO:')}"
+            )
+            for st in orch_result.current_level:
+                _safe_print(f"    ▸ [{st['agent']}] {st['description']}")
+        _safe_print()
+
+    # Si hay resultados previos, mostrarlos
+    if orch_result.previous_results:
+        _safe_print(f"  {_cyan('✅ Subtareas completadas:')}")
+        for prev in orch_result.previous_results:
+            _safe_print(f"    ✓ [{prev['agent']}] {prev['description']}")
+        _safe_print()
+
+    # --- Preparar contexto de dispatch con el plan ---
+    target_agent = orch_result.target_agent
+    logger.info("[Harness] Ruteando a @%s (sesión %s)",
+                target_agent, orch_result.session_id)
+
+    # Plan context para inyectar en el dispatch
+    plan_context = {
+        "session_id": orch_result.session_id,
+        "plan_summary": orch_result.session_status,
+        "current_level": orch_result.current_level,
+        "previous_results": orch_result.previous_results,
+        "communication_log": orch_result.communication_log,
+        "is_complete": orch_result.is_complete,
+    }
+
+    # Dispatch PARALELO con plan context
     import asyncio
     from harness.orchestrator.agent_dispatcher import AgentDispatcher
     dispatcher = AgentDispatcher(vector_store=store)
 
     async def run_async():
-        result = await dispatcher.dispatch_async(target_agent, task)
-        logger.info("[Harness] Dispatch paralelo: skill=%s, chunks=%d",
+        result = await dispatcher.dispatch_async(
+            target_agent, task,
+            plan_context=plan_context,
+        )
+        logger.info("[Harness] Dispatch paralelo: skill=%s, chunks=%d, plan=%s",
                      result["used_skill"],
                      len(result.get("rag_context", {}).get("relevant_docs", [])),
+                     bool(result.get("execution_plan")),
         )
 
     asyncio.run(run_async())
@@ -551,6 +599,8 @@ def main() -> None:
         logger.info("[HITL] Accion rechazada por el usuario. Cancelando.")
         sys.exit(1)
 
+    # Contexto RAG
+    assembler = ContextAssembler(store)
     ctx = assembler.assemble(task, target_agent)
     if ctx.relevant_docs:
         logger.info("[Harness] Contexto RAG: %d chunks, %d tokens",
@@ -566,9 +616,10 @@ def main() -> None:
             if ctx.relevant_docs:
                 logger.info("[Harness] Contexto RAG tras ingest: %d chunks", len(ctx.relevant_docs))
 
-    # Guardrails pre-check (P7: bypass silencioso eliminado)
+    # Guardrails pre-check
     _run_guardrails(task, target_agent, ctx, routing_source)
 
+    tm = TaskManager(vector_store=store)
     new_task = tm.create_task(
         title=task[:80],
         description=task,
@@ -581,6 +632,7 @@ def main() -> None:
         logger.info("[Harness] Tarea creada: %s (estado: %s)", task_id, task_status)
 
     # Registrar leccion en cognition store
+    cognition = CognitionSync(store)
     try:
         lesson = cognition.add_lesson(
             title=f"Tarea: {task[:60]}",
@@ -588,26 +640,48 @@ def main() -> None:
                 f"Tarea enrutada a @{target_agent}.\n"
                 f"Descripcion: {task}\n"
                 f"Routing: {routing_source}\n"
+                f"Sesión: {orch_result.session_id}\n"
+                f"Subtasks en plan: {len(orch_result.plan.subtasks)}\n"
                 f"Chunks RAG recuperados: {len(ctx.relevant_docs)}\n"
                 f"Tokens de contexto: {ctx.metadata.get('total_tokens_used', 0)}"
             ),
             domain="harness.routing",
-            tags=["routing", target_agent, routing_source, "harness"],
+            tags=["routing", target_agent, routing_source, "harness", "plan-and-execute"],
             metrics={
                 "rag_chunks": len(ctx.relevant_docs),
                 "token_estimate": ctx.metadata.get("total_tokens_used", 0),
                 "routing_source": routing_source,
+                "plan_subtasks": len(orch_result.plan.subtasks),
+                "session_id": orch_result.session_id,
             },
         )
         logger.info("[Harness] Leccion registrada en cognition: %s", lesson.id)
     except Exception as exc:
         logger.info("[Harness] Cognition store no disponible: %s", exc)
 
-    logger.info("[Harness] Tarea enrutada a @%s (%s)", target_agent, routing_source)
-    logger.info("[Harness] Para ejecutar: invoca @%s con el contexto ensamblado", target_agent)
+    # --- Output final ---
+    if orch_result.is_complete:
+        _safe_print(f"\n  {_ok('🎉 ¡PLAN COMPLETO!')} Todas las subtareas han sido ejecutadas.")
+        _safe_print(f"  El plan '{orch_result.session_id}' ha finalizado.")
+    else:
+        pending = len(orch_result.plan.subtasks) - sum(
+            1 for s in orch_result.plan.subtasks if s.completed
+        )
+        if pending > 0:
+            _safe_print(f"\n  {_warn(f'⏳ Quedan {pending} subtareas pendientes.')}")
+            _safe_print(f"  Para continuar, escribe 'continuar' o el siguiente paso.")
+        else:
+            _safe_print(f"\n  {_cyan('ℹ️  Usa este plan como guía para la implementación.')}")
 
-    # Si el target_agent es @software-engineer, iniciar SandboxLoop
-    if target_agent == "software-engineer" and new_task:
+    if orch_result.current_level:
+        for st in orch_result.current_level:
+            _safe_print(f"  ▶ [{st['agent']}] {st['description']}")
+
+    logger.info("[Harness] Tarea enrutada a @%s (%s) — sesión %s",
+                target_agent, routing_source, orch_result.session_id)
+
+    # --- SandboxLoop (solo si es implementación y hay tarea) ---
+    if target_agent in ("builder", "software-engineer") and new_task:
         from harness.orchestrator.sandbox_loop import SandboxLoop
         from harness.orchestrator.agent_bus import AgentBus
 
@@ -621,25 +695,20 @@ def main() -> None:
         bus.post_message(
             channel=channel,
             from_agent="@harness",
-            to_agent="@software-engineer",
+            to_agent=f"@{target_agent}",
             message=(
                 f"Tarea creada: **{task[:80]}**\n"
                 f"Task ID: `{task_id}`\n"
+                f"Sesión: `{orch_result.session_id}`\n"
                 f"Routing: `{routing_source}`\n\n"
+                f"Plan de ejecución con {len(orch_result.plan.subtasks)} subtareas.\n"
+                f"Nivel actual: {len(orch_result.current_level)} subtarea(s) lista(s).\n\n"
                 f"El SandboxLoop esta listo para ejecutar el bucle autonomo.\n"
-                f"Cuando el codigo este listo, ejecuta:\n"
-                f"```\n"
-                f"python -c \"from harness.orchestrator.sandbox_loop import SandboxLoop; "
-                f"loop = SandboxLoop(); "
-                f"loop.run_autonomous('{task_id}', code='<tu-codigo>', test_command='pytest')\"\n"
-                f"```"
             ),
             message_type="notification",
             task_id=task_id,
         )
         logger.info("[Harness] SandboxLoop listo en canal %s", channel)
-        logger.info("[Harness] Para activar el bucle autonomo con codigo:")
-        logger.info("[Harness]   SandboxLoop().run_autonomous('%s', code='...', test_command='pytest')", task_id)
 
 
 if __name__ == "__main__":

@@ -250,12 +250,19 @@ class AgentDispatcher:
         agent_role: str,
         task_description: str,
         vector_store: Optional[Any] = None,
+        plan_context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Version ASYNC de dispatch(). Ejecuta en PARALELO:
         1. Busqueda de skill en LanceDB
         2. Contexto RAG
         3. Mensajes recientes del agent_bus
+        4. Plan de ejecución (si existe)
+
+        Args:
+            plan_context: Optional dict with plan info (from TaskOrchestrator).
+                         Includes: session_id, plan_summary, current_level,
+                         previous_results, communication_log.
         """
         import asyncio
         from harness.memory_rag.context_assembler import ContextAssembler
@@ -265,6 +272,7 @@ class AgentDispatcher:
         assembler = ContextAssembler(store)
         bus = AgentBus(vector_store=store)
 
+        # Paralelizar: skill, RAG, mensajes, y formateo del plan
         skill_task = asyncio.to_thread(self.find_skill_for_task, task_description)
         context_task = asyncio.to_thread(
             assembler.assemble, task_description, agent_role
@@ -277,7 +285,7 @@ class AgentDispatcher:
             skill_task, context_task, messages_task
         )
 
-        return {
+        result: Dict[str, Any] = {
             "agent": agent_role,
             "task": task_description,
             "used_skill": skill_result is not None,
@@ -286,6 +294,20 @@ class AgentDispatcher:
             "recent_messages": messages,
             "reasoning_mode": "guided_by_skill" if skill_result else "from_scratch",
         }
+
+        # Incluir plan context si existe (Plan-and-Execute)
+        if plan_context:
+            result["execution_plan"] = {
+                "session_id": plan_context.get("session_id", ""),
+                "plan_summary": plan_context.get("plan_summary", ""),
+                "current_level": plan_context.get("current_level", []),
+                "previous_results": plan_context.get("previous_results", []),
+                "communication_log": plan_context.get("communication_log", []),
+                "is_complete": plan_context.get("is_complete", False),
+            }
+            result["reasoning_mode"] = "guided_by_plan"
+
+        return result
 
     async def dispatch_batch(
         self,
