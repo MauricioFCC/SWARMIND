@@ -83,10 +83,16 @@ class TestTaskPlanner:
         assert plan.subtasks[0].agent == "scientist"
 
     def test_dag_levels_api(self):
-        """API plan should have correct DAG structure (sequential levels)."""
+        """API plan: level 0 = builder, level 1 = 3 guardian IN PARALELO."""
         plan = self.planner.decompose("implementa una API REST en Rust")
         levels = plan.get_levels()
-        assert len(levels) >= 3  # code → tests, docs, security (parallel)
+        # Level 0: builder (code)
+        # Level 1: guardian (tests + docs + security in parallel)
+        assert len(levels) == 2
+        assert len(levels[0]) == 1  # 1 builder
+        assert levels[0][0].agent == "builder"
+        assert len(levels[1]) == 3  # 3 guardian in parallel
+        assert all(s.agent == "guardian" for s in levels[1])
 
     def test_dag_levels_bugfix(self):
         """Bugfix plan: diagnose → fix → test → verify (sequential)."""

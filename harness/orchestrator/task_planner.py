@@ -328,12 +328,16 @@ class TaskPlanner:
         specifics = self._extract_specifics(message)
 
         # --- 3. Build subtasks from template ---
+        # Map: template index → counter-based subtask ID
+        # deps use template indices (0-based), converted to counter-based IDs
         subtasks: List[SubTask] = []
+        idx_to_id: Dict[int, str] = {}
         for idx, tpl in enumerate(template["subtasks"]):
             self._counter += 1
             subtask_id = f"st-{self._counter}"
-            dep_ids = [f"st-{self._counter - (len(tpl['deps']) - dep_idx)}"
-                       for dep_idx in tpl["deps"]]
+            idx_to_id[idx] = subtask_id
+            # dep value is the template index of the dependency
+            dep_ids = [idx_to_id[dep] for dep in tpl["deps"] if dep in idx_to_id]
 
             description = self._customize_description(
                 tpl["description"], specifics
