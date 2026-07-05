@@ -27,6 +27,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from harness.common import EMPTY_VECTOR, fallback_embedding
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 
 logger = logging.getLogger(__name__)
@@ -100,7 +101,45 @@ class AgentBus:
             vector_store: Instancia de LanceVectorStore. Por defecto crea una nueva.
         """
         self.store = vector_store or LanceVectorStore()
-        self._embedding_fn = self._default_embedding
+        self._embedding_fn = fallback_embedding
+
+    # ------------------------------------------------------------------
+    # Internal: shared payload builder
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _build_message_payload(
+        channel: str,
+        from_agent: str,
+        to_agent: str,
+        message: str,
+        message_type: str = "notification",
+        task_id: Optional[str] = None,
+        iteration: int = 0,
+        attachments: Optional[List[str]] = None,
+        thread_id: Optional[str] = None,
+        msg_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Construye el payload de metadata para un mensaje.
+
+        Extraido de post_message() y post_message_batch() para eliminar
+        la duplicacion del dict de metadatos (~15 lineas identicas).
+        """
+        return {
+            "id": msg_id or str(uuid.uuid4()),
+            "channel": channel,
+            "thread_id": thread_id or str(uuid.uuid4()),
+            "from_agent": from_agent,
+            "to_agent": to_agent,
+            "message": message,
+            "message_type": message_type,
+            "status": "sent",
+            "task_id": task_id or "",
+            "iteration": iteration,
+            "attachments": json.dumps(attachments or []),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     # ------------------------------------------------------------------
     # API publica: Envio de mensajes
@@ -120,26 +159,6 @@ class AgentBus:
 
         Raises:
             InvalidMessageError: Si algun mensaje no es valido.
-
-        Uso tipico::
-
-            bus = AgentBus()
-            ids = bus.post_message_batch([
-                {
-                    "channel": "#feature-x",
-                    "from_agent": "@swe",
-                    "to_agent": "@qa",
-                    "message": "Tests listos",
-                    "message_type": "notification",
-                },
-                {
-                    "channel": "#feature-x",
-                    "from_agent": "@qa",
-                    "to_agent": "@pm",
-                    "message": "Cobertura validada",
-                    "message_type": "notification",
-                },
-            ])
         """
         if not messages:
             return []
@@ -149,70 +168,47 @@ class AgentBus:
         msg_ids: List[str] = []
 
         for msg_data in messages:
-            # Extraer parametros con defaults
             channel = msg_data.get("channel", "")
             from_agent = msg_data.get("from_agent", "")
             to_agent = msg_data.get("to_agent", "")
             message = msg_data.get("message", "")
             message_type = msg_data.get("message_type", "notification")
-            task_id = msg_data.get("task_id")
-            iteration = msg_data.get("iteration", 0)
-            attachments = msg_data.get("attachments")
-            thread_id = msg_data.get("thread_id")
 
-            # Validar parametros
-            self._validate_message_params(
-                channel, from_agent, to_agent, message, message_type,
-            )
+            self._validate_message_params(channel, from_agent, to_agent, message, message_type)
 
-            # Generar IDs y timestamps
             msg_id = str(uuid.uuid4())
-            now = datetime.now(timezone.utc).isoformat()
-            tid = thread_id or str(uuid.uuid4())
+            msg_ids.append(msg_id)
 
-            # Normalizar nombres de agente
             from_agent = self._normalize_agent(from_agent)
             to_agent = self._normalize_agent(to_agent)
 
-            # Construir metadata
-            metadata: Dict[str, Any] = {
-                "id": msg_id,
-                "channel": channel,
-                "thread_id": tid,
-                "from_agent": from_agent,
-                "to_agent": to_agent,
-                "message": message,
-                "message_type": message_type,
-                "status": "sent",
-                "task_id": task_id or "",
-                "iteration": iteration,
-                "attachments": json.dumps(attachments or []),
-                "created_at": now,
-            }
+            metadata = self._build_message_payload(
+                channel=channel,
+                from_agent=from_agent,
+                to_agent=to_agent,
+                message=message,
+                message_type=message_type,
+                task_id=msg_data.get("task_id"),
+                iteration=msg_data.get("iteration", 0),
+                attachments=msg_data.get("attachments"),
+                thread_id=msg_data.get("thread_id"),
+                msg_id=msg_id,
+            )
 
-            # Generar embedding
             text_for_embedding = f"{channel} {from_agent} {to_agent} {message}"
-            vector = self._embedding_fn(text_for_embedding)
-
-            vectors_list.append(vector)
+            vectors_list.append(self._embedding_fn(text_for_embedding))
             metadata_list.append(metadata)
-            msg_ids.append(msg_id)
 
         if not vectors_list:
             return []
 
-        # Batch insert: todos los vectores en una sola llamada
         vectors = np.array(vectors_list)
         try:
             self.store.insert(_COLLECTION, vectors, metadata_list)
-            logger.info(
-                "Batch: %d mensajes publicados en %s",
-                len(msg_ids), _COLLECTION,
-            )
+            logger.info("Batch: %d mensajes publicados en %s", len(msg_ids), _COLLECTION)
         except Exception as exc:
             raise AgentBusError(
-                f"Error al insertar batch de {len(msg_ids)} mensajes "
-                f"en {_COLLECTION}: {exc}"
+                f"Error al insertar batch de {len(msg_ids)} mensajes en {_COLLECTION}: {exc}"
             ) from exc
 
         return msg_ids
@@ -249,37 +245,26 @@ class AgentBus:
         Raises:
             InvalidMessageError: Si los parametros no son validos.
         """
-        # Validar parametros
-        self._validate_message_params(
-            channel, from_agent, to_agent, message, message_type,
-        )
+        self._validate_message_params(channel, from_agent, to_agent, message, message_type)
 
-        # Generar IDs y timestamps
         msg_id = str(uuid.uuid4())
-        now = datetime.now(timezone.utc).isoformat()
-        tid = thread_id or str(uuid.uuid4())
 
-        # Normalizar nombres de agente (sin @ duplicado)
         from_agent = self._normalize_agent(from_agent)
         to_agent = self._normalize_agent(to_agent)
 
-        # Construir payload de metadatos
-        metadata: Dict[str, Any] = {
-            "id": msg_id,
-            "channel": channel,
-            "thread_id": tid,
-            "from_agent": from_agent,
-            "to_agent": to_agent,
-            "message": message,
-            "message_type": message_type,
-            "status": "sent",
-            "task_id": task_id or "",
-            "iteration": iteration,
-            "attachments": json.dumps(attachments or []),
-            "created_at": now,
-        }
+        metadata = self._build_message_payload(
+            channel=channel,
+            from_agent=from_agent,
+            to_agent=to_agent,
+            message=message,
+            message_type=message_type,
+            task_id=task_id,
+            iteration=iteration,
+            attachments=attachments,
+            thread_id=thread_id,
+            msg_id=msg_id,
+        )
 
-        # Generar embedding a partir del contenido del mensaje
         text_for_embedding = f"{channel} {from_agent} {to_agent} {message}"
         vector = self._embedding_fn(text_for_embedding).reshape(1, -1)
 
@@ -295,6 +280,32 @@ class AgentBus:
             ) from exc
 
         return msg_id
+
+    # ------------------------------------------------------------------
+    # Internal: shared search helper
+    # ------------------------------------------------------------------
+
+    def _search_messages(
+        self,
+        filters: Optional[Dict[str, Any]] = None,
+        top_k: int = 50,
+    ) -> List[Dict[str, Any]]:
+        """
+        Busca mensajes en el store con filtros.
+
+        Reemplaza 7 repeticiones del mismo patron try/except/search en:
+            poll_channel, get_thread, get_channel_history,
+            get_message_by_id, count_iterations, get_channel_list,
+            get_tasks_with_errors
+        """
+        try:
+            results = self.store.search(
+                _COLLECTION, EMPTY_VECTOR, top_k=top_k, filters=filters or {},
+            )
+        except Exception as exc:
+            logger.warning("Error en busqueda de mensajes: %s", exc)
+            return []
+        return [self._deserialize_message(r) for r in results]
 
     # ------------------------------------------------------------------
     # API publica: Lectura de mensajes
@@ -319,188 +330,101 @@ class AgentBus:
             Lista de dicts con los datos de cada mensaje.
         """
         agent_name = self._normalize_agent(agent_name)
-        filters: Dict[str, Any] = {
-            "channel": channel,
-            "to_agent": agent_name,
-        }
+        results = self._search_messages(
+            filters={"channel": channel, "to_agent": agent_name},
+            top_k=limit,
+        )
 
-        try:
-            dummy = np.zeros(_EMBEDDING_DIM, dtype=np.float32)
-            results = self.store.search(
-                _COLLECTION, dummy, top_k=limit, filters=filters,
-            )
-        except Exception as exc:
-            logger.warning("Error en poll_channel: %s", exc)
-            return []
+        if since_timestamp:
+            results = [m for m in results if m.get("created_at", "") >= since_timestamp]
 
-        mensajes = []
-        for r in results:
-            msg = self._deserialize_message(r)
-            if since_timestamp and msg.get("created_at", "") < since_timestamp:
-                continue
-            mensajes.append(msg)
-
-        # Ordenar por timestamp ascendente
-        mensajes.sort(key=lambda m: m.get("created_at", ""))
-
-        return mensajes
+        results.sort(key=lambda m: m.get("created_at", ""))
+        return results
 
     def get_thread(self, thread_id: str, limit: int = 100) -> List[Dict[str, Any]]:
-        """Recupera todo el hilo de conversacion de un thread_id.
-
-        Args:
-            thread_id: ID del hilo de conversacion.
-            limit: Maximo de mensajes a retornar.
-
-        Returns:
-            Lista de mensajes del hilo ordenados cronologicamente.
-        """
-        try:
-            dummy = np.zeros(_EMBEDDING_DIM, dtype=np.float32)
-            results = self.store.search(
-                _COLLECTION, dummy, top_k=limit,
-                filters={"thread_id": thread_id},
-            )
-        except Exception as exc:
-            logger.warning("Error en get_thread: %s", exc)
-            return []
-
-        mensajes = [self._deserialize_message(r) for r in results]
-        mensajes.sort(key=lambda m: m.get("created_at", ""))
-        return mensajes
+        """Recupera todo el hilo de conversacion de un thread_id."""
+        results = self._search_messages(
+            filters={"thread_id": thread_id},
+            top_k=limit,
+        )
+        results.sort(key=lambda m: m.get("created_at", ""))
+        return results
 
     def get_channel_history(
         self,
         channel: str,
         limit: int = 50,
     ) -> List[Dict[str, Any]]:
-        """Obtiene el historial completo de un canal.
-
-        Args:
-            channel: Nombre del canal.
-            limit: Maximo de mensajes a retornar.
-
-        Returns:
-            Lista de mensajes del canal ordenados cronologicamente (mas reciente primero).
-        """
-        try:
-            dummy = np.zeros(_EMBEDDING_DIM, dtype=np.float32)
-            results = self.store.search(
-                _COLLECTION, dummy, top_k=limit,
-                filters={"channel": channel},
-            )
-        except Exception as exc:
-            logger.warning("Error en get_channel_history: %s", exc)
-            return []
-
-        mensajes = [self._deserialize_message(r) for r in results]
-        mensajes.sort(key=lambda m: m.get("created_at", ""), reverse=True)
-        return mensajes
+        """Obtiene el historial completo de un canal."""
+        results = self._search_messages(
+            filters={"channel": channel},
+            top_k=limit,
+        )
+        results.sort(key=lambda m: m.get("created_at", ""), reverse=True)
+        return results
 
     def get_message_by_id(self, message_id: str) -> Optional[Dict[str, Any]]:
-        """Recupera un mensaje individual por su ID.
-
-        Args:
-            message_id: ID del mensaje.
-
-        Returns:
-            Dict con los datos del mensaje o None si no existe.
-        """
-        try:
-            dummy = np.zeros(_EMBEDDING_DIM, dtype=np.float32)
-            results = self.store.search(
-                _COLLECTION, dummy, top_k=1,
-                filters={"id": message_id},
-            )
-        except Exception:
-            return None
-
-        if not results:
-            return None
-        return self._deserialize_message(results[0])
+        """Recupera un mensaje individual por su ID."""
+        results = self._search_messages(
+            filters={"id": message_id},
+            top_k=1,
+        )
+        return results[0] if results else None
 
     # ------------------------------------------------------------------
     # API publica: Actualizacion de estado
     # ------------------------------------------------------------------
 
-    def mark_delivered(self, message_id: str) -> bool:
-        """Marca un mensaje como entregado (status = ``delivered``).
+    def update_message_status(self, message_id: str, status: str) -> bool:
+        """
+        Actualiza el estado de un mensaje.
+
+        Reemplaza mark_delivered() y mark_acknowledged() que eran
+        identicos excepto por el string 'delivered'/'acknowledged'.
 
         Args:
             message_id: ID del mensaje a actualizar.
+            status: Nuevo estado ('delivered', 'acknowledged', etc.).
 
         Returns:
             True si se actualizo correctamente.
         """
+        if status not in _VALID_STATUSES:
+            logger.warning("Estado invalido: %s. Validos: %s", status, _VALID_STATUSES)
+            return False
         try:
             count = self.store.update_records(
                 _COLLECTION,
                 filters={"id": message_id},
-                updates={"status": "delivered"},
+                updates={"status": status},
             )
             if count > 0:
-                logger.info("Mensaje %s marcado como delivered", message_id[:8])
+                logger.info("Mensaje %s marcado como %s", message_id[:8], status)
                 return True
-            logger.warning("Mensaje %s no encontrado para mark_delivered", message_id[:8])
+            logger.warning("Mensaje %s no encontrado para %s", message_id[:8], status)
             return False
         except Exception as exc:
-            logger.warning("Error en mark_delivered: %s", exc)
+            logger.warning("Error al actualizar estado %s para %s: %s", status, message_id[:8], exc)
             return False
+
+    def mark_delivered(self, message_id: str) -> bool:
+        """Marca un mensaje como entregado. Delega en update_message_status()."""
+        return self.update_message_status(message_id, "delivered")
 
     def mark_acknowledged(self, message_id: str) -> bool:
-        """Marca un mensaje como confirmado (status = ``acknowledged``).
-
-        Args:
-            message_id: ID del mensaje a actualizar.
-
-        Returns:
-            True si se actualizo correctamente.
-        """
-        try:
-            count = self.store.update_records(
-                _COLLECTION,
-                filters={"id": message_id},
-                updates={"status": "acknowledged"},
-            )
-            if count > 0:
-                logger.info("Mensaje %s marcado como acknowledged", message_id[:8])
-                return True
-            logger.warning(
-                "Mensaje %s no encontrado para mark_acknowledged", message_id[:8]
-            )
-            return False
-        except Exception as exc:
-            logger.warning("Error en mark_acknowledged: %s", exc)
-            return False
+        """Marca un mensaje como confirmado. Delega en update_message_status()."""
+        return self.update_message_status(message_id, "acknowledged")
 
     # ------------------------------------------------------------------
     # API publica: Circuit Breaker
     # ------------------------------------------------------------------
 
     def count_iterations(self, task_id: str) -> int:
-        """Cuenta el numero de mensajes de error para una tarea.
-
-        Util para el circuit breaker: cada ``message_type: "error"``
-        con el mismo ``task_id`` cuenta como un intento fallido.
-
-        Args:
-            task_id: ID de la tarea a consultar.
-
-        Returns:
-            Numero de iteraciones fallidas registradas.
-        """
-        try:
-            dummy = np.zeros(_EMBEDDING_DIM, dtype=np.float32)
-            results = self.store.search(
-                _COLLECTION, dummy, top_k=1000,
-                filters={
-                    "task_id": task_id,
-                    "message_type": "error",
-                },
-            )
-        except Exception:
-            return 0
-
+        """Cuenta el numero de mensajes de error para una tarea."""
+        results = self._search_messages(
+            filters={"task_id": task_id, "message_type": "error"},
+            top_k=1000,
+        )
         return len(results)
 
     def check_circuit_breaker(
@@ -508,18 +432,7 @@ class AgentBus:
         task_id: str,
         max_iterations: int = 5,
     ) -> bool:
-        """Verifica si el circuit breaker se ha disparado para una tarea.
-
-        El circuit breaker se dispara cuando el numero de mensajes de error
-        para una tarea alcanza o supera ``max_iterations``.
-
-        Args:
-            task_id: ID de la tarea.
-            max_iterations: Maximo de iteraciones permitidas (defecto: 5).
-
-        Returns:
-            True si el circuit breaker esta abierto (se debe escalar).
-        """
+        """Verifica si el circuit breaker se ha disparado para una tarea."""
         count = self.count_iterations(task_id)
         is_open = count >= max_iterations
         if is_open:
@@ -567,46 +480,24 @@ class AgentBus:
     # ------------------------------------------------------------------
 
     def get_channel_list(self) -> List[str]:
-        """Retorna la lista de canales con actividad.
-
-        Returns:
-            Lista de nombres de canal unicos.
-        """
-        try:
-            dummy = np.zeros(_EMBEDDING_DIM, dtype=np.float32)
-            results = self.store.search(
-                _COLLECTION, dummy, top_k=5000,
-            )
-        except Exception:
-            return []
-
+        """Retorna la lista de canales con actividad."""
+        results = self._search_messages(top_k=5000)
         canales: set = set()
-        for r in results:
-            meta = self._deserialize_message(r)
-            ch = meta.get("channel", "")
+        for m in results:
+            ch = m.get("channel", "")
             if ch:
                 canales.add(ch)
         return sorted(canales)
 
     def get_tasks_with_errors(self) -> List[str]:
-        """Retorna los task_id que tienen mensajes de error.
-
-        Returns:
-            Lista de task_id con errores registrados.
-        """
-        try:
-            dummy = np.zeros(_EMBEDDING_DIM, dtype=np.float32)
-            results = self.store.search(
-                _COLLECTION, dummy, top_k=5000,
-                filters={"message_type": "error"},
-            )
-        except Exception:
-            return []
-
+        """Retorna los task_id que tienen mensajes de error."""
+        results = self._search_messages(
+            filters={"message_type": "error"},
+            top_k=5000,
+        )
         tareas: set = set()
-        for r in results:
-            meta = self._deserialize_message(r)
-            tid = meta.get("task_id", "")
+        for m in results:
+            tid = m.get("task_id", "")
             if tid:
                 tareas.add(tid)
         return sorted(tareas)
@@ -690,20 +581,8 @@ class AgentBus:
 
     @staticmethod
     def _default_embedding(text: str) -> np.ndarray:
-        """Embedding por defecto: vector de frecuencia de caracteres.
-
-        Produce un vector normalizado de dimension fija a partir de
-        conteos de caracteres. No es semanticamente significativo pero
-        mantiene el sistema funcional sin un modelo de embeddings externo.
-        """
-        vec = np.zeros(_EMBEDDING_DIM, dtype=np.float32)
-        for i, ch in enumerate(text.encode("utf-8", errors="replace")):
-            idx = (i * 7 + ch) % _EMBEDDING_DIM
-            vec[idx] += 1.0
-        norm = np.linalg.norm(vec)
-        if norm > 0:
-            vec /= norm
-        return vec
+        """Embedding por defecto. Delega en harness.common.fallback_embedding."""
+        return fallback_embedding(text)
 
     # ------------------------------------------------------------------
     # Async API

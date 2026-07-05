@@ -287,6 +287,7 @@ class TaskManager:
     def read_task(self, task_id: str) -> Optional[_TaskModel]:
         """Retrieve a single task by its ID."""
         if not self._use_sqlite and self._table is not None:
+            # task_id es internamente generado (uuid hex), seguro contra injection
             results = self._table.search().where(f"id = '{task_id}'").limit(1).to_pandas()
             if len(results) == 0:
                 return None
@@ -346,13 +347,29 @@ class TaskManager:
             return cursor.rowcount > 0
 
     def query_by_agent(self, agent: str) -> List[_TaskModel]:
-        """Return all tasks assigned to a specific agent."""
+        """Return all tasks assigned to a specific agent.
+
+        El parametro ``agent`` se valida contra agentes conocidos para
+        prevenir inyeccion en filtros LanceDB/SQL (CVE-style).
+        """
+        # Validar contra agentes conocidos para prevenir filter injection
+        _VALID_AGENTS = frozenset({
+            "coordinator", "builder", "scientist", "guardian", "evolve",
+            "software-engineer", "data-architect", "devops-sre", "quality-gate",
+            "project-manager", "product-owner", "ui-designer", "ux-researcher",
+            "security-analyst", "technical-writer", "scrum-master",
+        })
+        clean_agent = agent.strip().lower()
+        if clean_agent not in _VALID_AGENTS:
+            logger.warning("Agent desconocido en query_by_agent: '%s'", agent)
+            return []
+
         if not self._use_sqlite and self._table is not None:
-            results = self._table.search().where(f"agent_assigned = '{agent}'").to_pandas()
+            results = self._table.search().where(f"agent_assigned = '{clean_agent}'").to_pandas()
             return [self._deserialize_task(row.to_dict()) for _, row in results.iterrows()]
         else:
             rows = self._run_sqlite_query(
-                "SELECT * FROM tasks_board WHERE agent_assigned = ?", (agent,)
+                "SELECT * FROM tasks_board WHERE agent_assigned = ?", (clean_agent,)
             )
             return [self._deserialize_task(r) for r in rows]
 

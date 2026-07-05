@@ -21,6 +21,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from harness.common import EMPTY_VECTOR, fallback_embedding
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 
 logger = logging.getLogger(__name__)
@@ -383,10 +384,9 @@ class SemanticCache:
         """Buscar por hash exacto (mas rapido que busqueda vectorial)."""
         try:
             # Usamos un vector dummy con top_k generoso para cubrir toda la tabla
-            dummy_vec = np.zeros(DEFAULT_EMBEDDING_DIM, dtype=np.float32)
             results = self._store.search(
                 COLLECTION_SEMANTIC_CACHE,
-                dummy_vec,
+                EMPTY_VECTOR,
                 top_k=50,
             )
             for result in results:
@@ -452,18 +452,8 @@ class SemanticCache:
 
     @staticmethod
     def _default_embedding(text: str) -> np.ndarray:
-        """
-        Fallback embedding deterministico (no requiere modelo ML).
-        Basado en frecuencias de caracteres.
-        """
-        vec = np.zeros(DEFAULT_EMBEDDING_DIM, dtype=np.float32)
-        for i, ch in enumerate(text.encode("utf-8", errors="replace")):
-            idx = (i * 7 + ch) % DEFAULT_EMBEDDING_DIM
-            vec[idx] += 1.0
-        norm = np.linalg.norm(vec)
-        if norm > 0:
-            vec /= norm
-        return vec
+        """Delega en harness.common.fallback_embedding."""
+        return fallback_embedding(text)
 
     def _ensure_collection(self) -> None:
         """Asegurar que la coleccion semantic_cache existe con el schema correcto.

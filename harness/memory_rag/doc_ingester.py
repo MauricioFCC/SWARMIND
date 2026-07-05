@@ -17,6 +17,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from harness.common import fallback_embedding
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -182,15 +184,8 @@ class DocumentChunker:
 
     @staticmethod
     def _default_embedding(text: str) -> np.ndarray:
-        dim = 384
-        vec = np.zeros(dim, dtype=np.float32)
-        for i, ch in enumerate(text.encode("utf-8", errors="replace")):
-            idx = (i * 7 + ch) % dim
-            vec[idx] += 1.0
-        norm = np.linalg.norm(vec)
-        if norm > 0:
-            vec /= norm
-        return vec
+        """Delega en harness.common.fallback_embedding."""
+        return fallback_embedding(text)
 
 
 def _ensure_lancedb() -> None:

@@ -21,8 +21,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-import numpy as np
-
+from harness.common import EMPTY_VECTOR
 from harness.orchestrator.task_planner import SubTask, TaskPlan
 
 logger = logging.getLogger(__name__)
@@ -292,7 +291,7 @@ class SessionContext:
         if self._store is None:
             return
         try:
-            vec = np.zeros(self._embedding_dim, dtype=np.float32)
+            vec = EMPTY_VECTOR
             data = session.to_dict()
             # Store metadata as JSON string
             self._store.insert(
@@ -308,9 +307,8 @@ class SessionContext:
         if self._store is None:
             return None
         try:
-            dummy = np.zeros(self._embedding_dim, dtype=np.float32)
             results = self._store.search(
-                _SESSION_COLLECTION, dummy, top_k=10,
+                _SESSION_COLLECTION, EMPTY_VECTOR, top_k=10,
                 filters={"session_id": session_id},
             )
             if results:
@@ -324,9 +322,8 @@ class SessionContext:
         if self._store is None:
             return None
         try:
-            dummy = np.zeros(self._embedding_dim, dtype=np.float32)
             results = self._store.search(
-                _SESSION_COLLECTION, dummy, top_k=20,
+                _SESSION_COLLECTION, EMPTY_VECTOR, top_k=20,
             )
             if results:
                 # Find the one with the latest updated_at

@@ -23,6 +23,12 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
+from harness.common import (
+    EMPTY_VECTOR,
+    estimate_tokens,
+    fallback_embedding,
+    truncate_by_budget,
+)
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 
 logger = logging.getLogger(__name__)
@@ -31,20 +37,8 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-# Rough token estimation: ~4 chars per token for English text
-_CHARS_PER_TOKEN = 4.0
-
 # Default embedding model dimension for fallback random vectors
 _EMBEDDING_DIM = 384
-
-# Intentar cargar tiktoken para conteo preciso de tokens
-try:
-    import tiktoken  # type: ignore
-    _ENCODING = tiktoken.get_encoding("cl100k_base")
-    _TIKTOKEN_AVAILABLE = True
-except ImportError:
-    _TIKTOKEN_AVAILABLE = False
-    _ENCODING = None
 
 # Adaptive-k retrieval constants
 _ADAPTIVE_K_DEFAULT = 10
@@ -311,21 +305,8 @@ class ContextAssembler:
     # ------------------------------------------------------------------
 
     def _default_embedding(self, text: str) -> np.ndarray:
-        """
-        Fallback embedding: character-level frequency vector.
-
-        This is *not* semantically meaningful but ensures the assembler
-        works without any ML model installed.  It produces a fixed-size
-        vector derived from printable-ASCII character counts.
-        """
-        vec = np.zeros(_EMBEDDING_DIM, dtype=np.float32)
-        for i, ch in enumerate(text.encode("utf-8", errors="replace")):
-            idx = (i * 7 + ch) % _EMBEDDING_DIM
-            vec[idx] += 1.0
-        norm = np.linalg.norm(vec)
-        if norm > 0:
-            vec /= norm
-        return vec
+        """Fallback embedding: delega en harness.common.fallback_embedding."""
+        return fallback_embedding(text)
 
     def _make_query_vector(
         self, message: str, keywords: List[str]
@@ -523,39 +504,36 @@ class ContextAssembler:
         Strategy: remove lowest-score documents first, then truncate
         conversation history from the oldest entry.
 
+        Usa ``truncate_by_budget()`` de harness.common (reemplaza los 3 bucles
+        identicos de truncamiento que estaban duplicados aqui).
+
         Si el budget se excede, se loguea una advertencia.
         Se aplica un margen de seguridad del 10% (truncar al 90% del budget).
         """
-        used = self._estimate_tokens(assembly.instructions)
+        used = estimate_tokens(assembly.instructions)
 
-        # Aplicar margen de seguridad: usar 90% del budget maximo
-        effective_max = int(max_tokens * 0.9)
+        def doc_tokens(doc):
+            return estimate_tokens(str(doc.get("metadata", {})))
 
-        # --- Docs ---
-        kept_docs: List[Dict[str, Any]] = []
-        for doc in sorted(
+        def task_tokens(task):
+            return estimate_tokens(str(task.get("metadata", {})))
+
+        # --- Docs (sorted by score, highest first) ---
+        assembly.relevant_docs = truncate_by_budget(
             assembly.relevant_docs,
-            key=lambda d: d.get("score", 0.0),
-            reverse=True,
-        ):
-            doc_tokens = self._estimate_tokens(str(doc.get("metadata", {})))
-            if used + doc_tokens > effective_max:
-                continue
-            kept_docs.append(doc)
-            used += doc_tokens
-
-        assembly.relevant_docs = kept_docs
+            get_tokens=doc_tokens,
+            budget=max_tokens,
+            safety_margin=0.9,
+            sort_key=lambda d: d.get("score", 0.0),
+        )
 
         # --- Task context ---
-        kept_tasks: List[Dict[str, Any]] = []
-        for task in assembly.task_context:
-            task_tokens = self._estimate_tokens(str(task.get("metadata", {})))
-            if used + task_tokens > effective_max:
-                break
-            kept_tasks.append(task)
-            used += task_tokens
-
-        assembly.task_context = kept_tasks
+        assembly.task_context = truncate_by_budget(
+            assembly.task_context,
+            get_tokens=task_tokens,
+            budget=max_tokens - estimate_tokens(assembly.instructions),
+            safety_margin=0.9,
+        )
 
         # --- Compact conversation history first ---
         assembly.conversation_history = self.compact_context(
@@ -563,24 +541,31 @@ class ContextAssembler:
             max_messages=8,
         )
 
-        # --- Conversation history (oldest first removed) ---
-        kept_history: List[str] = []
-        for entry in assembly.conversation_history:
-            entry_tokens = self._estimate_tokens(entry)
-            if used + entry_tokens > effective_max:
-                break
-            kept_history.append(entry)
-            used += entry_tokens
+        # --- Conversation history ---
+        remaining_budget = max_tokens - estimate_tokens(assembly.instructions)
+        for docs in [assembly.relevant_docs]:
+            remaining_budget -= sum(doc_tokens(d) for d in docs)
+        for tasks in [assembly.task_context]:
+            remaining_budget -= sum(task_tokens(t) for t in tasks)
 
-        assembly.conversation_history = kept_history
+        assembly.conversation_history = truncate_by_budget(
+            assembly.conversation_history,
+            get_tokens=estimate_tokens,
+            budget=remaining_budget,
+            safety_margin=0.9,
+        )
+
+        # Recalcular total usado
+        used = estimate_tokens(assembly.instructions)
+        used += sum(doc_tokens(d) for d in assembly.relevant_docs)
+        used += sum(task_tokens(t) for t in assembly.task_context)
+        used += sum(estimate_tokens(h) for h in assembly.conversation_history)
 
         # Log warning if budget was exceeded
         if used > max_tokens:
             logger.warning(
-                "Token budget exceeded: %d/%d tokens used (%.1f%%). "
-                "Truncated to %d tokens (eff. max=%d).",
+                "Token budget exceeded: %d/%d tokens used (%.1f%%).",
                 used, max_tokens, (used / max_tokens) * 100,
-                effective_max, effective_max,
             )
 
         assembly.metadata["total_tokens_used"] = used
@@ -589,15 +574,11 @@ class ContextAssembler:
     @staticmethod
     def _estimate_tokens(text: str) -> int:
         """
-        Token estimation: usa tiktoken si disponible, fallback a chars/4.
+        Token estimation: delega en harness.common.estimate_tokens.
 
-        Si tiktoken esta instalado, usa ``cl100k_base`` encoding (el mismo
-        de GPT-4 / ChatGPT) para conteo preciso. Si no, usa la heuristica
-        de ~4 caracteres por token.
+        Usa tiktoken si disponible, fallback a chars/4.
         """
-        if _TIKTOKEN_AVAILABLE and _ENCODING is not None:
-            return len(_ENCODING.encode(text))
-        return max(1, len(text) // _CHARS_PER_TOKEN)
+        return estimate_tokens(text)
 
     def compact_context(
         self,

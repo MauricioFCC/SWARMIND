@@ -20,6 +20,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+import numpy as np
+
 logger = logging.getLogger(__name__)
 
 
@@ -267,7 +269,7 @@ class AgentHealthChecker:
         db_ok = False
         if self._store is not None:
             try:
-                dummy_vec = __import__('numpy').zeros(384, dtype='float32')
+                dummy_vec = np.zeros(384, dtype=np.float32)
                 self._store.search("health_check", dummy_vec, top_k=1)
                 db_ok = True
             except Exception as e:

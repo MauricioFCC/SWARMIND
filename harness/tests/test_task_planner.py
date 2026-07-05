@@ -157,6 +157,49 @@ class TestTaskPlan:
         plan = TaskPlan(session_id="test", original_message="test")
         assert plan.get_levels() == []
 
+    def test_get_current_level_num_initial(self):
+        """Nuevo plan sin completar → nivel 0."""
+        subtasks = [
+            SubTask(id="s1", agent="builder", description="code", dependencies=[]),
+            SubTask(id="s2", agent="guardian", description="test", dependencies=["s1"]),
+        ]
+        plan = TaskPlan(session_id="test", original_message="test", subtasks=subtasks)
+        assert plan.get_current_level_num() == 0  # Nivel 0: s1
+
+    def test_get_current_level_num_after_first(self):
+        """Completar nivel 0 → nivel 1."""
+        subtasks = [
+            SubTask(id="s1", agent="builder", description="code", dependencies=[]),
+            SubTask(id="s2", agent="guardian", description="test", dependencies=["s1"]),
+        ]
+        plan = TaskPlan(session_id="test", original_message="test", subtasks=subtasks)
+        plan.mark_completed("s1")
+        assert plan.get_current_level_num() == 1  # Nivel 1: s2
+
+    def test_get_current_level_num_all_complete(self):
+        """Todos completos → len(levels)."""
+        subtasks = [
+            SubTask(id="s1", agent="builder", description="code", dependencies=[]),
+        ]
+        plan = TaskPlan(session_id="test", original_message="test", subtasks=subtasks)
+        plan.mark_completed("s1")
+        assert plan.get_current_level_num() == 1
+
+    def test_get_current_level_num_empty(self):
+        """Plan vacio → 0."""
+        plan = TaskPlan(session_id="test", original_message="test")
+        assert plan.get_current_level_num() == 0
+
+    def test_get_summary(self):
+        """get_summary debe incluir el progreso."""
+        subtasks = [
+            SubTask(id="s1", agent="builder", description="code", dependencies=[]),
+        ]
+        plan = TaskPlan(session_id="test", original_message="test task", subtasks=subtasks)
+        summary = plan.get_summary()
+        assert "test task" in summary or "Plan" in summary
+        assert "0/1" in summary
+
     def test_to_dict(self):
         subtasks = [
             SubTask(id="s1", agent="builder", description="code", dependencies=[]),

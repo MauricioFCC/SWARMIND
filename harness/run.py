@@ -351,207 +351,162 @@ def _run_guardrails(task: str, target_agent: str, ctx: Any, routing_source: str)
 
 
 # ---------------------------------------------------------------------------
-# Main
+# Extracted sub-functions from main()
 # ---------------------------------------------------------------------------
 
 
-def main() -> None:
-    """Main entry point for the Harness."""
-    parsed = _parse_args()
+def _handle_gateway_mode(parsed: Dict[str, Any]) -> None:
+    """Handle --gateway mode."""
+    from harness.gateway.gateway import GatewayManager, Message, load_gateway_config
 
-    # --- Handle --help immediately (before first-run check) ---
-    if parsed.get("help"):
-        _show_usage()
-        return
+    config = load_gateway_config()
+    if parsed["gateway"] not in config.get("active_gateways", []):
+        config["active_gateways"] = [parsed["gateway"]]
 
-    # --- First-run onboarding (before any command processing) ---
-    check_first_run(HARNESS_ROOT)
+    manager = GatewayManager(config)
+    logger.info("[Harness] Gateway mode: %s", parsed['gateway'])
+    logger.info("[Harness] Gateways activas: %s", manager.list_active_gateways())
 
-    # --- Gateway mode ---
-    if parsed["gateway"]:
-        from harness.gateway.gateway import GatewayManager, Message, load_gateway_config
-
-        config = load_gateway_config()
-        if parsed["gateway"] not in config.get("active_gateways", []):
-            config["active_gateways"] = [parsed["gateway"]]
-
-        manager = GatewayManager(config)
-        logger.info("[Harness] Gateway mode: %s", parsed['gateway'])
-        logger.info("[Harness] Gateways activas: %s", manager.list_active_gateways())
-
-        cli_gw = manager.get_gateway("cli")
-        if cli_gw and cli_gw.is_active():
-            logger.info("[Harness] CLI gateway activa. Escribe mensajes o 'exit' para salir.")
-            try:
-                while True:
-                    line = input("> ").strip()
-                    if line.lower() in ("exit", "quit", "q"):
-                        break
-                    if line:
-                        msg = Message(role="user", content=line, channel="cli")
-                        manager.send_all(msg)
-            except (EOFError, KeyboardInterrupt):
-                pass
-        return
-
-    # --- Daemon mode ---
-    if parsed["daemon"]:
-        from harness.orchestrator.scheduler import Scheduler
-        import time
-
-        logger.info("[Harness] Daemon mode - iniciando scheduler en background...")
-        store = LanceVectorStore()
-        scheduler = Scheduler(vector_store=store)
-        scheduler.run_scheduler()
-        logger.info("[Harness] Scheduler corriendo. Presiona Ctrl+C para detener.")
+    cli_gw = manager.get_gateway("cli")
+    if cli_gw and cli_gw.is_active():
+        logger.info("[Harness] CLI gateway activa. Escribe mensajes o 'exit' para salir.")
         try:
             while True:
-                time.sleep(10)
-        except KeyboardInterrupt:
-            scheduler.stop()
-            logger.info("\n[Harness] Scheduler detenido.")
-        return
+                line = input("> ").strip()
+                if line.lower() in ("exit", "quit", "q"):
+                    break
+                if line:
+                    msg = Message(role="user", content=line, channel="cli")
+                    manager.send_all(msg)
+        except (EOFError, KeyboardInterrupt):
+            pass
 
-    # --- Watch mode ---
-    if parsed["watch"]:
-        _handle_watch_mode()
-        return
 
-    # --- Command mode ---
-    cmd = parsed.get("command")
-    if cmd:
-        store = LanceVectorStore()
-        if cmd.startswith("!evolve mutate"):
-            _handle_evolve_mutate(store, cmd)
-        elif cmd.startswith("!schedule add"):
-            _handle_schedule_add(store, cmd)
-        elif cmd.startswith("!schedule list"):
-            _handle_schedule_list(store)
-        elif cmd.startswith("!db migrate"):
-            _handle_db_migrate(store, cmd)
-        elif cmd.startswith("!db list-imports"):
-            _handle_db_list_imports()
-        elif cmd.startswith("!db stats"):
-            _handle_db_stats(store)
-        elif cmd.startswith("!db rollback"):
-            _handle_db_rollback(cmd)
-        elif cmd.startswith("!iteration end"):
-            _handle_iteration_end(cmd, HARNESS_ROOT)
-        elif cmd.startswith("!iteration quick"):
-            _handle_iteration_quick(cmd, HARNESS_ROOT)
-        elif cmd.startswith("!iteration auto"):
-            _handle_iteration_auto(cmd, HARNESS_ROOT)
-        elif cmd.startswith("!iteration history"):
-            _handle_iteration_history(cmd)
-        elif cmd.startswith("!iteration diff"):
-            _handle_iteration_diff(cmd)
-        elif cmd.startswith("!iteration report"):
-            _handle_iteration_report()
-        elif cmd.startswith("!hooks install"):
-            _handle_hooks_install()
-        elif cmd.startswith("!hooks uninstall"):
-            _handle_hooks_uninstall()
-        elif cmd.startswith("!hooks status"):
-            _handle_hooks_status()
-        elif cmd.startswith("!rag ingest"):
-            _handle_rag_ingest(store, cmd)
-        elif cmd.startswith("!rag stats"):
-            _handle_rag_stats(store)
-        elif cmd.startswith("!agent evolve"):
-            from harness.evolve_loop.agent_builder import run_agent_evolution
-            dry_run = "--dry-run" in cmd
-            result = run_agent_evolution(dry_run=dry_run)
-            logger.info("[AgentEvolve] Built: %s | Pruned: %s | Stats: %s",
-                         result["built"], result["pruned"], result["builder_stats"])
-        elif cmd.startswith("!agent build"):
-            from harness.evolve_loop.agent_builder import AgentBuilder
-            builder = AgentBuilder()
-            built = builder.build_agents_from_cognition()
-            logger.info("[AgentBuild] Created: %s", built)
-        elif cmd.startswith("!agent prune"):
-            from harness.evolve_loop.agent_builder import AgentPruner
-            dry_run = "--dry-run" in cmd
-            pruner = AgentPruner()
-            pruned = pruner.prune_underperforming(dry_run=dry_run)
-            logger.info("[AgentPrune] Removed: %s", pruned)
-        elif cmd.startswith("!hermes"):
-            _handle_hermes(cmd)
-        else:
-            logger.info("[Harness] Comando desconocido: %s", cmd)
-        return
+def _handle_daemon_mode() -> None:
+    """Handle --daemon mode."""
+    from harness.orchestrator.scheduler import Scheduler
+    import time
 
-    # --- Plan-and-Execute Orchestrator (reemplaza auto-detección simple) ---
-    task = parsed.get("task")
-    if not task:
-        _show_usage()
-        sys.exit(1)
-
-    logger.info("[Harness] Inicializando...")
-
+    logger.info("[Harness] Daemon mode - iniciando scheduler en background...")
     store = LanceVectorStore()
-    if not os.path.exists(os.path.join(HARNESS_ROOT, "db", "lancedb")):
-        logger.warning("harness/db/lancedb/ no existe. Los datos se perderan al reiniciar.")
+    scheduler = Scheduler(vector_store=store)
+    scheduler.run_scheduler()
+    logger.info("[Harness] Scheduler corriendo. Presiona Ctrl+C para detener.")
+    try:
+        while True:
+            time.sleep(10)
+    except KeyboardInterrupt:
+        scheduler.stop()
+        logger.info("\n[Harness] Scheduler detenido.")
 
-    # --- NEW: TaskOrchestrator (Plan-and-Execute) ---
-    # Descompone la peticion en un DAG de subtareas, preserva contexto,
-    # paraleliza niveles independientes, secuencializa los dependientes.
-    from harness.orchestrator.task_orchestrator import TaskOrchestrator
 
-    orchestrator = TaskOrchestrator(vector_store=store)
-    orch_result = orchestrator.process_message(
-        message=task,
-        force_agent=None,  # se auto-detecta
-    )
+def _handle_command(cmd: str) -> None:
+    """Dispatch a !command to its handler."""
+    store = LanceVectorStore()
+    if cmd.startswith("!evolve mutate"):
+        _handle_evolve_mutate(store, cmd)
+    elif cmd.startswith("!schedule add"):
+        _handle_schedule_add(store, cmd)
+    elif cmd.startswith("!schedule list"):
+        _handle_schedule_list(store)
+    elif cmd.startswith("!db migrate"):
+        _handle_db_migrate(store, cmd)
+    elif cmd.startswith("!db list-imports"):
+        _handle_db_list_imports()
+    elif cmd.startswith("!db stats"):
+        _handle_db_stats(store)
+    elif cmd.startswith("!db rollback"):
+        _handle_db_rollback(cmd)
+    elif cmd.startswith("!iteration end"):
+        _handle_iteration_end(cmd, HARNESS_ROOT)
+    elif cmd.startswith("!iteration quick"):
+        _handle_iteration_quick(cmd, HARNESS_ROOT)
+    elif cmd.startswith("!iteration auto"):
+        _handle_iteration_auto(cmd, HARNESS_ROOT)
+    elif cmd.startswith("!iteration history"):
+        _handle_iteration_history(cmd)
+    elif cmd.startswith("!iteration diff"):
+        _handle_iteration_diff(cmd)
+    elif cmd.startswith("!iteration report"):
+        _handle_iteration_report()
+    elif cmd.startswith("!hooks install"):
+        _handle_hooks_install()
+    elif cmd.startswith("!hooks uninstall"):
+        _handle_hooks_uninstall()
+    elif cmd.startswith("!hooks status"):
+        _handle_hooks_status()
+    elif cmd.startswith("!rag ingest"):
+        _handle_rag_ingest(store, cmd)
+    elif cmd.startswith("!rag stats"):
+        _handle_rag_stats(store)
+    elif cmd.startswith("!agent evolve"):
+        from harness.evolve_loop.agent_builder import run_agent_evolution
+        dry_run = "--dry-run" in cmd
+        result = run_agent_evolution(dry_run=dry_run)
+        logger.info("[AgentEvolve] Built: %s | Pruned: %s | Stats: %s",
+                     result["built"], result["pruned"], result["builder_stats"])
+    elif cmd.startswith("!agent build"):
+        from harness.evolve_loop.agent_builder import AgentBuilder
+        builder = AgentBuilder()
+        built = builder.build_agents_from_cognition()
+        logger.info("[AgentBuild] Created: %s", built)
+    elif cmd.startswith("!agent prune"):
+        from harness.evolve_loop.agent_builder import AgentPruner
+        dry_run = "--dry-run" in cmd
+        pruner = AgentPruner()
+        pruned = pruner.prune_underperforming(dry_run=dry_run)
+        logger.info("[AgentPrune] Removed: %s", pruned)
+    elif cmd.startswith("!hermes"):
+        _handle_hermes(cmd)
+    else:
+        logger.info("[Harness] Comando desconocido: %s", cmd)
 
-    # --- Mostrar plan al usuario ---
-    if orch_result.is_new_plan:
+
+def _display_plan(orch_result: Any, task: str) -> None:
+    """Display the execution plan to the user."""
+    if not orch_result.is_new_plan:
+        return
+
+    _safe_print()
+    _safe_print(f"  {_cyan('📋 PLAN DE EJECUCIÓN')}")
+    _safe_print(f"  {'─' * 50}")
+    _safe_print(f"  Sesión: {orch_result.session_id}")
+    _safe_print(f"  Tarea: {task[:100]}")
+    _safe_print()
+
+    for level_idx, level in enumerate(orch_result.plan.get_levels()):
+        is_parallel = len(level) > 1
+        mode = "⚡ PARALELO" if is_parallel else "→ SECUENCIAL"
+        _safe_print(f"  Nivel {level_idx} ({mode}):")
+        for s in level:
+            deps = f" [espera: {', '.join(s.dependencies)}]" if s.dependencies else ""
+            _safe_print(f"    ▸ [{s.agent}] {s.description}{deps}")
         _safe_print()
-        _safe_print(f"  {_cyan('📋 PLAN DE EJECUCIÓN')}")
-        _safe_print(f"  {'─' * 50}")
-        _safe_print(f"  Sesión: {orch_result.session_id}")
-        _safe_print(f"  Tarea: {task[:100]}")
-        _safe_print()
+    _safe_print(f"  {'─' * 50}")
+    _safe_print()
 
-        for level_idx, level in enumerate(orch_result.plan.get_levels()):
-            is_parallel = len(level) > 1
-            mode = "⚡ PARALELO" if is_parallel else "→ SECUENCIAL"
-            _safe_print(f"  Nivel {level_idx} ({mode}):")
-            for s in level:
-                deps = f" [espera: {', '.join(s.dependencies)}]" if s.dependencies else ""
-                _safe_print(f"    ▸ [{s.agent}] {s.description}{deps}")
-            _safe_print()
-        _safe_print(f"  {'─' * 50}")
-        _safe_print()
-
-    # Si hay un nivel actual listo, mostrar qué se ejecuta ahora
+    # Current level
     if orch_result.current_level:
         if len(orch_result.current_level) == 1:
             st = orch_result.current_level[0]
-            _safe_print(
-                f"  {_cyan(f'▶ Ejecutando:')} [{st['agent']}] {st['description']}"
-            )
+            _safe_print(f"  {_cyan(f'▶ Ejecutando:')} [{st['agent']}] {st['description']}")
         else:
-            agents = {st['agent'] for st in orch_result.current_level}
-            _safe_print(
-                f"  {_cyan(f'▶ Ejecutando {len(orch_result.current_level)} subtareas en PARALELO:')}"
-            )
+            _safe_print(f"  {_cyan(f'▶ Ejecutando {len(orch_result.current_level)} subtareas en PARALELO:')}")
             for st in orch_result.current_level:
                 _safe_print(f"    ▸ [{st['agent']}] {st['description']}")
         _safe_print()
 
-    # Si hay resultados previos, mostrarlos
+    # Previous results
     if orch_result.previous_results:
         _safe_print(f"  {_cyan('✅ Subtareas completadas:')}")
         for prev in orch_result.previous_results:
             _safe_print(f"    ✓ [{prev['agent']}] {prev['description']}")
         _safe_print()
 
-    # --- Preparar contexto de dispatch con el plan ---
-    target_agent = orch_result.target_agent
-    logger.info("[Harness] Ruteando a @%s (sesión %s)",
-                target_agent, orch_result.session_id)
 
-    # Plan context para inyectar en el dispatch
+def _dispatch_task(store: Any, orch_result: Any, task: str) -> str:
+    """Dispatch task via AgentDispatcher and return routing_source."""
+    target_agent = orch_result.target_agent
     plan_context = {
         "session_id": orch_result.session_id,
         "plan_summary": orch_result.session_status,
@@ -561,47 +516,35 @@ def main() -> None:
         "is_complete": orch_result.is_complete,
     }
 
-    # Dispatch PARALELO con plan context
     import asyncio
     from harness.orchestrator.agent_dispatcher import AgentDispatcher
     dispatcher = AgentDispatcher(vector_store=store)
 
-    async def run_async():
-        result = await dispatcher.dispatch_async(
-            target_agent, task,
-            plan_context=plan_context,
-        )
-        logger.info("[Harness] Dispatch paralelo: skill=%s, chunks=%d, plan=%s",
+    async def _run():
+        result = await dispatcher.dispatch_async(target_agent, task, plan_context=plan_context)
+        logger.info("[Harness] Dispatch: skill=%s, chunks=%d, plan=%s",
                      result["used_skill"],
                      len(result.get("rag_context", {}).get("relevant_docs", [])),
-                     bool(result.get("execution_plan")),
-        )
+                     bool(result.get("execution_plan")))
 
-    asyncio.run(run_async())
+    asyncio.run(_run())
+    return target_agent
 
-    # ModelRouter: determinar local vs cloud
-    force_cloud = parsed.get("force_cloud", False)
-    routing_source = _apply_model_routing(task, target_agent, force_cloud)
 
-    # HITL Guard: inicializar
-    hitl_mode = "hitl"
+def _resolve_hitl_mode(parsed: Dict[str, Any]) -> str:
+    """Determine HITL mode from parsed args."""
     if parsed.get("auto_pilot"):
-        hitl_mode = "auto_pilot"
-    elif parsed.get("hitl_sensitive"):
-        hitl_mode = "hitl_sensitive"
+        return "auto_pilot"
+    if parsed.get("hitl_sensitive"):
+        return "hitl_sensitive"
+    return "hitl"
 
-    guard = HITLGuard(vector_store=store, mode=hitl_mode)
-    if hitl_mode != "hitl":
-        logger.info("[HITL] Modo: %s", hitl_mode)
 
-    # HITL: check task for destructive actions
-    if not _check_hitl(task, target_agent, guard):
-        logger.info("[HITL] Accion rechazada por el usuario. Cancelando.")
-        sys.exit(1)
-
-    # Contexto RAG
+def _ensure_rag_context(store: Any, task: str, target_agent: str) -> Any:
+    """Assemble RAG context, auto-ingesting if empty."""
     assembler = ContextAssembler(store)
     ctx = assembler.assemble(task, target_agent)
+
     if ctx.relevant_docs:
         logger.info("[Harness] Contexto RAG: %d chunks, %d tokens",
                      len(ctx.relevant_docs), ctx.metadata.get("total_tokens_used", 0))
@@ -615,26 +558,23 @@ def main() -> None:
             ctx = assembler.assemble(task, target_agent)
             if ctx.relevant_docs:
                 logger.info("[Harness] Contexto RAG tras ingest: %d chunks", len(ctx.relevant_docs))
+    return ctx
 
-    # Guardrails pre-check
-    _run_guardrails(task, target_agent, ctx, routing_source)
 
+def _create_task_and_lesson(
+    store: Any, task: str, target_agent: str,
+    routing_source: str, orch_result: Any, ctx: Any,
+) -> Any:
+    """Create a TaskManager task and register cognition lesson."""
     tm = TaskManager(vector_store=store)
-    new_task = tm.create_task(
-        title=task[:80],
-        description=task,
-        agent_assigned=target_agent,
-        priority=5
-    )
+    new_task = tm.create_task(title=task[:80], description=task, agent_assigned=target_agent, priority=5)
     if new_task:
-        task_id = getattr(new_task, 'id', 'N/A')
-        task_status = getattr(new_task, 'status', 'pending')
-        logger.info("[Harness] Tarea creada: %s (estado: %s)", task_id, task_status)
+        logger.info("[Harness] Tarea creada: %s (estado: %s)",
+                     getattr(new_task, 'id', 'N/A'), getattr(new_task, 'status', 'pending'))
 
-    # Registrar leccion en cognition store
     cognition = CognitionSync(store)
     try:
-        lesson = cognition.add_lesson(
+        cognition.add_lesson(
             title=f"Tarea: {task[:60]}",
             content=(
                 f"Tarea enrutada a @{target_agent}.\n"
@@ -655,18 +595,19 @@ def main() -> None:
                 "session_id": orch_result.session_id,
             },
         )
-        logger.info("[Harness] Leccion registrada en cognition: %s", lesson.id)
     except Exception as exc:
         logger.info("[Harness] Cognition store no disponible: %s", exc)
 
-    # --- Output final ---
+    return new_task
+
+
+def _display_final_output(orch_result: Any, target_agent: str, routing_source: str) -> None:
+    """Display final output and status."""
     if orch_result.is_complete:
         _safe_print(f"\n  {_ok('🎉 ¡PLAN COMPLETO!')} Todas las subtareas han sido ejecutadas.")
         _safe_print(f"  El plan '{orch_result.session_id}' ha finalizado.")
     else:
-        pending = len(orch_result.plan.subtasks) - sum(
-            1 for s in orch_result.plan.subtasks if s.completed
-        )
+        pending = len(orch_result.plan.subtasks) - sum(1 for s in orch_result.plan.subtasks if s.completed)
         if pending > 0:
             _safe_print(f"\n  {_warn(f'⏳ Quedan {pending} subtareas pendientes.')}")
             _safe_print(f"  Para continuar, escribe 'continuar' o el siguiente paso.")
@@ -680,35 +621,120 @@ def main() -> None:
     logger.info("[Harness] Tarea enrutada a @%s (%s) — sesión %s",
                 target_agent, routing_source, orch_result.session_id)
 
-    # --- SandboxLoop (solo si es implementación y hay tarea) ---
-    if target_agent in ("builder", "software-engineer") and new_task:
-        from harness.orchestrator.sandbox_loop import SandboxLoop
-        from harness.orchestrator.agent_bus import AgentBus
 
-        task_id = getattr(new_task, 'id', 'N/A')
-        logger.info("\n[Harness] [Sandbox] Iniciando SandboxLoop para task_id=%s", task_id)
+def _start_sandbox_if_needed(
+    target_agent: str, new_task: Any, store: Any,
+    task: str, orch_result: Any, routing_source: str,
+) -> None:
+    """Start SandboxLoop for builder agents."""
+    if target_agent not in ("builder", "software-engineer") or not new_task:
+        return
 
-        sandbox = SandboxLoop(vector_store=store)
-        channel = "#swe-sandbox"
+    from harness.orchestrator.sandbox_loop import SandboxLoop
+    from harness.orchestrator.agent_bus import AgentBus
 
-        bus = AgentBus(vector_store=store)
-        bus.post_message(
-            channel=channel,
-            from_agent="@harness",
-            to_agent=f"@{target_agent}",
-            message=(
-                f"Tarea creada: **{task[:80]}**\n"
-                f"Task ID: `{task_id}`\n"
-                f"Sesión: `{orch_result.session_id}`\n"
-                f"Routing: `{routing_source}`\n\n"
-                f"Plan de ejecución con {len(orch_result.plan.subtasks)} subtareas.\n"
-                f"Nivel actual: {len(orch_result.current_level)} subtarea(s) lista(s).\n\n"
-                f"El SandboxLoop esta listo para ejecutar el bucle autonomo.\n"
-            ),
-            message_type="notification",
-            task_id=task_id,
-        )
-        logger.info("[Harness] SandboxLoop listo en canal %s", channel)
+    task_id = getattr(new_task, 'id', 'N/A')
+    logger.info("\n[Harness] [Sandbox] Iniciando SandboxLoop para task_id=%s", task_id)
+
+    SandboxLoop(vector_store=store)
+    bus = AgentBus(vector_store=store)
+    bus.post_message(
+        channel="#swe-sandbox",
+        from_agent="@harness",
+        to_agent=f"@{target_agent}",
+        message=(
+            f"Tarea creada: **{task[:80]}**\n"
+            f"Task ID: `{task_id}`\n"
+            f"Sesión: `{orch_result.session_id}`\n"
+            f"Routing: `{routing_source}`\n\n"
+            f"Plan de ejecución con {len(orch_result.plan.subtasks)} subtareas.\n"
+            f"Nivel actual: {len(orch_result.current_level)} subtarea(s) lista(s).\n\n"
+            f"El SandboxLoop esta listo para ejecutar el bucle autonomo.\n"
+        ),
+        message_type="notification",
+        task_id=task_id,
+    )
+    logger.info("[Harness] SandboxLoop listo en canal #swe-sandbox")
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+
+def main() -> None:
+    """Main entry point for the Harness."""
+    parsed = _parse_args()
+
+    if parsed.get("help"):
+        _show_usage()
+        return
+
+    check_first_run(HARNESS_ROOT)
+
+    # --- Mode dispatch ---
+    if parsed["gateway"]:
+        _handle_gateway_mode(parsed)
+        return
+
+    if parsed["daemon"]:
+        _handle_daemon_mode()
+        return
+
+    if parsed["watch"]:
+        _handle_watch_mode()
+        return
+
+    cmd = parsed.get("command")
+    if cmd:
+        _handle_command(cmd)
+        return
+
+    # --- Task mode ---
+    task = parsed.get("task")
+    if not task:
+        _show_usage()
+        sys.exit(1)
+
+    logger.info("[Harness] Inicializando...")
+    store = LanceVectorStore()
+    if not os.path.exists(os.path.join(HARNESS_ROOT, "db", "lancedb")):
+        logger.warning("harness/db/lancedb/ no existe. Los datos se perderan al reiniciar.")
+
+    # Orchestrate
+    from harness.orchestrator.task_orchestrator import TaskOrchestrator
+
+    orch_result = TaskOrchestrator(vector_store=store).process_message(message=task, force_agent=None)
+
+    # Display plan
+    _display_plan(orch_result, task)
+
+    # Dispatch
+    target_agent = _dispatch_task(store, orch_result, task)
+
+    # Model routing
+    routing_source = _apply_model_routing(task, target_agent, parsed.get("force_cloud", False))
+
+    # HITL
+    guard = HITLGuard(vector_store=store, mode=_resolve_hitl_mode(parsed))
+    if not _check_hitl(task, target_agent, guard):
+        logger.info("[HITL] Accion rechazada por el usuario. Cancelando.")
+        sys.exit(1)
+
+    # RAG context
+    ctx = _ensure_rag_context(store, task, target_agent)
+
+    # Guardrails
+    _run_guardrails(task, target_agent, ctx, routing_source)
+
+    # Task + cognition
+    new_task = _create_task_and_lesson(store, task, target_agent, routing_source, orch_result, ctx)
+
+    # Final output
+    _display_final_output(orch_result, target_agent, routing_source)
+
+    # Sandbox
+    _start_sandbox_if_needed(target_agent, new_task, store, task, orch_result, routing_source)
 
 
 if __name__ == "__main__":

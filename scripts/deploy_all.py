@@ -400,7 +400,7 @@ def deploy_project(
     project_path = Path(config["path"])
     if not project_path.exists():
         logger.warning("  ❌ Project path not found: %s", project_path)
-        return {"status": "skipped", "reason": "path_not_found"}
+        return {"name": project_name, "status": "skipped", "reason": "path_not_found", "type": "N/A"}
 
     stats = {
         "name": project_name,
@@ -566,8 +566,8 @@ def main():
             "  %s %-25s | type=%-12s | "
             ".opencode=%d  harness=%d  skills=%d  readme=%s",
             status,
-            s["name"],
-            s["type"],
+            s.get("name", "N/A"),
+            s.get("type", "N/A"),
             s.get("opencode_files", 0),
             s.get("harness_files", 0),
             s.get("skills_deployed", 0),

@@ -538,7 +538,7 @@ class TaskOrchestrator:
         # Advance level if needed
         next_level = session.plan.get_next_level()
         if next_level:
-            current_level_num = next_level[0].level if next_level else 1
+            current_level_num = session.plan.get_current_level_num()
             healing.advance_level(current_level_num)
 
         # Check self-healing conditions

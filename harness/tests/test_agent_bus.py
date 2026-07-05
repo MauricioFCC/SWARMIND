@@ -38,3 +38,98 @@ class TestAgentBus:
         msg = agent_bus.get_message_by_id(mid)
         assert msg is not None
         assert msg["message"] == "test"
+
+    # ── New tests for refactored methods ──
+
+    def test_update_message_status(self, agent_bus):
+        """update_message_status reemplaza mark_delivered/mark_acknowledged."""
+        mid = agent_bus.post_message("#t", "@a", "@b", "status test", "notification")
+        assert agent_bus.update_message_status(mid, "delivered") is True
+
+    def test_update_message_status_invalid(self, agent_bus):
+        """Estado invalido debe retornar False."""
+        mid = agent_bus.post_message("#t", "@a", "@b", "bad status", "notification")
+        assert agent_bus.update_message_status(mid, "invalid_status") is False
+
+    def test_mark_delivered_backward_compat(self, agent_bus):
+        """mark_delivered debe seguir funcionando (delega en update_message_status)."""
+        mid = agent_bus.post_message("#t", "@a", "@b", "delivered test", "notification")
+        assert agent_bus.mark_delivered(mid) is True
+
+    def test_mark_acknowledged_backward_compat(self, agent_bus):
+        """mark_acknowledged debe seguir funcionando."""
+        mid = agent_bus.post_message("#t", "@a", "@b", "ack test", "notification")
+        assert agent_bus.mark_acknowledged(mid) is True
+
+    def test_post_message_batch(self, agent_bus):
+        """post_message_batch con multiples mensajes."""
+        ids = agent_bus.post_message_batch([
+            {"channel": "#batch", "from_agent": "@a", "to_agent": "@b",
+             "message": "batch1", "message_type": "notification"},
+            {"channel": "#batch", "from_agent": "@b", "to_agent": "@c",
+             "message": "batch2", "message_type": "request"},
+        ])
+        assert len(ids) == 2
+        assert all(isinstance(i, str) for i in ids)
+
+    def test_post_message_batch_empty(self, agent_bus):
+        """Batch vacio debe retornar lista vacia."""
+        assert agent_bus.post_message_batch([]) == []
+
+    def test_get_thread(self, agent_bus):
+        """get_thread debe retornar mensajes del mismo thread."""
+        mid = agent_bus.post_message("#t", "@a", "@b", "thread msg", "request")
+        # Get thread by the auto-generated thread_id
+        msg = agent_bus.get_message_by_id(mid)
+        thread = agent_bus.get_thread(msg["thread_id"])
+        assert len(thread) >= 1
+
+    def test_get_channel_history(self, agent_bus):
+        """get_channel_history debe retornar historial del canal."""
+        agent_bus.post_message("#history", "@a", "@b", "hist1", "notification")
+        agent_bus.post_message("#history", "@a", "@b", "hist2", "notification")
+        history = agent_bus.get_channel_history("#history")
+        assert len(history) >= 2
+
+    def test_escalate(self, agent_bus):
+        """escalate debe crear un mensaje de escalacion."""
+        mid = agent_bus.escalate(task_id="esc-001", message="Urgent help needed")
+        assert mid is not None
+        msg = agent_bus.get_message_by_id(mid)
+        assert msg["message_type"] == "escalation"
+
+    def test_get_channel_list(self, agent_bus):
+        """get_channel_list debe listar canales unicos."""
+        agent_bus.post_message("#chanA", "@a", "@b", "test", "notification")
+        agent_bus.post_message("#chanB", "@a", "@b", "test", "notification")
+        channels = agent_bus.get_channel_list()
+        assert "#chanA" in channels
+        assert "#chanB" in channels
+
+    def test_get_tasks_with_errors(self, agent_bus):
+        """get_tasks_with_errors debe listar task_id con errores."""
+        agent_bus.post_message("#t", "@a", "@b", "err", "error", task_id="err-task")
+        tasks = agent_bus.get_tasks_with_errors()
+        assert "err-task" in tasks
+
+    def test_build_message_payload(self, agent_bus):
+        """_build_message_payload debe generar metadata completa."""
+        payload = agent_bus._build_message_payload(
+            channel="#test", from_agent="@a", to_agent="@b",
+            message="payload test", message_type="request",
+            msg_id="custom-id",
+        )
+        assert payload["id"] == "custom-id"
+        assert payload["channel"] == "#test"
+        assert payload["message"] == "payload test"
+        assert payload["message_type"] == "request"
+        assert payload["status"] == "sent"
+
+    def test_search_messages(self, agent_bus):
+        """_search_messages debe manejar busquedas con filtros."""
+        agent_bus.post_message("#search", "@x", "@y", "searchable msg", "notification")
+        results = agent_bus._search_messages(
+            filters={"channel": "#search"},
+            top_k=10,
+        )
+        assert len(results) >= 1

@@ -17,6 +17,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from harness.common import CHARS_PER_TOKEN, StatsMixin, compression_pct, estimate_tokens
+
 logger = logging.getLogger(__name__)
 
 
@@ -56,8 +58,8 @@ DEFAULT_BUDGETS: Dict[str, int] = {
     "tool_outputs": 2000,
 }
 
-# Estimacion: ~4 chars por token
-CHARS_PER_TOKEN = 4.0
+# Estimacion: ~4 chars por token (importado de harness.common)
+# CHARS_PER_TOKEN = 4.0  # Ahora en harness.common
 
 # Resumen de conversacion: chars max
 MAX_SUMMARY_CHARS = 500
@@ -202,7 +204,7 @@ class ContextWindow:
 # Context Window Manager
 # ---------------------------------------------------------------------------
 
-class ContextWindowManager:
+class ContextWindowManager(StatsMixin):
     """
     Gestiona la ventana de contexto para llamadas LLM.
 
@@ -228,6 +230,7 @@ class ContextWindowManager:
         sliding_window_size: int = SLIDING_WINDOW_SIZE,
         summary_fn: Optional[Callable[[str], str]] = None,
     ) -> None:
+        super().__init__()
         self._total_budget = total_budget
         self._sliding_window_size = sliding_window_size
         self._summary_fn = summary_fn or self._default_summary
@@ -329,10 +332,10 @@ class ContextWindowManager:
         self._stats["tokens_after"] += after
         self._stats["tokens_saved"] += (before - after)
 
-        compression_pct = (1 - after / max(before, 1)) * 100
+        pct = compression_pct(before, after)
         logger.debug(
             "ContextWindow optimized: %d -> %d tokens (%.1f%% compression)",
-            before, after, compression_pct,
+            before, after, pct,
         )
 
         return window
@@ -379,18 +382,7 @@ class ContextWindowManager:
         )
         return compacted
 
-    def get_stats(self) -> Dict[str, Any]:
-        """Return manager statistics."""
-        stats = dict(self._stats)
-        total_before = stats.get("tokens_before", 1)
-        if total_before > 0:
-            stats["avg_compression_pct"] = round(
-                stats["tokens_saved"] / total_before * 100, 1
-            )
-        else:
-            stats["avg_compression_pct"] = 0.0
-        return stats
-
+    # get_stats() heredado de StatsMixin
     # ------------------------------------------------------------------
     # Internal optimization strategies
     # ------------------------------------------------------------------

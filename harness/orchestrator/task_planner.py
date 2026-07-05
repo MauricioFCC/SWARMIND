@@ -139,6 +139,20 @@ class TaskPlan:
                 return
         logger.warning("Subtask %s not found in plan %s.", subtask_id, self.session_id)
 
+    def get_current_level_num(self) -> int:
+        """Get the 0-based index of the current execution level.
+
+        Recorre los niveles devueltos por get_levels() y retorna el indice
+        del primer nivel que contiene subtareas sin completar.
+        Si todos los niveles estan completos, retorna la cantidad de niveles
+        (equivalente a "nivel finalizado").
+        """
+        completed_ids = {s.id for s in self.subtasks if s.completed}
+        for idx, level in enumerate(self.get_levels()):
+            if any(s.id not in completed_ids for s in level):
+                return idx
+        return len(self.get_levels())
+
     def is_complete(self) -> bool:
         """Check if all subtasks are complete."""
         return all(s.completed for s in self.subtasks)
