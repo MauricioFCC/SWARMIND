@@ -33,6 +33,7 @@ LANCEDB_ROOT = os.path.join(
 
 from .lance_schemas import DEFAULT_COLLECTIONS  # noqa: E402
 from .lance_migration import generate_sample_row, serialize_for_schema  # noqa: E402
+from .memory_config import MemoryConfig, get_memory_config  # noqa: E402
 
 # Collection name constants for external consumption
 COLLECTION_PROCEDURAL_SKILLS = "procedural_skills"
@@ -96,9 +97,23 @@ class LanceVectorStore:
         self,
         db_path: Optional[str] = None,
         allow_fallback: bool = False,
+        config: Optional[MemoryConfig] = None,
     ) -> None:
-        """Inicializa el vector store con conexion a LanceDB."""
-        self.db_path = db_path or LANCEDB_ROOT
+        """Inicializa el vector store con conexion a LanceDB.
+
+        Args:
+            db_path: Ruta a la base LanceDB. Si no se especifica, se usa
+                     la ruta por defecto o la del MemoryConfig.
+            allow_fallback: Permitir fallback a memoria en RAM si LanceDB falla.
+            config: MemoryConfig opcional. Si se provee, db_path y allow_fallback
+                    se toman del config si no se especifican explícitamente.
+        """
+        if config:
+            self.db_path = db_path or config.lancedb_path
+            if not allow_fallback:
+                allow_fallback = config.allow_fallback
+        else:
+            self.db_path = db_path or LANCEDB_ROOT
         self._lancedb_available = False
         self._db: Any = None  # LanceDB connection or None
         self._mem_collections: Dict[str, _Collection] = {}
@@ -746,3 +761,20 @@ class LanceVectorStore:
                 schema_def=info["schema"],
                 last_updated=datetime.now(timezone.utc).isoformat(),
             )
+
+    @classmethod
+    def from_config(cls, config: Optional[MemoryConfig] = None) -> "LanceVectorStore":
+        """Crea un LanceVectorStore desde un MemoryConfig.
+
+        Args:
+            config: MemoryConfig. Si es None, usa get_memory_config().
+
+        Returns:
+            LanceVectorStore configurado.
+        """
+        cfg = config or get_memory_config()
+        return cls(
+            db_path=cfg.lancedb_path,
+            allow_fallback=cfg.allow_fallback,
+            config=cfg,
+        )

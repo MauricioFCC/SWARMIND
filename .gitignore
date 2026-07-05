@@ -28,3 +28,8 @@ harness/evolve_loop/prompt_archive/
 harness/orchestrator/scheduler_jobs.yaml
 harness/db/iteration_reports/
 harness/db/.hook_status.json
+
+# Coverage
+.coverage
+coverage.xml
+htmlcov/

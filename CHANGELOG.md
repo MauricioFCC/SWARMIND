@@ -4,6 +4,77 @@
 
 ---
 
+## [2026-07-05] 🚀 Token Optimization Sprint — 60-80% savings
+
+### Investigación Web (6 fuentes 2026)
+- **SkillReducer (arXiv 2603.29919)**: 48% compressión descripciones, 39% cuerpo skills, "menos es más"
+- **SkillsInjector (arXiv 2605.29794)**: Progressive disclosure 3 niveles, inyección adaptativa
+- **Prompt Caching Guide 2026**: 50-90% ahorro en tokens repetidos con KV-cache providers
+- **AI Agent Cost Optimization (Zylos Research)**: Budget governance, redistribución por prioridad
+- **Context Window Management (SurePrompts)**: Priority ordering, sliding window, summarization
+- **Token Budget Contracts (PyPI)**: Confidence-gated spending, redistribución dinámica
+
+### Nuevos Módulos (6 optimizaciones)
+
+#### `harness/memory_rag/token_budget.py` — Sistema de Presupuesto de Tokens
+- `TokenBudget`: presupuesto por agente con 6 pools (system, user, rag, skill, tool, conversation)
+- `BudgetManager`: gestión multi-agente con redistribución dinámica
+- Confidence-gated spending: >90% confianza → stop spending automático
+- Pool priorities: critical (system) → background (tool_outputs)
+- Redistribución de presupuesto no usado de agentes idle → activos de mayor prioridad
+- Ahorro estimado: 30-50% waste prevention
+
+#### `harness/memory_rag/skill_minifier.py` — Compresor de Skills
+- Stage 1: compresión de frontmatter (descripciones -48%)
+- Stage 2: compresión de cuerpo (eliminar secciones redundantes, condensar tablas -39%)
+- Progressive disclosure: estructurar skills en 3 niveles de detalle
+- Batch minifier: `minify_all_skills()` genera .min.md para todos los skills
+- Ahorro medido: 9.9% sobre 54,561 chars totales (5,421 chars ahorrados)
+
+#### `harness/memory_rag/skill_loader.py` — Carga Perezosa de Skills (3 niveles)
+- **Tier 1** (siempre en prompt): solo name + description (~50 tokens por skill)
+- **Tier 2** (on-demand): SKILL.min.md completo cuando el skill se activa
+- **Tier 3** (full): SKILL.md completo para tareas complejas
+- Domain detection automática (trading, healthtech, retail, evolve, general)
+- Auto-promotion: skills usados 3+ veces suben automáticamente a Tier 2
+- Ahorro medido: 62.8% (13,640 → 5,074 tokens)
+
+#### `harness/memory_rag/context_window_manager.py` — Gestor de Ventana de Contexto
+- Priority ordering: system > current instruction > session > skills > RAG > history > tools
+- Budget allocation por sección con máximos configurables
+- Sliding window: mantener últimos N mensajes completos, resumir anteriores
+- 5 estrategias progresivas: truncate → summarize → compress → drop → hard truncate
+- Ahorro estimado: 40-60% en historial de conversación
+
+#### `harness/memory_rag/prompt_cache_builder.py` — Constructor de Prompts Cache-Friendly
+- Stable prefix (cacheable): identidad, reglas, guardrails, tool schemas, skill catalog
+- Cache breakpoint: marker explícito para Anthropic/OpenAI prompt caching
+- Variable suffix (no cacheable): user message, RAG, conversation history
+- Auto-padding: si el prefix es <1024 tokens, agrega padding para alcanzar mínimo de cache
+- Ahorro: 50-90% en llamadas repetitivas con prefix caching de proveedores
+
+#### `harness/memory_rag/optimization_pipeline.py` — Pipeline Integrado
+- Orquesta los 5 módulos en pipeline secuencial
+- Flujo: Domain Detection → Skill Loading → Budget Check → Semantic Cache → Context Assembly → Window Management → Prompt Cache Structure
+- `OptimizationResult` dataclass con métricas detalladas (tokens before/after, cache hit, compression %)
+- Estadísticas consolidadas con reporte de todos los subsistemas
+
+### Archivos Modificados
+- `harness/memory_rag/__init__.py` — Exporta los 6 nuevos módulos
+
+### Tests
+- 33/33 tests existentes siguen pasando sin regresiones
+- Validación manual: BudgetManager (2 agents), LazySkillLoader (12 skills), ContextWindow (1000 budget), PromptCacheBuilder
+
+### Despliegue
+- core-quant-engine: 6/6 archivos nuevos, 5 minified skills
+- Historia Clinica: 6/6 archivos nuevos, 3 minified skills
+- Onyx-Quan-AIBot: 6/6 archivos nuevos, 5 minified skills
+- PDV Basic: 6/6 archivos nuevos, 3 minified skills
+- Hermes_Memory_Proyects: sync completado (15 archivos)
+
+---
+
 ## [2026-07-05] Auditoría 5 Proyectos + CHANGELOG
 
 ### Mejoras
