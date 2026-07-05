@@ -1,5 +1,9 @@
 # .opencode System — Universal Multi-Agent Framework
 
+> **🏦 Doctrina Hedge Fund**: Este sistema puede operar bajo la doctrina de **Hedge Fund Institucional**.
+> Los LLMs actúan como gestores del fondo (CIO, PM, Quant, CRO, COO). Cada tarea es una asignación
+> de capital con riesgo/reward, mandato y stop-loss. Más información en `skills/hedgefund/SKILL.md`.
+
 Sistema de skills multi-agente con enrutamiento automático, FDE (Forward Deployment Engineering) y ASI-Evolve (autonomous self-improvement loop).
 
 ## Estructura
@@ -42,7 +46,7 @@ Sistema de skills multi-agente con enrutamiento automático, FDE (Forward Deploy
 │   ├── registry.py
 │   ├── router_v2.py           # Grafo de estado + A2A Protocol + multi-agent
 │   └── skill_schema.json      # Schema v3
-├── skills/            # 19 skills activos
+├── skills/            # 20 skills activos
 │   ├── ai-engineer/           # ML/AI engineering, LLMOps
 │   ├── context-engineer/      # Context curation, compaction, memory
 │   ├── data-architect/        # Data modeling, ETL, migrations
@@ -51,6 +55,7 @@ Sistema de skills multi-agente con enrutamiento automático, FDE (Forward Deploy
 │   ├── enterprise-architect/  # System design, ADR, strategy
 │   ├── evolve/                # Meta-skill: self-improvement loop
 │   ├── frontend-engineer/     # UI, dashboards, visualization
+│   ├── hedgefund/ ⭐          # Doctrina fundacional: operar como hedge fund institucional
 │   ├── mobile-engineer/
 │   ├── project-manager/       # F.R.A.M.E. orchestration
 │   ├── quality-gate/          # QA + test strategy (merged qa-automation)
@@ -82,10 +87,11 @@ Router v2 implementa un grafo de estado con nodos que definen transiciones condi
 ### Guardrail Pipeline
 Pre-checks (arquitectura + discovery) y post-checks (seguridad + commits + docs + three whys) con 3 severidades: BLOCK / WARN / INFO.
 
-## Skills Activos (19)
+## Skills Activos (20)
 
 | Skill | FDE Pillars | Routing Trigger |
 |-------|-------------|-----------------|
+| **hedgefund** ⭐ | **DELTA, MISSION, RESILIENCE** | **Doctrina fundacional: hedge fund, fondo, inversión, capital, riesgo, mandato, institutional, data science** |
 | project-manager | MISSION, DIPLOMACY, VALUE | roadmap, plan, progreso, delegación @rol |
 | quant-developer | DELTA, GLUE, EVOLVE | estrategia, señal, broker, ONNX, backtest |
 | quant-scientist | EVOLVE, DELTA, VALUE | overfitting, sharpe, experimento, validación |
@@ -107,6 +113,8 @@ Pre-checks (arquitectura + discovery) y post-checks (seguridad + commits + docs 
 | requirements-analyst | — | análisis, requerimientos, viabilidad |
 
 **Merged into active roles**: `backend-engineer` (→ software-engineer), `compliance-officer` (→ security-engineer), `qa-automation` (→ quality-gate).
+
+**Doctrina Fundacional**: `hedgefund` es una skill doctrinal que NO reemplaza a las demás skills. Proporciona el marco de inversión (riesgo/reward, mandato, stop-loss, reporting) que contextualiza todas las operaciones del sistema.
 
 ## Commands
 
@@ -134,6 +142,7 @@ Pre-checks (arquitectura + discovery) y post-checks (seguridad + commits + docs 
 
 ## References
 
+- **`skills/hedgefund/SKILL.md`** ⭐ — **Doctrina Fundacional**: Hedge Fund Institucional con LLMs como gestores
 - `core/base_skill_template.md` — Template v3.0 con FDE Layer + Evolve Layer + C.A.S.E.
 - `core/fde_principles.md` — 7 pilares FDE + glosario + checklist operativo
 - `core/guardrails.py` — Pre/post pipeline con 19 checks (ARQ, SEC, COST, MCP, RAG)
