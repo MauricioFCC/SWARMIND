@@ -4,6 +4,78 @@
 
 ---
 
+## [2026-07-07] 📚 Nuevas Skills: math-doc, legal-doc, science-doc + deploy
+
+### Nuevas Skills de Procesamiento de Documentos
+
+| Skill | Archivo | Keywords | Alcance |
+|-------|---------|----------|---------|
+| **math-doc** | `.opencode/skills/math-doc/SKILL.md` | 20+ keywords | LaTeX, ecuaciones, demostraciones, estadística, papers matemáticos |
+| **legal-doc** | `.opencode/skills/legal-doc/SKILL.md` | 30+ keywords | Contratos, compliance, jurisprudencia, due diligence, multilingüe |
+| **science-doc** | `.opencode/skills/science-doc/SKILL.md` | 25+ keywords | Papers IMRaD, metodología, PRISMA, metaanálisis, bibliometría |
+
+### Dominios cubiertos por skill
+- **math-doc**: Parseo LaTeX, validación de demostraciones, análisis estadístico, conversión bidireccional
+- **legal-doc**: Análisis contractual, compliance GDPR/LGPD, jurisprudencia, dictámenes, due diligence, 5 idiomas
+- **science-doc**: Estructura IMRaD, evaluación metodológica, PRISMA, forest/funnel plots, bibliometría
+
+### Distribución por proyecto
+| Proyecto | Skills adicionales |
+|----------|-------------------|
+| core-quant-engine | math-doc, science-doc (papers cuantitativos) |
+| Historia Clinica | legal-doc, science-doc (compliance salud + papers médicos) |
+| Onyx-Quan-AIBot | math-doc, science-doc (análisis cuantitativo) |
+| PDV Basic | legal-doc (contratos, compliance retail) |
+
+### skills_registry.yaml actualizado
+Registro completo con 10 skills documentadas (7 existentes + 3 nuevas).
+
+### Tests
+- 369/369 tests pasan (0 regresiones)
+
+---
+
+## [2026-07-07] 📋 ADR-0001 + DebateOrchestrator + Confidence Early Stopping + 82 tests
+
+### Investigación web (6+ fuentes 2026)
+| Fuente | Aporte |
+|--------|--------|
+| **SkillReducer (arXiv 2603.29919)** | 48% compresión descripciones, "less-is-more" |
+| **SkillsInjector (arXiv 2605.29794)** | Inyección adaptativa, set-aware rendering |
+| **Princeton NLP 2026** | Single-agent > multi-agent en 64% benchmarks |
+| **Microsoft AutoGen 2026** | DAG dinámico, self-healing, adaptive planning |
+| **Token Budget Contracts (PyPI)** | Confidence-gated spending |
+| **Prompt Caching (Anthropic/OpenAI)** | 50-90% ahorro prefix caching |
+
+### ADR-0001: docs/adr/adr0001-mejoras.md
+Documento de Arquitectura con:
+- P0: Unificar schedulers + fusionar health/telemetry ✅
+- P1: Coverage 32% ✅
+- P2: DebateOrchestrator + Confidence Early Stopping ✅ (implementado ahora)
+- P2+: Set-aware rendering, Debate paralelo 🔲 (propuesto)
+
+### DebateOrchestrator (NUEVO) — `harness/orchestrator/debate_orchestrator.py`
+- 3 estrategias: CONSENSUS (votación), CRITIQUE (crítica entre pares), DELIBERATION (debate secuencial)
+- Integrado con TaskPlanner (template "debate") y TaskOrchestrator
+- Trazabilidad completa via AgentBus (cada ronda se registra como mensaje)
+- 48 tests
+
+### Confidence Early Stopping (NUEVO) — `harness/orchestrator/confidence_scorer.py`
+- ConfidenceScorer con 4 señales heurísticas: length, hedging, self-correction, speed
+- SubTask.confidence_impact: "critical", "neutral", "validation"
+- Early stop cuando confianza > 0.90 y el siguiente nivel es solo validación
+- Integrado en TaskOrchestrator.process_completion()
+- 34 tests
+
+### Tests
+- 287 → **369** (+82 tests, +29%)
+- 0 fallos
+
+### Coverage
+- 32.44% → **34.76%** (threshold 30% ✅)
+
+---
+
 ## [2026-07-05] 🐛 Bugfixes + 73 nuevos tests (182 total, 0 fallos)
 
 ### Bug corregido
