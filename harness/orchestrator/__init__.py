@@ -16,6 +16,12 @@ from harness.orchestrator.agent_bus import AgentBus, AgentBusError, InvalidMessa
 from harness.orchestrator.sandbox_loop import SandboxLoop
 from harness.orchestrator.agent_dispatcher import AgentDispatcher
 from harness.orchestrator.scheduler import Scheduler, ScheduledJob
+from harness.orchestrator.debate_orchestrator import (
+    DebateOrchestrator,
+    DebateResult,
+    DebateRound,
+    DebateStrategy,
+)
 
 __all__ = [
     "TaskManager",
@@ -27,4 +33,8 @@ __all__ = [
     "AgentDispatcher",
     "Scheduler",
     "ScheduledJob",
+    "DebateOrchestrator",
+    "DebateResult",
+    "DebateRound",
+    "DebateStrategy",
 ]

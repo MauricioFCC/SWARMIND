@@ -41,8 +41,14 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from harness.orchestrator.agent_bus import AgentBus
+from harness.orchestrator.debate_orchestrator import (
+    DebateOrchestrator,
+    DebateResult,
+    DebateStrategy,
+)
 from harness.orchestrator.task_planner import TaskPlan, TaskPlanner
 from harness.orchestrator.session_context import SessionContext, SessionState
+from harness.orchestrator.confidence_scorer import ConfidenceScorer, ConfidenceScore
 
 logger = logging.getLogger(__name__)
 
@@ -293,6 +299,9 @@ class OrchestratorResult:
     original_message: str
     is_new_plan: bool            # Whether a new plan was created
     is_complete: bool            # Whether the entire plan is done
+    is_debate: bool = False      # Whether this task uses debate strategy
+    debate_agents: List[str] = field(default_factory=list)  # Agents in the debate
+    debate_strategy: str = ""    # The debate strategy to use
 
     def to_dict(self) -> Dict:
         return {
@@ -306,6 +315,9 @@ class OrchestratorResult:
             "original_message": self.original_message,
             "is_new_plan": self.is_new_plan,
             "is_complete": self.is_complete,
+            "is_debate": self.is_debate,
+            "debate_agents": list(self.debate_agents),
+            "debate_strategy": self.debate_strategy,
         }
 
 
@@ -354,6 +366,9 @@ class TaskOrchestrator:
         self._level_timeout_sec = level_timeout_sec
         self._stall_timeout_sec = stall_timeout_sec
         self._verbose = verbose
+
+        # Confidence-gated early stopping
+        self._confidence_scorer = ConfidenceScorer()
 
         # Self-healing contexts por sesión
         self._healing_contexts: Dict[str, SelfHealingContext] = {}
@@ -521,6 +536,11 @@ class TaskOrchestrator:
                 agent_cb = healing.get_circuit_breaker(subtask.agent)
                 agent_cb.record_success()
 
+            # Confidence-gated early stopping: evaluate and skip validation if confident
+            self._evaluate_confidence_and_check_early_stop(
+                session, subtask_id, result,
+            )
+
         # If complete, celebrate
         if session.plan.is_complete():
             StructuredLogRecord.info(
@@ -599,6 +619,199 @@ class TaskOrchestrator:
         """Obtiene el estado de self-healing de una sesión."""
         healing = self._healing_contexts.get(session_id)
         return healing.to_dict() if healing else None
+
+    def run_debate(
+        self,
+        session_id: str,
+        task: str,
+        agents: Optional[List[str]] = None,
+        strategy: str = "consensus",
+        dispatch_fn: Optional[callable] = None,
+    ) -> "DebateResult":
+        """
+        Run a multi-agent debate for a session that uses the debate template.
+
+        Args:
+            session_id: The session ID.
+            task: The original task to debate.
+            agents: List of agent names. If None, extracted from the plan.
+            strategy: Debate strategy name ('consensus', 'critique', 'deliberation').
+            dispatch_fn: Optional callable for obtaining agent responses.
+
+        Returns:
+            A DebateResult with the debate outcome.
+        """
+        session = self._session_ctx.get_session(session_id)
+        if not session:
+            raise ValueError(f"Session {session_id} not found.")
+
+        # Resolve agents from plan if not provided
+        if agents is None:
+            agents = sorted({
+                st.agent for st in session.plan.subtasks
+                if st.agent != "coordinator"
+            })
+
+        # Resolve strategy
+        strategy_map = {
+            "consensus": DebateStrategy.CONSENSUS,
+            "critique": DebateStrategy.CRITIQUE,
+            "deliberation": DebateStrategy.DELIBERATION,
+        }
+        debate_strategy = strategy_map.get(strategy, DebateStrategy.CONSENSUS)
+
+        # Run the debate
+        orch = DebateOrchestrator(vector_store=self._store)
+        result = orch.debate(
+            task=task,
+            agents=agents,
+            strategy=debate_strategy,
+            dispatch_fn=dispatch_fn,
+        )
+
+        StructuredLogRecord.info(
+            "debate_completed",
+            message=(
+                f"Debate completado para sesión {session_id}: "
+                f"confianza={result.confidence:.2f}, "
+                f"acuerdo={result.agent_agreement:.2f}"
+            ),
+            session_id=session_id,
+            strategy=strategy,
+            agents=agents,
+            confidence=round(result.confidence, 4),
+            agreement=round(result.agent_agreement, 4),
+            num_rounds=len(result.rounds),
+        )
+
+        return result
+
+    # ------------------------------------------------------------------
+    # Confidence-gated early stopping
+    # ------------------------------------------------------------------
+
+    def _evaluate_confidence_and_check_early_stop(
+        self,
+        session: SessionState,
+        subtask_id: str,
+        result: str,
+    ) -> Optional[ConfidenceScore]:
+        """
+        Evaluate confidence of a completed subtask and decide on early stopping.
+
+        If the result has HIGH confidence AND all completed subtasks at the
+        current execution level also have HIGH confidence, AND the next level
+        is a validation/review level, skip that level entirely.
+
+        Args:
+            session: The current session state.
+            subtask_id: The completed subtask ID.
+            result: The subtask result text.
+
+        Returns:
+            ConfidenceScore if evaluated, None if evaluation was skipped.
+        """
+        # Find the subtask
+        subtask = next(
+            (s for s in session.plan.subtasks if s.id == subtask_id),
+            None,
+        )
+        if not subtask:
+            return None
+
+        # Score this completion
+        confidence = self._confidence_scorer.score_completion(
+            task=subtask.description,
+            result=result,
+            agent=subtask.agent,
+        )
+
+        # Log the confidence score
+        StructuredLogRecord.info(
+            "confidence_score",
+            message=f"Confianza para {subtask_id}: {confidence.score:.2f} ({confidence.level})",
+            session_id=session.session_id,
+            subtask_id=subtask_id,
+            agent=subtask.agent,
+            confidence_score=round(confidence.score, 4),
+            confidence_level=confidence.level,
+            confidence_signals=confidence.signals,
+            should_stop=confidence.should_stop,
+        )
+
+        # Only proceed with early-stop check if confidence is HIGH
+        if not confidence.should_stop:
+            return confidence
+
+        # Check if ALL completed subtasks in the current level have HIGH confidence
+        levels = session.plan.get_levels()
+        current_level_num = session.plan.get_current_level_num()
+
+        if current_level_num >= len(levels):
+            return confidence
+
+        current_level = levels[current_level_num]
+        completed_ids = {s.id for s in session.plan.subtasks if s.completed}
+
+        # All subtasks in this level must be completed
+        level_subtask_ids = {s.id for s in current_level}
+        if not level_subtask_ids.issubset(completed_ids):
+            # Not all done yet — can't early-stop a level that's still running
+            return confidence
+
+        # Check if next level exists and is a validation level
+        next_level_num = current_level_num + 1
+        if next_level_num >= len(levels):
+            return confidence
+
+        next_level = levels[next_level_num]
+        next_confidence_impacts = {s.confidence_impact for s in next_level}
+
+        # Only skip if ALL subtasks in the next level are "validation"
+        # (i.e., review, verification, checking — not core work)
+        if next_confidence_impacts == {"validation"} or (
+            next_confidence_impacts == {"validation", "neutral"}
+        ):
+            # Skip the validation level — mark as completed with a note
+            next_subtask_ids = []
+            for st in next_level:
+                next_subtask_ids.append(st.id)
+                self._session_ctx.mark_subtask_done(
+                    session,
+                    st.id,
+                    result=(
+                        f"[SKIPPED by confidence-gated early stopping] "
+                        f"Confidence score: {confidence.score:.2f} ({confidence.level}). "
+                        f"Validation not required."
+                    ),
+                )
+                StructuredLogRecord.info(
+                    "early_stop_skip",
+                    message=(
+                        f"Subtask {st.id} omitida por early stopping "
+                        f"(confianza={confidence.score:.2f})"
+                    ),
+                    session_id=session.session_id,
+                    subtask_id=st.id,
+                    agent=st.agent,
+                    description=st.description,
+                    confidence_score=round(confidence.score, 4),
+                )
+
+            StructuredLogRecord.info(
+                "early_stop_triggered",
+                message=(
+                    f"Nivel de validación {next_level_num} omitido "
+                    f"por alta confianza ({confidence.score:.2f})"
+                ),
+                session_id=session.session_id,
+                current_level=current_level_num,
+                skipped_level=next_level_num,
+                skipped_subtasks=next_subtask_ids,
+                confidence_score=round(confidence.score, 4),
+            )
+
+        return confidence
 
     # ------------------------------------------------------------------
     # Internal
@@ -726,6 +939,19 @@ class TaskOrchestrator:
 
         status = self._session_ctx.get_status(session)
 
+        # --- Detect debate template ---
+        is_debate = plan.template_name == "debate"
+        debate_agents = []
+        debate_strategy = ""
+        if is_debate:
+            # Extract unique non-coordinator agents from the plan for the debate
+            debate_agents = sorted({
+                st.agent for st in plan.subtasks
+                if st.agent != "coordinator" and not st.completed
+            })
+            # Default to CONSENSUS strategy; can be overridden via metadata
+            debate_strategy = "consensus"
+
         return OrchestratorResult(
             session_id=session.session_id,
             target_agent=target_agent,
@@ -737,6 +963,9 @@ class TaskOrchestrator:
             original_message=message,
             is_new_plan=is_new_plan,
             is_complete=plan.is_complete(),
+            is_debate=is_debate,
+            debate_agents=debate_agents,
+            debate_strategy=debate_strategy,
         )
 
     def _resolve_target_agent(self, next_level: List) -> str:
