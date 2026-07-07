@@ -4,6 +4,45 @@
 
 ---
 
+## [2026-07-07] 🔗 Hermes_Memory_Proyects como nodo central + .env loader + sync bidireccional
+
+### Problema detectado
+- `HERMES_ROOT` no estaba configurado en el entorno (faltaba `.env`)
+- Hermes_Memory_Proyects no recibía deploy de `.opencode` ni `harness/`
+- Dos bridges separados con el mismo nombre (`HermesBridge` en dos archivos)
+- La cognición no se sincronizaba con Hermes
+
+### Soluciones implementadas
+
+#### 1. `.env` creado con HERMES_ROOT
+- `.env` generado desde `.env.example` con `HERMES_ROOT=C:\Users\USUARIO\Documents\Hermes_Memory_Proyects`
+- `hermes_bridge.py` ahora carga automáticamente `.env` al importarse (busca en 3 ubicaciones)
+- No sobreescribe variables de entorno ya existentes
+
+#### 2. Hermes_Memory_Proyects como proyecto destino en deploy_all.py
+- Nueva entrada con all 10 skills desplegadas
+- `_ensure_dir()` agregado para crear directorios faltantes antes de copiar
+- `dst.parent.mkdir(parents=True, exist_ok=True)` para archivos en subdirectorios nuevos
+
+#### 3. Sincronización bidireccional verificada
+- `sync_hermes --to-hermes` → Exporta entries de cognition store → `syntheses/` y `knowledge/`
+- `sync_hermes --from-hermes` → Importa archivos .md → cognition store
+- Bridge operacional: 1 entry exportado exitosamente en prueba
+
+### Deploy final
+| Proyecto | .opencode | harness | skills |
+|----------|-----------|---------|--------|
+| core-quant-engine | 53 | 672 | 7 |
+| Historia Clinica | 53 | 3137 | 5 |
+| Onyx-Quan-AIBot | 53 | 302 | 7 |
+| PDV Basic | 57 | 682 | 4 |
+| **Hermes_Memory_Proyects** | **50** | **299** | **10** |
+
+### Tests
+- 369/369 pasan
+
+---
+
 ## [2026-07-07] 📚 Nuevas Skills: math-doc, legal-doc, science-doc + deploy
 
 ### Nuevas Skills de Procesamiento de Documentos

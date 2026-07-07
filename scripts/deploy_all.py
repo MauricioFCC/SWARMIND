@@ -74,6 +74,14 @@ PROJECTS = {
         "add_skills": ["pos-retail", "legal-doc"],
         "description": "Sistema de punto de venta básico",
     },
+    "Hermes_Memory_Proyects": {
+        "path": r"C:\Users\USUARIO\Documents\Hermes_Memory_Proyects",
+        "type": "general",
+        "keep_skills": ["evolve", "hedgefund"],
+        "add_skills": ["math-doc", "legal-doc", "science-doc", "healthtech", "pos-retail",
+                       "quant-trading", "alpha-research", "risk-execution"],
+        "description": "Repositorio central de memoria y conocimiento multi-proyecto",
+    },
 }
 
 
@@ -431,6 +439,8 @@ def deploy_project(
             if src.exists():
                 backup_files[fname] = src.read_text(encoding="utf-8")
 
+        # Ensure target exists
+        _ensure_dir(dst_opencode)
         # Clean and recopy .opencode (preserving config/ and memory/)
         preserve = {"config", "memory", "db"}
         for item in dst_opencode.iterdir() if dst_opencode.exists() else []:
@@ -450,6 +460,7 @@ def deploy_project(
                     shutil.rmtree(str(dst))
                 shutil.copytree(str(item), str(dst))
             else:
+                dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(str(item), str(dst))
 
         # Restore project-specific configs
@@ -472,6 +483,7 @@ def deploy_project(
     dst_harness = project_path / "harness"
 
     if not dry_run:
+        _ensure_dir(dst_harness)
         # Preserve db/ directory
         preserve_harness = {"db"}
         for item in dst_harness.iterdir() if dst_harness.exists() else []:
@@ -490,6 +502,7 @@ def deploy_project(
                     shutil.rmtree(str(dst))
                 shutil.copytree(str(item), str(dst))
             else:
+                dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(str(item), str(dst))
 
         stats["harness_files"] = sum(

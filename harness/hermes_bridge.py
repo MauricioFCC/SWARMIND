@@ -40,6 +40,49 @@ from harness.memory_rag.lance_vector_store import LanceVectorStore
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# .env loader (antes de leer environment variables)
+# ---------------------------------------------------------------------------
+
+def _load_env_file(env_path: Optional[str] = None) -> None:
+    """
+    Carga variables de entorno desde un archivo .env si existe.
+    Busca en: ruta especifica, raiz del proyecto, o directorio actual.
+    """
+    if env_path is None:
+        candidates = [
+            Path(__file__).resolve().parent.parent / ".env",       # harness/../.env
+            Path(__file__).resolve().parent.parent.parent / ".env", # raiz del proyecto
+            Path.cwd() / ".env",
+        ]
+        for c in candidates:
+            if c.exists():
+                env_path = str(c)
+                break
+
+    if not env_path or not Path(env_path).exists():
+        return
+
+    try:
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key = key.strip()
+                value = value.strip().strip("\"'")
+                if key and not os.environ.get(key):  # No sobreescribir vars existentes
+                    os.environ[key] = value
+        logger.debug("Loaded environment from %s", env_path)
+    except Exception as exc:
+        logger.debug("Could not load .env file %s: %s", env_path, exc)
+
+
+# Cargar .env automaticamente al importar el modulo
+_load_env_file()
+
+
+# ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
 
