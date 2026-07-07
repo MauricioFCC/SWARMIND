@@ -470,6 +470,155 @@ def _get_files_to_watch(harness_root: Path) -> dict:
     return snapshots
 
 
+# ── Watch-mode handler ──────────────────────────────────────────────
+
+
+def _handle_watch_mode(harness_root: Path) -> None:
+    """Handle --watch flag - monitors harness/ and .opencode/ for changes."""
+    import time as _time
+    from datetime import datetime as _datetime
+    from harness.cli_common import get_project_root
+
+    logger.info("[Harness] Watch mode activado - monitoreando:")
+    logger.info("  - %s", harness_root)
+    logger.info("  - %s", harness_root.parent / ".opencode")
+    logger.info("  Excluyendo: harness/db/, __pycache__/, .git/")
+    logger.info("")
+
+    eoi_script = harness_root / "scripts" / "end_of_iteration.py"
+    if not eoi_script.exists():
+        _safe_print(f"    {_err('[ERROR]')} No se encontro: %s", eoi_script)
+        return
+
+    last_snapshot = _get_files_to_watch(harness_root)
+    idle_since: Optional[float] = None
+    debounce_seconds = 3.0
+
+    _safe_print(f"  {_cyan('[WATCH]')} Waiting for changes...")
+    _safe_print(f"  Press Ctrl+C to stop.")
+    _safe_print()
+
+    try:
+        while True:
+            _time.sleep(2)
+            now = _time.time()
+
+            new_snapshot = _get_files_to_watch(harness_root)
+            changed_files = []
+
+            for fpath, mtime in new_snapshot.items():
+                old_mtime = last_snapshot.get(fpath)
+                if old_mtime is None or mtime > old_mtime:
+                    changed_files.append(fpath)
+
+            for fpath in last_snapshot:
+                if fpath not in new_snapshot:
+                    changed_files.append(fpath)
+
+            if not changed_files:
+                idle_since = None
+                continue
+
+            if idle_since is None:
+                idle_since = now
+                continue
+
+            if now - idle_since < debounce_seconds:
+                continue
+
+            timestamp = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            for f in changed_files[:5]:
+                rel = os.path.relpath(f, str(get_project_root()))
+                _safe_print(f"  [{timestamp}] change detected: {rel}")
+            if len(changed_files) > 5:
+                _safe_print(f"  [{timestamp}] ... and {len(changed_files) - 5} more")
+
+            _safe_print(f"  [{timestamp}] Running check...")
+            try:
+                import subprocess as _subprocess
+                result = _subprocess.run(
+                    [sys.executable, str(eoi_script), "--watch"],
+                    capture_output=True, text=True, timeout=30,
+                    cwd=str(harness_root.parent),
+                )
+                for line in result.stdout.splitlines():
+                    _safe_print(f"  {line}")
+                if result.stderr.strip():
+                    for line in result.stderr.splitlines():
+                        _safe_print(f"  {_warn('[STDERR]')} {line}")
+            except _subprocess.TimeoutExpired:
+                _safe_print(f"  {_warn('[WARN]')} Pipeline timeout (>30s)")
+            except Exception as exc:
+                _safe_print(f"  {_err('[ERROR]')} Pipeline failed: {exc}")
+
+            last_snapshot = new_snapshot.copy()
+            idle_since = None
+            _safe_print(f"  {_cyan('[WATCH]')} Waiting for changes...")
+            logger.info("")
+
+    except KeyboardInterrupt:
+        _safe_print(f"\n  {_cyan('[WATCH]')} Watch mode detenido.")
+
+
+# ── Hermes commands ────────────────────────────────────────────────
+
+
+def _handle_hermes(cmd: str) -> None:
+    """Handle !hermes sync and !hermes stats."""
+    from harness.hermes_bridge import HermesBridge
+
+    sub = cmd[len("!hermes"):].strip()
+    if sub == "sync":
+        bridge = HermesBridge()
+        result = bridge.sync_all()
+        logger.info("[Hermes] Sync complete: %s", result)
+    elif sub == "stats":
+        bridge = HermesBridge()
+        stats = bridge.get_stats()
+        logger.info("[Hermes] Bridge stats: %s", stats)
+    elif sub in ("", "help"):
+        logger.info("[Hermes] Commands:")
+        logger.info("  !hermes sync    - Bidirectional sync AGENTIC <-> Hermes_Memory_Proyects")
+        logger.info("  !hermes stats   - Show bridge statistics")
+    else:
+        logger.info("[Hermes] Unknown subcommand: '%s'. Try '!hermes sync' or '!hermes stats'.", sub)
+
+
+# ── Guardrails helper ──────────────────────────────────────────────
+
+
+def _run_guardrails(task: str, target_agent: str, ctx: Any,
+                     routing_source: str,
+                     run_full_pipeline: Any = None) -> None:
+    """
+    Ejecuta guardrails de seguridad.
+    
+    Si run_full_pipeline no está disponible, emite WARNING pero continúa
+    (comportamiento degradado pero no bloqueante para desarrollo local).
+    """
+    if run_full_pipeline is None:
+        logger.info("[Harness] Guardrails no disponible (opencode.core.guardrails no importado)")
+        logger.info("[Harness] El sistema opera SIN proteccion de guardrails.")
+        return
+
+    pre_context = {
+        "agent_role": target_agent,
+        "task_description": task,
+        "rag_chunks": len(ctx.relevant_docs) if hasattr(ctx, 'relevant_docs') else 0,
+        "token_budget": ctx.metadata.get("total_tokens_used", 0) if hasattr(ctx, 'metadata') else 0,
+        "routing_source": routing_source,
+    }
+    result = run_full_pipeline(task, "", pre_context)
+    if not result.get("allowed", True):
+        blocked_at = result.get("blocked_at", "unknown")
+        summary = result.get("summary", {})
+        logger.info("[Harness] Guardrails BLOCKED en fase %s: %s",
+                     blocked_at, summary.get("failed_rules", []))
+        sys.exit(1)
+    logger.info("[Harness] Guardrails OK (%s/%s checks pasados)",
+                 result['summary']['passed'], result['summary']['total_checks'])
+
+
 # ── ANSI helpers ────────────────────────────────────────────────────
 
 _RED = "\033[91m"; _GREEN = "\033[92m"; _YELLOW = "\033[93m"

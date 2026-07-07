@@ -10,6 +10,11 @@ Integra con TaskOrchestrator para detectar:
   - Repeater: misma subtask repetida sin cambio de estado
   - Wanderer: agente activo pero sin progreso en el plan
   - Looper: alternancia entre 2+ subtasks sin avance real
+
+Design Principles:
+  - DRY: CognitiveState delega datos de subtasks/errors/warnings a SessionTelemetry
+  - KISS: CognitiveState es una thin facade sobre SessionTelemetry
+  - Single Responsibility: health.py = health CHECKING, telemetry.py = data RECORDING
 """
 
 from __future__ import annotations
@@ -67,7 +72,6 @@ class HealthStatus:
 # Cognitive state: tracking para detectar fallos de progreso
 # ---------------------------------------------------------------------------
 
-@dataclass
 class CognitiveState:
     """
     Estado cognitivo de una sesión activa.
@@ -76,26 +80,104 @@ class CognitiveState:
       - Repeater: misma subtask una y otra vez
       - Wanderer: sin progreso en el plan general
       - Looper: alternando entre mismas subtasks
+
+    DRY: Los datos de subtasks, errores y warnings se delegan a
+    SessionTelemetry cuando una referencia está disponible. En modo
+    standalone (sin telemetry) se usa almacenamiento local.
     """
-    session_id: str
-    subtask_history: List[Dict] = field(default_factory=list)
-    last_progress_time: float = field(default_factory=time.time)
-    level_start_time: float = field(default_factory=time.time)
-    current_level_idx: int = 0
-    errors: int = 0
-    warnings: int = 0
+
+    def __init__(
+        self,
+        session_id: str,
+        telemetry: Optional["SessionTelemetry"] = None,
+    ) -> None:
+        self.session_id = session_id
+        self._telemetry = telemetry
+
+        # Almacenamiento local (solo usado cuando NO hay telemetry)
+        self._history: List[Dict] = []
+        self._err_count: int = 0
+        self._warn_count: int = 0
+
+        # Campos de progreso (exclusivos de CognitiveState)
+        self.last_progress_time: float = time.time()
+        self.level_start_time: float = time.time()
+        self.current_level_idx: int = 0
+
+    # ------------------------------------------------------------------
+    # Properties: delegan a telemetry cuando está disponible
+    # ------------------------------------------------------------------
+
+    @property
+    def subtask_history(self) -> List[Dict]:
+        """Historial plano de subtasks (últimas 20)."""
+        if self._telemetry is not None:
+            return self._telemetry.get_subtask_history()[-20:]
+        return self._history[-20:]
+
+    @subtask_history.setter
+    def subtask_history(self, value: List[Dict]) -> None:
+        """Setter para compatibilidad con asignaciones directas."""
+        if self._telemetry is None:
+            self._history = value
+
+    @property
+    def errors(self) -> int:
+        """Total de errores registrados."""
+        if self._telemetry is not None:
+            return self._telemetry.get_error_count()
+        return self._err_count
+
+    @errors.setter
+    def errors(self, value: int) -> None:
+        """Setter para compatibilidad con asignaciones directas."""
+        if self._telemetry is None:
+            self._err_count = value
+
+    @property
+    def warnings(self) -> int:
+        """Total de warnings registrados."""
+        if self._telemetry is not None:
+            return self._telemetry.get_warning_count()
+        return self._warn_count
+
+    @warnings.setter
+    def warnings(self, value: int) -> None:
+        """Setter para compatibilidad con asignaciones directas."""
+        if self._telemetry is None:
+            self._warn_count = value
+
+    # ------------------------------------------------------------------
+    # Recording: delega a telemetry cuando está disponible
+    # ------------------------------------------------------------------
 
     def record_subtask(self, subtask_id: str, agent: str, description: str) -> None:
-        """Registra la ejecución de una subtask para análisis."""
-        self.subtask_history.append({
+        """Registra la ejecución de una subtask para análisis.
+
+        Cuando CognitiveState está vinculado a SessionTelemetry, delega
+        el almacenamiento para evitar duplicación de datos.
+        """
+        entry = {
             "subtask_id": subtask_id,
             "agent": agent,
             "description": description,
             "timestamp": time.time(),
-        })
-        # Keep last 20 for analysis
-        if len(self.subtask_history) > 20:
-            self.subtask_history = self.subtask_history[-20:]
+        }
+        if self._telemetry is not None:
+            from harness.orchestrator.telemetry import SubtaskRecord  # lazy import
+            record = SubtaskRecord(
+                subtask_id=subtask_id,
+                agent=agent,
+                description=description,
+                start_time=time.time(),
+                status="success",
+            )
+            self._telemetry.record_subtask(self.current_level_idx, record)
+        else:
+            self._history.append(entry)
+            # Keep last 20 for analysis
+            if len(self._history) > 20:
+                self._history = self._history[-20:]
 
     def record_progress(self) -> None:
         """Registra que hubo progreso (avance a nuevo nivel)."""
@@ -103,8 +185,23 @@ class CognitiveState:
         self.level_start_time = time.time()
 
     def record_error(self) -> None:
-        """Registra un error."""
-        self.errors += 1
+        """Registra un error (delega a telemetry si está disponible)."""
+        if self._telemetry is not None:
+            self._telemetry.record_error()
+        else:
+            self._err_count += 1
+
+    def record_warning(self) -> None:
+        """Registra un warning (delega a telemetry si está disponible)."""
+        if self._telemetry is not None:
+            self._telemetry.record_warning()
+        else:
+            self._warn_count += 1
+
+    # ------------------------------------------------------------------
+    # Cognitive detectors (leen de subtask_history, que resuelve
+    # desde telemetry o almacenamiento local)
+    # ------------------------------------------------------------------
 
     def check_repeater(self) -> Optional[str]:
         """Detecta si la misma subtask se repite sin cambio."""
@@ -186,10 +283,18 @@ class AgentHealthChecker:
         status = checker.check_all()
         if not status["cognitive"].healthy:
             # tomar acción correctiva
+
+    Opcionalmente acepta un TelemetryTracker para vincular CognitiveState
+    con SessionTelemetry, eliminando la duplicación de datos.
     """
 
-    def __init__(self, vector_store: Optional[Any] = None) -> None:
+    def __init__(
+        self,
+        vector_store: Optional[Any] = None,
+        telemetry_tracker: Optional[Any] = None,
+    ) -> None:
         self._store = vector_store
+        self._telemetry_tracker = telemetry_tracker
         self._cognitive_states: Dict[str, CognitiveState] = {}
 
     # ------------------------------------------------------------------
@@ -378,16 +483,29 @@ class AgentHealthChecker:
     # ------------------------------------------------------------------
 
     def get_or_create_cognitive_state(self, session_id: str) -> CognitiveState:
-        """Obtiene o crea el estado cognitivo para una sesión."""
+        """Obtiene o crea el estado cognitivo para una sesión.
+
+        Si hay un TelemetryTracker configurado, vincula el CognitiveState
+        con la SessionTelemetry correspondiente para evitar duplicación.
+        """
         if session_id not in self._cognitive_states:
-            self._cognitive_states[session_id] = CognitiveState(session_id=session_id)
+            telemetry = None
+            if self._telemetry_tracker is not None:
+                telemetry = self._telemetry_tracker.get_session(session_id)
+            self._cognitive_states[session_id] = CognitiveState(
+                session_id=session_id,
+                telemetry=telemetry,
+            )
         return self._cognitive_states[session_id]
 
     def record_subtask(
         self, session_id: str, subtask_id: str,
         agent: str, description: str,
     ) -> None:
-        """Registra una subtask ejecutada y verifica salud cognitiva."""
+        """Registra una subtask ejecutada y verifica salud cognitiva.
+
+        Si hay un TelemetryTracker, también actualiza la telemetría.
+        """
         state = self.get_or_create_cognitive_state(session_id)
         state.record_subtask(subtask_id, agent, description)
 

@@ -9,6 +9,9 @@ Registra métricas de ejecución por sesión:
   - Latencia de cada paso
 
 Exporta a JSON para post-procesamiento y dashboards.
+
+Design: Single Responsibility — telemetry.py = data RECORDING.
+CognitiveState en health.py delega aquí para evitar duplicación de datos.
 """
 
 from __future__ import annotations
@@ -94,7 +97,11 @@ class LevelRecord:
 
 @dataclass
 class SessionTelemetry:
-    """Telemetría completa de una sesión."""
+    """Telemetría completa de una sesión.
+
+    Almacena TODOS los datos de ejecución: subtasks, errores, warnings.
+    CognitiveState (health.py) delega aquí para evitar duplicación.
+    """
     session_id: str
     task: str
     project: str = ""
@@ -147,6 +154,47 @@ class SessionTelemetry:
             self.agent_stats[agent]["ok"] += 1
         elif record.status == "failed":
             self.agent_stats[agent]["error"] += 1
+
+    # ------------------------------------------------------------------
+    # Convenience methods for CognitiveState delegation (DRY)
+    # ------------------------------------------------------------------
+
+    def get_subtask_history(self) -> List[Dict]:
+        """Flat list of all subtask entries, compatible with CognitiveState format.
+
+        Returns:
+            List of dicts with keys: subtask_id, agent, description, timestamp.
+        """
+        history: List[Dict] = []
+        for level in self.levels:
+            for st in level.subtasks:
+                history.append({
+                    "subtask_id": st.subtask_id,
+                    "agent": st.agent,
+                    "description": st.description,
+                    "timestamp": st.start_time or time.time(),
+                })
+        return history
+
+    def record_error(self) -> None:
+        """Incrementa el contador de errores (delegado desde CognitiveState)."""
+        self.total_errors += 1
+
+    def record_warning(self) -> None:
+        """Incrementa el contador de warnings (delegado desde CognitiveState)."""
+        self.total_warnings += 1
+
+    def get_error_count(self) -> int:
+        """Retorna el total de errores."""
+        return self.total_errors
+
+    def get_warning_count(self) -> int:
+        """Retorna el total de warnings."""
+        return self.total_warnings
+
+    # ------------------------------------------------------------------
+    # Finalization & export
+    # ------------------------------------------------------------------
 
     def finalize(self, status: str = "completed") -> None:
         self.end_time = time.time()

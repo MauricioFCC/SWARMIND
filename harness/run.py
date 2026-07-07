@@ -96,9 +96,8 @@ from harness.run_commands import (
     _handle_evolve_mutate, _handle_schedule_add, _handle_schedule_list,
     _handle_rag_ingest, _handle_rag_stats,
     _apply_model_routing, _check_hitl, _get_files_to_watch,
+    _handle_watch_mode, _handle_hermes, _run_guardrails,
 )
-from harness.hermes_bridge import HermesBridge
-
 
 def _show_usage() -> None:
     """Show usage information."""
@@ -205,149 +204,7 @@ def _parse_args() -> Dict[str, Any]:
     return parsed
 
 
-def _handle_watch_mode() -> None:
-    """Handle --watch flag - monitors harness/ and .opencode/ for changes."""
-    import time as _time
-    from datetime import datetime as _datetime
-
-    logger.info("[Harness] Watch mode activado - monitoreando:")
-    logger.info("  - %s", HARNESS_ROOT)
-    logger.info("  - %s", HARNESS_ROOT.parent / ".opencode")
-    logger.info("  Excluyendo: harness/db/, __pycache__/, .git/")
-    logger.info("")
-
-    eoi_script = HARNESS_ROOT / "scripts" / "end_of_iteration.py"
-    if not eoi_script.exists():
-        logger.info("[Harness] %s No se encontro: %s", _err('[ERROR]'), eoi_script)
-        return
-
-    last_snapshot = _get_files_to_watch(HARNESS_ROOT)
-    idle_since: Optional[float] = None
-    debounce_seconds = 3.0
-
-    _safe_print(f"  {_cyan('[WATCH]')} Waiting for changes...")
-    _safe_print(f"  Press Ctrl+C to stop.")
-    _safe_print()
-
-    try:
-        while True:
-            _time.sleep(2)
-            now = _time.time()
-
-            new_snapshot = _get_files_to_watch(HARNESS_ROOT)
-            changed_files = []
-
-            for fpath, mtime in new_snapshot.items():
-                old_mtime = last_snapshot.get(fpath)
-                if old_mtime is None or mtime > old_mtime:
-                    changed_files.append(fpath)
-
-            for fpath in last_snapshot:
-                if fpath not in new_snapshot:
-                    changed_files.append(fpath)
-
-            if not changed_files:
-                idle_since = None
-                continue
-
-            if idle_since is None:
-                idle_since = now
-                continue
-
-            if now - idle_since < debounce_seconds:
-                continue
-
-            timestamp = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            for f in changed_files[:5]:
-                rel = os.path.relpath(f, str(get_project_root()))
-                _safe_print(f"  [{timestamp}] change detected: {rel}")
-            if len(changed_files) > 5:
-                _safe_print(f"  [{timestamp}] ... and {len(changed_files) - 5} more")
-
-            _safe_print(f"  [{timestamp}] Running check...")
-            try:
-                import subprocess as _subprocess
-                result = _subprocess.run(
-                    [sys.executable, str(eoi_script), "--watch"],
-                    capture_output=True, text=True, timeout=30,
-                    cwd=str(get_project_root()),
-                )
-                for line in result.stdout.splitlines():
-                    _safe_print(f"  {line}")
-                if result.stderr.strip():
-                    for line in result.stderr.splitlines():
-                        _safe_print(f"  {_warn('[STDERR]')} {line}")
-            except _subprocess.TimeoutExpired:
-                _safe_print(f"  {_warn('[WARN]')} Pipeline timeout (>30s)")
-            except Exception as exc:
-                _safe_print(f"  {_err('[ERROR]')} Pipeline failed: {exc}")
-
-            last_snapshot = new_snapshot.copy()
-            idle_since = None
-            _safe_print(f"  {_cyan('[WATCH]')} Waiting for changes...")
-            logger.info("")
-
-    except KeyboardInterrupt:
-        _safe_print(f"\n  {_cyan('[WATCH]')} Watch mode detenido.")
-
-
-# ---------------------------------------------------------------------------
-# Hermes commands
-# ---------------------------------------------------------------------------
-
-
-def _handle_hermes(cmd: str) -> None:
-    """Handle !hermes sync and !hermes stats."""
-    sub = cmd[len("!hermes"):].strip()
-    if sub == "sync":
-        bridge = HermesBridge()
-        result = bridge.sync_all()
-        logger.info("[Hermes] Sync complete: %s", result)
-    elif sub == "stats":
-        bridge = HermesBridge()
-        stats = bridge.get_stats()
-        logger.info("[Hermes] Bridge stats: %s", stats)
-    elif sub in ("", "help"):
-        logger.info("[Hermes] Commands:")
-        logger.info("  !hermes sync    - Bidirectional sync AGENTIC <-> Hermes_Memory_Proyects")
-        logger.info("  !hermes stats   - Show bridge statistics")
-    else:
-        logger.info("[Hermes] Unknown subcommand: '%s'. Try '!hermes sync' or '!hermes stats'.", sub)
-
-
-# ---------------------------------------------------------------------------
-# Guardrails helper (P7: eliminado HAS_GUARDRAILS bypass silencioso)
-# ---------------------------------------------------------------------------
-
-
-def _run_guardrails(task: str, target_agent: str, ctx: Any, routing_source: str) -> None:
-    """
-    Ejecuta guardrails de seguridad.
-    
-    Si run_full_pipeline no está disponible, emite WARNING pero continúa
-    (comportamiento degradado pero no bloqueante para desarrollo local).
-    """
-    if run_full_pipeline is None:
-        logger.info("[Harness] Guardrails no disponible (opencode.core.guardrails no importado)")
-        logger.info("[Harness] El sistema opera SIN proteccion de guardrails.")
-        return
-
-    pre_context = {
-        "agent_role": target_agent,
-        "task_description": task,
-        "rag_chunks": len(ctx.relevant_docs) if hasattr(ctx, 'relevant_docs') else 0,
-        "token_budget": ctx.metadata.get("total_tokens_used", 0) if hasattr(ctx, 'metadata') else 0,
-        "routing_source": routing_source,
-    }
-    result = run_full_pipeline(task, "", pre_context)
-    if not result.get("allowed", True):
-        blocked_at = result.get("blocked_at", "unknown")
-        summary = result.get("summary", {})
-        logger.info("[Harness] Guardrails BLOCKED en fase %s: %s",
-                     blocked_at, summary.get("failed_rules", []))
-        sys.exit(1)
-    logger.info("[Harness] Guardrails OK (%s/%s checks pasados)",
-                 result['summary']['passed'], result['summary']['total_checks'])
+# (moved to run_commands.py: _handle_watch_mode, _handle_hermes, _run_guardrails)
 
 
 # ---------------------------------------------------------------------------
@@ -682,7 +539,7 @@ def main() -> None:
         return
 
     if parsed["watch"]:
-        _handle_watch_mode()
+        _handle_watch_mode(HARNESS_ROOT)
         return
 
     cmd = parsed.get("command")
@@ -725,7 +582,7 @@ def main() -> None:
     ctx = _ensure_rag_context(store, task, target_agent)
 
     # Guardrails
-    _run_guardrails(task, target_agent, ctx, routing_source)
+    _run_guardrails(task, target_agent, ctx, routing_source, run_full_pipeline)
 
     # Task + cognition
     new_task = _create_task_and_lesson(store, task, target_agent, routing_source, orch_result, ctx)
