@@ -37,49 +37,69 @@ _HERE = Path(__file__).resolve().parent          # AGENTIC/scripts/
 _ROOT = _HERE.parent                              # AGENTIC/
 _HARNESS = _ROOT / "harness"                      # AGENTIC/harness/
 
-# Proyectos destino
+# ---------------------------------------------------------------------------
+# Resolucion de rutas de proyectos (portable via env vars)
+# ---------------------------------------------------------------------------
+# Las rutas se leen de variables de entorno (ej: CQE_ROOT, HC_ROOT, etc.)
+# Si no estan definidas, se usa DEV_SPACE_ROOT como base.
+# Si DEV_SPACE_ROOT tampoco esta definido, se usa el default local.
+# ---------------------------------------------------------------------------
+
+_DEV_SPACE = Path(os.environ.get("DEV_SPACE_ROOT", r"C:\Users\USUARIO\Documents\DEV-SPACE"))
+_HERMES_PATH = Path(os.environ.get("HERMES_ROOT", r"C:\Users\USUARIO\Documents\Hermes_Memory_Proyects"))
+
+
+def _project_path(name: str, env_var: str, default: str) -> str:
+    """Resuelve ruta de proyecto: env var > DEV_SPACE_ROOT > default."""
+    env_val = os.environ.get(env_var)
+    if env_val:
+        return env_val
+    # Si DEV_SPACE_ROOT fue cambiado, usar relativo
+    if _DEV_SPACE != Path(r"C:\Users\USUARIO\Documents\DEV-SPACE"):
+        return str(_DEV_SPACE / name)
+    return default
+
+
+# Proyectos destino (rutas portables via env vars)
 PROJECTS = {
-    "Aeternus": {
-        "path": r"C:\Users\USUARIO\Documents\DEV-SPACE\Aeternus",
-        "type": "general",
-        "keep_skills": ["evolve", "hedgefund"],
-        "add_skills": ["math-doc", "legal-doc", "science-doc"],
-        "description": "Sistema base multi-propósito",
-    },
     "core-quant-engine": {
-        "path": r"C:\Users\USUARIO\Documents\DEV-SPACE\core-quant-engine",
+        "path": _project_path("core-quant-engine", "CQE_ROOT",
+                              r"C:\Users\USUARIO\Documents\DEV-SPACE\core-quant-engine"),
         "type": "trading",
         "keep_skills": ["evolve", "hedgefund", "quant-trading", "alpha-research", "risk-execution"],
         "add_skills": ["math-doc", "science-doc"],
         "description": "Motor cuantitativo de trading en Rust",
     },
     "Historia Clinica": {
-        "path": r"C:\Users\USUARIO\Documents\DEV-SPACE\Historia Clinica",
+        "path": _project_path("Historia Clinica", "HC_ROOT",
+                              r"C:\Users\USUARIO\Documents\DEV-SPACE\Historia Clinica"),
         "type": "healthtech",
         "keep_skills": ["evolve", "hedgefund"],
         "add_skills": ["healthtech", "legal-doc", "science-doc"],
         "description": "Sistema de historias clínicas electrónicas",
     },
     "Onyx-Quan-AIBot": {
-        "path": r"C:\Users\USUARIO\Documents\DEV-SPACE\Onyx-Quan-AIBot",
+        "path": _project_path("Onyx-Quan-AIBot", "ONYX_ROOT",
+                              r"C:\Users\USUARIO\Documents\DEV-SPACE\Onyx-Quan-AIBot"),
         "type": "trading",
         "keep_skills": ["evolve", "hedgefund", "quant-trading", "alpha-research", "risk-execution"],
         "add_skills": ["math-doc", "science-doc"],
         "description": "Bot de trading cuantitativo con IA",
     },
     "PDV Basic": {
-        "path": r"C:\Users\USUARIO\Documents\DEV-SPACE\PDV Basic",
+        "path": _project_path("PDV Basic", "PDV_ROOT",
+                              r"C:\Users\USUARIO\Documents\DEV-SPACE\PDV Basic"),
         "type": "retail",
         "keep_skills": ["evolve", "hedgefund"],
         "add_skills": ["pos-retail", "legal-doc"],
         "description": "Sistema de punto de venta básico",
     },
     "Hermes_Memory_Proyects": {
-        "path": r"C:\Users\USUARIO\Documents\Hermes_Memory_Proyects",
+        "path": str(_HERMES_PATH),
         "type": "general",
         "keep_skills": ["evolve", "hedgefund"],
         "add_skills": ["math-doc", "legal-doc", "science-doc", "healthtech", "pos-retail",
-                       "quant-trading", "alpha-research", "risk-execution"],
+                       "quant-trading", "risk-execution"],
         "description": "Repositorio central de memoria y conocimiento multi-proyecto",
     },
 }
