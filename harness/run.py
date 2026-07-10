@@ -42,23 +42,18 @@ logger = setup_logging()
 sys.path.insert(0, str(get_project_root()))
 
 HARNESS_ROOT = get_harness_root()
+HAS_LANCEDB: bool = False
 
 # ---------------------------------------------------------------------------
-# Verificar LanceDB antes de cualquier otra operacion
+# Verificar LanceDB — solo warning en import, error en main()
 # ---------------------------------------------------------------------------
 try:
     import lancedb  # noqa: F401
+    HAS_LANCEDB = True
 except ImportError:
-    logger.info("=" * 60)
-    logger.info("  LanceDB REQUERIDO - No se encontro instalado.")
-    logger.info("=" * 60)
-    logger.info("")
-    logger.info("    pip install lancedb")
-    logger.info("    python harness/scripts/init.py")
-    logger.info("")
-    logger.info("  El sistema NO puede funcionar sin LanceDB.")
-    logger.info("=" * 60)
-    sys.exit(1)
+    logger.warning(
+        "LanceDB no encontrado. Ejecuta: pip install lancedb && python harness/scripts/init.py"
+    )
 
 from harness.orchestrator.task_manager import TaskManager
 from harness.orchestrator.delegation_engine import DelegationEngine
@@ -519,8 +514,29 @@ def _start_sandbox_if_needed(
 # ---------------------------------------------------------------------------
 
 
+def _check_lancedb_or_exit() -> None:
+    """Verifica LanceDB al inicio de main(). Si no está, sale con mensaje claro."""
+    global HAS_LANCEDB
+    if HAS_LANCEDB:
+        return
+    import logging as _log
+    _log.basicConfig(level=_log.INFO, format="%(message)s")
+    _log.info("=" * 60)
+    _log.info("  LanceDB REQUERIDO - No se encontro instalado.")
+    _log.info("=" * 60)
+    _log.info("")
+    _log.info("    pip install lancedb")
+    _log.info("    python harness/scripts/init.py")
+    _log.info("")
+    _log.info("  El sistema NO puede funcionar sin LanceDB.")
+    _log.info("=" * 60)
+    sys.exit(1)
+
+
 def main() -> None:
     """Main entry point for the Harness."""
+    _check_lancedb_or_exit()
+
     parsed = _parse_args()
 
     if parsed.get("help"):

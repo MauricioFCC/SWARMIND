@@ -190,62 +190,75 @@ class TaskPlan:
 # - expected_output: what the agent must produce
 
 SUBTASK_TEMPLATES: Dict[str, Dict] = {
+    # OPTIMIZACION TOKENS: Descripciones cortas. Calidad automatica via agent prompts.
+    "swarm_default": {
+        "triggers": ["implement", "create", "build", "develop", "haz", "crea", "implementa"],
+        "description": "Implementacion SWARM multi-agente",
+        "subtasks": [
+            {"agent": "builder", "description": "Implementar codigo (estandares automaticos en builder.md)", "deps": [], "expected_output": "Codigo completo", "context_hint": "Aplicar estandares sin mencionarlos", "confidence_impact": "critical"},
+            {"agent": "scientist", "description": "Investigar alternativas y mejores practicas", "deps": [], "expected_output": "Recomendaciones tecnicas", "context_hint": "Arquitectura, librerias, trade-offs", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Definir plan de testing y seguridad", "deps": [], "expected_output": "Plan de calidad", "context_hint": "Tests, OWASP, DocStrings", "confidence_impact": "validation"},
+            {"agent": "guardian", "description": "Ejecutar tests, verificar calidad y seguridad", "deps": [0], "expected_output": "Reporte de calidad", "context_hint": "Cobertura, vulnerabilidades, docs", "confidence_impact": "validation"},
+            {"agent": "guardian", "description": "Documentar API y ejemplos de uso", "deps": [0], "expected_output": "Documentacion ES-UTF8", "context_hint": "README, ejemplos, referencia", "confidence_impact": "neutral"},
+            {"agent": "coordinator", "description": "Consolidar resultados de todos los agentes", "deps": [0, 1, 2, 3, 4], "expected_output": "Entrega unificada", "context_hint": "Integrar codigo + investigacion + calidad", "confidence_impact": "critical"},
+        ],
+    },
     "implement_api": {
         "triggers": ["api", "endpoint", "rest", "graphql", "grpc"],
-        "description": "Implementación de API",
+        "description": "Implementar API",
         "subtasks": [
-            {"agent": "builder", "description": "Diseñar e implementar la API con endpoints, validación y errores", "deps": [], "expected_output": "Código de la API funcionando", "context_hint": "usar el stack especificado (Rust/Go/Python)", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Escribir tests unitarios y de integración para la API", "deps": [0], "expected_output": "Tests que cubren todos los endpoints", "context_hint": "cobertura >80%, casos borde incluidos", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Documentar la API con ejemplos de uso", "deps": [0], "expected_output": "Documentación de la API", "context_hint": "ejemplos curl, request/response, códigos de error", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Revisar seguridad de la API (autenticación, validación, rate limiting)", "deps": [0], "expected_output": "Reporte de seguridad", "context_hint": "OWASP Top 10, inyección, autenticación", "confidence_impact": "validation"},
+            {"agent": "builder", "description": "Implementar API con endpoints y validacion", "deps": [], "expected_output": "API funcionando", "context_hint": "Stack especificado (Rust/Go/Python)", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Tests unitarios e integracion para API", "deps": [0], "expected_output": "Tests pasando", "context_hint": "Cobertura >80%, casos borde", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "Documentar API con ejemplos", "deps": [0], "expected_output": "Documentacion API", "context_hint": "Curl, request/response, errores", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "Revisar seguridad de la API", "deps": [0], "expected_output": "Reporte seguridad", "context_hint": "OWASP, auth, rate limiting", "confidence_impact": "validation"},
         ],
     },
     "implement_feature": {
         "triggers": ["implement", "feature", "funcionalidad", "create", "build", "develop"],
-        "description": "Implementación de funcionalidad",
+        "description": "Implementar funcionalidad",
         "subtasks": [
-            {"agent": "scientist", "description": "Analizar requisitos y diseñar la solución", "deps": [], "expected_output": "Diseño de la solución", "context_hint": "considerar arquitectura actual, patrones existentes", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Implementar la funcionalidad", "deps": [0], "expected_output": "Código implementado", "context_hint": "seguir el diseño acordado, código limpio", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Escribir tests para la nueva funcionalidad", "deps": [1], "expected_output": "Tests unitarios y de integración", "context_hint": "probar casos normales, borde y error", "confidence_impact": "validation"},
-            {"agent": "guardian", "description": "Documentar la funcionalidad y actualizar changelog", "deps": [1], "expected_output": "Documentación actualizada", "context_hint": "README, API docs, ejemplos", "confidence_impact": "neutral"},
+            {"agent": "scientist", "description": "Analizar requisitos y disenar solucion", "deps": [], "expected_output": "Diseno solucion", "context_hint": "Arquitectura actual, patrones", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "Implementar funcionalidad", "deps": [0], "expected_output": "Codigo implementado", "context_hint": "Seguir diseno acordado", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Tests para nueva funcionalidad", "deps": [1], "expected_output": "Tests unitarios + integracion", "context_hint": "Casos normal, borde, error", "confidence_impact": "validation"},
+            {"agent": "guardian", "description": "Documentar funcionalidad y actualizar changelog", "deps": [1], "expected_output": "Docs actualizadas", "context_hint": "README, API docs, ejemplos", "confidence_impact": "neutral"},
         ],
     },
     "fix_bug": {
         "triggers": ["bug", "fix", "error", "issue", "problema", "bugfix", "hotfix"],
-        "description": "Corrección de bug",
+        "description": "Corregir bug",
         "subtasks": [
-            {"agent": "scientist", "description": "Diagnosticar la causa raíz del bug", "deps": [], "expected_output": "Diagnóstico con causa raíz identificada", "context_hint": "revisar logs, stack traces, reproducción", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Implementar la corrección", "deps": [0], "expected_output": "Código corregido", "context_hint": "mínimo cambio necesario, no romper otras funcionalidades", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Escribir test que prevenga regresión", "deps": [1], "expected_output": "Test de regresión", "context_hint": "el test debe fallar sin la corrección", "confidence_impact": "validation"},
-            {"agent": "guardian", "description": "Verificar que todos los tests existentes sigan pasando", "deps": [1], "expected_output": "Tests verdes", "context_hint": "ejecutar suite completa", "confidence_impact": "validation"},
+            {"agent": "scientist", "description": "Diagnosticar causa raiz del bug", "deps": [], "expected_output": "Diagnostico con causa raiz", "context_hint": "Logs, stack traces, reproduccion", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "Implementar correccion", "deps": [0], "expected_output": "Codigo corregido", "context_hint": "Minimo cambio necesario", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Test que prevenga regresion", "deps": [1], "expected_output": "Test regresion", "context_hint": "Debe fallar sin la correccion", "confidence_impact": "validation"},
+            {"agent": "guardian", "description": "Verificar tests existentes", "deps": [1], "expected_output": "Tests verdes", "context_hint": "Suite completa", "confidence_impact": "validation"},
         ],
     },
     "research": {
         "triggers": ["research", "investigar", "study", "analyze", "analysis", "paper", "survey"],
-        "description": "Investigación",
+        "description": "Investigacion",
         "subtasks": [
-            {"agent": "scientist", "description": "Recopilar información y fuentes relevantes", "deps": [], "expected_output": "Fuentes recopiladas y organizadas", "context_hint": "buscar papers, documentación, ejemplos", "confidence_impact": "critical"},
-            {"agent": "scientist", "description": "Analizar y sintetizar hallazgos", "deps": [0], "expected_output": "Análisis estructurado con conclusiones", "context_hint": "comparar enfoques, ventajas/desventajas", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Crear prototipo o PoC si aplica", "deps": [1], "expected_output": "Prototipo funcional o PoC", "context_hint": "implementar solo lo mínimo para validar", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Documentar hallazgos y recomendaciones", "deps": [1], "expected_output": "Documento de investigación completo", "context_hint": "incluir referencias, metodología, conclusiones", "confidence_impact": "neutral"},
+            {"agent": "scientist", "description": "Recopilar fuentes relevantes", "deps": [], "expected_output": "Fuentes organizadas", "context_hint": "Papers, docs, ejemplos", "confidence_impact": "critical"},
+            {"agent": "scientist", "description": "Analizar y sintetizar hallazgos", "deps": [0], "expected_output": "Analisis con conclusiones", "context_hint": "Comparar enfoques, pros/cons", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "Crear prototipo o PoC si aplica", "deps": [1], "expected_output": "Prototipo funcional", "context_hint": "Minimo para validar", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "Documentar hallazgos y recomendaciones", "deps": [1], "expected_output": "Documento investigacion", "context_hint": "Referencias, metodologia, conclusiones", "confidence_impact": "neutral"},
         ],
     },
     "refactor": {
-        "triggers": ["refactor", "refactoring", "reestructurar", "clean", "cleanup", "deuda técnica"],
-        "description": "Refactorización",
+        "triggers": ["refactor", "refactoring", "reestructurar", "clean", "cleanup", "deuda tecnica"],
+        "description": "Refactorizar",
         "subtasks": [
-            {"agent": "scientist", "description": "Analizar código actual e identificar puntos de mejora", "deps": [], "expected_output": "Análisis con áreas de mejora identificadas", "context_hint": "buscar duplicación, complejidad, acoplamiento", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Ejecutar refactorización preservando comportamiento", "deps": [0], "expected_output": "Código refactorizado", "context_hint": "cambios incrementales, mantener API pública", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Ejecutar tests para verificar que nada se rompió", "deps": [1], "expected_output": "Tests pasando al 100%", "context_hint": "ejecutar suite completa, comparar antes/después", "confidence_impact": "validation"},
-            {"agent": "guardian", "description": "Documentar cambios y actualizar referencias", "deps": [1], "expected_output": "Documentación actualizada", "context_hint": "actualizar docs que referencien código cambiado", "confidence_impact": "neutral"},
+            {"agent": "scientist", "description": "Analizar codigo y puntos de mejora", "deps": [], "expected_output": "Areas de mejora", "context_hint": "Duplicacion, complejidad, acoplamiento", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "Ejecutar refactor preservando comportamiento", "deps": [0], "expected_output": "Codigo refactorizado", "context_hint": "Cambios incrementales, API publica intacta", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Verificar tests post-refactor", "deps": [1], "expected_output": "Tests 100% verdes", "context_hint": "Comparar antes/despues", "confidence_impact": "validation"},
+            {"agent": "guardian", "description": "Documentar cambios y referencias", "deps": [1], "expected_output": "Docs actualizadas", "context_hint": "Actualizar docs que referencien codigo cambiado", "confidence_impact": "neutral"},
         ],
     },
     "security_audit": {
         "triggers": ["security", "seguridad", "audit", "auditar", "vulnerabilidad", "hardening", "owasp"],
-        "description": "Auditoría de seguridad",
+        "description": "Auditoria seguridad",
         "subtasks": [
-            {"agent": "guardian", "description": "Auditar código en busca de vulnerabilidades", "deps": [], "expected_output": "Reporte de vulnerabilidades encontradas", "context_hint": "OWASP Top 10, inyección SQL, XSS, CSRF", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Corregir vulnerabilidades encontradas", "deps": [0], "expected_output": "Código corregido", "context_hint": "priorizar por severidad, mínimo cambio", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Auditar vulnerabilidades en codigo", "deps": [], "expected_output": "Reporte vulnerabilidades", "context_hint": "OWASP Top 10, SQLi, XSS, CSRF", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "Corregir vulnerabilidades encontradas", "deps": [0], "expected_output": "Codigo corregido", "context_hint": "Priorizar por severidad", "confidence_impact": "critical"},
             {"agent": "guardian", "description": "Verificar correcciones y escanear nuevamente", "deps": [1], "expected_output": "Verificación de correcciones", "context_hint": "re-ejecutar análisis, confirmar cierre", "confidence_impact": "validation"},
             {"agent": "guardian", "description": "Documentar hallazgos y medidas tomadas", "deps": [1], "expected_output": "Reporte de seguridad final", "context_hint": "incluir CVEs, mitigaciones, recomendaciones", "confidence_impact": "neutral"},
         ],
@@ -300,13 +313,64 @@ SUBTASK_TEMPLATES: Dict[str, Dict] = {
             {"agent": "coordinator", "description": "Consolidar perspectivas en decisión final", "deps": [1, 2, 3], "expected_output": "Decisión final consolidada", "context_hint": "integrar las tres perspectivas en una recomendación", "confidence_impact": "critical"},
         ],
     },
+    "deploy": {
+        "triggers": ["deploy", "desplegar", "release", "lanzar", "produccion", "production", "ci/cd"],
+        "description": "Despliegue",
+        "subtasks": [
+            {"agent": "builder", "description": "Preparar artefactos build y release", "deps": [], "expected_output": "Artefactos listos", "context_hint": "Compilar, empaquetar, versionar", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "Tests pre-deploy y validaciones", "deps": [0], "expected_output": "Validaciones ok", "context_hint": "Smoke tests, integracion", "confidence_impact": "validation"},
+            {"agent": "builder", "description": "Ejecutar despliegue en entorno objetivo", "deps": [1], "expected_output": "Deploy completado", "context_hint": "Seguir runbook, migraciones", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Verificar deploy y monitorear estabilidad", "deps": [2], "expected_output": "Verificacion post-deploy", "context_hint": "Health checks, logs, metricas", "confidence_impact": "validation"},
+        ],
+    },
+    "docs": {
+        "triggers": ["document", "documentar", "docs", "readme", "wiki", "manual"],
+        "description": "Documentacion",
+        "subtasks": [
+            {"agent": "scientist", "description": "Analizar funcionalidad a documentar", "deps": [], "expected_output": "Entendimiento del tema", "context_hint": "Codigo, tests, issues", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Escribir documentacion clara", "deps": [0], "expected_output": "Docs escritas", "context_hint": "Ejemplos, casos de uso, API reference", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "Revisar y corregir documentacion", "deps": [1], "expected_output": "Docs revisadas", "context_hint": "Ortografia, claridad, completitud", "confidence_impact": "validation"},
+        ],
+    },
+    "test": {
+        "triggers": ["test", "testing", "coverage", "cobertura", "pruebas"],
+        "description": "Testing",
+        "subtasks": [
+            {"agent": "scientist", "description": "Analizar codigo y planificar tests", "deps": [], "expected_output": "Plan testing", "context_hint": "Caminos criticos, casos borde, integraciones", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Escribir tests unitarios", "deps": [0], "expected_output": "Tests unitarios", "context_hint": "Framework del proyecto, cobertura >80%", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "Escribir tests de integracion", "deps": [1], "expected_output": "Tests integracion", "context_hint": "Interaccion entre componentes", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "Ejecutar suite completa y reportar", "deps": [2], "expected_output": "Reporte tests", "context_hint": "Pasados, fallidos, cobertura", "confidence_impact": "validation"},
+        ],
+    },
+    "database": {
+        "triggers": ["database", "db", "sql", "query", "migracion", "schema", "modelo datos"],
+        "description": "Base de datos",
+        "subtasks": [
+            {"agent": "scientist", "description": "Disenar esquema de datos", "deps": [], "expected_output": "Esquema disenado", "context_hint": "Normalizacion, indices, relaciones", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "Implementar migraciones y modelos", "deps": [0], "expected_output": "Migraciones + modelos", "context_hint": "ORM/herramienta del proyecto", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Tests de integracion con BD", "deps": [1], "expected_output": "Tests BD", "context_hint": "Consultas, transacciones, rollbacks", "confidence_impact": "validation"},
+            {"agent": "guardian", "description": "Documentar esquema y consultas", "deps": [1], "expected_output": "Docs BD", "context_hint": "Diagrama ER, consultas frecuentes", "confidence_impact": "neutral"},
+        ],
+    },
+    "debate": {
+        "triggers": ["debate", "discutir", "consenso", "votar", "criticar", "revisar"],
+        "description": "Debate multi-agente",
+        "subtasks": [
+            {"agent": "coordinator", "description": "Facilitar debate entre agentes", "deps": [], "expected_output": "Debate facilitado", "context_hint": "Coordinar builder, scientist, guardian", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "Perspectiva de implementacion tecnica", "deps": [0], "expected_output": "Perspectiva tecnica", "context_hint": "Stack, arquitectura, rendimiento", "confidence_impact": "neutral"},
+            {"agent": "scientist", "description": "Perspectiva de investigacion y analisis", "deps": [0], "expected_output": "Perspectiva investigacion", "context_hint": "Alternativas, literatura, datos", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "Perspectiva de calidad y riesgo", "deps": [0], "expected_output": "Perspectiva calidad/riesgo", "context_hint": "Tests, seguridad, mantenibilidad", "confidence_impact": "neutral"},
+            {"agent": "coordinator", "description": "Consolidar perspectivas en decision final", "deps": [1, 2, 3], "expected_output": "Decision final", "context_hint": "Integrar las 3 perspectivas", "confidence_impact": "critical"},
+        ],
+    },
     "general": {
         "triggers": [],
-        "description": "Tarea general",
+        "description": "Tarea general multi-agente",
         "subtasks": [
-            {"agent": "scientist", "description": "Analizar la solicitud y planificar enfoque", "deps": [], "expected_output": "Plan de acción", "context_hint": "entender requisitos, identificar riesgos", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Ejecutar la implementación principal", "deps": [0], "expected_output": "Implementación completada", "context_hint": "seguir mejores prácticas del stack", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Verificar calidad: tests, seguridad, documentación", "deps": [1], "expected_output": "Verificación de calidad completada", "context_hint": "tests pasando, sin vulnerabilidades, documentado", "confidence_impact": "validation"},
+            {"agent": "builder", "description": "Implementar (estandares automaticos en builder.md)", "deps": [], "expected_output": "Implementacion", "context_hint": "Estandares sin mencionar", "confidence_impact": "critical"},
+            {"agent": "scientist", "description": "Investigar dominio y proponer enfoque", "deps": [], "expected_output": "Recomendaciones", "context_hint": "Alternativas, mejores practicas", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Tests, seguridad y documentacion", "deps": [0], "expected_output": "Calidad verificada", "context_hint": "Cobertura >80%, sin vulnerabilidades, docs", "confidence_impact": "validation"},
+            {"agent": "coordinator", "description": "Consolidar resultados", "deps": [0, 1, 2], "expected_output": "Entrega unificada", "context_hint": "Integrar todo", "confidence_impact": "critical"},
         ],
     },
 }
@@ -405,8 +469,10 @@ class TaskPlanner:
         """
         Detect the best matching template for a message.
 
-        Scores templates by number of matching trigger keywords.
-        Falls back to ('general', SUBTASK_TEMPLATES["general"]).
+        OPTIMIZACION SWISS WATCH:
+        - "swarm_default" tiene prioridad para tareas de implementacion (maximo paralelismo)
+        - Si hay keywords claras de implementacion, usa SWARM
+        - Fallback a general template que tambien tiene multi-agente paralelo
 
         Returns:
             Tuple of (template_name, template_dict).
@@ -415,11 +481,31 @@ class TaskPlanner:
         best_name = "general"
         best_template = SUBTASK_TEMPLATES["general"]
 
+        # Fase 1: Buscar template especifico (implement_api, fix_bug, research, etc.)
+        # Si hay coincidencia EXACTA con triggers de un template especifico, usarlo
+        for name, tpl in SUBTASK_TEMPLATES.items():
+            triggers = tpl.get("triggers", [])
+            if not triggers or name in ("swarm_default", "general"):
+                continue
+            score = sum(1 for t in triggers if t in msg_lower)
+            if score >= 2:  # Dos o mas keywords = template especifico
+                logger.debug("Specific template %s selected (score=%d)", name, score)
+                return name, tpl
+
+        # Fase 2: Si no hay template especifico, detectar si es implementacion -> SWARM
+        swarm_triggers = SUBTASK_TEMPLATES["swarm_default"].get("triggers", [])
+        swarm_score = sum(1 for t in swarm_triggers if t in msg_lower)
+        if swarm_score >= 2:  # Dos o mas keywords de implementacion = SWARM
+            logger.debug("SWARM template selected (score=%d)", swarm_score)
+            return "swarm_default", SUBTASK_TEMPLATES["swarm_default"]
+
         for name, tpl in SUBTASK_TEMPLATES.items():
             triggers = tpl.get("triggers", [])
             if not triggers:
                 continue
             score = sum(1 for t in triggers if t in msg_lower)
+            if name in ("swarm_default",):
+                continue
             if score > best_score:
                 best_score = score
                 best_name = name
@@ -523,3 +609,4 @@ class TaskPlanner:
                 f"usar {specifics['stack']}"
             )
         return description
+

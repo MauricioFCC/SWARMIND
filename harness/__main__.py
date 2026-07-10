@@ -1,4 +1,4 @@
 """Permite ejecutar: python -m harness"""
-from harness.run import main
+from harness import run_main
 
-main()
+run_main()

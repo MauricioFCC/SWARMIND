@@ -194,17 +194,20 @@ class DifficultyRouter:
     """
     Router de dificultad que clasifica una tarea y determina el pipeline.
 
+    OPTIMIZACION SWISS WATCH: Thresholds reducidos para maximizar paralelismo.
+    Por defecto, toda tarea no trivial se enruta a DEEP (multi-agente, fan-out).
+
     Uso:
         router = DifficultyRouter()
         result = router.route("Implementar API REST con Docker y CI/CD")
-        # result.complexity = ComplexityLevel.COMPLEX
+        # result.complexity = ComplexityLevel.VERY_COMPLEX (por defecto)
         # result.pipeline = PipelineType.DEEP
     """
 
     def __init__(
         self,
-        shallow_threshold: float = 0.25,
-        deep_threshold: float = 0.55,
+        shallow_threshold: float = 0.10,
+        deep_threshold: float = 0.20,
     ) -> None:
         """
         Args:
@@ -312,7 +315,8 @@ class DifficultyRouter:
             base += 1
         if features.length_chars > 500:
             base += 1
-        return min(base, 8)  # Cap at 8 subtasks
+        # Cap at 16 subtasks (Swiss Watch: maximo paralelismo)
+        return min(base, 16)
 
     # ------------------------------------------------------------------
     # Classification

@@ -74,13 +74,17 @@ class TestTaskPlanner:
         """'crear esquema de base de datos' → template database."""
         plan = self.planner.decompose("crear esquema de base de datos para usuarios")
         assert len(plan.subtasks) >= 2
-        assert plan.subtasks[0].agent == "scientist"
+        # With SWARM optimization, level 0 has builder + scientist + guardian in parallel
+        assert plan.subtasks[0].agent in ("builder", "scientist")
 
     def test_decompose_general(self):
-        """Mensaje sin keywords claros → template general."""
+        """Mensaje sin keywords claros → template general (optimizado multi-agente)."""
         plan = self.planner.decompose("haz algo con el sistema")
-        assert len(plan.subtasks) == 3
-        assert plan.subtasks[0].agent == "scientist"
+        # Ahora general template tiene 4 subtasks con builder+scientist en paralelo
+        assert len(plan.subtasks) == 4
+        # Level 0: builder + scientist en paralelo
+        assert plan.subtasks[0].agent == "builder"
+        assert plan.subtasks[1].agent == "scientist"
 
     def test_dag_levels_api(self):
         """API plan: level 0 = builder, level 1 = 3 guardian IN PARALELO."""

@@ -1,7 +1,16 @@
-"""Harness — Multi-agent orchestration engine with LanceDB memory, C.A.S.E. evaluation, GEPA mutation, and procedural memory."""
+"""
+Harness — Multi-agent orchestration engine with LanceDB memory.
 
-from harness.run import main as run
-from harness.delegate import delegate_task
+Entry points:
+    python -m harness           -> run.main()
+    python harness/run.py       -> run.main()
+    python harness/delegate.py  -> delegate.delegate_task()
+
+IMPORTANTE: Este __init__.py NO importa run.py ni delegate.py a nivel de módulo
+para evitar que el check de LanceDB se ejecute al importar el paquete.
+Usa lazy imports en los getters.
+"""
+
 from harness.orchestrator.task_manager import TaskManager
 from harness.orchestrator.delegation_engine import DelegationEngine
 from harness.orchestrator.agent_bus import AgentBus
@@ -17,9 +26,15 @@ from harness.tools_sandbox.mcp_executor import MCPExecutor
 from harness.scheduler import TaskScheduler
 from harness.memory_rag.doc_ingester import DocumentChunker, ingest_directory
 
+
+def run_main() -> None:
+    """Ejecuta el entry point principal (lazy import de run.py)."""
+    from harness.run import main
+    main()
+
+
 __all__ = [
-    "run",
-    "delegate_task",
+    "run_main",
     "TaskManager",
     "DelegationEngine",
     "AgentBus",
