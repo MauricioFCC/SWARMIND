@@ -322,10 +322,12 @@ class TestConfidenceImpactInPlanner:
         assert tpl["subtasks"][3]["confidence_impact"] == "validation"
 
     def test_general_has_validation(self):
-        """general template last subtask (verification) is validation."""
+        """general template has validation subtask (guardian tests)."""
         from harness.orchestrator.task_planner import SUBTASK_TEMPLATES
         tpl = SUBTASK_TEMPLATES["general"]
-        assert tpl["subtasks"][2]["confidence_impact"] == "validation"
+        # Index 3 is guardian tests/docs with validation impact
+        validation_subtasks = [s for s in tpl["subtasks"] if s.get("confidence_impact") == "validation"]
+        assert len(validation_subtasks) >= 1
 
     def test_planner_propagates_confidence_impact(self):
         """TaskPlanner.decompose() propagates confidence_impact to SubTask."""

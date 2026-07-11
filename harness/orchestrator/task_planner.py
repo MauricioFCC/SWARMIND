@@ -191,78 +191,71 @@ class TaskPlan:
 
 SUBTASK_TEMPLATES: Dict[str, Dict] = {
     # ==========================================================================
-    # TEMPLATES COORDINADOS: paralelo SEGURO con pre-plan.
-    # Estrategia: 
-    #   1. Builder crea PLAN rapido (nivel 0) listando archivos a modificar
-    #   2. TODOS los agentes trabajan en PARALELO sabiendo quien hace que
-    #   3. Nadie toca el mismo archivo porque conocen los boundaries
+    # SWISS WATCH: MAXIMA VELOCIDAD, CERO COLISIONES.
+    # Nivel 0: builder+guardian+scientist en PARALELO.
+    # - Builder escribe CODIGO (src/)
+    # - Guardian escribe PLAN de tests (texto, 0 archivos)
+    # - Scientist INVESTIGA (texto, 0 archivos)
+    # Nivel 1: guardian escribe TESTS sobre codigo ya existente (tests/)
+    # => VELOCIDAD de paralelo + 0 colisiones (nadie toca el mismo archivo)
     # ==========================================================================
-    "implement": {
+    "swarm_default": {
         "triggers": ["implement", "create", "build", "develop", "haz", "crea", "implementa"],
-        "description": "Implementacion paralela coordinada",
+        "description": "Swiss Watch: builder+guardian+scientist paralelo",
         "subtasks": [
-            {"agent": "builder", "description": "PLAN RAPIDO: listar archivos a crear/modificar (max 3 lineas)", "deps": [], "expected_output": "Lista de archivos que editara cada agente", "context_hint": "Builder: produce SOLO un plan. Ej: 'src/api.rs: implementar endpoints, tests/api_test.rs: tests'", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "IMPLEMENTAR segun plan: solo los archivos que anunciaste", "deps": [0], "expected_output": "Codigo implementado", "context_hint": "Builder: editas SOLO los archivos que listaste en el plan. Guardian trabajara en tests/.", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "TESTS en archivos SEPARADOS (tests/) segun el plan del builder", "deps": [0], "expected_output": "Tests >80% cobertura", "context_hint": "Guardian: creas tests en tests/ NUNCA tocas archivos del builder. Usa el plan para saber que testear.", "confidence_impact": "validation"},
-            {"agent": "scientist", "description": "INVESTIGAR alternativas (solo texto, 0 archivos de codigo)", "deps": [], "expected_output": "Recomendaciones tecnicas", "context_hint": "Scientist: produces texto. No tocas NINGUN archivo del proyecto.", "confidence_impact": "critical"},
-            {"agent": "coordinator", "description": "Consolidar resultados de todos los agentes", "deps": [1, 2, 3], "expected_output": "Entrega unificada", "context_hint": "Coordinator: builder y guardian trabajaron en archivos DIFERENTES. No hay conflictos.", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "CODIGO: implementar en src/ (guardian hara tests en tests/)", "deps": [], "expected_output": "Codigo completo en src/", "context_hint": "Builder: implementas en src/. Guardian: plan en texto + tests en tests/. CERO colision.", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "PLAN (texto): disenar tests y seguridad para el codigo del builder", "deps": [], "expected_output": "Plan de tests y seguridad (solo texto, 0 archivos de codigo)", "context_hint": "Guardian: produces SOLO texto. NO tocas archivos del builder. Los tests los escribiras despues.", "confidence_impact": "validation"},
+            {"agent": "scientist", "description": "INVESTIGAR: mejores practicas y alternativas (solo texto)", "deps": [], "expected_output": "Recomendaciones tecnicas (solo texto)", "context_hint": "Scientist: produces texto. 0 archivos de codigo.", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "TESTS: escribir tests unitarios en tests/ contra codigo del builder", "deps": [0], "expected_output": "Tests >80% cobertura en tests/", "context_hint": "Guardian: escribes tests en tests/. Builder ya termino en src/. Archivos DIFERENTES.", "confidence_impact": "validation"},
+            {"agent": "guardian", "description": "DOCS: documentar API con ejemplos", "deps": [0], "expected_output": "Docs ES-UTF8", "context_hint": "Documentar API, ejemplos, referencia", "confidence_impact": "neutral"},
+            {"agent": "coordinator", "description": "CONSOLIDAR: integrar codigo + tests + investigacion", "deps": [0, 1, 2, 3, 4], "expected_output": "Entrega unificada", "context_hint": "Sin conflictos: builder=src/, guardian=tests/, scientist=texto", "confidence_impact": "critical"},
         ],
     },
     "implement_api": {
         "triggers": ["api", "endpoint", "rest", "graphql", "grpc"],
         "description": "Implementar API",
         "subtasks": [
-            {"agent": "builder", "description": "Implementar API con endpoints y validacion", "deps": [], "expected_output": "API funcionando", "context_hint": "Stack especificado (Rust/Go/Python)", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Tests unitarios e integracion para API", "deps": [0], "expected_output": "Tests pasando", "context_hint": "Cobertura >80%, casos borde", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Documentar API con ejemplos", "deps": [0], "expected_output": "Documentacion API", "context_hint": "Curl, request/response, errores", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Revisar seguridad de la API", "deps": [0], "expected_output": "Reporte seguridad", "context_hint": "OWASP, auth, rate limiting", "confidence_impact": "validation"},
-        ],
-    },
-    "implement_feature": {
-        "triggers": ["implement", "feature", "funcionalidad", "create", "build", "develop"],
-        "description": "Implementar funcionalidad",
-        "subtasks": [
-            {"agent": "scientist", "description": "Analizar requisitos y disenar solucion (solo texto, no editar archivos)", "deps": [], "expected_output": "Diseno solucion", "context_hint": "Scientist: produces diseno. Builder implementara.", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Implementar funcionalidad segun diseno", "deps": [0], "expected_output": "Codigo implementado", "context_hint": "Builder: implementas el diseno del scientist", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Tests para nueva funcionalidad", "deps": [1], "expected_output": "Tests unitarios + integracion", "context_hint": "Casos normal, borde, error", "confidence_impact": "validation"},
-            {"agent": "guardian", "description": "Documentar funcionalidad y actualizar changelog", "deps": [1], "expected_output": "Docs actualizadas", "context_hint": "README, API docs, ejemplos", "confidence_impact": "neutral"},
+            {"agent": "builder", "description": "CODIGO: implementar API en src/", "deps": [], "expected_output": "API en src/", "context_hint": "Builder: src/. Guardian: tests/ y texto. CERO colision.", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "PLAN (texto): disenar tests y seguridad para la API", "deps": [], "expected_output": "Plan de testing (texto, 0 archivos)", "context_hint": "Guardian: SOLO texto ahora. Tests los escribiras en tests/ cuando builder termine.", "confidence_impact": "validation"},
+            {"agent": "guardian", "description": "TESTS: escribir tests unitarios e integracion en tests/", "deps": [0], "expected_output": "Tests en tests/", "context_hint": "Builder ya termino src/. Tu trabajas en tests/. Archivos DIFERENTES.", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "DOCS + SEGURIDAD: documentar y revisar seguridad", "deps": [0], "expected_output": "Docs + reporte seguridad", "context_hint": "Solo agregas archivos en tests/ y docs/", "confidence_impact": "validation"},
         ],
     },
     "fix_bug": {
         "triggers": ["bug", "fix", "error", "issue", "problema", "bugfix", "hotfix"],
-        "description": "Corregir bug",
+        "description": "Corregir bug: diagnostico + fix + test paralelo",
         "subtasks": [
-            {"agent": "scientist", "description": "Diagnosticar causa raiz del bug (solo texto, no codigo)", "deps": [], "expected_output": "Diagnostico con causa raiz", "context_hint": "Logs, stack traces, reproduccion", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Implementar correccion segun diagnostico", "deps": [0], "expected_output": "Codigo corregido", "context_hint": "Builder: solo tu editas archivos. Minimo cambio necesario.", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Test que prevenga regresion", "deps": [1], "expected_output": "Test regresion", "context_hint": "Debe fallar sin la correccion", "confidence_impact": "validation"},
-            {"agent": "guardian", "description": "Verificar tests existentes", "deps": [1], "expected_output": "Tests verdes", "context_hint": "Suite completa", "confidence_impact": "validation"},
+            {"agent": "scientist", "description": "DIAGNOSTICO: causa raiz del bug (solo texto)", "deps": [], "expected_output": "Diagnostico (texto)", "context_hint": "Scientist: produces texto. Builder corrige.", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "FIX: corregir bug en src/ segun diagnostico", "deps": [0], "expected_output": "Bug corregido en src/", "context_hint": "Builder: solo src/. Guardian hara tests en tests/.", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "TEST REGRESION: escribir test en tests/ que prevenga regreso", "deps": [1], "expected_output": "Test regresion en tests/", "context_hint": "Guardian: tests/ solo. Builder ya termino src/.", "confidence_impact": "validation"},
+            {"agent": "guardian", "description": "VERIFICAR: ejecutar suite completa", "deps": [1], "expected_output": "Tests verdes", "context_hint": "Suite completa", "confidence_impact": "validation"},
         ],
     },
     "research": {
         "triggers": ["research", "investigar", "study", "analyze", "analysis", "paper", "survey"],
-        "description": "Investigacion",
+        "description": "Investigacion con prototipo",
         "subtasks": [
-            {"agent": "scientist", "description": "Recopilar fuentes relevantes (solo texto, no editar codigo)", "deps": [], "expected_output": "Fuentes organizadas", "context_hint": "Scientist: solo produces texto", "confidence_impact": "critical"},
-            {"agent": "scientist", "description": "Analizar y sintetizar hallazgos", "deps": [0], "expected_output": "Analisis con conclusiones", "context_hint": "Comparar enfoques, pros/cons", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Documentar hallazgos y recomendaciones", "deps": [0], "expected_output": "Documento investigacion", "context_hint": "Referencias, metodologia, conclusiones", "confidence_impact": "neutral"},
+            {"agent": "scientist", "description": "RECOPILAR fuentes y analizar (solo texto)", "deps": [], "expected_output": "Fuentes + analisis (texto)", "context_hint": "Scientist: texto. Builder prototipa.", "confidence_impact": "critical"},
+            {"agent": "scientist", "description": "SINTETIZAR: conclusiones y recomendaciones (texto)", "deps": [0], "expected_output": "Conclusiones (texto)", "context_hint": "Scientist: texto.", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "DOCUMENTAR: escribir documento de investigacion", "deps": [0], "expected_output": "Documento investigacion", "context_hint": "Solo texto, 0 archivos de codigo", "confidence_impact": "neutral"},
         ],
     },
     "refactor": {
         "triggers": ["refactor", "refactoring", "reestructurar", "clean", "cleanup", "deuda tecnica"],
-        "description": "Refactorizar",
+        "description": "Refactorizar: analisis + refactor + test paralelo",
         "subtasks": [
-            {"agent": "scientist", "description": "Analizar codigo y puntos de mejora (solo texto)", "deps": [], "expected_output": "Areas de mejora", "context_hint": "Scientist: solo produce analisis. Builder refactoriza.", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Ejecutar refactor preservando comportamiento", "deps": [0], "expected_output": "Codigo refactorizado", "context_hint": "Builder: solo tu editas archivos. Cambios incrementales.", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Verificar tests post-refactor", "deps": [1], "expected_output": "Tests 100% verdes", "context_hint": "Comparar antes/despues", "confidence_impact": "validation"},
-            {"agent": "guardian", "description": "Documentar cambios y referencias", "deps": [1], "expected_output": "Docs actualizadas", "context_hint": "Actualizar docs que referencien codigo cambiado", "confidence_impact": "neutral"},
+            {"agent": "scientist", "description": "ANALISIS: puntos de mejora en el codigo (solo texto)", "deps": [], "expected_output": "Analisis (texto)", "context_hint": "Scientist: texto. Builder refactoriza src/.", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "REFACTOR: ejecutar refactor en src/ preservando comportamiento", "deps": [0], "expected_output": "Codigo refactorizado en src/", "context_hint": "Builder: src/. Guardian tests en tests/.", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "VERIFICAR: tests post-refactor en tests/", "deps": [1], "expected_output": "Tests 100% en tests/", "context_hint": "Guardian: tests/. Builder ya termino src/.", "confidence_impact": "validation"},
+            {"agent": "guardian", "description": "DOCUMENTAR cambios", "deps": [1], "expected_output": "Docs actualizadas", "context_hint": "Actualizar docs", "confidence_impact": "neutral"},
         ],
     },
     "security_audit": {
         "triggers": ["security", "seguridad", "audit", "auditar", "vulnerabilidad", "hardening", "owasp"],
         "description": "Auditoria seguridad",
         "subtasks": [
-            {"agent": "guardian", "description": "Auditar vulnerabilidades en codigo", "deps": [], "expected_output": "Reporte vulnerabilidades", "context_hint": "OWASP Top 10, SQLi, XSS, CSRF", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Corregir vulnerabilidades encontradas", "deps": [0], "expected_output": "Codigo corregido", "context_hint": "Builder: solo tu editas archivos. Priorizar por severidad.", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "AUDITAR: vulnerabilidades en codigo (texto + tests/ si aplica)", "deps": [], "expected_output": "Reporte vulnerabilidades + tests en tests/", "context_hint": "Guardian: reporte texto + tests en tests/. Builder corrige src/. CERO colision.", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "CORREGIR: vulnerabilidades en src/", "deps": [0], "expected_output": "Codigo corregido en src/", "context_hint": "Builder: src/ solamente.", "confidence_impact": "critical"},
             {"agent": "guardian", "description": "Verificar correcciones y escanear nuevamente", "deps": [1], "expected_output": "Verificación de correcciones", "context_hint": "re-ejecutar análisis, confirmar cierre", "confidence_impact": "validation"},
             {"agent": "guardian", "description": "Documentar hallazgos y medidas tomadas", "deps": [1], "expected_output": "Reporte de seguridad final", "context_hint": "incluir CVEs, mitigaciones, recomendaciones", "confidence_impact": "neutral"},
         ],
@@ -317,64 +310,75 @@ SUBTASK_TEMPLATES: Dict[str, Dict] = {
             {"agent": "coordinator", "description": "Consolidar perspectivas en decisión final", "deps": [1, 2, 3], "expected_output": "Decisión final consolidada", "context_hint": "integrar las tres perspectivas en una recomendación", "confidence_impact": "critical"},
         ],
     },
+    "security_audit": {
+        "triggers": ["security", "seguridad", "audit", "auditar", "vulnerabilidad", "hardening", "owasp"],
+        "description": "Auditoria seguridad",
+        "subtasks": [
+            {"agent": "guardian", "description": "AUDITAR: vulnerabilidades (texto + tests/ si aplica)", "deps": [], "expected_output": "Reporte + tests/", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "CORREGIR: vulnerabilidades en src/", "deps": [0], "expected_output": "Codigo corregido src/", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "VERIFICAR: re-ejecutar analisis y confirmar cierre", "deps": [1], "expected_output": "Verificacion", "confidence_impact": "validation"},
+            {"agent": "guardian", "description": "DOCUMENTAR: reporte final de seguridad", "deps": [1], "expected_output": "Reporte final", "confidence_impact": "neutral"},
+        ],
+    },
     "deploy": {
         "triggers": ["deploy", "desplegar", "release", "lanzar", "produccion", "production", "ci/cd"],
         "description": "Despliegue",
         "subtasks": [
-            {"agent": "builder", "description": "Preparar artefactos build y release", "deps": [], "expected_output": "Artefactos listos", "context_hint": "Builder: solo tu preparas artefactos", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Tests pre-deploy y validaciones", "deps": [0], "expected_output": "Validaciones ok", "context_hint": "Guardian: builder ya termino, no modifiques sus archivos", "confidence_impact": "validation"},
-            {"agent": "builder", "description": "Ejecutar despliegue en entorno objetivo", "deps": [1], "expected_output": "Deploy completado", "context_hint": "Seguir runbook, migraciones", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Verificar deploy y monitorear estabilidad", "deps": [2], "expected_output": "Verificacion post-deploy", "context_hint": "Health checks, logs, metricas", "confidence_impact": "validation"},
+            {"agent": "builder", "description": "Preparar artefactos build y release en src/", "deps": [], "expected_output": "Artefactos listos", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "TESTS: pre-deploy y smoke tests", "deps": [0], "expected_output": "Validaciones ok", "confidence_impact": "validation"},
+            {"agent": "builder", "description": "Despliegue en entorno objetivo", "deps": [1], "expected_output": "Deploy completado", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Verificar deploy y monitorear", "deps": [2], "expected_output": "Verificacion post-deploy", "confidence_impact": "validation"},
         ],
     },
     "docs": {
         "triggers": ["document", "documentar", "docs", "readme", "wiki", "manual"],
         "description": "Documentacion",
         "subtasks": [
-            {"agent": "scientist", "description": "Analizar funcionalidad a documentar (solo texto)", "deps": [], "expected_output": "Entendimiento del tema", "context_hint": "Scientist: solo produces texto, no editas codigo", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Escribir documentacion clara", "deps": [0], "expected_output": "Docs escritas", "context_hint": "Ejemplos, casos de uso, API reference", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Revisar y corregir documentacion", "deps": [1], "expected_output": "Docs revisadas", "context_hint": "Ortografia, claridad, completitud", "confidence_impact": "validation"},
+            {"agent": "scientist", "description": "Analizar funcionalidad a documentar (solo texto)", "deps": [], "expected_output": "Analisis (texto)", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Escribir documentacion clara", "deps": [0], "expected_output": "Docs escritas", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "Revisar y corregir documentacion", "deps": [1], "expected_output": "Docs revisadas", "confidence_impact": "validation"},
         ],
     },
     "test": {
         "triggers": ["test", "testing", "coverage", "cobertura", "pruebas"],
-        "description": "Testing",
+        "description": "Testing (sin tocar src/)",
         "subtasks": [
-            {"agent": "scientist", "description": "Analizar codigo y planificar tests (solo texto)", "deps": [], "expected_output": "Plan testing", "context_hint": "Scientist: solo produces plan. Guardian escribe tests.", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Escribir tests unitarios", "deps": [0], "expected_output": "Tests unitarios", "context_hint": "Framework del proyecto, cobertura >80%", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Escribir tests de integracion", "deps": [1], "expected_output": "Tests integracion", "context_hint": "Interaccion entre componentes", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Ejecutar suite completa y reportar", "deps": [2], "expected_output": "Reporte tests", "context_hint": "Pasados, fallidos, cobertura", "confidence_impact": "validation"},
+            {"agent": "scientist", "description": "Planificar tests (solo texto)", "deps": [], "expected_output": "Plan testing", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Tests unitarios en tests/", "deps": [0], "expected_output": "Tests unitarios", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "Tests integracion en tests/", "deps": [1], "expected_output": "Tests integracion", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "Ejecutar suite y reportar", "deps": [2], "expected_output": "Reporte", "confidence_impact": "validation"},
         ],
     },
     "database": {
         "triggers": ["database", "db", "sql", "query", "migracion", "schema", "modelo datos"],
         "description": "Base de datos",
         "subtasks": [
-            {"agent": "scientist", "description": "Disenar esquema de datos (solo texto)", "deps": [], "expected_output": "Esquema disenado", "context_hint": "Scientist: produces diseno. Builder implementa.", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Implementar migraciones y modelos segun diseno", "deps": [0], "expected_output": "Migraciones + modelos", "context_hint": "Builder: solo tu editas archivos", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Tests de integracion con BD", "deps": [1], "expected_output": "Tests BD", "context_hint": "Consultas, transacciones, rollbacks", "confidence_impact": "validation"},
-            {"agent": "guardian", "description": "Documentar esquema y consultas", "deps": [1], "expected_output": "Docs BD", "context_hint": "Diagrama ER, consultas frecuentes", "confidence_impact": "neutral"},
+            {"agent": "scientist", "description": "Disenar esquema de datos (solo texto)", "deps": [], "expected_output": "Esquema (texto)", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "Migraciones y modelos en src/", "deps": [0], "expected_output": "Migraciones src/", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Tests integracion BD en tests/", "deps": [1], "expected_output": "Tests BD", "confidence_impact": "validation"},
+            {"agent": "guardian", "description": "Documentar esquema", "deps": [1], "expected_output": "Docs BD", "confidence_impact": "neutral"},
         ],
     },
     "debate": {
         "triggers": ["debate", "discutir", "consenso", "votar", "criticar", "revisar"],
-        "description": "Debate multi-agente (solo texto, nadie edita archivos)",
+        "description": "Debate multi-agente (solo texto, 0 archivos)",
         "subtasks": [
-            {"agent": "coordinator", "description": "Facilitar debate entre agentes", "deps": [], "expected_output": "Debate facilitado", "context_hint": "Solo texto, nadie edita archivos de codigo", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Perspectiva de implementacion tecnica", "deps": [0], "expected_output": "Perspectiva tecnica", "context_hint": "Stack, arquitectura, rendimiento", "confidence_impact": "neutral"},
-            {"agent": "scientist", "description": "Perspectiva de investigacion y analisis", "deps": [0], "expected_output": "Perspectiva investigacion", "context_hint": "Alternativas, literatura, datos", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Perspectiva de calidad y riesgo", "deps": [0], "expected_output": "Perspectiva calidad/riesgo", "context_hint": "Tests, seguridad, mantenibilidad", "confidence_impact": "neutral"},
-            {"agent": "coordinator", "description": "Consolidar perspectivas en decision final", "deps": [1, 2, 3], "expected_output": "Decision final", "context_hint": "Integrar las 3 perspectivas", "confidence_impact": "critical"},
+            {"agent": "coordinator", "description": "Facilitar debate (solo texto)", "deps": [], "expected_output": "Debate facilitado", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "Perspectiva implementacion", "deps": [0], "expected_output": "Perspectiva tecnica", "confidence_impact": "neutral"},
+            {"agent": "scientist", "description": "Perspectiva investigacion", "deps": [0], "expected_output": "Perspectiva investigacion", "confidence_impact": "neutral"},
+            {"agent": "guardian", "description": "Perspectiva calidad/riesgo", "deps": [0], "expected_output": "Perspectiva calidad", "confidence_impact": "neutral"},
+            {"agent": "coordinator", "description": "Consolidar perspectivas", "deps": [1, 2, 3], "expected_output": "Decision final", "confidence_impact": "critical"},
         ],
     },
     "general": {
         "triggers": [],
-        "description": "Tarea general paralela coordinada",
+        "description": "Tarea general multi-agente paralelo",
         "subtasks": [
-            {"agent": "builder", "description": "PLAN + IMPLEMENTAR: primero listar archivos, luego implementar", "deps": [], "expected_output": "Codigo implementado", "context_hint": "Builder: anuncias los archivos que crearas. Nadie mas los tocara.", "confidence_impact": "critical"},
-            {"agent": "scientist", "description": "Investigar dominio (solo texto, 0 archivos de codigo)", "deps": [], "expected_output": "Recomendaciones", "context_hint": "Scientist: produces texto. No tocas archivos.", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Tests + docs en archivos SEPARADOS (tests/)", "deps": [0], "expected_output": "Calidad verificada", "context_hint": "Guardian: trabajas en tests/. No tocas archivos del builder.", "confidence_impact": "validation"},
-            {"agent": "coordinator", "description": "Consolidar resultados", "deps": [0, 1, 2], "expected_output": "Entrega unificada", "context_hint": "Sin conflictos: cada agente trabajo en archivos diferentes", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "CODIGO: implementar en src/", "deps": [], "expected_output": "Implementacion src/", "context_hint": "Builder: src/. Guardian: tests/. CERO colision.", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "PLAN (texto): disenar tests y seguridad", "deps": [], "expected_output": "Plan calidad (texto)", "context_hint": "Guardian: SOLO texto ahora. Tests en tests/ luego.", "confidence_impact": "validation"},
+            {"agent": "scientist", "description": "INVESTIGAR: mejores practicas (solo texto)", "deps": [], "expected_output": "Recomendaciones (texto)", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "TESTS + DOCS: escribir tests en tests/ y docs", "deps": [0], "expected_output": "Tests + docs", "context_hint": "Guardian: tests/ solamente. Builder src/ ya termino.", "confidence_impact": "validation"},
+            {"agent": "coordinator", "description": "Consolidar resultados", "deps": [0, 1, 2, 3], "expected_output": "Entrega unificada", "confidence_impact": "critical"},
         ],
     },
 }
@@ -459,7 +463,7 @@ class TaskPlanner:
                 description=injected_desc,
                 dependencies=dep_ids,
                 expected_output=tpl["expected_output"],
-                context_hint=specifics.get("context", tpl["context_hint"]),
+                context_hint=specifics.get("context", tpl.get("context_hint", "")),
                 confidence_impact=tpl.get("confidence_impact", "neutral"),
             ))
 
@@ -503,25 +507,25 @@ class TaskPlanner:
         for name, tpl in SUBTASK_TEMPLATES.items():
             triggers = tpl.get("triggers", [])
             # Saltar templates genericos (implement, general) en Fase 1
-            if not triggers or name in ("implement", "general"):
+            if not triggers or name in ("swarm_default", "general"):
                 continue
             score = sum(1 for t in triggers if t in msg_lower)
             if score >= 2:  # Dos o mas keywords = template especifico
                 logger.debug("Specific template %s selected (score=%d)", name, score)
                 return name, tpl
 
-        # Fase 2: Si no hay template especifico, detectar si es implementacion generica
-        impl_triggers = SUBTASK_TEMPLATES["implement"].get("triggers", [])
-        impl_score = sum(1 for t in impl_triggers if t in msg_lower)
-        if impl_score >= 2:
-            logger.debug("Implement template selected (score=%d)", impl_score)
-            return "implement", SUBTASK_TEMPLATES["implement"]
+        # Fase 2: Si no hay template especifico -> SWARM (maximo paralelismo)
+        swarm_triggers = SUBTASK_TEMPLATES["swarm_default"].get("triggers", [])
+        swarm_score = sum(1 for t in swarm_triggers if t in msg_lower)
+        if swarm_score >= 2:
+            logger.debug("SWARM template selected (score=%d)", swarm_score)
+            return "swarm_default", SUBTASK_TEMPLATES["swarm_default"]
 
         for name, tpl in SUBTASK_TEMPLATES.items():
             triggers = tpl.get("triggers", [])
             if not triggers:
                 continue
-            if name in ("implement",):
+            if name in ("swarm_default",):
                 continue
             score = sum(1 for t in triggers if t in msg_lower)
             if score > best_score:

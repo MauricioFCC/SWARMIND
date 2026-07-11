@@ -3,16 +3,17 @@
 ## 📋 Índice
 1. [Filosofía del Sistema](#-filosofía-del-sistema)
 2. [Cómo Usar AGENTIC Correctamente](#-cómo-usar-agentic-correctamente)
-3. [Estrategias para que el LLM no pierda memoria](#-estrategias-para-que-el-llm-no-pierda-memoria)
-4. [Máximo Provecho del Sistema](#-máximo-provecho-del-sistema)
-5. [Estándares Automáticos (sin mencionarlos)](#-estándares-automáticos-sin-mencionarlos)
-6. [El Patrón Swiss Watch](#-el-patrón-swiss-watch)
-7. [Estructura del Proyecto](#-estructura-del-proyecto)
-8. [Cómo Modificar Archivos Correctamente](#-cómo-modificar-archivos-correctamente)
-9. [Agentes y sus Responsabilidades](#-agentes-y-sus-responsabilidades)
-10. [Optimización de Tokens](#-optimización-de-tokens)
-11. [Exportación y Backup](#-exportación-y-backup)
-12. [Checklist de Calidad](#-checklist-de-calidad)
+3. [Velocidad y Paralelismo Máximo](#-velocidad-y-paralelismo-máximo)
+4. [Estrategias para que el LLM no pierda memoria](#-estrategias-para-que-el-llm-no-pierda-memoria)
+5. [Máximo Provecho del Sistema](#-máximo-provecho-del-sistema)
+6. [Estándares Automáticos (sin mencionarlos)](#-estándares-automáticos-sin-mencionarlos)
+7. [El Patrón Swiss Watch](#-el-patrón-swiss-watch)
+8. [Estructura del Proyecto](#-estructura-del-proyecto)
+9. [Cómo Modificar Archivos Correctamente](#-cómo-modificar-archivos-correctamente)
+10. [Agentes y sus Responsabilidades](#-agentes-y-sus-responsabilidades)
+11. [Optimización de Tokens](#-optimización-de-tokens)
+12. [Exportación y Backup](#-exportación-y-backup)
+13. [Checklist de Calidad](#-checklist-de-calidad)
 
 ---
 
@@ -76,6 +77,89 @@ El sistema AGENTIC **ya tiene todo configurado** en los prompts de los agentes:
 No necesitas recordarle nada al sistema. Solo describe **qué** hacer, no **cómo** hacerlo.
 
 ---
+
+## ⚡ Velocidad y Paralelismo Máximo
+
+### Principio: "Plan rápido + Ejecución consciente"
+
+El sistema lanza **múltiples agentes en paralelo** pero cada uno sabe EXACTAMENTE
+qué archivos le tocan. Esto evita colisiones sin sacrificar velocidad.
+
+```
+Nivel 0 (PARALELO TOTAL - 3 agentes):
+  [builder]   CODIGO en src/         ← UNICO que edita src/
+  [guardian]  PLAN de tests (texto)  ← Solo texto, 0 archivos
+  [scientist] INVESTIGACION (texto)  ← Solo texto, 0 archivos
+  → NADIE toca el mismo archivo → CERO colisiones
+
+Nivel 1 (PARALELO - 2 agentes):
+  [guardian]  TESTS en tests/        ← UNICO que edita tests/
+  [builder]   (ya termino)
+  [scientist] (ya termino)
+  → builder ya termino src/, guardian crea tests/ → CERO colisiones
+
+Nivel 2:
+  [coordinator] CONSOLIDA           ← Solo lectura
+```
+
+### Reglas de Oro para Mantener la Velocidad
+
+| Regla | Por qué |
+|-------|---------|
+| **Builder edita SOLO src/** | Nadie más toca src/ → sin colisiones |
+| **Guardian crea SOLO tests/** | test files NUNCA chocan con src/ |
+| **Scientist produce SOLO texto** | 0 archivos de código → 0 colisiones |
+| **Coordinator solo consolida** | Solo lectura → 0 colisiones |
+| **Nivel 0 siempre tiene 3 agentes** | Máximo paralelismo posible |
+| **Nivel 1 solo si hay dependencia** | guardian necesita código del builder para testear |
+
+### Por qué es RÁPIDO y SEGURO
+
+| Aspecto | Estrategia |
+|---------|-----------|
+| **3 agentes en nivel 0** | builder+guardian+scientist simultáneos |
+| **0 colisiones** | Cada agente escribe en directorios DIFERENTES |
+| **0 esperas** | No hay dependencias entre los 3 del nivel 0 |
+| **ContextInjector** | Recordatorio en cada subtarea (25 tokens, evita repeticiones) |
+| **AgentSelector** | Solo activa los agentes necesarios (ahorra tokens) |
+| **SkillRouter** | Solo carga skills relevantes (ahorra 60-80% tokens skills) |
+
+### Ahorro de Tokens vs Velocidad
+
+| Componente | Ahorro | Impacto en velocidad |
+|------------|:------:|:--------------------:|
+| ContextInjector en subtareas | -25 tokens/subtarea | Ninguno (1 línea) |
+| SkillRouter (solo skills relevantes) | 60-80% | Ninguno |
+| AgentSelector (solo agentes necesarios) | 30-50% | **+50%** (menos agentes fantasma) |
+| Semantic Cache | 50-80% en repeats | **+200%** (respuesta instantánea) |
+| Templates cortos (task_planner) | 24% | Ninguno |
+
+### Cómo Escalar la Velocidad
+
+Para tareas que requieren **máxima velocidad posible**:
+
+```bash
+# Modo SWARM completo (3 agentes simultáneos)
+python harness/run.py "implementa un modulo de trading con tests"
+
+# El sistema automaticamente:
+# 1. Carga SOLO skill de trading (ahorra tokens)
+# 2. Activa builder+guardian+scientist (paralelo)
+# 3. Inyecta estandares en cada subtarea (no olvida)
+# 4. Usa cache semantico si ya hizo algo similar
+```
+
+### Qué NO HACER (reduce velocidad)
+
+```
+❌ Poner todo en un solo agente → pierdes paralelismo
+❌ Cargar todos los skills → gastas tokens en skills irrelevantes
+❌ Repetir estandares en cada mensaje → el ContextInjector ya lo hace
+❌ Hacer tareas secuenciales cuando podrian ser paralelas
+   → Preguntate: "puede guardian hacer tests mientras builder programa?"
+```
+
+La respuesta es SIEMPRE "sí" — porque trabajan en directorios diferentes (src/ vs tests/).
 
 ## 🧠 Estrategias para que el LLM no pierda memoria
 
@@ -155,23 +239,73 @@ Si el LLM "olvida" el contexto del proyecto:
 4. **Revisar el último commit** — `git log --oneline -5` para saber el estado actual
 5. **Usar el export como snapshot** — `python scripts/export_archive.py --dry-run` para ver el estado del proyecto
 
-### 📌 Estrategia 6: Mantener un archivo SESSION_LOG.md
+### 📌 Estrategia 6: Session Log en LanceDB (recomendado)
 
-Para sesiones largas, mantener un log de decisiones:
+En lugar de un archivo plano `.md`, usa **LanceDB + CognitionSync** para almacenar
+decisiones de sesión con **búsqueda semántica**. Esto permite que el LLM encuentre
+decisiones pasadas por similitud (no solo por keywords).
 
-```markdown
-# Session Log - AGENTIC
-## 2026-07-10
+#### Registrar una decisión
 
-## Tarea: Optimización de tokens
-- Se modificó prompt_compressor.py (modo ligero)
-- Se minificaron agent prompts (-35%)
-- Se refactorizó task_orchestrator.py (<900LC)
-- Commit: d102c2f
+```bash
+# Usando el helper (ver abajo)
+python scripts/session_log.py add "Optimización de tokens" \
+  --content "Se modificó prompt_compressor.py (modo ligero). Minificación -35%. Refactor <900LC." \
+  --domain "harness.optimization" \
+  --tags "tokens,refactor,compressor" \
+  --metrics '{"tokens_ahorrados": 118, "archivos": 22}'
+```
 
-## Tarea: Exportación
-- 5 proyectos recibieron mejoras
-- Export AGENTIC: 650 KB, 30.3% compresión
+#### Consultar decisiones pasadas
+
+```bash
+# Buscar decisiones similares por significado (no solo keywords)
+python scripts/session_log.py search "ahorro de tokens en prompts"
+# → Encuentra: "Optimización de tokens" (similitud semántica, aunque las palabras no coincidan exactamente)
+
+# Ver últimas decisiones
+python scripts/session_log.py list --limit 5
+
+# Filtrar por dominio
+python scripts/session_log.py list --domain "harness.optimization"
+```
+
+#### Ventajas sobre .md plano
+
+| Aspecto | SESSION_LOG.md | LanceDB Cognition |
+|---------|:--------------:|:-----------------:|
+| Búsqueda por keywords | ✅ | ✅ |
+| Búsqueda semántica | ❌ | ✅ |
+| Filtrado por dominio/tags | ❌ | ✅ |
+| Persistencia vectorial | ❌ | ✅ |
+| Consultable por LLM | Lectura lineal | Búsqueda semántica |
+| Ocupa espacio en contexto | Sí (texto completo) | No (solo resultados) |
+| Histórico ilimitado | ❌ (archivo crece) | ✅ |
+
+#### Implementación del helper
+
+El script `scripts/session_log.py` usa `CognitionSync.add_lesson()` internamente:
+
+```python
+from harness.evolve_loop.cognition_sync import CognitionSync
+from harness.memory_rag.lance_vector_store import LanceVectorStore
+
+def log_session_decision(titulo, contenido, dominio, tags=None, metrics=None):
+    store = LanceVectorStore()
+    cog = CognitionSync(store)
+    leccion = cog.add_lesson(
+        title=titulo,
+        content=contenido,
+        domain=dominio,
+        tags=tags or [],
+        metrics=metrics or {},
+    )
+    return leccion
+
+def search_decisions(query, domain=None, limit=5):
+    store = LanceVectorStore()
+    cog = CognitionSync(store)
+    return cog.search_lessons(query, domain=domain, top_k=limit)
 ```
 
 ---
@@ -453,7 +587,37 @@ def procesar_orden(orden_id: str, monto: float) -> dict:
     ...
 ```
 
-### Regla #5: Commits Convencionales
+### Regla #5: Preservar el paralelismo al modificar templates
+
+Los templates en `harness/orchestrator/task_planner.py` controlan cuántos agentes
+se lanzan en paralelo. Para mantener la velocidad:
+
+```
+✅ Nivel 0: 3 agentes (builder+guardian+scientist) sin dependencias
+   builder.description = "CODIGO: implementar en src/"
+   guardian.description = "PLAN (texto): disenar tests"    → 0 archivos
+   scientist.description = "INVESTIGAR: (solo texto)"       → 0 archivos
+   → NADIE CHOCA porque cada uno escribe en su directorio
+
+❌ Nivel 0: 1 solo agente (builder esperando)
+   → LENTO: guardian espera a que builder termine
+```
+
+Al agregar un nuevo template, asegúrate de:
+1. **Nivel 0**: Siempre 3 agentes sin dependencias entre sí
+2. **Builder**: Solo escribe en `src/` o directorio principal
+3. **Guardian**: `tests/` y documentación (nunca src/)
+4. **Scientist**: Solo texto (nunca toca archivos de código)
+5. **Coordinator**: Solo consolida al final
+
+### Regla #6: No romper el ContextInjector
+
+El archivo `harness/memory_rag/context_injector.py` inyecta recordatorios
+ultra-compactos en cada subtarea. NO lo deshabilites ni le quites el prefijo
+`[F]` — ese prefijo le dice al LLM "estos son estándares fijos" y evita
+que tenga que adivinarlos.
+
+### Regla #7: Commits Convencionales
 
 ```
 feat: nueva funcionalidad para el modulo X
