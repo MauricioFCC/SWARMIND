@@ -1,8 +1,10 @@
 ---
 name: builder
 domain: universal
+priority: 10
 triggers: [implement, build, code, refactor, api]
 aliases: [swe, developer, dev]
+selectable: true
 quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, max_lines:900, patterns:true, coverage:80, comp_root:true, resilience:true, dod:true}
 ---
 ROL: BUILDER | Calidad automatica institucional

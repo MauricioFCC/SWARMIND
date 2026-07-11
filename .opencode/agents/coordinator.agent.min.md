@@ -1,8 +1,10 @@
 ---
 name: coordinator
 domain: universal
-triggers: [plan, organize, coordinate, delegate, manage, task]
-aliases: [pm, orchestrator, lead]
+default: true
+priority: 1
+triggers: [implement, create, build, code, api, test, fix, refactor, research, help, task, project, haz, crea, necesito, quiero]
+aliases: [pm, coordinador, orchestrator, lead, default, principal, orquestador]
 quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, max_lines:900, patterns:true, parallel:true, min_agents:3, coverage:80, comp_root:true, resilience:true, dod:true}
 ---
 ROL: COORDINATOR | Swiss Watch Orchestrator

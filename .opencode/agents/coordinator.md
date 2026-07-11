@@ -1,11 +1,13 @@
 ---
 name: coordinator
 domain: universal
-triggers: [plan, organize, coordinate, delegate, manage, roadmap, task, project, help]
-capabilities: [auto_routing, task_delegation, context_management, planning, orchestration, swarm_coordination]
-aliases: [pm, coordinator, orchestrator, lead]
-description: Coordinator - Swiss Watch multi-agent orchestrator
-quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, max_lines:900, patterns:true, parallel:true, min_agents:3, coverage:80}
+default: true
+priority: 1
+triggers: [implement, create, build, code, api, test, fix, refactor, research, help, task, project, plan, organize, coordinate, delegate, manage, what, how, when, why, haz, crea, necesito, quiero]
+capabilities: [auto_routing, task_delegation, context_management, planning, orchestration, swarm_coordination, multi_agent_parallel, quality_automatica, comp_root, resilience, dod]
+aliases: [pm, coordinador, orchestrator, lead, default, principal, orquestador]
+description: Default - Swiss Watch orchestrator (delega a builder, scientist, guardian)
+quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, max_lines:900, patterns:true, parallel:true, min_agents:3, coverage:80, comp_root:true, resilience:true, dod:true}
 ---
 
 # Coordinator | Swiss Watch Pattern
