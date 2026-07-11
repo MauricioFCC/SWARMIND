@@ -3,14 +3,16 @@
 ## 📋 Índice
 1. [Filosofía del Sistema](#-filosofía-del-sistema)
 2. [Cómo Usar AGENTIC Correctamente](#-cómo-usar-agentic-correctamente)
-3. [Estándares Automáticos (sin mencionarlos)](#-estándares-automáticos-sin-mencionarlos)
-4. [El Patrón Swiss Watch](#-el-patrón-swiss-watch)
-5. [Estructura del Proyecto](#-estructura-del-proyecto)
-6. [Cómo Modificar Archivos Correctamente](#-cómo-modificar-archivos-correctamente)
-7. [Agentes y sus Responsabilidades](#-agentes-y-sus-responsabilidades)
-8. [Optimización de Tokens](#-optimización-de-tokens)
-9. [Exportación y Backup](#-exportación-y-backup)
-10. [Checklist de Calidad](#-checklist-de-calidad)
+3. [Estrategias para que el LLM no pierda memoria](#-estrategias-para-que-el-llm-no-pierda-memoria)
+4. [Máximo Provecho del Sistema](#-máximo-provecho-del-sistema)
+5. [Estándares Automáticos (sin mencionarlos)](#-estándares-automáticos-sin-mencionarlos)
+6. [El Patrón Swiss Watch](#-el-patrón-swiss-watch)
+7. [Estructura del Proyecto](#-estructura-del-proyecto)
+8. [Cómo Modificar Archivos Correctamente](#-cómo-modificar-archivos-correctamente)
+9. [Agentes y sus Responsabilidades](#-agentes-y-sus-responsabilidades)
+10. [Optimización de Tokens](#-optimización-de-tokens)
+11. [Exportación y Backup](#-exportación-y-backup)
+12. [Checklist de Calidad](#-checklist-de-calidad)
 
 ---
 
@@ -72,6 +74,165 @@ El sistema AGENTIC **ya tiene todo configurado** en los prompts de los agentes:
 - `guardian.md` → Calidad, seguridad, tests, documentación
 
 No necesitas recordarle nada al sistema. Solo describe **qué** hacer, no **cómo** hacerlo.
+
+---
+
+## 🧠 Estrategias para que el LLM no pierda memoria
+
+Uno de los mayores desafíos al trabajar con LLMs es la **pérdida de contexto** entre sesiones.
+AGENTIC está diseñado con mecanismos para mitigar esto, pero hay estrategias que el usuario
+(es decir, TÚ leyendo este documento) puede aplicar para mantener la memoria del sistema.
+
+### 📌 Estrategia 1: Este documento como prompt de sistema
+
+Cuando inicies una nueva sesión con el LLM, **este documento debe ser el contexto inicial**.
+
+El LLM que lee este documento DEBE:
+1. Recordar que existe un sistema AGENTIC con 5 agentes especializados
+2. Recordar que los estándares de calidad están embebidos (no necesita mencionarlos)
+3. Recordar que debe delegar al coordinator para tareas multi-agente
+4. Recordar la estructura del proyecto (.opencode, harness/)
+5. Recordar que existe `export_archive.py` para backups
+
+**Forma correcta de iniciar una sesión:**
+```
+He leído y comprendo la GUIA_AGENTIC.md. 
+Soy un sistema AGENTIC Swiss Watch con 5 agentes (coordinator, builder, scientist, guardian, evolve).
+Tengo estándares automáticos: Clean Code, DRY, KISS, SSOT, <900LC, patrones, DocStrings ES-UTF8, tests >80%.
+Mi proyecto está en C:\Users\USUARIO\Documents\DEV-SPACE\AGENTIC
+```
+
+### 📌 Estrategia 2: Recordatorios estructurados al iniciar tareas
+
+Para tareas largas o complejas, incluir un **brief recordatorio** al inicio:
+
+```
+Contexto actual del proyecto AGENTIC:
+- .opencode/agents/ → perfiles de 5 agentes
+- harness/ → motor de ejecución con 327 tests
+- skills disponibles: 10 skills en .opencode/skills/
+- export: scripts/export_archive.py
+- commit reciente: d102c2f (optimización tokens + Swiss Watch)
+```
+
+### 📌 Estrategia 3: Usar el sistema de skills como memoria externa
+
+Los skills en `.opencode/skills/` actúan como **memoria externa del LLM**.
+Cada skill contiene conocimiento especializado que el LLM puede consultar.
+
+```bash
+# Los skills disponibles son:
+ls .opencode/skills/
+# alpha-research/  evolve/  hedgefund/  math-doc/  quant-trading/
+# risk-execution/  science-doc/  healthtech/  legal-doc/  pos-retail/
+```
+
+### 📌 Estrategia 4: El archivo cognition_store como memoria persistente
+
+AGENTIC usa `asi_cognition_store` en LanceDB para persistir lecciones aprendidas.
+Cada vez que completas una tarea importante, el sistema guarda:
+
+- Qué funcionó (patrones de éxito)
+- Qué no funcionó (patrones de fracaso)
+- Decisiones técnicas tomadas
+- Lecciones aprendidas
+
+**Para consultar la memoria del sistema:**
+```python
+from harness.evolve_loop.cognition_sync import CognitionSync
+store = LanceVectorStore()
+cog = CognitionSync(store)
+lecciones = cog.get_lessons_by_domain("harness.routing")
+```
+
+### 📌 Estrategia 5: Resiliencia ante pérdida de contexto
+
+Si el LLM "olvida" el contexto del proyecto:
+
+1. **Re-leer este documento** — Especialmente las secciones de agentes y estándares
+2. **Consultar los agentes** — `cat .opencode/agents/coordinator.md` para recordar el patrón Swiss Watch
+3. **Ejecutar el health check** — `python harness/run.py '!health'` para verificar que el sistema está vivo
+4. **Revisar el último commit** — `git log --oneline -5` para saber el estado actual
+5. **Usar el export como snapshot** — `python scripts/export_archive.py --dry-run` para ver el estado del proyecto
+
+### 📌 Estrategia 6: Mantener un archivo SESSION_LOG.md
+
+Para sesiones largas, mantener un log de decisiones:
+
+```markdown
+# Session Log - AGENTIC
+## 2026-07-10
+
+## Tarea: Optimización de tokens
+- Se modificó prompt_compressor.py (modo ligero)
+- Se minificaron agent prompts (-35%)
+- Se refactorizó task_orchestrator.py (<900LC)
+- Commit: d102c2f
+
+## Tarea: Exportación
+- 5 proyectos recibieron mejoras
+- Export AGENTIC: 650 KB, 30.3% compresión
+```
+
+---
+
+## 🚀 Máximo Provecho del Sistema
+
+### ⚡ Modo Turbo — Para veteranos
+
+Una vez que conoces el sistema, puedes usar **comandos directos** sin pasar por el coordinator:
+
+```bash
+# Delegación directa a un agente específico
+python harness/run.py "@builder: implementa modulo X en Rust"
+python harness/run.py "@scientist: investiga algoritmo Y"
+python harness/run.py "@guardian: audita seguridad de Z"
+
+# Sin preámbulo — los estándares ya están en los agentes
+python harness/run.py "@builder: API REST en Python con FastAPI"
+# Esto automaticamente produce: código limpio + tests >80% + DocStrings ES-UTF8
+```
+
+### ⚡ Atajos de Productividad
+
+| Acción | Comando |
+|--------|---------|
+| Health check rápido | `python harness/run.py '!health'` |
+| Ver métricas | `python harness/run.py '!metrics'` |
+| Exportar proyecto | `python scripts/export_archive.py --format zip` |
+| Ver tests | `python -m pytest harness/tests/ -q` |
+| Ver agentes | `ls .opencode/agents/` |
+| Ver skills | `ls .opencode/skills/` |
+
+### ⚡ Orquestación Avanzada
+
+Para tareas que requieren máxima potencia, usa el **patrón SWARM explícito**:
+
+```
+Quiero que hagas lo siguiente como equipo SWARM:
+1. [builder] Implementa el módulo de procesamiento de señales
+2. [scientist] Investiga la mejor técnica de filtrado
+3. [guardian] Prepara el plan de tests y seguridad
+4. [coordinator] Consolida todo al final
+```
+
+Esto fuerza el lanzamiento simultáneo de los 3 agentes desde el nivel 0.
+
+### ⚡ Pipeline Completo (Todo en uno)
+
+```bash
+# 1. Implementar con calidad automática
+python harness/run.py "implementa un modulo de risk management"
+
+# 2. Verificar salud
+python harness/run.py '!health'
+
+# 3. Exportar backup
+python scripts/export_archive.py --format zip
+
+# 4. Ver estado de git
+git status
+```
 
 ---
 
@@ -159,40 +320,73 @@ Usuario -> Coordinator -> SWARM (Nivel 0) --------------------------------
 
 ```
 AGENTIC/
-├── .opencode/                    # Cerebro del sistema
-│   ├── agents/                   # Perfiles de agentes
-│   │   ├── coordinator.md        # Orquestador Swiss Watch
-│   │   ├── coordinator.agent.min.md  # Versión minificada
-│   │   ├── builder.md            # Implementador con calidad automática
+├── .opencode/                          # CEREBRO DEL SISTEMA (memoria del LLM)
+│   ├── agents/                         # Perfiles de agentes (5)
+│   │   ├── coordinator.md              # Orquestador Swiss Watch
+│   │   ├── coordinator.agent.min.md    # Versión minificada (<300 chars)
+│   │   ├── builder.md                  # Implementador calidad automática
 │   │   ├── builder.agent.min.md
-│   │   ├── scientist.md          # Investigador
-│   │   ├── guardian.md           # Calidad y seguridad
-│   │   └── evolve.md             # Auto-mejora
-│   ├── skills/                   # Skills del sistema (10)
-│   ├── core/                     # Router, guardrails, registry
-│   └── config/                   # Config del proyecto + routing + tokens
-├── harness/                      # Motor de ejecución
-│   ├── orchestrator/             # Corazón: planner, dispatcher, health
-│   │   ├── task_orchestrator.py  # Orquestador (<900LC ✅)
-│   │   ├── task_planner.py       # Planificador con templates SWARM
-│   │   ├── difficulty_router.py  # Clasifica complejidad
-│   │   ├── structured_log.py     # Logging estructurado
-│   │   ├── self_healing.py       # Circuit breaker + timeouts
-│   │   ├── orchestration_result.py  # Resultados
-│   │   └── ... (agent_bus, session_context, health, etc.)
-│   ├── memory_rag/               # Memoria vectorial LanceDB
-│   │   ├── prompt_compressor.py  # Compresor ligero (19% ahorro)
-│   │   ├── semantic_cache.py     # Cache semántico
-│   │   ├── token_budget.py       # Presupuesto de tokens
-│   │   └── lance_vector_store.py # Vector store
-│   ├── model_router/             # Enrutamiento local/cloud
-│   ├── evolve_loop/              # Auto-mejora ASI-Evolve
-│   ├── gateway/                  # CLIs, Slack, Telegram
-│   ├── db/                       # Migración y persistencia
-│   └── tests/                    # 327 tests
-└── scripts/
-    ├── export_archive.py         # Script universal de exportación
-    └── ... (ingest, consolidation, etc.)
+│   │   ├── scientist.md                # Investigador técnico
+│   │   ├── guardian.md                 # Calidad, seguridad, docs
+│   │   └── evolve.md                   # Auto-mejora del sistema
+│   ├── skills/                         # MEMORIA ESPECIALIZADA (10 skills)
+│   │   ├── alpha-research/             # Factor research, ML, feature engineering
+│   │   ├── evolve/                     # Self-improvement loop
+│   │   ├── healthtech/                 # Salud, HIPAA, interoperabilidad
+│   │   ├── hedgefund/                  # Hedge fund institucional
+│   │   ├── legal-doc/                  # Documentos legales, compliance
+│   │   ├── math-doc/                   # Documentos matemáticos, LaTeX
+│   │   ├── pos-retail/                 # Punto de venta, retail
+│   │   ├── quant-trading/              # Trading cuantitativo con CQE Rust
+│   │   ├── risk-execution/             # Risk management, position sizing
+│   │   └── science-doc/                # Documentos científicos
+│   ├── core/                           # Router, guardrails, registry
+│   │   ├── router_v2.py               # Enrutamiento multi-agente
+│   │   ├── guardrails.py               # Seguridad y validaciones
+│   │   ├── registry.py                 # Registro de skills con contratos
+│   │   └── base_principles.md          # Principios universales
+│   └── config/                         # Config del proyecto
+│       ├── project_config.yaml          # Metadata del proyecto
+│       ├── routing_rules.yaml           # Reglas de enrutamiento por intent
+│       └── token_budgets.yaml           # Presupuestos de tokens por rol
+├── harness/                            # MOTOR DE EJECUCIÓN
+│   ├── orchestrator/                   # Corazón: planner, dispatcher, health
+│   │   ├── task_orchestrator.py        # Orquestador (<900LC ✅)
+│   │   ├── task_planner.py             # Planificador con templates SWARM
+│   │   ├── difficulty_router.py        # Clasifica complejidad
+│   │   ├── structured_log.py           # Logging estructurado
+│   │   ├── self_healing.py             # Circuit breaker + timeouts
+│   │   ├── orchestration_result.py     # Resultados
+│   │   ├── agent_bus.py                # Comunicación entre agentes
+│   │   ├── agent_dispatcher.py         # Dispatch asíncrono batch
+│   │   ├── session_context.py          # Contexto de sesión
+│   │   ├── federated_memory.py         # Memoria entre proyectos
+│   │   ├── health.py                   # Health check 3 niveles
+│   │   ├── telemetry.py                # KPIs y telemetría
+│   │   └── ... (adaptive_planner, debate, confidence, etc.)
+│   ├── memory_rag/                     # MEMORIA VECTORIAL (LanceDB)
+│   │   ├── lance_vector_store.py       # Vector store principal
+│   │   ├── prompt_compressor.py        # Compresor ligero (19% ahorro)
+│   │   ├── semantic_cache.py           # Cache semántico (evita LLM calls)
+│   │   ├── token_budget.py             # Presupuesto de tokens por pool
+│   │   ├── context_assembler.py        # Ensambla contexto RAG
+│   │   ├── context_window_manager.py   # Gestión de ventana de contexto
+│   │   ├── agent_kpi_tracker.py        # KPIs por agente y sesión
+│   │   ├── skill_loader.py             # Carga skills desde .opencode
+│   │   └── trajectory_compressor.py    # Compresión de trayectorias
+│   ├── model_router/                   # Enrutamiento local/cloud
+│   ├── evolve_loop/                    # Auto-mejora ASI-Evolve
+│   ├── gateway/                        # CLIs, Slack, Telegram
+│   ├── db/                             # Migración y persistencia
+│   │   ├── migrate_engine.py           # Motor de migración
+│   │   ├── migrate_discovery.py        # Descubrimiento de colecciones
+│   │   └── migrate_cli.py              # CLI de migración
+│   └── tests/                          # 327 tests de integración
+├── scripts/
+│   ├── export_archive.py               # Script universal de exportación
+│   ├── hermes_bridge.py                # Puente con Hermes_Memory_Proyects
+│   └── ... (ingest, consolidation, etc.)
+└── GUIA_AGENTIC.md                     # Este documento
 ```
 
 ---
