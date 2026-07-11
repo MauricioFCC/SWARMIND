@@ -191,18 +191,21 @@ class TaskPlan:
 
 SUBTASK_TEMPLATES: Dict[str, Dict] = {
     # ==========================================================================
-    # TEMPLATES SIN COLISIONES: nivel 0 SIEMPRE tiene 1 SOLO agente.
-    # Los agentes trabajan en secuencia, pasandose el output via AgentBus.
+    # TEMPLATES COORDINADOS: paralelo SEGURO con pre-plan.
+    # Estrategia: 
+    #   1. Builder crea PLAN rapido (nivel 0) listando archivos a modificar
+    #   2. TODOS los agentes trabajan en PARALELO sabiendo quien hace que
+    #   3. Nadie toca el mismo archivo porque conocen los boundaries
     # ==========================================================================
     "implement": {
         "triggers": ["implement", "create", "build", "develop", "haz", "crea", "implementa"],
-        "description": "Implementacion secuencial optimizada",
+        "description": "Implementacion paralela coordinada",
         "subtasks": [
-            {"agent": "builder", "description": "Implementar codigo completo", "deps": [], "expected_output": "Codigo implementado", "context_hint": "Builder: solo tu editas archivos. Guardian esperara tu output.", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Escribir tests sobre el codigo del builder", "deps": [0], "expected_output": "Tests >80% cobertura", "context_hint": "Guardian: builder ya termino. No modifiques su codigo, solo agrega tests.", "confidence_impact": "validation"},
-            {"agent": "guardian", "description": "Documentar API y ejemplos de uso", "deps": [0], "expected_output": "Docs ES-UTF8", "context_hint": "Documentar lo que builder creo, sin modificarlo", "confidence_impact": "neutral"},
-            {"agent": "scientist", "description": "Investigar alternativas y mejores practicas (NO editar archivos)", "deps": [], "expected_output": "Recomendaciones tecnicas", "context_hint": "Scientist: solo produces texto. No toques archivos del builder.", "confidence_impact": "critical"},
-            {"agent": "coordinator", "description": "Consolidar codigo, tests, docs e investigacion", "deps": [0, 1, 2, 3], "expected_output": "Entrega unificada", "context_hint": "Integrar todo sin conflictos", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "PLAN RAPIDO: listar archivos a crear/modificar (max 3 lineas)", "deps": [], "expected_output": "Lista de archivos que editara cada agente", "context_hint": "Builder: produce SOLO un plan. Ej: 'src/api.rs: implementar endpoints, tests/api_test.rs: tests'", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "IMPLEMENTAR segun plan: solo los archivos que anunciaste", "deps": [0], "expected_output": "Codigo implementado", "context_hint": "Builder: editas SOLO los archivos que listaste en el plan. Guardian trabajara en tests/.", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "TESTS en archivos SEPARADOS (tests/) segun el plan del builder", "deps": [0], "expected_output": "Tests >80% cobertura", "context_hint": "Guardian: creas tests en tests/ NUNCA tocas archivos del builder. Usa el plan para saber que testear.", "confidence_impact": "validation"},
+            {"agent": "scientist", "description": "INVESTIGAR alternativas (solo texto, 0 archivos de codigo)", "deps": [], "expected_output": "Recomendaciones tecnicas", "context_hint": "Scientist: produces texto. No tocas NINGUN archivo del proyecto.", "confidence_impact": "critical"},
+            {"agent": "coordinator", "description": "Consolidar resultados de todos los agentes", "deps": [1, 2, 3], "expected_output": "Entrega unificada", "context_hint": "Coordinator: builder y guardian trabajaron en archivos DIFERENTES. No hay conflictos.", "confidence_impact": "critical"},
         ],
     },
     "implement_api": {
@@ -366,12 +369,12 @@ SUBTASK_TEMPLATES: Dict[str, Dict] = {
     },
     "general": {
         "triggers": [],
-        "description": "Tarea general (builder primero, guardian despues)",
+        "description": "Tarea general paralela coordinada",
         "subtasks": [
-            {"agent": "builder", "description": "Implementar codigo (estandares en builder.md)", "deps": [], "expected_output": "Implementacion", "context_hint": "Builder: solo tu editas archivos. Guardian espera tu output.", "confidence_impact": "critical"},
-            {"agent": "scientist", "description": "Investigar dominio y proponer enfoque (solo texto, no codigo)", "deps": [], "expected_output": "Recomendaciones", "context_hint": "Scientist: solo produces texto, no tocas archivos", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Tests, seguridad y documentacion sobre codigo del builder", "deps": [0], "expected_output": "Calidad verificada", "context_hint": "Guardian: builder ya termino, solo agregas tests y docs", "confidence_impact": "validation"},
-            {"agent": "coordinator", "description": "Consolidar resultados sin conflictos", "deps": [0, 1, 2], "expected_output": "Entrega unificada", "context_hint": "Integrar todo sin colisiones", "confidence_impact": "critical"},
+            {"agent": "builder", "description": "PLAN + IMPLEMENTAR: primero listar archivos, luego implementar", "deps": [], "expected_output": "Codigo implementado", "context_hint": "Builder: anuncias los archivos que crearas. Nadie mas los tocara.", "confidence_impact": "critical"},
+            {"agent": "scientist", "description": "Investigar dominio (solo texto, 0 archivos de codigo)", "deps": [], "expected_output": "Recomendaciones", "context_hint": "Scientist: produces texto. No tocas archivos.", "confidence_impact": "critical"},
+            {"agent": "guardian", "description": "Tests + docs en archivos SEPARADOS (tests/)", "deps": [0], "expected_output": "Calidad verificada", "context_hint": "Guardian: trabajas en tests/. No tocas archivos del builder.", "confidence_impact": "validation"},
+            {"agent": "coordinator", "description": "Consolidar resultados", "deps": [0, 1, 2], "expected_output": "Entrega unificada", "context_hint": "Sin conflictos: cada agente trabajo en archivos diferentes", "confidence_impact": "critical"},
         ],
     },
 }
