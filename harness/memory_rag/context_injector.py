@@ -92,15 +92,24 @@ class ContextInjector:
     def get_reminder(self, agent_role: str = "builder") -> str:
         """
         Obtiene recordatorio de estandares para un rol.
+        SIEMPRE incluye la firma universal + los estandares especificos del rol.
 
         Args:
             agent_role: Rol del agente.
 
         Returns:
-            String con estandares codificados.
+            String con estandares codificados (universal + especifico).
         """
-        specific = STANDARDS_ENCODED.get(agent_role, UNIVERSAL_FIRMA)
-        return f"[F]{specific}"
+        universal = UNIVERSAL_FIRMA
+        specific = STANDARDS_ENCODED.get(agent_role, "")
+        if specific:
+            # Unir universal + especifico, evitar duplicados
+            universal_parts = set(universal.split("+"))
+            specific_parts = [p for p in specific.split("+") if p not in universal_parts]
+            combined = universal + "+" + "+".join(specific_parts)
+        else:
+            combined = universal
+        return f"[F]{combined}"
 
     def estimate_tokens(self, agent_role: str = "builder") -> int:
         """Estima tokens adicionales por inyeccion."""
