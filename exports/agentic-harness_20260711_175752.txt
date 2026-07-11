@@ -1,7 +1,7 @@
 Manifiesto de Exportación
 ============================================================
 Proyecto: AGENTIC
-Fecha: 2026-07-11T17:55:10.122971+00:00
+Fecha: 2026-07-11T17:57:53.595041+00:00
 Total archivos: 210
 ============================================================
 
@@ -13,10 +13,10 @@ Total archivos: 210
   1.1 KB  .gitignore
   2.9 KB  .MEJORAS_AGENTIC.md
      0 B  .opencode/agents/.gitkeep
- 589.0 B  .opencode/agents/builder.agent.min.md
+ 619.0 B  .opencode/agents/builder.agent.min.md
   1.9 KB  .opencode/agents/builder.md
- 730.0 B  .opencode/agents/coordinator.agent.min.md
-  1.6 KB  .opencode/agents/coordinator.md
+ 868.0 B  .opencode/agents/coordinator.agent.min.md
+  1.9 KB  .opencode/agents/coordinator.md
   2.0 KB  .opencode/agents/evolve-analyzer.agent.min.md
   2.4 KB  .opencode/agents/evolve-analyzer.md
   1.6 KB  .opencode/agents/evolve-engineer.agent.min.md

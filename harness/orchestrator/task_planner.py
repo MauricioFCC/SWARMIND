@@ -200,7 +200,7 @@ SUBTASK_TEMPLATES: Dict[str, Dict] = {
     # => VELOCIDAD de paralelo + 0 colisiones (nadie toca el mismo archivo)
     # ==========================================================================
     "swarm_default": {
-        "triggers": ["implement", "create", "build", "develop", "haz", "crea", "implementa"],
+        "triggers": ["implement", "create", "build", "develop", "haz", "crea", "implementa", "construye", "construir", "hacer", "realiza", "desarrolla", "genera", "produce", "prepara", "disena"],
         "description": "CUADRILLA: 6 agentes paralelos + bugfix dedicado",
         "subtasks": [
             {"agent": "coordinator", "description": "PLAN: dividir trabajo en modulos (core, api, db) + tests + docs", "deps": [], "expected_output": "Plan de trabajo dividido en modulos", "context_hint": "Coordinator: produces SOLO un plan. Cada builder trabajara en su modulo SIN colision.", "confidence_impact": "critical"},
@@ -406,6 +406,7 @@ class TaskPlanner:
     def __init__(self) -> None:
         self._counter: int = 0
         self._injector = None  # Lazy import
+        self._scope_analyzer = None  # Lazy import
 
     def _get_injector(self):
         """Lazy import de ContextInjector para evitar circular imports."""
@@ -414,15 +415,26 @@ class TaskPlanner:
             self._injector = ContextInjector(always_inject=True)
         return self._injector
 
+    def _get_scope_analyzer(self):
+        """Lazy import de ScopeAnalyzer para evitar circular imports."""
+        if self._scope_analyzer is None:
+            from harness.orchestrator.scope_analyzer import ScopeAnalyzer
+            self._scope_analyzer = ScopeAnalyzer()
+        return self._scope_analyzer
+
     def decompose(self, message: str) -> TaskPlan:
         """
         Decompose a user message into a structured TaskPlan.
 
         Strategy:
           1. Detect task type from keywords and patterns
-          2. Load matching template
+          2. Load matching template (o genera uno dinamico segun alcance)
           3. Customize subtasks based on specifics in message
           4. Assign a session ID
+
+        DYNAMIC SCALING: Si el template detectado es "swarm_default",
+        el ScopeAnalyzer determina cuantos builders/guardians lanzar
+        segun la cantidad de trabajo detectada en el mensaje.
 
         Args:
             message: The user's request/message.
@@ -439,9 +451,15 @@ class TaskPlanner:
         # --- 2. Extract specifics from message ---
         specifics = self._extract_specifics(message)
 
-        # --- 3. Build subtasks from template ---
-        # Map: template index → counter-based subtask ID
-        # deps use template indices (0-based), converted to counter-based IDs
+        # --- 3. DYNAMIC SCALING: si es swarm_default, analizar alcance ---
+        if template_name == "swarm_default":
+            analyzer = self._get_scope_analyzer()
+            scope = analyzer.analyze(message)
+            template_name = analyzer.get_template_name(scope)
+            subtask_dicts = analyzer.generate_subtasks(scope)
+            template = {"description": f"dynamic_{scope.level}", "subtasks": subtask_dicts}
+
+        # --- 4. Build subtasks from template ---
         subtasks: List[SubTask] = []
         idx_to_id: Dict[int, str] = {}
         for idx, tpl in enumerate(template["subtasks"]):
@@ -456,7 +474,6 @@ class TaskPlanner:
             )
 
             # Inyectar estandares en la descripcion (ContextInjector)
-            # para evitar que el LLM los olvide durante sesiones largas
             injector = self._get_injector()
             injected_desc = injector.inject(description, agent_role=tpl["agent"])
 
@@ -505,23 +522,25 @@ class TaskPlanner:
         best_name = "general"
         best_template = SUBTASK_TEMPLATES["general"]
 
-        # Fase 1: Buscar template especifico (implement_api, fix_bug, research, etc.)
-        # Si hay coincidencia EXACTA con triggers de un template especifico, usarlo
+        # Fase 1: Buscar template especifico (fix_bug, research, etc.)
+        # Umbral ALTO (>3) para que solo tareas MUY especificas activen templates concretos.
+        # Por defecto, TODO va a swarm_default (que escala dinamicamente segun alcance).
         for name, tpl in SUBTASK_TEMPLATES.items():
             triggers = tpl.get("triggers", [])
-            # Saltar templates genericos (implement, general) en Fase 1
             if not triggers or name in ("swarm_default", "general"):
                 continue
             score = sum(1 for t in triggers if t in msg_lower)
-            if score >= 2:  # Dos o mas keywords = template especifico
+            # Umbral 3+ keywords para template especifico (antes era 2)
+            if score >= 3:
                 logger.debug("Specific template %s selected (score=%d)", name, score)
                 return name, tpl
 
-        # Fase 2: Si no hay template especifico -> SWARM (maximo paralelismo)
+        # Fase 2: Si no hay template especifico -> SWARM DINAMICO (escala segun alcance)
+        # Cualquier mensaje con al menos 1 keyword de implementacion activa el escalado
         swarm_triggers = SUBTASK_TEMPLATES["swarm_default"].get("triggers", [])
         swarm_score = sum(1 for t in swarm_triggers if t in msg_lower)
-        if swarm_score >= 2:
-            logger.debug("SWARM template selected (score=%d)", swarm_score)
+        if swarm_score >= 1:  # Solo 1 keyword y va a dinamico
+            logger.debug("SWARM DINAMICO (score=%d)", swarm_score)
             return "swarm_default", SUBTASK_TEMPLATES["swarm_default"]
 
         for name, tpl in SUBTASK_TEMPLATES.items():
