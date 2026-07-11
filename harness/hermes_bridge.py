@@ -83,15 +83,44 @@ _load_env_file()
 
 
 # ---------------------------------------------------------------------------
-# Paths
+# Paths — PORTABLES: funcionan desde cualquier ubicacion y usuario
 # ---------------------------------------------------------------------------
 
-# Hermes root (external repo) — set via env var HERMES_ROOT or config
-DEFAULT_HERMES_ROOT = Path(
-    os.environ.get("HERMES_ROOT", "")
-    or os.environ.get("HERMES_HOME", "")
-    or ""
-)
+def _resolve_hermes_root() -> Path:
+    """
+    Resuelve HERMES_ROOT con maxima portabilidad.
+
+    Orden de resolucion:
+      1. Variable de entorno HERMES_ROOT (si existe y es accesible)
+      2. Variable de entorno HERMES_HOME (backward compat)
+      3. Documents/Hermes_Memory_Proyects/  (ruta estandar)
+      4. Documents/AGENTIC_MEMORY/          (fallback: crea carpeta centralizada)
+
+    Returns:
+        Path al directorio de memoria centralizada (siempre existe o se crea).
+    """
+    # 1. Env var
+    env_root = os.environ.get("HERMES_ROOT", "") or os.environ.get("HERMES_HOME", "")
+    if env_root:
+        p = Path(env_root)
+        if p.exists():
+            return p.resolve()
+
+    # 2. Documents/Hermes_Memory_Proyects/
+    docs_path = Path.home() / "Documents" / "Hermes_Memory_Proyects"
+    if docs_path.exists():
+        return docs_path.resolve()
+
+    # 3. Fallback: crear carpeta centralizada en Documents
+    fallback = Path.home() / "Documents" / "AGENTIC_MEMORY"
+    fallback.mkdir(parents=True, exist_ok=True)
+    # Crear subdirectorios de memoria
+    for sub in ["syntheses", "knowledge", "skills", "projects"]:
+        (fallback / sub).mkdir(exist_ok=True)
+    return fallback.resolve()
+
+
+DEFAULT_HERMES_ROOT = _resolve_hermes_root()
 
 # Hermes subdirectories
 HERMES_SYNTHESES_DIR = "syntheses"
