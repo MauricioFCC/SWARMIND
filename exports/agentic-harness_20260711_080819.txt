@@ -1,8 +1,8 @@
 Manifiesto de Exportación
 ============================================================
 Proyecto: AGENTIC
-Fecha: 2026-07-10T03:53:59.662058+00:00
-Total archivos: 200
+Fecha: 2026-07-11T08:08:19.952191+00:00
+Total archivos: 210
 ============================================================
 
   2.6 KB  .env.example
@@ -13,9 +13,9 @@ Total archivos: 200
   1.1 KB  .gitignore
   2.9 KB  .MEJORAS_AGENTIC.md
      0 B  .opencode/agents/.gitkeep
-  2.0 KB  .opencode/agents/builder.agent.min.md
-  2.9 KB  .opencode/agents/builder.md
-  1.1 KB  .opencode/agents/coordinator.agent.min.md
+ 509.0 B  .opencode/agents/builder.agent.min.md
+  1.3 KB  .opencode/agents/builder.md
+ 667.0 B  .opencode/agents/coordinator.agent.min.md
   1.4 KB  .opencode/agents/coordinator.md
   2.0 KB  .opencode/agents/evolve-analyzer.agent.min.md
   2.4 KB  .opencode/agents/evolve-analyzer.md
@@ -61,6 +61,7 @@ Total archivos: 200
  23.4 KB  CHANGELOG.md
  104.0 B  Dockerfile
   6.6 KB  docs/adr/adr0001-mejoras.md
+ 28.9 KB  GUIA_AGENTIC.md
   1.8 KB  harness/__init__.py
   83.0 B  harness/__main__.py
      0 B  harness/benchmarks/__init__.py
@@ -92,10 +93,11 @@ Total archivos: 200
  615.0 B  harness/gateway/__init__.py
  15.7 KB  harness/gateway/gateway.py
  513.0 B  harness/gateway/gateway_config.yaml
- 14.8 KB  harness/hermes_bridge.py
+ 15.9 KB  harness/hermes_bridge.py
   1.3 KB  harness/memory_rag/__init__.py
  27.5 KB  harness/memory_rag/agent_kpi_tracker.py
  23.8 KB  harness/memory_rag/context_assembler.py
+  4.2 KB  harness/memory_rag/context_injector.py
  18.7 KB  harness/memory_rag/context_window_manager.py
  13.3 KB  harness/memory_rag/doc_ingester.py
   9.5 KB  harness/memory_rag/embedding_service.py
@@ -108,10 +110,11 @@ Total archivos: 200
   6.9 KB  harness/memory_rag/memory_config.py
  19.3 KB  harness/memory_rag/optimization_pipeline.py
  15.2 KB  harness/memory_rag/prompt_cache_builder.py
-  5.0 KB  harness/memory_rag/prompt_compressor.py
+  7.4 KB  harness/memory_rag/prompt_compressor.py
  18.5 KB  harness/memory_rag/semantic_cache.py
  17.9 KB  harness/memory_rag/skill_loader.py
  16.6 KB  harness/memory_rag/skill_minifier.py
+  6.8 KB  harness/memory_rag/skill_router.py
  17.1 KB  harness/memory_rag/token_budget.py
   9.3 KB  harness/memory_rag/trajectory_compressor.py
   1.3 KB  harness/mkdocs.yml
@@ -126,21 +129,25 @@ Total archivos: 200
  21.1 KB  harness/orchestrator/agent_bus.py
  19.1 KB  harness/orchestrator/agent_discovery.py
  11.5 KB  harness/orchestrator/agent_dispatcher.py
+  7.0 KB  harness/orchestrator/agent_selector.py
  14.8 KB  harness/orchestrator/confidence_scorer.py
  27.1 KB  harness/orchestrator/debate_orchestrator.py
  15.4 KB  harness/orchestrator/delegation_engine.py
- 13.2 KB  harness/orchestrator/difficulty_router.py
+ 13.5 KB  harness/orchestrator/difficulty_router.py
  19.5 KB  harness/orchestrator/federated_memory.py
  19.8 KB  harness/orchestrator/health.py
   2.2 KB  harness/orchestrator/hitl/hitl_config.yaml
  14.1 KB  harness/orchestrator/hitl_guard.py
+  2.5 KB  harness/orchestrator/orchestration_result.py
  15.6 KB  harness/orchestrator/sandbox_loop.py
   1.2 KB  harness/orchestrator/scheduler.py
   10.0 B  harness/orchestrator/scheduler_jobs.yaml
+  7.0 KB  harness/orchestrator/self_healing.py
  13.3 KB  harness/orchestrator/session_context.py
+  2.5 KB  harness/orchestrator/structured_log.py
  16.8 KB  harness/orchestrator/task_manager.py
- 40.7 KB  harness/orchestrator/task_orchestrator.py
- 27.8 KB  harness/orchestrator/task_planner.py
+ 30.8 KB  harness/orchestrator/task_orchestrator.py
+ 37.9 KB  harness/orchestrator/task_planner.py
  15.7 KB  harness/orchestrator/telemetry.py
  569.0 B  harness/plugins/__init__.py
   3.0 KB  harness/plugins/registry.py
@@ -179,10 +186,11 @@ Total archivos: 200
   2.0 KB  harness/tests/conftest.py
   6.0 KB  harness/tests/test_agent_bus.py
  31.6 KB  harness/tests/test_agent_kpi_tracker.py
+  2.6 KB  harness/tests/test_agent_selector.py
  597.0 B  harness/tests/test_cache.py
   6.4 KB  harness/tests/test_common.py
  746.0 B  harness/tests/test_compressor.py
- 15.9 KB  harness/tests/test_confidence.py
+ 16.1 KB  harness/tests/test_confidence.py
   6.3 KB  harness/tests/test_context_window.py
  25.8 KB  harness/tests/test_debate.py
  704.0 B  harness/tests/test_discovery.py
@@ -190,11 +198,12 @@ Total archivos: 200
  829.0 B  harness/tests/test_hermes.py
  18.0 KB  harness/tests/test_integration.py
   1.2 KB  harness/tests/test_memory.py
-  4.7 KB  harness/tests/test_orchestrator.py
+  4.9 KB  harness/tests/test_orchestrator.py
   1.3 KB  harness/tests/test_routing.py
  12.0 KB  harness/tests/test_semantic_cache_extended.py
   4.7 KB  harness/tests/test_session_context.py
-  9.4 KB  harness/tests/test_task_planner.py
+  3.6 KB  harness/tests/test_skill_router.py
+  9.8 KB  harness/tests/test_task_planner.py
      0 B  harness/tools_sandbox/__init__.py
  12.4 KB  harness/tools_sandbox/mcp_client.py
  15.0 KB  harness/tools_sandbox/mcp_executor.py
@@ -204,15 +213,16 @@ Total archivos: 200
   10.0 B  requirements.txt
  20.6 KB  scripts/deploy_all.py
  14.3 KB  scripts/export_archive.py
+  5.4 KB  scripts/session_log.py
 276.7 KB  uv.lock
 
 ============================================================
-Total: 200 archivos, 2.1 MB
+Total: 210 archivos, 2.2 MB
 ============================================================
 
 Archivos por extensión:
-           .py: 141
-           .md: 34
+           .py: 150
+           .md: 35
          .yaml: 10
           .yml: 5
   (sin extensión): 3

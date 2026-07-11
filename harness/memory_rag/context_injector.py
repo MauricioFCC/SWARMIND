@@ -28,15 +28,16 @@ from typing import Dict, List, Optional
 # Cada entry: [nombre_corto] = [significado]
 
 STANDARDS_ENCODED: Dict[str, str] = {
-    "builder": "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+DocStringsES+tests>80+Seg+YAGNI",
-    "scientist": "MetodoCientifico+Fuentes+Analisis+Conclusiones+DocumentarES",
-    "guardian": "Tests>80+OWASP+DocStringsES+CommitsConvencionales+SinVulns",
-    "coordinator": "SwissWatch+Paralelo+CalidadAutomatica+Consolidar",
-    "evolve": "Cognition+MejoraContinua+Skills+Optimizacion",
+    "builder": "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Resiliencia+Rust+DoD+DocStringsES+tests>80+Seg+YAGNI",
+    "scientist": "MetodoCientifico+Fuentes+Analisis+Conclusiones+DocumentarES+DoD",
+    "guardian": "Tests>80+OWASP+DocStringsES+CommitsConvencionales+SinVulns+DoD+Resiliencia",
+    "coordinator": "SwissWatch+Paralelo+CalidadAutomatica+Consolidar+CompRoot+DoD",
+    "evolve": "Cognition+MejoraContinua+Skills+Optimizacion+CompRoot+Resiliencia",
 }
 
 # Firma universal aplica a TODOS los agentes siempre
-UNIVERSAL_FIRMA = "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+DocStringsES+tests>80+Seg"
+# Incluye: Composition Root, Resilience Erlang/OTP, Definition of Done
+UNIVERSAL_FIRMA = "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Resiliencia+DoD+DocStringsES+tests>80+Seg"
 
 # Tamaño en chars de la firma (para calculo de tokens)
 FIRMA_LENGTH = len(UNIVERSAL_FIRMA)

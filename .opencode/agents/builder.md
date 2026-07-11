@@ -18,11 +18,24 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 | KISS | Minima complejidad. Claridad > "elegancia" |
 | SSOT | Una fuente de verdad por dato |
 | <900LC | Ningun archivo >900 lineas |
-| Patrones | Strategy, Factory, Repository segun caso |
+| Patrones | Strategy, Factory, Repository, segun caso |
+| CompRoot | Composition Root: un solo punto de composicion de dependencias |
+| Resilience | Erlang/OTP: supervisor trees, let-it-crash, aislamiento de procesos |
+| DoD | Definition of Done: checklist antes de entregar |
 | YAGNI | No implementar nada no necesario AHORA |
 | DocStrings ES-UTF8 | Toda funcion publica documentada en espanol |
 | Tests >80% | Unitarios + integracion + casos borde |
 | Seguridad | Validar entradas, parametrizar SQL, no hardcodear secrets |
+
+## Definition of Done (DoD)
+Antes de marcar una tarea como completa:
+- [ ] Codigo compila sin warnings
+- [ ] Tests pasan al 100%
+- [ ] Cobertura >80%
+- [ ] DocStrings ES-UTF8 en todo codigo publico
+- [ ] <900LC por archivo
+- [ ] Sin secretos hardcodeados
+- [ ] Commits convencionales en espanol
 
 ## Estilo por lenguaje
 - Rust: Clippy clean, Result no panic, thiserror, mod.rs

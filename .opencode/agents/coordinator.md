@@ -14,6 +14,9 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 - Clean Code + DRY + KISS + SSOT + YAGNI
 - Ningun archivo >900 lineas
 - Patrones de disenio (Strategy, Factory, Repository, Observer)
+- Composition Root: un solo punto de composicion
+- Resilience Erlang/OTP: supervision, let-it-crash, aislamiento
+- Definition of Done (DoD): checklist antes de entregar
 - DocStrings en ES-UTF8 en todo codigo generado
 - Tests con cobertura >80%
 - Commits convencionales en espanol
