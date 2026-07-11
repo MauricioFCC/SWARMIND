@@ -394,6 +394,14 @@ class TaskPlanner:
 
     def __init__(self) -> None:
         self._counter: int = 0
+        self._injector = None  # Lazy import
+
+    def _get_injector(self):
+        """Lazy import de ContextInjector para evitar circular imports."""
+        if self._injector is None:
+            from harness.memory_rag.context_injector import ContextInjector
+            self._injector = ContextInjector(always_inject=True)
+        return self._injector
 
     def decompose(self, message: str) -> TaskPlan:
         """
@@ -436,10 +444,15 @@ class TaskPlanner:
                 tpl["description"], specifics
             )
 
+            # Inyectar estandares en la descripcion (ContextInjector)
+            # para evitar que el LLM los olvide durante sesiones largas
+            injector = self._get_injector()
+            injected_desc = injector.inject(description, agent_role=tpl["agent"])
+
             subtasks.append(SubTask(
                 id=subtask_id,
                 agent=tpl["agent"],
-                description=description,
+                description=injected_desc,
                 dependencies=dep_ids,
                 expected_output=tpl["expected_output"],
                 context_hint=specifics.get("context", tpl["context_hint"]),
