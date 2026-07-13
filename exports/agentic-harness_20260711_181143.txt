@@ -1,8 +1,8 @@
 Manifiesto de Exportación
 ============================================================
 Proyecto: AGENTIC
-Fecha: 2026-07-11T17:57:53.595041+00:00
-Total archivos: 210
+Fecha: 2026-07-11T18:11:43.774099+00:00
+Total archivos: 211
 ============================================================
 
   2.6 KB  .env.example
@@ -142,12 +142,13 @@ Total archivos: 210
  15.6 KB  harness/orchestrator/sandbox_loop.py
   1.2 KB  harness/orchestrator/scheduler.py
   10.0 B  harness/orchestrator/scheduler_jobs.yaml
+ 10.1 KB  harness/orchestrator/scope_analyzer.py
   7.0 KB  harness/orchestrator/self_healing.py
  13.3 KB  harness/orchestrator/session_context.py
   2.5 KB  harness/orchestrator/structured_log.py
  16.8 KB  harness/orchestrator/task_manager.py
  30.8 KB  harness/orchestrator/task_orchestrator.py
- 37.9 KB  harness/orchestrator/task_planner.py
+ 39.0 KB  harness/orchestrator/task_planner.py
  15.7 KB  harness/orchestrator/telemetry.py
  569.0 B  harness/plugins/__init__.py
   3.0 KB  harness/plugins/registry.py
@@ -203,7 +204,7 @@ Total archivos: 210
  12.0 KB  harness/tests/test_semantic_cache_extended.py
   4.7 KB  harness/tests/test_session_context.py
   3.6 KB  harness/tests/test_skill_router.py
-  9.8 KB  harness/tests/test_task_planner.py
+  9.6 KB  harness/tests/test_task_planner.py
      0 B  harness/tools_sandbox/__init__.py
  12.4 KB  harness/tools_sandbox/mcp_client.py
  15.0 KB  harness/tools_sandbox/mcp_executor.py
@@ -217,11 +218,11 @@ Total archivos: 210
 276.7 KB  uv.lock
 
 ============================================================
-Total: 210 archivos, 2.2 MB
+Total: 211 archivos, 2.2 MB
 ============================================================
 
 Archivos por extensión:
-           .py: 150
+           .py: 151
            .md: 35
          .yaml: 10
           .yml: 5

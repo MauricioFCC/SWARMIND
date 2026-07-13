@@ -13,7 +13,7 @@ skills:
     description: Institutional hedge fund doctrine, risk/reward management
   - name: legal-doc
     domain: legal
-    description: Legal document analysis, contracts, compliance, jurisprudence
+    description: Legal document analysis, Colombian law (multi-especialidad), RTF+C methodology, comparative law, Corte Constitucional
   - name: math-doc
     domain: academic
     description: Mathematical document processing, LaTeX, proofs, statistics
@@ -29,3 +29,4 @@ skills:
   - name: science-doc
     domain: academic
     description: Scientific document analysis, peer review, systematic reviews
+
