@@ -1,0 +1,69 @@
+# MCP Servers Configuration
+# =========================
+# Define MCP servers that this harness can connect to.
+# All servers are DISABLED by default. Enable the ones you need.
+#
+# To install community MCP servers:
+#   See: https://github.com/modelcontextprotocol/servers
+
+servers:
+  - name: filesystem
+    url: http://localhost:3100
+    description: "Read/write files and list directories (filesystem MCP server)"
+    tools:
+      - read_file
+      - write_file
+      - list_directory
+    enabled: false
+    install_hint: "npx @modelcontextprotocol/server-filesystem"
+
+  - name: github
+    url: http://localhost:3101
+    description: "GitHub API integration: repos, issues, PRs (GitHub MCP server)"
+    tools:
+      - get_repo
+      - list_issues
+      - create_pr
+      - search_code
+    enabled: false
+    install_hint: "npx @modelcontextprotocol/server-github"
+
+  - name: postgres
+    url: http://localhost:3102
+    description: "PostgreSQL database queries and schema inspection"
+    tools:
+      - query
+      - list_tables
+      - describe_table
+    enabled: false
+    install_hint: "npx @modelcontextprotocol/server-postgres"
+
+  - name: filesystem_local
+    url: http://localhost:3103
+    description: "Alternative filesystem server with expanded path access"
+    tools:
+      - read_file
+      - write_file
+      - list_directory
+      - search_files
+    enabled: false
+    install_hint: "npx @modelcontextprotocol/server-filesystem --allowed-paths=/tmp"
+
+  - name: memory
+    url: http://localhost:3104
+    description: "Persistent memory/knowledge graph server (MemMCP)"
+    tools:
+      - store_memory
+      - recall_memory
+      - list_memories
+    enabled: false
+    install_hint: "npx @modelcontextprotocol/server-memory"
+
+  - name: brave_search
+    url: http://localhost:3105
+    description: "Web search via Brave Search API"
+    tools:
+      - web_search
+      - web_fetch
+    enabled: false
+    install_hint: "npx @modelcontextprotocol/server-brave-search"

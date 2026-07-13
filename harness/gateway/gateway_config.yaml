@@ -1,0 +1,21 @@
+# Gateway Configuration
+# =====================
+# Tokens can be set directly OR via ${ENV_VAR} syntax.
+# Prefer ${ENV_VAR} to avoid hardcoding secrets in YAML.
+#
+# Examples:
+#   token: "${SLACK_BOT_TOKEN}"
+#   token: "${TELEGRAM_BOT_TOKEN}"
+#
+# See .env.example for all supported environment variables.
+#
+active_gateways:
+  - cli
+slack:
+  enabled: false
+  token: "${SLACK_BOT_TOKEN}"
+  channel: "${SLACK_CHANNEL:-#dev}"
+telegram:
+  enabled: false
+  token: "${TELEGRAM_BOT_TOKEN}"
+  chat_id: "${TELEGRAM_CHAT_ID}"

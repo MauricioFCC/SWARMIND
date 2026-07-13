@@ -1,0 +1,53 @@
+site_name: Onyx Multi-Agent System
+site_description: Universal multi-agent framework with FDE, context engineering, and autonomous self-improvement
+repo_url: https://github.com/onyx-project/onyx
+
+docs_dir: ../docs
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - search.suggest
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - tags
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Arquitectura:
+    - Visión General: arquitectura/index.md
+    - ADR-001: Base de Datos: arquitectura/adr-001-base-datos.md
+  - Dominios de Negocio:
+    - Sistema Multi-Agente: dominios_negocio/sistema-agentes.md
+    - Context Engineering: dominios_negocio/context-engineering.md
+  - Manual de Usuario:
+    - Agentes: manual_usuario/agentes.md
+    - CLI: manual_usuario/cli.md

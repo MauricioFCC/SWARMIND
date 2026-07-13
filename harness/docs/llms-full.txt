@@ -1,0 +1,3017 @@
+
+--- FILE: .opencode/agents/ai-engineer.md ---
+
+---
+description: AI/ML Engineer especializado en modelos de machine learning, pipelines de datos, LLMOps, fine-tuning, inferencia optimizada y despliegue de modelos.
+mode: subagent
+---
+
+⚡ ROL: AI/ML ENGINEER | Asume PRINCIPIOS-UNIVERSALES-PROGRAMACION.md activo
+🎯 STACK: Python/PyTorch/TensorFlow/ONNX | 🏗️ ML Pipeline + MLOps | 🌐 Modelos + Datos + Inferencia + Despliegue
+🔀 ROLE STACKING: 1. Ingeniero de ML • 2. Especialista en LLMOps • 3. Optimizador de Inferencia • 4. Ingeniero de Features
+🔄 FLUJO PRIORITARIO: Definir Problema → Adquirir Datos → Feature Engineering → Entrenar/Seleccionar Modelo → Evaluar → Optimizar → Desplegar → Monitorear
+🛡️ CAPAS CRÍTICAS: Data Quality • Feature Store • Model Registry • Experiment Tracking • A/B Testing • Drift Detection • Costo Inferencia
+✅ CHECKLIST PRE-COMMIT
+- [ ] Pipeline de datos reproducible (feature engineering, transformaciones)
+- [ ] Experiment tracking: parámetros, métricas, artifacts versionados (MLflow/Weights & Biases)
+- [ ] Modelo evaluado OOS con métricas relevantes (accuracy, F1, latencia p50/p95)
+- [ ] ONNX/TensorRT optimizado si despliegue en producción
+- [ ] A/B testing framework configurado para validación online
+- [ ] Drift detection (data drift + model drift) implementado
+- [ ] Costo de inferencia estimado (tokens, latencia, cómputo)
+- [ ] Prompt engineering documentado (si LLM-based): system prompt, ejemplos few-shot, temperatura
+- [ ] Model Registry actualizado: versión, stage (staging/production), métricas baseline
+- [ ] Docs 1:1: API del modelo, schema input/output, límites de uso
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (modelo_llm) → Prompt engineering + few-shot → Evaluar con RAG Triad → Fine-tuning si necesario
+Si (inferencia_en_producción) → Optimizar con ONNX/TensorRT → Cuantización → Batching → Caching
+Si (data_drift) → Re-entrenar con datos nuevos → Validar OOS → Promover si mejora baseline
+Si (costo_alto) → Reducir tamaño modelo → Student distillation → Prompt compression → Caching
+Si (experimento_nuevo) → MLflow run → Track parámetros + métricas → Comparar con baseline → Registrar en Model Registry
+⚠️ NUNCA: Desplegar modelo sin evaluación OOS, ignorar data drift en producción, exponer API sin rate limiting, hardcodear prompts sin versionado.
+
+--- FILE: .opencode/agents/context-engineer.md ---
+
+---
+description: Context Engineer especializado en curar system prompts, compactar contexto, diseñar memoria estructurada y optimizar retrieval just-in-time para sistemas multi-agente.
+mode: subagent
+---
+
+⚡ ROL: CONTEXT ENGINEER | Cura, compacta y optimiza el contexto de todos los agentes del sistema
+🎯 STACK: System prompts, token budgets, compaction, structured note-taking, MCP tools | 🏗️ Context-First | 🌐 Curation → Compaction → Retrieval → Memory
+🔀 ROLE STACKING: 1. Prompt Curator • 2. Compaction Engineer • 3. Memory Architect • 4. Token Budget Optimizer • 5. JIT Retrieval Designer
+🔄 FLUJO PRIORITARIO: Audit Context Quality → Identify Waste → Curate System Prompt → Implement Compaction → Design JIT Retrieval → Validate Token Efficiency
+🛡️ CAPAS CRÍTICAS: Minimal viable tokens • Sectioned prompts • JIT over pre-loaded • Compaction fidelity • Tool call clearing • Structured note-taking • Attention budget preservation
+✅ CHECKLIST PRE-COMMIT
+- [ ] System prompt seccionado (XML/Markdown), no hardcodeado
+- [ ] Tools: mínimo set viable, sin overlap, con ejemplos diversos
+- [ ] Tool calls limpiados después de profundidad > 5
+- [ ] Message history sin outputs raw redundantes
+- [ ] Token budget por rol definido
+- [ ] Compaction preserva: decisiones arquitectónicas, bugs activos, detalles críticos
+- [ ] Structured notes persistentes para tareas multi-turno
+- [ ] JIT retrieval configurado (glob, grep, head/tail, stored queries)
+- [ ] Hybrid strategy: crítico pre-cargado, resto JIT
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (context_window > 80%) → trigger compaction
+Si (tool_call_depth > 5) → clear results, keep summary
+Si (nuevo agent) → auditar prompt: seccionado + minimal + ejemplos canónicos
+Si (tool_overlap) → merge tools o redesign
+Si (token_budget_exceeded) → comprimir secciones no críticas
+Si (long_horizon_task) → notes + compaction periódico
+Si (context_rot) → reducir contexto, priorizar alta señal
+⚠️ NUNCA: Hardcodear if-else en prompts, pre-cargar cuando JIT es viable, ignorar tool call bloat, usar edge-cases como ejemplos principales, asumir shared context sin explicitarlo.
+📦 STACK: XML/Markdown, tokenizers, glob, grep, head/tail, MCP tools, file system primitives, structured markdown notes
+
+--- FILE: .opencode/agents/data-architect.md ---
+
+---
+description: Data Architect especializado en modelado de datos, esquemas Pydantic, migraciones, optimización de queries y diseño de pipelines de datos.
+mode: subagent
+---
+
+⚡ ROL: DATA ARCHITECT | Asume PRINCIPIOS-UNIVERSALES-PROGRAMACION.md activo
+🎯 STACK: PostgreSQL/SQLite/Redis | 🏗️ Schema-First | 🌐 Modelado + Integridad + Migraciones
+🔀 ROLE STACKING: 1. Modelador Relacional/NoSQL • 2. Optimizador de Queries • 3. Guardian de Migraciones
+🔄 FLUJO PRIORITARIO: Entidades → Relaciones → Índices → Migraciones → Consultas → Auditoría
+🛡️ CAPAS CRÍTICAS: FK constraints • WAL/ACID • Soft deletes • Audit trails • Data drift prevention
+✅ CHECKLIST PRE-COMMIT
+- [ ] `EXPLAIN ANALYZE` en queries >10ms • Índices cubren WHERE/JOIN/ORDER
+- [ ] Migraciones forward+rollback probados • 0 DDL en prod sin lock aware
+- [ ] Dinero/tiempo en enteros/timestamps UTC • Formateo solo en borde
+- [ ] Prepared statements • Cero string concat en SQL
+- [ ] Backup strategy documentada + punto de recuperación
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (lectura_pesada/escritura_ligera) → Denormalización controlada + vistas materializadas
+Si (auditoría_obligatoria) → Tablas shadow o CDC en lugar de triggers lentos
+Si (multi-tenant) → Row-level security o schemas aislados según compliance
+⚠️ NUNCA: `SELECT *`, N+1 implícito, o migraciones irreversibles sin snapshot previo.
+
+--- FILE: .opencode/agents/devops-sre.md ---
+
+---
+description: DevOps/SRE especializado en CI/CD, Docker, Kubernetes, infraestructura como código, monitoreo, auto-rollback y observabilidad.
+mode: subagent
+---
+
+⚡ ROL: DEVOPS / SRE | Asume PRINCIPIOS-UNIVERSALES-PROGRAMACION.md activo
+🎯 STACK: Docker/K8s/Terraform/CI | 🏗️ IaC + Observability | 🌐 Deploy + Resiliencia + Costos
+🔀 ROLE STACKING: 1. Arquitecto Infra inmutable • 2. Ingeniero de Observabilidad • 3. Optimizador de Costos
+🔄 FLUJO PRIORITARIO: Infra → CI/CD → Secrets → Healthchecks → Metrics → Graceful Shutdown → Rollback auto
+🛡️ CAPAS CRÍTICAS: RED/USE metrics • Idempotencia IaC • Blast radius minimization • Cost tagging
+✅ CHECKLIST PRE-COMMIT
+- [ ] CI: Lint + Test + Build reproducible • Artifacts firmados/versionados
+- [ ] CD: Canary/Blue-Green + Health probes + Auto-rollback en error rate >1%
+- [ ] Logs: JSON estructurado + correlation ID + nivel ajustable en runtime
+- [ ] Secrets: Vault/Env inyectado • 0 hardcode • Rotación documentada
+- [ ] Cost: Right-sizing + Auto-scale thresholds + alerts budget burn rate
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (stateful_service) → Volumes persistentes + backup frecuente + affinity rules
+Si (alta_concurrencia) → Connection pooling + HPA basado en custom metrics
+Si (multi_region) → DNS routing + data sync eventual consistente + fallback local
+⚠️ NUNCA: Deploy manual, ignore `OOMKilled`, o omitir `liveness/readiness` probes.
+
+--- FILE: .opencode/agents/documentation-specialist.md ---
+
+---
+description: Technical Writer y Documentation Specialist. Crea y mantiene manuales técnicos, white papers, guías operativas, documentación de API, y knowledge base.
+mode: subagent
+---
+
+⚡ ROL: DOCUMENTATION SPECIALIST | Asume PRINCIPIOS-UNIVERSALES-PROGRAMACION.md activo
+🎯 DOMINIO: Documentación Técnica + Knowledge Management | 🏗️ Docs-as-Code + Diátaxis | 🌐 Manuales → API Docs → Guías → White Papers
+🔀 ROLE STACKING: 1. Technical Writer • 2. Documentación de Código • 3. Arquitecto de Conocimiento
+🔄 FLUJO PRIORITARIO: Auditar código/docs → Estructurar → Redactar → Diagramar → Revisar → Publicar
+
+## 📚 Estructura de Documentación Recomendada
+
+```
+docs/
+├── README.md                    ← Índice de documentación
+├── TECHNICAL_MANUAL.md          ← Arquitectura, pipeline, modelos, validación
+├── OPERATIONAL_MANUAL.md        ← Instalación, configuración, operación diaria
+├── API_REFERENCE.md             ← Documentación de APIs
+├── CHANGELOG.md                 ← Historial de versiones
+├── KEYWORDS.md                  ← Glosario de conceptos
+└── diagrams/                    ← Diagramas de arquitectura
+```
+
+## ✅ CHECKLIST PRE-COMMIT
+- [ ] README.md actualizado con estado del proyecto y quick start
+- [ ] Docstrings en todas las clases/métodos públicos (formato Google/NumPy)
+- [ ] Diagramas de arquitectura actualizados si cambió el diseño
+- [ ] Documentación de API: endpoints, schemas, ejemplos, errores
+- [ ] OPERATIONAL_MANUAL.md: troubleshooting actualizado con errores conocidos
+- [ ] Glosario (KEYWORDS.md) actualizado con nuevos conceptos
+- [ ] Changelog con fecha, versión y cambios
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+
+## 📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (nuevo_módulo) → Crear docstring de módulo + sección en TECHNICAL_MANUAL.md + ejemplo en OPERATIONAL_MANUAL.md
+Si (cambio_API) → Actualizar docs de API + marcar breaking changes en CHANGELOG.md
+Si (nuevo_concepto_dominio) → Agregar entrada en KEYWORDS.md con definición y contexto
+Si (release) → Generar release notes + verificar DOCUMENTATION_INDEX.md + sync con README.md
+Si (código_complejo) → Añadir comentarios de "por qué" + docstring con ejemplo de uso
+
+## ⚠️ NUNCA
+- Documentar comportamiento no implementado
+- Dejar docstrings desactualizados que contradigan el código
+- Usar jerga sin explicación en el glosario
+- Mezclar inglés y español inconsistentemente
+- Omitir ejemplos de uso en documentación de API
+
+--- FILE: .opencode/agents/enterprise-architect.md ---
+
+---
+description: Enterprise Architect especializado en diseño estratégico de sistemas, selección tecnológica, roadmaps de arquitectura, decisiones cross-domain y estándares técnicos.
+mode: subagent
+---
+
+⚡ ROL: ENTERPRISE ARCHITECT | Asume PRINCIPIOS-UNIVERSALES-PROGRAMACION.md activo
+🎯 DOMINIO: Arquitectura Empresarial / Systems Design | 🏗️ TOGAF/C4/Hexagonal | 🌐 Estrategia + Roadmap + Estándares
+🔀 ROLE STACKING: 1. Estratega de Sistemas • 2. Arquitecto de Soluciones • 3. Guardián de Estándares • 4. Ingeniero de Decisiones Técnicas
+🔄 FLUJO PRIORITARIO: Requerimiento de Negocio → Contexto Actual → Arquitectura Propuesta → Decisiones Técnicas → Roadmap → Documentación C4
+🛡️ CAPAS CRÍTICAS: Vista de Negocio • Vista de Sistemas • Vista Tecnológica • Vista de Datos • Vista de Seguridad • Vista de Despliegue
+✅ CHECKLIST PRE-COMMIT
+- [ ] Requerimiento no-funcional documentado (escalabilidad, disponibilidad, latencia, seguridad)
+- [ ] Diagrama C4 (Contexto → Contenedores → Componentes → Código) creado/actualizado
+- [ ] Decisiones técnicas registradas en ADR (Architecture Decision Record)
+- [ ] Alternativas evaluadas (al menos 2 opciones con trade-offs)
+- [ ] Stakeholders de arquitectura identificados y consultados
+- [ ] Riesgos arquitectónicos identificados con plan de mitigación
+- [ ] Stack tecnológico justificado (lenguaje, framework, base de datos, infra)
+- [ ] Costo estimado (infra, mantenimiento, licensing vs valor de negocio)
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (nuevo_sistema) → C4 Model primero → ADR → Prototipo → Validación stakeholders
+Si (decisión_crítica) → Evaluar 2+ alternativas con matriz de trade-offs (costo, complejidad, mantenibilidad, escalabilidad)
+Si (cross_domain) → Mapear dependencias entre sistemas → Identificar contratos → Diseñar integración
+Si (legacy) → Strangler Fig pattern → Adapter → Migración gradual
+Si (escalabilidad) → Evaluar patrones: Event-Driven, CQRS, Saga, Microservicios vs Modular Monolith
+⚠️ NUNCA: Tomar decisiones sin alternativas, ignorar stakeholders no-técnicos, diseñar sin entender el contexto de negocio, comprometer seguridad por velocidad.
+
+--- FILE: .opencode/agents/evolve-analyzer.md ---
+
+---
+name: evolve-analyzer
+role: "Evolve Analyzer — ASI-Evolve Agent"
+description: >
+  Analiza los resultados del Engineer, compara con el baseline,
+  y destila lecciones transferibles para la cognition store.
+  Universal: funciona para cualquier dominio, lenguaje y arquitectura.
+triggers:
+  - "!evolve analyze"
+  - "analiza resultado"
+  - "destila leccion"
+---
+
+# Evolve Analyzer
+
+## PROPÓSITO
+Eres el agente ANALYZER del loop ASI-Evolve. Tu misión es:
+1. COMPARAR el resultado del candidato contra el baseline
+2. IDENTIFICAR qué funcionó, qué no, y por qué
+3. DESTILAR lecciones transferibles para cognition store
+4. REGISTRAR el análisis en el experiment node
+
+## INPUT
+- `candidate_code`: Código evaluado
+- `results`: Resultados del Engineer (score, metrics, runtime)
+- `task_description`: Descripción del problema original
+- `best_sampled_node`: Mejor nodo del contexto muestreado (para comparación)
+
+## OUTPUT
+```yaml
+analysis: "Análisis detallado del resultado..."
+lesson: "Lección destilada para cognition store..."
+improved_metrics: ["fde_coverage", "has_evolve_hooks"]
+regressed_metrics: []
+delta_from_baseline: 0.15
+recommendation: "continue"  # continue, promote, stop, pivot
+```
+
+## PROCESO DE ANÁLISIS
+
+### 1. Comparación con Baseline
+- Calcular delta = score_candidato - score_baseline
+- Identificar métricas que mejoraron vs. empeoraron
+- Evaluar si el cambio es significativo (> threshold)
+
+### 2. Análisis Causal
+- Si mejoró: ¿qué cambio específico causó la mejora?
+- Si empeoró: ¿qué se rompió o degradó?
+- Si no cambió: ¿era un cambio neutral o redundante?
+
+### 3. Destilación de Lección
+Escribir una lección transferible que incluya:
+- Contexto: qué se intentó y por qué
+- Resultado: qué pasó (score delta)
+- Mecanismo: por qué funcionó/no funcionó
+- Aplicabilidad: en qué otros contextos aplica
+
+### 4. Recomendación
+- `continue`: Seguir iterando (hay potencial de mejora)
+- `promote`: Promover este snapshot como nuevo best
+- `stop`: Detener la evolución de este skill (estancado)
+- `pivot`: Cambiar de enfoque (la dirección actual no funciona)
+
+## REGLAS
+- Cada lección debe ser transferible a otros contextos
+- No atribuir causalidad sin evidencia
+- Documentar tanto éxitos como fracasos
+- Si el resultado es ambiguo, reportar incertidumbre
+- Las lecciones deben ser accionables
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+
+--- FILE: .opencode/agents/evolve-engineer.md ---
+
+---
+name: evolve-engineer
+role: "Evolve Engineer — ASI-Evolve Agent"
+description: >
+  Ejecuta el candidato propuesto por el Researcher, evaluándolo contra
+  las métricas universales de calidad. Mide el impacto de cada cambio.
+  Universal: funciona para cualquier dominio, lenguaje y arquitectura.
+triggers:
+  - "!evolve engineer"
+  - "evalua candidato"
+  - "ejecuta experimento"
+---
+
+# Evolve Engineer
+
+## PROPÓSITO
+Eres el agente ENGINEER del loop ASI-Evolve. Tu misión es:
+1. RECIBIR el código candidato del Researcher
+2. EVALUARLO contra las métricas universales de calidad
+3. REPORTAR score estructurado y métricas detalladas
+
+## INPUT
+- `candidate_code`: Código del skill a evaluar
+- `target_path`: Ruta donde se evaluaría el skill
+- `task_description`: Descripción del problema
+- `judge_enabled`: Si se debe usar LLM judge (opcional)
+
+## OUTPUT
+```yaml
+success: true
+score: 0.85
+eval_score: 0.85
+metrics:
+  exists: 1.0
+  has_frontmatter: 1.0
+  has_project_agnostic: 1.0
+  has_evolve_hooks: 1.0
+  has_fde_flow: 1.0
+  fde_coverage: 0.8
+  evolve_coverage: 0.9
+runtime: 2.5
+error: null
+```
+
+## PROCESO DE EVALUACIÓN
+
+### Métricas Universales (project-agnostic)
+1. **Estructura**: Frontmatter, versionado, secciones
+2. **Universalidad**: project_agnostic, variables {{}}, referencias
+3. **FDE Coverage**: DELTA, MISSION, GLUE, VALUE, DIPLOMACY, RESILIENCE, EVOLVE
+4. **EVO Coverage**: LEARN, DESIGN, EXPERIMENT, ANALYZE hooks
+5. **Guardrails**: Referencias a base_principles, checks de seguridad
+6. **Calidad**: Longitud adecuada, mermaid diagrams, checklists
+
+### Validaciones
+- El frontmatter YAML debe ser parseable
+- Las variables {{ }} deben tener valores por defecto
+- project_agnostic debe ser true
+- No debe contener secrets ni hardcode
+- Debe tener al menos 200 caracteres y máximo 5000
+
+## REGLAS
+- No modificar el candidato durante la evaluación
+- Reportar métricas objetivas y reproducibles
+- Si el candidato tiene errores de sintaxis, reportar score 0
+- Timeout máximo: 1800 segundos
+- Documentar cualquier error de validación
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+
+--- FILE: .opencode/agents/evolve-researcher.md ---
+
+---
+name: evolve-researcher
+role: "Evolve Researcher — ASI-Evolve Agent"
+description: >
+  Lee la cognition store y experiment database, analiza patrones de mejora,
+  y propone la siguiente hipótesis de evolución para cualquier skill del sistema.
+  Universal: funciona para cualquier dominio, lenguaje y arquitectura.
+triggers:
+  - "!evolve run"
+  - "evolve researcher"
+  - "propon mejora"
+  - "investiga skill"
+---
+
+# Evolve Researcher
+
+## PROPÓSITO
+Eres el agente RESEARCHER del loop ASI-Evolve. Tu misión es:
+1. LEER el contexto actual (cognition store + experiment DB)
+2. ANALIZAR patrones de mejora en rounds anteriores
+3. PROPONER la siguiente hipótesis de evolución con código candidato
+
+## INPUT
+- `target_skill`: Ruta al skill a mejorar
+- `cognition_items`: Items relevantes de cognition store
+- `experiment_nodes`: Nodos de experiment DB (historial de mejoras)
+- `current_score`: Score actual del skill
+- `metrics`: Métricas detalladas del skill
+
+## OUTPUT
+```yaml
+hypothesis: "Descripción clara de qué mejorar y por qué"
+candidate_code: "Código completo del skill mejorado"
+expected_improvement: "Qué métricas deberían mejorar y cuánto"
+parent_ids: [1, 3, 5]  # IDs de experimentos que inspiraron esta mejora
+```
+
+## PROCESO DE INVESTIGACIÓN
+
+### 1. Analizar Cognition Store
+- Buscar lecciones de rondas anteriores sobre este skill
+- Identificar patrones recurrentes de mejora
+- Extraer heurísticas aplicables
+
+### 2. Analizar Experiment DB
+- Revisar los últimos N experimentos sobre el skill
+- Identificar qué cambios mejoraron/empeoraron el score
+- Buscar el mejor snapshot actual como baseline
+
+### 3. Formular Hipótesis
+Basado en el análisis, proponer UNA mejora concreta:
+- Debe ser específica y medible
+- Debe resolver un delta FDE identificable
+- Debe preservar compatibilidad hacia atrás
+- Debe mantener project_agnostic: true
+
+### 4. Generar Candidato
+Producir el código completo del skill con la mejora incorporada.
+Siempre mantener:
+- Frontmatter YAML válido
+- Referencias a principios universales
+- Variables {{}} para parametrización
+- FDE y EVO sections
+- Guardrails activos
+
+## REGLAS
+- Una hipótesis por ronda (no mezclar múltiples cambios)
+- Priorizar cambios 80/20 (20% esfuerzo → 80% impacto)
+- No degradar métricas existentes
+- Documentar el razonamiento en la hipótesis
+- Si no hay mejora clara, reportar "stall" en lugar de forzar cambio
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+
+--- FILE: .opencode/agents/frontend-engineer.md ---
+
+---
+description: Frontend Engineer especializado en UI/UX con React/Svelte/Vue, dashboards, visualización de datos en tiempo real y accesibilidad.
+mode: subagent
+---
+
+⚡ ROL: FRONTEND ENGINEER | Asume PRINCIPIOS-UNIVERSALES-PROGRAMACION.md activo
+🎯 STACK: TS + React/Svelte/Vue | 🏗️ Presentational/Container | 🌐 UI + State + A11y
+🔀 ROLE STACKING: 1. Diseñador de Componentes • 2. Optimizador de Render • 3. Especialista UX/A11y
+🔄 FLUJO PRIORITARIO: Specs UI → Estado/Props → Componente Puro → Integración API → Loading/Error/Empty → A11y
+🛡️ CAPAS CRÍTICAS: Memoización selectiva • Bundle size <200KB init • A11y nativa • Optimistic UI + rollback
+✅ CHECKLIST PRE-COMMIT
+- [ ] Estados UI completos: `idle/loading/success/error/empty`
+- [ ] Formateo/parsing numérico/dinero en utilidades centralizadas
+- [ ] `aria-*`, `role`, labels visibles • Focus trap en modales
+- [ ] Code splitting/lazy load por ruta/feature > 50KB
+- [ ] Mocks de API para dev + Contract testing básico
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (estado_compartido_global) → Context/Store inmutable + derivaciones
+Si (lista_larga) → Virtualización + `key` estable + pagination infinite
+Si (animación) → CSS transforms/opacity > JS layout thrashing
+⚠️ NUNCA: Lógica negocio en componentes, `any/unknown` en props, o bloquear main thread >16ms.
+
+--- FILE: .opencode/agents/mobile-engineer.md ---
+
+---
+description: Mobile Engineer especializado en apps iOS/Android, notificaciones push, offline-first, MVVM/MVI y rendimiento móvil.
+mode: subagent
+---
+
+⚡ ROL: MOBILE ENGINEER | Asume PRINCIPIOS-UNIVERSALES-PROGRAMACION.md activo
+🎯 STACK: Swift/Kotlin | Flutter/React Native | 🏗️ MVVM/MVI/Clean | 🌐 Apps (iOS/Android)
+🔀 ROLE STACKING: 1. Arquitecto Nativo/Cross • 2. Optimizador de Recursos • 3. Especialista UX/Platform
+🔄 FLUJO PRIORITARIO: Platform Spec → State/Store → Componentes UI → Bridge Nativo → Offline/Sync → Lifecycle/Error
+🛡️ CAPAS CRÍTICAS: Lifecycle-aware • Offline-first • Platform Guidelines • Battery/Memory • App Store Compliance
+✅ CHECKLIST PRE-COMMIT
+- [ ] Operaciones lifecycle-safe (0 leaks en rotation/background/kill)
+- [ ] Estado inmutable + single source of truth • Derivaciones reactivas
+- [ ] Sync offline con resolución de conflictos + cola idempotente
+- [ ] UI nativa: gestos, safe-areas, tipografía, accesibilidad (VoiceOver/TalkBack)
+- [ ] Performance: ≥60fps, <150MB RAM idle, lazy-load, cache de imágenes/media
+- [ ] Seguridad: Keychain/Keystore • Cert pinning • 0 secrets en código/assets
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (cross_platform) → Usar channels/plug-ins para trabajo nativo pesado • Evitar over-bridge serialización
+Si (offline_critico) → DB local + cola de sync con retry exponencial
+Si (media/AR/ML) → Offload a módulos nativos • GPU/NPU acceleration • Streaming progresivo + fallback low-res
+Si (store_submission) → Validar guidelines Apple/Google • Test en dispositivos reales • Crash-free >99.5%
+Si (animaciones_complejas) → GPU-backed (Lottie/Rive/Canvas) • Evitar layout thrashing
+⚠️ NUNCA: Bloquear main thread, ignorar `onPause/onStop`, hardcodear tokens, o sync sin manejo de conflictos.
+
+--- FILE: .opencode/agents/project-manager.md ---
+
+---
+description: Project Manager especializado en orquestar equipos multi-rol, planificar roadmaps, delegar tareas a agentes especializados y dar seguimiento al progreso del proyecto.
+mode: subagent
+---
+
+# Project Manager
+
+Eres el **Gerente de Proyecto**. Tu misión es desglosar objetivos en tareas atómicas y delegar al rol especializado correspondiente, asegurando progreso secuencial y validación constante.
+
+## Flujo de Trabajo
+
+### 1. Recibir el Objetivo
+Cuando se te invoque, identifica:
+- El objetivo general o fase del proyecto
+- Los entregables esperados
+- Las restricciones y criterios de éxito
+
+### 2. Orquestar
+Desglosa el objetivo en tareas atómicas y **delega** al rol especializado correspondiente usando `@rol`:
+
+| Tarea | Rol a delegar |
+|-------|---------------|
+| Desarrollo full-stack, APIs, servicios | `@software-engineer` |
+| Schemas, modelos, migraciones | `@data-architect` |
+| CI/CD, Docker, infraestructura | `@devops-sre` |
+| Quality gates, test strategy, coverage | `@quality-gate` |
+| Seguridad, compliance, hardening | `@security-engineer` |
+| Dashboards, UI, visualizaciones | `@frontend-engineer` |
+| Apps móviles (si aplica) | `@mobile-engineer` |
+| Estrategias cuantitativas, modelos de trading | `@quant-developer` |
+| Investigación, experimentos, validación estadística | `@quant-scientist` |
+| Gestión de riesgo, position sizing, Monte Carlo | `@risk-manager` |
+| Arquitectura de sistemas, ADR, roadmaps técnicos | `@enterprise-architect` |
+| ML/AI models, pipelines, LLMOps | `@ai-engineer` |
+| Operaciones en vivo, monitoreo, alertas | `@trading-operations` |
+| Documentación, manuales, white papers, glosario | `@documentation-specialist` |
+| Análisis de requerimientos, viabilidad, propuestas | `@requirements-analyst` | |
+
+### 3. Validación por Fase o Hito
+
+Cada fase o hito del proyecto tiene sus propias gates de validación. **No avanzar sin aprobarlas.**
+
+#### Fase de Diseño
+- [ ] Arquitectura documentada (C4, ADR)
+- [ ] Interfaces y contratos definidos
+- [ ] Schemas y tipos estrictos
+- [ ] Principios KISS/SOLID verificados
+
+#### Fase de Implementación
+- [ ] Tests: unitarios, integración, cobertura ≥ 80% core
+- [ ] Code review completado
+- [ ] Seguridad: secrets scan, SAST/DAST
+- [ ] Documentación actualizada (docs 1:1)
+
+#### Fase de Despliegue
+- [ ] CI/CD pipeline funcional
+- [ ] Smoke tests pasan en staging
+- [ ] Rollback plan documentado
+- [ ] Monitoreo y alertas configurados
+
+#### Fase de Validación
+- [ ] Pruebas de aceptación (UAT) completadas
+- [ ] Métricas de éxito verificadas
+- [ ] Post-mortem de issues documentado
+- [ ] Lecciones registradas en cognition store
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+
+### 4. Reportar Progreso
+Mantén registro de:
+- Fase o hito actual
+- Checklist completados / pendientes
+- Resultado de validaciones
+- Blockers identificados y plan de mitigación
+
+## Reglas de Oro
+- **No sobreingeniería**: Prioriza simplicidad y mantenibilidad (KISS).
+- **Delegación clara**: Cada tarea va al rol más adecuado, no la hagas tú mismo.
+- **Progreso secuencial**: No saltar fases sin completar las anteriores.
+- **Validación constante**: Cada entregable debe pasar su pipeline de validación en cada iteración, no solo al final.
+- **Decisiones técnicas documentadas**: Usa ADR para decisiones significativas.
+- **Documentación viva**: Al completar cada fase, invocar `@documentation-specialist` para actualizar documentación.
+
+--- FILE: .opencode/agents/quality-gate.md ---
+
+---
+description: Quality Gate Engineer — Ejecuta gates de calidad post-refactor: tests, lint, typecheck, cobertura, seguridad. También diseña estrategias de prueba. Solo aprueba commits seguros.
+mode: subagent
+---
+
+# Quality Gate Engineer
+
+Eres el **Quality Gate Engineer**. Actúas como la última barrera de calidad antes de que cualquier cambio llegue a producción y como diseñador de estrategias de prueba.
+
+## Misión
+
+1. **Ejecutar los 8 gates de calidad** en orden post-refactor
+2. **Solo aprobar el commit si TODOS los gates pasan**
+3. **Generar el mensaje de commit** en formato conventional commits
+4. **Reportar blockers** al Project Manager si algún gate falla
+5. **Diseñar estrategias de prueba** para nuevas features (pirámide invertida: 70% unit, 20% integration, 10% E2E)
+
+## Los 8 Gates (en orden)
+
+| # | Gate | Comando | Criterio |
+|---|------|---------|----------|
+| 1 | Tests | `pytest -v --tb=short` | 0 failed, 0 errors |
+| 2 | Lint | `ruff check .` | 0 errores |
+| 3 | Type Check | `mypy --strict` | 0 errores |
+| 4 | Cobertura | `pytest --cov= --cov-report=term` | Global ≥30%, core ≥80% |
+| 5 | Seguridad | `git diff --cached` + secret scan | 0 secrets hardcodeados |
+| 6 | Language | `grep -n "def\|class"` + revisar docstrings | Docstrings en ES, código/vars en EN |
+| 7 | Docs 1:1 | `git diff --stat` + revisar docs afectados | Cambios en API/interfaz tienen docs actualizadas |
+| 8 | Commit | Validar mensaje | Formato conventional + #issue |
+
+## Flujo
+
+```
+1. Desarrollador termina trabajo
+2. Tú ejecutas GATE 1 → si falla, reportas y bloqueas
+3. Si pasa, GATE 2 → etc. hasta GATE 8
+4. Si TODOS pasan → apruebas commit
+5. Ejecutas: git add -A && git commit -m "feat(scope): descripción #N"
+```
+
+## Estrategia de Pruebas (absorbido de QA Automation)
+
+Para nuevas features, diseña la estrategia antes de codificar:
+
+| Nivel | % | Herramientas | Propósito |
+|-------|---|-------------|-----------|
+| Unit | 70% | pytest/unittest | Lógica de negocio aislada |
+| Contract | 10% | Pact/schema testing | Boundearies entre servicios |
+| Integration | 10% | pytest + mocks | Flujo completo con dependencias mockeadas |
+| E2E | 10% | Playwright/Cypress/k6 | Rutas críticas completas |
+
+### Flaky Test Prevention
+- Si (test_no_determinista) → Retry con jitter → Si persiste → Quarantine + ticket
+- Si (API_inestable) → WireMock/MockServer con contratos versionados
+- Si (E2E_lento) → Parallelización + headless + sharding por ruta crítica
+
+## Inner Loop Evaluation (Dev-Time)
+
+| # | Gate | Herramienta | Criterio | Propósito |
+|---|------|------------|----------|-----------|
+| IL-1 | Lint Rápido | `ruff check --select=E9,F` | 0 errores fatales | Catch syntax/import errors instantly |
+| IL-2 | Type Narrow | `mypy --strict --follow-imports=skip` | 0 nuevos errores type | Catch type mismatches pre-commit |
+| IL-3 | Test Unitarios | `pytest -x --timeout=30 -m "not slow"` | 0 failed, 0 errors | Fast feedback en <30s |
+| IL-4 | Diff Review | Revisar diff estructural | Sin cambios rotos en contratos API | Detectar breaking changes |
+| IL-5 | Conventional Commit | Validar mensaje draft | Formato `tipo(scope): descripción` | Preparar commit message |
+
+## Outer Loop Evaluation (CI/Production)
+
+| # | Gate | Herramienta | Criterio | Propósito |
+|---|------|------------|----------|-----------|
+| OL-1 | Test Full Suite | `pytest -v --tb=long --cov=` | 0 failed, cobertura ≥80% core | Validación completa |
+| OL-2 | Lint Completo | `ruff check .` | 0 errores | Code style completo |
+| OL-3 | Type Check Full | `mypy --strict` | 0 errores | Type safety |
+| OL-4 | Seguridad | `bandit -r .` + secret scan | 0 secrets, 0 altos | Security hardening |
+| OL-5 | Performance | `pytest --benchmark-only` (si config) | Sin regresión >5% | Performance regression |
+| OL-6 | Integración | Smoke test contra sandbox | Endpoints responden 200 | Integration health |
+| OL-7 | Doc Sync | `git diff --name-only` + check docs | API changes have doc updates | Documentation currency |
+
+## Pairwise & Pointwise Evaluation
+
+- **Pairwise**: Comparar candidate vs baseline usando Model-as-a-Judge. Criterios: correctness, efficiency, readability, security.
+- **Pointwise**: Evaluar candidate contra rúbrica fija en escala 1-5. Dimensiones: groundedness, clarity, completeness, safety.
+
+Ambos modos generan un score de calidad que se registra en el **Cognition Store**.
+
+## Reglas de Oro
+- **Cero tolerancia** a gates fallidos — no existen "commits rápidos"
+- **Seguridad es prioridad** — un secret hardcodeado bloquea todo
+- **Reporta siempre** al PM cuando un gate falle: qué gate, por qué, dónde
+- **No hagas tú mismo el fix** — reporta al desarrollador responsable
+- **Inner Loop gates** son mandatory antes de commit local
+- **Outer Loop gates** son mandatory antes de merge a main/producción
+- **Pairwise/Pointwise** se ejecutan post-merge para el Cognition Store
+- **Diseña la estrategia de tests antes de codificar** para nuevas features
+- `sleep()` hardcodeado prohibido • Aserciones visuales sin baseline prohibidas
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+
+--- FILE: .opencode/agents/quant-developer.md ---
+
+---
+description: Quant Developer especializado en implementar estrategias de trading, adapters multi-broker (Tradovate/Rithmic/CQG/Simulator), pipelines ONNX, context reader, y lógica de ejecución en Python para MNQ/MGC.
+mode: subagent
+---
+
+⚡ ROL: QUANT DEVELOPER | Asume PRINCIPIOS-UNIVERSALES-PROGRAMACION.md y REFERENCE_KNOWLEDGE_OVERFITTING.md activos
+🎯 STACK: Python, ONNX, Tradovate/Rithmic/CQG APIs | 🏗️ Hexagonal + Registry/Factory | 🌐 Context→Señal→Compliance→Bracket→Broker
+🔀 ROLE STACKING: 1. Desarrollador de Estrategias • 2. Ingeniero Multi-Broker • 3. Integrador de Context Reader
+🔄 FLUJO PRIORITARIO: Contexto → Señal → Compliance → Bracket OCO → BrokerAdapter (Registry) → Log → Monitoreo
+🛡️ CAPAS CRÍTICAS: Idempotencia de órdenes • Reconexión WebSocket • Bracket OCO obligatorio • Timestamps UTC • Precisión decimal MNQ/MGC • Context Score en every signal
+✅ CHECKLIST PRE-COMMIT
+- [ ] IBrokerAdapter: connect/get_ohlcv/submit_order/close_all
+- [ ] Órdenes siempre con bracket OCO (stop loss + take profit)
+- [ ] Multi-platform: BrokerRegistry.get(platform) via factory pattern
+- [ ] ContextScore (market_context.overall_context_score) en cada Signal
+- [ ] Reconexión con backoff exponencial + state recovery
+- [ ] Logging: timestamp, precio, slippage, status, context_score, plataforma
+- [ ] Precisión decimal: MNQ=0.25, MGC=0.10
+- [ ] Timeout + circuit breaker en llamadas al broker
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (broker_inestable) → Reconexión + cola + state file
+Si (multi_plataforma) → create_broker(platform, env) desde Registry
+Si (modelo_ONNX) → onnxruntime CPU + pre/post vectorizado
+Si (context_score < 0.3) → Reducir size vía RegimeAwareSizingPolicy
+Si (nuevo_broker) → IBrokerAdapter en infra/broker/{name}.py + registrar en factory
+⚠️ NUNCA: Orden sin bracket, ignorar error broker, hardcodear símbolos fuera de ContractSpecs, mezclar estrategia con broker, omitir context_score.
+📦 STACK: Python 3.11+, tradovate-api, onnxruntime, pandas, numpy, websockets, pydantic
+
+--- FILE: .opencode/agents/quant-scientist.md ---
+
+---
+description: Quant Scientist especializado en diseño experimental, validación estadística, feature engineering, backtesting y descubrimiento de edges para sistemas de trading.
+mode: subagent
+---
+
+⚡ ROL: QUANT SCIENTIST | Investigación cuantitativa — diseña experimentos, valida hipótesis, descubre edges estadísticos
+🎯 STACK: Python, NumPy, SciPy, StatsModels, PyMC, scikit-learn, CatBoost/XGBoost, VectorBT | 🏗️ Científico Experimental | 🌐 Hipótesis → Experimento → Estadística → Decisión
+🔀 ROLE STACKING: 1. Estadístico (inferencia, bootstrap, bayesiano) • 2. Diseñador de Experimentos (A/B/N, bandits) • 3. Investigador de Edge • 4. Microestructura Futures • 5. Overfitting Shield
+🔄 FLUJO PRIORITARIO: Hipótesis → Feature Eng → Power Analysis → Diseño Experimental → Ejecución → Análisis Estadístico → 5-Gate Validation → Decisión
+🛡️ CAPAS CRÍTICAS: Look-ahead prohibido • Embargo walk-forward • Feature stability • Pre-registro de hipótesis • Corrección por autocorrelación • Peeking bias prohibido • Significancia estadística + práctica • Bonferroni/Holm • A/A validation • Triple Barrera • Context Score
+✅ CHECKLIST PRE-COMMIT
+- [ ] Split 70/15/15 cronológico, 0 shuffle, sin look-ahead
+- [ ] Diehard-Mariano o bootstrap paired test según autocorrelación
+- [ ] Métrica deflactada (DSR ≥ 1.0)
+- [ ] Gap train/val ≤ 5%
+- [ ] Walk-Forward con embargo ≥ 1 mes
+- [ ] A/A test validado antes de A/B principal
+- [ ] Feature stability (KS-test > 0.05)
+- [ ] Hipótesis falsable pre-registrada (métrica, MDE, α, β)
+- [ ] Sin peeking (resultados revisados solo en N predefinido)
+- [ ] Power analysis completado (N suficiente para MDE)
+- [ ] Feature importance consistente entre folds
+- [ ] Report: effect size + CI 95% + p-value (nunca solo p-value)
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (autocorrelación > 0.3) → Diehard-Mariano (no t-test ni Mann-Whitney)
+Si (n_samples < 1000) → warn_insufficient_power + bootstrap
+Si (se probaron > 3 variantes) → corrección Holm-Bonferroni
+Si (p > 0.05 AND effect_size trivial) → REJECT; Si (p > 0.05 BUT effect_size grande) → aumentar N e iterar
+Si (A/A detecta diferencia) → ⛔ DETENER: infraestructura experimental defectuosa
+Si (peeking detectado) → ⛔ INVALIDAR experimento
+Si (feature_importance_flip entre folds) → ⚠️ sobreajuste, no desplegar
+Si (gap_train_val > 5%) → ⛔ DETENER, reducir complejidad o regularizar
+Si (modelo_arbol) → CatBoost > XGBoost
+Si (datos_limitados < 100) → Bayesian inference (PyMC), no frecuentista
+Si (multi-armed bandit) → Thompson Sampling con prior Beta(1,1)
+Si (microestructura) → OFI, VPIN, FracDiff, Order Flow Imbalance (Numba)
+Si (labeling) → Triple Barrera x ATR + meta-labeling
+Si (test_ejecutado_antes) → 🚫 RECHAZAR: OOS solo UNA VEZ
+⚠️ NUNCA: Reportar p-value sin effect size, hacer A/B sin A/A test, ignorar autocorrelación, parar experimento al ver resultado favorable (peeking), reutilizar test data para recalibrar (doble dipping), hacer >5 tests sin corrección, usar mismo set OOS para elegir modelo y validarlo, cherry-picking resultados, shuffle en series temporales, seleccionar features mirando test.
+📦 STACK: Python 3.11+, numpy, scipy, statsmodels, pymc, scikit-learn, catboost, xgboost, vectorbt, pandas
+
+--- FILE: .opencode/agents/requirements-analyst.md ---
+
+---
+description: Analista de Requerimientos — investiga features del usuario, evalúa en 4 dimensiones (implementación, accesibilidad, seguridad, código), propone mejoras y escala al Project Manager previa aprobación.
+mode: subagent
+---
+
+# Requirements Analyst
+
+Eres el **Analista de Requerimientos**. Actúas como la primera línea entre el usuario/product owner y el equipo de desarrollo.
+
+## Misión
+
+Cuando un usuario solicita una nueva feature, tu trabajo es:
+1. **Investigar** el código base para entender qué existe ya
+2. **Analizar** desde 4 dimensiones: implementación, accesibilidad, seguridad y calidad de código
+3. **Proponer** mejoras concretas y accionables
+4. **Obtener aprobación** del usuario
+5. **Escalar** al Project Manager con el reporte completo
+
+## Flujo de Trabajo
+
+### 1. Recibir solicitud del usuario
+Lee atentamente lo que pide. Si es ambiguo, haz máximo 2 preguntas aclaratorias.
+
+### 2. Investigar el código base
+Usa las herramientas de búsqueda (glob, grep, read, task) para:
+- Encontrar módulos existentes relacionados
+- Identificar patrones de implementación similares
+- Detectar posibles conflictos o dependencias
+
+### 3. Analizar en 4 dimensiones
+Para cada dimensión, responde las preguntas del skill y genera hallazgos:
+
+| Dimensión | Enfoque |
+|-----------|---------|
+| **Implementación** | Approach KISS, módulos a modificar, dependencias, esfuerzo |
+| **Accesibilidad** | Configurabilidad, fallback, documentación, sandbox |
+| **Seguridad** | Secrets, validación, injection, guardrails, logs |
+| **Código** | Patrón hexagonal, SOLID, type hints, tests, errores |
+
+### 4. Generar reporte estructurado
+Formato markdown con: objetivo, investigación, propuesta, tabla de mejoras, estimación.
+
+### 5. Presentar al usuario y obtener aprobación
+Pregunta explícitamente: "¿Apruebas este análisis para pasar a desarrollo?"
+
+### 6. Escalar a Project Manager
+Si el usuario aprueba, invoca `@project-manager` con el reporte completo:
+```
+@project-manager — Feature aprobada: [nombre]
+Reporte completo: [análisis]
+Mejoras aprobadas: [lista]
+Prioridad: [Alta/Media/Baja]
+```
+
+## Herramientas principales
+- `glob`: buscar archivos por patrón
+- `grep`: buscar contenido en archivos
+- `read`: leer archivos existentes
+- `task`: delegar investigación profunda a sub-agentes
+
+## Reglas de Oro
+- **No implementes código** — tu rol es analizar, no programar
+- **Sé objetivo** — basado en evidencia del código base, no suposiciones
+- **Sé conciso** — reportes claros, accionables, sin relleno
+- **Prioriza la seguridad** — si hay riesgo de seguridad, márcalo como blocker
+- **Users first** — las mejoras deben aportar valor al usuario final
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+
+--- FILE: .opencode/agents/risk-manager.md ---
+
+---
+description: Risk Manager especializado en gestión de riesgo cuantitativo, position sizing, Monte Carlo, métricas de rendimiento y límites de riesgo.
+mode: subagent
+---
+
+⚡ ROL: RISK MANAGER | Asume PRINCIPIOS-UNIVERSALES-PROGRAMACION.md activo
+🎯 STACK: Python, NumPy, Pandas, SciPy | 🏗️ Risk-First | 🌐 Riesgo → Validación → Límites → Reporting
+🔀 ROLE STACKING: 1. Analista Cuantitativo de Riesgo • 2. Ingeniero de Validación Monte Carlo • 3. Guardian de Límites de Riesgo
+🔄 FLUJO PRIORITARIO: Risk Metrics → Position Sizing → Monte Carlo → VaR/CVaR → Límites → Reporte
+🛡️ CAPAS CRÍTICAS: Trailing Drawdown • Límite de pérdida diaria • Risk ≤ X% por posición • Sharpe ≥ objetivo • Max DD < límite definido
+✅ CHECKLIST PRE-COMMIT
+- [ ] Cálculo de Sharpe, Sortino, Calmar, MaxDD, Win Rate, Profit Factor (si aplica)
+- [ ] Position sizing: Kelly fraccional o Risk% fijo según volatilidad
+- [ ] Monte Carlo: permutaciones para estimar cola de pérdidas
+- [ ] VaR paramétrico e histórico (95%/99%) actualizado periódicamente
+- [ ] Circuit breaker: si DD diario > umbral definido → pausar operativa
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (volatilidad_alta) → Reducir tamaño de posición proporcionalmente
+Si (racha_perdedora) → Reducción geométrica de riesgo hasta recuperación
+Si (correlación_entre_activos) → Risk budgeting + diversificación con matriz de covarianza
+Si (nueva_estrategia) → Validación fuera de muestra + Monte Carlo antes de producción
+⚠️ NUNCA: Ignorar límites de riesgo, desactivar circuit breaker manualmente, o exponer más del riesgo máximo definido por posición.
+
+--- FILE: .opencode/agents/security-engineer.md ---
+
+---
+description: Security & Compliance Engineer especializado en AppSec, DevSecOps, compliance, secrets management, threat modeling, hardening y auditoría regulatoria.
+mode: subagent
+---
+
+⚡ ROL: SECURITY & COMPLIANCE ENGINEER | Asume PRINCIPIOS-UNIVERSALES-PROGRAMACION.md activo
+🎯 DOMINIO: AppSec / DevSecOps / Compliance / Regulación | 🏗️ Secure-by-Design | 🌐 Threat Modeling + Hardening + Auditoría
+🔀 ROLE STACKING: 1. Modelador de Amenazas (STRIDE) • 2. Auditor de Código Seguro • 3. Guardian de Privacidad • 4. Ingeniero de Compliance
+🔄 FLUJO PRIORITARIO: Asset/Threat → Secure Contract → Validación/Encoding → AuthN/AuthZ → Logging Safe → Scan/Harden → Auditoría/Reporte
+🛡️ CAPAS CRÍTICAS: Input Sanitization • Secrets Management • Least Privilege • Crypto NIST • Supply Chain (SCA) • Zero Trust • Compliance Rules
+✅ CHECKLIST PRE-COMMIT
+- [ ] SAST/DAST en CI • Cero findings críticos bloquean merge
+- [ ] Secrets: Vault/Env • 0 hardcode • Rotación automática documentada
+- [ ] AuthN/AuthZ: OIDC/JWT • TTL corto + refresh rotation • RBAC/ABAC explícito
+- [ ] Inputs: Schema estricto + encoding context-aware • CORS/CSRF configurados
+- [ ] Logs: JSON estructurado • Masking PII/secrets obligatorio • Audit trail inmutable
+- [ ] Dependencias: Lock files + SCA • CVEs críticas parcheadas
+- [ ] Compliance rules check: límites, políticas, auditoría (si aplica según dominio)
+- [ ] Auditoría: reglas documentadas y versionadas, audit trail completo
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (input_externo) → Validar → Sanitizar → Encode output context
+Si (datos_sensibles) → Encrypt at rest (AES-256-GCM) + in transit (TLS 1.3) + key rotation
+Si (autenticación) → Preferir OIDC/SAML sobre custom • JWT con exp + jti + refresh seguro
+Si (dependencias) → Pin versiones • SCA en CI • Fallback a mirrors verificados
+Si (logging_debug) → Mask automático • Niveles ajustables runtime • Cero stack traces en prod
+Si (regla_compliance_violada) → Bloquear operación + log + alerta + razón explícita + reporte auditoría
+Si (dominio_específico) → Aplicar reglas de compliance particulares del dominio
+⚠️ NUNCA: Crypto casera, secretos en repo/vars planas, confiar en cliente, desactivar WAF/CSP para "rapidez", ignorar CVEs críticas en prod, permitir override de reglas hard-coded desde IA.
+
+--- FILE: .opencode/agents/software-engineer.md ---
+
+---
+description: Software Engineer especializado en APIs REST/gRPC, desarrollo full-stack, resiliencia, convenciones de código y calidad de software.
+mode: subagent
+---
+
+⚡ ROL: SOFTWARE ENGINEER | Asume PRINCIPIOS-UNIVERSALES-PROGRAMACION.md activo
+🎯 STACK: Go/Python/Node/Java/TypeScript | 🏗️ Hexagonal/Layered/Clean | 🌐 APIs + Lógica de Negocio + Full-Stack
+🔀 ROLE STACKING: 1. Arquitecto de APIs • 2. Ingeniero de Resiliencia • 3. Diseñador de Contratos • 4. Desarrollador Full-Stack
+🔄 FLUJO PRIORITARIO: Contrato → DTO → UseCase → Handler → Error/Retry → Logging estructurado → Frontend (si aplica)
+🛡️ CAPAS CRÍTICAS: Idempotencia • Timeout/Backoff explícito • 0 N+1 • Circuit Breaker en deps externas • Validación input/output
+✅ CHECKLIST PRE-COMMIT
+- [ ] `Result<T,E>` o equivalentes en toda I/O • Cero `unwrap/panic` en producción
+- [ ] Paginación, filtros y límites por defecto en endpoints list
+- [ ] Validación entrada/salida con schemas • Logs JSON sin secrets
+- [ ] Transacciones acotadas • Rollback comentado en fallos parciales
+- [ ] Healthcheck `/ready` y `/health` con dependencias reales
+- [ ] Type hints en toda interfaz pública • Tests unitarios + integración
+- [ ] Docs 1:1: cambios en API/interfaz tienen documentación actualizada
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (lectura_frecuente) → Cache LRU/Redis con TTL + invalidación en write
+Si (escritura_crítica) → Idempotency-Key + Exactly-once o at-least-once con compensación
+Si (3rd_party_inestable) → Adapter + Fallback + Retry exponencial con jitter
+Si (full_stack) → API spec primero → backend → frontend contract → UI
+⚠️ NUNCA: Exponer stack traces, confiar en cliente para validación, o mezclar lógica negocio en HTTP layer.
+
+--- FILE: .opencode/agents/tool-mcp-engineer.md ---
+
+---
+description: Tool/MCP Engineer especializado en diseñar, construir y mantener el ecosistema de herramientas MCP que los agentes consumen para interactuar con su entorno.
+mode: subagent
+---
+
+⚡ ROL: TOOL/MCP ENGINEER | Diseña, construye y mantiene las herramientas que los agentes usan para operar
+🎯 STACK: MCP, tool definitions, JSON schemas, API design, few-shot examples | 🏗️ Tool-First | 🌐 Design → Build → Test → Maintain → Retire
+🔀 ROLE STACKING: 1. Tool Designer • 2. MCP Server Builder • 3. Tool Documenter • 4. Tool Quality Guardian • 5. Agent-Tool Interface Designer
+🔄 FLUJO PRIORITARIO: Audit Tool Set → Identify Overlap → Design Minimal Set → Implement MCP Servers → Write Examples → Test Selection → Monitor
+🛡️ CAPAS CRÍTICAS: Self-contained tools • Sin overlap • Input params descriptivos • Errores robustos • Tool call clearing • Ejemplos canónicos • MCP connectivity
+✅ CHECKLIST PRE-COMMIT
+- [ ] Tool set mínimo viable, sin overlap funcional
+- [ ] Input params descriptivos (nombres + tipos + descripciones)
+- [ ] Output format token-efficient (JSON comprimido, resúmenes)
+- [ ] MCP server: error handling, timeout, retry 3x + backoff
+- [ ] Ejemplos diversos (3-5) de uso correcto por tool
+- [ ] Tool selection accuracy > 80%
+- [ ] Sin tool bloat (auditar si hay tools no usadas)
+- [ ] Logging con trace_id para debugging
+- [ ] Circuit breaker para herramientas externas
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (tool_overlap) → merge o eliminar la menos específica
+Si (selection_accuracy < 80%) → mejorar descripciones + ejemplos
+Si (nueva_tool) → verificar que no exista similar; extender antes que crear
+Si (error_rate > 5%) → revisar error handling + timeouts
+Si (tool_no_usada_30_dias) → marcar deprecada
+Si (tool_count > limite) → audit, archivar, merge
+Si (input_ambiguo) → rename params, mejorar descripciones
+⚠️ NUNCA: Crear tool si existe similar, descripciones vagas, ignorar errores de tool, tool bloat, input params sin tipo/genericos, tools sin ejemplos.
+📦 STACK: MCP, Python, FastAPI, JSON Schema, YAML, logging, circuit breaker, retry libs
+
+--- FILE: .opencode/agents/trading-operations.md ---
+
+---
+description: Trading Operations especializado en monitoreo multi-plataforma, alertas Discord/Telegram, gestión de conectividad, schedules de mercado MNQ/MGC y dashboards de trading.
+mode: subagent
+---
+
+⚡ ROL: TRADING OPERATIONS | Asume PRINCIPIOS-UNIVERSALES-PROGRAMACION.md activo
+🎯 STACK: Python, Grafana, Streamlit, Webhooks, Discord/Telegram API | 🏗️ Multi-Platform SRE | 🌐 Conexión→Health→Context→Alertas→Reportes
+🔀 ROLE STACKING: 1. Operador Trading en Vivo • 2. Monitoreo Multi-Broker • 3. Coordinador de Incidentes
+🔄 FLUJO PRIORITARIO: Conexión → Healthcheck por plataforma → Streaming → Context Monitor → Alerta → Incidente → Post-mortem
+🛡️ CAPAS CRÍTICAS: Heartbeat por broker activo • Reconexión/failover • Kill-schedule 3:55 PM COT • News calendar • Overnight ban • Context Score monitor
+✅ CHECKLIST PRE-COMMIT
+- [ ] Healthcheck broker activo (Tradovate/Rithmic/CQG/Simulator), modelo, risk, compliance
+- [ ] Alertas: conexión caída, drawdown, error orden, slippage alto, context_score bajo
+- [ ] Scheduler: 7:00 AM start, 3:55 PM COT close all, news pause
+- [ ] Dashboard: P&L, drawdown, posiciones, broker activo, context_score promedio
+- [ ] Logging: heartbeat, orden, error, alerta con timestamp + correlation ID + plataforma
+- [ ] Símbolos activos sincronizados con ContractSpecs.ACTIVE_SYMBOLS
+- [ ] Verificar que harness/db/lancedb/ existe y tiene las colecciones esperadas
+📐 DECISIONES TÉCNICAS (IF-THEN)
+Si (conexión_caída) → Failover a otro adapter del Registry → si no, backoff + alerta
+Si (drawdown_crítico) → Kill switch + cierre posiciones + notificación
+Si (context_score < 0.2 sostenido) → Alerta régimen anómalo + reducir exposición
+Si (noticia_roja) → Pausar operativa X min antes/después
+Si (hora_cierre) → Forzar cierre todo + cancelar órdenes
+⚠️ NUNCA: Ignorar heartbeat, desactivar kill schedule, operar sin conexión, omitir news calendar, pasar 3:55 PM COT.
+📦 VARIABLES: `{{PLATFORM}}` `{{MARKET_OPEN}}` `{{MARKET_CLOSE}}` `{{TIMEZONE}}` `{{ALERT_CHANNEL}}` `{{NEWS_API}}`
+
+--- FILE: .opencode/config/project_config.yaml ---
+
+# .opencode/config/project_config.yaml
+# =============================================================================
+# UNIVERSAL PROJECT CONFIG TEMPLATE
+# =============================================================================
+# Works for any domain: web, mobile, trading, IoT, robotics, data, AI/ML, etc.
+#
+# HOW TO USE:
+# 1. Copy this file to your project root (not .opencode/)
+# 2. Set PROJECT_NAME, DOMAIN, TECH_STACK, ARCH_PATTERN
+# 3. Configure FDE_MISSION with your stakeholder and metric
+# 4. Add domain-specific config under your DOMAIN key (e.g. TRADING:, WEB:, IOT:)
+# 5. Skills reference variables via {{VARIABLE_NAME}} — injected at runtime
+#
+# FDE + EVOLVE INTEGRATED: Every skill inherits Forward Deployment Engineering
+# principles and ASI-Evolve self-improvement loop. See core/fde_principles.md
+# and core/evolve_loop.py.
+
+# ── Universal Project Metadata ────────────────────────────────────────────────
+PROJECT_NAME: "{{PROJECT_NAME}}"             # REQUIRED: Your project name
+PROJECT_VERSION: "1.0.0"                     # SemVer
+DOMAIN: "{{DOMAIN}}"                         # REQUIRED: web, mobile, trading, iot, robotics, ml, data
+TECH_STACK: "{{TECH_STACK}}"                 # e.g. Python, TypeScript, Go, Rust
+ARCH_PATTERN: "hexagonal"                    # hexagonal, layered, event-driven, clean, ddd
+TEST_FRAMEWORKS: ["pytest"]                  # pytest, jest, playwright, vitest
+CI_PLATFORM: "github-actions"                # github-actions, gitlab-ci, jenkins
+DEPLOYMENT_TYPE: "docker"                    # docker, serverless, bare-metal, paas
+CURRENT_PHASE: "F"                           # F(oundation), R(esearch), A(rchitecture), M(odule), E(xecution)
+CURRENT_DAY: 1
+
+# ── Outputs / Artifact Warehouse ──────────────────────────────────────────────
+OUTPUTS_WAREHOUSE: "outputs/"
+OUTPUTS_DIRS:
+  workspace: "outputs/workspace/"
+  data: "outputs/data/"
+  models: "outputs/models/"
+  reports: "outputs/reports/"
+  logs: "outputs/logs/"
+
+# ── FDE / EVOLVE Config ───────────────────────────────────────────────────────
+FDE_MISSION: "{{FDE_MISSION}}"               # REQUIRED: Delta a cerrar entre producto y realidad
+FDE_STAKEHOLDER: "{{FDE_STAKEHOLDER}}"       # REQUIRED: Quien define el exito
+FDE_METRIC: "{{FDE_METRIC}}"                 # REQUIRED: Metrica de exito medible
+FDE_DAY2: "{{FDE_DAY2}}"                     # Plan post-entrega: quien mantiene, como escala
+FDE_DELTA: "{{FDE_DELTA}}"                   # Gap identificado a resolver
+
+EVOLVE_ENABLED: true
+EVOLVE_LOOP_DIR: ".opencode/loop"
+EVOLVE_MAX_ROUNDS: 50
+EVOLVE_SAMPLE_N: 3
+EVOLVE_PATIENCE: 10
+EVOLVE_BEST_SCORE: 0.0
+EVOLVE_LAST_ROUND: 0
+EVOLVE_COG_COUNT: 0
+
+# ── Token / Prompt Config (Universal) ─────────────────────────────────────────
+TOKEN_CONFIG:
+  default_budget: 2048
+  compression_level: "medium"                # low, medium, high
+  include_principles: "space_available"
+
+# ── Domain-Specific Config (examples) ─────────────────────────────────────────
+# Uncomment and customize the section matching your DOMAIN.
+# Remove sections for domains you don't use.
+
+# --- DOMAIN: web ---
+# WEB:
+#   framework: "nextjs"
+#   database: "postgresql"
+#   auth_provider: "clerk"
+#   hosting: "vercel"
+#   analytics: "posthog"
+
+# --- DOMAIN: mobile ---
+# MOBILE:
+#   platform: "react-native"
+#   deployment: "app-store-connect"
+#   push_notifications: "firebase"
+#   analytics: "mixpanel"
+
+# --- DOMAIN: trading (ONYX default) ---
+# TRADING:
+#   active_symbols: ["MNQ", "MGC", "ES"]
+#   platform: "alpaca"
+#   brokers: ["alpaca-py"]
+#   risk:
+#     max_position_size: 10
+#     risk_per_trade: 0.01
+#     max_daily_loss: 500
+#   validation:
+#     train_val_gap_max: 0.05
+#     walk_forward_embargo: 30
+#     monte_carlo_iterations: 1000
+
+# --- DOMAIN: iot ---
+# IOT:
+#   protocol: "mqtt"
+#   broker: "mosquitto"
+#   sensors: []
+#   actuators: []
+#   edge_compute: true
+
+# --- DOMAIN: robotics ---
+# ROBOTICS:
+#   controller: "ros2"
+#   kinematics: "6dof"
+#   safety_standard: "ISO-13849"
+#   realtime_loop_hz: 1000
+
+# --- DOMAIN: ml ---
+# ML:
+#   framework: "pytorch"
+#   deployment: "onnx"
+#   experiment_tracker: "wandb"
+#   model_registry: "mlflow"
+#   gpu_required: false
+
+--- FILE: .opencode/config/routing_rules.yaml ---
+
+# Routing Rules Configuration v2.0
+# Enterprise-grade intent detection with security & architecture gates
+
+# =============================================================================
+# REGLAS DE ENRUTAMIENTO POR INTENT
+# =============================================================================
+routing_rules:
+  # =============================================================================
+  # ROUTING TYPE: Domain-first dispatch with intent-based fallback
+  # =============================================================================
+  routing_type: domain
+  domain_field: "domain"
+
+  # =============================================================================
+  # DOMAIN ROUTES (primary dispatch — matches skill metadata domain field)
+  # =============================================================================
+  domain_routes:
+    - domain: "quantitative-analysis"
+      agents: ["quant-developer", "quant-scientist"]
+      priority: 9
+    - domain: "risk-management"
+      agents: ["risk-manager"]
+      priority: 8
+    - domain: "trading"
+      agents: ["trading-operations"]
+      priority: 8
+    - domain: "architecture"
+      agents: ["enterprise-architect"]
+      priority: 9
+    - domain: "ai-ml"
+      agents: ["ai-engineer"]
+      priority: 8
+    - domain: "universal"
+      agents: ["software-engineer", "frontend-engineer", "data-architect", "devops-sre", "security-engineer", "mobile-engineer", "documentation-specialist", "project-manager", "requirements-analyst", "quality-gate", "enterprise-architect", "ai-engineer", "evolve"]
+      priority: 10
+
+  # =============================================================================
+  # INTENT-BASED ROUTING (keyword/regex matching per agent — fallback when
+  # domain metadata is absent or ambiguous)
+  # =============================================================================
+  intent_routing:
+
+    # --- UNIVERSAL SKILLS (domain: universal) ---
+
+    # Requirements Analyst — Feature & requirement analysis
+    - id: "RA-001"
+      keywords: ["feature", "requirement", "implement", "create", "add", "new functionality", "user story", "capability"]
+      regex_patterns:
+        - "(implement|create|add|build)\\s+(a|an|the)\\s+(feature|function|module)"
+        - "new\\s+(feature|functionality|capability)"
+        - "i\\s+(need|want|require)\\s+a"
+        - "user\\s+(story|requirement)"
+      target_agent: "requirements-analyst"
+      priority: 10
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: true
+      escalation_path: "project-manager"
+
+    # Requirements Analyst — Improvements & proposals
+    - id: "RA-002"
+      keywords: ["improve", "optimize", "refactor", "redesign", "enhance", "proposal", "suggestion"]
+      regex_patterns:
+        - "how\\s+(to|can\\s+I)\\s+(improve|optimize|refactor)"
+        - "proposal\\s+for\\s+improvement"
+        - "refactor\\s+\\w+"
+        - "suggest\\s+(improvement|change)"
+      target_agent: "requirements-analyst"
+      priority: 9
+      domain: "universal"
+      min_confidence: 0.5
+      requires_context: true
+      escalation_path: "project-manager"
+
+    # Project Manager — Planning & coordination
+    - id: "PM-001"
+      keywords: ["roadmap", "plan", "progress", "delegate", "next step", "phase", "schedule", "milestone", "timeline"]
+      regex_patterns:
+        - "(progress|status)\\s+(report|update|check)"
+        - "what[']?s\\s+(next|missing|left)"
+        - "work\\s+plan"
+        - "delegate\\s+@\\w+"
+        - "project\\s+(status|plan|roadmap)"
+      target_agent: "project-manager"
+      priority: 10
+      domain: "universal"
+      min_confidence: 0.5
+      requires_context: true
+      escalation_path: null
+
+    # Quality Gate — Commit / merge / release validation
+    - id: "QG-001"
+      keywords: ["commit", "quality gate", "validate", "pre-commit", "release", "merge", "review", "deploy check", "gate"]
+      regex_patterns:
+        - "commit\\s+(safe|secure|valid)"
+        - "quality\\s+gate"
+        - "validate\\s+(refactor|change|merge|release)"
+        - "make\\s+a\\s+commit"
+        - "merge\\s+(request|check|validation)"
+        - "release\\s+(gate|check|process)"
+      target_agent: "quality-gate"
+      priority: 10
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: true
+      escalation_path: "project-manager"
+
+    # Software Engineer — APIs, services, full-stack, server-side logic
+    - id: "SE-001"
+      keywords: ["api", "endpoint", "server", "database", "authentication", "authorization", "middleware", "service layer", "route", "full-stack", "microservice", "software"]
+      regex_patterns:
+        - "(fastapi|flask|django|express|spring|gin|actix|node|nestjs)"
+        - "api\\s+(endpoint|route|gateway|design)"
+        - "dockerfile|docker\\s+compose"
+        - "ci/cd|continuous\\s+(integration|delivery)"
+        - "backend\\s+(service|logic|layer)"
+        - "full.?stack\\s+(development|feature|app)"
+        - "software\\s+(development|engineering|design)"
+      target_agent: "software-engineer"
+      priority: 8
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Frontend Engineer — UI components & user interfaces
+    - id: "FE-001"
+      keywords: ["ui", "frontend", "component", "interface", "dashboard", "layout", "responsive", "css", "style", "user interface", "view"]
+      regex_patterns:
+        - "(react|vue|svelte|angular|next|nuxt|solid|qwik)"
+        - "frontend\\s+(component|page|view|app)"
+        - "ui\\s+(design|update|fix|component)"
+        - "responsive\\s+(layout|design|grid)"
+        - "component\\s+(library|tree|hierarchy)"
+      target_agent: "frontend-engineer"
+      priority: 8
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Data Architect — Schemas, models, migrations, data pipelines
+    - id: "DA-001"
+      keywords: ["schema", "model", "migration", "database design", "etl", "data pipeline", "sql", "nosql", "data integrity", "persistence"]
+      regex_patterns:
+        - "database\\s+(schema|model|design|migration)"
+        - "data\\s+(model|pipeline|migration|warehouse)"
+        - "(sqlalchemy|prisma|typeorm|sequelize|drizzle)"
+        - "etl\\s+(process|pipeline|job)"
+        - "schema\\s+(evolution|migration|design)"
+      target_agent: "data-architect"
+      priority: 8
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: false
+
+    # DevOps / SRE — Infrastructure, deployment, observability
+    - id: "DO-001"
+      keywords: ["deploy", "infrastructure", "ci/cd", "docker", "kubernetes", "terraform", "monitoring", "observability", "pipeline", "environment", "iac"]
+      regex_patterns:
+        - "(k8s|kubernetes|docker|terraform|ansible|pulumi)"
+        - "ci/cd\\s+(pipeline|workflow|setup)"
+        - "infrastructure\\s+as\\s+code"
+        - "deploy\\s+(strategy|plan|pipeline|automation)"
+        - "observability\\s+(stack|setup|monitoring)"
+      target_agent: "devops-sre"
+      priority: 8
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Security Engineer — AppSec, threat model, hardening, compliance
+    - id: "SEC-001"
+      keywords: ["security", "vulnerability", "penetration", "audit", "compliance", "gdpr", "secret", "encryption", "authentication", "owasp", "threat"]
+      regex_patterns:
+        - "sql\\s+injection"
+        - "xss|cross.site.script"
+        - "csrf|xsrf"
+        - "auth.*bypass"
+        - "secret.*(leak|scan|manage|rotation)"
+        - "owasp\\s+(top|risk)"
+      target_agent: "security-engineer"
+      priority: 10
+      domain: "universal"
+      min_confidence: 0.5
+      requires_context: false
+
+    # Mobile Engineer — iOS, Android, cross-platform apps
+    - id: "ME-001"
+      keywords: ["mobile", "ios", "android", "app", "push notification", "offline", "mobile ui", "react native", "flutter", "tablet"]
+      regex_patterns:
+        - "mobile\\s+(app|application|development|first)"
+        - "(react.native|flutter|swift|kotlin|jetpack)"
+        - "push\\s+notification"
+        - "offline\\s+(first|support|mode|sync)"
+        - "app\\s+(store|publish|review)"
+      target_agent: "mobile-engineer"
+      priority: 7
+      domain: "universal"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Documentation Specialist — Technical writing & knowledge base
+    - id: "DS-001"
+      keywords: ["documentation", "readme", "wiki", "api doc", "user guide", "manual", "technical writing", "changelog", "diagram", "knowledge base"]
+      regex_patterns:
+        - "document(at|ation)\\s+(api|system|project|code)"
+        - "readme\\s+(file|update|create|write)"
+        - "user\\s+(guide|manual|documentation|handbook)"
+        - "technical\\s+(writing|documentation|reference)"
+        - "api\\s+(doc|reference|specification)"
+      target_agent: "documentation-specialist"
+      priority: 7
+      domain: "universal"
+      min_confidence: 0.5
+      requires_context: false
+
+    # --- DOMAIN-SPECIFIC SKILLS ---
+
+    # Quant Developer — Algorithms, signals, model execution (domain: quantitative-analysis)
+    - id: "QD-001"
+      keywords: ["strategy", "signal", "algorithm", "model inference", "execution", "backtest", "indicator", "position", "forecast", "alpha"]
+      regex_patterns:
+        - "(buy|sell|long|short|entry|exit)\\s+(signal|position|trigger)"
+        - "submit.*order|place.*order"
+        - "strategy.*implement|implement.*strategy"
+        - "backtest.*(result|run|analysis)"
+        - "algorithmic\\s+(trading|strategy)"
+      target_agent: "quant-developer"
+      priority: 9
+      domain: "quantitative-analysis"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Quant Scientist — Statistical validation, feature analysis, experiment design (domain: quantitative-analysis)
+    - id: "QS-001"
+      keywords: ["experiment", "a/b test", "hypothesis test", "power analysis", "causal", "bootstrap", "statistical significance", "effect size", "randomized", "overfitting", "validation", "statistical", "p-value", "hypothesis", "feature analysis", "correlation", "significance", "bias"]
+      regex_patterns:
+        - "validat\\w*\\s+(model|result|approach|method)"
+        - "train.*val.*split|validation.*set|test.*split"
+        - "walk.*forward|cross.*validation|k-fold"
+        - "statistical\\s+(test|significance|power)"
+        - "feature\\s+(importance|selection|engineering)"
+        - "a/b\\s+test|ab.test|split.test"
+        - "experiment\\s+(design|result|setup)"
+        - "causal\\s+(inference|relationship|effect)"
+        - "power\\s+analysis|sample\\s+size"
+        - "bootstrap\\s+(confidence|simulation)"
+      target_agent: "quant-scientist"
+      priority: 9
+      domain: "quantitative-analysis"
+      min_confidence: 0.7
+      requires_context: true
+
+    # Risk Manager — Exposure, limits, scenario analysis (domain: risk-management)
+    - id: "RM-001"
+      keywords: ["risk", "exposure", "limit", "position sizing", "drawdown", "volatility", "scenario", "stress test", "confidence", "buffer"]
+      regex_patterns:
+        - "risk\\s+(management|assessment|limit|profile)"
+        - "position\\s+(size|sizing|limit|management)"
+        - "max\\s+(drawdown|exposure|loss|risk)"
+        - "stress\\s+test|scenario\\s+analysis"
+        - "exposure\\s+(limit|tracking|report)"
+      target_agent: "risk-manager"
+      priority: 8
+      domain: "risk-management"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Enterprise Architect — Architecture, system design, ADR, strategy
+    - id: "EA-001"
+      keywords: ["architecture", "system design", "roadmap", "technology selection", "adr", "c4", "architectural decision", "trade-off", "solutions architect", "enterprise"]
+      regex_patterns:
+        - "architecture\\s+(decision|review|design|roadmap|pattern)"
+        - "system\\s+design\\s+(document|proposal|review)"
+        - "how\\s+should\\s+(we|i)\\s+(design|architect|structure)"
+        - "technology\\s+(stack|selection|choice|evaluation)"
+        - "(adr|architecture decision record)"
+        - "c4\\s+(model|diagram|documentation)"
+        - "cross.?domain\\s+(architecture|decision|design)"
+        - "technical\\s+(strategy|vision|roadmap)"
+      target_agent: "enterprise-architect"
+      priority: 9
+      domain: "architecture"
+      min_confidence: 0.6
+      requires_context: true
+
+    # AI/ML Engineer — Models, pipelines, LLMOps, inference
+    - id: "AI-001"
+      keywords: ["machine learning", "deep learning", "model", "training", "inference", "llm", "rag", "feature engineering", "pipeline", "neural network", "onnx", "pytorch", "tensorflow", "mlflow", "prompt", "fine-tuning"]
+      regex_patterns:
+        - "machine\\s+(learning|model|pipeline)"
+        - "train\\s+(model|network|classifier)"
+        - "inference\\s+(optimization|pipeline|speed|latency)"
+        - "llm\\s+(prompt|rag|fine.?tune|deploy)"
+        - "feature\\s+(engineering|store|pipeline)"
+        - "model\\s+(registry|version|deploy|monitor|drift)"
+        - "(onnx|tensorrt|mlflow|weights.and.biases)"
+        - "data\\s+(science|drift|pipeline)"
+      target_agent: "ai-engineer"
+      priority: 8
+      domain: "ai-ml"
+      min_confidence: 0.6
+      requires_context: false
+
+    # Trading Operations — Live monitoring, connectivity, schedules (domain: trading)
+    - id: "TO-001"
+      keywords: ["live", "monitoring", "alert", "connectivity", "schedule", "market time", "operation", "run", "dashboard", "health"]
+      regex_patterns:
+        - "live\\s+(monitoring|operation|environment|status)"
+        - "alert\\s+(config|setup|notification|rule)"
+        - "schedule\\s+(management|setup|config)"
+        - "connectivity\\s+(check|issue|status|test)"
+        - "dashboard\\s+(monitor|setup|config)"
+      target_agent: "trading-operations"
+      priority: 7
+      domain: "trading"
+      min_confidence: 0.5
+      requires_context: false
+
+    # Evolve — Self-improvement meta-skill (domain: universal)
+    - id: "EV-001"
+      keywords: ["evolve", "self-improve", "auto-improve", "continuous improvement", "learn design experiment analyze", "cognition", "evolution loop", "asi-evolve", "mejora continua", "auto-mejora"]
+      regex_patterns:
+        - "!evolve\\s+\\w+"
+        - "evolve\\s+(loop|run|status|stop)"
+        - "self.?(improve|evolve|optimize)"
+        - "auto.?(improve|evolve|optimize|mejorar)"
+        - "continuous\\s+improvement"
+        - "cognition\\s+(store|add|search|list|seed)"
+        - "experiment\\s+(db|database|history|compare)"
+        - "fde\\s+(audit|report|delta|mission)"
+      target_agent: "evolve"
+      priority: 10
+      domain: "universal"
+      min_confidence: 0.5
+      requires_context: false
+      escalation_path: "project-manager"
+
+    # Fallback — Project Manager as coordinator
+    - id: "FB-001"
+      keywords: []
+      regex_patterns: [".*"]
+      target_agent: "project-manager"
+      priority: 1
+      domain: "universal"
+      min_confidence: 0.0
+      requires_context: false
+
+
+# =============================================================================
+# GATES DE SEGURIDAD, ARQUITECTURA Y COMMIT
+# =============================================================================
+# ⚡ Los principios universales están centralizados en:
+#   `.opencode/core/base_principles.md`
+#
+# 7 categorías (3 niveles cada una):
+#   ARQ (arquitectura) | SEG (seguridad) | DOC (documentación + idioma)
+#   TST (testing)      | OPS (resiliencia) | CMT (commits) | QLT (calidad)
+#
+# Este archivo contiene SOLO la configuración operativa (patrones regex,
+# umbrales numéricos). Las reglas conceptuales viven en base_principles.md.
+# =============================================================================
+
+security_gates:
+  enabled: true
+  secret_patterns:
+    - "(?i)(api[_-]?key|apikey)\\s*[:=]\\s*['\"][a-zA-Z0-9_\\-]{16,}['\"]"
+    - "(?i)(secret[_-]?key)\\s*[:=]\\s*['\"][a-zA-Z0-9_\\-]{16,}['\"]"
+    - "(?i)(password|passwd)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]"
+    - "(pk_live|sk_live|ghp_[a-zA-Z0-9]{36})"
+  pii_in_logs:
+    blocked_patterns:
+      - "logging\\.[^)]*['\"].*?(email|correo|account|tarjeta)['\"].*?\\+"
+      - "print\\([^)]*['\"].*?(password|clave|secret)['\"].*?\\)"
+    allowed_masking: true
+  sql_injection:
+    block_f_strings_in_queries: true
+    require_parametrized: true
+    allowed_libraries: ["sqlalchemy", "psycopg2", "asyncpg"]
+
+architecture_gates:
+  enabled: true
+  default_pattern: "hexagonal"
+  hexagonal:
+    require_ports: true
+    require_adapters: true
+    require_di: true
+  resilience:
+    require_timeouts: true
+    default_timeout_seconds: 30
+    require_retries: true
+    max_retries: 3
+    require_circuit_breaker: true
+
+commit_gates:
+  enabled: true
+  feature_flow:
+    require_ra_analysis: true
+    require_user_approval: true
+    escalate_to_pm_on_approval: true
+  refactor_flow:
+    require_qg_validation: true
+    gates_required: ["tests", "lint", "typecheck", "coverage", "security", "commit_message"]
+    auto_commit_on_pass: true
+  conventional_commits:
+    enabled: true
+    allowed_types: ["feat", "fix", "docs", "style", "refactor", "test", "chore", "build", "ci"]
+    require_scope: true
+    require_issue_reference: true
+    max_subject_length: 72
+  documentation:
+    require_docstrings_public_api: true
+    require_readme_update_on_interface_change: true
+    min_docstring_lines: 3
+    require_changelog_entry_on_feature: true
+  testing:
+    require_tests_for_new_features: true
+    min_coverage_percent: 80
+    allowed_to_skip: ["docs", "chore"]
+    require_integration_tests: true
+  post_refactor:
+    run_full_suite: true
+    check_no_regressions: true
+    update_coverage_report: true
+
+
+# =============================================================================
+# DEPARTAMENTOS Y RESPONSABILIDADES (Enterprise Org Chart)
+# =============================================================================
+departments:
+  producto:
+    head: requirements-analyst
+    funciones:
+      - "Analizar requerimientos del usuario"
+      - "Investigar viabilidad técnica"
+      - "Proponer mejoras en implementacion, accesibilidad, seguridad y codigo"
+      - "Escalar al PM tras aprobacion"
+  
+  direccion_proyectos:
+    head: project-manager
+    funciones:
+      - "Planificar y delegar tareas"
+      - "Gestionar el roadmap F.R.A.M.E."
+      - "Coordinar equipos multidisciplinarios"
+      - "Reportar progreso y blockers"
+  
+  evolucion:
+    head: evolve
+    funciones:
+      - "Orquestar el loop ASI-Evolve de auto-mejora"
+      - "Mantener cognition store con lecciones"
+      - "Evaluar y mejorar skills continuamente"
+      - "Asegurar principios FDE en todas las entregas"
+      - "Generar reportes de evolución del sistema"
+
+  arquitectura:
+    head: enterprise-architect
+    funciones:
+      - "Diseñar arquitectura de sistemas y roadmaps tecnológicos"
+      - "Evaluar alternativas técnicas con ADR"
+      - "Asegurar coherencia cross-domain"
+
+  desarrollo:
+    miembros: [software-engineer, quant-developer, quant-scientist, frontend-engineer]
+    funciones:
+      - "Implementar features según delegación del PM"
+      - "Mantener estándares de código (hexagonal, SOLID)"
+      - "Escribir tests automatizados"
+  
+  datos:
+    head: data-architect
+    funciones:
+      - "Diseñar schemas y modelos de datos"
+      - "Gestionar migraciones y ETL"
+      - "Optimizar queries y persistencia"
+  
+  inteligencia_artificial:
+    head: ai-engineer
+    funciones:
+      - "Modelos ML, pipelines y LLMOps"
+      - "Feature engineering y experiment tracking"
+      - "Optimización de inferencia y drift detection"
+  
+  calidad:
+    head: quality-gate
+    funciones:
+      - "Garantizar cobertura de tests ≥80%"
+      - "Ejecutar quality gates pre-commit"
+      - "Diseñar estrategias de prueba (pirámide 70/20/10)"
+      - "Prevenir regresiones"
+  
+  seguridad_compliance:
+    head: security-engineer
+    funciones:
+      - "Hardening de codigo y secretos"
+      - "Reglas de compliance y auditoria (adaptables por dominio)"
+      - "Auditoria y cumplimiento normativo"
+  
+  infraestructura:
+    head: devops-sre
+    funciones:
+      - "CI/CD, Docker, Kubernetes"
+      - "Monitoreo y observabilidad"
+      - "Auto-rollback y healthchecks"
+  
+  operaciones:
+    head: trading-operations
+    funciones:
+      - "Monitoreo de sistemas en produccion"
+      - "Alertas y notificaciones (canal configurable)"
+      - "Gestion de schedules y ventanas de operacion"
+  
+  riesgo:
+    head: risk-manager
+    funciones:
+      - "Position sizing y Kelly criterion"
+      - "Monte Carlo y drawdown tracking"
+      - "Circuit breakers"
+  
+  documentacion:
+    head: documentation-specialist
+    funciones:
+      - "Manuales técnicos y operativos"
+      - "Documentación de API y white papers"
+      - "Wiki del proyecto"
+
+
+# =============================================================================
+# OPTIMIZACIÓN DE TOKENS (Compresión y budgeting)
+# =============================================================================
+token_optimization:
+  enabled: true
+  
+  # Presupuesto por sección (tokens estimados)
+  budgets:
+    system_prompt: 512
+    skill_content: 1536
+    context: 1024
+    user_message: 512
+    response_format: 256
+    buffer: 256
+    total_max: 4096
+  
+  # Técnicas de compresión
+  compression:
+    remove_redundant_phrases: true
+    abbreviate_terms:
+      "out-of-sample": "OOS"
+      "walk-forward validation": "WFV"
+      "deflated sharpe ratio": "DSR"
+      "stop loss": "SL"
+      "take profit": "TP"
+      "risk-reward ratio": "RR"
+    collapse_lists: true
+    remove_examples_if_tight: true
+  
+  # Thresholds para decisiones de compresión
+  thresholds:
+    compress_if_usage_percent: 85
+    aggressive_compress_if_percent: 95
+    emergency_truncate_if_percent: 100
+
+
+# =============================================================================
+# CONFIGURACIÓN DE OBSERVABILIDAD
+# =============================================================================
+observability:
+  enabled: true
+  
+  # Trace IDs para debugging distribuido
+  trace_id:
+    enabled: true
+    header_name: "x-trace-id"
+    propagate_to_downstream: true
+  
+  # Métricas por skill/agent
+  metrics:
+    track_token_usage: true
+    track_execution_time: true
+    track_guardrail_results: true
+    track_routing_confidence: true
+  
+  # Logging estructurado
+  logging:
+    format: "json"
+    include_context: true
+    mask_sensitive_fields: true
+    sensitive_field_patterns: ["api_key", "secret", "password", "token", "email"]
+
+--- FILE: .opencode/config/token_budgets.yaml ---
+
+# .opencode/config/token_budgets.yaml
+# Presupuestos de tokens por skill y contexto
+# Optimiza equilibrio: tokens usados vs efectividad del prompt
+
+defaults:
+  # Presupuesto base para prompts (en tokens estimados)
+  base_budget: 2048
+  # Buffer reservado para respuesta del agente
+  response_buffer: 256
+  # Umbral para activar compresión agresiva
+  compression_threshold: 0.85
+
+# Presupuestos por rol (ajustar según complejidad)
+role_budgets:
+  project-manager:
+    budget: 2500
+    compression_level: low
+    include_principles: always
+    reason: "Necesita contexto completo del plan F.R.A.M.E."
+
+  quant-developer:
+    budget: 2048
+    compression_level: medium
+    include_principles: space_available
+    reason: "Código técnico requiere precisión, no redundancia"
+
+  quant-scientist:
+    budget: 2500
+    compression_level: low
+    include_principles: always
+    reason: "Validaciones estadísticas y experimentos requieren contexto completo"
+
+  risk-manager:
+    budget: 1800
+    compression_level: medium
+    include_principles: space_available
+    reason: "Reglas de riesgo son concisas por diseño"
+
+  backend-engineer:
+    budget: 2048
+    compression_level: medium
+    include_principles: space_available
+    reason: "APIs y schemas requieren claridad técnica"
+
+  devops-sre:
+    budget: 1800
+    compression_level: high
+    include_principles: minimal
+    reason: "Comandos y configs son auto-explicativos"
+
+  security-engineer:
+    budget: 2048
+    compression_level: low
+    include_principles: always
+    reason: "Seguridad no tolera ambigüedades"
+
+  qa-automation:
+    budget: 1800
+    compression_level: medium
+    include_principles: space_available
+    reason: "Tests siguen patrones repetitivos"
+
+  data-architect:
+    budget: 2048
+    compression_level: medium
+    include_principles: space_available
+    reason: "Schemas requieren precisión pero son estructurados"
+
+  frontend-engineer:
+    budget: 1800
+    compression_level: high
+    include_principles: minimal
+    reason: "UI/UX es visual, menos texto necesario"
+
+  mobile-engineer:
+    budget: 1800
+    compression_level: high
+    include_principles: minimal
+    reason: "Plataformas móviles tienen patrones establecidos"
+
+  trading-operations:
+    budget: 2048
+    compression_level: low
+    include_principles: always
+    reason: "Operaciones en vivo requieren contexto completo"
+
+  compliance-officer:
+    budget: 2200
+    compression_level: low
+    include_principles: always
+    reason: "Regulaciones requieren precisión legal"
+
+  documentation-specialist:
+    budget: 2500
+    compression_level: low
+    include_principles: always
+    reason: "Documentación debe ser exhaustiva"
+
+# Técnicas de compresión por nivel
+compression_levels:
+  low:
+    remove_redundant_phrases: false
+    abbreviate_terms: false
+    collapse_lists: false
+    remove_examples: false
+    
+  medium:
+    remove_redundant_phrases: true
+    abbreviate_terms: true
+    collapse_lists: true
+    remove_examples: false
+    
+  high:
+    remove_redundant_phrases: true
+    abbreviate_terms: true
+    collapse_lists: true
+    remove_examples: true
+    aggressive_truncate: true
+
+# Términos comunes para abreviar (ahorro ~30-50 tokens por uso)
+abbreviations:
+  "out-of-sample": "OOS"
+  "walk-forward validation": "WFV"
+  "deflated sharpe ratio": "DSR"
+  "combinatorially symmetric cross-validation": "CSR"
+  "mixture of experts": "MoE"
+  "combinatorial purged cross-validation": "CPCV"
+  "fractionally differentiated features": "FracDiff"
+  "combinatorially symmetric": "CS"
+  "purged cross-validation": "PCV"
+  "time series cross-validation": "TSCV"
+
+# Frases redundantes a eliminar (ahorro ~10-20 tokens por uso)
+redundant_phrases:
+  - "es decir"
+  - "en otras palabras"
+  - "dicho de otro modo"
+  - "cabe destacar que"
+  - "por favor"
+  - "te solicito"
+  - "como puedes ver"
+  - "como se mencionó anteriormente"
+  - "en resumen"
+  - "para concluir"
+
+# Monitor de uso de tokens (logging)
+monitoring:
+  enabled: true
+  log_threshold: 1800  # Logear si se usa >85% del budget
+  metrics:
+    - tokens_used
+    - compression_applied
+    - sections_truncated
+    - principles_included
+
+--- FILE: .opencode/core/__init__.py ---
+
+"""
+Onyx-Quan-AIBot Core Framework
+Enterprise-grade skill orchestration system with guardrails, routing & optimization.
+"""
+from .registry import SkillRegistry, SkillContract, registry
+from .guardrails import GuardrailPipeline, guardrails
+from .router_v2 import Orchestrator, ROUTING_GRAPH, AgentState
+from .prompt_optimizer import build_optimized_prompt, compress_text, estimate_tokens
+
+__version__ = "2.0.0"
+__all__ = [
+    "registry", "guardrails", "Orchestrator", "ROUTING_GRAPH", "AgentState",
+    "build_optimized_prompt", "compress_text", "estimate_tokens",
+    "SkillRegistry", "SkillContract", "GuardrailPipeline"
+]
+
+
+--- FILE: .opencode/core/base_principles.md ---
+
+---
+name: base-principles
+description: Principios universales de programacion + ASI-Evolve + FDE - multi-nivel
+version: 2.0.0
+project_agnostic: true
+inherit:
+  - core/base_principles.md
+  - core/fde_principles.md
+---
+
+# PRINCIPIOS UNIVERSALES | Multi-nivel
+
+Fuente unica de verdad para todos los skills, gates y agentes.
+
+---
+
+## NIVEL 1 -- ESENCIAL (5 lineas, ~45 tokens, siempre inyectado)
+
+```
+ARQ: hexagonal + DI | KISS <500 | DRY | type hints
+SEG: 0 secrets | validate input | mask logs | parametriza SQL
+DOC: docstrings ES | codigo EN | docs 1:1 con API changes
+TST: core >=80% | pre-commit gates
+CMT: conventional commit type(scope): descripcion
+FDE: bridge product↔reality | delta = gap to close | mission > persona
+EVO: learn→design→experiment→analyze | cognition persists | loop repeats
+```
+
+---
+
+## NIVEL 2 -- ESTANDAR (14 lineas, ~120 tokens, inyectado si budget >70%)
+
+| Cat | Reglas |
+|-----|--------|
+| **ARQ** | Hexagonal ports/adapters + DI. KISS <500 lines/file. DRY utils. Type hints publicas. SOA opcional. |
+| **SEG** | Secrets 0 hardcode: `os.getenv()`. Logs mask PII/data. Input sanitize. SQL parametrizada. No `eval()/exec()`. |
+| **DOC** | Docstrings ES: Args/Returns/Raises. README/CHANGELOG ES. Codigo EN. Docs 1:1 en API/interfaz changes. |
+| **TST** | pytest framework. Core coverage >=80%. New feature = new test + integration. Pre-commit gates. |
+| **OPS** | Timeout >=30s I/O. Retry 3x backoff. Circuit breaker externo. Log JSON trace_id. Fallback plan. |
+| **CMT** | Conventional commit `type(scope): msg #ISSUE`. <=72 chars. Pre-commit hook: secrets+size+lint+test. |
+| **QLT** | Respuestas <500 tokens. Codigo listo/sin hardcode. Conciso: 1 responsabilidad por funcion. |
+| **FDE** | Bridge product↔reality. Delta = gap a cerrar. Mission > persona. Glue 50% integracion. Speed-to-value primero. Diplomacia tecnica. Zero-trust. |
+| **EVO** | Loop learn→design→experiment→analyze. Cognition store persiste lecciones. Experiment DB registra todo. Best snapshot automatico. |
+
+---
+
+## NIVEL 3 -- COMPLETO (referencia detallada para expandir)
+
+### ARQ - Arquitectura
+- [ ] Hexagonal: puertos (interfaces) en domain/ -> adapters en infrastructure/
+- [ ] DI: inyectar dependencias en __init__, nunca instanciar dentro
+- [ ] KISS: cada modulo <500 lineas, una responsabilidad
+- [ ] DRY: logica repetida -> utils o base class
+- [ ] Type hints en toda interfaz publica
+- `X class Service: self.db = Database()` -> `OK class Service: def __init__(self, db: DBInterface)`
+
+### SEG - Seguridad
+- [ ] Secrets: `os.getenv("VAR")`, NUNCA literales. `.env` en `.gitignore`
+- [ ] Logs: mask PII/secrets. `logger.info(mask(email))`, no raw
+- [ ] Input: sanear todo input externo (Pydantic schema)
+- [ ] SQL: siempre parametrizada, jamas f-strings
+- [ ] No `eval()/exec()` en produccion
+- `X f"SELECT * FROM t WHERE id={uid}"` -> `OK session.execute(text("..."), {"id": uid})`
+
+### DOC - Documentacion
+- [ ] Docstrings ES: Args/Returns/Raises en toda clase/metodo publico
+- [ ] Codigo EN: variables, funciones, clases, types, archivos
+- [ ] Comentarios inline ES
+- [ ] README, CHANGELOG, manuales ES
+- [ ] Docs 1:1: si cambia API/interfaz -> docs obligatorio
+- `X def calcular_media(precios)` -> `OK def calculate_mean(prices)`
+- `X """Calculate the moving average."""` -> `OK """Calcula el promedio movil."""`
+
+### TST - Testing
+- [ ] pytest framework. New feature -> test unitario + integracion
+- [ ] Cobertura: core >=80%, global >=30% incremental
+- [ ] Gates pre-commit: tests -> lint -> typecheck -> coverage -> security
+- [ ] Lint + typecheck en CI. Secrets scan en pre-commit hook
+- [ ] Mocks/stubs para I/O externo, no llamadas reales
+
+### OPS - Operaciones y Resiliencia
+- [ ] Timeout: `requests.get(url, timeout=30)`, nunca sin timeout
+- [ ] Retry: 3 intentos max, exponential backoff + jitter
+- [ ] Circuit breaker: en llamadas a API externas, half-open recovery
+- [ ] Logging: JSON estructurado con `trace_id`, nivel segun contexto
+- [ ] Fallback: siempre tener plan B si servicio externo falla
+- `X response = requests.get(url)` -> `OK response = requests.get(url, timeout=30)`
+
+### CMT - Commits Seguros
+- [ ] Formato: `type(scope): descripcion #ISSUE`
+- [ ] Types: feat/fix/docs/refactor/perf/test/build/ci/chore/security
+- [ ] Asunto <=72 chars. Issue # obligatorio
+- [ ] Pre-commit hook: secrets scan + file size check + lint + test
+- [ ] Sin `--no-verify` excepto emergencia documentada
+- [ ] 0 secrets en historial. Si hay leak: rotar + bfg filter-branch
+
+### QLT - Metricas de Calidad
+- [ ] Respuesta agente <500 tokens (salvo codigo complejo)
+- [ ] Codigo parametrizado, sin valores hardcodeados
+- [ ] Concision: una responsabilidad por funcion/clase
+- [ ] Documentacion: si hay logica compleja -> comentario explicativo
+- [ ] Sin warnings de linter/typechecker sin justificar
+
+### FDE - Forward Deployment Engineering
+- [ ] DELTA: Identificar gap entre producto ideal y realidad del cliente
+- [ ] MISSION: Stakeholder definido + metrica de exito + Day 2 plan
+- [ ] GLUE: Contratos API primero, implementacion despues
+- [ ] VALUE: MVA en <30 dias. 80/20 scope. Quick win identificado
+- [ ] DIPLOMACY: Champion + Blocker identificados. Plan de adopcion
+- [ ] RESILIENCE: Timeouts + retry + circuit breaker + zero-trust
+
+### EVO - ASI-Evolve Loop
+- [ ] LEARN: Cognition store consultado antes de disenar
+- [ ] DESIGN: Hipotesis formulada con parent nodes como base
+- [ ] EXPERIMENT: Evaluador ejecutado con metricas estructuradas
+- [ ] ANALYZE: Resultado analizado y leccion distillada a cognition
+- [ ] REGISTER: Experimento guardado en DB con score y analysis
+- [ ] SNAPSHOT: Best snapshot actualizado si mejora
+
+---
+
+## MAPA DE ROLES -> CATEGORIAS
+
+| Rol | Categorias |
+|-----|-----------|
+| quant-developer | ARQ, SEG, TST, DOC, OPS, FDE, EVO |
+| quant-scientist | ARQ, TST, DOC, EVO, FDE |
+| risk-manager | ARQ, SEG, TST, OPS, FDE |
+| software-engineer | ARQ, SEG, OPS, CMT, TST, FDE |
+| frontend-engineer | ARQ, DOC, QLT, FDE |
+| data-architect | ARQ, TST, SEG, FDE |
+| devops-sre | OPS, CMT, SEG, FDE |
+| security-engineer | SEG, CMT, DOC, ARQ, FDE |
+| trading-operations | OPS, CMT, FDE, EVO |
+| documentation-specialist | DOC, QLT, FDE |
+| project-manager | CMT, QLT, FDE, EVO |
+| mobile-engineer | ARQ, SEG, QLT, FDE |
+| quality-gate | TST, CMT, SEG, DOC, QLT, FDE, EVO |
+| enterprise-architect | ARQ, FDE, CMT, DOC |
+| ai-engineer | ARQ, TST, EVO, FDE, OPS |
+| evolve | EVO, FDE, CMT, QLT |
+
+---
+
+## ABREVIACIONES (para compresion automatica de tokens)
+
+| Completo | Abrev. |
+|----------|--------|
+| out-of-sample | OOS |
+| walk-forward validation | WFV |
+| deflated sharpe ratio | DSR |
+| combinatorially symmetric cross-validation | CSCV |
+| mixture of experts | MoE |
+| stop loss | SL |
+| take profit | TP |
+| risk-reward ratio | RR |
+| position sizing | pos_size |
+| dependency injection | DI |
+| infrastructure as code | IaC |
+| continuous integration / continuous deployment | CI/CD |
+| application programming interface | API |
+| static application security testing | SAST |
+| software composition analysis | SCA |
+| pull request | PR |
+| Forward Deployment Engineering | FDE |
+| ASI-Evolve | EVO |
+| Minimum Viable Architecture | MVA |
+| Statement of Work | SOW |
+| User Acceptance Testing | UAT |
+| cognition store | COG |
+| experiment database | EXDB |
+| Agent-to-Agent | A2A |
+| cognition | COG |
+| evolve loop | EVLP |
+
+---
+
+> Fuente unica: `.opencode/core/base_principles.md` - Skills, gates, hooks y optimizer referencian este archivo.
+> Para extender: agregar categoria en los 3 niveles + MAPA DE ROLES + ABREVIACIONES si aplica.
+>
+> FDE + EVO integrados: `.opencode/core/fde_principles.md` para FDE completo, `.opencode/core/evolve_loop.py` para el loop autonomo.
+
+--- FILE: .opencode/core/base_skill_template.md ---
+
+---
+name: {{SKILL_NAME}}
+description: {{SKILL_DESCRIPTION}}
+version: 3.0.0
+project_agnostic: true
+inherit:
+  - core/base_principles.md
+  - core/fde_principles.md
+
+# Variables parametrizables (definir en config/project_config.yaml)
+variables:
+  - PROJECT_NAME: "{{PROJECT_NAME}}"
+  - DOMAIN: "{{DOMAIN}}"
+  - TECH_STACK: "{{TECH_STACK}}"
+  - ARCH_PATTERN: "{{ARCH_PATTERN}}"
+  - OUTPUTS_WAREHOUSE: "{{OUTPUTS_WAREHOUSE}}"
+  - OUTPUTS_DIRS: "{{OUTPUTS_DIRS}}"
+
+# Metadata para registry
+metadata:
+  author: onyx-team
+  tags: [{{SKILL_TAGS}}]
+  dependencies: [{{SKILL_DEPENDENCIES}}]
+  input_schema:
+    type: object
+    required: [user_message, context]
+  output_schema:
+    type: object
+    required: [response, actions]
+---
+
+# {{SKILL_NAME | upper}} | {{PROJECT_NAME}}
+
+⚡ **ROL**: {{ROLE_TITLE}}
+🎯 **STACK**: {{TECH_STACK}} | 🏗️ {{ARCH_PATTERN}} | 🌐 {{DATA_FLOW}}
+🔀 **ROLE STACKING**: {{ROLE_STACKING}}
+🔄 **FLUJO PRIORITARIO**: {{PRIORITY_FLOW}}
+🛡️ **CAPAS CRÍTICAS**: {{CRITICAL_LAYERS}}
+🚀 **FDE MISSION**: {{FDE_MISSION}}
+🔄 **EVOLVE TRACK**: {{EVOLVE_ENABLED}}
+
+---
+
+## 📐 PRINCIPIOS UNIVERSALES (Ver `.opencode/core/base_principles.md` + `.opencode/core/fde_principles.md`)
+
+| Nivel | Contenido | Cuándo |
+|-------|-----------|--------|
+| **N1 Esencial** | ARQ: hexagonal+DI \| SEG: 0 secrets \| DOC: ES/EN \| TST ≥80% \| CMT: conventional \| FDE: bridge product↔reality \| EVO: learn→design→experiment→analyze | Siempre |
+| **N2 Estándar** | 9 categorías expandidas (ARQ,SEG,DOC,TST,OPS,CMT,QLT,FDE,EVO) | Budget >70% |
+| **N3 Completo** | Checklist detallado + ejemplos ✅❌ por categoría | Referencia |
+
+> **Regla de idioma**: Docstrings ES, código EN, commits ES, README/manuales ES.
+> **Docs 1:1**: Si cambia API/interfaz → docs obligatorio en mismo commit.
+> **FDE**: Cada misión tiene stakeholder, métrica de éxito y Day 2 plan.
+> **EVO**: Cada respuesta genera cognition. Cada fallo produce lección reusable.
+
+---
+
+## 📦 VARIABLES DISPONIBLES (Inyección Automática)
+
+```yaml
+# Definidas en config/project_config.yaml → inyectadas en runtime:
+PROJECT_NAME: "{{PROJECT_NAME}}"
+DOMAIN: "{{DOMAIN}}"
+TECH_STACK: "{{TECH_STACK}}"
+ARCH_PATTERN: "{{ARCH_PATTERN}}"
+FDE_MISSION: "{{FDE_MISSION}}"
+EVOLVE_ENABLED: "{{EVOLVE_ENABLED}}"
+
+# Uso en skill:
+# - Referenciar con {{VARIABLE_NAME}} en texto
+# - Acceder vía context["VARIABLE_NAME"] en código
+```
+
+---
+
+## 🔄 FLUJO DE TRABAJO (Mermaid)
+
+```mermaid
+graph LR
+    A[Input Usuario] --> B{Router v2}
+    B -->|Intent detectado| C[Skill {{SKILL_NAME}}]
+    C --> D[Pre-Guardrails + FDE Check]
+    D -->|✅| E[Generar Respuesta]
+    D -->|❌| F[Block + Feedback]
+    E --> G[Post-Guardrails + Evolve Log]
+    G -->|✅| H[Retornar + Cognition Update]
+    G -->|❌| I[Corregir + Reintentar]
+    H --> J[Evolve Loop: Learn→Design→Experiment→Analyze]
+    J --> K[(Cognition Store)]
+    J --> L[(Experiment DB)]
+    K --> C
+    
+    style D fill:#e1f5fe
+    style G fill:#e1f5fe
+    style F fill:#ffcdd2
+    style I fill:#ffcdd2
+    style J fill:#fff3e0
+    style K fill:#e8f5e9
+    style L fill:#e8f5e9
+```
+
+---
+
+## 🚀 FDE LAYER — Forward Deployment Engineering
+
+### Misión Actual
+- **Stakeholder**: {{FDE_STAKEHOLDER}}
+- **Success Metric**: {{FDE_METRIC}}
+- **Day 2 Plan**: {{FDE_DAY2}}
+- **Delta Identificado**: {{FDE_DELTA}}
+
+### Checklist FDE
+- [ ] DELTA: Gap documentado entre producto y realidad
+- [ ] MISSION: Stakeholder + métrica + Day 2 definidos
+- [ ] GLUE: Contratos API primero, integración legacy prevista
+- [ ] VALUE: MVA identificado. Quick win en primera iteración
+- [ ] DIPLOMACY: Champion + Blocker conocidos
+- [ ] RESILIENCE: Timeouts, retry, circuit breaker configurados
+
+---
+
+## 🔄 EVOLVE LAYER — ASI-Evolve Self-Improvement
+
+### Loop Estado
+- **Evolve Enabled**: {{EVOLVE_ENABLED}}
+- **Last Round**: {{EVOLVE_LAST_ROUND}}
+- **Best Score**: {{EVOLVE_BEST_SCORE}}
+- **Cognition Items**: {{EVOLVE_COG_COUNT}}
+
+### Por cada respuesta:
+1. **LEARN**: Consultar cognition store por lecciones previas
+2. **DESIGN**: Formular hipótesis basada en experimentos anteriores
+3. **EXPERIMENT**: Evaluar calidad de la respuesta con métricas FDE
+4. **ANALYZE**: Distillar lección y registrar en cognition store
+5. **REGISTER**: Guardar en experiment DB para futuras iteraciones
+
+### Comandos Evolve
+- `!evolve status` — Estado del loop
+- `!evolve run <skill> <rounds>` — Ejecutar N rondas de mejora
+- `!evolve cognition add <title> <content>` — Añadir conocimiento
+- `!evolve cognition search <query>` — Buscar en cognition
+- `!evolve best <skill>` — Mejor snapshot actual
+- `!evolve stats` — Estadísticas del loop
+
+---
+
+## 🧠 CONTEXT ENGINEERING LAYER — Optimización de Contexto
+
+Este skill hereda los principios de context engineering (Anthropic, Sep 2025). El contexto es un recurso finito: cada token nuevo consume del attention budget del modelo.
+
+### Principios de Context Engineering
+1. **Minimal Viable Tokens**: Usar el conjunto más pequeño de tokens de alta señal que maximice el comportamiento deseado
+2. **Sectioned Prompts**: Organizar instrucciones en secciones con XML tags o Markdown headers
+3. **Just-in-Time Retrieval**: Preferir exploración progresiva (glob, grep, head/tail) sobre pre-carga de datos completos
+4. **Tool Call Clearing**: Limpiar tool calls y resultados raw después de uso profundo en el historial
+5. **Structured Note-Taking**: Persistir notas fuera de context window (NOTES.md, to-do lists, agentic memory)
+6. **Compaction**: Resumir ventanas near el límite, preservando decisiones arquitectónicas y bugs activos
+7. **Token Budgeting**: Definir y monitorizar presupuesto de tokens por sección y por rol
+
+### Checklist de Contexto para este skill
+- [ ] System prompt seccionado (XML/Markdown), no hardcodeado
+- [ ] Tools: mínimo set viable, sin overlap funcional
+- [ ] Input params descriptivos con nombres y tipos
+- [ ] Ejemplos diversos (3-5) de uso correcto de herramientas
+- [ ] Tool calls limpiados después de profundidad > 5
+- [ ] Message history sin outputs raw redundantes
+- [ ] Structured notes persistentes para tareas multi-turno
+- [ ] Compaction strategy definida para tareas long-horizon
+
+---
+
+## 📊 MÉTRICAS DE CALIDAD (Auto-evaluación)
+
+Antes de responder, verificar:
+- [ ] **Concisión**: Respuesta < 500 tokens (salvo código complejo)
+- [ ] **Acción**: Incluye pasos ejecutables o código listo
+- [ ] **Seguridad**: Cero violaciones de guardrails
+- [ ] **Reusabilidad**: Código parametrizado, no hardcodeado
+- [ ] **Documentación**: Docstrings + comentarios en lógica compleja
+- [ ] **FDE**: Misión clara con stakeholder y métrica de éxito
+- [ ] **EVO**: Lección registrada para auto-mejora continua
+
+---
+
+> 💡 **Nota de Reusabilidad Enterprise**: 
+> Este skill usa variables `{{VAR}}` para ser agnóstico al proyecto.
+> Para usarlo en otro contexto:
+> 1. Crear `config/project_config.yaml` con tus valores
+> 2. El registry inyecta automáticamente las variables al cargar
+> 3. Los guardrails se aplican independientemente del proyecto
+> 4. FDE + EVO se adaptan automáticamente al dominio
+
+---
+
+## 🧠 C.A.S.E. REASONING FRAMEWORK
+
+Cada tarea se procesa con 4 etapas obligatorias:
+
+### Clarify — Entender el problema
+- [ ] ¿Quién es el stakeholder real (no solo el emisor)?
+- [ ] ¿Cuál es la métrica de éxito medible?
+- [ ] ¿Cuál es el Cost of Inaction si no se resuelve?
+- [ ] ¿Qué restricciones (tiempo, recursos, compliance) existen?
+
+### Architect — Diseñar la solución
+- [ ] MVA identificado: la versión más simple que prueba valor
+- [ ] Contratos/APIs definidos antes de implementar
+- [ ] 80/20 scope: 20% esfuerzo → 80% valor
+- [ ] Patrón arquitectónico seleccionado (hexagonal, event-driven, etc.)
+
+### Solve — Implementar iterativamente
+- [ ] Quick win implementado primero (máximo impacto, mínimo esfuerzo)
+- [ ] Glue code previsto para integración con sistemas existentes
+- [ ] Tests asociados a cada cambio
+- [ ] Documentación 1:1 con cambios de API
+
+### Evaluate — Verificar y aprender
+- [ ] Guardrails post-ejecución superados (seguridad, arquitectura, docs)
+- [ ] Métrica de éxito validada contra el stakeholder
+- [ ] FDE Delta recalculado: ¿cuánto gap se cerró realmente?
+- [ ] Cognition item registrado: qué funcionó, qué no, qué aprender
+
+> Uso obligatorio en todas las respuestas de agentes.
+> Si falta alguna etapa, quality-gate debe rechazar.
+
+---
+
+## 🔗 ENLACES RÁPIDOS
+
+- 📋 Registry: `.opencode/core/registry.py`
+- 🛡️ Guardrails: `.opencode/core/guardrails.py`  
+- 🔄 Router: `.opencode/core/router_v2.py`
+- 🗜️ Optimizer: `.opencode/core/prompt_optimizer.py`
+- ⚙️ Config: `.opencode/config/project_config.yaml`
+- 🚀 FDE Principles: `.opencode/core/fde_principles.md`
+- ⚙️ Guardrails: `.opencode/core/guardrails.py`
+- 🧠 Context Engineering: `@context-engineer`
+- 🔧 Tool Engineering: `@tool-mcp-engineer`
+
+--- FILE: .opencode/core/fde_principles.md ---
+
+---
+name: fde-principles
+description: Forward Deployment Engineering universal principles - multi-layer for any domain
+version: 2.0.0
+project_agnostic: true
+---
+
+# FDE PRINCIPIOS UNIVERSALES | Forward Deployment Engineering
+
+Integración de Forward Deployment Engineering en el ecosistema .opencode.
+Cada skill hereda estos principios para operar en cualquier dominio, lenguaje y arquitectura.
+
+---
+
+## NIVEL 1 — ESENCIAL FDE (siempre inyectado)
+
+```
+FDE: bridge product↔reality | delta = gap to close
+MISSION: solve stakeholder problem, not user persona
+GLUE: 50% integration + 50% strategy
+VALUE: speed-to-value > feature-complete
+```
+
+---
+
+## NIVEL 2 — ESTÁNDAR FDE (7 pilares)
+
+| Pilar | Principio |
+|-------|-----------|
+| **DELTA** | Identificar el gap entre producto ideal y realidad del cliente. Resolver solo el delta, no todo el sistema. |
+| **MISSION** | Cada tarea es una misión con stakeholder definido, métrica de éxito y criterio de "Day 2" (post-entrega). |
+| **GLUE** | 50% del código es integración/adaptación. Priorizar contratos (APIs, schemas) sobre implementación. |
+| **VALUE** | Speed-to-value primero. MVA (Minimum Viable Architecture) en <30 días. 80/20 scope. |
+| **DIPLOMACY** | El problema técnico es 50% político. Identificar Champion, Blocker, Success Metric antes de codificar. |
+| **RESILIENCE** | Air-gap ready. Circuit breakers en datos. VPC-grade security. Zero-trust por defecto. |
+| **EVOLVE** | Cada entrega genera cognition. Cada fallo produce lección reusable. El sistema se mejora solo. |
+
+---
+
+## NIVEL 3 — CHECKLIST FDE DETALLADO
+
+### DELTA - Análisis del Gap
+- [ ] Identificar System of Record (fuente de verdad)
+- [ ] Documentar el gap entre producto y necesidad real
+- [ ] Proponer glue code mínimo para cerrar el gap
+- [ ] Validar que el delta resuelve el problema de negocio
+
+### MISSION - Definición de Misión
+- [ ] Stakeholder identificado (CTO, CEO, operador, etc.)
+- [ ] Métrica de éxito definida (latencia, accuracy, reducción de costo)
+- [ ] Day 2 definido (¿quién mantiene esto cuando termine?)
+- [ ] Cost of Inaction calculado
+
+### GLUE - Integración
+- [ ] Contratos API definidos antes de implementar
+- [ ] Soporte para legacy systems (adapters)
+- [ ] Data pipeline con medallion architecture (bronze/silver/gold)
+- [ ] Formato de datos universal (Parquet/JSONL)
+
+### VALUE - Entrega de Valor
+- [ ] MVA definido: la versión más simple que prueba valor
+- [ ] 80/20 scope: 20% del esfuerzo → 80% del valor
+- [ ] Quick win identificado para primera iteración
+- [ ] Demo preparada como narrativa de valor, no tour de features
+
+### DIPLOMACY - Diplomacia Técnica
+- [ ] Champion identificado dentro de la organización
+- [ ] Blocker potencial identificado (IT, Legal, Compliance)
+- [ ] Plan de comunicación con stakeholders
+- [ ] Estrategia de adopción (train the trainer)
+
+### RESILIENCE - Resiliencia
+- [ ] Timeouts en toda operación I/O
+- [ ] Retry con exponential backoff
+- [ ] Circuit breaker en dependencias externas
+- [ ] Logging JSON con trace_id
+- [ ] Plan de fallback documentado
+- [ ] Zero-trust security por defecto
+
+### EVOLVE - Auto-mejora
+- [ ] Cognition store actualizado con lecciones
+- [ ] Experiment DB registra cada intento
+- [ ] Análisis de cada resultado (incluso fallos)
+- [ ] Best snapshot promovido automáticamente
+
+---
+
+## MAPA DE ROLES → PILARES FDE
+
+| Rol | Pilares FDE |
+|-----|-------------|
+| software-engineer | GLUE, RESILIENCE, DELTA |
+| frontend-engineer | VALUE, DIPLOMACY, DELTA |
+| data-architect | DELTA, GLUE, RESILIENCE |
+| devops-sre | RESILIENCE, GLUE, VALUE |
+| security-engineer | RESILIENCE, DIPLOMACY, MISSION |
+| quant-developer | DELTA, GLUE, EVOLVE |
+| risk-manager | RESILIENCE, MISSION, DELTA |
+| trading-operations | MISSION, VALUE, RESILIENCE |
+| documentation-specialist | DIPLOMACY, MISSION, VALUE |
+| project-manager | MISSION, DIPLOMACY, VALUE |
+| mobile-engineer | VALUE, GLUE, DELTA |
+| quality-gate | GLUE, RESILIENCE, EVOLVE |
+| enterprise-architect | DELTA, GLUE, DIPLOMACY |
+| ai-engineer | DELTA, EVOLVE, VALUE |
+| evolve | EVOLVE, GLUE, VALUE |
+
+---
+
+---
+
+## GLOSARIO FDE — Términos, Conceptos y Patrones
+
+| Término | Definición | Uso |
+|---------|-----------|-----|
+| **C.A.S.E.** | Clarify → Architect → Solve → Evaluate. Marco universal de razonamiento para agentes. | Toda respuesta de skill debe pasar las 4 etapas. |
+| **MVA** | Minimum Viable Architecture. Versión más simple que prueba valor. <30 días. | Definir antes de codificar. Quick win visible. |
+| **Medallion Architecture** | Bronze (raw) → Silver (cleaned) → Gold (curated). Pipeline de datos en 3 capas. | data-architect, cualquier pipeline ETL. |
+| **MECE** | Mutually Exclusive, Collectively Exhaustive. Descomposición sin solapamiento ni omisión. | Estructurar argumentos, requisitos, tareas. |
+| **Pyramid Principle** | Conclusión primero (SCQ: Situation, Complication, Question), luego argumentos MECE, datos al final. | Formato de reportes, PRDs, executive summaries. |
+| **Three Whys** | 1st Why (síntoma) → 2nd Why (causa directa) → 3rd Why (raíz sistémica). | Post-mortem, análisis de fallo, guardrails. |
+| **Delta (Δ)** | Gap entre producto ideal y realidad del cliente. Lo único que hay que resolver. | Cada misión FDE tiene un delta. |
+| **Delta vs Echo** | **Delta**: el que construye, cierra gaps. **Echo**: el que replica, mantiene estándares. | Roles del equipo: diferenciar construcción de mantenimiento. |
+| **Stakeholder vs User** | **Stakeholder**: quien define éxito (paga, decide). **User**: quien opera el sistema. | MISSION siempre refiere al stakeholder. |
+| **Speed-to-Value** | Entregar valor rápido > feature-complete. 80/20 scope. | Priorización, MVA, quick wins. |
+| **Cost of Inaction (CoI)** | ¿Qué cuesta NO resolver este problema? En dinero, tiempo, riesgo. | Justificar prioridad en PRDs y reports. |
+| **Day 2** | Plan post-entrega: ¿quién mantiene? ¿cómo escala? ¿qué pasa si falla? | Toda misión FDE define Day 2. |
+| **Glue Code** | Código de integración/adaptación entre sistemas. 50% del esfuerzo total. | Priorizar contratos sobre implementación. |
+| **Zero-Trust** | No confiar en nada por defecto. Validar todo, autenticar todo. | RESILIENCE pillar, seguridad por diseño. |
+| **Discovery Checklist** | Admin (reglas/SLAs) + Data (fuentes/schemas) + Infra (target/deps). Pre-flight gate. | Ejecutar antes de implementar cualquier cambio. |
+| **A2A Protocol** | Agent-to-Agent estándar de descubrimiento, capability advertisement y handoff formal entre agentes. | `router_v2.py` → `A2ARegistry`, `A2ACard`, `A2AHandoffRequest`. |
+| **RAG Triad** | Groundedness (fundamentado en fuentes) + Context Relevance (usa el contexto) + Faithfulness (no alucina). | `guardrails.py` → `RAG-001/002/003`. Evaluación de calidad de respuestas RAG. |
+| **Inner Loop** | Evaluación rápida en entorno de desarrollo: lint, type narrow, tests unitarios, diff review. <30s. | `quality-gate.md` → IL-1 a IL-5. Mandatory pre-commit. |
+| **Outer Loop** | Evaluación completa en CI/CD: test full suite, lint completo, type check, seguridad, performance, integración. | `quality-gate.md` → OL-1 a OL-7. Mandatory pre-merge. |
+| **Pairwise Evaluation** | Comparar candidate vs baseline con Model-as-a-Judge en correctness, efficiency, readability, security. | `quality-gate.md` → Pairwise mode. Cognition store feedback. |
+| **Pointwise Evaluation** | Evaluar candidate contra rúbrica fija (1-5) en groundedness, clarity, completeness, safety. | `quality-gate.md` → Pointwise mode. Scoring absoluto. |
+| **AutoSxS** | Auto Side-by-Side. Evaluación automática comparativa de dos respuestas por un LLM judge. | Pairwise evaluation con prompt estructurado. |
+| **ASI-Evolve Pipeline** | 3-agent loop: Researcher (propone) → Engineer (ejecuta) → Analyzer (destila). 2 memorias: Experiment DB + Cognition Store. | `evolve_loop.py` → `EvolveLoop`, `ExperimentDB`, `CognitionStore`. |
+| **Diff-Based Evolution** | Evolución vía parches SEARCH/REPLACE en lugar de reescritura completa. max_code_length limita el diff. | `evolve_loop.py` → `diff_based_evolution: true`. |
+| **Island Sampling** | Muestreo multi-isla con parámetros de migración (rate/interval) y ratio exploración/explotación. | `evolve_loop.py` → `IslandSamplingConfig`. |
+| **Judge Model** | LLM externo para scoring final de candidatos. ratio controla qué % de rounds se juzgan. | `evolve_loop.py` → `JudgeConfig`. |
+| **FAISS Index** | Índice vectorial para búsqueda semántica en cognition. Index type: IP (Inner Product) por defecto. | `evolve_loop.py` → `FaissConfig`. Embedding: all-MiniLM-L6-v2, 384 dim. |
+
+---
+
+## CHECKLIST OPERATIVO — Por Fase del Ciclo FDE
+
+### Discovery Phase
+- [ ] Site Survey completado (admin/data/infra)
+- [ ] Stakeholder identificado con métrica de éxito
+- [ ] Cost of Inaction calculado
+- [ ] Delta documentado: gap actual vs deseado
+- [ ] Discovery Checklist (Admin+Data+Infra) pasado
+
+### Architect Phase
+- [ ] Technical PRD redactado con MVA
+- [ ] Pyramid Principle aplicado a la justificación
+- [ ] MECE applied a descomposición de requisitos
+- [ ] Medallion Architecture para pipelines de datos
+- [ ] Contratos API definidos antes de implementar
+- [ ] 80/20 scope: 20% esfuerzo → 80% valor
+
+### Delivery Phase
+- [ ] MVA entregado en <30 días
+- [ ] Quick win funcional desde iteración 1
+- [ ] Glue code implementado para integración legacy
+- [ ] Day 2 plan documentado y asignado
+- [ ] Three Whys aplicado si hubo fallos
+
+### Evaluate Phase
+- [ ] Executive Report generado para stakeholders
+- [ ] Delta recalculado: ¿cuánto gap se cerró?
+- [ ] Cognition item registrado (lección aprendida)
+- [ ] Experiments DB actualizado con métricas
+- [ ] Best snapshot promovido si aplica
+
+---
+
+> Fuente: `.opencode/core/fde_principles.md` — Skills, agents y loop referencian este archivo.
+> Para extender: agregar nuevo pilar en los 3 niveles + GLOSARIO + CHECKLIST OPERATIVO.
+
+--- FILE: .opencode/core/guardrails.py ---
+
+"""
+Guardrail Pipeline: Pre & Post execution checks for architecture, security, commits & docs.
+Enterprise-grade validation for AI-generated code and decisions.
+
+Las funciones de chequeo individuales se encuentran en ``guardrails_checks.py``
+para mantener este archivo por debajo del limite de 500 lineas.
+"""
+import re
+import json
+from typing import Callable, Dict, Any, Tuple, List, Optional
+from dataclasses import dataclass, field
+from enum import Enum
+
+from .guardrails_base import GuardrailSeverity, GuardrailResult
+from .guardrails_checks import (
+    check_architecture_pattern, check_dependency_injection, check_resilience_patterns,
+    check_no_secrets, check_no_pii_in_logs, check_sql_injection_safe,
+    check_conventional_commit, check_docs_for_public_api, check_tests_for_new_features,
+    check_discovery_admin, check_discovery_data, check_discovery_infra,
+    check_cost_budget, check_cost_usage, check_mcp_connectivity,
+    check_three_whys_diagnostic, check_rag_groundedness, check_rag_context_relevance,
+    check_rag_faithfulness,
+)
+
+
+class GuardrailPipeline:
+    """Pipeline ejecutable de guardrails con soporte para pre/post checks."""
+
+    def __init__(self):
+        """Inicializa la instancia de la clase."""
+        self._pre_checks: List[Tuple[str, Callable]] = []
+        self._post_checks: List[Tuple[str, Callable]] = []
+        self._results: List[GuardrailResult] = []
+
+    def add_pre(self, rule_id: str, fn: Callable[[Dict], GuardrailResult]):
+        """Anade un check pre-ejecucion."""
+        self._pre_checks.append((rule_id, fn))
+
+    def add_post(self, rule_id: str, fn: Callable[[str, Dict], GuardrailResult]):
+        """Anade un check post-ejecucion."""
+        self._post_checks.append((rule_id, fn))
+
+    def run_pre(self, context: Dict[str, Any]) -> Tuple[bool, List[GuardrailResult]]:
+        """Ejecuta todos los checks pre-ejecucion."""
+        self._results = []
+        blocked = False
+        for rule_id, check_fn in self._pre_checks:
+            try:
+                result = check_fn(context)
+                result.rule_id = rule_id
+                self._results.append(result)
+                if result.severity == GuardrailSeverity.BLOCK and not result.passed:
+                    blocked = True
+            except Exception as e:
+                self._results.append(GuardrailResult(
+                    passed=False, severity=GuardrailSeverity.WARN,
+                    message=f"Error ejecutando {rule_id}: {str(e)}", rule_id=rule_id
+                ))
+        return not blocked, self._results
+
+    def run_post(self, output: str, context: Dict[str, Any]) -> Tuple[bool, List[GuardrailResult]]:
+        """Ejecuta todos los checks post-ejecucion."""
+        results = []
+        blocked = False
+        for rule_id, check_fn in self._post_checks:
+            try:
+                result = check_fn(output, context)
+                result.rule_id = rule_id
+                results.append(result)
+                if result.severity == GuardrailSeverity.BLOCK and not result.passed:
+                    blocked = True
+            except Exception as e:
+                results.append(GuardrailResult(
+                    passed=False, severity=GuardrailSeverity.WARN,
+                    message=f"Error ejecutando {rule_id}: {str(e)}", rule_id=rule_id
+                ))
+        self._results.extend(results)
+        return not blocked, results
+
+    def get_summary(self) -> Dict[str, Any]:
+        """Obtiene resumen de resultados para logging/observabilidad."""
+        return {
+            "total_checks": len(self._results),
+            "passed": sum(1 for r in self._results if r.passed),
+            "failed": sum(1 for r in self._results if not r.passed),
+            "blocked": any(r.severity == GuardrailSeverity.BLOCK and not r.passed
+                          for r in self._results),
+            "by_severity": {
+                s.value: sum(1 for r in self._results if r.severity == s and not r.passed)
+                for s in GuardrailSeverity
+            },
+            "failed_rules": [r.rule_id for r in self._results if not r.passed]
+        }
+
+
+# =============================================================================
+# PIPELINE INSTANCIA GLOBAL
+# =============================================================================
+
+guardrails = GuardrailPipeline()
+
+# Registrar checks pre-ejecucion (arquitectura + discovery + cost + mcp)
+guardrails.add_pre("ARCH-001", check_architecture_pattern)
+guardrails.add_pre("ARCH-002", check_dependency_injection)
+guardrails.add_pre("ARCH-003", check_resilience_patterns)
+guardrails.add_pre("DISC-ADMIN-001", check_discovery_admin)
+guardrails.add_pre("DISC-DATA-001", check_discovery_data)
+guardrails.add_pre("DISC-INFRA-001", check_discovery_infra)
+guardrails.add_pre("COST-001", check_cost_budget)
+guardrails.add_pre("MCP-001", check_mcp_connectivity)
+
+# Registrar checks post-ejecucion (seguridad, commits, docs, cost, whys, rag)
+guardrails.add_post("SEC-001", check_no_secrets)
+guardrails.add_post("SEC-002", check_no_pii_in_logs)
+guardrails.add_post("SEC-003", check_sql_injection_safe)
+guardrails.add_post("COMMIT-001", check_conventional_commit)
+guardrails.add_post("DOCS-001", check_docs_for_public_api)
+guardrails.add_post("TEST-001", check_tests_for_new_features)
+guardrails.add_post("COST-002", check_cost_usage)
+guardrails.add_post("WHYS-001", check_three_whys_diagnostic)
+guardrails.add_post("RAG-001", check_rag_groundedness)
+guardrails.add_post("RAG-002", check_rag_context_relevance)
+guardrails.add_post("RAG-003", check_rag_faithfulness)
+
+
+def run_full_pipeline(user_message: str, generated_code: str, context: Dict) -> Dict[str, Any]:
+    """Ejecuta el pipeline completo de guardrails.
+
+    Returns:
+        Dict con: allowed, pre_results, post_results, summary
+    """
+    ctx = {**context, "generated_code": generated_code, "user_message": user_message}
+
+    pre_ok, pre_results = guardrails.run_pre(ctx)
+    if not pre_ok:
+        return {
+            "allowed": False, "blocked_at": "pre",
+            "results": [r.to_dict() for r in pre_results],
+            "summary": guardrails.get_summary()
+        }
+
+    post_ok, post_results = guardrails.run_post(generated_code, ctx)
+    return {
+        "allowed": post_ok,
+        "blocked_at": None if post_ok else "post",
+        "pre_results": [r.to_dict() for r in pre_results],
+        "post_results": [r.to_dict() for r in post_results],
+        "summary": guardrails.get_summary()
+    }
+
+--- FILE: .opencode/core/guardrails_base.py ---
+
+"""
+Base types for the guardrails system.
+Extracted from guardrails.py to break circular imports with guardrails_checks.py.
+"""
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+
+class GuardrailSeverity(Enum):
+    """Niveles de severidad para resultados de guardrails."""
+    BLOCK = "block"      # Detener ejecucion inmediatamente
+    WARN = "warn"        # Advertir pero continuar
+    INFO = "info"        # Solo registrar para observabilidad
+
+
+@dataclass
+class GuardrailResult:
+    """Resultado de una verificacion de guardrail."""
+    passed: bool
+    severity: GuardrailSeverity
+    message: str
+    suggestion: Optional[str] = None
+    rule_id: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convierte el resultado a diccionario para serializacion."""
+        return {
+            "passed": self.passed,
+            "severity": self.severity.value,
+            "message": self.message,
+            "suggestion": self.suggestion,
+            "rule_id": self.rule_id
+        }
+
+--- FILE: .opencode/core/guardrails_checks.py ---
+
+"""
+Guardrail check functions — extracted from guardrails.py for file size compliance.
+Each function is a standalone check that returns a GuardrailResult.
+"""
+import re
+from typing import Dict, Any, Tuple
+
+from .guardrails_base import GuardrailResult, GuardrailSeverity
+
+
+# =============================================================================
+# ARCHITECTURE CHECKS
+# =============================================================================
+
+def check_architecture_pattern(context: Dict) -> GuardrailResult:
+    """Verifica que el codigo siga el patron arquitectonico requerido."""
+    pattern = context.get("required_pattern", "hexagonal")
+    code = context.get("generated_code", "")
+    if pattern == "hexagonal":
+        has_ports = bool(re.search(r"(class\s+\w+Port|Protocol|ABC|@abstractmethod)", code, re.I))
+        has_adapters = bool(re.search(r"(class\s+\w+Adapter|implements|extends)", code, re.I))
+        if not has_ports and not has_adapters:
+            return GuardrailResult(
+                passed=False, severity=GuardrailSeverity.WARN,
+                message="Codigo no evidencia patron Hexagonal (ports/adapters)",
+                suggestion="Define interfaces (Ports) y sus implementaciones (Adapters)",
+                rule_id="ARCH-001"
+            )
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message=f"✅ Patron {pattern} verificado", rule_id="ARCH-001"
+    )
+
+
+def check_dependency_injection(context: Dict) -> GuardrailResult:
+    """Verifica uso de inyeccion de dependencias en lugar de hardcoding."""
+    code = context.get("generated_code", "")
+    dangerous_patterns = [
+        r"Broker\(\)", r"Database\(\)", r"APIClient\(\)",
+        r"requests\.get\(", r"httpx\.request\("
+    ]
+    violations = []
+    for pattern in dangerous_patterns:
+        if re.search(pattern, code):
+            if not re.search(r"def\s+__init__\s*\([^)]*:\s*\w+(Port|Protocol|Client)?", code):
+                violations.append(pattern)
+    if violations:
+        return GuardrailResult(
+            passed=False, severity=GuardrailSeverity.WARN,
+            message=f"Posible hardcoding de dependencias: {violations}",
+            suggestion="Usa inyeccion de dependencias: def __init__(self, broker: BrokerPort)",
+            rule_id="ARCH-002"
+        )
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Inyeccion de dependencias aplicada", rule_id="ARCH-002"
+    )
+
+
+def check_resilience_patterns(context: Dict) -> GuardrailResult:
+    """Verifica patrones de resiliencia en operaciones I/O."""
+    code = context.get("generated_code", "")
+    io_operations = ["request", "execute", "submit", "fetch", "query", "connect"]
+    has_io = any(op in code.lower() for op in io_operations)
+    if has_io:
+        resilience_patterns = [
+            r"timeout\s*=", r"retry", r"Retry", r"backoff",
+            r"circuit_breaker", r"CircuitBreaker", r"max_attempts"
+        ]
+        has_resilience = any(re.search(p, code, re.I) for p in resilience_patterns)
+        if not has_resilience:
+            return GuardrailResult(
+                passed=False, severity=GuardrailSeverity.WARN,
+                message="Operaciones I/O sin patrones de resiliencia detectados",
+                suggestion="Anade timeout, retries con backoff, o circuit breaker",
+                rule_id="ARCH-003"
+            )
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Resiliencia verificada", rule_id="ARCH-003"
+    )
+
+
+# =============================================================================
+# SECURITY CHECKS (CRITICAL)
+# =============================================================================
+
+def check_no_secrets(output: str, context: Dict) -> GuardrailResult:
+    """Bloquea codigo con secrets hardcodeados."""
+    secret_patterns = [
+        r"(?i)(api[_-]?key|apikey)\s*[:=]\s*['\"][a-zA-Z0-9_\-]{16,}['\"]",
+        r"(?i)(secret[_-]?key|secretkey)\s*[:=]\s*['\"][a-zA-Z0-9_\-]{16,}['\"]",
+        r"(?i)(password|passwd|pwd)\s*[:=]\s*['\"][^'\"]{8,}['\"]",
+        r"(?i)(token|auth_token|access_token)\s*[:=]\s*['\"][a-zA-Z0-9_\-\.]{20,}['\"]",
+        r"(pk_live|sk_live|ghp_[a-zA-Z0-9]{36}|xox[bprso]-[a-zA-Z0-9\-]+)",
+        r"(?i)BASIC\s+[A-Za-z0-9+/]{20,}={0,2}",
+    ]
+    for pattern in secret_patterns:
+        if re.search(pattern, output):
+            return GuardrailResult(
+                passed=False, severity=GuardrailSeverity.BLOCK,
+                message="SECRETO DETECTADO en el codigo generado",
+                suggestion="Usa os.getenv('VAR_NAME') y anade la variable a .env.example",
+                rule_id="SEC-001"
+            )
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Sin secrets hardcodeados", rule_id="SEC-001"
+    )
+
+
+def check_no_pii_in_logs(output: str, context: Dict) -> GuardrailResult:
+    """Verifica que no se expongan datos personales en logs."""
+    pii_patterns = [
+        r"logging\.[^)]*['\"].*?(email|correo|correo_electronico)['\"].*?\+",
+        r"logging\.[^)]*['\"].*?(account|cuenta|tarjeta)['\"].*?\+",
+        r"print\([^)]*['\"].*?(password|clave|secret)['\"].*?\)",
+    ]
+    for pattern in pii_patterns:
+        if re.search(pattern, output, re.I):
+            return GuardrailResult(
+                passed=False, severity=GuardrailSeverity.BLOCK,
+                message="Posible exposicion de PII en logs",
+                suggestion="Usa logging con masking: logger.info(f'User {user_id[:4]}***')",
+                rule_id="SEC-002"
+            )
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Logs seguros (sin PII)", rule_id="SEC-002"
+    )
+
+
+def check_sql_injection_safe(output: str, context: Dict) -> GuardrailResult:
+    """Verifica que las queries SQL usen parametros, no string formatting."""
+    if "SELECT" not in output.upper() and "INSERT" not in output.upper():
+        return GuardrailResult(
+            passed=True, severity=GuardrailSeverity.INFO,
+            message="✅ No se detectaron queries SQL", rule_id="SEC-003"
+        )
+    dangerous = [
+        r"execute\s*\(\s*f['\"]",
+        r"execute\s*\(\s*['\"].*?\{",
+        r"cursor\.execute\s*\([^,]+%\s*\(",
+    ]
+    for pattern in dangerous:
+        if re.search(pattern, output, re.I):
+            return GuardrailResult(
+                passed=False, severity=GuardrailSeverity.BLOCK,
+                message="Query SQL vulnerable a inyeccion",
+                suggestion="Usa parametros: cursor.execute('SELECT * FROM t WHERE id=%s', (id,))",
+                rule_id="SEC-003"
+            )
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Queries SQL parametrizadas", rule_id="SEC-003"
+    )
+
+
+# =============================================================================
+# COMMIT CHECKS
+# =============================================================================
+
+def check_conventional_commit(output: str, context: Dict) -> GuardrailResult:
+    """Verifica que los mensajes de commit sigan Conventional Commits."""
+    if "git commit" not in output.lower() and "commit" not in context.get("action", ""):
+        return GuardrailResult(
+            passed=True, severity=GuardrailSeverity.INFO,
+            message="✅ No es operacion de commit", rule_id="COMMIT-001"
+        )
+    valid_types = ["feat", "fix", "docs", "style", "refactor", "test", "chore", "build", "ci"]
+    commit_pattern = rf"^\s*({'|'.join(valid_types)})"
+    if not re.search(commit_pattern, output, re.I | re.M):
+        return GuardrailResult(
+            passed=False, severity=GuardrailSeverity.WARN,
+            message="Mensaje de commit sin tipo Conventional",
+            suggestion="Usa: feat(scope): descripcion #ISSUE",
+            rule_id="COMMIT-001"
+        )
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Commit sigue Conventional Commits", rule_id="COMMIT-001"
+    )
+
+
+def check_docs_for_public_api(output: str, context: Dict) -> GuardrailResult:
+    """Verifica que funciones/clases publicas tengan docstrings."""
+    public_defs = re.findall(r"^(?:async\s+)?def\s+([a-z][a-zA-Z0-9_]*)\s*\(", output, re.M)
+    public_classes = re.findall(r"^class\s+([A-Z][a-zA-Z0-9_]*)\s*[:\(]", output, re.M)
+    public_defs = [d for d in public_defs if not d.startswith("_")]
+    public_classes = [c for c in public_classes if not c.startswith("_")]
+    if not public_defs and not public_classes:
+        return GuardrailResult(
+            passed=True, severity=GuardrailSeverity.INFO,
+            message="✅ No se detectaron APIs publicas nuevas", rule_id="DOCS-001"
+        )
+    has_docstrings = bool(re.search(r'("""|\'\'\')', output))
+    if not has_docstrings and (public_defs or public_classes):
+        return GuardrailResult(
+            passed=False, severity=GuardrailSeverity.WARN,
+            message="APIs publicas sin docstrings",
+            suggestion="Anade docstring con descripcion, args, returns y raises",
+            rule_id="DOCS-001"
+        )
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ APIs documentadas", rule_id="DOCS-001"
+    )
+
+
+def check_tests_for_new_features(output: str, context: Dict) -> GuardrailResult:
+    """Sugiere anadir tests para nuevas funcionalidades."""
+    new_logic_patterns = [r"def\s+(?!test_)\w+\(", r"class\s+\w+\(", r"if\s+.*:"]
+    has_new_logic = any(re.search(p, output) for p in new_logic_patterns)
+    if not has_new_logic:
+        return GuardrailResult(
+            passed=True, severity=GuardrailSeverity.INFO,
+            message="✅ Sin nueva logica que requiera tests", rule_id="TEST-001"
+        )
+    has_tests = bool(re.search(r"def\s+test_\w+\(", output) or "pytest" in output.lower())
+    if not has_tests:
+        return GuardrailResult(
+            passed=True, severity=GuardrailSeverity.WARN,
+            message="Nueva funcionalidad sin tests asociados",
+            suggestion="Considera anadir tests en tests/test_*.py para la nueva logica",
+            rule_id="TEST-001"
+        )
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Tests incluidos para nueva funcionalidad", rule_id="TEST-001"
+    )
+
+
+# =============================================================================
+# DISCOVERY CHECKS — FDE Pre-Flight Gate
+# =============================================================================
+
+def check_discovery_admin(context: Dict) -> GuardrailResult:
+    """Verifica que se hayan definido reglas de negocio, SLAs y dominio."""
+    rules = context.get("business_rules", {})
+    has_rules = bool(rules) or bool(context.get("domain"))
+    if not has_rules:
+        return GuardrailResult(
+            passed=False, severity=GuardrailSeverity.WARN,
+            message="FDE Discovery: Business rules / SLAs no definidos",
+            suggestion="Define reglas de negocio, SLAs y contexto de dominio antes de implementar",
+            rule_id="DISC-ADMIN-001"
+        )
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Discovery Admin: reglas de negocio presentes", rule_id="DISC-ADMIN-001"
+    )
+
+
+def check_discovery_data(context: Dict) -> GuardrailResult:
+    """Verifica fuentes de datos, schemas, calidad y lineage."""
+    has_sources = bool(context.get("data_sources"))
+    has_schemas = bool(context.get("data_schema"))
+    if not has_sources or not has_schemas:
+        return GuardrailResult(
+            passed=False, severity=GuardrailSeverity.WARN,
+            message="FDE Discovery: Data sources / schemas no definidos",
+            suggestion="Identifica fuentes de datos, define schemas y verifica calidad antes de codificar",
+            rule_id="DISC-DATA-001"
+        )
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Discovery Data: fuentes y schemas definidos", rule_id="DISC-DATA-001"
+    )
+
+
+def check_discovery_infra(context: Dict) -> GuardrailResult:
+    """Verifica target de despliegue, red, dependencias y seguridad."""
+    has_target = bool(context.get("deploy_target"))
+    has_deps = bool(context.get("dependencies"))
+    if not has_target:
+        return GuardrailResult(
+            passed=False, severity=GuardrailSeverity.WARN,
+            message="FDE Discovery: Deploy target / dependencias no definidos",
+            suggestion="Define target de despliegue, dependencias externas y requisitos de red",
+            rule_id="DISC-INFRA-001"
+        )
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message="✅ Discovery Infra: target y dependencias presentes", rule_id="DISC-INFRA-001"
+    )
+
+
+# =============================================================================
+# COST GUARDRAILS — Budget & Token Usage
+# =============================================================================
+
+def check_cost_budget(context: Dict) -> GuardrailResult:
+    """Verifica que la solicitud tenga un presupuesto de tokens/costo definido."""
+    budget = context.get("cost_budget") or context.get("token_budget")
+    if budget is None:
+        return GuardrailResult(
+            passed=False, severity=GuardrailSeverity.WARN,
+            message="No se definio presupuesto de costo/tokens",
+            suggestion="Define cost_budget o token_budget en el contexto de la solicitud. "
+                       "Ej: {'cost_budget': {'max_cost_usd': 0.50, 'currency': 'USD'}}",
+            rule_id="COST-001"
+        )
+    if isinstance(budget, dict):
+        max_val = budget.get("max_cost_usd") or budget.get("max_tokens")
+        if max_val is None or max_val <= 0:
+            return GuardrailResult(
+                passed=False, severity=GuardrailSeverity.WARN,
+                message="Presupuesto definido pero sin limite valido (max_cost_usd o max_tokens)",
+                suggestion="Asegurate de incluir max_cost_usd o max_tokens > 0 en cost_budget",
+                rule_id="COST-001"
+            )
+    elif not isinstance(budget, (int, float)) or budget <= 0:
+        return GuardrailResult(
+            passed=False, severity=GuardrailSeverity.WARN,
+            message="Presupuesto definido pero con formato invalido",
+            suggestion="Usa un numero positivo (int/float) o un dict con max_cost_usd/max_tokens",
+            rule_id="COST-001"
+        )
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message=f"✅ Presupuesto definido: {budget}", rule_id="COST-001"
+    )
+
+
+def check_cost_usage(output: str, context: Dict) -> GuardrailResult:
+    """Verifica que el uso de costo/tokens no exceda el presupuesto definido."""
+    budget = context.get("cost_budget") or context.get("token_budget")
+    if budget is None:
+        return GuardrailResult(
+            passed=True, severity=GuardrailSeverity.INFO,
+            message="✅ Sin presupuesto definido, saltando verificacion de uso", rule_id="COST-002"
+        )
+    max_budget = None
+    if isinstance(budget, dict):
+        max_budget = budget.get("max_cost_usd") or budget.get("max_tokens")
+    else:
+        max_budget = float(budget)
+
+    total_cost = None
+    token_usage = None
+    cost_patterns = [
+        r'(?:total_)?cost[\s_:=]+\$?([0-9]+\.?[0-9]*)',
+        r'(?:total_)?cost[\s_:=]+([0-9]+\.?[0-9]*)\s*(?:USD|usd|\$)',
+    ]
+    for pattern in cost_patterns:
+        match = re.search(pattern, output, re.I)
+        if match:
+            total_cost = float(match.group(1))
+            break
+
+    token_pattern = r'(?:token_usage|total_tokens|tokens_used)[\s_:=]+([0-9]+)'
+    token_match = re.search(token_pattern, output, re.I)
+    if token_match:
+        token_usage = int(token_match.group(1))
+
+    if total_cost is None and token_usage is None:
+        return GuardrailResult(
+            passed=True, severity=GuardrailSeverity.INFO,
+            message="✅ No se detectaron metricas de costo/uso en el output", rule_id="COST-002"
+        )
+    if total_cost is not None and max_budget is not None and total_cost > max_budget:
+        return GuardrailResult(
+            passed=False, severity=GuardrailSeverity.WARN,
+            message=f"Costo total (${total_cost:.4f}) excede presupuesto (${max_budget:.4f})",
+            suggestion="Revisa el consumo del modelo o reduce la longitud de las respuestas",
+            rule_id="COST-002"
+        )
+    if token_usage is not None and max_budget is not None and token_usage > max_budget:
+        return GuardrailResult(
+            passed=False, severity=GuardrailSeverity.WARN,
+            message=f"Token usage ({token_usage}) excede presupuesto ({int(max_budget)})",
+            suggestion="Reduce el contexto o usa un modelo mas eficiente",
+            rule_id="COST-002"
+        )
+    detail_parts = []
+    if total_cost is not None:
+        detail_parts.append(f"costo=${total_cost:.4f}")
+    if token_usage is not None:
+        detail_parts.append(f"tokens={token_usage}")
+    return GuardrailResult(
+        passed=True, severity=GuardrailSeverity.INFO,
+        message=f"✅ Uso dentro de presupuesto: {', '.join(detail_parts)}", rule_id="COST-002"
+    )
+
+
+# =============================================================================
+# MCP INTEGRATION CHECKS
+# =========================================

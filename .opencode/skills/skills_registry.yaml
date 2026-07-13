@@ -1,0 +1,32 @@
+skills:
+  - name: alpha-research
+    domain: quantitative
+    description: Factor research, ML, feature engineering, statistical validation
+  - name: evolve
+    domain: meta
+    description: Self-improvement and continuous evolution loop
+  - name: healthtech
+    domain: healthtech
+    description: Healthtech, clinical systems, HIPAA, interoperability
+  - name: hedgefund
+    domain: financial
+    description: Institutional hedge fund doctrine, risk/reward management
+  - name: legal-doc
+    domain: legal
+    description: Legal document analysis, Colombian law (multi-especialidad), RTF+C methodology, comparative law, Corte Constitucional
+  - name: math-doc
+    domain: academic
+    description: Mathematical document processing, LaTeX, proofs, statistics
+  - name: pos-retail
+    domain: retail
+    description: Point of sale, retail operations, inventory management
+  - name: quant-trading
+    domain: quantitative
+    description: Quantitative trading strategies with CQE Rust
+  - name: risk-execution
+    domain: quantitative
+    description: Risk management, position sizing, market making, TCA
+  - name: science-doc
+    domain: academic
+    description: Scientific document analysis, peer review, systematic reviews
+
