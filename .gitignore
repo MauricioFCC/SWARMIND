@@ -1,64 +1,93 @@
-__pycache__/
-*.pyc
-*.pyo
-.env
-.env.*
-!.env.example
-*.egg-info/
-dist/
-build/
-.DS_Store
-Thumbs.db
+# AGENTIC Framework - NO versionar (viene del repositorio central)
+# Solo versionar .opencode/config/ (proyecto especifico)
+harness/
+.opencode/agents/
+.opencode/skills/
+.opencode/core/
+.opencode/README.md
 
-# Virtual environment (portable: each dev creates their own)
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
 .venv/
 venv/
-.virtualenvs/
+env/
+dist/
+build/
+*.whl
+*.egg
 
-# IDE and editor files
-.vscode/
+# LanceDB data
+harness/db/lancedb/
+harness/db/_archived/
+harness/db/import/
+harness/db/iteration_reports/
+99_Hermes_Brain/lancedb_data/
+memory_rag/*.db
+
+# Environment
+.env
+.env.local
+*.env
+.envrc
+
+# IDE
 .idea/
+.vscode/
 *.swp
 *.swo
 *~
+.vs/
+*.code-workspace
 
-# Regenerable: pre-compiled skills and auto-generated agents
-.opencode/skills/*/SKILL.min.md
-.opencode/agents/auto/
-.opencode/agents/auto/*.agent.min.md
-
-# Onboarding marker (regenerable)
-harness/.harness_initialized
-
-# Harness data (regenerable)
-harness/db/lancedb/
-harness/db/lancedb/**
-harness/db/lancedb_store/  # legacy name (removed in future)
-harness/db/import/*/
-harness/db/_archived/
-harness/evolve_loop/prompt_archive/
-.opencode/skills/auto/
-harness/orchestrator/scheduler_jobs.yaml
-harness/db/iteration_reports/
-harness/db/.hook_status.json
-harness/scheduler_jobs.json
-harness/db/lancedb/*/
-
-# Test and cache artifacts
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-*.coverage.*
-htmlcov/
-coverage.xml
-.coverage
-.coverage.*
-
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 desktop.ini
+*.dll
+*.so
+*.dylib
 
 # Logs
 *.log
-harness/**/*.log
+outputs/
+logs/
+99_Hermes_Brain/logs/
+
+# Coverage
+.coverage
+coverage.xml
+htmlcov/
+*.profraw
+lcov.info
+
+# Documentation build
+docs/book/
+
+# Export archives
+exports/*.zip
+exports/*.tar.gz
+
+# CI / Tooling
+.installed/
+.cargo/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Proptest
+proptest-regressions/
+fuzz/corpus/
+fuzz/artifacts/
+
+# Backup
+*.orig
+*.rej
+*.bak
+*.backup
+
+# Rust (CQE specific - but harmless for others)
+/target/
+**/*.rs.bk
+*.pdb
