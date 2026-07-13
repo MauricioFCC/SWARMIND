@@ -1,8 +1,8 @@
 Manifiesto de Exportación
 ============================================================
 Proyecto: AGENTIC
-Fecha: 2026-07-11T18:11:43.774099+00:00
-Total archivos: 211
+Fecha: 2026-07-13T18:25:54.593454+00:00
+Total archivos: 213
 ============================================================
 
   2.6 KB  .env.example
@@ -50,7 +50,7 @@ Total archivos: 211
   5.9 KB  .opencode/skills/evolve/SKILL.md
   2.4 KB  .opencode/skills/healthtech/SKILL.md
  18.2 KB  .opencode/skills/hedgefund/SKILL.md
-  4.0 KB  .opencode/skills/legal-doc/SKILL.md
+  6.8 KB  .opencode/skills/legal-doc/SKILL.md
   3.0 KB  .opencode/skills/math-doc/SKILL.md
   3.2 KB  .opencode/skills/pos-retail/SKILL.md
   7.0 KB  .opencode/skills/quant-trading/SKILL.md
@@ -210,6 +210,8 @@ Total archivos: 211
  15.0 KB  harness/tools_sandbox/mcp_executor.py
  11.3 KB  harness/tools_sandbox/mcp_manager.py
   1.9 KB  harness/tools_sandbox/mcp_servers.yaml
+ 56.5 KB  knowledge/legal-colombia/ANALISTA DE CASOS MULTIESPECIALIDAD DERECHO COLOMBIANO.md
+ 95.3 KB  knowledge/legal-colombia/PROMPT ENGINEERING PARA ABOGADOS COLOMBIANOS.md
  764.0 B  pyproject.toml
   10.0 B  requirements.txt
  20.6 KB  scripts/deploy_all.py
@@ -218,12 +220,12 @@ Total archivos: 211
 276.7 KB  uv.lock
 
 ============================================================
-Total: 211 archivos, 2.2 MB
+Total: 213 archivos, 2.3 MB
 ============================================================
 
 Archivos por extensión:
            .py: 151
-           .md: 35
+           .md: 37
          .yaml: 10
           .yml: 5
   (sin extensión): 3
