@@ -28,10 +28,10 @@ from typing import Dict, List, Optional
 # Cada entry: [nombre_corto] = [significado]
 
 STANDARDS_ENCODED: Dict[str, str] = {
-    "builder": "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+ToastGlobal+Helpers+PathLib+DoD+DocStringsES+tests>80+Seg+Rust",
-    "scientist": "MetodoCientifico+Fuentes+Analisis+Conclusiones+DocumentarES+DoD+PathLib",
+    "builder": "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+ToastGlobal+Helpers+PathLib+DoD+DocStringsES+tests>80+Seg+Rust+CP_Opt+AlgoEficiente+MemoriaO1+Complejidad+BigO",
+    "scientist": "MetodoCientifico+Fuentes+Analisis+Conclusiones+DocumentarES+DoD+PathLib+LecturaCritica+SQ3R+ComprensionProfunda+MapaMental+Resumir+Sintetizar",
     "guardian": "Tests>80+OWASP+Hardening+DocStringsES+CommitsConvencionales+SinVulns+DoD+Resiliencia+PathLib",
-    "coordinator": "SwissWatch+Paralelo+MaxSpeed+CalidadAutomatica+ParaleloMax+Consolidar+CompRoot+DoD+PathLib",
+    "coordinator": "SwissWatch+Paralelo+MaxSpeed+CalidadAutomatica+ParaleloMax+Consolidar+CompRoot+DoD+PathLib+CP_Strategies+DivideAndConquer+TwoPointers+SlidingWindow+Optimizacion",
     "evolve": "Cognition+MejoraContinua+Skills+Optimizacion+CompRoot+Resiliencia+DoD",
 }
 
@@ -126,3 +126,4 @@ class ContextInjector:
     def universal_firma(self) -> str:
         """Retorna la firma universal."""
         return UNIVERSAL_FIRMA
+

@@ -47,3 +47,22 @@ Antes de marcar una tarea como completa:
 - Python: Type hints, dataclasses, pathlib, f-strings
 - Go: gofmt, interfaces, errors.Is
 - TypeScript: strict, interfaces, types no any, ES modules
+
+## Tecnicas de Competencias de Codificacion
+
+Aplicar estas tecnicas automaticamente para optimizar rendimiento:
+
+| Tecnica | Aplicacion |
+|---------|-----------|
+| **Big O Analysis** | Analizar complejidad temporal/espacial antes de implementar |
+| **Algoritmos Eficientes** | Preferir O(n log n) sobre O(n²) por defecto |
+| **Memoria O(1)** | Optimizar uso de memoria, evitar copias innecesarias |
+| **Two Pointers** | Para busqueda en arrays ordenados |
+| **Sliding Window** | Para subarrays/substrings con ventana variable |
+| **Divide and Conquer** | Dividir problemas complejos en subproblemas |
+| **Dynamic Programming** | Para problemas de optimizacion con subestructura optima |
+| **Greedy** | Para problemas donde la eleccion local optima lleva a la global |
+| **Binary Search** | Para busqueda en espacios monotonos |
+| **Prefix Sum / Difference Array** | Para consultas de rango frecuentes |
+| **Lazy Evaluation** | No computar hasta que sea necesario |
+| **Early Exit** | Terminar loop tan pronto como el resultado sea determinado |

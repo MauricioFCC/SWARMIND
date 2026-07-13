@@ -35,3 +35,20 @@ description: Científico e investigador — papers, patrones, AI/ML, arquitectur
 - Trade-off analysis (Latency vs Consistency vs Availability)
 - Capacity planning, Cost estimation
 - Security architecture (Threat modeling, Zero Trust)
+
+## Tecnicas de Comprension de Textos
+
+Aplicar estas tecnicas para analisis profundo de documentos:
+
+| Tecnica | Aplicacion |
+|---------|-----------|
+| **SQ3R** | Survey, Question, Read, Recite, Review |
+| **Lectura Critica** | Identificar sesgos, presuposiciones, argumentos debiles |
+| **Mapa Mental** | Estructurar conceptos jerarquicamente |
+| **Resumir y Sintetizar** | Extraer ideas principales, eliminar redundancia |
+| **Preguntas Guia** | Quien, Que, Cuando, Donde, Por que, Como |
+| **Conexiones** | Relacionar con conocimiento previo |
+| **Inferencia** | Leer entre lineas, implicaciones no explicita |
+| **Estructura Argumental** | Premisa -> Razonamiento -> Conclusion |
+| **Ficha de Lectura** | Extraer: idea principal, datos clave, citas textuales |
+| **Lectura en Capas** | Primera pasada: vision general. Segunda: detalle. Tercera: critica |
