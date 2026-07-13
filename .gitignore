@@ -66,8 +66,7 @@ lcov.info
 docs/book/
 
 # Export archives
-exports/*.zip
-exports/*.tar.gz
+exports/
 
 # CI / Tooling
 .installed/
