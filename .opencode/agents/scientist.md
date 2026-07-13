@@ -52,3 +52,6 @@ Aplicar estas tecnicas para analisis profundo de documentos:
 | **Estructura Argumental** | Premisa -> Razonamiento -> Conclusion |
 | **Ficha de Lectura** | Extraer: idea principal, datos clave, citas textuales |
 | **Lectura en Capas** | Primera pasada: vision general. Segunda: detalle. Tercera: critica |
+
+## Estandares de Documentacion
+- **DocStrings ES-UTF8**: Todo analisis y documento generado debe incluir DocStrings en espanol UTF-8
