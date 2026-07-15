@@ -452,7 +452,7 @@ def deploy_project(
     dst_opencode = project_path / ".opencode"
 
     if not dry_run:
-        # Backup project_config.yaml and routing_rules.yaml if they exist
+        # Backup project-specific configs BEFORE cleanup
         backup_files = {}
         for fname in ["project_config.yaml", "routing_rules.yaml", "skills_registry.yaml"]:
             src = dst_opencode / "config" / fname
@@ -461,8 +461,10 @@ def deploy_project(
 
         # Ensure target exists
         _ensure_dir(dst_opencode)
-        # Clean and recopy .opencode (preserving config/ and memory/)
-        preserve = {"config", "memory", "db"}
+        # Clean .opencode preserving ONLY runtime data (memory/, db/)
+        # NOTE: config/ is NOT preserved — it's copied fresh from source
+        #       and then project-specific overrides are restored from backup.
+        preserve = {"memory", "db"}
         for item in dst_opencode.iterdir() if dst_opencode.exists() else []:
             if item.name not in preserve:
                 if item.is_dir():
@@ -470,10 +472,8 @@ def deploy_project(
                 else:
                     item.unlink()
 
-        # Copy from source
+        # Copy ALL from source (including config/ — framework defaults)
         for item in src_opencode.iterdir():
-            if item.name in preserve:
-                continue  # Skip preserved dirs
             dst = dst_opencode / item.name
             if item.is_dir():
                 if dst.exists():
@@ -483,7 +483,7 @@ def deploy_project(
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(str(item), str(dst))
 
-        # Restore project-specific configs
+        # Restore project-specific configs ON TOP of framework defaults
         for fname, content in backup_files.items():
             dst = dst_opencode / "config" / fname
             dst.parent.mkdir(parents=True, exist_ok=True)
@@ -504,17 +504,18 @@ def deploy_project(
 
     if not dry_run:
         _ensure_dir(dst_harness)
-        # Preserve db/ directory
-        preserve_harness = {"db"}
+        _ensure_dir(dst_harness / "db")  # Ensure runtime data dir exists
+        # Preserve db/ directory (runtime data, not overwritten)
         for item in dst_harness.iterdir() if dst_harness.exists() else []:
-            if item.name not in preserve_harness:
+            if item.name != "db":
                 if item.is_dir():
                     shutil.rmtree(str(item))
                 else:
                     item.unlink()
 
+        # Copy ALL from source (db/ skipped — it's runtime data created by LanceDB)
         for item in src_harness.iterdir():
-            if item.name in preserve_harness:
+            if item.name == "db":
                 continue
             dst = dst_harness / item.name
             if item.is_dir():
