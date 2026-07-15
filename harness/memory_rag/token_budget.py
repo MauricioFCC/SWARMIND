@@ -141,6 +141,9 @@ class TokenBudget:
     pools: Dict[str, TokenPool] = field(default_factory=dict)
     parent_session: Optional[str] = None
     _lock: threading.Lock = field(default_factory=threading.Lock)
+    _agent_failures: Dict[str, int] = field(default_factory=dict)
+    max_failures: int = 3
+    disabled: bool = False
 
     def __post_init__(self) -> None:
         # Initialize pools with allocation
@@ -186,9 +189,12 @@ class TokenBudget:
         """
         Whether this agent can continue spending.
         Blocked if:
+          - Pool disabled (exceeded max failures)
           - Confidence is high (>90%) → no more spending needed
           - Budget is exhausted with no reserve
         """
+        if self.disabled:
+            return False
         if self.confidence >= CONFIDENCE_HIGH:
             return False
         if self.total_remaining <= self.min_reserve:
@@ -199,6 +205,33 @@ class TokenBudget:
         """Set agent confidence level. Affects spending eligibility."""
         with self._lock:
             self.confidence = max(0.0, min(1.0, confidence))
+
+    def record_failure(self, agent_id: str, tokens_used: int) -> None:
+        """
+        Registrar un fallo del agente y reducir presupuesto disponible.
+
+        Si el agente excede max_failures, se desactiva el pool.
+
+        Args:
+            agent_id: Identificador del agente que falló.
+            tokens_used: Cantidad de tokens consumidos en el intento fallido.
+        """
+        with self._lock:
+            self._agent_failures[agent_id] = self._agent_failures.get(agent_id, 0) + 1
+            # Penalizar: reducir presupuesto en 50% de tokens usados
+            penalty = int(tokens_used * 0.5)
+            self.total_budget = max(0, self.total_budget - penalty)
+            # Ajustar pools proporcionalmente
+            if self.total_budget > 0:
+                for pool in self.pools.values():
+                    pool.allocated = int(self.total_budget * self.pool_allocation.get(pool.name, 0.0))
+            # Desactivar si excede max_failures
+            if self._agent_failures[agent_id] >= self.max_failures:
+                self.disabled = True
+                logger.warning(
+                    "TokenBudget[%s]: desactivado por exceder %d fallos (agente=%s)",
+                    self.agent_id, self.max_failures, agent_id,
+                )
 
     def request(self, pool_name: str, tokens: int) -> int:
         """

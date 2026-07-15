@@ -313,66 +313,6 @@ SUBTASK_TEMPLATES: Dict[str, Dict] = {
             {"agent": "coordinator", "description": "Consolidar perspectivas en decisión final", "deps": [1, 2, 3], "expected_output": "Decisión final consolidada", "context_hint": "integrar las tres perspectivas en una recomendación", "confidence_impact": "critical"},
         ],
     },
-    "security_audit": {
-        "triggers": ["security", "seguridad", "audit", "auditar", "vulnerabilidad", "hardening", "owasp"],
-        "description": "Auditoria seguridad",
-        "subtasks": [
-            {"agent": "guardian", "description": "AUDITAR: vulnerabilidades (texto + tests/ si aplica)", "deps": [], "expected_output": "Reporte + tests/", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "CORREGIR: vulnerabilidades en src/", "deps": [0], "expected_output": "Codigo corregido src/", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "VERIFICAR: re-ejecutar analisis y confirmar cierre", "deps": [1], "expected_output": "Verificacion", "confidence_impact": "validation"},
-            {"agent": "guardian", "description": "DOCUMENTAR: reporte final de seguridad", "deps": [1], "expected_output": "Reporte final", "confidence_impact": "neutral"},
-        ],
-    },
-    "deploy": {
-        "triggers": ["deploy", "desplegar", "release", "lanzar", "produccion", "production", "ci/cd"],
-        "description": "Despliegue",
-        "subtasks": [
-            {"agent": "builder", "description": "Preparar artefactos build y release en src/", "deps": [], "expected_output": "Artefactos listos", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "TESTS: pre-deploy y smoke tests", "deps": [0], "expected_output": "Validaciones ok", "confidence_impact": "validation"},
-            {"agent": "builder", "description": "Despliegue en entorno objetivo", "deps": [1], "expected_output": "Deploy completado", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Verificar deploy y monitorear", "deps": [2], "expected_output": "Verificacion post-deploy", "confidence_impact": "validation"},
-        ],
-    },
-    "docs": {
-        "triggers": ["document", "documentar", "docs", "readme", "wiki", "manual"],
-        "description": "Documentacion",
-        "subtasks": [
-            {"agent": "scientist", "description": "Analizar funcionalidad a documentar (solo texto)", "deps": [], "expected_output": "Analisis (texto)", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Escribir documentacion clara", "deps": [0], "expected_output": "Docs escritas", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Revisar y corregir documentacion", "deps": [1], "expected_output": "Docs revisadas", "confidence_impact": "validation"},
-        ],
-    },
-    "test": {
-        "triggers": ["test", "testing", "coverage", "cobertura", "pruebas"],
-        "description": "Testing (sin tocar src/)",
-        "subtasks": [
-            {"agent": "scientist", "description": "Planificar tests (solo texto)", "deps": [], "expected_output": "Plan testing", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Tests unitarios en tests/", "deps": [0], "expected_output": "Tests unitarios", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Tests integracion en tests/", "deps": [1], "expected_output": "Tests integracion", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Ejecutar suite y reportar", "deps": [2], "expected_output": "Reporte", "confidence_impact": "validation"},
-        ],
-    },
-    "database": {
-        "triggers": ["database", "db", "sql", "query", "migracion", "schema", "modelo datos"],
-        "description": "Base de datos",
-        "subtasks": [
-            {"agent": "scientist", "description": "Disenar esquema de datos (solo texto)", "deps": [], "expected_output": "Esquema (texto)", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Migraciones y modelos en src/", "deps": [0], "expected_output": "Migraciones src/", "confidence_impact": "critical"},
-            {"agent": "guardian", "description": "Tests integracion BD en tests/", "deps": [1], "expected_output": "Tests BD", "confidence_impact": "validation"},
-            {"agent": "guardian", "description": "Documentar esquema", "deps": [1], "expected_output": "Docs BD", "confidence_impact": "neutral"},
-        ],
-    },
-    "debate": {
-        "triggers": ["debate", "discutir", "consenso", "votar", "criticar", "revisar"],
-        "description": "Debate multi-agente (solo texto, 0 archivos)",
-        "subtasks": [
-            {"agent": "coordinator", "description": "Facilitar debate (solo texto)", "deps": [], "expected_output": "Debate facilitado", "confidence_impact": "critical"},
-            {"agent": "builder", "description": "Perspectiva implementacion", "deps": [0], "expected_output": "Perspectiva tecnica", "confidence_impact": "neutral"},
-            {"agent": "scientist", "description": "Perspectiva investigacion", "deps": [0], "expected_output": "Perspectiva investigacion", "confidence_impact": "neutral"},
-            {"agent": "guardian", "description": "Perspectiva calidad/riesgo", "deps": [0], "expected_output": "Perspectiva calidad", "confidence_impact": "neutral"},
-            {"agent": "coordinator", "description": "Consolidar perspectivas", "deps": [1, 2, 3], "expected_output": "Decision final", "confidence_impact": "critical"},
-        ],
-    },
     "general": {
         "triggers": [],
         "description": "Tarea general multi-agente paralelo",
@@ -402,6 +342,16 @@ class TaskPlanner:
             for subtask in level:
                 print(f"[{subtask.agent}] {subtask.description}")
     """
+
+    # Mapa de confidence_impact por tipo de template
+    _TEMPLATE_CONFIDENCE_IMPACT = {
+        "security_audit": "critical",
+        "deploy": "critical",
+        "implement_api": "high",
+        "fix_bug": "critical",
+        "docs": "validation",
+        "test": "validation",
+    }
 
     def __init__(self) -> None:
         self._counter: int = 0
@@ -484,7 +434,9 @@ class TaskPlanner:
                 dependencies=dep_ids,
                 expected_output=tpl["expected_output"],
                 context_hint=specifics.get("context", tpl.get("context_hint", "")),
-                confidence_impact=tpl.get("confidence_impact", "neutral"),
+                confidence_impact=self._TEMPLATE_CONFIDENCE_IMPACT.get(
+                    template_name, tpl.get("confidence_impact", "neutral")
+                ),
             ))
 
         plan = TaskPlan(

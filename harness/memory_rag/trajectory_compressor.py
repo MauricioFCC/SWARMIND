@@ -1,5 +1,5 @@
 """
-Trajectory Compressor — Hermes-inspired conversation compression.
+Trajectory Compressor — Hermes-inspired conversation compression + SelfCompact.
 
 Comprime trayectorias de conversaciones multi-turno para ahorrar tokens.
 Estrategia (tomada de Hermes Agent trajectory_compressor.py):
@@ -8,6 +8,11 @@ Estrategia (tomada de Hermes Agent trajectory_compressor.py):
   3. Comprime SOLO la region media (turnos redundantes)
   4. Reemplaza region comprimida con un unico mensaje SUMMARY
   5. Mantiene el resto de tool calls intactos
+
+SelfCompact Pattern (arXiv 2606.23525, junio 2026):
+  - El propio modelo decide cuando compactar via rubric
+  - Compactacion selectiva segun fase de la trayectoria
+  - Evita compactar en fases criticas (exploring, stuck)
 
 Ahorro estimado: 30-50% de tokens en historial de conversacion.
 """
@@ -35,6 +40,18 @@ CHAR_PER_TOKEN = 4.0  # estimacion rough
 # Roles que se comprimen (middle turns)
 COMPRESSIBLE_ROLES = {"tool", "gpt", "assistant", "function"}
 
+# Fases de trayectoria para SelfCompact
+VALID_PHASES = frozenset({
+    "exploring",   # Exploracion activa — NO compactar
+    "resolving",   # Resolviendo subtarea — posible compactar
+    "converging",  # Convergiendo a solucion — compactar recomendado
+    "stuck",       # Atascado — NO compactar (contexto valioso)
+    "completed",   # Subtarea resuelta — compactar siempre
+})
+
+# Contexto maximo estimado por defecto (8K tokens)
+DEFAULT_MAX_CONTEXT_TOKENS = 8000
+
 
 # ---------------------------------------------------------------------------
 # TrajectoryCompressor
@@ -45,10 +62,17 @@ class TrajectoryCompressor:
     """
     Comprime trayectorias de conversacion multi-turno.
 
+    Incorpora SelfCompact Pattern (arXiv 2606.23525): el propio modelo
+    decide cuando compactar basado en la fase de la trayectoria y el
+    uso de contexto.
+
     Uso:
         compressor = TrajectoryCompressor()
         compressed = compressor.compress(conversation_history)
         # compressed tiene ~30-50% menos tokens
+
+        # Con SelfCompact:
+        compressed = compressor.compress(history, phase="converging")
     """
 
     def __init__(
@@ -62,6 +86,7 @@ class TrajectoryCompressor:
         self.protect_tail = protect_tail
         self.summary_tokens = summary_tokens
         self.min_tokens = min_tokens
+        self._phase: str = "exploring"
         self._stats: Dict[str, Any] = {
             "compressions": 0,
             "skipped": 0,
@@ -76,20 +101,40 @@ class TrajectoryCompressor:
         self,
         conversation: List[Dict[str, Any]],
         target_tokens: Optional[int] = None,
+        phase: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Comprime una trayectoria de conversacion.
+
+        Si se proporciona 'phase', aplica SelfCompact rubric para decidir
+        si la compactacion es apropiada. Sin 'phase', mantiene el
+        comportamiento clasico (comprime siempre que supere el umbral).
 
         Args:
             conversation: Lista de mensajes en orden cronologico.
                 Cada mensaje debe tener al menos 'role' y 'content'.
             target_tokens: Token target opcional (default: auto).
+            phase: Fase actual de la trayectoria para SelfCompact.
+                Valores: exploring, resolving, converging, stuck, completed.
 
         Returns:
-            Lista comprimida de mensajes.
+            Lista comprimida de mensajes (original si rubric dice no compactar).
         """
         if not conversation:
             return conversation
+
+        # --- SelfCompact: verificar rubric si hay fase ---
+        if phase is not None:
+            if phase in VALID_PHASES:
+                self._phase = phase
+            context_usage = self._estimate_context_usage(conversation)
+            if not self.should_compact(self._phase, context_usage, len(conversation)):
+                self._stats["skipped"] += 1
+                logger.debug(
+                    "SelfCompact: skip compression (phase=%s, ctx=%.1f%%, turns=%d)",
+                    self._phase, context_usage, len(conversation),
+                )
+                return conversation
 
         # 1. Contar tokens totales
         total_tokens = self._count_tokens_list(conversation)
@@ -189,6 +234,97 @@ class TrajectoryCompressor:
         return dict(self._stats)
 
     # ------------------------------------------------------------------
+    # SelfCompact Pattern (arXiv 2606.23525, junio 2026)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def get_compact_rubric() -> str:
+        """
+        Retorna un prompt/rubric ligero para que el LLM decida si compactar.
+
+        El rubric sigue las condiciones del paper SelfCompact:
+        - Compactar cuando: subtarea resuelta, trayectoria convergiendo,
+          >80% contexto usado, >15 turnos
+        - NO compactar cuando: mid-derivation, stuck, esperando tool output
+
+        Returns:
+            String con el rubric formateado para incluir en system prompt.
+        """
+        return (
+            "## Self-Compact Rubric\n"
+            "Decide si compactar la trayectoria actual siguiendo estas reglas:\n\n"
+            "### Compactar CUANDO:\n"
+            "- La subtarea actual esta resuelta (completed)\n"
+            "- La trayectoria esta convergiendo a una solucion (converging)\n"
+            "- El uso de contexto es > 80%\n"
+            "- El numero de turnos es > 15\n\n"
+            "### NO compactar CUANDO:\n"
+            "- Estas en medio de una derivacion (mid-derivation)\n"
+            "- Estas atascado (stuck) — necesitas contexto para debug\n"
+            "- Estas esperando un tool output\n"
+            "- Estas explorando activamente (exploring)\n\n"
+            "### Fases y decision:\n"
+            "- exploring  → NO compactar (exploracion activa)\n"
+            "- resolving  → compactar solo si >85% contexto y >20 turnos\n"
+            "- converging → compactar recomendado\n"
+            "- stuck      → NO compactar (se perderia contexto valioso)\n"
+            "- completed  → compactar siempre\n"
+        )
+
+    def mark_trajectory_phase(self, phase: str) -> None:
+        """
+        Marca la fase actual de la trayectoria para decisiones de compactacion.
+
+        Args:
+            phase: Fase de la trayectoria.
+                Valores: exploring, resolving, converging, stuck, completed.
+
+        Raises:
+            ValueError: Si la fase no es valida.
+        """
+        if phase not in VALID_PHASES:
+            raise ValueError(
+                f"Fase invalida: '{phase}'. "
+                f"Valores validos: {', '.join(sorted(VALID_PHASES))}"
+            )
+        self._phase = phase
+        logger.debug("Trajectory phase marked: %s", phase)
+
+    @staticmethod
+    def should_compact(phase: str, context_usage_pct: float, turn_count: int) -> bool:
+        """
+        Implementa la logica del rubric Self-Compact.
+
+        Decide si se debe compactar segun la fase actual, el porcentaje
+        de contexto usado y el numero de turnos.
+
+        Args:
+            phase: Fase actual de la trayectoria.
+            context_usage_pct: Porcentaje de contexto usado (0-100).
+            turn_count: Numero de turnos en la trayectoria.
+
+        Returns:
+            True si se debe compactar, False en caso contrario.
+        """
+        if phase not in VALID_PHASES:
+            phase = "exploring"  # Default seguro
+
+        # Nunca compactar en estas fases (se perderia contexto valioso)
+        if phase in ("exploring", "stuck"):
+            return False
+
+        # Compactar si la fase lo permite Y hay alta presion de contexto
+        if phase in ("completed", "converging"):
+            if context_usage_pct > 75 or turn_count > 15:
+                return True
+
+        # Fase 'resolving': solo si hay mucha presion
+        if phase == "resolving" and context_usage_pct > 85 and turn_count > 20:
+            return True
+
+        return False
+
+    # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
@@ -210,6 +346,21 @@ class TrajectoryCompressor:
             if isinstance(tc, str):
                 total += cls._count_tokens(tc)
         return total
+
+    @staticmethod
+    def _estimate_context_usage(conversation: List[Dict[str, Any]]) -> float:
+        """
+        Estima el porcentaje de contexto usado (0-100) asumiendo ventana de 8K tokens.
+
+        Args:
+            conversation: Lista de mensajes a evaluar.
+
+        Returns:
+            Porcentaje entre 0 y 100.
+        """
+        total = TrajectoryCompressor._count_tokens_list(conversation)
+        pct = (total / DEFAULT_MAX_CONTEXT_TOKENS) * 100
+        return min(100.0, pct)
 
     def _generate_summary(self, turns: List[Dict[str, Any]]) -> str:
         """
@@ -255,6 +406,7 @@ class TrajectoryCompressor:
 def compress_conversation(
     conversation: List[Dict[str, Any]],
     target_tokens: Optional[int] = None,
+    phase: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """
     Comprime una conversacion multi-turno (funcion de conveniencia).
@@ -262,9 +414,10 @@ def compress_conversation(
     Args:
         conversation: Lista de mensajes con 'role' y 'content'.
         target_tokens: Target de tokens (default: auto).
+        phase: Fase de trayectoria para SelfCompact (opcional).
 
     Returns:
         Lista comprimida.
     """
     compressor = TrajectoryCompressor()
-    return compressor.compress(conversation, target_tokens)
+    return compressor.compress(conversation, target_tokens, phase=phase)

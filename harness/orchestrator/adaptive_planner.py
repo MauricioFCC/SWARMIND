@@ -7,11 +7,14 @@ Características:
   - Re-planifica si un nivel falla consistentemente
   - Aprende qué estructuras de plan funcionan mejor por tipo de tarea
   - Integra con FederatedMemory y AgentKpiTracker
+  - Phase-Scheduled Multi-Agent Systems (PSMAS, arXiv 2604.17400, abril 2026)
+    para activación de agentes por fase y reducción de tokens
 
 Basado en investigación Princeton NLP 2026 + Microsoft AutoGen:
   - Single-agent supera multi-agent en 64% de tareas benchmark
   - Multi-agent añade ~2.1 puntos de precisión al doble de costo
   - Adaptive Planning decide dinámicamente la estructura óptima
+  - PSMAS logra 27.3% de reducción de tokens con agentes phase-scheduled
 """
 
 from __future__ import annotations
@@ -41,6 +44,20 @@ MODE_SINGLE_AGENT = "single_agent"
 MODE_SEQUENTIAL = "sequential"
 MODE_PARALLEL = "parallel"
 MODE_HYBRID = "hybrid"          # Mezcla de sequential + parallel
+
+# PSMAS: Fases angulares por agente (grados)
+PHASE_BUILDER = 0.0      # Siempre activo
+PHASE_SCIENTIST = 120.0  # Fase de investigación/análisis
+PHASE_GUARDIAN = 240.0   # Fase de revisión/calidad
+
+# Ventana angular por defecto para activación (grados)
+PSMAS_DEFAULT_WINDOW = 60.0
+
+# Umbral de agentes para activar phase scheduling
+PSMAS_MIN_AGENTS = 3
+
+# Agentes siempre activos (fase 0)
+ALWAYS_ACTIVE_AGENTS = {"builder", "planner", "coordinator", "orchestrator"}
 
 
 # ---------------------------------------------------------------------------
@@ -159,6 +176,30 @@ class StrategyStats:
         }
 
 
+@dataclass
+class PhasePlan:
+    """
+    Plan de fases PSMAS para un conjunto de agentes.
+
+    Almacena la asignación de fase angular por agente y el tipo de tarea
+    para el cual fue generado el plan.
+    """
+    agent_phases: Dict[str, float] = field(default_factory=dict)
+    task_type: str = ""
+    window_degrees: float = PSMAS_DEFAULT_WINDOW
+    created_at: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
+    def to_dict(self) -> Dict:
+        return {
+            "agent_phases": dict(self.agent_phases),
+            "task_type": self.task_type,
+            "window_degrees": self.window_degrees,
+            "created_at": self.created_at,
+        }
+
+
 # ---------------------------------------------------------------------------
 # AdaptivePlanner
 # ---------------------------------------------------------------------------
@@ -167,15 +208,36 @@ class AdaptivePlanner:
     """
     Planificador adaptativo que aprende de ejecuciones anteriores.
 
+    Incorpora PSMAS (Phase-Scheduled Multi-Agent Systems) para activación
+    de agentes por fase angular, logrando ~27.3% de reducción de tokens.
+
     Uso:
         planner = AdaptivePlanner()
-        
+
         # Decidir estrategia para una tarea
         strategy = planner.choose_strategy("implementar API REST con Docker")
-        
+
+        # Activar phase scheduling para 3+ agentes
+        strategy = planner.choose_strategy(
+            "investigar arquitectura",
+            agents=["builder", "scientist", "guardian"],
+        )
+        phase_plan = planner.get_phase_plan()
+
+        # Obtener agentes activos en una fase
+        activos = planner.get_active_agents(
+            ["builder", "scientist", "guardian"],
+            phase_degrees=120.0,
+        )
+
+        # Comprimir contexto para agente inactivo
+        resumen = planner.compress_context_for_idle(
+            "guardian", context_largo, target_tokens=200,
+        )
+
         # Registrar feedback después de ejecución
         planner.record_feedback(feedback)
-        
+
         # Obtener recomendación
         rec = planner.get_recommendation("implementar API")
     """
@@ -205,6 +267,9 @@ class AdaptivePlanner:
         # Mapa de task_hash → mejor estrategia conocida
         self._best_strategies: Dict[str, Tuple[PlanStrategy, float]] = {}
 
+        # Plan de fases PSMAS (phase-scheduled agents)
+        self._phase_plan: PhasePlan = PhasePlan()
+
         # Persistencia
         if self._storage_path:
             self._load()
@@ -219,15 +284,20 @@ class AdaptivePlanner:
         task_type: Optional[str] = None,
         force_agent: Optional[str] = None,
         known_strategy: Optional[PlanStrategy] = None,
+        agents: Optional[List[str]] = None,
     ) -> PlanStrategy:
         """
         Elige la mejor estrategia de plan para una tarea.
+
+        Si se proporcionan 3+ agentes, activa phase scheduling PSMAS
+        para reducir tokens manteniendo precisión.
 
         Args:
             task: Mensaje de la tarea.
             task_type: Tipo detectado (opcional).
             force_agent: Si se forzó un agente específico.
             known_strategy: Estrategia conocida (opcional).
+            agents: Lista de agentes disponibles para phase scheduling.
 
         Returns:
             PlanStrategy recomendada.
@@ -241,7 +311,7 @@ class AdaptivePlanner:
             return PlanStrategy.SINGLE_AGENT
 
         # Detectar tipo de tarea
-        task_type = task_type or self._detect_task_type(task)
+        task_type_actual = task_type or self._detect_task_type(task)
         task_hash = self._hash_task(task)
 
         # Si ya tenemos una mejor estrategia para esta tarea
@@ -251,17 +321,283 @@ class AdaptivePlanner:
                 logger.info(
                     "AdaptivePlanner: usando estrategia conocida %s "
                     "(confianza=%.2f) para tarea tipo %s",
-                    strategy.value, confidence, task_type,
+                    strategy.value, confidence, task_type_actual,
                 )
+                self._apply_phase_scheduling(strategy, agents, task_type_actual)
                 return strategy
 
         # Elegir basado en estadísticas + tipo de tarea
-        strategy = self._select_by_task_type(task, task_type)
+        strategy = self._select_by_task_type(task, task_type_actual)
+
+        # Phase scheduling para 3+ agentes
+        self._apply_phase_scheduling(strategy, agents, task_type_actual)
+
         logger.info(
             "AdaptivePlanner: estrategia %s para tarea tipo %s",
-            strategy.value, task_type,
+            strategy.value, task_type_actual,
         )
         return strategy
+
+    def _apply_phase_scheduling(
+        self,
+        strategy: PlanStrategy,
+        agents: Optional[List[str]],
+        task_type: str,
+    ) -> None:
+        """
+        Aplica phase scheduling PSMAS si hay suficientes agentes.
+
+        Solo se activa cuando:
+          - Hay 3+ agentes en la lista
+          - La estrategia lo soporta (HYBRID o FAN_OUT_FAN_IN)
+
+        Args:
+            strategy: Estrategia seleccionada.
+            agents: Lista de agentes disponibles.
+            task_type: Tipo de tarea detectado.
+        """
+        if not agents or len(agents) < PSMAS_MIN_AGENTS:
+            self._phase_plan = PhasePlan()
+            return
+
+        # Phase scheduling es más efectivo con estrategias multi-agente
+        if strategy in (PlanStrategy.HYBRID, PlanStrategy.FAN_OUT_FAN_IN):
+            self._phase_plan = PhasePlan(
+                agent_phases=self._assign_agent_phases(agents, task_type),
+                task_type=task_type,
+            )
+            logger.info(
+                "PSMAS: phase plan asignado para %d agentes "
+                "(estrategia=%s, tipo=%s)",
+                len(agents), strategy.value, task_type,
+            )
+        else:
+            # Con estrategias single/secuencial, fase 0 para todos
+            self._phase_plan = PhasePlan(
+                agent_phases={a: 0.0 for a in agents},
+                task_type=task_type,
+            )
+
+    def _assign_agent_phases(
+        self,
+        agents: List[str],
+        task_type: str,
+    ) -> Dict[str, float]:
+        """
+        Asigna fase angular (0-360°) a cada agente según PSMAS.
+
+        La técnica PSMAS (arXiv 2604.17400, abril 2026) asigna fases
+        angulares a los agentes para activarlos solo en su ventana
+        programada, logrando 27.3% de reducción de tokens.
+
+        Reglas de asignación:
+          - builder/planner/coordinator → fase 0° (siempre activos)
+          - scientist/researcher → fase 120°
+          - guardian/quality/reviewer → fase 240°
+          - Otros agentes sin dependencias → misma fase (paralelo)
+
+        Args:
+            agents: Lista de IDs de agentes.
+            task_type: Tipo de tarea (influye en asignación).
+
+        Returns:
+            Dict[str, float] mapeando agente → fase en grados.
+        """
+        phases: Dict[str, float] = {}
+        n = len(agents)
+        if n == 0:
+            return phases
+
+        # Contadores para distribución uniforme de agentes genéricos
+        generic_idx = 0
+
+        for agent in agents:
+            agent_lower = agent.lower()
+
+            # Agentes siempre activos en fase 0
+            if agent_lower in ALWAYS_ACTIVE_AGENTS:
+                phases[agent] = PHASE_BUILDER
+
+            # Científicos / investigadores en fase 120°
+            elif any(kw in agent_lower for kw in ("scientist", "research", "analyst")):
+                phases[agent] = PHASE_SCIENTIST
+
+            # Guardianes / revisores en fase 240°
+            elif any(kw in agent_lower for kw in ("guardian", "quality", "review", "audit")):
+                phases[agent] = PHASE_GUARDIAN
+
+            else:
+                # Agentes genéricos: distribuir uniformemente
+                # Los que comparten fase pueden ejecutarse en paralelo
+                if generic_idx % 3 == 0:
+                    phases[agent] = PHASE_BUILDER
+                elif generic_idx % 3 == 1:
+                    phases[agent] = PHASE_SCIENTIST
+                else:
+                    phases[agent] = PHASE_GUARDIAN
+                generic_idx += 1
+
+        return phases
+
+    def get_active_agents(
+        self,
+        agents: List[str],
+        phase_degrees: float,
+        window: float = PSMAS_DEFAULT_WINDOW,
+    ) -> List[str]:
+        """
+        Retorna solo agentes dentro de la ventana angular desde ``phase_degrees``.
+
+        Los agentes fuera de la ventana reciben context summaries
+        comprimidos para ahorrar tokens.
+
+        Args:
+            agents: Lista de agentes a filtrar.
+            phase_degrees: Fase actual del ciclo (0-360°).
+            window: Ventana angular en grados (default 60°).
+
+        Returns:
+            Lista de agentes activos en la fase actual.
+        """
+        if not agents:
+            return []
+
+        # Sin plan de fases: todos activos
+        if not self._phase_plan.agent_phases:
+            return agents
+
+        active: List[str] = []
+        seen: set = set()
+
+        # Primera pasada: agentes dentro de la ventana
+        for agent in agents:
+            agent_phase = self._phase_plan.agent_phases.get(agent, 0.0)
+            # Distancia angular mínima (circular)
+            diff = abs(agent_phase - phase_degrees) % 360.0
+            diff = min(diff, 360.0 - diff)
+
+            if diff <= window:
+                active.append(agent)
+                seen.add(agent)
+
+        # Segunda pasada: siempre incluir agentes en fase 0 (críticos)
+        for agent in agents:
+            if agent in seen:
+                continue
+            agent_phase = self._phase_plan.agent_phases.get(agent, 0.0)
+            if agent_phase == PHASE_BUILDER:
+                active.append(agent)
+                seen.add(agent)
+
+        # Tercera pasada: si no hay activos, incluir los más cercanos
+        if not active:
+            # Encontrar agente más cercano a la fase actual
+            closest = min(
+                agents,
+                key=lambda a: min(
+                    abs(self._phase_plan.agent_phases.get(a, 0.0) - phase_degrees) % 360.0,
+                    360.0 - abs(self._phase_plan.agent_phases.get(a, 0.0) - phase_degrees) % 360.0,
+                ),
+            )
+            active.append(closest)
+
+        logger.debug(
+            "PSMAS get_active_agents: phase=%s, window=%s, "
+            "activos=%d/%d",
+            phase_degrees, window, len(active), len(agents),
+        )
+
+        return active
+
+    def compress_context_for_idle(
+        self,
+        agent_id: str,
+        context: str,
+        target_tokens: int,
+    ) -> str:
+        """
+        Comprime el contexto para agentes inactivos (solo envían summary).
+
+        Extrae líneas con información esencial y descarta el resto,
+        reduciendo drásticamente el consumo de tokens.
+
+        Args:
+            agent_id: ID del agente destino (para logging).
+            context: Contexto original completo.
+            target_tokens: Tokens objetivo para el resumen comprimido.
+
+        Returns:
+            Contexto comprimido (solo información esencial).
+        """
+        if not context:
+            return ""
+
+        # Estimación rápida de tokens (chars/4)
+        estimated_tokens = max(1, len(context) // 4)
+        if estimated_tokens <= target_tokens:
+            return context
+
+        # Líneas con información esencial
+        essential_keywords = [
+            "task:", "goal:", "objective:", "output:", "result:",
+            "decision:", "conclusion:", "summary:", "resumen:",
+            "requerim", "requisito", "api:", "endpoint:",
+            "error:", "warning:", "critical:", "importante:",
+            "strategy:", "plan:", "status:", "progress:",
+        ]
+
+        lines = context.split("\n")
+        essential_lines: List[str] = []
+        header_lines: List[str] = []
+
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                continue
+
+            # Mantener encabezados de sección
+            if stripped.startswith("###") or stripped.startswith("==="):
+                header_lines.append(stripped)
+                continue
+
+            # Mantener líneas con palabras clave
+            if any(kw in stripped.lower() for kw in essential_keywords):
+                essential_lines.append(stripped)
+
+        # Combinar encabezados + líneas esenciales
+        compressed = "\n".join(header_lines + essential_lines)
+
+        # Si aún excede, truncar por tokens
+        if len(compressed) // 4 > target_tokens:
+            char_limit = target_tokens * 4
+            compressed = compressed[:char_limit] + (
+                "\n[...truncated for idle agent...]"
+            )
+
+        # Si no hay nada esencial, tomar las primeras líneas significativas
+        if not compressed.strip():
+            meaningful = [l for l in lines if l.strip()][
+                :max(3, target_tokens // 10)
+            ]
+            compressed = "\n".join(meaningful)
+
+        logger.debug(
+            "PSMAS compress_context: agente=%s, %d → %d tokens (objetivo=%d)",
+            agent_id, estimated_tokens, max(1, len(compressed) // 4),
+            target_tokens,
+        )
+
+        return compressed
+
+    def get_phase_plan(self) -> Dict:
+        """
+        Obtiene el plan de fases PSMAS actual.
+
+        Returns:
+            Dict con agent_phases, task_type, window, created_at.
+            Vacío si no hay phase scheduling activo.
+        """
+        return self._phase_plan.to_dict()
 
     def record_feedback(self, feedback: PlanFeedback) -> None:
         """
@@ -299,7 +635,7 @@ class AdaptivePlanner:
         Obtiene recomendación completa para una tarea.
 
         Returns:
-            Dict con estrategia, confianza, y stats.
+            Dict con estrategia, confianza, stats y fase PSMAS.
         """
         task_type = self._detect_task_type(task)
         task_hash = self._hash_task(task)
@@ -308,7 +644,7 @@ class AdaptivePlanner:
         stats = self._strategy_stats[strategy.value]
         known = self._best_strategies.get(f"type:{task_type}")
 
-        return {
+        recommendation: Dict = {
             "task_type": task_type,
             "recommended_strategy": strategy.value,
             "confidence": known[1] if known else stats.avg_success_rate,
@@ -320,6 +656,13 @@ class AdaptivePlanner:
                 if k != strategy.value and v.total_uses > 0
             },
         }
+
+        # Incluir plan de fases PSMAS si está activo
+        phase_plan = self.get_phase_plan()
+        if phase_plan.get("agent_phases"):
+            recommendation["phase_plan"] = phase_plan
+
+        return recommendation
 
     def should_replan(
         self,

@@ -14,7 +14,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -260,6 +259,10 @@ class SemanticCache:
         """
         Almacenar respuesta en cache.
 
+        Si ya existe una entrada con el mismo ``prompt_hash`` cuyo campo
+        ``response`` contiene ``[PENDING]``, se elimina antes de insertar
+        la nueva entrada para evitar duplicados.
+
         Args:
             prompt: El prompt original.
             response: La respuesta del LLM.
@@ -272,15 +275,24 @@ class SemanticCache:
         """
         self._stats["sets"] += 1
         now = datetime.now(timezone.utc).isoformat()
+        prompt_hash = self._hash_prompt(prompt)
+        effective_ttl = ttl_seconds or self._default_ttl
+
+        # --- Fix #5: eliminar [PENDING] previo para evitar duplicados ---
+        if self._try_remove_pending(prompt_hash):
+            logger.debug(
+                "SemanticCache removed [PENDING] (hash=%s, agent=%s)",
+                prompt_hash[:8], agent_role,
+            )
 
         entry = CacheEntry(
-            prompt_hash=self._hash_prompt(prompt),
+            prompt_hash=prompt_hash,
             prompt_text=prompt,
             response=response,
             agent_role=agent_role,
             created_at=now,
             last_accessed=now,
-            ttl_seconds=ttl_seconds or self._default_ttl,
+            ttl_seconds=effective_ttl,
             metadata=metadata or {},
         )
 
@@ -300,7 +312,7 @@ class SemanticCache:
             )
             logger.debug(
                 "SemanticCache SET (hash=%s, agent=%s, len=%d chars)",
-                entry.prompt_hash[:8], agent_role, len(response),
+                prompt_hash[:8], agent_role, len(response),
             )
             return True
         except Exception as exc:
@@ -343,16 +355,48 @@ class SemanticCache:
         """
         Eliminar entradas expiradas del cache.
 
-        Nota: Esta es una operacion costosa que recorre todas las entradas.
-        Se recomienda ejecutarla periodicamente (ej: cada hora).
+        Recorre todas las entradas, verifica expiracion por ``created_at``
+        y ``ttl_seconds``, y elimina las que han expirado tanto en LanceDB
+        como en el fallback in-memory.
 
         Returns:
             Numero de entradas eliminadas.
         """
-        # LanceDB no tiene borrado por condicion facil, asi que
-        # esta operacion es principalmente util para el fallback in-memory
-        logger.info("SemanticCache expired-entry cleanup skipped (LanceDB TTL)")
-        return 0
+        removed = 0
+        try:
+            if self._store._lancedb_available and self._store._db is not None:
+                tbl = self._store._db.open_table(COLLECTION_SEMANTIC_CACHE)
+                # Escanear con limite alto para cubrir toda la tabla
+                all_entries = tbl.search().limit(100000).to_list()
+                for entry in all_entries:
+                    created_at = entry.get("created_at", "")
+                    ttl = entry.get("ttl_seconds", self._default_ttl)
+                    if self._is_expired(created_at, ttl):
+                        prompt_hash = entry.get("prompt_hash", "")
+                        if prompt_hash:
+                            tbl.delete(f"prompt_hash = '{prompt_hash}'")
+                            removed += 1
+            else:
+                # Fallback in-memory
+                col = self._store._mem_collections.get(COLLECTION_SEMANTIC_CACHE)
+                if col:
+                    to_delete = [
+                        key
+                        for key, item in col.items.items()
+                        if self._is_expired(
+                            item.metadata.get("created_at", ""),
+                            item.metadata.get("ttl_seconds", self._default_ttl),
+                        )
+                    ]
+                    for key in to_delete:
+                        del col.items[key]
+                        removed += 1
+        except Exception as exc:
+            logger.warning("SemanticCache clear_expired failed: %s", exc)
+
+        if removed > 0:
+            logger.info("SemanticCache eliminated %d expired entries", removed)
+        return removed
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -381,41 +425,77 @@ class SemanticCache:
     def _search_exact(
         self, prompt_hash: str, agent_role: str
     ) -> Optional[Tuple[str, CacheEntry]]:
-        """Buscar por hash exacto (mas rapido que busqueda vectorial)."""
+        """
+        Buscar por hash exacto.
+
+        Para LanceDB usa filtro ``WHERE`` directamente sobre la columna
+        ``prompt_hash`` (mas eficiente que escanear top_k). Para el
+        fallback in-memory itera sobre los items de la coleccion.
+        """
         try:
-            # Usamos un vector dummy con top_k generoso para cubrir toda la tabla
-            results = self._store.search(
-                COLLECTION_SEMANTIC_CACHE,
-                EMPTY_VECTOR,
-                top_k=50,
-            )
-            for result in results:
-                meta = result.get("metadata", {})
-                if not isinstance(meta, dict):
-                    continue
-                # Verificar prompt_hash y agent_role manualmente
-                result_hash = meta.get("prompt_hash", "")
-                result_role = meta.get("agent_role", "*")
-                if result_hash != prompt_hash:
-                    continue
-                if agent_role != "*" and result_role not in (agent_role, "*"):
-                    continue
-                response = meta.get("response", "")
-                if not response:
-                    continue
-                entry = CacheEntry(
-                    prompt_hash=prompt_hash,
-                    prompt_text=meta.get("prompt_text", ""),
-                    response=response,
-                    agent_role=meta.get("agent_role", "*"),
-                    created_at=meta.get("created_at", ""),
-                    last_accessed=meta.get("last_accessed", ""),
-                    ttl_seconds=meta.get("ttl_seconds", DEFAULT_TTL_SECONDS),
-                    hit_count=meta.get("hit_count", 1),
+            if self._store._lancedb_available and self._store._db is not None:
+                tbl = self._store._db.open_table(COLLECTION_SEMANTIC_CACHE)
+                # Construir WHERE con prompt_hash (+ agent_role si aplica)
+                where_clause = f"prompt_hash = '{prompt_hash}'"
+                if agent_role != "*":
+                    where_clause += f" AND agent_role = '{agent_role}'"
+                results = (
+                    tbl.search(EMPTY_VECTOR.tolist())
+                    .where(where_clause)
+                    .limit(1)
+                    .to_list()
                 )
-                return response, entry
+            else:
+                # Fallback in-memory
+                col = self._store._mem_collections.get(COLLECTION_SEMANTIC_CACHE)
+                results = []
+                if col:
+                    for item in col.items.values():
+                        meta = item.metadata
+                        if meta.get("prompt_hash") != prompt_hash:
+                            continue
+                        r_role = meta.get("agent_role", "*")
+                        if agent_role != "*" and r_role not in (agent_role, "*"):
+                            continue
+                        results.append({
+                            "metadata": meta,
+                            "score": 1.0,
+                            "created_at": item.created_at,
+                        })
+                        break
         except Exception:
-            pass
+            return None
+
+        for result in results:
+            meta = result.get("metadata", {})
+            # LanceDB almacena metadata como JSON string; convertirlo
+            if isinstance(meta, str):
+                try:
+                    meta = json.loads(meta)
+                except (json.JSONDecodeError, TypeError):
+                    meta = {}
+            if not isinstance(meta, dict):
+                continue
+            # Verificar agent_role (por si no se pudo incluir en WHERE)
+            result_role = meta.get("agent_role", "*")
+            if agent_role != "*" and result_role not in (agent_role, "*"):
+                continue
+            response = meta.get("response", "") or result.get("response", "")
+            if not response:
+                continue
+            entry = CacheEntry(
+                prompt_hash=prompt_hash,
+                prompt_text=meta.get("prompt_text", "") or result.get("prompt_text", ""),
+                response=response,
+                agent_role=result_role,
+                created_at=meta.get("created_at", "") or result.get("created_at", ""),
+                last_accessed=meta.get("last_accessed", "")
+                or result.get("last_accessed", ""),
+                ttl_seconds=meta.get("ttl_seconds", DEFAULT_TTL_SECONDS)
+                or result.get("ttl_seconds", DEFAULT_TTL_SECONDS),
+                hit_count=meta.get("hit_count", 1) or result.get("hit_count", 1),
+            )
+            return response, entry
         return None
 
     def _update_hit_count(self, entry: CacheEntry) -> None:
@@ -433,10 +513,32 @@ class SemanticCache:
             pass
 
     def _delete_entry(self, prompt_hash: str) -> None:
-        """Eliminar una entrada del cache (para entries expiradas)."""
-        # En LanceDB no hay delete por campo facil,
-        # asi que esto es un no-op para LanceDB.
-        logger.debug("Cache entry deletion requested (hash=%s)", prompt_hash[:8])
+        """
+        Eliminar una entrada del cache usando prompt_hash.
+
+        Para LanceDB usa ``tbl.delete()`` con filtro SQL directo.
+        Para el fallback in-memory remueve el item del diccionario.
+        """
+        try:
+            if self._store._lancedb_available and self._store._db is not None:
+                tbl = self._store._db.open_table(COLLECTION_SEMANTIC_CACHE)
+                tbl.delete(f"prompt_hash = '{prompt_hash}'")
+            else:
+                col = self._store._mem_collections.get(COLLECTION_SEMANTIC_CACHE)
+                if col:
+                    to_del = [
+                        key
+                        for key, item in col.items.items()
+                        if item.metadata.get("prompt_hash") == prompt_hash
+                    ]
+                    for key in to_del:
+                        del col.items[key]
+            logger.debug("Cache entry deleted (hash=%s)", prompt_hash[:8])
+        except Exception as exc:
+            logger.warning(
+                "Failed to delete cache entry (hash=%s): %s",
+                prompt_hash[:8], exc,
+            )
 
     @staticmethod
     def _is_expired(created_at: str, ttl_seconds: int) -> bool:
@@ -452,28 +554,96 @@ class SemanticCache:
 
     @staticmethod
     def _default_embedding(text: str) -> np.ndarray:
-        """Delega en harness.common.fallback_embedding."""
-        return fallback_embedding(text)
+        """
+        Embedding deterministico mejorado con SHA256 + modulo.
+
+        Mezcla el hash SHA256 del texto completo con la posicion y valor
+        de cada byte para producir un vector mas discriminativo que la
+        simple frecuencia de caracteres.
+
+        Returns:
+            Vector numpy normalizado de dimension ``DEFAULT_EMBEDDING_DIM``.
+        """
+        if not text:
+            return np.zeros(DEFAULT_EMBEDDING_DIM, dtype=np.float32)
+
+        vec = np.zeros(DEFAULT_EMBEDDING_DIM, dtype=np.float32)
+        data = text.encode("utf-8", errors="replace")
+
+        # Semilla global derivada del SHA256 del texto completo
+        digest = hashlib.sha256(data).digest()
+        seed_high = int.from_bytes(digest[:8], "little")
+        seed_low = int.from_bytes(digest[8:16], "little")
+
+        for i, byte_val in enumerate(data):
+            # Combinacion no-lineal: posicion + byte + semillas SHA256
+            mix = (i * 7 + byte_val * 3 + seed_high + (seed_low >> (i & 7)))
+            idx = mix % DEFAULT_EMBEDDING_DIM
+            vec[idx] += 1.0 + (byte_val / 255.0)
+
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            vec /= norm
+
+        return vec
 
     def _ensure_collection(self) -> None:
-        """Asegurar que la coleccion semantic_cache existe con el schema correcto.
+        """
+        Asegurar que la coleccion ``semantic_cache`` existe con el schema correcto.
 
-        LanceDB requiere que el schema se defina al crear la tabla.
-        Como LanceVectorStore._ensure_lancedb_collections() crea la tabla
-        para DEFAULT_COLLECTIONS con un schema base (solo id/vector/metadata/
-        created_at), siempre recreamos semantic_cache para garantizar que
-        tenga las columnas especificas que necesita.
+        Si la coleccion ya existe y tiene las columnas requeridas (``prompt_hash``,
+        ``response``, etc.), la reutiliza. Si existe pero con schema incompleto
+        (ej: creada por ``_ensure_lancedb_collections`` sin campos personalizados),
+        la elimina y la recrea. Solo crea si no existe (no destructivo cuando el
+        schema es correcto).
         """
         try:
-            # Siempre eliminar primero si existe (puede tener schema incorrecto)
-            if COLLECTION_SEMANTIC_CACHE in self._store.list_collections():
-                self._store.delete_collection(COLLECTION_SEMANTIC_CACHE)
-            self._create_collection_with_schema()
+            lancedb_available = getattr(self._store, '_lancedb_available', False)
+            lancedb_db = getattr(self._store, '_db', None)
+
+            if lancedb_available and lancedb_db is not None:
+                # Usar list_tables() (no-deprecated) en lugar de table_names()
+                tbl_names = set(lancedb_db.list_tables().tables)
+                if COLLECTION_SEMANTIC_CACHE in tbl_names:
+                    tbl = lancedb_db.open_table(COLLECTION_SEMANTIC_CACHE)
+                    field_names = {f.name for f in tbl.schema}
+                    # Verificar que tenga las columnas personalizadas
+                    if "prompt_hash" in field_names and "response" in field_names:
+                        logger.debug(
+                            "Collection '%s' exists with correct schema, reusing",
+                            COLLECTION_SEMANTIC_CACHE,
+                        )
+                        return
+                    # Schema incompleto -> eliminar y recrear
+                    logger.warning(
+                        "Collection '%s' has incomplete schema, recreating",
+                        COLLECTION_SEMANTIC_CACHE,
+                    )
+                    lancedb_db.drop_table(COLLECTION_SEMANTIC_CACHE)
+                self._create_collection_with_schema()
+            else:
+                # Fallback in-memory: usar list_collections()
+                existing = self._store.list_collections()
+                if COLLECTION_SEMANTIC_CACHE not in existing:
+                    self._create_collection_with_schema()
+                else:
+                    logger.debug(
+                        "Collection '%s' already exists (in-memory), reusing",
+                        COLLECTION_SEMANTIC_CACHE,
+                    )
         except Exception as exc:
-            logger.warning(
-                "Could not ensure collection '%s': %s",
-                COLLECTION_SEMANTIC_CACHE, exc,
-            )
+            # Ultimo recurso: intentar crear con overwrite
+            try:
+                logger.warning(
+                    "Ensuring collection '%s' failed (%s), trying overwrite",
+                    COLLECTION_SEMANTIC_CACHE, exc,
+                )
+                self._recreate_collection_with_schema()
+            except Exception as inner:
+                logger.warning(
+                    "Could not ensure collection '%s': %s",
+                    COLLECTION_SEMANTIC_CACHE, inner,
+                )
 
     def _create_collection_with_schema(self) -> None:
         """Crear la coleccion con un sample row para definir el schema.
@@ -483,7 +653,6 @@ class SemanticCache:
         un sample row que define todas las columnas necesarias, y luego
         borramos el placeholder.
         """
-        # Intentar crear via LanceDB directamente si esta disponible
         lancedb_available = getattr(self._store, '_lancedb_available', False)
         lancedb_db = getattr(self._store, '_db', None)
 
@@ -518,3 +687,77 @@ class SemanticCache:
             # Fallback: create_collection funciona para in-memory
             self._store.create_collection(COLLECTION_SEMANTIC_CACHE)
             logger.info("Created collection '%s' (in-memory)", COLLECTION_SEMANTIC_CACHE)
+
+    def _recreate_collection_with_schema(self) -> None:
+        """Forzar recreacion de la coleccion con schema completo (overwrite)."""
+        lancedb_available = getattr(self._store, '_lancedb_available', False)
+        lancedb_db = getattr(self._store, '_db', None)
+
+        if lancedb_available and lancedb_db is not None:
+            now = datetime.now(timezone.utc).isoformat()
+            sample = {
+                "id": "__schema_init__",
+                "vector": [0.0] * DEFAULT_EMBEDDING_DIM,
+                "metadata": "{}",
+                "created_at": now,
+                "prompt_hash": "",
+                "prompt_text": "",
+                "prompt_text_short": "",
+                "response": "",
+                "agent_role": "",
+                "hit_count": 0,
+                "last_accessed": now,
+                "ttl_seconds": DEFAULT_TTL_SECONDS,
+            }
+            lancedb_db.create_table(
+                COLLECTION_SEMANTIC_CACHE,
+                data=[sample],
+                mode="overwrite",
+            )
+            tbl = lancedb_db.open_table(COLLECTION_SEMANTIC_CACHE)
+            tbl.delete("id = '__schema_init__'")
+            logger.info(
+                "Recreated LanceDB table '%s' with semantic_cache schema (overwrite)",
+                COLLECTION_SEMANTIC_CACHE,
+            )
+        else:
+            # Fallback in-memory: recrear
+            if COLLECTION_SEMANTIC_CACHE in self._store._mem_collections:
+                del self._store._mem_collections[COLLECTION_SEMANTIC_CACHE]
+            self._store.create_collection(COLLECTION_SEMANTIC_CACHE)
+            logger.info("Recreated collection '%s' (in-memory overwrite)", COLLECTION_SEMANTIC_CACHE)
+
+    def _try_remove_pending(self, prompt_hash: str) -> bool:
+        """
+        Eliminar entrada existente cuyo ``response`` contenga ``[PENDING]``.
+
+        Si existe una entrada con el ``prompt_hash`` indicado y su campo
+        ``response`` incluye la subcadena ``[PENDING]``, se elimina para
+        evitar duplicados cuando ``set()`` inserte la respuesta real.
+
+        Returns:
+            True si se elimino una entrada pendiente, False en caso contrario.
+        """
+        try:
+            if self._store._lancedb_available and self._store._db is not None:
+                tbl = self._store._db.open_table(COLLECTION_SEMANTIC_CACHE)
+                results = (
+                    tbl.search(EMPTY_VECTOR.tolist())
+                    .where(f"prompt_hash = '{prompt_hash}'")
+                    .limit(1)
+                    .to_list()
+                )
+                if results and "[PENDING]" in results[0].get("response", ""):
+                    tbl.delete(f"prompt_hash = '{prompt_hash}'")
+                    return True
+            else:
+                col = self._store._mem_collections.get(COLLECTION_SEMANTIC_CACHE)
+                if col:
+                    for key, item in list(col.items.items()):
+                        if item.metadata.get("prompt_hash") == prompt_hash:
+                            if "[PENDING]" in item.metadata.get("response", ""):
+                                del col.items[key]
+                                return True
+        except Exception:
+            pass
+        return False

@@ -428,9 +428,8 @@ class LanceVectorStore:
                 **updates,
             }
 
-            # Limpiar claves que no deben estar en top-level
-            for key in ("metadata", "vector"):
-                update_values.pop(key, None)
+            # Limpiar solo 'vector' del top-level (metadata debe actualizarse)
+            update_values.pop("vector", None)
 
             try:
                 tbl.update(where=f"id = '{record_id}'", values=update_values)
