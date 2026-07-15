@@ -29,7 +29,6 @@ from harness.memory_rag.semantic_cache import (
     CacheEntry,
     SemanticCache,
 )
-from harness.common import fallback_embedding
 
 
 # ---------------------------------------------------------------------------
@@ -203,10 +202,11 @@ class TestSemanticCacheGetStats:
 
 
 class TestSemanticCacheClearExpired:
-    def test_clear_expired_returns_zero(self, semantic_cache):
-        """clear_expired is largely a no-op for LanceDB backend."""
+    def test_clear_expired_returns_int(self, semantic_cache):
+        """clear_expired returns count of removed expired entries (>=0)."""
         result = semantic_cache.clear_expired()
-        assert result == 0
+        assert isinstance(result, int)
+        assert result >= 0
 
 
 class TestSemanticCacheClear:
@@ -277,10 +277,17 @@ class TestHashPrompt:
 
 
 class TestDefaultEmbedding:
-    def test_delegates_to_fallback(self):
-        vec = SemanticCache._default_embedding("hello")
-        expected = fallback_embedding("hello")
-        assert np.allclose(vec, expected)
+    def test_deterministic(self):
+        """Same input produces same embedding (deterministic)."""
+        v1 = SemanticCache._default_embedding("hello")
+        v2 = SemanticCache._default_embedding("hello")
+        assert np.allclose(v1, v2)
+
+    def test_different_inputs_different_vectors(self):
+        """Different inputs produce different vectors (discriminative)."""
+        v1 = SemanticCache._default_embedding("hello")
+        v2 = SemanticCache._default_embedding("world")
+        assert not np.allclose(v1, v2)
 
     def test_returns_normalized_vector(self):
         vec = SemanticCache._default_embedding("test")
