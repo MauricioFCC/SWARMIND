@@ -41,6 +41,13 @@ Antes de marcar una tarea como completa:
 - [ ] <900LC por archivo
 - [ ] Sin secretos hardcodeados
 - [ ] Commits convencionales en espanol
+- [ ] Hidden tests TDAD pasan (tests invisibles de especificacion)
+- [ ] Semantic mutation tests pasan (robustez semantica)
+- [ ] Adversarial tests superados (generator vs validator)
+- [ ] Property-based invariants verificados (Hypothesis)
+- [ ] Token budget respetado (cache-shape + failure-spend)
+- [ ] Fuzz testing completado (si aplica)
+- [ ] Parallel reasoning validado (PaCoRe)
 
 ## Estilo por lenguaje
 - Rust: Clippy clean, Result no panic, thiserror, mod.rs
@@ -55,7 +62,7 @@ Aplicar estas tecnicas automaticamente para optimizar rendimiento:
 | Tecnica | Aplicacion |
 |---------|-----------|
 | **Big O Analysis** | Analizar complejidad temporal/espacial antes de implementar |
-| **Algoritmos Eficientes** | Preferir O(n log n) sobre O(n�) por defecto |
+| **Algoritmos Eficientes** | Preferir O(n log n) sobre O(n²) por defecto |
 | **Memoria O(1)** | Optimizar uso de memoria, evitar copias innecesarias |
 | **Two Pointers** | Para busqueda en arrays ordenados |
 | **Sliding Window** | Para subarrays/substrings con ventana variable |
@@ -66,3 +73,33 @@ Aplicar estas tecnicas automaticamente para optimizar rendimiento:
 | **Prefix Sum / Difference Array** | Para consultas de rango frecuentes |
 | **Lazy Evaluation** | No computar hasta que sea necesario |
 | **Early Exit** | Terminar loop tan pronto como el resultado sea determinado |
+
+## Tecnicas de Vanguardia para Codificacion Agentic
+
+| Tecnica | Descripcion | Aplicacion |
+|---------|-------------|-----------|
+| **TDAD** | Test-Driven AI Agent Definition: prompts como artefactos compilados. Roles: Test-Smith (tests), PromptSmith (compila prompts), MutationSmith (mutaciones semanticas), Built Agent (runtime). Hidden/visible test splits, semantic mutation testing, spec evolution. 92% v1 success | Escribir tests primero → compilar prompt hasta pasar → mutar semantica para validar robustez |
+| **TDFlow** | Workflow agentic test-driven para SWE a escala repositorio. Sub-agentes: patch proposer, debugger, patch reviser, test generator opcional. 88.8% pass SWE-Bench Lite, 94.3% SWE-Bench Verified | Patch proposer → debugger → patch reviser → iterar hasta pasar todos los tests del repo |
+| **PaCoRe** | Parallel Coordinated Reasoning: exploracion paralela + message-passing entre agentes + RL training. Escala test-time compute a millones de tokens sin exceder context window | Dividir exploracion en agentes paralelos, sincronizar via message-passing, entrenar con RL |
+| **REPOREASON** | White-box diagnostic con Abductive Assertion Verification y Execution-Driven Mutation para identificar bugs precisos en la codebase | Diagnosticar causas raiz con verificacion abductiva y mutacion dirigida por ejecucion |
+| **ABC-Bench** | Full-lifecycle backend coding benchmark: 8 lenguajes, 19 frameworks. Evalua agentes en escenarios reales multi-lenguaje | Usar como referencia de calidad para evaluaciones multi-lenguaje |
+
+## Testing Avanzado
+
+| Tecnica | Descripcion | Impacto |
+|---------|-------------|---------|
+| **TDAD (detalle)** | Test-Smith escribe tests visibles/ocultos → PromptSmith compila prompts iterativamente hasta pasar → MutationSmith evalua mutaciones semanticas → Built Agent listo para runtime | 92% v1 success rate. Hidden tests previenen overfitting del prompt |
+| **TDFlow (detalle)** | Patcheador propone fix → Debugger analiza fallos → Revisor mejora calidad → Test generator opcional crea tests faltantes. Ciclo iterativo hasta 100% pass | 88.8% SWE-Bench Lite, 94.3% SWE-Bench Verified |
+| **PROBE / AdverTest** | Generator propone implementacion ↔ Validator crea counter-implementations para exponer loopholes. Juego minimax que fuerza robustez contra adversarial examples | +9.79% mutation scores. Elimina falsos positivos en tests |
+| **Property-Based Testing** | Especificar invariantes del dominio, generar inputs aleatorios con Hypothesis framework, buscar counterexamples que rompan las propiedades | Detecta edge cases invisibles para tests unitarios tradicionales |
+| **FuzzAgent** | Multi-agent system para evolutionary library fuzzing. Equipo especializado: seed generator, mutator, executor, crash analyzer | Cobertura automatica de casos borde en librerias y APIs |
+| **SMART Mutation (Rust)** | RAG + code chunking + SFT para mutation testing especifico de Rust. Contexto semantico del crate entero para mutaciones precisas | Mutation testing preciso para codebase Rust con contexto completo |
+
+## Optimizacion de Tokens y Costos
+
+| Patron | Descripcion | Implementacion |
+|--------|-------------|----------------|
+| **Cache-Shape Discipline** | Cachear resultados intermedios y shapear requests para reutilizar KV-cache del LLM. Reducir tokens repetidos entre invocaciones | Cache por agente con TTL configurable, invalidacion por cambio de contexto, reuse de prefijos comunes |
+| **Failure-Spend Governance** | Presupuesto de fallos por tarea. Stop-loss por agente. Max retries antes de escalar a humano o fallback. El fallo es informacion, no costo perdido | Contador de retries con backoff exponencial, escalation policy por severidad, logging de fallos para mejora continua |
+| **Structured Compaction** | Comprimir historial de conversacion: resumir ramas completadas, podar arboles de decision muertos, priorizar contexto relevante con scoring semantico | Compresion jerarquica por sesion, poda de ramas con low relevance score, ventana de contexto deslizante |
+| **Harness Effect** | El prompt es el harness de test: cada invocacion es un experimento. Fallo controlado = dato de entrenamiento, no desperdicio. Cultura "fail fast, learn faster" | Todo fallo se registra como caso de test. Iteracion rapida prompt → test → fix → prompt. Ciclo de mejora continua |

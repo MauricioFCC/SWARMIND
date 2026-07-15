@@ -1,32 +1,32 @@
 skills:
   - name: alpha-research
     domain: quantitative
-    description: Factor research, ML, feature engineering, statistical validation
+    description: "Factor research, ML, feature engineering, statistical validation | PaCoRe parallel exploration, LTS shared memory, Harness Effect token optimization"
   - name: evolve
     domain: meta
-    description: Self-improvement and continuous evolution loop
+    description: "Self-improvement loop ASI-Evolve | Token Economics, Agentic RL Scaling (KAT-Coder, PaCoRe Train, LTS Control), Spec Evolution (TDAD), Role Evolution (AOSE Hybrid), FDE, Autobuilder"
   - name: healthtech
     domain: healthtech
-    description: Healthtech, clinical systems, HIPAA, interoperability
+    description: "Healthtech, clinical systems, HIPAA, interoperability | Adversarial testing (PROBE), Property-based testing, mutation testing (SMART)"
   - name: hedgefund
     domain: financial
-    description: Institutional hedge fund doctrine, risk/reward management
+    description: "Institutional hedge fund doctrine, risk/reward | Harness Effect token economics, circuit breaker patterns, failure-spend governance"
   - name: legal-doc
     domain: legal
-    description: Legal document analysis, Colombian law (multi-especialidad), RTF+C methodology, comparative law, Corte Constitucional
+    description: "Legal document analysis, Colombian law (multi-especialidad), RTF+C methodology, comparative law, Corte Constitucional | AOSE Hybrid Roles, structured output contracts"
   - name: math-doc
     domain: academic
-    description: Mathematical document processing, LaTeX, proofs, statistics
+    description: "Mathematical document processing, LaTeX, proofs, statistics | PaCoRe parallel reasoning, REPOREASON diagnostic metrics"
   - name: pos-retail
     domain: retail
-    description: Point of sale, retail operations, inventory management
+    description: "Point of sale, retail operations, inventory management | TDAD test-driven compilation, SpecOps automated testing, FuzzAgent fuzzing"
   - name: quant-trading
     domain: quantitative
-    description: Quantitative trading strategies with CQE Rust
+    description: "Quantitative trading strategies with CQE Rust | PaCoRe parallel exploration, Helium workflow scheduling, Agentix program-level optimization"
   - name: risk-execution
     domain: quantitative
-    description: Risk management, position sizing, market making, TCA
+    description: "Risk management, position sizing, market making, TCA | Circuit breaker patterns, failure classification, Token Budget Governance, structured compaction"
   - name: science-doc
     domain: academic
-    description: Scientific document analysis, peer review, systematic reviews
+    description: "Scientific document analysis, peer review, systematic reviews | 38-metric catalogue, LTS shared memory, Token Maxing analysis"
 
