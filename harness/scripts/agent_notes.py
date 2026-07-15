@@ -27,8 +27,8 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-from harness.memory_rag.lance_vector_store import LanceVectorStore
+sys.path.insert(1, str(Path(__file__).resolve().parent.parent.parent))
+from harness.common import fallback_embedding\nfrom harness.memory_rag.lance_vector_store import LanceVectorStore
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -43,16 +43,7 @@ def _ensure_collection(store: LanceVectorStore) -> None:
         store.create_collection(NOTES_COLLECTION)
 
 
-def _embed(text: str) -> np.ndarray:
-    """Deterministic embedding (no ML model required)."""
-    vec = np.zeros(EMBEDDING_DIM, dtype=np.float32)
-    for i, ch in enumerate(text.encode("utf-8", errors="replace")):
-        idx = (i * 7 + ch) % EMBEDDING_DIM
-        vec[idx] += 1.0
-    norm = np.linalg.norm(vec)
-    if norm > 0:
-        vec /= norm
-    return vec
+# _embed removed: use common.fallback_embedding directly
 
 
 def cmd_write(args: argparse.Namespace) -> None:
@@ -74,7 +65,7 @@ def cmd_write(args: argparse.Namespace) -> None:
         "updated_at": now,
     }
     
-    vec = _embed("%s %s %s" % (args.title, args.category, args.content))
+    vec = fallback_embedding("%s %s %s" % (args.title, args.category, args.content))
     store.insert(NOTES_COLLECTION, vec.reshape(1, -1), [metadata])
     logger.info("Note saved: [%s] %s", args.category, args.title)
 
@@ -120,7 +111,7 @@ def cmd_search(args: argparse.Namespace) -> None:
     """Search notes by content."""
     store = LanceVectorStore()
     
-    query_vec = _embed(args.query)
+    query_vec = fallback_embedding(args.query)
     try:
         results = store.search(NOTES_COLLECTION, query_vec, top_k=args.limit)
     except Exception:
@@ -252,3 +243,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

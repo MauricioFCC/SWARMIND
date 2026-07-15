@@ -440,8 +440,8 @@ class AgentKpiTracker:
                 r_agent = meta.get("agent", r.get("agent", ""))
                 if r_skill == skill_name and r_domain == domain and r_agent == agent:
                     return r
-        except Exception:
-            pass
+        except Exception as _exc:
+            logger.warning("agent_kpi_tracker: %s", _exc)
         return None
 
     # ------------------------------------------------------------------
@@ -574,8 +574,8 @@ class AgentKpiTracker:
                         meta = {}
                 if r.get("session_id", meta.get("session_id", "")) == session_id:
                     return r
-        except Exception:
-            pass
+        except Exception as _exc:
+            logger.warning("agent_kpi_tracker: %s", _exc)
         return None
 
     # ------------------------------------------------------------------

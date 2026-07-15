@@ -59,7 +59,7 @@ def _save_report_to_lancedb(report: IterationReport) -> bool:
     """Save the iteration report to LanceDB (best-effort, silent fail)."""
     import numpy as np
     try:
-        sys.path.insert(0, str(HARNESS_ROOT.parent))
+        sys.path.insert(1, str(HARNESS_ROOT.parent))
         from harness.memory_rag.lance_vector_store import LanceVectorStore
 
         store = LanceVectorStore()

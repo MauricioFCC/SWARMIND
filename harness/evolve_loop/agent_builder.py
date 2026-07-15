@@ -1,4 +1,6 @@
 """
+
+EMBEDDING_DIM = 384
 Hermes Agent Builder — Construye agentes que funcionan, elimina el resto.
 
 Observa la cognition store (asi_cognition_store) buscando patrones de tareas
@@ -122,7 +124,7 @@ class AgentBuilder:
     def _fetch_lessons(self) -> List[Dict[str, Any]]:
         """Obtiene lessons recientes de la cognition store."""
         try:
-            dummy = np.zeros(384, dtype=np.float32)
+            dummy = np.zeros(EMBEDDING_DIM, dtype=np.float32)
             results = self._store.search(
                 COGNITION_COLLECTION, dummy, top_k=200
             )
@@ -400,7 +402,7 @@ class AgentPruner:
             }
             
             try:
-                dummy = np.zeros(384, dtype=np.float32)
+                dummy = np.zeros(EMBEDDING_DIM, dtype=np.float32)
                 results = self._store.search(
                     AGENT_WORKSPACE_COLLECTION, dummy, top_k=100,
                     filters={"to_agent": f"@{agent_name}"},
@@ -430,8 +432,8 @@ class AgentPruner:
                     if scores:
                         usage[agent_name]["avg_score"] = sum(scores) / len(scores)
                 
-            except Exception:
-                pass
+            except Exception as _exc:
+                logger.warning("agent_builder: %s", _exc)
         
         return usage
     

@@ -299,8 +299,8 @@ def _get_git_changed_files() -> List[str]:
             files = [f.strip() for f in result.stdout.split("\n") if f.strip()]
             if files:
                 return files
-    except Exception:
-        pass
+    except Exception as _exc:
+        logger.warning("config: %s", _exc)
     return []
 
 
@@ -344,8 +344,8 @@ def _get_changed_files_since_last_commit() -> List[str]:
                 files = [f.strip() for f in diff_result.stdout.split("\n") if f.strip()]
                 if files:
                     return files
-    except Exception:
-        pass
+    except Exception as _exc:
+        logger.warning("config: %s", _exc)
     return _get_git_changed_files()
 
 

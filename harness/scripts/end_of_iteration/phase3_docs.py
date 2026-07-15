@@ -39,8 +39,8 @@ def check_and_update_docs(changed_files: List[str], dry_run: bool = False) -> Tu
             _safe_print(f"    {_cyan('[DRY-RUN]')} Regeneraria llms.txt (cambios en memory_rag/)")
         else:
             try:
-                sys.path.insert(0, str(HARNESS_ROOT.parent))
-                sys.path.insert(0, str(HARNESS_ROOT))
+                sys.path.insert(1, str(HARNESS_ROOT.parent))
+                sys.path.insert(1, str(HARNESS_ROOT))
                 from harness.scripts.generate_llms_txt import generate_llms_txt
                 generate_llms_txt()
                 _safe_print(f"    {_ok('[OK]')} llms.txt regenerado (cambios en memory_rag/)")

@@ -751,8 +751,8 @@ class LanceVectorStore:
             for name in self._db.table_names():
                 try:
                     self._db.drop_table(name)
-                except Exception:
-                    pass
+                except Exception as _exc:
+                    logger.warning("lance_vector_store: %s", _exc)
         self._mem_collections.clear()
         for name, info in DEFAULT_COLLECTIONS.items():
             self._mem_collections[name] = _Collection(

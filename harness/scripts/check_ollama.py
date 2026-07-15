@@ -91,8 +91,8 @@ def list_local_models() -> list[str]:
         if resp.status_code == 200:
             data = resp.json()
             return [m.get("name", "?") for m in data.get("models", [])]
-    except Exception:
-        pass
+    except Exception as _exc:
+        logger.warning("check_ollama: %s", _exc)
     return []
 
 

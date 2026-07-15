@@ -321,8 +321,8 @@ class DBMigrator:
                     try:
                         last_row = tbl.head(count).to_pylist()[-1]
                         last_up = last_row.get("created_at", "")
-                    except Exception:
-                        pass
+                    except Exception as _exc:
+                        logger.warning("migrate_engine: %s", _exc)
                 collections_info.append(
                     {
                         "name": name,

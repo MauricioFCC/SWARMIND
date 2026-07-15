@@ -170,8 +170,8 @@ class TaskManager:
                     self._conn_lancedb.open_table(self._table_name).delete("id = 'init'")
                 self._table = self._conn_lancedb.open_table(self._table_name)
                 return
-            except Exception:
-                pass
+            except Exception as _exc:
+                logger.warning("task_manager: %s", _exc)
 
         self._use_sqlite = True
         os.makedirs(os.path.dirname(self._db_path), exist_ok=True)

@@ -39,7 +39,7 @@ from harness.cli_common import (
 logger = setup_logging()
 
 # Asegurar que la raíz del proyecto está en sys.path
-sys.path.insert(0, str(get_project_root()))
+sys.path.insert(1, str(get_project_root()))
 
 HARNESS_ROOT = get_harness_root()
 HAS_LANCEDB: bool = False

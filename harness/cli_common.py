@@ -150,8 +150,8 @@ def parse_message(task: str) -> Tuple[Optional[str], str]:
         engine = DelegationEngine()
         detected = engine.auto_route(task)
         return detected, task.strip()
-    except Exception:
-        pass
+    except Exception as _exc:
+        logger.warning("cli_common: %s", _exc)
 
     # Fallback: coordinator como default
     return "coordinator", task.strip()

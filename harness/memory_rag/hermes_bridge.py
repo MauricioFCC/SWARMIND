@@ -102,7 +102,7 @@ class HermesBridge:
 
         try:
             if self._hermes_path not in sys.path:
-                sys.path.insert(0, self._hermes_path)
+                sys.path.insert(1, self._hermes_path)
 
             from core import MemoryService, QualityService, SessionService
             from core.models import ProcessingRequest, QualityMetric

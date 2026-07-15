@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+
+logger = logging.getLogger(__name__)
 Delegate — Entry point simplificado para el harness multi-agente.
 
 Uso:
@@ -43,7 +45,7 @@ HARNESS_ROOT = get_harness_root()
 
 # Asegurar que la raíz del proyecto está en sys.path
 if str(get_project_root()) not in sys.path:
-    sys.path.insert(0, str(get_project_root()))
+    sys.path.insert(1, str(get_project_root()))
 
 # Cache de agentes descubiertos (se carga una vez)
 _AGENTS_CACHE = None
@@ -90,10 +92,8 @@ def _detect_role(task: str) -> Optional[str]:
         detected = engine.route_message(task)
         if detected and detected != "project-manager":
             return detected
-    except ImportError:
-        pass
-    except Exception:
-        pass
+    except Exception as _exc:
+        logger.warning("delegate route_message failed: %s", _exc)
 
     # Fallback: intent matching desde agent discovery
     agents = _get_agents()
@@ -118,9 +118,9 @@ def _detect_role(task: str) -> Optional[str]:
         if decision.source == "cloud":
             return "software-engineer"
     except ImportError:
-        pass
-    except Exception:
-        pass
+        logger.warning("delegate ImportError: ModelRouter not available")
+    except Exception as _exc:
+        logger.warning("delegate route failed: %s", _exc)
 
     return None
 

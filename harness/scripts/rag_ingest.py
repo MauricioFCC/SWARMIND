@@ -23,7 +23,7 @@ from pathlib import Path
 # Asegurar que el proyecto raíz está en sys.path
 _HERE = Path(__file__).resolve().parent
 _PROJECT_ROOT = _HERE.parent.parent
-sys.path.insert(0, str(_PROJECT_ROOT))
+sys.path.insert(1, str(_PROJECT_ROOT))
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)

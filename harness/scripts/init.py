@@ -162,7 +162,7 @@ def init_lancedb(base: Path) -> None:
     """Init lancedb."""
     db_path = base / "harness" / "db" / "lancedb"
     try:
-        sys.path.insert(0, str(base))
+        sys.path.insert(1, str(base))
         from harness.memory_rag.lance_vector_store import LanceVectorStore
 
         store = LanceVectorStore(str(db_path))

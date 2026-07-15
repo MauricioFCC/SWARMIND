@@ -1,4 +1,6 @@
 """
+
+EMBEDDING_DIM = 384
 Nudge System — Auto-persistencia de contexto (inspirado en Hermes Agent nudges).
 
 Hermes Agent tiene un sistema de "nudges" periodicos donde el agente persiste
@@ -136,7 +138,7 @@ class AutoNudge:
 
         try:
             # Recent cognition lessons
-            dummy = np.zeros(384, dtype=np.float32)
+            dummy = np.zeros(EMBEDDING_DIM, dtype=np.float32)
             results = self._store.search(
                 COGNITION_COLLECTION, dummy, top_k=20
             )

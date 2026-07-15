@@ -127,8 +127,8 @@ class FTSSearch:
             if self._conn:
                 try:
                     self._conn.close()
-                except Exception:
-                    pass
+                except Exception as _exc:
+                    logger.warning("fts_search: %s", _exc)
                 self._conn = None
             return False
 
@@ -376,8 +376,8 @@ class FTSSearch:
                     "document_count": count,
                     "db_path": str(self.db_path),
                 }
-            except Exception:
-                pass
+            except Exception as _exc:
+                logger.warning("fts_search: %s", _exc)
 
         return {
             "backend": "memory",
@@ -389,8 +389,8 @@ class FTSSearch:
         if self._conn is not None:
             try:
                 self._conn.close()
-            except Exception:
-                pass
+            except Exception as _exc:
+                logger.warning("fts_search: %s", _exc)
             self._conn = None
 
     # ------------------------------------------------------------------

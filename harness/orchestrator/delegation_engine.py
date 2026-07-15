@@ -152,7 +152,7 @@ class DelegationEngine:
             from opencode.core import router_v2  # type: ignore
             self._router_v2 = router_v2
         except ImportError:
-            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
             try:
                 from opencode.core import router_v2  # type: ignore
                 self._router_v2 = router_v2
@@ -296,8 +296,8 @@ class DelegationEngine:
                     return result.get("agent", "coordinator")
                 if isinstance(result, str) and result:
                     return result
-            except Exception:
-                pass
+            except Exception as _exc:
+                logger.warning("delegation_engine: %s", _exc)
 
         # Auto-detección por contenido (NO requiere @)
         return self.auto_route(message)

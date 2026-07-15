@@ -396,7 +396,7 @@ def _relpath(path: Path, anchor: Path) -> str:
 
 if __name__ == "__main__":
     import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+    sys.path.insert(1, str(Path(__file__).parent.parent.parent))
 
     from harness.memory_rag.lance_vector_store import LanceVectorStore
 

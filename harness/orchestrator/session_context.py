@@ -313,8 +313,8 @@ class SessionContext:
             )
             if results:
                 return self._deserialize(results[0])
-        except Exception:
-            pass
+        except Exception as _exc:
+            logger.warning("session_context: %s", _exc)
         return None
 
     def _load_most_recent(self) -> Optional[SessionState]:
@@ -331,8 +331,8 @@ class SessionContext:
                     json.loads(r.get("metadata", {}).get("data", "{}")).get("updated_at", ""))
                 )
                 return self._deserialize(best)
-        except Exception:
-            pass
+        except Exception as _exc:
+            logger.warning("session_context: %s", _exc)
         return None
 
     def _deserialize(self, record: Dict) -> Optional[SessionState]:

@@ -509,8 +509,8 @@ class SemanticCache:
                     "last_accessed": datetime.now(timezone.utc).isoformat(),
                 },
             )
-        except Exception:
-            pass
+        except Exception as _exc:
+            logger.warning("semantic_cache: %s", _exc)
 
     def _delete_entry(self, prompt_hash: str) -> None:
         """
@@ -758,6 +758,6 @@ class SemanticCache:
                             if "[PENDING]" in item.metadata.get("response", ""):
                                 del col.items[key]
                                 return True
-        except Exception:
-            pass
+        except Exception as _exc:
+            logger.warning("semantic_cache: %s", _exc)
         return False

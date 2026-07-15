@@ -278,8 +278,8 @@ class MCPExecutor:
             try:
                 import shutil
                 shutil.rmtree(str(tmp_dir), ignore_errors=True)
-            except Exception:
-                pass
+            except Exception as _exc:
+                logger.warning("mcp_executor: %s", _exc)
 
     def get_execution_log(
         self,

@@ -208,7 +208,7 @@ def _handle_iteration_end(cmd: str, harness_root) -> None:
         if flags["skip_docs"]:
             skips.append("docs")
         logger.info(f"[Harness] Fases saltadas: {', '.join(skips)}")
-    sys.path.insert(0, str(harness_root.parent))
+    sys.path.insert(1, str(harness_root.parent))
     from harness.scripts.end_of_iteration import run_pipeline
     run_pipeline(
         skip_bugs=flags["skip_bugs"], skip_security=flags["skip_sec"],
@@ -221,7 +221,7 @@ def _handle_iteration_quick(cmd: str = "", harness_root=None) -> None:
 
     Modo rápido: solo bugs + tokens, salta security y docs.
     """
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+    sys.path.insert(1, str(Path(__file__).resolve().parent.parent.parent))
     from harness.scripts.end_of_iteration import run_quick_pipeline
     run_quick_pipeline()
 
@@ -231,7 +231,7 @@ def _handle_iteration_auto(cmd: str = "", harness_root=None) -> None:
 
     Modo automático: pipeline completo + commit si no hay criticals.
     """
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+    sys.path.insert(1, str(Path(__file__).resolve().parent.parent.parent))
     from harness.scripts.end_of_iteration import run_auto_pipeline
     run_auto_pipeline()
 

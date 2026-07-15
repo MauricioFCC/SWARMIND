@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+
+EMBEDDING_DIM = 384
 Auto-Compact — Automatic context compaction pipeline.
 
 Inspirado en Anthropic context engineering (Sep 2025):
@@ -25,7 +27,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+sys.path.insert(1, str(Path(__file__).resolve().parent.parent.parent))
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 from harness.evolve_loop.cognition_sync import CognitionSync
 
@@ -44,7 +46,7 @@ def compact_cognition_store(
     """Agrupa entries por dominio, comprime grupos grandes con summary."""
     stats = {"groups_found": 0, "entries_compressed": 0}
     
-    dummy = np.zeros(384, dtype=np.float32)
+    dummy = np.zeros(EMBEDDING_DIM, dtype=np.float32)
     try:
         results = store.search(COGNITION_COLLECTION, dummy, top_k=500)
     except Exception as exc:
@@ -63,7 +65,8 @@ def compact_cognition_store(
             import json
             try:
                 meta = json.loads(meta)
-            except Exception:
+            except Exception as _exc:
+                logger.warning("auto_compact: %s", _exc)
                 meta = {}
         entries.append(meta)
     

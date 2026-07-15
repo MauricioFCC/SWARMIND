@@ -1,4 +1,6 @@
 """
+
+EMBEDDING_DIM = 384
 Unified scheduler — BaseScheduler ABC + JobStore mixin + concrete implementations.
 
 Provides:
@@ -778,7 +780,7 @@ class LanceScheduler(BaseScheduler, JobStore):
             "timestamp": timestamp,
         }
 
-        vec = np.zeros(384, dtype=np.float32)
+        vec = np.zeros(EMBEDDING_DIM, dtype=np.float32)
         text_for_vec = f"{job_name} {job.command} {status}"
         for i, ch in enumerate(text_for_vec.encode("utf-8", errors="replace")):
             idx = (i * 7 + ch) % 384

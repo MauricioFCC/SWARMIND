@@ -187,7 +187,8 @@ class BatchedEmbeddingService:
             except asyncio.TimeoutError:
                 # No hay requests pendientes, seguir esperando
                 continue
-            except Exception:
+            except Exception as _exc:
+                logger.warning("embedding_service: %s", _exc)
                 continue
 
             # Acumular mas items durante la ventana de batch
@@ -203,7 +204,8 @@ class BatchedEmbeddingService:
                     batch.append((key, text))
                 except (asyncio.TimeoutError, asyncio.CancelledError):
                     break
-                except Exception:
+                except Exception as _exc:
+                    logger.warning("embedding_service: %s", _exc)
                     continue
 
             if not batch:

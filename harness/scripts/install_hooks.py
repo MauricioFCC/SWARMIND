@@ -294,8 +294,8 @@ def _get_last_run_info() -> Optional[str]:
         )
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
-    except Exception:
-        pass
+    except Exception as _exc:
+        logger.warning("install_hooks: %s", _exc)
     return None
 
 

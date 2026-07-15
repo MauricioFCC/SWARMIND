@@ -221,8 +221,8 @@ class AgentDispatcher:
                 return min_p.read_text(encoding='utf-8')
             if p.exists():
                 return p.read_text(encoding='utf-8')
-        except Exception:
-            pass
+        except Exception as _exc:
+            logger.warning("agent_dispatcher: %s", _exc)
         return ""
 
     # ------------------------------------------------------------------

@@ -1,4 +1,6 @@
 """
+
+EMBEDDING_DIM = 384
 Prompt Evolver — GEPA-inspired prompt mutation and evaluation.
 
 Creates mutated variants of agent profile prompts, evaluates them against
@@ -351,7 +353,7 @@ class PromptEvolver:
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
-        vec = np.zeros(384, dtype=np.float32)
+        vec = np.zeros(EMBEDDING_DIM, dtype=np.float32)
         text_for_vec = f"{agent} {mutation_type} prompt evolution"
         for i, ch in enumerate(text_for_vec.encode("utf-8", errors="replace")):
             idx = (i * 7 + ch) % 384

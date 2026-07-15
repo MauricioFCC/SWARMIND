@@ -1,4 +1,6 @@
 """
+
+EMBEDDING_DIM = 384
 Sandbox Loop Autonomo — Quality Gate - Sandbox Loop
 
 Orquesta el bucle autonomo de calidad para codigo generado por agentes:
@@ -424,7 +426,7 @@ class SandboxLoop:
         ultimo = None
         try:
             import numpy as np  # noqa: F811 — safe direct import
-            dummy = np.zeros(384, dtype=np.float32)
+            dummy = np.zeros(EMBEDDING_DIM, dtype=np.float32)
             results = self.bus.store.search(
                 "agent_workspace_logs", dummy, top_k=1,
                 filters={"task_id": task_id},
@@ -432,8 +434,8 @@ class SandboxLoop:
             if results:
                 ultimo = self.bus._deserialize_message(results[0])
                 ultimo.pop("vector", None)
-        except Exception:
-            pass
+        except Exception as _exc:
+            logger.warning("sandbox_loop: %s", _exc)
 
         return {
             "task_id": task_id,

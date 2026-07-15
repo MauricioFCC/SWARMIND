@@ -41,8 +41,8 @@ class HermesModelAdapter:
             if config_path.exists():
                 import yaml
                 return yaml.safe_load(config_path.read_text())
-        except Exception:
-            pass
+        except Exception as _exc:
+            logger.warning("hermes_adapter: %s", _exc)
         
         return None
     

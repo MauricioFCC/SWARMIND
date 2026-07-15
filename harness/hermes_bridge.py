@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+
+EMBEDDING_DIM = 384
 hermes_bridge.py — Puente bidireccional AGENTIC ↔ Hermes_Memory_Proyects.
 
 Sincroniza la cognition store (asi_cognition_store) del harness AGENTIC
@@ -209,7 +211,7 @@ class HermesBridge:
         """Retrieve entries from asi_cognition_store."""
         try:
             # Use search with zero vector to get recent entries
-            dummy = np.zeros(384, dtype=np.float32)
+            dummy = np.zeros(EMBEDDING_DIM, dtype=np.float32)
             results = self._store.search(
                 ASI_COLLECTION, dummy, top_k=max_entries
             )
@@ -400,7 +402,8 @@ class HermesBridge:
 
     def _store_cognition_entry(self, entry: Dict[str, Any]) -> None:
         """Store a parsed entry into asi_cognition_store."""
-        vec = self._make_embedding(entry.get("title", "") + " " + entry.get("content", ""))
+        from harness.common import fallback_embedding
+        vec = fallback_embedding(entry.get("title", "") + " " + entry.get("content", ""))
 
         metadata = {
             "title": entry.get("title", ""),
@@ -442,15 +445,4 @@ class HermesBridge:
     # Embedding helper
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _make_embedding(text: str) -> np.ndarray:
-        """Deterministic fallback embedding (no ML model required)."""
-        dim = 384
-        vec = np.zeros(dim, dtype=np.float32)
-        for i, ch in enumerate(text.encode("utf-8", errors="replace")):
-            idx = (i * 7 + ch) % dim
-            vec[idx] += 1.0
-        norm = np.linalg.norm(vec)
-        if norm > 0:
-            vec /= norm
-        return vec
+    # _make_embedding removed: use harness.common.fallback_embedding
