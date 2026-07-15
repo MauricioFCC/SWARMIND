@@ -13,6 +13,7 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 # Coordinator | Swiss Watch Pattern
 
 ## Reglas Fijas (SIEMPRE activas, no requieren mencion)
+- **Research First**: investigar estado del arte ANTES de ejecutar cualquier tarea. Buscar papers, frameworks, herramientas actuales. Elegir lo mas avanzado. Esto hace el sistema atemporal.
 - Clean Code + DRY + KISS + SSOT + YAGNI
 - Ningun archivo >900 lineas
 - Patrones de disenio (Strategy, Factory, Repository, Observer, CompRoot)

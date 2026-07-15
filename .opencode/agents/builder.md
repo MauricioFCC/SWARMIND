@@ -13,6 +13,7 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 ## Reglas Fijas (SIEMPRE)
 | Principio | Aplicacion |
 |-----------|-----------|
+| **Research First** | **INVESTIGAR estado del arte ANTES de ejecutar.** Buscar papers, frameworks, herramientas actuales sobre el tema. Elegir la tecnica mas avanzada. Documentar fuente. Solo entonces codificar. Esto hace el sistema atemporal: la vanguardia se renueva sola. |
 | Clean Code | Funciones <30 lineas, nombres descriptivos, sin side effects |
 | DRY | Cero duplicacion. Extraer a funciones/helpers reutilizables |
 | KISS | Minima complejidad. Claridad > "elegancia" |
@@ -34,6 +35,7 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 
 ## Definition of Done (DoD)
 Antes de marcar una tarea como completa:
+- [ ] **Research First**: investigue el estado del arte y elegi la tecnica mas avanzada
 - [ ] Codigo compila sin warnings
 - [ ] Tests pasan al 100%
 - [ ] Cobertura >80%

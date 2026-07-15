@@ -28,22 +28,41 @@ from typing import Dict, List, Optional
 # Cada entry: [nombre_corto] = [significado]
 
 STANDARDS_ENCODED: Dict[str, str] = {
-    "builder": "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+ToastGlobal+Helpers+PathLib+DoD+DocStringsES+tests>80+Seg+Rust+CP_Opt+AlgoEficiente+MemoriaO1+Complejidad+BigO+TDAD+TDFlow+PaCoRe+PROBE+AdverTest+FuzzAgent+PropBase+TokenEcon+CacheShape+FailSpend+StructCompact+HarnessEffect",
-    "scientist": "MetodoCientifico+Fuentes+Analisis+Conclusiones+DocumentarES+DoD+PathLib+LecturaCritica+SQ3R+ComprensionProfunda+MapaMental+Resumir+Sintetizar+PaCoRe+LTS+Helium+Agentix+SwarmX+HarnessEffect+TokenMaxing+38Metrics+AOSE+CDBench+ReproReas+ABCBench",
-    "guardian": "Tests>80+OWASP+Hardening+DocStringsES+CommitsConvencionales+SinVulns+DoD+Resiliencia+PathLib+PROBE+SpecOps+AdverTest+SMART+FuzzAgent+MuTON+TDADMut+CDBench+PBT+AdvLoop+MutScore85",
-    "coordinator": "SwissWatch+Paralelo+MaxSpeed+CalidadAutomatica+ParaleloMax+Consolidar+CompRoot+DoD+PathLib+CP_Strategies+DivideAndConquer+TwoPointers+SlidingWindow+Optimizacion+HarnessMec+TokenBudget+CircuitBrk+StructuredOut+PaCoRe+LTS+Helium+ScaleDecide+FailClass+PLAS+ATLAS",
-    "evolve": "Cognition+MejoraContinua+Skills+Optimizacion+CompRoot+Resiliencia+DoD+TokenEcon+HarnessOpt+AgenticRL+SpecEvo+RoleAOSE+FDE+Autobuilder+KATCoder+PaCoReTrain+LTSControl+TreeTrain+MCLA+AgentScale",
+    "builder": "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+ToastGlobal+Helpers+PathLib+DoD+DocStringsES+tests>80+Seg+Rust+CP_Opt+AlgoEficiente+MemoriaO1+Complejidad+BigO+TDAD+TDFlow+PaCoRe+PROBE+AdverTest+FuzzAgent+PropBase+TokenEcon+CacheShape+FailSpend+StructCompact+HarnessEffect+ResearchFirst",
+    "scientist": "MetodoCientifico+Fuentes+Analisis+Conclusiones+DocumentarES+DoD+PathLib+LecturaCritica+SQ3R+ComprensionProfunda+MapaMental+Resumir+Sintetizar+PaCoRe+LTS+Helium+Agentix+SwarmX+HarnessEffect+TokenMaxing+38Metrics+AOSE+CDBench+ReproReas+ABCBench+ResearchFirst",
+    "guardian": "Tests>80+OWASP+Hardening+DocStringsES+CommitsConvencionales+SinVulns+DoD+Resiliencia+PathLib+PROBE+SpecOps+AdverTest+SMART+FuzzAgent+MuTON+TDADMut+CDBench+PBT+AdvLoop+MutScore85+ResearchFirst",
+    "coordinator": "SwissWatch+Paralelo+MaxSpeed+CalidadAutomatica+ParaleloMax+Consolidar+CompRoot+DoD+PathLib+CP_Strategies+DivideAndConquer+TwoPointers+SlidingWindow+Optimizacion+HarnessMec+TokenBudget+CircuitBrk+StructuredOut+PaCoRe+LTS+Helium+ScaleDecide+FailClass+PLAS+ATLAS+ResearchFirst",
+    "evolve": "Cognition+MejoraContinua+Skills+Optimizacion+CompRoot+Resiliencia+DoD+TokenEcon+HarnessOpt+AgenticRL+SpecEvo+RoleAOSE+FDE+Autobuilder+KATCoder+PaCoReTrain+LTSControl+TreeTrain+MCLA+AgentScale+ResearchFirst",
 }
 
 # Firma universal: aplica a TODOS los agentes, siempre, sin excepcion.
 # Cubre: arquitectura, calidad, seguridad, documentacion, entrega.
-UNIVERSAL_FIRMA = "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+Helpers+PathLib+DoD+DocStringsES+tests>80+Seg+TokenEcon+CacheShape+StructuredOut+CircuitBrk+FailGovern"
+UNIVERSAL_FIRMA = "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+Helpers+PathLib+DoD+DocStringsES+tests>80+Seg+TokenEcon+CacheShape+StructuredOut+CircuitBrk+FailGovern+ResearchFirst"
 
 # Tamaño en chars de la firma (para calculo de tokens)
 FIRMA_LENGTH = len(UNIVERSAL_FIRMA)
 
 # Maximo de caracteres para la inyeccion (limitar impacto tokens)
 MAX_INJECTION_CHARS = 120
+
+# ---------------------------------------------------------------------------
+# Research First — Principio Atemporal de Vanguardia
+# ---------------------------------------------------------------------------
+# ResearchFirst: ANTES de ejecutar cualquier tarea, investigar el estado del
+# arte actual via web search. Esto garantiza que el agente use las tecnicas
+# mas avanzadas disponibles en el momento de ejecucion, no las que conocia
+# en su entrenamiento. El sistema es atemporal: la vanguardia se mantiene
+# simple: "investiga primero, ejecuta despues".
+#
+# El agente DEBE:
+#   1. Buscar papers, frameworks y herramientas actuales sobre el tema
+#   2. Identificar la tecnica mas avanzada y adecuada
+#   3. Documentar brevemente la fuente y por que la eligio
+#   4. Ejecutar la tarea con esa tecnica
+#
+# Esto aplica a TODOS los agentes, sin excepcion. Es la unica forma de
+# garantizar que el sistema se mantenga en la frontera technologica
+# independientemente de cuando se ejecute.
 
 
 class ContextInjector:
