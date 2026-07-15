@@ -133,3 +133,49 @@ class TestAgentBus:
             top_k=10,
         )
         assert len(results) >= 1
+
+    # ── Tests for bugfix: poll_channel debe incluir @all ──
+
+    def test_poll_channel_incluye_atall(self, agent_bus):
+        """poll_channel para un agente debe incluir mensajes @all del mismo canal."""
+        agent_bus.post_message("#swarm", "@coordinator", "@all",
+                               "📋 NUEVO PLAN: tarea X", "notification")
+        agent_bus.post_message("#swarm", "@coordinator", "@builder",
+                               "🎯 TU TAREA: codificar modulo", "request")
+
+        msgs = agent_bus.poll_channel("#swarm", "@builder")
+        # Debe encontrar AMBOS mensajes (el @all + el directo)
+        messages_text = " || ".join(m["message"] for m in msgs)
+        assert "NUEVO PLAN" in messages_text, (
+            f"Mensaje @all no aparecio en poll de @builder: {messages_text}"
+        )
+        assert "TU TAREA" in messages_text, (
+            f"Mensaje directo no aparecio: {messages_text}"
+        )
+
+    def test_poll_channel_atall_dedup(self, agent_bus):
+        """poll_channel no debe duplicar mensajes @all si ya llegaron como directos."""
+        agent_bus.post_message("#dedup", "@coordinator", "@all",
+                               "PLAN: tarea Y", "notification")
+        # El mismo mensaje conceptual llega como @all y luego como directo
+        msgs = agent_bus.poll_channel("#dedup", "@coordinator")
+        messages = [m["message"] for m in msgs]
+        assert "PLAN: tarea Y" in messages
+        # Contar ocurrencias exactas
+        count = sum(1 for m in messages if m == "PLAN: tarea Y")
+        assert count == 1, f"Mensaje duplicado {count} veces en poll de @coordinator"
+
+    def test_poll_channel_only_own_channel(self, agent_bus):
+        """poll_channel solo debe retornar mensajes del canal solicitado."""
+        agent_bus.post_message("#canal-A", "@c", "@all", "msg en A", "notification")
+        agent_bus.post_message("#canal-B", "@c", "@builder", "msg en B", "notification")
+
+        msgs_a = agent_bus.poll_channel("#canal-A", "@builder")
+        msgs_b = agent_bus.poll_channel("#canal-B", "@builder")
+
+        msgs_a_text = [m["message"] for m in msgs_a]
+        msgs_b_text = [m["message"] for m in msgs_b]
+
+        assert "msg en A" in msgs_a_text
+        assert "msg en B" not in msgs_a_text, "Mensaje de otro canal filtro incorrecto"
+        assert "msg en B" in msgs_b_text

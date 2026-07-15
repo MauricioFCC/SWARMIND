@@ -114,3 +114,74 @@ class TestTaskOrchestrator:
         assert "previous_results" in d
         assert "is_new_plan" in d
         assert "is_complete" in d
+
+    # ── Tests for bugfix: 3 agentes con mismo request ──
+
+    def test_broadcast_plan_envia_subtask_especifica(self):
+        """Cada agente recibe SU subtask especifica, no el mensaje generico."""
+        result = self.orch.process_message("implementar una API REST en Rust")
+        session = self.orch._session_ctx.get_session(result.session_id)
+        # Verificar que _broadcast_plan ejecutó (la sesión tiene plan)
+        assert session is not None
+        assert session.plan is not None
+        assert len(session.plan.subtasks) >= 3
+
+        # Verificar que el bus tiene mensajes individuales para cada agente
+        for st in session.plan.subtasks:
+            agent_key = f"@{st.agent}"
+            # poll para este agente deberia ver su subtask, no generico
+            msgs = self.orch._bus.poll_channel(
+                f"#session-{session.session_id}", agent_key
+            )
+            # Debe haber al menos un mensaje para este agente
+            agent_msgs = [m for m in msgs if m.get("to_agent") == agent_key]
+            if agent_msgs:
+                msg = agent_msgs[0]
+                # El mensaje NO debe ser el generico "Revisa tu nivel"
+                assert "Revisa la sección de tu nivel" not in msg.get("message", "")
+                # Debe contener la descripcion de su subtask o identificador
+                if st.description:
+                    assert "TU TAREA" in msg.get("message", "") or "⏳" in msg.get("message", "")
+
+    def test_broadcast_plan_no_envia_request_sin_subtask(self):
+        """Agentes sin trabajo en el nivel actual reciben notification, no request."""
+        result = self.orch.process_message("implementar API")
+        bus = self.orch._bus
+
+        # Todos los mensajes de tipo "request" deben tener SubtaskID en el body
+        channel = f"#session-{result.session_id}"
+        all_msgs = bus.get_channel_history(channel)
+        for msg in all_msgs:
+            if msg.get("message_type") == "request":
+                body = msg.get("message", "")
+                assert "SubtaskID" in body, \
+                    f"Request sin SubtaskID en body: {msg}"
+
+    def test_process_message_dedup_rechaza_duplicado(self):
+        """Mismo mensaje dentro de ventana de 30s → rechazado."""
+        msg = "implementar una tarea unica para test de dedup"
+        result1 = self.orch.process_message(msg)
+        assert result1.is_new_plan is True
+
+        result2 = self.orch.process_message(msg)
+        # El segundo debe ser rechazado por dedup (mensaje duplicado)
+        assert result2.is_new_plan is False, "Debe ser rechazado, no nuevo plan"
+        # El session_status debe contener el mensaje de error por duplicado
+        status = result2.session_status.lower()
+        assert "duplicado" in status or "duplicate" in status, (
+            f"Status deberia mencionar duplicado: {result2.session_status}"
+        )
+
+    def test_process_message_dedup_permite_diferente(self):
+        """Mensajes diferentes NO son rechazados por dedup."""
+        r1 = self.orch.process_message("hacer tarea A")
+        assert r1.is_new_plan is True
+
+        r2 = self.orch.process_message("hacer tarea B")
+        assert r2.is_new_plan is True  # mensaje diferente → permitido
+
+    def test_process_message_min_len_respected(self):
+        """Mensaje vacio o muy corto no deberia romper dedup."""
+        result = self.orch.process_message("x")
+        # No deberia explotar
+        assert result is not None

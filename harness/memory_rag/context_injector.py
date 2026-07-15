@@ -169,14 +169,14 @@ class ContextInjector:
             tree = ast.parse(code)
             for node in ast.walk(tree):
                 if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                    # Saltar métodos dunder y privados
-                    if node.name.startswith("_") and not (node.name.startswith("__") and node.name.endswith("__")):
+                    # Saltar métodos privados (_foo) y dunder (__foo__)
+                    if node.name.startswith("_"):
                         continue
                     doc = ast.get_docstring(node)
                     if not doc:
                         missing.append(f"[SIN DOCSTRING] {node.name} en {file_path}")
-                    elif node.name.startswith("__") is False:
-                        # Verificar secciones minimas para funciones publicas
+                    elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        # Solo verificar Args/Returns en funciones, no en clases
                         doc_lower = doc.lower()
                         has_args = "args:" in doc_lower
                         has_returns = "returns:" in doc_lower

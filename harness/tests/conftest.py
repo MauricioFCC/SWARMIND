@@ -72,3 +72,10 @@ def trajectory_compressor():
     """TrajectoryCompressor."""
     from harness.memory_rag.trajectory_compressor import TrajectoryCompressor
     return TrajectoryCompressor()
+
+
+@pytest.fixture
+def context_injector():
+    """ContextInjector."""
+    from harness.memory_rag.context_injector import ContextInjector
+    return ContextInjector(always_inject=True)

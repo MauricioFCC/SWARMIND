@@ -788,6 +788,7 @@ class TaskOrchestrator:
                     # Tiene trabajo AHORA — enviar request con subtask especifica
                     task_desc = ready_subtasks[0]["description"]
                     task_output = ready_subtasks[0]["expected_output"]
+                    st_id = ready_subtasks[0]["id"]
                     self._bus.post_message(
                         channel=f"#session-{session.session_id}",
                         from_agent="@coordinator",
@@ -795,10 +796,10 @@ class TaskOrchestrator:
                         message=(
                             f"🎯 TU TAREA: {task_desc}\n"
                             f"Output esperado: {task_output}\n"
+                            f"SubtaskID: {st_id}\n"
                             f"Plan: {session.session_id}"
                         ),
                         message_type="request",
-                        subtask_id=ready_subtasks[0]["id"],
                     )
                 else:
                     # No tiene trabajo ahora — solo notificar
