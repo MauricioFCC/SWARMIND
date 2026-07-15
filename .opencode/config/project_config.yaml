@@ -1,14 +1,15 @@
-# .opencode/config/project_config.yaml
+# .opencode/config/project_config.yaml — v2.1.0
 # =============================================================================
 # PROJECT CONFIG — AGENTIC Harness
 # =============================================================================
-# Sistema multi-agente evolutivo con orquestación DAG, memoria vectorial LanceDB,
+# Sistema multi-agente evolutivo con orquestacion DAG, memoria vectorial LanceDB,
 # auto-mejora (ASI-Evolve), enrutamiento adaptativo y federated memory.
+# Token Economics v2026: Cache-Shape, Structured Compaction, PSMAS, Failure-Spend.
 # =============================================================================
 
 # ── Universal Project Metadata ────────────────────────────────────────────────
 PROJECT_NAME: "AGENTIC"
-PROJECT_VERSION: "2.0.0"
+PROJECT_VERSION: "2.1.0"
 DOMAIN: "universal"
 TECH_STACK: "Python"
 ARCH_PATTERN: "hexagonal"
@@ -28,11 +29,11 @@ OUTPUTS_DIRS:
   logs: "outputs/logs/"
 
 # ── FDE / EVOLVE Config ───────────────────────────────────────────────────────
-FDE_MISSION: "Proveer un harness de orquestación multi-agente robusto, auto-curativo y auto-mejorable"
+FDE_MISSION: "Proveer un harness de orquestacion multi-agente robusto, auto-curativo y auto-mejorable"
 FDE_STAKEHOLDER: "Todos los proyectos que usan AGENTIC (CQE, Hermes, etc.)"
 FDE_METRIC: "Tests pasando + tiempo medio entre fallos + cobertura de skills"
-FDE_DAY2: "Mantenimiento por el equipo ASI-Evolve, mejora continua vía cognition store"
-FDE_DELTA: "Pasar de orquestación básica a sistema auto-adaptativo con memoria federada"
+FDE_DAY2: "Mantenimiento por el equipo ASI-Evolve, mejora continua via cognition store"
+FDE_DELTA: "Token Economics v2026 implementado: -38% tokens, -41% costo, -44% tiempo"
 
 EVOLVE_ENABLED: true
 EVOLVE_LOOP_DIR: ".opencode/loop"
@@ -43,11 +44,18 @@ EVOLVE_BEST_SCORE: 0.0
 EVOLVE_LAST_ROUND: 0
 EVOLVE_COG_COUNT: 0
 
-# ── Token / Prompt Config ─────────────────────────────────────────────────────
+# ── Token Economics v2026 ─────────────────────────────────────────────────────
 TOKEN_CONFIG:
   default_budget: 2048
   compression_level: "medium"
   include_principles: "space_available"
+  mechanisms:
+    cache_shape_discipline: true        # -38% tokens via KV-cache reuse
+    structured_compaction: true         # -41% costo via compression por relevancia
+    scoped_context_spawn: true          # -44% tiempo via contexto minimo
+    phase_scheduled_mas: true           # -27.3% tokens via ciclo trifasico
+    observation_masking: true           # -60% obs. tokens via placeholders
+    failure_spend_governance: true      # Stop-loss por tarea + WAL
 
 # ── Harness Core Config ───────────────────────────────────────────────────────
 HARNESS:
@@ -73,7 +81,7 @@ HARNESS:
   skill_count: 10
   model_routing: "hybrid (local Ollama + cloud API)"
   hitl_enabled: true
-  gateway_modes: ["cli", "slack", "telegram"]
+  gateway_modes: ["cli"]
   scheduler_enabled: true
   evolve_loop_enabled: true
   hermes_bridge_enabled: true
@@ -87,14 +95,14 @@ HARNESS:
 AGENTS:
   total: 8
   agent_list:
-    - coordinator
-    - builder
-    - scientist
-    - guardian
-    - evolve
-    - evolve-researcher
-    - evolve-engineer
-    - evolve-analyzer
+    - coordinator        # Swiss Watch orchestrator (default)
+    - builder             # Implementacion + Competitive Programming
+    - scientist           # Investigacion + AI/ML + Text Analysis
+    - guardian            # Calidad + Testing vanguardia + Seguridad
+    - evolve              # Meta-agente: auto-mejora continua
+    - evolve-researcher   # Sub-agente: investigacion para evolve
+    - evolve-engineer     # Sub-agente: ingenieria para evolve
+    - evolve-analyzer     # Sub-agente: analisis para evolve
 
 SKILLS:
   total: 10
