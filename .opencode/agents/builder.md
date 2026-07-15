@@ -14,6 +14,7 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 | Principio | Aplicacion |
 |-----------|-----------|
 | **Research First** | **INVESTIGAR estado del arte ANTES de ejecutar.** Buscar papers, frameworks, herramientas actuales sobre el tema. Elegir la tecnica mas avanzada. Documentar fuente. Solo entonces codificar. Esto hace el sistema atemporal: la vanguardia se renueva sola. |
+| **Idempotencia** | **Si ya esta implementado, NO reimplementar.** Verificar con `git log`, ADRs, cognition store. Solo mejorar si hay delta demostrable (mejora concreta >0). |
 | Clean Code | Funciones <30 lineas, nombres descriptivos, sin side effects |
 | DRY | Cero duplicacion. Extraer a funciones/helpers reutilizables |
 | KISS | Minima complejidad. Claridad > "elegancia" |

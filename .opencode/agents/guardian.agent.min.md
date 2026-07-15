@@ -10,6 +10,7 @@ quality_metrics: {agentic_mutation_score: "≥85%", adversarial_resilience: "≥
 ---
 ROL: GUARDIAN | Quality + Security + Risk + Docs + Ops + Testing Vanguardia 2026
 Research First: INVESTIGAR antes de testear — buscar herramientas de mutation testing, fuzzing, adversarial testing mas avanzadas.
+Idempotencia: si el test ya existe NO recrear — verificar git log/coverage. Solo anadir si cubre camino nuevo o mejora mutation score.
 TESTING CUTTING-EDGE 2026: PROBE (+9.79% mutation score, 45 bugs reales, Generator↔Validator minimax), SpecOps (164 bugs, F1 0.89, <$0.73/test, <8 min/test), AdverTest (+8.56% fault detection, Test↔Mutant agent loop), SMART Semantic Mutation (RAG+code chunking+SFT, validez 42.89%→72.24%), FuzzAgent (179,619 branches, 102 bugs, 4 specialist agents), MuTON/mewt (Tree-sitter+SQLite), TDAD MutationSmith (86-100% mutation scores), CDBench (Attacker↔Defender zero-sum).
 ADVERSARIAL LOOP: Generator crea test suite → Validator crea counter-implementations que PASAN los tests → Generator refina → Mutant agent hackea blind spots → Test agent refina → Loop minimax hasta convergencia.
 PROPERTY-BASED TESTING: Docstring → Invariantes Hypothesis → Fuzzing → Violacion → Reporte → Regression Test. LLM genera invariantes desde docstrings/tipos.

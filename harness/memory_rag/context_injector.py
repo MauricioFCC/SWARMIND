@@ -28,16 +28,16 @@ from typing import Dict, List, Optional
 # Cada entry: [nombre_corto] = [significado]
 
 STANDARDS_ENCODED: Dict[str, str] = {
-    "builder": "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+ToastGlobal+Helpers+PathLib+DoD+DocStringsES+tests>80+Seg+Rust+CP_Opt+AlgoEficiente+MemoriaO1+Complejidad+BigO+TDAD+TDFlow+PaCoRe+PROBE+AdverTest+FuzzAgent+PropBase+TokenEcon+CacheShape+FailSpend+StructCompact+HarnessEffect+ResearchFirst",
-    "scientist": "MetodoCientifico+Fuentes+Analisis+Conclusiones+DocumentarES+DoD+PathLib+LecturaCritica+SQ3R+ComprensionProfunda+MapaMental+Resumir+Sintetizar+PaCoRe+LTS+Helium+Agentix+SwarmX+HarnessEffect+TokenMaxing+38Metrics+AOSE+CDBench+ReproReas+ABCBench+ResearchFirst",
-    "guardian": "Tests>80+OWASP+Hardening+DocStringsES+CommitsConvencionales+SinVulns+DoD+Resiliencia+PathLib+PROBE+SpecOps+AdverTest+SMART+FuzzAgent+MuTON+TDADMut+CDBench+PBT+AdvLoop+MutScore85+ResearchFirst",
-    "coordinator": "SwissWatch+Paralelo+MaxSpeed+CalidadAutomatica+ParaleloMax+Consolidar+CompRoot+DoD+PathLib+CP_Strategies+DivideAndConquer+TwoPointers+SlidingWindow+Optimizacion+HarnessMec+TokenBudget+CircuitBrk+StructuredOut+PaCoRe+LTS+Helium+ScaleDecide+FailClass+PLAS+ATLAS+ResearchFirst",
-    "evolve": "Cognition+MejoraContinua+Skills+Optimizacion+CompRoot+Resiliencia+DoD+TokenEcon+HarnessOpt+AgenticRL+SpecEvo+RoleAOSE+FDE+Autobuilder+KATCoder+PaCoReTrain+LTSControl+TreeTrain+MCLA+AgentScale+ResearchFirst",
+    "builder": "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+ToastGlobal+Helpers+PathLib+DoD+DocStringsES+tests>80+Seg+Rust+CP_Opt+AlgoEficiente+MemoriaO1+Complejidad+BigO+TDAD+TDFlow+PaCoRe+PROBE+AdverTest+FuzzAgent+PropBase+TokenEcon+CacheShape+FailSpend+StructCompact+HarnessEffect+ResearchFirst+Idempotencia",
+    "scientist": "MetodoCientifico+Fuentes+Analisis+Conclusiones+DocumentarES+DoD+PathLib+LecturaCritica+SQ3R+ComprensionProfunda+MapaMental+Resumir+Sintetizar+PaCoRe+LTS+Helium+Agentix+SwarmX+HarnessEffect+TokenMaxing+38Metrics+AOSE+CDBench+ReproReas+ABCBench+ResearchFirst+Idempotencia",
+    "guardian": "Tests>80+OWASP+Hardening+DocStringsES+CommitsConvencionales+SinVulns+DoD+Resiliencia+PathLib+PROBE+SpecOps+AdverTest+SMART+FuzzAgent+MuTON+TDADMut+CDBench+PBT+AdvLoop+MutScore85+ResearchFirst+Idempotencia",
+    "coordinator": "SwissWatch+Paralelo+MaxSpeed+CalidadAutomatica+ParaleloMax+Consolidar+CompRoot+DoD+PathLib+CP_Strategies+DivideAndConquer+TwoPointers+SlidingWindow+Optimizacion+HarnessMec+TokenBudget+CircuitBrk+StructuredOut+PaCoRe+LTS+Helium+ScaleDecide+FailClass+PLAS+ATLAS+ResearchFirst+Idempotencia",
+    "evolve": "Cognition+MejoraContinua+Skills+Optimizacion+CompRoot+Resiliencia+DoD+TokenEcon+HarnessOpt+AgenticRL+SpecEvo+RoleAOSE+FDE+Autobuilder+KATCoder+PaCoReTrain+LTSControl+TreeTrain+MCLA+AgentScale+ResearchFirst+Idempotencia",
 }
 
 # Firma universal: aplica a TODOS los agentes, siempre, sin excepcion.
 # Cubre: arquitectura, calidad, seguridad, documentacion, entrega.
-UNIVERSAL_FIRMA = "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+Helpers+PathLib+DoD+DocStringsES+tests>80+Seg+TokenEcon+CacheShape+StructuredOut+CircuitBrk+FailGovern+ResearchFirst"
+UNIVERSAL_FIRMA = "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+Helpers+PathLib+DoD+DocStringsES+tests>80+Seg+TokenEcon+CacheShape+StructuredOut+CircuitBrk+FailGovern+ResearchFirst+Idempotencia"
 
 # Tamaño en chars de la firma (para calculo de tokens)
 FIRMA_LENGTH = len(UNIVERSAL_FIRMA)

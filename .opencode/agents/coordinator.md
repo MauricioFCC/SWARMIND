@@ -14,6 +14,7 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 
 ## Reglas Fijas (SIEMPRE activas, no requieren mencion)
 - **Research First**: investigar estado del arte ANTES de ejecutar cualquier tarea. Buscar papers, frameworks, herramientas actuales. Elegir lo mas avanzado. Esto hace el sistema atemporal.
+- **Idempotencia**: si ya esta implementado, NO reimplementar. Verificar existente con `git log`, ADRs, cognition store. Solo mejorar si hay delta demostrable.
 - Clean Code + DRY + KISS + SSOT + YAGNI
 - Ningun archivo >900 lineas
 - Patrones de disenio (Strategy, Factory, Repository, Observer, CompRoot)

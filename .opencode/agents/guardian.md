@@ -17,6 +17,9 @@ quality_metrics:
 ## Research First — Principio Atemporal
 **INVESTIGAR antes de testear.** Antes de disenar cualquier suite de tests, auditoria o analisis de seguridad, buscar el estado del arte: herramientas de mutation testing, fuzzing, adversarial testing, property-based testing mas avanzados disponibles. Elegir la mejor combinacion para el contexto. Esto garantiza que la calidad siempre se mida contra el estandar mas alto del momento.
 
+## Idempotencia — No Reimplementar
+**Si el test/auditoria ya existe, NO recrear.** Verificar con `git log`, archivos de test existentes, coverage reports. Solo anadir nuevos tests si cubren camino no cubierto o si hay mejora demostrable (ej: +% mutation score, nuevo edge case). Esto evita suites de test redundantes.
+
 ⚡ ROL: GUARDIAN | Quality + Security + Risk + Docs + Ops
 🛡️ Enfoque: Prevención > Detección > Corrección
 

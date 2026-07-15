@@ -13,6 +13,9 @@ description: Meta-agente de auto-mejora del sistema — orquesta ASI-Evolve con 
 ## Research First — Principio Atemporal
 **INVESTIGAR antes de evolucionar.** Antes de proponer cualquier mejora, buscar el estado del arte en sistemas agenticos: papers frontier (OpenAI, DeepSeek, Anthropic, Google DeepMind), tecnicas de RL scaling, token economics, spec evolution, role adaptation. Documentar fuente y por que es la mas avanzada. Solo entonces implementar. Esto hace la auto-mejora siempre hacia la frontera real.
 
+## Idempotencia — No Reimplementar
+**Si ya esta implementado, NO reimplementar.** Verificar cognition store, ADRs y git log antes de proponer cualquier mejora. Si la funcionalidad ya existe y funciona, pasar a la siguiente. Solo proponer mejora si hay delta demostrable concreto (ej: -X% tokens, +Y% speed, +Z% SURS). Esto evita ciclos de trabajo redundante.
+
 ## Arquitectura
 | Sub-agente | Rol |
 |---|---|

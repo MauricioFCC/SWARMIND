@@ -14,33 +14,39 @@ Fuente unica de verdad para todos los skills, gates y agentes.
 
 ---
 
-## NIVEL 1 -- ESENCIAL (5 lineas, ~45 tokens, siempre inyectado)
+## NIVEL 1 -- ESENCIAL (7 lineas, ~65 tokens, siempre inyectado)
 
 ```
-ARQ: hexagonal + DI | KISS <500 | DRY | type hints
-SEG: 0 secrets | validate input | mask logs | parametriza SQL
+RSF: Research First | investigar ANTES de ejecutar | vanguardia se renueva sola
+IDP: Idempotencia | si ya esta implementado NO reimplementar | solo mejorar
+ARQ: hexagonal + DI | KISS <500 | DRY | type hints | pathlib
+SEG: 0 secrets | validate input | mask logs | parametriza SQL | sys.path.insert(1)
 DOC: docstrings ES | codigo EN | docs 1:1 con API changes
-TST: core >=80% | pre-commit gates
+TST: core >=80% | pre-commit gates | 0 except silenciosos | logger.warning()
 CMT: conventional commit type(scope): descripcion
 FDE: bridge product↔reality | delta = gap to close | mission > persona
 EVO: learn→design→experiment→analyze | cognition persists | loop repeats
+TKN: Cache-Shape | Structured Compact | Failure-Spend | Observation Masking
 ```
 
 ---
 
-## NIVEL 2 -- ESTANDAR (14 lineas, ~120 tokens, inyectado si budget >70%)
+## NIVEL 2 -- ESTANDAR (17 lineas, ~150 tokens, inyectado si budget >70%)
 
 | Cat | Reglas |
 |-----|--------|
-| **ARQ** | Hexagonal ports/adapters + DI. KISS <500 lines/file. DRY utils. Type hints publicas. SOA opcional. |
-| **SEG** | Secrets 0 hardcode: `os.getenv()`. Logs mask PII/data. Input sanitize. SQL parametrizada. No `eval()/exec()`. |
+| **RSF** | Research First: investigar estado del arte ANTES de ejecutar. Buscar papers/frameworks actuales. Elegir lo mas avanzado. Esto hace el sistema atemporal. |
+| **IDP** | Idempotencia: si la funcionalidad ya existe, NO reimplementar. Solo mejorar si hay delta demostrable. Verificar con `git log`, `cognition store`, ADRs existentes. Si ya esta implementado y funciona, pasar a la siguiente tarea. |
+| **ARQ** | Hexagonal ports/adapters + DI. KISS <500 lines/file. DRY utils. Type hints publicas. Pathlib siempre. |
+| **SEG** | Secrets 0 hardcode: `os.getenv()`. Logs mask PII/data. Input sanitize. SQL parametrizada. No `eval()/exec()`. `sys.path.insert(1,)` nunca `insert(0,)`. |
 | **DOC** | Docstrings ES: Args/Returns/Raises. README/CHANGELOG ES. Codigo EN. Docs 1:1 en API/interfaz changes. |
-| **TST** | pytest framework. Core coverage >=80%. New feature = new test + integration. Pre-commit gates. |
-| **OPS** | Timeout >=30s I/O. Retry 3x backoff. Circuit breaker externo. Log JSON trace_id. Fallback plan. |
+| **TST** | pytest framework. Core coverage >=80%. New feature = new test + integration. Pre-commit gates. 0 `except Exception: pass` sin logger. |
+| **OPS** | Timeout >=30s I/O. Retry 3x backoff. Circuit breaker externo. Log JSON trace_id. Fallback plan. WAL obligatorio antes de tool-calls costosos. |
 | **CMT** | Conventional commit `type(scope): msg #ISSUE`. <=72 chars. Pre-commit hook: secrets+size+lint+test. |
-| **QLT** | Respuestas <500 tokens. Codigo listo/sin hardcode. Conciso: 1 responsabilidad por funcion. |
+| **QLT** | Respuestas <500 tokens. Codigo listo/sin hardcode. Conciso: 1 responsabilidad por funcion. Sin constantes magicas (siempre con nombre). |
+| **TKN** | Cache-Shape Discipline (-38% tokens), Structured Compaction (-41% costo), Scoped Context (-44% tiempo), Failure-Spend Governance, Observation Masking, Phase-Scheduled MAS (-27.3% tokens). Effective-Input-Price = inp * miss_ratio * price + out * price. |
 | **FDE** | Bridge product↔reality. Delta = gap a cerrar. Mission > persona. Glue 50% integracion. Speed-to-value primero. Diplomacia tecnica. Zero-trust. |
-| **EVO** | Loop learn→design→experiment→analyze. Cognition store persiste lecciones. Experiment DB registra todo. Best snapshot automatico. |
+| **EVO** | Loop learn→design→experiment→analyze. Cognition store persiste lecciones. Experiment DB registra todo. Best snapshot automatico. SURS >= 90% en cada deploy. |
 
 ---
 
