@@ -15,7 +15,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | **0009** | **[Competitive Programming Techniques v2026](adr0009-competitive-programming-2026.md)** | **ACEPTADO** | **2d681c5** |
 | **0010** | **[Text Analysis & Processing Techniques v2026](adr0010-text-analysis-2026.md)** | **ACEPTADO** | **fb618ad** |
 | **0011** | **[Idempotencia — No Reimplementar si ya Existe](adr0011-idempotencia-principle.md)** | **ACEPTADO** | **a7dcfee** |
-| **0012** | **[DocStrings Obligatorios + Error Readability & Actionability](adr0012-docstrings-error-readability.md)** | **ACEPTADO** | **(pendiente)** |
+| **0012** | **[DocStrings Obligatorios + Error Readability & Actionability](adr0012-docstrings-error-readability.md)** | **ACEPTADO** | **4b99fc4** |
 
 ## Resumen por Categoria
 
