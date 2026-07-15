@@ -27,17 +27,18 @@ from typing import Dict, List, Optional
 # Formato: siglas sin espacios, + como separador
 # Cada entry: [nombre_corto] = [significado]
 
+# !DOC_ES_OBLIG! y !ERR_ACTION! van PRIMERO en cada entry.
 STANDARDS_ENCODED: Dict[str, str] = {
-    "builder": "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+ToastGlobal+Helpers+PathLib+DoD+DocStringsES+tests>80+Seg+Rust+CP_Opt+AlgoEficiente+MemoriaO1+Complejidad+BigO+TDAD+TDFlow+PaCoRe+PROBE+AdverTest+FuzzAgent+PropBase+TokenEcon+CacheShape+FailSpend+StructCompact+HarnessEffect+ResearchFirst+Idempotencia",
-    "scientist": "MetodoCientifico+Fuentes+Analisis+Conclusiones+DocumentarES+DoD+PathLib+LecturaCritica+SQ3R+ComprensionProfunda+MapaMental+Resumir+Sintetizar+PaCoRe+LTS+Helium+Agentix+SwarmX+HarnessEffect+TokenMaxing+38Metrics+AOSE+CDBench+ReproReas+ABCBench+ResearchFirst+Idempotencia",
-    "guardian": "Tests>80+OWASP+Hardening+DocStringsES+CommitsConvencionales+SinVulns+DoD+Resiliencia+PathLib+PROBE+SpecOps+AdverTest+SMART+FuzzAgent+MuTON+TDADMut+CDBench+PBT+AdvLoop+MutScore85+ResearchFirst+Idempotencia",
-    "coordinator": "SwissWatch+Paralelo+MaxSpeed+CalidadAutomatica+ParaleloMax+Consolidar+CompRoot+DoD+PathLib+CP_Strategies+DivideAndConquer+TwoPointers+SlidingWindow+Optimizacion+HarnessMec+TokenBudget+CircuitBrk+StructuredOut+PaCoRe+LTS+Helium+ScaleDecide+FailClass+PLAS+ATLAS+ResearchFirst+Idempotencia",
-    "evolve": "Cognition+MejoraContinua+Skills+Optimizacion+CompRoot+Resiliencia+DoD+TokenEcon+HarnessOpt+AgenticRL+SpecEvo+RoleAOSE+FDE+Autobuilder+KATCoder+PaCoReTrain+LTSControl+TreeTrain+MCLA+AgentScale+ResearchFirst+Idempotencia",
+    "builder": "!DOC_ES_OBLIG!+!ERR_ACTION!+CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+ToastGlobal+Helpers+PathLib+DoD+tests>80+Seg+Rust+CP_Opt+AlgoEficiente+MemoriaO1+Complejidad+BigO+TDAD+TDFlow+PaCoRe+PROBE+AdverTest+FuzzAgent+PropBase+TokenEcon+CacheShape+FailSpend+StructCompact+HarnessEffect+ResearchFirst+Idempotencia",
+    "scientist": "!DOC_ES_OBLIG!+!ERR_ACTION!+MetodoCientifico+Fuentes+Analisis+Conclusiones+DocumentarES+DoD+PathLib+LecturaCritica+SQ3R+ComprensionProfunda+MapaMental+Resumir+Sintetizar+PaCoRe+LTS+Helium+Agentix+SwarmX+HarnessEffect+TokenMaxing+38Metrics+AOSE+CDBench+ReproReas+ABCBench+ResearchFirst+Idempotencia",
+    "guardian": "!DOC_ES_OBLIG!+!ERR_ACTION!+Tests>80+OWASP+Hardening+CommitsConvencionales+SinVulns+DoD+Resiliencia+PathLib+PROBE+SpecOps+AdverTest+SMART+FuzzAgent+MuTON+TDADMut+CDBench+PBT+AdvLoop+MutScore85+ResearchFirst+Idempotencia",
+    "coordinator": "!DOC_ES_OBLIG!+!ERR_ACTION!+SwissWatch+Paralelo+MaxSpeed+CalidadAutomatica+ParaleloMax+Consolidar+CompRoot+DoD+PathLib+CP_Strategies+DivideAndConquer+TwoPointers+SlidingWindow+Optimizacion+HarnessMec+TokenBudget+CircuitBrk+StructuredOut+PaCoRe+LTS+Helium+ScaleDecide+FailClass+PLAS+ATLAS+ResearchFirst+Idempotencia",
+    "evolve": "!DOC_ES_OBLIG!+!ERR_ACTION!+Cognition+MejoraContinua+Skills+Optimizacion+CompRoot+Resiliencia+DoD+TokenEcon+HarnessOpt+AgenticRL+SpecEvo+RoleAOSE+FDE+Autobuilder+KATCoder+PaCoReTrain+LTSControl+TreeTrain+MCLA+AgentScale+ResearchFirst+Idempotencia",
 }
 
 # Firma universal: aplica a TODOS los agentes, siempre, sin excepcion.
-# Cubre: arquitectura, calidad, seguridad, documentacion, entrega.
-UNIVERSAL_FIRMA = "CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+Helpers+PathLib+DoD+DocStringsES+tests>80+Seg+TokenEcon+CacheShape+StructuredOut+CircuitBrk+FailGovern+ResearchFirst+Idempotencia"
+# Cubre: arquitectura, calidad, seguridad, documentacion, entrega, errores accionables.
+UNIVERSAL_FIRMA = "!DOC_ES_OBLIG!+!ERR_ACTION!+CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Copyright+Resiliencia+Hardening+YAGNI+Helpers+PathLib+DoD+tests>80+Seg+TokenEcon+CacheShape+StructuredOut+CircuitBrk+FailGovern+ResearchFirst+Idempotencia"
 
 # Tamaño en chars de la firma (para calculo de tokens)
 FIRMA_LENGTH = len(UNIVERSAL_FIRMA)
@@ -145,4 +146,43 @@ class ContextInjector:
     def universal_firma(self) -> str:
         """Retorna la firma universal."""
         return UNIVERSAL_FIRMA
+
+    @staticmethod
+    def validate_docstrings(code: str, file_path: str = "<string>") -> List[str]:
+        """Valida que todo codigo tenga docstring ES-UTF8 completo.
+
+        Escanea el codigo con AST y reporta funciones/clases sin docstring
+        o con docstring incompleto (sin Args/Returns/Raises).
+        Puede llamarse despues de generar codigo para validacion automatica.
+
+        Args:
+            code: Codigo fuente a validar.
+            file_path: Nombre del archivo (para reporte).
+
+        Returns:
+            Lista de strings con funciones/clases que faltan docstring.
+            Vacia si todo cumple.
+        """
+        import ast
+        missing: List[str] = []
+        try:
+            tree = ast.parse(code)
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                    # Saltar métodos dunder y privados
+                    if node.name.startswith("_") and not (node.name.startswith("__") and node.name.endswith("__")):
+                        continue
+                    doc = ast.get_docstring(node)
+                    if not doc:
+                        missing.append(f"[SIN DOCSTRING] {node.name} en {file_path}")
+                    elif node.name.startswith("__") is False:
+                        # Verificar secciones minimas para funciones publicas
+                        doc_lower = doc.lower()
+                        has_args = "args:" in doc_lower
+                        has_returns = "returns:" in doc_lower
+                        if not has_args and not has_returns:
+                            missing.append(f"[DOCSTRING INCOMPLETO] {node.name} en {file_path} - falta Args/Returns")
+            return missing
+        except SyntaxError:
+            return [f"  [SyntaxError] No se pudo parsear {file_path}"]
 

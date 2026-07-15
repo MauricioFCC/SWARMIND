@@ -19,9 +19,10 @@ Fuente unica de verdad para todos los skills, gates y agentes.
 ```
 RSF: Research First | investigar ANTES de ejecutar | vanguardia se renueva sola
 IDP: Idempotencia | si ya esta implementado NO reimplementar | solo mejorar
+ERR: Errores legibles y accionables | WHAT+WHY+WHERE | sin except silencioso
 ARQ: hexagonal + DI | KISS <500 | DRY | type hints | pathlib
 SEG: 0 secrets | validate input | mask logs | parametriza SQL | sys.path.insert(1)
-DOC: docstrings ES | codigo EN | docs 1:1 con API changes
+DOC: docstrings ES OBLIGATORIAS | 0 funciones sin docstring | template Args/Returns/Raises
 TST: core >=80% | pre-commit gates | 0 except silenciosos | logger.warning()
 CMT: conventional commit type(scope): descripcion
 FDE: bridge product↔reality | delta = gap to close | mission > persona
@@ -44,6 +45,7 @@ TKN: Cache-Shape | Structured Compact | Failure-Spend | Observation Masking
 | **OPS** | Timeout >=30s I/O. Retry 3x backoff. Circuit breaker externo. Log JSON trace_id. Fallback plan. WAL obligatorio antes de tool-calls costosos. |
 | **CMT** | Conventional commit `type(scope): msg #ISSUE`. <=72 chars. Pre-commit hook: secrets+size+lint+test. |
 | **QLT** | Respuestas <500 tokens. Codigo listo/sin hardcode. Conciso: 1 responsabilidad por funcion. Sin constantes magicas (siempre con nombre). |
+| **ERR** | Errores accionables: WHAT (que fallo) + WHY (causa) + WHERE (linea/archivo/funcion). Sin except silencioso. Logger siempre con contexto. Stack trace estructurado. |
 | **TKN** | Cache-Shape Discipline (-38% tokens), Structured Compaction (-41% costo), Scoped Context (-44% tiempo), Failure-Spend Governance, Observation Masking, Phase-Scheduled MAS (-27.3% tokens). Effective-Input-Price = inp * miss_ratio * price + out * price. |
 | **FDE** | Bridge product↔reality. Delta = gap a cerrar. Mission > persona. Glue 50% integracion. Speed-to-value primero. Diplomacia tecnica. Zero-trust. |
 | **EVO** | Loop learn→design→experiment→analyze. Cognition store persiste lecciones. Experiment DB registra todo. Best snapshot automatico. SURS >= 90% en cada deploy. |
@@ -68,14 +70,32 @@ TKN: Cache-Shape | Structured Compact | Failure-Spend | Observation Masking
 - [ ] No `eval()/exec()` en produccion
 - `X f"SELECT * FROM t WHERE id={uid}"` -> `OK session.execute(text("..."), {"id": uid})`
 
-### DOC - Documentacion
-- [ ] Docstrings ES: Args/Returns/Raises en toda clase/metodo publico
+### DOC - Documentacion (OBLIGATORIO — sin docstring = FAIL)
+- [ ] **TODA funcion/clase/metodo publico DEBE tener docstring en ESPANOL UTF-8**
+- [ ] Formato: Args/Returns/Raises (NumPy style o Google style)
 - [ ] Codigo EN: variables, funciones, clases, types, archivos
 - [ ] Comentarios inline ES
 - [ ] README, CHANGELOG, manuales ES
 - [ ] Docs 1:1: si cambia API/interfaz -> docs obligatorio
 - `X def calcular_media(precios)` -> `OK def calculate_mean(prices)`
 - `X """Calculate the moving average."""` -> `OK """Calcula el promedio movil."""`
+- Template obligatorio:
+  ```python
+  def mi_funcion(param1: str, param2: int) -> bool:
+      """Descripcion breve en espanol.
+      
+      Args:
+          param1: Descripcion del primer parametro.
+          param2: Descripcion del segundo parametro.
+      
+      Returns:
+          Descripcion del valor de retorno.
+      
+      Raises:
+          ValueError: Si param2 es negativo.
+      """
+  ```
+- ⚠️ CERO funciones sin docstring. Si el agente genera codigo sin docstring, se rechaza en revision.
 
 ### TST - Testing
 - [ ] pytest framework. New feature -> test unitario + integracion
@@ -91,6 +111,24 @@ TKN: Cache-Shape | Structured Compact | Failure-Spend | Observation Masking
 - [ ] Logging: JSON estructurado con `trace_id`, nivel segun contexto
 - [ ] Fallback: siempre tener plan B si servicio externo falla
 - `X response = requests.get(url)` -> `OK response = requests.get(url, timeout=30)`
+
+### ERR - Error Handling & Readability (OBLIGATORIO)
+- [ ] **TODO `except` debe registrar causa**: `logger.warning("Fallo X: %s", e)` — jamas `except: pass`
+- [ ] **Formato de error accionable**: Mensaje que incluya:
+  - `WHAT` = Que operacion fallo (ej: "Fallo al conectar a BD")
+  - `WHY` = Causa raiz (ej: "Timeout de conexion: 30s")
+  - `WHERE` = Archivo:linea:funcion (incluir en log)
+  - `HOW` = Como resolver (ej: "Verificar que el servicio BD este corriendo")
+- [ ] **Stack trace estructurado**: Usar `logging.exception()` o formatear con `traceback.format_exc()` — nunca `print(e)`
+- [ ] **Errores en ES** para usuarios finales, **tecnicos en EN** con contexto completo
+- [ ] **Error classification**: Distinguir entre:
+  - `VALIDATION`: input invalido → mensaje claro al usuario
+  - `OPERATIONAL`: red/DB/timeout → retry + alert
+  - `BUG`: assertion/codigo → stack trace completo
+- [ ] **Nunca exponer internals** en errores al usuario (sanitizar antes de mostrar)
+- `X except: pass` -> `OK except TimeoutError as e: logger.warning("Timeout en %s: %s", op, e); raise`
+- `X print(e)` -> `OK logger.exception("Fallo al procesar %s", request_id)`
+- `X raise Exception("error")` -> `OK raise ConnectionError("No se pudo conectar a %s: %s", host, reason)`
 
 ### CMT - Commits Seguros
 - [ ] Formato: `type(scope): descripcion #ISSUE`

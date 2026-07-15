@@ -30,9 +30,10 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 | Helpers | Bibliotecas helpers modulares y reutilizables |
 | PathLib | Toda ruta usa pathlib.Path, nunca strings crudos |
 | DoD | Definition of Done: checklist antes de entregar |
-| DocStrings ES-UTF8 | Toda funcion publica documentada en espanol |
+| **DocStrings ES-UTF8** | **TODA funcion/metodo/clase publico DEBE tener docstring en espanol UTF-8 con Args/Returns/Raises. Sin docstring = FAIL** |
 | Tests >80% | Unitarios + integracion + casos borde |
 | Seguridad | Validar entradas, parametrizar SQL, no hardcodear secrets |
+| **Errores Legibles** | **TODO error debe tener WHAT+WHY+WHERE. Sin `except: pass`. Logger con contexto. Stack trace estructurado.** |
 
 ## Definition of Done (DoD)
 Antes de marcar una tarea como completa:
@@ -40,7 +41,25 @@ Antes de marcar una tarea como completa:
 - [ ] Codigo compila sin warnings
 - [ ] Tests pasan al 100%
 - [ ] Cobertura >80%
-- [ ] DocStrings ES-UTF8 en todo codigo publico
+- [ ] **DocStrings ES-UTF8 en TODA funcion/clase/metodo publico** (con Args/Returns/Raises)
+- [ ] **Template obligatorio**:
+      ```python
+      def mi_funcion(param1: str, param2: int) -> bool:
+          """Descripcion breve en espanol.
+          
+          Args:
+              param1: Descripcion del primer parametro.
+              param2: Descripcion del segundo parametro.
+          
+          Returns:
+              Descripcion del valor de retorno.
+          
+          Raises:
+              ValueError: Si param2 es negativo.
+          """
+      ```
+- [ ] ⚠️ No se entrega codigo sin docstring. Si falta, se rechaza automaticamente.
+- [ ] **Errores Legibles**: TODO `except` tiene logger con WHAT+WHY+WHERE. Sin `except: pass`.
 - [ ] <900LC por archivo
 - [ ] Sin secretos hardcodeados
 - [ ] Commits convencionales en espanol

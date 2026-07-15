@@ -26,7 +26,8 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 - Helpers: bibliotecas de ayuda modulares y reutilizables
 - PathLib: toda ruta con pathlib.Path, nunca strings
 - Definition of Done (DoD): checklist antes de entregar
-- DocStrings en ES-UTF8 en todo codigo generado
+- **DocStrings ES-UTF8 OBLIGATORIOS en todo codigo generado** — Toda funcion/clase/metodo publico debe incluir docstring con Args/Returns/Raises. Sin docstring = rechazar en revision.
+- **Errores Accionables**: Verificar que builder/scientist usen WHAT+WHY+WHERE en errores. Sin `except: pass`.
 - Tests con cobertura >80%
 - Commits convencionales en espanol
 - PARALELO: lanzar agentes al maximo desde nivel 0 (Swiss Watch)
@@ -131,3 +132,20 @@ Workflows agenticos modelados como query plans con:
   - `PLAS` (Program-Level Attained Service): planificacion single-threaded con prioridades
   - `ATLAS` (Adaptive Thread-Level Attained Service): planificacion multi-threaded con critical path
 - **CompRobustness**: validacion cruzada entre builder (implementa) y guardian (verifica) antes de entregar
+
+## Delivery Gates (aplicar antes de entregar al usuario)
+- [ ] **DocStrings ES-UTF8**: Todo codigo generado tiene docstring con Args/Returns/Raises. Revisar codigo.RECHAZAR si falta.
+- [ ] Template minimo aceptable:
+      ```python
+      def foo(param: str) -> bool:
+          """Descripcion.
+          Args:
+              param: Descripcion.
+          Returns:
+              Descripcion.
+          """
+      ```
+- [ ] Tests pasan (delegar a @guardian si no se ejecutaron)
+- [ ] Sin secretos hardcodeados (revisar strings con api_key, password, token, secret)
+- [ ] **Errores Accionables**: TODO `except` tiene logger con WHAT+WHY+WHERE. Sin `except: pass`. Stack trace estructurado.
+- [ ] Sin `except Exception: pass` sin logger — revisar con `Select-String -Pattern "except.*pass"`

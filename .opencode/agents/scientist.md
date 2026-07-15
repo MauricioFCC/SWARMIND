@@ -129,8 +129,21 @@ Aplicar estas técnicas para análisis profundo de documentos:
 | **Ficha de Lectura** | Extraer: idea principal, datos clave, citas textuales |
 | **Lectura en Capas** | Primera pasada: visión general. Segunda: detalle. Tercera: crítica |
 
-## Estándares de Documentación
-- **DocStrings ES-UTF8**: Todo análisis y documento generado debe incluir DocStrings en español UTF-8
+## Estándares de Documentación (OBLIGATORIOS)
+- **DocStrings ES-UTF8**: TODO codigo/analisis generado DEBE incluir docstring completo en español UTF-8 con Args/Returns/Raises. Sin docstring = rechazar.
+- **Errores Accionables**: TODO analisis con errores debe tener WHAT+WHY+WHERE. Sin `except: pass`. Clasificar error (VALIDATION/OPERATIONAL/BUG).
+- **Template obligatorio para todo codigo**:
+      ```python
+      def mi_analisis(param: str) -> Dict:
+          """Descripcion del analisis.
+          
+          Args:
+              param: Descripcion del parametro.
+          
+          Returns:
+              Diccionario con resultados del analisis.
+          """
+      ```
 - **ADR obligatorio** para decisiones arquitectónicas en sistemas agenticos
 - **Registro de métricas**: toda evaluación debe reportar métricas del catálogo 38
 - **Reproducibilidad**: semillas, configuraciones y splits documentados

@@ -96,6 +96,34 @@ PROBE / AdverTest Cycle:
 - **User**: Manuals, Tutorials, Quickstart guides
 - **Automated**: Doc generation, doc-as-code, doc testing
 
+### Error Readability & Actionability Gate
+El guardian DEBE verificar que todo codigo revisado cumpla:
+- [ ] **TODO `except` tiene logger** con WHAT+WHY+WHERE — usar grep para `except.*pass`
+- [ ] **Errores clasificados**: VALIDATION (input), OPERATIONAL (red/DB), BUG (logica)
+- [ ] **Stack trace en logs**: usar `logger.exception()` o `traceback.format_exc()`
+- [ ] **Sin exponer internals**: errores mostrados al usuario sanitizados
+- [ ] Rechazar si hay `except: pass` sin logger
+
+### DocStrings ES-UTF8 Quality Gate
+El guardian DEBE verificar que todo codigo revisado cumpla:
+- [ ] **TODA funcion/clase/metodo publico tiene docstring** — usar `ast.get_docstring()` para validar
+- [ ] **Args, Returns, Raises documentados** — verificar presencia de secciones
+- [ ] **Idioma espanol UTF-8** — verificar que no hay ingles en docstrings
+- [ ] **RECHAZAR si falta docstring** — no aprobar codigo sin documentacion
+
+Template que debe cumplir todo codigo:
+```python
+def mi_funcion(param: str) -> bool:
+    """Descripcion breve.
+    Args:
+        param: Descripcion.
+    Returns:
+        Descripcion.
+    Raises:
+        ValueError: Si param es invalido.
+    """
+```
+
 ### Operations
 - **Monitoring**: Prometheus/Grafana, Healthchecks, Alerts
 - **Observability**: Logging (structured), Metrics, Tracing (OpenTelemetry)

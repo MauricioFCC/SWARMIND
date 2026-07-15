@@ -153,4 +153,36 @@ Evolve-autobuilder genera tasks RL autonomamente:
 5. Push a buffer con prioridad por novedad
 
 ---
+
+## Estándares de Documentacion (OBLIGATORIOS para todo skill/agente generado)
+
+### Errores Accionables
+Todo codigo generado por evolve DEBE tener errores legibles y accionables:
+- [ ] **WHAT+WHY+WHERE** en cada `logger.warning/exception`
+- [ ] Sin `except: pass` — usar `logger.warning("Fallo %s: %s", op, e)`
+- [ ] Stack trace estructurado con `logger.exception()`
+- [ ] Clasificar error: VALIDATION, OPERATIONAL, BUG
+
+### DocStrings ES-UTF8
+Todo codigo generado por evolve (skills, agentes, tools, scripts) DEBE incluir docstring completo en espanol UTF-8:
+
+```python
+def mi_mejora(param: str) -> bool:
+    """Descripcion de la mejora.
+    
+    Args:
+        param: Descripcion del parametro.
+    
+    Returns:
+        True si la mejora fue aplicada exitosamente.
+    
+    Raises:
+        RuntimeError: Si la mejora no puede aplicarse.
+    """
+```
+
+- [ ] **TODA** funcion/clase/metodo publico tiene docstring
+- [ ] **Sin docstring = rechazar** el skill completo
+
+---
 *Evolve: Cada mejora debe pagar sus propios tokens. Sin delta medible, no hay deploy.*
