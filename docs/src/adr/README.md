@@ -14,6 +14,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | **0008** | **[Token Economy & Speed Optimization v2026](adr0008-token-economy-speed.md)** | **ACEPTADO** | **2a63327** |
 | **0009** | **[Competitive Programming Techniques v2026](adr0009-competitive-programming-2026.md)** | **ACEPTADO** | **2d681c5** |
 | **0010** | **[Text Analysis & Processing Techniques v2026](adr0010-text-analysis-2026.md)** | **ACEPTADO** | **fb618ad** |
+| **0011** | **[Idempotencia — No Reimplementar si ya Existe](adr0011-idempotencia-principle.md)** | **ACEPTADO** | **a7dcfee** |
 
 ## Resumen por Categoria
 
@@ -32,6 +33,9 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 - **ADR-0007**: 22+ estandares fijos + tecnicas CP y comprension clasicas
 - **ADR-0009**: 30+ tecnicas de programacion competitiva 2026 (Stoer-Wagner, SMAWK, HLD, etc.)
 - **ADR-0010**: Text analysis 2026 (Doc-Researcher, Arg-LLaDA, discourse parsing)
+
+### Principios Universales
+- **ADR-0011**: Idempotencia — si ya esta implementado, no reimplementar; solo mejorar si hay delta demostrable
 
 ### Dominios Especificos
 - **ADR-0001**: Mejoras base transversales
