@@ -110,6 +110,10 @@ class TaskOrchestrator:
             recovery_timeout=60.0,
         )
 
+        # Idempotencia: evita procesar el mismo mensaje multiple veces
+        self._recent_messages: Dict[str, float] = {}
+        self._dedup_window: float = 30.0  # Ventana de 30 segundos
+
         StructuredLogRecord.info(
             "orchestrator_init",
             message=f"TaskOrchestrator inicializado",
@@ -153,6 +157,26 @@ class TaskOrchestrator:
             return self._error_result(
                 "Sistema en recuperación. Intenta de nuevo en unos segundos.",
             )
+
+        # --- 0. Idempotencia: evitar duplicados del mismo mensaje ---
+        import hashlib
+        msg_hash = hashlib.sha256((message or "").encode()).hexdigest()[:16]
+        now = time.time()
+        # Limpiar entradas viejas
+        stale = [k for k, t in self._recent_messages.items() if now - t > self._dedup_window]
+        for k in stale:
+            del self._recent_messages[k]
+        if msg_hash in self._recent_messages:
+            StructuredLogRecord.warning(
+                "duplicate_message_blocked",
+                message=f"Mensaje duplicado ignorado (hash={msg_hash})",
+                session_id=None,
+                original_time=self._recent_messages[msg_hash],
+            )
+            return self._error_result(
+                "Mensaje duplicado ignorado (ya se esta procesando esta solicitud).",
+            )
+        self._recent_messages[msg_hash] = now
 
         StructuredLogRecord.info(
             "process_message_start",
@@ -715,16 +739,32 @@ class TaskOrchestrator:
         return "coordinator"
 
     def _broadcast_plan(self, session: SessionState) -> None:
-        """Broadcast the new plan to all involved agents."""
+        """Broadcast the new plan to all involved agents.
+
+        CADA agente recibe SOLO su subtask especifica — no el mensaje generico.
+        Esto previene que 3+ agentes ejecuten la misma tarea.
+        """
         try:
-            # Get unique agents
+            # Get next level (subtasks ready NOW) and all agents
+            next_level = session.plan.get_next_level()
             agents = set()
+            agent_subtasks: Dict[str, List[Dict]] = {}
             for st in session.plan.subtasks:
-                agents.add(f"@{st.agent}")
+                agent_key = f"@{st.agent}"
+                agents.add(agent_key)
+                if agent_key not in agent_subtasks:
+                    agent_subtasks[agent_key] = []
+                agent_subtasks[agent_key].append({
+                    "id": st.id,
+                    "description": st.description,
+                    "expected_output": st.expected_output,
+                    "level": session.plan.get_current_level_num(),
+                    "is_ready": st.id in {s.id for s in next_level},
+                })
 
             summary = session.plan.get_summary()
 
-            # Post to session channel
+            # Post plan summary to session channel (solo notificacion)
             self._bus.post_message(
                 channel=f"#session-{session.session_id}",
                 from_agent="@coordinator",
@@ -738,25 +778,49 @@ class TaskOrchestrator:
                 message_type="notification",
             )
 
-            # Notify each agent individually
-            for agent in agents:
-                self._bus.post_message(
-                    channel=f"#session-{session.session_id}",
-                    from_agent="@coordinator",
-                    to_agent=agent,
-                    message=(
-                        f"Asignado al plan `{session.session_id}`.\n"
-                        f"Revisa la sección de tu nivel para saber cuándo empezar."
-                    ),
-                    message_type="request",
-                )
+            # Notify CADA agente SOLO con su subtask especifica
+            for agent in sorted(agents):
+                subtasks = agent_subtasks.get(agent, [])
+                ready_subtasks = [s for s in subtasks if s["is_ready"]]
+                pending_subtasks = [s for s in subtasks if not s["is_ready"]]
+
+                if ready_subtasks:
+                    # Tiene trabajo AHORA — enviar request con subtask especifica
+                    task_desc = ready_subtasks[0]["description"]
+                    task_output = ready_subtasks[0]["expected_output"]
+                    self._bus.post_message(
+                        channel=f"#session-{session.session_id}",
+                        from_agent="@coordinator",
+                        to_agent=agent,
+                        message=(
+                            f"🎯 TU TAREA: {task_desc}\n"
+                            f"Output esperado: {task_output}\n"
+                            f"Plan: {session.session_id}"
+                        ),
+                        message_type="request",
+                        subtask_id=ready_subtasks[0]["id"],
+                    )
+                else:
+                    # No tiene trabajo ahora — solo notificar
+                    self._bus.post_message(
+                        channel=f"#session-{session.session_id}",
+                        from_agent="@coordinator",
+                        to_agent=agent,
+                        message=(
+                            f"⏳ Asignado al plan `{session.session_id}`.\n"
+                            f"Esperarás turno cuando tus dependencias estén listas."
+                            + (f"\nTareas pendientes: {len(pending_subtasks)}" if pending_subtasks else "")
+                        ),
+                        message_type="notification",
+                    )
 
             StructuredLogRecord.info(
                 "broadcast_plan",
-                message=f"Plan broadcast a {len(agents)} agentes",
+                message=f"Plan broadcast a {len(agents)} agentes con subtasks individuales",
                 session_id=session.session_id,
                 agents=list(agents),
                 subtask_count=len(session.plan.subtasks),
+                next_level_count=len(next_level),
             )
         except Exception as exc:
             StructuredLogRecord.error(

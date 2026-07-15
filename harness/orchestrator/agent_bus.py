@@ -330,10 +330,22 @@ class AgentBus:
             Lista de dicts con los datos de cada mensaje.
         """
         agent_name = self._normalize_agent(agent_name)
+
+        # Buscar mensajes dirigidos al agente O a @all (broadcasts)
         results = self._search_messages(
             filters={"channel": channel, "to_agent": agent_name},
             top_k=limit,
         )
+        # Incluir mensajes @all que no sean duplicados de los que ya recibio
+        all_messages = self._search_messages(
+            filters={"channel": channel, "to_agent": "@all"},
+            top_k=limit,
+        )
+        seen_ids = {m.get("id") for m in results}
+        for m in all_messages:
+            if m.get("id") not in seen_ids:
+                results.append(m)
+                seen_ids.add(m.get("id"))
 
         if since_timestamp:
             results = [m for m in results if m.get("created_at", "") >= since_timestamp]
