@@ -17,6 +17,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | **0011** | **[Idempotencia — No Reimplementar si ya Existe](adr0011-idempotencia-principle.md)** | **ACEPTADO** | **a7dcfee** |
 | **0012** | **[DocStrings Obligatorios + Error Readability & Actionability](adr0012-docstrings-error-readability.md)** | **ACEPTADO** | **4b99fc4** |
 | **0013** | **[Workflow Patterns + PBT Templates + Context Engineering + 3 mas](adr0013-six-new-techniques.md)** | **ACEPTADO** | **152b99f** |
+| **0014** | **[Lazy Loading PEP 562 — Cold Start 72x mas rapido](adr0014-lazy-loading.md)** | **ACEPTADO** | **c1ea3fd** |
 
 ## Resumen por Categoria
 
@@ -40,6 +41,9 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 - **ADR-0011**: Idempotencia — si ya esta implementado, no reimplementar; solo mejorar si hay delta demostrable
 - **ADR-0012**: DocStrings ES-UTF8 obligatorios + Error Readability & Actionability (WHAT/WHY/WHERE)
 - **ADR-0013**: 6 nuevas tecnicas: Workflow Patterns, PBT Templates, Context Engineering, Behavioral Tracing, Architectural Guardrails, Semantic Versioning
+
+### Performance y Optimizacion
+- **ADR-0014**: Lazy Loading PEP 562 — cold start 2800ms→39ms (72x faster)
 
 ### Dominios Especificos
 - **ADR-0001**: Mejoras base transversales
