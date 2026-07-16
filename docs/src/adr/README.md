@@ -16,6 +16,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | **0010** | **[Text Analysis & Processing Techniques v2026](adr0010-text-analysis-2026.md)** | **ACEPTADO** | **fb618ad** |
 | **0011** | **[Idempotencia — No Reimplementar si ya Existe](adr0011-idempotencia-principle.md)** | **ACEPTADO** | **a7dcfee** |
 | **0012** | **[DocStrings Obligatorios + Error Readability & Actionability](adr0012-docstrings-error-readability.md)** | **ACEPTADO** | **4b99fc4** |
+| **0013** | **[Workflow Patterns + PBT Templates + Context Engineering + 3 mas](adr0013-six-new-techniques.md)** | **ACEPTADO** | **(pendiente)** |
 
 ## Resumen por Categoria
 
@@ -38,6 +39,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 ### Principios Universales
 - **ADR-0011**: Idempotencia — si ya esta implementado, no reimplementar; solo mejorar si hay delta demostrable
 - **ADR-0012**: DocStrings ES-UTF8 obligatorios + Error Readability & Actionability (WHAT/WHY/WHERE)
+- **ADR-0013**: 6 nuevas tecnicas: Workflow Patterns, PBT Templates, Context Engineering, Behavioral Tracing, Architectural Guardrails, Semantic Versioning
 
 ### Dominios Especificos
 - **ADR-0001**: Mejoras base transversales

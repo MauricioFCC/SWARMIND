@@ -28,6 +28,12 @@ CMT: conventional commit type(scope): descripcion
 FDE: bridge product↔reality | delta = gap to close | mission > persona
 EVO: learn→design→experiment→analyze | cognition persists | loop repeats
 TKN: Cache-Shape | Structured Compact | Failure-Spend | Observation Masking
+WFP: Workflow Patterns | Evaluator-Optimizer | Voting | Critique-Revise | Parallel-Transform
+PBT: Property-Based Testing Templates | holes rellenables | invariantes | -59% alucinaciones
+CEN: Context Engineering | Least-Recent First | Progresivo | Chunking semantico
+BTR: Behavioral Tracing | decisiones registradas | fingerprints | consistencia
+AGR: Architectural Guardrails | layers | type hints | tamano | imports prohibidos
+SVE: Semantic Versioning | MAJOR.MINOR.PATCH | changelog | skills y prompts
 ```
 
 ---
@@ -47,6 +53,12 @@ TKN: Cache-Shape | Structured Compact | Failure-Spend | Observation Masking
 | **QLT** | Respuestas <500 tokens. Codigo listo/sin hardcode. Conciso: 1 responsabilidad por funcion. Sin constantes magicas (siempre con nombre). |
 | **ERR** | Errores accionables: WHAT (que fallo) + WHY (causa) + WHERE (linea/archivo/funcion). Sin except silencioso. Logger siempre con contexto. Stack trace estructurado. |
 | **TKN** | Cache-Shape Discipline (-38% tokens), Structured Compaction (-41% costo), Scoped Context (-44% tiempo), Failure-Spend Governance, Observation Masking, Phase-Scheduled MAS (-27.3% tokens). Effective-Input-Price = inp * miss_ratio * price + out * price. |
+| **WFP** | 4 patrones de flujo reutilizables: Evaluator-Optimizer (genera→evalua→loop), Voting (N variantes→ranking→mejor), Critique-Revise (genera→critica→revisa), Parallel-Transform (fan-out→transforma→fan-in merge). Retry cost -51%. |
+| **PBT** | Property-Based Testing con templates de holes rellenables. 7 templates predefinidos (sorting, idempotent, pure, boundary, roundtrip, commutative, associative). Reduce alucinaciones -59%, costo -3.8x. |
+| **CEN** | Context Engineering: Least-Recent Context First (relevancia al inicio), Structured Chunking (metadatos por bloque), Progressive Disclosure (instruccion→ejemplos→datos). |
+| **BTR** | Behavioral Tracing: cada decision registra action+chosen+rationale+confidence. Fingerprint de comportamiento por agente. Reportes de consistencia y auditoria. |
+| **AGR** | Architectural Guardrails: type hints obligatorios, max 60 lineas/funcion, prohibido except:pass, imports prohibidos (eval, exec, pickle). Validacion automatica post-generacion. |
+| **SVE** | Semantic Versioning MAJOR.MINOR.PATCH para skills y agent prompts. CHANGELOG automatico. Trazabilidad de regresiones por scaffolding. |
 | **FDE** | Bridge product↔reality. Delta = gap a cerrar. Mission > persona. Glue 50% integracion. Speed-to-value primero. Diplomacia tecnica. Zero-trust. |
 | **EVO** | Loop learn→design→experiment→analyze. Cognition store persiste lecciones. Experiment DB registra todo. Best snapshot automatico. SURS >= 90% en cada deploy. |
 
