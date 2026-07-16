@@ -16,7 +16,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | **0010** | **[Text Analysis & Processing Techniques v2026](adr0010-text-analysis-2026.md)** | **ACEPTADO** | **fb618ad** |
 | **0011** | **[Idempotencia — No Reimplementar si ya Existe](adr0011-idempotencia-principle.md)** | **ACEPTADO** | **a7dcfee** |
 | **0012** | **[DocStrings Obligatorios + Error Readability & Actionability](adr0012-docstrings-error-readability.md)** | **ACEPTADO** | **4b99fc4** |
-| **0013** | **[Workflow Patterns + PBT Templates + Context Engineering + 3 mas](adr0013-six-new-techniques.md)** | **ACEPTADO** | **(pendiente)** |
+| **0013** | **[Workflow Patterns + PBT Templates + Context Engineering + 3 mas](adr0013-six-new-techniques.md)** | **ACEPTADO** | **152b99f** |
 
 ## Resumen por Categoria
 
