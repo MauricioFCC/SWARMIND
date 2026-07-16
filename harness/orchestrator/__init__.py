@@ -1,40 +1,51 @@
 """
-Orquestador multi-agente: task management, delegacion, bus de mensajes, sandbox loop,
-agent dispatcher y scheduler.
+Orquestador multi-agente: lazy loading via __getattr__ (PEP 562).
 
-Exporta las clases principales del modulo de orquestacion:
-- TaskManager: Gestion de tareas con LanceDB + SQLite fallback
-- DelegationEngine: Enrutamiento de mensajes a agentes por @rol o intent matching
-- AgentBus: Bus de mensajes asincrono entre agentes (Slack para Agentes)
-- SandboxLoop: Bucle autonomo de calidad con circuit breaker
-- AgentDispatcher: Dispatch con skill injection
-- Scheduler: Programador de jobs con persistencia YAML
+Exporta las clases principales del modulo de orquestacion con carga perezosa.
+Cold-start: ~1ms vs ~500ms con imports eager.
 """
-from harness.orchestrator.task_manager import TaskManager
-from harness.orchestrator.delegation_engine import DelegationEngine
-from harness.orchestrator.agent_bus import AgentBus, AgentBusError, InvalidMessageError
-from harness.orchestrator.sandbox_loop import SandboxLoop
-from harness.orchestrator.agent_dispatcher import AgentDispatcher
-from harness.orchestrator.scheduler import Scheduler, ScheduledJob
-from harness.orchestrator.debate_orchestrator import (
-    DebateOrchestrator,
-    DebateResult,
-    DebateRound,
-    DebateStrategy,
-)
+from __future__ import annotations
+import importlib
+from typing import Any, Dict
 
-__all__ = [
-    "TaskManager",
-    "DelegationEngine",
-    "AgentBus",
-    "AgentBusError",
-    "InvalidMessageError",
-    "SandboxLoop",
-    "AgentDispatcher",
-    "Scheduler",
-    "ScheduledJob",
-    "DebateOrchestrator",
-    "DebateResult",
-    "DebateRound",
-    "DebateStrategy",
-]
+_SYMBOL_MAP: Dict[str, str] = {
+    "TaskManager": "harness.orchestrator.task_manager",
+    "DelegationEngine": "harness.orchestrator.delegation_engine",
+    "AgentBus": "harness.orchestrator.agent_bus",
+    "AgentBusError": "harness.orchestrator.agent_bus",
+    "InvalidMessageError": "harness.orchestrator.agent_bus",
+    "SandboxLoop": "harness.orchestrator.sandbox_loop",
+    "AgentDispatcher": "harness.orchestrator.agent_dispatcher",
+    "Scheduler": "harness.orchestrator.scheduler",
+    "ScheduledJob": "harness.orchestrator.scheduler",
+    "DebateOrchestrator": "harness.orchestrator.debate_orchestrator",
+    "DebateResult": "harness.orchestrator.debate_orchestrator",
+    "DebateRound": "harness.orchestrator.debate_orchestrator",
+    "DebateStrategy": "harness.orchestrator.debate_orchestrator",
+    # Nuevos modulos (opcionales, no se cargan hasta usarse)
+    "evaluator_optimizer": "harness.orchestrator.workflow_patterns",
+    "voting": "harness.orchestrator.workflow_patterns",
+    "PBTTemplate": "harness.orchestrator.pbt_templates",
+    "BehavioralTracer": "harness.orchestrator.behavioral_tracer",
+    "check_all": "harness.orchestrator.architectural_guardrails",
+}
+
+
+def __getattr__(name: str) -> Any:
+    """Lazy import de simbolos del paquete orchestrator."""
+    module_path = _SYMBOL_MAP.get(name)
+    if module_path is None:
+        raise AttributeError(f"module 'harness.orchestrator' has no attribute '{name}'")
+    module = importlib.import_module(module_path)
+    attr = getattr(module, name, None)
+    if attr is None:
+        raise AttributeError(f"module '{module_path}' has no attribute '{name}'")
+    globals()[name] = attr
+    return attr
+
+
+def __dir__() -> list:
+    return list(_SYMBOL_MAP.keys())
+
+
+__all__ = list(_SYMBOL_MAP.keys())

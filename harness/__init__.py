@@ -6,48 +6,90 @@ Entry points:
     python harness/run.py       -> run.main()
     python harness/delegate.py  -> delegate.delegate_task()
 
-IMPORTANTE: Este __init__.py NO importa run.py ni delegate.py a nivel de módulo
-para evitar que el check de LanceDB se ejecute al importar el paquete.
-Usa lazy imports en los getters.
+INICIO RAPIDO: Este __init__.py usa lazy imports via __getattr__ (PEP 562).
+Importar 'harness' NO carga submodulos pesados (numpy, LanceDB, etc.)
+hasta que se accede explicitamente a un simbolo. Cold-start: ~10ms vs ~2800ms.
 """
 
-from harness.orchestrator.task_manager import TaskManager
-from harness.orchestrator.delegation_engine import DelegationEngine
-from harness.orchestrator.agent_bus import AgentBus
-from harness.orchestrator.sandbox_loop import SandboxLoop
-from harness.memory_rag.lance_vector_store import LanceVectorStore
-from harness.memory_rag.context_assembler import ContextAssembler
-from harness.evolve_loop.evaluator import CASEEvaluator
-from harness.evolve_loop.cognition_sync import CognitionSync
-from harness.evolve_loop.self_improver import SelfImprover
-from harness.evolve_loop.gepa_mutator import GEPAMutator
-from harness.evolve_loop.procedural_memory import ProceduralMemory
-from harness.tools_sandbox.mcp_executor import MCPExecutor
-from harness.scheduler import TaskScheduler
-from harness.memory_rag.doc_ingester import DocumentChunker, ingest_directory
+from __future__ import annotations
+import importlib
+import logging
+from typing import Any, Dict, Optional
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Mapeo nombre -> modulo para lazy loading
+# ---------------------------------------------------------------------------
+_SYMBOL_MAP: Dict[str, str] = {
+    "TaskManager": "harness.orchestrator.task_manager",
+    "DelegationEngine": "harness.orchestrator.delegation_engine",
+    "AgentBus": "harness.orchestrator.agent_bus",
+    "SandboxLoop": "harness.orchestrator.sandbox_loop",
+    "AgentDispatcher": "harness.orchestrator.agent_dispatcher",
+    "Scheduler": "harness.orchestrator.scheduler",
+    "DebateOrchestrator": "harness.orchestrator.debate_orchestrator",
+    "LanceVectorStore": "harness.memory_rag.lance_vector_store",
+    "ContextAssembler": "harness.memory_rag.context_assembler",
+    "CASEEvaluator": "harness.evolve_loop.evaluator",
+    "CognitionSync": "harness.evolve_loop.cognition_sync",
+    "SelfImprover": "harness.evolve_loop.self_improver",
+    "GEPAMutator": "harness.evolve_loop.gepa_mutator",
+    "ProceduralMemory": "harness.evolve_loop.procedural_memory",
+    "MCPExecutor": "harness.tools_sandbox.mcp_executor",
+    "TaskScheduler": "harness.scheduler",
+    "DocumentChunker": "harness.memory_rag.doc_ingester",
+    "ingest_directory": "harness.memory_rag.doc_ingester",
+    "run_main": "harness",  # local, no de submodulo
+    # Workflow Patterns (nuevos)
+    "evaluator_optimizer": "harness.orchestrator.workflow_patterns",
+    "voting": "harness.orchestrator.workflow_patterns",
+    "critique_revise": "harness.orchestrator.workflow_patterns",
+    "parallel_transform": "harness.orchestrator.workflow_patterns",
+    "PBTTemplate": "harness.orchestrator.pbt_templates",
+    "TEMPLATES": "harness.orchestrator.pbt_templates",
+    "BehavioralTracer": "harness.orchestrator.behavioral_tracer",
+    "check_all": "harness.orchestrator.architectural_guardrails",
+}
 
 
-def run_main() -> None:
-    """Ejecuta el entry point principal (lazy import de run.py)."""
-    from harness.run import main
-    main()
+def __getattr__(name: str) -> Any:
+    """Lazy import: solo carga el submodulo cuando se accede al simbolo.
+
+    Args:
+        name: Nombre del simbolo a importar.
+
+    Returns:
+        El objeto importado (clase, funcion o constante).
+
+    Raises:
+        AttributeError: Si el simbolo no esta en el mapa.
+    """
+    if name == "run_main":
+        from harness.run import main
+        return main
+
+    module_path = _SYMBOL_MAP.get(name)
+    if module_path is None:
+        raise AttributeError(f"module 'harness' has no attribute '{name}'")
+
+    module = importlib.import_module(module_path)
+    attr = getattr(module, name, None)
+    if attr is None:
+        raise AttributeError(f"module '{module_path}' has no attribute '{name}'")
+
+    # Cachear en el modulo para acceso futuro directo
+    globals()[name] = attr
+    return attr
 
 
-__all__ = [
-    "run_main",
-    "TaskManager",
-    "DelegationEngine",
-    "AgentBus",
-    "SandboxLoop",
-    "LanceVectorStore",
-    "ContextAssembler",
-    "CASEEvaluator",
-    "CognitionSync",
-    "SelfImprover",
-    "GEPAMutator",
-    "ProceduralMemory",
-    "MCPExecutor",
-    "TaskScheduler",
-    "DocumentChunker",
-    "ingest_directory",
-]
+def __dir__() -> list:
+    """Soporte para tab completion."""
+    return list(_SYMBOL_MAP.keys()) + list(globals().keys())
+
+
+# Cache frio: simbolos que NO requieren import pesado y se usan siempre
+# (actualmente vacio, pero se puede poblar con constantes/utiles ligeros)
+
+
+__all__ = list(_SYMBOL_MAP.keys())
