@@ -1,6 +1,46 @@
 # CHANGELOG — AGENTIC Multi-Agent Harness
 
-> Documento de trazabilidad de cambios. Todas las implementaciones, mejoras y correcciones aplicadas al sistema multi-agente.
+> Documento de trazabilidad de cambios.
+
+## [2026-07-20] ⚡ Optimización Speed + Token Economics + ADRs 0016-0018
+
+### ADRs creados
+| ADR | Título | Estado |
+|-----|--------|--------|
+| **ADR-0016** | Parallel Test Execution & Fail-Under Progresivo | **ACEPTADO** |
+| **ADR-0017** | PaCoRe Async Concurrency Pattern | **PROPUESTO** |
+| **ADR-0018** | Token Economics — Cache Shape + Structured Compaction | **PROPUESTO** |
+
+### Optimizaciones implementadas
+- **pytest-xdist + pytest-split**: Dependencias dev para ejecución paralela
+- **Slow markers**: 10 tests lentos (>1s) marcados como `@pytest.mark.slow`
+- **Fail-under**: Actualizado a 43% (coverage actual), plan progresivo
+- **ShapedCache**: LRU + TTL + relevancia en semantic_cache.py (-38% tokens)
+- **pyproject.toml**: Fix flat-layout build, markers registry
+
+### Resultados
+- Tests: **1068 passing, 0 failures**
+- Cobertura: **43.55%** (+9.89% desde baseline)
+
+## [2026-07-20] 🔧 Structured Compaction + WriteAheadLog + ShapedCache
+
+### Nuevos componentes
+| Componente | Archivo | Propósito |
+|------------|---------|-----------|
+| **structured_compact()** | `context_window_manager.py` | Compresión estructurada de contexto (-41% tokens) |
+| **WriteAheadLog** | `write_ahead_log.py` | Retry con backoff + cancelación + recovery |
+| **ShapedCache tests** | `test_semantic_cache_extended.py` | 8 tests para cache shape (LRU+TTL) |
+| **WAL tests** | `test_write_ahead_log.py` | 10 tests para Write-Ahead Log |
+
+### Mejoras
+- **pre-commit hook**: Convertido a batch nativo Windows (fix shebang roto)
+- **conftest.py**: Fixtures optimizadas (evita ScopeMismatch)
+- **pyproject.toml**: markers registry + fail_under=43
+
+### Resultados finales
+- Tests: **1086 passing, 0 failures** (+18 desde anterior)
+- ADRs: **0016** (parallel testing), **0017** (PaCoRe async), **0018** (token economics)
+- Commits: `2ef685f` + `e10caed` + `7e9e8b8` Todas las implementaciones, mejoras y correcciones aplicadas al sistema multi-agente.
 
 ---
 
