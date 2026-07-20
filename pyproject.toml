@@ -18,7 +18,8 @@ dependencies = [
     "pytest-asyncio>=1.4.0",
     "pyyaml>=6.0",
     "requests>=2.31",
-    "schedule>=1.2",
+     "schedule>=1.2",
+     "torch>=2.0",
 ]
 
 [project.optional-dependencies]
@@ -56,3 +57,4 @@ fail_under = 59
 # Proximo PR: fail_under = 55
 # Siguiente:   fail_under = 70
 # Objetivo:    fail_under = 80
+
