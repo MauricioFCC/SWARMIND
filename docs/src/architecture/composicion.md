@@ -36,3 +36,19 @@
 N1 (7 líneas, siempre): RSF, IDP, ERR, ARQ, SEG, DOC, TST, CMT, FDE, EVO, TKN, WFP, PBT, CEN, BTR, AGR, SVE, MCL, MKS
 N2 (19 líneas, budget >70%): Detalle de cada principio
 N3 (completo): Checklists detallados por categoría
+
+## Documentación del Proyecto
+
+La documentación completa incluye:
+
+| Sección | Archivos | Propósito |
+|---------|----------|-----------|
+| **Guía de Uso** | 4 docs | Filosofía, cómo usar, velocidad, estándares |
+| **Arquitectura** | 3 docs | Swiss Watch, Dynamic Scaling, Composición |
+| **Manual Técnico** | 1 doc (NUEVO) | Documentación técnica completa del harness |
+| **Agentes** | 5 docs | Perfiles de cada agente |
+| **Skills** | 3 docs | Registro y skills específicos |
+| **Desarrollo** | 4 docs (NUEVO testing-guide) | Testing, modificación, commits, export |
+| **Referencia** | 1 doc (NUEVO glosario) | Términos y abreviaturas |
+| **Roadmap** | 1 doc (NUEVO estado) | Estado del proyecto y próximos pasos |
+| **ADRs** | 18 docs | Architecture Decision Records |

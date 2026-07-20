@@ -12,7 +12,22 @@
 
 - [Guía de uso](guide/como-usar.md) — Cómo delegar tareas a los agentes
 - [Arquitectura](architecture/swiss-watch.md) — Patrón Swiss Watch, Dynamic Scaling, Composición
-- [ADR](adr/README.md) — Architecture Decision Records (15 documentos)
+- [Manual Técnico](technical/manual-tecnico.md) — Documentación técnica completa del harness
+- [ADR](adr/README.md) — Architecture Decision Records (18 documentos)
 - [Agentes](agents/coordinator.md) — Perfiles de cada agente
 - [Skills](skills/registry.md) — Registro completo de skills
+- [Testing Guide](development/testing-guide.md) — Cómo escribir y ejecutar tests
+- [Glosario](reference/glosario.md) — Terminos y abreviaturas
+- [Roadmap](roadmap/estado.md) — Estado del proyecto y próximos pasos
 - [Desarrollo](development/modificar.md) — Cómo modificar y contribuir
+
+## Estado Actual
+
+| Métrica | Valor |
+|---------|-------|
+| Tests | 1518 passing (4 xfailed) |
+| Cobertura | 59.69% (objetivo: 80%) |
+| ADRs | 18 (15 implementados) |
+| Agentes | 8 especializados |
+| Skills | 11 contextuales |
+| Commits | 200+ |

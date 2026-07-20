@@ -13,6 +13,9 @@
 - [Dynamic Scaling](architecture/dynamic-scaling.md)
 - [Composicion del Sistema](architecture/composicion.md)
 
+# Manual Tecnico
+- [Manual Tecnico Completo](technical/manual-tecnico.md)
+
 # Agentes
 - [Coordinator](agents/coordinator.md)
 - [Builder](agents/builder.md)
@@ -26,9 +29,16 @@
 - [Otras Skills](skills/otras.md)
 
 # Desarrollo
+- [Testing Guide](development/testing-guide.md)
 - [Como Modificar Archivos](development/modificar.md)
 - [Commits Convencionales](development/commits.md)
 - [Exportacion y Backup](development/export.md)
+
+# Referencia
+- [Glosario de Terminos](reference/glosario.md)
+
+# Roadmap
+- [Estado del Proyecto](roadmap/estado.md)
 
 # ADR - Architecture Decision Records
 - [ADR-0001: Mejora General del Sistema](adr/adr0001-mejoras.md)
