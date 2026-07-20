@@ -4,6 +4,7 @@ import pytest
 from harness.orchestrator.architectural_guardrails import (
     check_type_hints, check_function_length, check_no_except_pass,
     check_forbidden_imports, check_all, builtin_guardrails,
+    GuardrailResult,
 )
 
 
@@ -96,3 +97,80 @@ def suma(a, b):
         """builtin_guardrails debe retornar 4 funciones."""
         guards = builtin_guardrails()
         assert len(guards) == 4
+
+
+class TestSummary:
+    """Tests para GuardrailResult.summary()."""
+
+    def test_summary_passed(self):
+        """summary muestra exito cuando passed=True."""
+        result = GuardrailResult(passed=True, checked_rules=5)
+        s = result.summary()
+        assert "✅" in s
+        assert "5 reglas" in s
+        assert "0 violaciones" in s
+
+    def test_summary_failed(self):
+        """summary muestra violaciones cuando passed=False."""
+        from harness.orchestrator.architectural_guardrails import GuardrailViolation
+        result = GuardrailResult(
+            passed=False,
+            violations=[GuardrailViolation(rule="test", severity="error", message="fallo")],
+            checked_rules=3,
+        )
+        s = result.summary()
+        assert "❌" in s
+        assert "1 violacion" in s
+        assert "3 reglas" in s
+
+
+class TestSyntaxErrors:
+    """Tests para manejo de SyntaxError en guardrails."""
+
+    def test_check_type_hints_syntax_error(self):
+        """SyntaxError en check_type_hints registra violacion."""
+        codigo = "def foo(::"  # SyntaxError intencional
+        result = check_type_hints(codigo, "test.py")
+        assert len(result.violations) == 1
+        assert result.violations[0].rule == "type_hints"
+        assert result.violations[0].severity == "error"
+
+    def test_check_function_length_syntax_error(self):
+        """SyntaxError en check_function_length no rompe."""
+        codigo = "def foo(::"  # SyntaxError intencional
+        result = check_function_length(codigo, "test.py")
+        assert result.passed is True
+        assert len(result.violations) == 0
+
+    def test_check_function_length_vacia(self):
+        """check_function_length con sintaxis valida en asyncio."""
+        codigo = """
+async def foo() -> None:
+    pass
+"""
+        result = check_function_length(codigo, "test.py", max_lines=60)
+        assert result.passed is True
+
+
+class TestCheckNoExceptPassEdgeCases:
+    """Tests para bordes de check_no_except_pass."""
+
+    def test_except_pass_con_comentarios_intermedios(self):
+        """except:pass se detecta aunque haya comentarios entre medio."""
+        codigo = "try:\n    x = 1\nexcept:\n    # comment\n    pass\n"
+        result = check_no_except_pass(codigo, "test.py")
+        assert result.passed is False
+        assert any(v.rule == "no_except_pass" for v in result.violations)
+
+    def test_except_pass_con_lineas_vacias(self):
+        """except:pass se detecta aunque haya lineas en blanco."""
+        codigo = "try:\n    x = 1\nexcept:\n\n    pass\n"
+        result = check_no_except_pass(codigo, "test.py")
+        assert result.passed is False
+        assert any(v.rule == "no_except_pass" for v in result.violations)
+
+    def test_except_con_logger_y_pass_no_detecta(self):
+        """except con logger seguido de pass en otro bloque no se detecta."""
+        codigo = 'try:\n    x = 1\nexcept:\n    logger.error("fallo")\n    pass\n'
+        result = check_no_except_pass(codigo, "test.py")
+        assert result.passed is True

@@ -1,6 +1,5 @@
 """
 
-EMBEDDING_DIM = 384
 Sandbox Loop Autonomo — Quality Gate - Sandbox Loop
 
 Orquesta el bucle autonomo de calidad para codigo generado por agentes:
@@ -27,6 +26,8 @@ Ejemplo de uso::
     )
 """
 from __future__ import annotations
+
+EMBEDDING_DIM = 384
 
 import logging
 from typing import Any, Dict, List, Optional, Tuple

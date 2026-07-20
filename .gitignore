@@ -86,3 +86,6 @@ fuzz/artifacts/
 /target/
 **/*.rs.bk
 *.pdb
+
+# Coverage artifacts
+*.py,cover

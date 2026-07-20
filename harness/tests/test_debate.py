@@ -16,6 +16,7 @@ import pytest
 from dataclasses import asdict
 from enum import Enum
 from typing import Any, Dict, List
+from unittest.mock import MagicMock, patch
 
 from harness.orchestrator.debate_orchestrator import (
     DebateOrchestrator,
@@ -676,3 +677,252 @@ class TestDebateOrchestratorIntegration:
         """Debate plan should target coordinator (since level 0 is coordinator)."""
         result = task_orch.process_message("debate sobre estrategia")
         assert result.target_agent == "coordinator"
+
+
+# ---------------------------------------------------------------------------
+# Edge cases: internal methods uncovered by strategies above
+# ---------------------------------------------------------------------------
+
+
+class TestDebateInternalMethods:
+    """Coverage tests for internal helpers of DebateOrchestrator (sin LanceDB)."""
+
+    def _make_orchestrator(self):
+        """Crea DebateOrchestrator con _bus mockeado para evitar LanceDB."""
+        with patch('harness.orchestrator.agent_bus.AgentBus') as mock_bus_cls:
+            mock_bus_cls.return_value = MagicMock()
+            from harness.orchestrator.debate_orchestrator import DebateOrchestrator
+            orch = DebateOrchestrator(vector_store=None)
+            orch._bus = MagicMock()
+            return orch
+
+    def test_unknown_strategy_raises(self):
+        """Estrategia desconocida debe lanzar ValueError."""
+        orch = self._make_orchestrator()
+        # Debido a que DebateStrategy extiende str, pasamos un string invalido
+        with pytest.raises(ValueError, match="Unknown debate strategy"):
+            orch.debate(
+                task="test",
+                agents=["builder", "scientist"],
+                strategy="non_existent_strategy",  # type: ignore
+                dispatch_fn=lambda a, t, c: "ok",
+            )
+
+    def test_text_similarity_empty(self):
+        """_text_similarity con textos vacios retorna 0.0."""
+        from harness.orchestrator.debate_orchestrator import DebateOrchestrator
+        assert DebateOrchestrator._text_similarity("", "hello") == 0.0
+        assert DebateOrchestrator._text_similarity("hello", "") == 0.0
+        assert DebateOrchestrator._text_similarity("", "") == 0.0
+
+    def test_text_similarity_no_words(self):
+        """_text_similarity con textos sin palabras retorna 0.0."""
+        from harness.orchestrator.debate_orchestrator import DebateOrchestrator
+        assert DebateOrchestrator._text_similarity("   ", "hello") == 0.0
+        assert DebateOrchestrator._text_similarity("hello", "   ") == 0.0
+        assert DebateOrchestrator._text_similarity("   ", "   ") == 0.0
+
+    def test_text_similarity_normal(self):
+        """_text_similarity calcula Jaccard similarity correctamente."""
+        from harness.orchestrator.debate_orchestrator import DebateOrchestrator
+        sim = DebateOrchestrator._text_similarity("hello world", "hello world")
+        assert sim == 1.0
+        sim = DebateOrchestrator._text_similarity("hello world", "hello there")
+        assert sim == 1.0 / 3.0  # {hello} / {hello, world, there}
+
+    def test_compute_agreement_single(self):
+        """_compute_agreement con <2 outputs retorna 0.0."""
+        orch = self._make_orchestrator()
+        agreement = orch._compute_agreement({"a": "only one"})
+        assert agreement == 0.0
+
+    def test_compute_agreement_normal(self):
+        """_compute_agreement calcula promedio pairwise."""
+        orch = self._make_orchestrator()
+        agreement = orch._compute_agreement({
+            "a": "hello world",
+            "b": "hello world",
+            "c": "hello world",
+        })
+        assert agreement == 1.0
+
+    def test_majority_winner_empty(self):
+        """_majority_winner con outputs vacio retorna ('', 0.0)."""
+        orch = self._make_orchestrator()
+        winner, agreement = orch._majority_winner({})
+        assert winner == ""
+        assert agreement == 0.0
+
+    def test_majority_winner_single(self):
+        """_majority_winner con un solo agente retorna su texto."""
+        orch = self._make_orchestrator()
+        winner, agreement = orch._majority_winner({"a": "unica respuesta"})
+        assert winner == "unica respuesta"
+        assert agreement == 1.0
+
+    def test_majority_winner_multiple(self):
+        """_majority_winner encuentra el texto con mas soporte."""
+        orch = self._make_orchestrator()
+        winner, agreement = orch._majority_winner({
+            "a": "usar Rust con Axum",
+            "b": "usar Rust con Axum",
+            "c": "usar Python con FastAPI",
+        })
+        assert "Rust" in winner
+        assert agreement >= 0.5
+
+    def test_synthesize_answers_empty(self):
+        """_synthesize_answers con outputs vacio retorna ''."""
+        orch = self._make_orchestrator()
+        result = orch._synthesize_answers({})
+        assert result == ""
+
+    def test_synthesize_answers_normal(self):
+        """_synthesize_answers retorna el output mas largo."""
+        orch = self._make_orchestrator()
+        result = orch._synthesize_answers({
+            "a": "short",
+            "b": "much longer answer here",
+        })
+        assert "much longer" in result
+
+    def test_critique_addressed_empty(self):
+        """_critique_addressed con original/refined vacio retorna False."""
+        from harness.orchestrator.debate_orchestrator import DebateOrchestrator
+        assert DebateOrchestrator._critique_addressed("", "refined", "critique") is False
+        assert DebateOrchestrator._critique_addressed("original", "", "critique") is False
+        assert DebateOrchestrator._critique_addressed("", "", "critique") is False
+
+    def test_critique_addressed_longer(self):
+        """_critique_addressed con refined > 1.1x original retorna True."""
+        from harness.orchestrator.debate_orchestrator import DebateOrchestrator
+        assert DebateOrchestrator._critique_addressed(
+            "short", "short and much longer content here", "make it longer"
+        ) is True
+
+    def test_critique_addressed_new_words(self):
+        """_critique_addressed con nuevas palabras retorna True."""
+        from harness.orchestrator.debate_orchestrator import DebateOrchestrator
+        assert DebateOrchestrator._critique_addressed(
+            "original answer here", "original answer here with new improvements",
+            "add improvements"
+        ) is True
+
+    def test_critique_addressed_not_addressed(self):
+        """_critique_addressed cuando no hay cambios retorna False."""
+        from harness.orchestrator.debate_orchestrator import DebateOrchestrator
+        assert DebateOrchestrator._critique_addressed(
+            "same text", "same text", "critique not addressed"
+        ) is False
+
+    def test_default_dispatch_critique_phase(self):
+        """_default_dispatch con phase='critique' incluye critica."""
+        from harness.orchestrator.debate_orchestrator import DebateOrchestrator
+        result = DebateOrchestrator._default_dispatch(
+            "builder",
+            "design API",
+            {"phase": "critique", "answer_to_review": "proposal"},
+        )
+        assert "Crítica" in result
+
+    def test_default_dispatch_refinement_phase(self):
+        """_default_dispatch con phase='refinement' incluye refinamiento."""
+        from harness.orchestrator.debate_orchestrator import DebateOrchestrator
+        result = DebateOrchestrator._default_dispatch(
+            "builder",
+            "design API",
+            {"phase": "refinement", "critique": "needs more tests"},
+        )
+        assert "Refinamiento" in result
+        assert "needs more tests" in result
+
+    def test_default_dispatch_unknown_agent(self):
+        """_default_dispatch con agente desconocido genera respuesta generica."""
+        from harness.orchestrator.debate_orchestrator import DebateOrchestrator
+        result = DebateOrchestrator._default_dispatch(
+            "custom_agent",
+            "some task",
+            {"phase": "unknown"},
+        )
+        assert "custom_agent" in result
+        assert "some task" in result
+
+    def test_default_dispatch_conference_vote(self):
+        """_default_dispatch con phase='conference_vote' incluye voto."""
+        from harness.orchestrator.debate_orchestrator import DebateOrchestrator
+        result = DebateOrchestrator._default_dispatch(
+            "builder",
+            "design API",
+            {"phase": "conference_vote", "other_answers": {"a": "answer1", "b": "answer2"}},
+        )
+        assert "Voto" in result
+        assert "answer1" in result
+
+
+class TestDebateLoggingExceptions:
+    """Verifica que excepciones en logging no propagan errores (sin LanceDB)."""
+
+    def _make_orchestrator(self):
+        """Crea DebateOrchestrator con _bus mockeado para evitar LanceDB."""
+        with patch('harness.orchestrator.agent_bus.AgentBus') as mock_bus_cls:
+            mock_bus_cls.return_value = MagicMock()
+            from harness.orchestrator.debate_orchestrator import DebateOrchestrator
+            orch = DebateOrchestrator(vector_store=None)
+            orch._bus = MagicMock()
+            orch._bus.post_message.side_effect = RuntimeError("log error simulado")
+            return orch
+
+    def test_logging_exceptions_do_not_propagate(self):
+        """Excepciones en _bus.post_message no deben romper el debate."""
+        orch = self._make_orchestrator()
+
+        result = orch.debate(
+            task="Design API",
+            agents=["builder", "scientist"],
+            strategy=DebateStrategy.CONSENSUS,
+            max_rounds=1,
+            dispatch_fn=lambda a, t, c: "respuesta de prueba",
+        )
+        assert result is not None
+        assert result.final_answer != ""
+
+    def test_logging_exceptions_critique(self):
+        """Excepciones en logging con estrategia CRITIQUE."""
+        orch = self._make_orchestrator()
+
+        result = orch.debate(
+            task="Test critique logging",
+            agents=["builder", "guardian"],
+            strategy=DebateStrategy.CRITIQUE,
+            max_rounds=3,
+            dispatch_fn=lambda a, t, c: "respuesta",
+        )
+        assert result is not None
+        assert result.strategy == DebateStrategy.CRITIQUE
+
+    def test_logging_exceptions_deliberation(self):
+        """Excepciones en logging con estrategia DELIBERATION."""
+        orch = self._make_orchestrator()
+
+        result = orch.debate(
+            task="Test deliberation logging",
+            agents=["builder", "scientist", "guardian"],
+            strategy=DebateStrategy.DELIBERATION,
+            max_rounds=2,
+            dispatch_fn=lambda a, t, c: "respuesta",
+        )
+        assert result is not None
+        assert result.strategy == DebateStrategy.DELIBERATION
+
+    def test_majority_winner_tie(self):
+        """_majority_winner con empate escoge el primero del cluster mas grande."""
+        orch = self._make_orchestrator()
+        # Usamos palabras sin overlap para que clusters se formen correctamente
+        winner, agreement = orch._majority_winner({
+            "a": "rustlanguage",
+            "b": "rustlanguage",
+            "c": "pythonlanguage",
+            "d": "pythonlanguage",
+        })
+        assert winner in ("rustlanguage", "pythonlanguage")
+        assert agreement == 0.5

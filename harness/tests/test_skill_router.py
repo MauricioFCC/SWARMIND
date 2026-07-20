@@ -99,3 +99,15 @@ class TestSkillRouter:
         """Bonus por dominio en keyword matching."""
         skills = self.router.route("legal contract compliance")
         assert "legal-doc" in skills
+
+    def test_route_fallback_semantic_no_vectors(self):
+        """route retorna always_active cuando no hay vectores disponibles."""
+        skills = self.router.route("xyzzy zzzzz sin coincidencias semanticas")
+        assert "evolve" in skills
+
+    def test_route_no_keyword_no_vectors(self):
+        """route sin keyword match y sin vectores retorna always_active."""
+        self.router._skill_vectors = None
+        skills = self.router.route("plugh plover xyzzy")
+        assert "evolve" in skills
+        assert len(skills) == 1

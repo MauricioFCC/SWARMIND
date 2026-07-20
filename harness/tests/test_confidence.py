@@ -6,6 +6,7 @@ Cubre: ConfidenceScore dataclass, signal evaluators, score_completion,
 """
 
 import pytest
+from unittest.mock import patch, ANY
 from harness.orchestrator.confidence_scorer import (
     ConfidenceScorer,
     ConfidenceScore,
@@ -128,6 +129,30 @@ class TestSignalLength:
         # ratio ~2-3x → goldilocks zone
         assert score > 0.5, f"Expected high score, got {score}"
 
+    def test_signal_length_zero_tokens(self):
+        """estimate_tokens=0 para ambos → 0.5 (neutral)."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=0):
+            score = self.scorer._signal_length("task", "result")
+        assert score == 0.5
+
+    def test_signal_length_ratio_0_6(self):
+        """Ratio entre 0.5 y 1.0 (zona media-baja) → 0.60."""
+        # task_tokens=2 (8 chars), result_tokens=1 (1 char) → ratio=0.5
+        score = self.scorer._signal_length("a" * 8, "a")
+        assert score == 0.60
+
+    def test_signal_length_ratio_0_3(self):
+        """Ratio < 0.5 (muy corto) → 0.30."""
+        # task_tokens=10 (40 chars), result_tokens=2 (8 chars) → ratio=0.2
+        score = self.scorer._signal_length("a" * 40, "a" * 8)
+        assert score == 0.30
+
+    def test_signal_length_ratio_0_2(self):
+        """Ratio > 50 (muy largo) → 0.20."""
+        # task_tokens=1 (1 char), result_tokens=60 (240 chars) → ratio=60
+        score = self.scorer._signal_length("a", "a" * 240)
+        assert score == 0.20
+
 
 class TestSignalHedging:
     """Test _signal_hedging heuristic."""
@@ -158,6 +183,44 @@ class TestSignalHedging:
         score = self.scorer._signal_hedging(result)
         assert score < 0.8, f"Expected lower score for Spanish hedging, got {score}"
 
+    def test_signal_hedging_sparse_0_90(self):
+        """Hedging muy esparso (normalized <= 0.01) → 0.90."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=200):
+            result = "I think " + "x" * 796  # 1 match en 200 tokens mocked
+            score = self.scorer._signal_hedging(result)
+        assert score == 0.90
+
+    def test_signal_hedging_moderate_0_70(self):
+        """Hedging moderado (0.01 < normalized <= 0.02) → 0.70."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=200):
+            result = "I think maybe perhaps " + "x" * 788  # 3 matches en 200 tokens mocked
+            score = self.scorer._signal_hedging(result)
+        assert score == 0.70
+
+    def test_signal_hedging_significant_0_50(self):
+        """Hedging significativo (0.02 < normalized <= 0.05) → 0.50."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=200):
+            result = ("I think I believe I'm not sure maybe perhaps possibly probably might be could be "
+                      + "x" * 740)  # 10 matches en 200 tokens mocked
+            score = self.scorer._signal_hedging(result)
+        assert score == 0.50
+
+    def test_signal_hedging_heavy_0_30(self):
+        """Hedging denso (0.05 < normalized <= 0.10) → 0.30."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=200):
+            result = ("I think I believe I'm not sure maybe perhaps possibly probably "
+                      "i guess i suppose approximate roughly estimate " + "x" * 200)
+            score = self.scorer._signal_hedging(result)
+        # 12 matches / 200 tokens = 0.06 → > 0.05, <= 0.10 → 0.30
+        assert score == 0.30
+
+    def test_signal_hedging_extreme_0_10(self):
+        """Hedging extremo (normalized > 0.10) → 0.10."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=20):
+            result = "I think I believe I'm not sure maybe perhaps possibly probably"
+            score = self.scorer._signal_hedging(result)
+        assert score == 0.10
+
 
 class TestSignalSelfCorrection:
     """Test _signal_self_correction heuristic."""
@@ -177,10 +240,102 @@ class TestSignalSelfCorrection:
         score = self.scorer._signal_self_correction(result)
         assert score == 1.0, f"Expected max score for no self-correction, got {score}"
 
+    def test_signal_self_correction_empty(self):
+        """Empty result → 0.0."""
+        score = self.scorer._signal_self_correction("")
+        assert score == 0.0
+
+    def test_signal_self_correction_sparse_0_90(self):
+        """Self-correction muy esparso (normalized <= 0.005) → 0.90."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=200):
+            result = "actually " + "x" * 792  # 1 match en 200 tokens mocked
+            score = self.scorer._signal_self_correction(result)
+        assert score == 0.90
+
+    def test_signal_self_correction_moderate_0_70(self):
+        """Self-correction moderado (0.005 < normalized <= 0.015) → 0.70."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=200):
+            result = "actually wait hmm " + "x" * 780  # 3 matches en 200 tokens mocked
+            score = self.scorer._signal_self_correction(result)
+        assert score == 0.70
+
+    def test_signal_self_correction_significant_0_50(self):
+        """Self-correction significativo (0.015 < normalized <= 0.03) → 0.50."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=200):
+            result = ("actually wait hmm reconsider instead let me revise "
+                      + "x" * 740)  # 6 matches en 200 tokens mocked
+            score = self.scorer._signal_self_correction(result)
+        assert score == 0.50
+
+    def test_signal_self_correction_excessive_0_20(self):
+        """Self-correction excesivo (normalized > 0.03) → 0.20."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=50):
+            result = ("actually wait hmm reconsider instead let me revise "
+                      "scratch that never mind correction retract "
+                      + "x" * 80)  # 9 matches en 50 tokens mocked
+            score = self.scorer._signal_self_correction(result)
+        assert score == 0.20
+
+
+# ===========================================================================
+# Speed signal
+# ===========================================================================
+
+
+class TestSignalSpeed:
+    """Test _signal_speed heuristic."""
+
+    def setup_method(self):
+        self.scorer = ConfidenceScorer()
+
+    def test_speed_zero_duration(self):
+        """Duracion cero o negativa → 0.5."""
+        score = self.scorer._signal_speed(0, "some result")
+        assert score == 0.5
+        score = self.scorer._signal_speed(-1, "some result")
+        assert score == 0.5
+
+    def test_speed_fast_0_95(self):
+        """Muy rapido (>50 tokens/sec) → 0.95."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=100):
+            score = self.scorer._signal_speed(duration_ms=100, result="x" * 400)
+        assert score == 0.95
+
+    def test_speed_medium_fast_0_80(self):
+        """Rapido (20-50 tokens/sec) → 0.80."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=100):
+            score = self.scorer._signal_speed(duration_ms=2000, result="x" * 400)
+        # 100 tokens / 2.0s = 50 tokens/sec → > 20 → 0.80
+        # Wait, 50 is > 50? No, 50 is not > 50. So it falls to 20-50 range.
+        # Actually 100/2.0 = 50. 50 > 20 → 0.80
+        assert score == 0.80
+
+    def test_speed_medium_slow_0_60(self):
+        """Moderado (10-20 tokens/sec) → 0.60."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=100):
+            score = self.scorer._signal_speed(duration_ms=7000, result="x" * 400)
+        # 100 / 7.0 ≈ 14.29 tokens/sec → > 10 → 0.60
+        assert score == 0.60
+
+    def test_speed_slow_0_40(self):
+        """Lento (5-10 tokens/sec) → 0.40."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=100):
+            score = self.scorer._signal_speed(duration_ms=15000, result="x" * 400)
+        # 100 / 15.0 ≈ 6.67 tokens/sec → > 5 → 0.40
+        assert score == 0.40
+
+    def test_speed_very_slow_0_20(self):
+        """Muy lento (<5 tokens/sec) → 0.20."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=100):
+            score = self.scorer._signal_speed(duration_ms=30000, result="x" * 400)
+        # 100 / 30.0 ≈ 3.33 tokens/sec → ≤ 5 → 0.20
+        assert score == 0.20
+
 
 # ===========================================================================
 # score_completion integration
 # ===========================================================================
+
 
 class TestScoreCompletion:
     """Test the full score_completion pipeline."""
@@ -292,6 +447,21 @@ class TestDebateAgreement:
         outputs = {}
         score = self.scorer.score_debate_agreement(outputs)
         assert score.score == 0.5
+
+    def test_score_debate_agreement_zero_tokens(self):
+        """Outputs con zero tokens → score 0.3."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=0):
+            outputs = {"a": "x", "b": "y"}
+            score = self.scorer.score_debate_agreement(outputs)
+        assert score.score == 0.3
+
+    def test_score_debate_agreement_no_pairwise(self):
+        """Outputs where all pairwise have longer=0 → fallback 0.5."""
+        with patch('harness.orchestrator.confidence_scorer.estimate_tokens', return_value=0):
+            outputs = {"a": "x", "b": "y", "c": "z"}
+            score = self.scorer.score_debate_agreement(outputs)
+        # With 3 agents and all zero tokens, pairwise_scores is empty
+        assert score.score == 0.3  # hits zero-token branch first
 
 
 # ===========================================================================

@@ -85,3 +85,39 @@ class TestBehavioralTracer:
         dec = report["decisions"][0]
         assert dec["metadata"]["extra_field"] == "extra"
         assert dec["metadata"]["numeric"] == 42
+
+
+class TestEdgeCases:
+    """Tests para casos borde del BehavioralTracer."""
+
+    def test_trace_exception_handling(self):
+        """Excepcion dentro del context manager se registra y propaga."""
+        tracer = BehavioralTracer()
+        with pytest.raises(ValueError, match="error forzado"):
+            with tracer.trace("builder", task_id="task-error") as ctx:
+                ctx.record_decision(action="a", chosen="x", rationale="r")
+                raise ValueError("error forzado")
+
+        report = tracer.get_report("task-error")
+        assert report is not None
+        assert report["error"] == "error forzado"
+
+    def test_get_report_nonexistent(self):
+        """get_report retorna None para tarea inexistente."""
+        tracer = BehavioralTracer()
+        report = tracer.get_report("no-existe")
+        assert report is None
+
+    def test_add_tokens(self):
+        """add_tokens acumula tokens correctamente."""
+        tracer = BehavioralTracer()
+        with tracer.trace("builder", task_id="task-tokens") as ctx:
+            ctx.add_tokens(100)
+            ctx.add_tokens(50)
+            ctx.record_decision(action="a", chosen="x", rationale="r")
+            ctx.set_result("done")
+
+        report = tracer.get_report("task-tokens")
+        assert report is not None
+        assert report["tokens_consumed"] == 150
+        assert report["result_preview"] == "done"
