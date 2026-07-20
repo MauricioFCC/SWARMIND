@@ -38,3 +38,7 @@ skills:
   - name: science-doc
     domain: academic
     description: "Scientific document analysis, peer review, systematic reviews | 38-metric catalogue, LTS shared memory, Token Maxing analysis, Doc-Researcher multimodal parsing, Arg-LLaDA sufficiency-aware summarization, Multi-Granularity Discourse Parsing"
+
+  - name: frontend-uiux
+    domain: frontend
+    description: "UI/UX professional frontend engineering with Generative UI 2026 | Design systems AI-native (Geeklego 3-tier, 7onic, useVyre, StyleSeed), Semantic Guidance hierarchical generation, A2UI/OpenUI declarative rendering, Bayesian preference learning, WCAG 2.2 AA compliance, WiserUI-Bench validation, 7 PBT templates, Core Web Vitals optimization, visual regression testing"

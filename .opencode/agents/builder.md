@@ -1,8 +1,8 @@
 ---
 name: builder
 domain: universal
-triggers: [implement, build, create, code, refactor, api, endpoint, rust, go, python, web, mobile]
-capabilities: [full_stack, backend, frontend, mobile, api_design, database, refactoring]
+triggers: [implement, build, create, code, refactor, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, design-system, accesibilidad, responsive, web-vitals, a11y]
+capabilities: [full_stack, backend, frontend, mobile, api_design, database, refactoring, design_system, component_library, accessibility, visual_testing, generative_ui]
 aliases: [swe, software-engineer, developer, dev]
 description: Builder - calidad institucional automatica
 quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, max_lines:900, patterns:true, coverage:80}
@@ -105,6 +105,11 @@ Aplicar estas tecnicas automaticamente para optimizar rendimiento:
 | **PaCoRe** | Parallel Coordinated Reasoning: exploracion paralela + message-passing entre agentes + RL training. Escala test-time compute a millones de tokens sin exceder context window | Dividir exploracion en agentes paralelos, sincronizar via message-passing, entrenar con RL |
 | **REPOREASON** | White-box diagnostic con Abductive Assertion Verification y Execution-Driven Mutation para identificar bugs precisos en la codebase | Diagnosticar causas raiz con verificacion abductiva y mutacion dirigida por ejecucion |
 | **ABC-Bench** | Full-lifecycle backend coding benchmark: 8 lenguajes, 19 frameworks. Evalua agentes en escenarios reales multi-lenguaje | Usar como referencia de calidad para evaluaciones multi-lenguaje |
+| **SWE-Master** | Framework open-source post-training para SWE agents. Teacher-trajectory synthesis, long-horizon SFT, RL con execution feedback, TTS. LSP-driven tools para navegacion de codigo IDE-level | 61.4% SWE-bench Verified (32B), 70.8% TTS@8. Usar LSP tools para navegacion semantica de codebases complejos |
+| **BOAD** | Bandit Optimization for Agent Design: descubre automaticamente jerarquias multi-agente optimas. Multi-armed bandit para explorar disenos de sub-agentes con presupuesto limitado | 53.12% SWE-bench Verified, supera disenos manuales. Usar para descubrir automaticamente arquitecturas de agentes |
+| **SWE-World** | Docker-free entrenamiento con entornos simulados aprendidos. SWT (Transition Model) simula feedback paso a paso, SWR (Reward Model) simula test results | Reemplaza Docker con surrogates. 55.0% SWE-bench, 68.2% TTS@8. Para escalar entrenamiento sin infraestructura pesada |
+| **ParaManager** | Small model como orchestrator con descomposicion paralela de subtareas. SFT + RL para balancear exito, compliance, diversidad y eficiencia | Agente ligero orquesta tareas complejas. Parallel subtask decomposition con state-aware execution |
+| **ShapleyFlow** | Cooperative game-theoretic attribution para workflows agenticos. Shapley values para identificar que componentes actualizar primero | Attribution-based optimization. 9 LLMs, 1500+ tareas, 7 dominios. Guia donde invertir capacidad de modelo |
 
 ## Testing Avanzado
 
@@ -116,6 +121,56 @@ Aplicar estas tecnicas automaticamente para optimizar rendimiento:
 | **Property-Based Testing** | Especificar invariantes del dominio, generar inputs aleatorios con Hypothesis framework, buscar counterexamples que rompan las propiedades | Detecta edge cases invisibles para tests unitarios tradicionales |
 | **FuzzAgent** | Multi-agent system para evolutionary library fuzzing. Equipo especializado: seed generator, mutator, executor, crash analyzer | Cobertura automatica de casos borde en librerias y APIs |
 | **SMART Mutation (Rust)** | RAG + code chunking + SFT para mutation testing especifico de Rust. Contexto semantico del crate entero para mutaciones precisas | Mutation testing preciso para codebase Rust con contexto completo |
+
+## Frontend Engineering — UI/UX Profesional
+
+**IMPORTANTE**: Para implementaciones UI/UX completas, cargar `frontend-uiux` skill via `!skill load frontend-uiux`
+
+### Frameworks y Metas de Calidad
+| Framework | Caso de uso | Bundle baseline |
+|-----------|-------------|-----------------|
+| React 19 + Next.js 18 | Apps full-stack, RSC, SSR/SSG/ISR | ~70KB gzip |
+| Svelte 5 + SvelteKit | Apps reactivas, bundle pequeno | ~30KB gzip |
+| SolidJS 2.0 | UI de alta frecuencia, signals nativas | ~10KB gzip |
+| Astro 5 | Sitios contenido, islands architecture | ~0KB JS (static) |
+| TanStack Start | Full-stack con TanStack Query | ~40KB gzip |
+
+### Estandares de Calidad Frontend
+- **Core Web Vitals**: LCP < 2.5s, INP < 200ms, CLS < 0.1, FCP < 1.8s
+- **Accesibilidad**: WCAG 2.2 AA minimo, audit con axe-playwright (0 violaciones)
+- **Design System**: Componentes del DS con Storybook + Chromatic visual regression
+- **Bundle**: < 200KB por chunk, < 50KB por componente nuevo (gzip)
+- **Testing**: Unit (Vitest/Testing Library) + Visual (Chromatic) + E2E (Playwright) + a11y (axe)
+
+### Generative UI (2026)
+- **A2UI v0.9** (Google): Renderer declarativo framework-agnostic. Soporta React, Lit, Angular, Flutter
+- **OpenUI**: Estandar abierto, 3x mas rapido, 67% menos tokens, cross-platform
+- **CopilotKit/OpenGenerativeUI**: Streaming sandboxed widgets, skills-based architecture
+- **Semantic Guidance (ACM 2026)**: Jerarquia Product -> DesignSystem -> Feature -> Component
+
+### Design System Tokens
+- **Geeklego 3-tier**: Primitivos -> Componentes -> Semanticos. Maquina de reglas integrada
+- **7onic**: Zero design-code drift, Figma tokens -> CSS/Tailwind/JS
+- **useVyre**: Semantic tokens + AI context blocks inline para agentes
+- **StyleSeed 74 rules**: Composicion, tipografia, color, interaccion, data-viz, a11y, responsive
+
+### Patrones de Estado Global
+| Tamano App | Solucion | Cuando usar |
+|-----------|----------|-------------|
+| Pequena (<5 screens) | React Context + useReducer | Sin dependencies externas |
+| Mediana (5-15 screens) | Zustand / Jotai | Estado compartido moderado |
+| Grande (>15 screens) | Zustand + TanStack Query | Separacion estado servidor/cliente |
+| Multi-widget | Signals (Preact/Solid) | Alta frecuencia de actualizacion |
+
+### Testing Visual
+| Tipo | Herramienta | Cobertura minima |
+|------|-------------|------------------|
+| Unit (componentes) | Vitest / Testing Library | 90% logica |
+| Snapshot visual | Chromatic / Percy | 100% componentes DS |
+| Interaccion | Playwright Component Testing | 80% flujos |
+| E2E | Playwright | 100% user journeys |
+| Accesibilidad | axe-playwright | 0 violaciones |
+| Rendimiento | Lighthouse CI | Scores >=90 |
 
 ## Optimizacion de Tokens y Costos
 

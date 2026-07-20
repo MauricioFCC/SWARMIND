@@ -47,10 +47,18 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 9. Entregar respuesta unificada validada por guardian
 
 ## Auto-deteccion
-- @builder: implement, code, api, endpoint, rust, go, python, web, mobile, db, trading
-- @scientist: research, paper, architecture, design, pattern, algorithm, ml, ai
-- @guardian: test, security, audit, risk, doc, quality, review, validate
+- @builder: implement, code, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, db, trading, design-system, accesibilidad, responsive, a11y
+- @scientist: research, paper, architecture, design, pattern, algorithm, ml, ai, hci, ux, ui-research, generative-ui
+- @guardian: test, security, audit, risk, doc, quality, review, validate, frontend-quality, visual-regression, a11y-audit
 - @evolve: evolve, improve, optimize, skill, cognition, learn
+
+### Reglas de Delegacion UI/UX
+Cuando la tarea involucre interfaz de usuario (UI/UX), frontend, componentes visuales, design system, o accesibilidad:
+1. **Cargar skill frontend-uiux**: Verificar que builder cargue `!skill load frontend-uiux` antes de implementar
+2. **Incluir guardian en el loop**: Ejecutar Frontend Quality Gate post-implementacion
+3. **Referenciar design system**: Usar tokens de Geeklego 3-tier como fuente unica de verdad visual
+4. **Generative UI first**: Preferir A2UI/OpenUI para interfaces generativas sobre markdown estatico
+5. **WCAG 2.2 AA minimo**: Toda interfaz debe cumplir accesibilidad nivel AA
 
 ---
 
@@ -87,6 +95,45 @@ Workflows agenticos modelados como query plans con:
 - **Proactive Caching**: Pre-cacheo de contextos frecuentes
 - **Cache-Aware Scheduling**: Planificador que maximiza cache hits
 - **Critical Path Prioritization**: ATLAS para multi-thread, PLAS para single-thread
+
+### AdaptOrch — Topology-Aware Orchestration
+Framework formal para seleccion dinamica de topologia de orquestacion. 4 topologias canonicas: parallel, sequential, hierarchical, hybrid. Performance Convergence Scaling Law: cuando modelos convergen, la topologia domina el rendimiento.
+- **Topology Routing Algorithm**: Mapea DAG de dependencias a patron optimo en O(|V|+|E|)
+- **Adaptive Synthesis Protocol**: Reconciliacion de outputs paralelos con termination guarantees
+- **12-23% mejora** sobre baselines static single-topology con modelos identicos. SWE-bench, GPQA, RAG.
+
+### NeuralFSM — Learned Coordination via Finite-State Machine
+Coordina agentes via estados FSM aprendidos. Temporal Coordination Controller con Temporal Graph Networks. Decide transiciones de estado y routing de comunicacion.
+- **Sparse Routing**: Reduce tokens via routing esparso, solo agentes relevantes se comunican
+- **Dual-Defense Protection**: Graph regularization training + trust-aware message attenuation runtime
+- **6.74-19.39% mejora** sobre baselines. Token consumption reducido. Robusto ante ataques adversariales.
+
+### MPAC — Multi-Principal Agent Coordination Protocol
+Protocolo para coordinacion entre agentes de diferentes principals (personas/organizaciones). 5 capas: Session, Intent, Operation, Conflict, Governance.
+- **21 message types**, 3 state machines, Lamport-clock causal watermarking
+- **95% reduction** en coordination overhead. **4.8x wall-clock speedup** vs baseline serializado
+- Ideal cuando multiples stakeholders necesitan coordinar agentes sobre estado compartido
+
+### Symphony-Coord — Adaptive Bandit-Based Routing
+Two-stage dynamic beacon protocol: (1) candidate screening ligero, (2) LinUCB selector contextual. Feedback post-execution actualiza estadisticas.
+- **Regret bounds** sublineales probados. Maneja distribution shifts y agent failures
+- Scaling a pools grandes de agentes heterogeneos sin rol fijo
+
+### LLM-as-Scheduler (LAS) — Dynamic Workflow Routing
+Cascade scheduling system: lightweight gate (scriptable checks + judge model) + LLM-based scheduler. Decisions per-step routing: early-exit, verify, repair, reroute.
+- **50.5% token reduction**, **36% latency reduction** con max 1.4pp accuracy drop
+- Applicable a cualquier workflow multi-agente existente sin modificaciones
+
+### StructAgent — State-Centered Framework
+Estado unificado (requirements, values, evidences) + workflow estructurado con verifier-backed transitions. Progress checkpointing, targeted failure recovery, evidence-driven completion.
+- Qwen3.5-9B: 27.0% → 46.9% OSWorld. Qwen3.5-27B: 31.6% → 62.2%
+- MiniMax-M3: 78.9% SOTA open-source. Generaliza a Minecraft
+
+### Enterprise Event-Driven Orchestration
+Evaluacion de DAG Plan & Execute vs ReAct a escala enterprise (Persona <10, Department 20-80, Enterprise 200 agents).
+- **Task Manager**: Priority inference, related-event merging, preemption. 14-75% reduccion latency alta prioridad
+- Scale, no task complexity, domina performance. ReAct mas robusto a escala. DAG mejor precision en pequena escala
+- Counterintuitive: tareas simples degradan MAS que complejas a escala enterprise (needle in a haystack)
 
 ---
 

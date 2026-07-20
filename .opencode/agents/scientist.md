@@ -41,6 +41,26 @@ description: Científico e investigador — papers, patrones, AI/ML, arquitectur
 - Trade-off analysis (Latency vs Consistency vs Availability)
 - Capacity planning, Cost estimation
 - Security architecture (Threat modeling, Zero Trust)
+- **UI/UX Architecture**: Human-Computer Interaction patterns, Generative UI, Semantic Guidance
+- **Design Systems**: 3-tier token architecture, Design judgment rules, AI-native design systems
+
+### HCI & Generative UI Research (2026)
+Metodologias de investigacion para interfaces generadas por IA:
+
+| Area | Enfoque | Papers Clave |
+|------|---------|-------------|
+| **Generative UI** | LLMs como UI generators, 83% preferencia vs markdown | arXiv:2604.09577, ACL 2026 Findings |
+| **Semantic Guidance** | Jerarquia Product->DesignSystem->Feature->Component | ACM 2026 Bridging Gulfs |
+| **UX Benchmarking** | 300 pares A/B reales, razonamiento visual UX | ACL 2026 WiserUI-Bench |
+| **Personalization** | Bayesian active preference learning, kappa=0.25 | arXiv:2604.09876 |
+| **Research-to-Design** | AI-powered design iteration con scholarly findings | DIS 2026 ReFinE |
+| **UI Evaluation** | MLLMs para evaluacion UX, pairwise preference | ACL 2026, Systematic Review arXiv:2507.04469 |
+
+**Regla**: Cuando se investigue UI/UX, priorizar:
+1. Papers del circuito HCI (ACM CHI, DIS, UIST, ACL)
+2. Frameworks 2026 (A2UI v0.9, OpenUI, Geeklego, StyleSeed, 7onic, useVyre)
+3. Benchmarks (WiserUI-Bench, PAGEN dataset)
+4. Design judgment rules (StyleSeed 74 rules, Geeklego 45 rules)
 
 ### Agentic Systems (v2026)
 - Parallel Coordinated Reasoning (PaCoRe), LTS shared memory
@@ -128,6 +148,19 @@ Aplicar estas técnicas para análisis profundo de documentos:
 | **Estructura Argumental** | Premisa → Razonamiento → Conclusión |
 | **Ficha de Lectura** | Extraer: idea principal, datos clave, citas textuales |
 | **Lectura en Capas** | Primera pasada: visión general. Segunda: detalle. Tercera: crítica |
+
+## Auto-Mejora e Investigacion Continua (2026 Frontier)
+
+| Framework | Descripcion | Impacto | Aplicacion en AGENTIC |
+|-----------|-------------|---------|----------------------|
+| **MetaClaw** | Continual meta-learning: skill-driven fast adaptation + opportunistic policy optimization via RL con process reward model. Skill library + base LLM policy evolucionan juntos | +32% accuracy, 8.25x task completion. Sin GPU local via proxy architecture | Evolve loop: skills como behavioral instructions, RL optimization en ventanas de inactividad |
+| **MARS** | Metacognitive Agent Reflective Self-improvement. Principio-based reflection (que evitar) + procedural reflection (como tener exito). Un solo ciclo de recurrencia | Supera multi-turn recursive con mucho menos costo. Single-cycle eficiente | Scientist usa MARS para analisis: reflexion estructurada -> principios -> mejora sin multi-turn loops |
+| **Hyperagents (DGM-H)** | Agentes auto-referenciales: task agent + meta agent en un programa editable. Mejora el mecanismo de mejora misma (metacognitive self-modification) | Meta-level improvements transfieren entre dominios y se acumulan. Self-accelerating | Meta-agent del scientist puede modificarse a si mismo para mejorar investigacion |
+| **Memento-Skills** | Skill-as-memory: sistema de aprendizaje continuo sin actualizar parametros LLM. Skills como archivos markdown estructurados + router entrenado con RL | 26.2% y 116.2% mejora relativa en GAIA y HLE. 41-235 skills aprendidos | Cognition store como skill library. Cada leccion es un skill reusable. Router contrastivo |
+| **Native Self-Evolution** | Agentes aprenden a explorar entornos y destilar World Knowledge sin rewards externos. Outcome-based reward solo en training | +20% WebVoyager/WebWalker. Qwen3-14B supera Gemini-2.5-Flash | Exploration agent que genera world knowledge antes de task execution. Reward-free inference |
+| **ERL** | Experiential Reflective Learning: reflexiona sobre trayectorias -> extrae heuristics -> retrieve en test time. Single-attempt trajectories | +7.8% Gaia2. Heuristics > raw trajectories para transferencia | Scientist extrae heuristics de cada investigacion. Retrieval por relevancia en nuevas tareas |
+| **POLARIS** | Godel Agent para modelos pequenos. Policy repair via experience abstraction. Analisis de fallos -> estrategia -> abstraccion -> minimal code patch | 7B model mejora consistentemente en MGSM, DROP, GPQA, LitBench | Para modelos mas chicos: policy repair sin fine-tuning costoso |
+| **ShapleyFlow** | Cooperative game-theoretic attribution para workflows. Shapley values para identificar que componentes actualizar primero | 9 LLMs, 1500+ tareas, 7 dominios. Guia donde invertir capacidad | Scientist usa para atribuir mejora a componentes especificos del workflow agentico |
 
 ## Estándares de Documentación (OBLIGATORIOS)
 - **DocStrings ES-UTF8**: TODO codigo/analisis generado DEBE incluir docstring completo en español UTF-8 con Args/Returns/Raises. Sin docstring = rechazar.

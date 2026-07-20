@@ -34,6 +34,8 @@ CEN: Context Engineering | Least-Recent First | Progresivo | Chunking semantico
 BTR: Behavioral Tracing | decisiones registradas | fingerprints | consistencia
 AGR: Architectural Guardrails | layers | type hints | tamano | imports prohibidos
 SVE: Semantic Versioning | MAJOR.MINOR.PATCH | changelog | skills y prompts
+MCL: MetaClaw continual learning | skills evolucionan con RL | sin GPU local
+MKS: Memento-Skills | cognition store como skill library | router contrastivo
 ```
 
 ---
@@ -61,6 +63,8 @@ SVE: Semantic Versioning | MAJOR.MINOR.PATCH | changelog | skills y prompts
 | **SVE** | Semantic Versioning MAJOR.MINOR.PATCH para skills y agent prompts. CHANGELOG automatico. Trazabilidad de regresiones por scaffolding. |
 | **FDE** | Bridge product↔reality. Delta = gap a cerrar. Mission > persona. Glue 50% integracion. Speed-to-value primero. Diplomacia tecnica. Zero-trust. |
 | **EVO** | Loop learn→design→experiment→analyze. Cognition store persiste lecciones. Experiment DB registra todo. Best snapshot automatico. SURS >= 90% en cada deploy. |
+| **MCL** | MetaClaw continual meta-learning: skill-driven fast adaptation + RL process reward optimization. Skills como behavioral instructions que evolucionan. MARS reflection single-cycle. |
+| **MKS** | Memento-Skills: skill-as-memory en cognition store. Router contrastivo recupera lecciones relevantes. ERL heuristics > raw trajectories para transferencia entre skills. |
 
 ---
 
@@ -228,6 +232,21 @@ SVE: Semantic Versioning | MAJOR.MINOR.PATCH | changelog | skills y prompts
 | Agent-to-Agent | A2A |
 | cognition | COG |
 | evolve loop | EVLP |
+| MetaClaw continual meta-learning | MCL |
+| Memento-Skills skill-as-memory | MKS |
+| Metacognitive Agent Reflective Self-improvement | MARS |
+| Hyperagents DGM-H | HYP |
+| Experiential Reflective Learning | ERL |
+| Native Self-Evolution | NSE |
+| ShapleyFlow workflow attribution | SHF |
+| AdaptOrch topology-aware orchestration | AOR |
+| Neural Finite-State Machine | NFSM |
+| Multi-Principal Agent Coordination | MPAC |
+| Symphony-Coord bandit routing | SYM |
+| LLM-as-Scheduler | LAS |
+| StructAgent state-centered framework | SAG |
+| Bandit Optimization for Agent Design | BOAD |
+| MuTON language-agnostic mutation testing | MUT |
 
 ---
 
