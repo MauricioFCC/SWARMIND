@@ -24,7 +24,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-from harness.memory_rag.context_window_manager import structured_compact
+from harness.memory_rag.compaction import structured_compact
 
 logger = logging.getLogger(__name__)
 

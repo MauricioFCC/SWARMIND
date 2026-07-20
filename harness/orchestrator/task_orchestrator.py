@@ -415,7 +415,7 @@ class TaskOrchestrator:
         dispatch_fn: Optional[callable] = None,
     ) -> "DebateResult":
         """
-        Run a multi-agent debate for a session that uses the debate template.
+        Delegado a DebateRunner.
 
         Args:
             session_id: The session ID.
@@ -427,50 +427,10 @@ class TaskOrchestrator:
         Returns:
             A DebateResult with the debate outcome.
         """
-        session = self._session_ctx.get_session(session_id)
-        if not session:
-            raise ValueError(f"Session {session_id} not found.")
+        from harness.orchestrator.debate_runner import DebateRunner
 
-        # Resolve agents from plan if not provided
-        if agents is None:
-            agents = sorted({
-                st.agent for st in session.plan.subtasks
-                if st.agent != "coordinator"
-            })
-
-        # Resolve strategy
-        strategy_map = {
-            "consensus": DebateStrategy.CONSENSUS,
-            "critique": DebateStrategy.CRITIQUE,
-            "deliberation": DebateStrategy.DELIBERATION,
-        }
-        debate_strategy = strategy_map.get(strategy, DebateStrategy.CONSENSUS)
-
-        # Run the debate
-        orch = DebateOrchestrator(vector_store=self._store)
-        result = orch.debate(
-            task=task,
-            agents=agents,
-            strategy=debate_strategy,
-            dispatch_fn=dispatch_fn,
-        )
-
-        StructuredLogRecord.info(
-            "debate_completed",
-            message=(
-                f"Debate completado para sesión {session_id}: "
-                f"confianza={result.confidence:.2f}, "
-                f"acuerdo={result.agent_agreement:.2f}"
-            ),
-            session_id=session_id,
-            strategy=strategy,
-            agents=agents,
-            confidence=round(result.confidence, 4),
-            agreement=round(result.agent_agreement, 4),
-            num_rounds=len(result.rounds),
-        )
-
-        return result
+        runner = DebateRunner(self._store, self._session_ctx, self._bus)
+        return runner.run_debate(session_id, task, agents, strategy, dispatch_fn)
 
     # ------------------------------------------------------------------
     # Confidence-gated early stopping

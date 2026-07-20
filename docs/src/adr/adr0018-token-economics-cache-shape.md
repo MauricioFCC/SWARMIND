@@ -87,7 +87,7 @@ def structured_compact(text: str, budget_ratio: float = 0.6, min_chars: int = 50
 **Integración en TaskPlanner:**
 ```python
 # En task_planner.py (harness/orchestrator/task_planner.py)
-from harness.memory_rag.context_window_manager import structured_compact
+from harness.memory_rag.compaction import structured_compact
 
 # En decompose():
 if context and len(context) > 500:

@@ -896,12 +896,12 @@ compacted = cwm.compact_history(history, max_messages=8)
 
 #### 2.2.5 structured_compact
 
-**Archivo:** `harness/memory_rag/context_window_manager.py` (función `structured_compact`, línea 947)
+**Archivo:** `harness/memory_rag/compaction.py` (función `structured_compact`)
 
 Compresión estructurada de texto que reduce tokens **~41%** preservando secciones críticas.
 
 ```python
-from harness.memory_rag.context_window_manager import structured_compact
+from harness.memory_rag.compaction import structured_compact
 
 texto_largo = """
 # Plan de Implementación
