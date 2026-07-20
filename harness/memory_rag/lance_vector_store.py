@@ -202,7 +202,7 @@ class LanceVectorStore:
         """
         if not self._lancedb_available or self._db is None:
             return
-        existing = set(self._db.table_names())
+        existing = set(self._db.list_tables().tables)
         for name in DEFAULT_COLLECTIONS:
             if name in existing:
                 continue
@@ -249,7 +249,7 @@ class LanceVectorStore:
     def list_collections(self) -> List[str]:
         """Return list of available collection names."""
         if self._lancedb_available and self._db is not None:
-            return list(self._db.table_names())
+            return list(self._db.list_tables().tables)
         return list(self._mem_collections.keys())
 
     # ------------------------------------------------------------------
@@ -748,7 +748,7 @@ class LanceVectorStore:
     def clear(self) -> None:
         """Remove all collections and reset to defaults."""
         if self._lancedb_available and self._db is not None:
-            for name in self._db.table_names():
+            for name in self._db.list_tables().tables:
                 try:
                     self._db.drop_table(name)
                 except Exception as _exc:

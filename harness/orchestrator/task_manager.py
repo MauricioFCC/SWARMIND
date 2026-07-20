@@ -157,7 +157,7 @@ class TaskManager:
         if HAS_LANCEDB:
             try:
                 self._conn_lancedb = lancedb.connect(self._db_path)
-                tables = self._conn_lancedb.table_names()
+                tables = self._conn_lancedb.list_tables().tables
                 if self._table_name not in tables:
                     self._conn_lancedb.create_table(
                         self._table_name,
