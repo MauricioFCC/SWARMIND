@@ -6,9 +6,12 @@
    - **skills/**: 11 skills registrados (evolve, hedgefund, quant-trading, alpha-research, risk-execution, math-doc, legal-doc, science-doc, frontend-uiux, auto, science-doc)
    - **core/**: base_principles.md (3 niveles, 18 principios + 50+ abreviaturas)
 2. harness/ - Motor de ejecucion: orchestrator, memory_rag, tests
-   - **orchestrator/**: TaskPlanner (11 templates DAG), TaskOrchestrator (Plan-and-Execute), AgentBus, DebateOrchestrator (3 estrategias), ConfidenceScorer, workflow_patterns (4 patrones), pbt_templates (7 templates), behavioral_tracer, architectural_guardrails
-   - **memory_rag/**: LanceDB vector store, semantic cache, context window manager, token budget, skill minifier/loader, prompt cache builder, federated memory
-   - **tests/**: 457 tests (28 suites)
+   - **orchestrator/**: TaskPlanner (11 templates DAG), TaskOrchestrator (Plan-and-Execute), AsyncAgentBus/AgentBus, DebateOrchestrator (3 estrategias + async), ConfidenceScorer, ShapedCache, WriteAheadLog, workflow_patterns (4 patrones), pbt_templates (7 templates), behavioral_tracer, architectural_guardrails
+   - **memory_rag/**: LanceDB vector store, ShapedCache (LRU+TTL), semantic cache, context window manager (+structured_compact), token budget, skill minifier/loader, prompt cache builder, federated memory
+   - **tests/**: 1518 tests (52 suites, MockVectorStore session-scoped)
+   - **ADR-0016**: Parallel testing + fail-under 59%
+   - **ADR-0017**: PaCoRe async concurrency (AsyncAgentBus, asyncio.gather debate, WAL)
+   - **ADR-0018**: Token Economics (ShapedCache -38%, structured_compact -41%, WAL governance)
 3. scripts/ - Herramientas: deploy_all, export_archive, session_log, agentic_bridge_sync
 4. knowledge/ - Documentos de referencia
 
@@ -20,7 +23,7 @@
 | **builder** | SWE-Master (LSP-driven), BOAD (bandit design), SWE-World (Docker-free), ParaManager, ShapleyFlow, TDAD, TDFlow, PaCoRe, REPOREASON |
 | **scientist** | MetaClaw (+32%), MARS (single-cycle), Hyperagents, Memento-Skills, Native Self-Evolution, ERL, POLARIS, ShapleyFlow |
 | **guardian** | MuTON/mewt (Trail of Bits), AdverTest, SWE-Mutation, CDBench, UAgent, SWE-ABS, PROBE, SMART |
-| **coordinator** | AdaptOrch (12-23%↑), NeuralFSM, MPAC (95%↓), Symphony-Coord, LAS (50.5%↓), StructAgent, PaCoRe, LTS, Helium |
+| **coordinator** | AdaptOrch (12-23%↑), NeuralFSM, MPAC (95%↓), Symphony-Coord, LAS (50.5%↓), StructAgent, PaCoRe, LTS, Helium, AsyncAgentBus, asyncio.gather debate |
 
 ### Skills
 | Skill | Técnicas Frontier |

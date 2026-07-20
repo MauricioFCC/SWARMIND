@@ -38,3 +38,6 @@
 - [ADR-0005: Memoria Portable](adr/adr0005-memoria-portable.md)
 - [ADR-0006: legal-doc Colombia](adr/adr0006-legal-doc-colombia.md)
 - [ADR-0015: Frontier Agents & Skills 2026](adr/adr0015-frontier-agents-skills-2026.md)
+- [ADR-0016: Parallel Testing & Fail-Under](adr/adr0016-parallel-testing-fail-under.md)
+- [ADR-0017: PaCoRe Async Concurrency](adr/adr0017-pacore-async-concurrency.md)
+- [ADR-0018: Token Economics Cache Shape](adr/adr0018-token-economics-cache-shape.md)
