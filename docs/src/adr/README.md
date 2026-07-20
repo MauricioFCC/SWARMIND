@@ -18,6 +18,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | **0012** | **[DocStrings Obligatorios + Error Readability & Actionability](adr0012-docstrings-error-readability.md)** | **ACEPTADO** | **4b99fc4** |
 | **0013** | **[Workflow Patterns + PBT Templates + Context Engineering + 3 mas](adr0013-six-new-techniques.md)** | **ACEPTADO** | **152b99f** |
 | **0014** | **[Lazy Loading PEP 562 — Cold Start 72x mas rapido](adr0014-lazy-loading.md)** | **ACEPTADO** | **c1ea3fd** |
+| **0015** | **[Frontier Agents & Skills 2026 — MetaClaw, AdaptOrch, MuTON, SWE-Master, ShapleyFlow + frontend-uiux](adr0015-frontier-agents-skills-2026.md)** | **ACEPTADO** | **306e9c4** |
 
 ## Resumen por Categoria
 
@@ -44,7 +45,12 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 
 ### Performance y Optimizacion
 - **ADR-0014**: Lazy Loading PEP 562 — cold start 2800ms→39ms (72x faster)
+- **ADR-0015**: Frontend UI/UX skill con Generative UI 2026, A2UI, StyleSeed, WCAG 2.2 AA
+
+### Agentes y Skills Frontera 2026
+- **ADR-0015**: Builder (SWE-Master, BOAD, SWE-World), Scientist (MetaClaw, MARS, Hyperagents), Guardian (MuTON, AdverTest, SWE-Mutation), Coordinator (AdaptOrch, NeuralFSM, MPAC, LAS, StructAgent), Evolve (MetaClaw, MARS, Hyperagents, Memento-Skills)
 
 ### Dominios Especificos
 - **ADR-0001**: Mejoras base transversales
 - **ADR-0006**: Legal-Doc Colombia (RTF+C, derecho comparado)
+- **ADR-0015**: Frontend-UIUX skill (Generative UI, Design Systems AI-native, 7 PBT templates UI)

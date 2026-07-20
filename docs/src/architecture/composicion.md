@@ -2,6 +2,34 @@
 
 ## Capas
 1. .opencode/ - Cerebro: agentes, skills, config
+   - **agents/**: 5 perfiles (coordinator, builder, scientist, guardian, evolve) con ~25 técnicas frontier 2026
+   - **skills/**: 11 skills registrados (evolve, hedgefund, quant-trading, alpha-research, risk-execution, math-doc, legal-doc, science-doc, frontend-uiux, auto, science-doc)
+   - **core/**: base_principles.md (3 niveles, 18 principios + 50+ abreviaturas)
 2. harness/ - Motor de ejecucion: orchestrator, memory_rag, tests
-3. scripts/ - Herramientas: export_archive, session_log
+   - **orchestrator/**: TaskPlanner (11 templates DAG), TaskOrchestrator (Plan-and-Execute), AgentBus, DebateOrchestrator (3 estrategias), ConfidenceScorer, workflow_patterns (4 patrones), pbt_templates (7 templates), behavioral_tracer, architectural_guardrails
+   - **memory_rag/**: LanceDB vector store, semantic cache, context window manager, token budget, skill minifier/loader, prompt cache builder, federated memory
+   - **tests/**: 457 tests (28 suites)
+3. scripts/ - Herramientas: deploy_all, export_archive, session_log, agentic_bridge_sync
 4. knowledge/ - Documentos de referencia
+
+## Técnicas Frontier Incorporadas (2026)
+
+### Agentes
+| Agente | Técnicas Frontier |
+|--------|------------------|
+| **builder** | SWE-Master (LSP-driven), BOAD (bandit design), SWE-World (Docker-free), ParaManager, ShapleyFlow, TDAD, TDFlow, PaCoRe, REPOREASON |
+| **scientist** | MetaClaw (+32%), MARS (single-cycle), Hyperagents, Memento-Skills, Native Self-Evolution, ERL, POLARIS, ShapleyFlow |
+| **guardian** | MuTON/mewt (Trail of Bits), AdverTest, SWE-Mutation, CDBench, UAgent, SWE-ABS, PROBE, SMART |
+| **coordinator** | AdaptOrch (12-23%↑), NeuralFSM, MPAC (95%↓), Symphony-Coord, LAS (50.5%↓), StructAgent, PaCoRe, LTS, Helium |
+
+### Skills
+| Skill | Técnicas Frontier |
+|-------|------------------|
+| **frontend-uiux** | Generative UI, A2UI/OpenUI, Geeklego 3-tier, StyleSeed 74 rules, Bayesian preference, WiserUI-Bench, 7 PBT templates UI |
+| **evolve** | MetaClaw, MARS, Hyperagents, Memento-Skills, Native Evolution, ERL, ASI-Evolve loop, FDE |
+| **quant-trading** | AlphaCFG, PIKAN, MeanFieldControl, RL static analysis |
+
+### Principios Universales (base_principles.md)
+N1 (7 líneas, siempre): RSF, IDP, ERR, ARQ, SEG, DOC, TST, CMT, FDE, EVO, TKN, WFP, PBT, CEN, BTR, AGR, SVE, MCL, MKS
+N2 (19 líneas, budget >70%): Detalle de cada principio
+N3 (completo): Checklists detallados por categoría

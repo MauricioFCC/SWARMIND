@@ -4,6 +4,72 @@
 
 ---
 
+## [2026-07-20] 🧬 Frontier Upgrade 2026 — MetaClaw, AdaptOrch, MuTON, SWE-Master, ShapleyFlow + frontend-uiux
+
+### Investigación Web Frontera (2 waves, 25+ fuentes 2026)
+#### Wave 1: UI/UX (7 papers + 10 frameworks)
+| Fuente | Aporte |
+|--------|--------|
+| **arXiv:2604.09577** | LLMs as UI Generators — 83% preferencia vs markdown |
+| **ACM 2026 Bridging Gulfs** | Semantic Guidance jerárquico Product→DesignSystem→Feature→Component |
+| **ACL 2026 WiserUI-Bench** | 300 pares A/B reales con razonamiento visual UX |
+| **arXiv:2604.09876** | Bayesian active preference learning para personalización |
+| **DIS 2026 ReFinE** | AI-powered design iteration con scholarly findings |
+| **arXiv:2507.04469** | Systematic review: UI generation con LLMs |
+| **A2UI v0.9, OpenUI, Geeklego, StyleSeed, 7onic, useVyre, UDS, LLUI** | 10 frameworks de Generative UI 2026 |
+
+#### Wave 2: 5 especialidades (18+ papers/frameworks)
+| Especialidad | Fuentes Clave |
+|-------------|---------------|
+| **Builder** | SWE-Master (arXiv:2602.03411, 61.4% SWE-bench), BOAD (53.12% SWB, bandit agent design), SWE-World (55.0% SWB, Docker-free), AOrchestra (dynamic sub-agent), ParaManager (lightweight orchestrator), ShapleyFlow (ACL 2026, game-theoretic attribution) |
+| **Scientist** | MetaClaw (arXiv:2603.17187, +32% accuracy), MARS (single-cycle metacognitive), Hyperagents/DGM-H (self-referential), Memento-Skills (26.2-116.2% mejora GAIA/HLE), Native Self-Evolution (+20% WebVoyager), ERL (+7.8% Gaia2), POLARIS (policy repair 7B), ShapleyFlow |
+| **Guardian** | MuTON/mewt (Trail of Bits 2026, language-agnostic), AdverTest (+8.56% fault detection), SWE-Mutation (ACL 2026, 2636 variants, 9 lenguajes), CDBench (zero-sum game, 57-80% fail rate), UAgent (92% accuracy), SWE-ABS (25.1x mejora), PROBE (+9.79% mutation score, 45 bugs) |
+| **Coordinator** | AdaptOrch (arXiv:2602.16873, 12-23% mejora), NeuralFSM (6.74-19.39% mejora), MPAC (95% overhead reduction, 4.8x speedup), Symphony-Coord (bandit routing, regret bounds), LAS (50.5% token reduction), StructAgent (27%→46.9% OSWorld), Enterprise event-driven (14-75% latency reduction) |
+| **Evolve** | MetaClaw (skill-driven fast adaptation), MARS (single-cycle reflection), Hyperagents (self-referential), Memento-Skills (skill-as-memory), Native Self-Evolution (reward-free), ERL (heuristics extraction) |
+
+### Nuevo Skill: frontend-uiux
+`.opencode/skills/frontend-uiux/SKILL.md` (~580 líneas, 18 secciones):
+- Generative UI con Semantic Guidance + A2UI/OpenUI declarativo
+- Design Systems AI-native: Geeklego 3-tier tokens, StyleSeed 74 rules, 7onic, useVyre
+- WCAG 2.2 AA compliance, Core Web Vitals optimization
+- 7 PBT templates UI (render_stable, idempotent_click, boundary_viewport, roundtrip_form, commutative_layout, associative_compose, responsive_invariant)
+- Bayesian preference learning para personalización
+- WiserUI-Bench validation, visual regression testing (Pixelmatch 0.1% umbral)
+- 4 stages (analyze → design → implement → validate), DoD checklist
+
+### Agentes actualizados (25+ técnicas frontier 2026)
+| Agente | Técnicas Nuevas |
+|--------|-----------------|
+| builder.md | SWE-Master (LSP-driven, post-training), BOAD (bandit discovery), SWE-World (Docker-free), AOrchestra, ParaManager, ShapleyFlow |
+| scientist.md | MetaClaw, MARS, Hyperagents, Memento-Skills, Native Self-Evolution, ERL, POLARIS, ShapleyFlow |
+| guardian.md | MuTON/mewt (AI-assisted triage, two-phase campaigns), AdverTest, SWE-Mutation, CDBench, UAgent, SWE-ABS, PROBE |
+| coordinator.md | AdaptOrch (4 topologías canónicas), NeuralFSM, MPAC (5 capas), Symphony-Coord, LAS, StructAgent, Enterprise event-driven |
+| evolve/SKILL.md | MetaClaw, MARS, Hyperagents, Memento-Skills, Native Evolution, ERL |
+| base_principles.md | MCL + MKS en N1+N2 + 17 nuevas abreviaturas |
+
+### ADR-0015 creado
+`docs/src/adr/adr0015-frontier-agents-skills-2026.md` documenta:
+- Contexto, decisión, 6 áreas de impacto
+- Archivos creados/modificados (1 creado, 7 modificados)
+- Tests (455 passed, 2 pre-existing failures)
+- Deploy a 5 proyectos con estadísticas
+- 22 referencias a papers/frameworks
+
+### Tests
+- **455 passed, 2 failed** (2 pre-existing LanceDB semantic_cache deprecation issues)
+- 0 regresiones
+
+### Deploy final
+| Proyecto | .opencode | harness | skills |
+|----------|-----------|---------|--------|
+| core-quant-engine | 58 | 2033 | 7 |
+| Historia Clinica | 58 | 3170 | 5 |
+| Onyx-Quan-AIBot | 58 | 337 | 7 |
+| PDV Basic | 62 | 715 | 4 |
+| Hermes_Memory_Proyects | 58 | 1723 | 9 |
+
+---
+
 ## [2026-07-07] 🔗 Hermes_Memory_Proyects como nodo central + .env loader + sync bidireccional
 
 ### Problema detectado

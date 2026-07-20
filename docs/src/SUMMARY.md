@@ -37,3 +37,4 @@
 - [ADR-0004: Skill Router](adr/adr0004-skill-router.md)
 - [ADR-0005: Memoria Portable](adr/adr0005-memoria-portable.md)
 - [ADR-0006: legal-doc Colombia](adr/adr0006-legal-doc-colombia.md)
+- [ADR-0015: Frontier Agents & Skills 2026](adr/adr0015-frontier-agents-skills-2026.md)
