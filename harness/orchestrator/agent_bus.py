@@ -23,7 +23,7 @@ import json
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
@@ -621,3 +621,69 @@ class AgentBus:
         return await asyncio.to_thread(
             self.poll_channel, channel, agent_name, limit=limit
         )
+
+
+# ---------------------------------------------------------------------------
+# AsyncAgentBus — version asincrona para PaCoRe (ADR-0017)
+# ---------------------------------------------------------------------------
+
+
+class AsyncAgentBus:
+    """
+    AgentBus asincrono con asyncio.Queue para coordinacion PaCoRe.
+
+    Permite post/consume de mensajes sin bloqueo, con timeout y cancelacion.
+    Cada canal tiene su propia cola asincrona.
+
+    Reference:
+        PaCoRe (Parallel Coordination + RL message-passing) — ADR-0017
+        MPAC95: 95% overhead reduction, 4.8x speedup
+    """
+
+    def __init__(self, loop=None):
+        import asyncio
+        self._queues: dict[str, asyncio.Queue] = {}
+        self._loop = loop or asyncio.get_event_loop()
+        self._lock = asyncio.Lock()
+
+    async def post_message(self, channel: str, message: Any) -> None:
+        """
+        Publicar mensaje en un canal (non-blocking).
+
+        Args:
+            channel: Nombre del canal.
+            message: Mensaje a publicar.
+        """
+        async with self._lock:
+            if channel not in self._queues:
+                import asyncio
+                self._queues[channel] = asyncio.Queue()
+        await self._queues[channel].put(message)
+
+    async def consume(self, channel: str, timeout: float = 30.0) -> Any:
+        """
+        Consumir mensaje de un canal con timeout.
+
+        Args:
+            channel: Nombre del canal.
+            timeout: Timeout en segundos.
+
+        Returns:
+            Mensaje del canal.
+
+        Raises:
+            asyncio.TimeoutError: Si no hay mensaje dentro del timeout.
+        """
+        async with self._lock:
+            if channel not in self._queues:
+                import asyncio
+                self._queues[channel] = asyncio.Queue()
+        import asyncio
+        return await asyncio.wait_for(
+            self._queues[channel].get(), timeout=timeout
+        )
+
+    def get_queue_size(self, channel: str) -> int:
+        """Tamanio actual de la cola de un canal."""
+        q = self._queues.get(channel)
+        return q.qsize() if q else 0

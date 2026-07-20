@@ -21,9 +21,10 @@ parallelizing where possible and sequencing where there are dependencies.
 from __future__ import annotations
 
 import logging
-import re
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
+
+from harness.memory_rag.context_window_manager import structured_compact
 
 logger = logging.getLogger(__name__)
 
@@ -400,6 +401,12 @@ class TaskPlanner:
 
         # --- 2. Extract specifics from message ---
         specifics = self._extract_specifics(message)
+
+        # Compactar contexto (Token Economics - ADR-0018)
+        agent_context = specifics.get("context", "")
+        if agent_context and len(agent_context) > 500:
+            agent_context = structured_compact(agent_context, budget_ratio=0.6)
+            specifics["context"] = agent_context
 
         # --- 3. DYNAMIC SCALING: si es swarm_default, analizar alcance ---
         if template_name == "swarm_default":

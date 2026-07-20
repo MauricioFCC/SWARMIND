@@ -23,9 +23,8 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
-from enum import Enum
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -323,6 +322,99 @@ class DebateOrchestrator:
                 "strategy": DebateStrategy.CONSENSUS.value,
             },
         )
+
+    # ------------------------------------------------------------------
+    # Async consensus (PaCoRe — ADR-0017)
+    # ------------------------------------------------------------------
+
+    async def _execute_consensus_async(
+        self,
+        task: str,
+        agents: list[str],
+        max_rounds: int,
+        dispatch_fn: callable,
+        session_id: str,
+    ) -> "DebateResult":
+        """
+        Version asincrona de consenso: agentes responden en paralelo.
+
+        Usa asyncio.gather para ejecutar dispatch de todos los agentes
+        simultaneamente, reduciendo latencia de O(n) a O(1).
+
+        Args:
+            task: Tarea a debatir.
+            agents: Lista de agentes.
+            max_rounds: Maximo de rondas.
+            dispatch_fn: Funcion de dispatch.
+            session_id: ID de sesion.
+
+        Returns:
+            DebateResult con respuestas de todos los agentes.
+        """
+        import asyncio
+
+        responses: list[str] = []
+        rounds: list[DebateRound] = []
+        for rnd in range(max_rounds):
+            round_responses = await asyncio.gather(
+                *[self._run_async_dispatch(agent, task, dispatch_fn)
+                  for agent in agents],
+                return_exceptions=True,
+            )
+            valid = [r for r in round_responses if isinstance(r, str)]
+            if not valid:
+                break
+            responses.extend(valid)
+
+            dr = DebateRound(round_num=rnd + 1)
+            for i, agent in enumerate(agents):
+                if i < len(valid):
+                    dr.agent_outputs[agent] = valid[i]
+            dr.confidence = self._compute_agreement(dict(dr.agent_outputs))
+            dr.synthesis = self._synthesize_answers(dict(dr.agent_outputs))
+            rounds.append(dr)
+
+            # Verificar convergencia temprana
+            if len(valid) == len(agents) and dr.confidence > 0.9:
+                break
+
+        return DebateResult(
+            session_id=session_id,
+            task=task,
+            strategy=DebateStrategy.CONSENSUS,
+            rounds=rounds,
+            final_answer=responses[-1] if responses else "",
+            confidence=0.85,
+            agent_agreement=rounds[-1].confidence if rounds else 0.0,
+            metadata={
+                "num_agents": len(agents),
+                "num_rounds": len(rounds),
+                "agents": list(agents),
+                "strategy": DebateStrategy.CONSENSUS.value,
+                "async": True,
+            },
+        )
+
+    async def _run_async_dispatch(
+        self,
+        agent: str,
+        task: str,
+        dispatch_fn: callable,
+    ) -> str:
+        """
+        Ejecutar dispatch de un agente de forma asincrona.
+
+        Args:
+            agent: Nombre del agente.
+            task: Tarea a ejecutar.
+            dispatch_fn: Funcion de dispatch.
+
+        Returns:
+            Respuesta del agente.
+        """
+        import asyncio
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, dispatch_fn, agent, task)
 
     # ------------------------------------------------------------------
     # Strategy: CRITIQUE
@@ -676,10 +768,10 @@ class DebateOrchestrator:
         elif phase == "critique":
             answer = context.get("answer_to_review", "")
             base += (
-                f"\nCrítica a la respuesta propuesta:\n"
-                f"- Puntos fuertes: enfoque estructurado.\n"
-                f"- Áreas de mejora: considerar más casos borde, "
-                f"agregar métricas de validación."
+                "\nCrítica a la respuesta propuesta:\n"
+                "- Puntos fuertes: enfoque estructurado.\n"
+                "- Áreas de mejora: considerar más casos borde, "
+                "agregar métricas de validación."
             )
         elif phase == "refinement":
             critique_text = context.get("critique", "")

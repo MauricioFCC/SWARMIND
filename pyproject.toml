@@ -15,6 +15,7 @@ requires-python = ">=3.10"
 dependencies = [
     "lancedb>=0.33",
     "numpy>=1.24",
+    "pytest-asyncio>=1.4.0",
     "pyyaml>=6.0",
     "requests>=2.31",
     "schedule>=1.2",
@@ -50,8 +51,8 @@ source = ["harness"]
 omit = ["harness/tests/*", "harness/scripts/*"]
 
 [tool.coverage.report]
-# Jul 2026: coverage actual 43.55%
-fail_under = 43
+# Jul 2026: coverage actual 59.69%
+fail_under = 59
 # Proximo PR: fail_under = 55
 # Siguiente:   fail_under = 70
 # Objetivo:    fail_under = 80

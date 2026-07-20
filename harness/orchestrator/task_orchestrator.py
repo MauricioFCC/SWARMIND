@@ -36,21 +36,23 @@ import time
 from typing import Any, Dict, List, Optional
 
 from harness.orchestrator.agent_bus import AgentBus
+from harness.orchestrator.confidence_scorer import ConfidenceScore, ConfidenceScorer
 from harness.orchestrator.debate_orchestrator import (
     DebateOrchestrator,
     DebateResult,
     DebateStrategy,
 )
-from harness.orchestrator.task_planner import TaskPlan, TaskPlanner
 from harness.orchestrator.session_context import SessionContext, SessionState
-from harness.orchestrator.confidence_scorer import ConfidenceScorer, ConfidenceScore
+from harness.orchestrator.task_planner import TaskPlan, TaskPlanner
 
 logger = logging.getLogger(__name__)
 
-from harness.orchestrator.structured_log import StructuredLogRecord  # noqa: F401
-from harness.orchestrator.self_healing import CircuitBreaker, SelfHealingContext  # noqa: F401
 from harness.orchestrator.orchestration_result import OrchestratorResult  # noqa: F401
-
+from harness.orchestrator.self_healing import (  # noqa: F401
+    CircuitBreaker,
+    SelfHealingContext,
+)
+from harness.orchestrator.structured_log import StructuredLogRecord  # noqa: F401
 
 # ---------------------------------------------------------------------------
 # TaskOrchestrator
@@ -110,13 +112,16 @@ class TaskOrchestrator:
             recovery_timeout=60.0,
         )
 
+        # ShapedCache para token economics (ADR-0018)
+        self._shaped_cache = None
+
         # Idempotencia: evita procesar el mismo mensaje multiple veces
         self._recent_messages: Dict[str, float] = {}
         self._dedup_window: float = 30.0  # Ventana de 30 segundos
 
         StructuredLogRecord.info(
             "orchestrator_init",
-            message=f"TaskOrchestrator inicializado",
+            message="TaskOrchestrator inicializado",
             max_retries=max_retries,
             level_timeout_sec=level_timeout_sec,
             stall_timeout_sec=stall_timeout_sec,
@@ -158,6 +163,32 @@ class TaskOrchestrator:
                 "Sistema en recuperación. Intenta de nuevo en unos segundos.",
             )
 
+        # --- 0. Verificar cache semantico (ShapedCache - Token Economics) ---
+        if hasattr(self, '_shaped_cache') and self._shaped_cache is not None:
+            import hashlib
+            _cache_hash = hashlib.sha256((message or "").encode()).hexdigest()[:16]
+            cached = self._shaped_cache.get_shaped(message, threshold=0.95)
+            if cached is not None:
+                response = cached.get("response", "")
+                if response:
+                    StructuredLogRecord.info(
+                        "cache_hit",
+                        message=f"Cache hit para: {message[:50]}...",
+                        session_id="",
+                    )
+                    return OrchestratorResult(
+                        session_id="",
+                        target_agent="coordinator",
+                        plan=None,  # type: ignore[arg-type]
+                        current_level=[],
+                        session_status="completed",
+                        previous_results=[],
+                        communication_log=[],
+                        original_message=message,
+                        is_new_plan=False,
+                        is_complete=True,
+                    )
+
         # --- 0. Idempotencia: evitar duplicados del mismo mensaje ---
         import hashlib
         msg_hash = hashlib.sha256((message or "").encode()).hexdigest()[:16]
@@ -180,7 +211,7 @@ class TaskOrchestrator:
 
         StructuredLogRecord.info(
             "process_message_start",
-            message=f"Procesando mensaje",
+            message="Procesando mensaje",
             session_id=None,
             message_len=len(message) if message else 0,
             force_agent=force_agent or "",
@@ -614,7 +645,6 @@ class TaskOrchestrator:
 
     def _error_result(self, message: str) -> OrchestratorResult:
         """Return an error result with a descriptive message."""
-        from harness.orchestrator.task_planner import TaskPlan
         plan = TaskPlan(session_id="error", original_message="")
         return OrchestratorResult(
             session_id="error",
@@ -917,7 +947,6 @@ class TaskOrchestrator:
 
     def _empty_result(self) -> OrchestratorResult:
         """Return an empty result (error case)."""
-        from harness.orchestrator.task_planner import TaskPlan
         plan = TaskPlan(session_id="error", original_message="")
         return OrchestratorResult(
             session_id="error",
@@ -931,3 +960,35 @@ class TaskOrchestrator:
             is_new_plan=False,
             is_complete=False,
         )
+
+
+# ---------------------------------------------------------------------------
+# Configuracion de ShapedCache para TaskOrchestrator
+# ---------------------------------------------------------------------------
+
+
+def enable_cache(orchestrator: "TaskOrchestrator", max_tokens: int = 50000) -> None:
+    """
+    Habilitar ShapedCache en un TaskOrchestrator existente.
+
+    Permite que el orquestador cachee respuestas semanticamente similares
+    y las reutilice sin llamar al LLM, ahorrando tokens (ADR-0018).
+
+    Args:
+        orchestrator: Instancia de TaskOrchestrator.
+        max_tokens: Maximo de tokens acumulados en el cache antes de
+                    hacer LRU eviction. Por defecto 50000.
+
+    Example:
+        >>> from harness.orchestrator.task_orchestrator import enable_cache
+        >>> orch = TaskOrchestrator()
+        >>> enable_cache(orch, max_tokens=100000)
+        >>> orch._shaped_cache is not None
+        True
+    """
+    from harness.memory_rag.semantic_cache import SemanticCache, ShapedCache
+    sem_cache = SemanticCache()
+    orchestrator._shaped_cache = ShapedCache(
+        semantic_cache=sem_cache,
+        max_tokens=max_tokens,
+    )
