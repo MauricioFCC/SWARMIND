@@ -28,6 +28,7 @@ from harness.memory_rag.semantic_cache import (
     DEFAULT_TTL_SECONDS,
     CacheEntry,
     SemanticCache,
+    ShapedCache,
 )
 
 
@@ -257,6 +258,173 @@ class TestIsExpired:
 
     def test_invalid_date(self):
         assert SemanticCache._is_expired("not-a-date", 3600)
+
+
+# ---------------------------------------------------------------------------
+# ShapedCache — Cache-Shape Discipline tests
+# ---------------------------------------------------------------------------
+
+
+class TestShapedCache:
+    """Tests para ShapedCache — Cache-Shape Discipline (-38% tokens)."""
+
+    def test_shaped_cache_init(self):
+        """Constructor con valores por defecto."""
+        mock_cache = MagicMock()
+        shaped = ShapedCache(mock_cache)
+
+        assert shaped._cache is mock_cache
+        assert shaped._max_tokens == 10000
+        assert shaped._ttl_sec == 3600.0
+        assert shaped._min_relevance == 0.1
+        assert len(shaped._lru) == 0
+        assert shaped._hit_count == 0
+        assert shaped._miss_count == 0
+        assert shaped.hit_rate == 0.0
+
+    def test_shaped_cache_get_miss(self):
+        """Cache miss retorna None y actualiza contadores."""
+        mock_cache = MagicMock()
+        mock_cache.get.return_value = None
+        shaped = ShapedCache(mock_cache)
+
+        result = shaped.get_shaped("inexistent prompt")
+
+        assert result is None
+        assert shaped._miss_count == 1
+        assert shaped._hit_count == 0
+        assert shaped.hit_rate == 0.0
+
+    def test_shaped_cache_set_and_get(self):
+        """Set + Get exitoso retorna la respuesta cacheada."""
+        mock_cache = MagicMock()
+        mock_cache.set.return_value = True
+        mock_cache.get.return_value = {
+            "response": "cached answer",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        shaped = ShapedCache(mock_cache)
+
+        # Set
+        set_result = shaped.set_shaped("test prompt", "cached answer", token_cost=50)
+        assert set_result is True
+
+        # Get
+        get_result = shaped.get_shaped("test prompt")
+        assert get_result is not None
+        assert get_result["response"] == "cached answer"
+        assert shaped._hit_count == 1
+        assert shaped._miss_count == 0
+
+    def test_shaped_cache_hit_rate(self):
+        """Hit rate tracking refleja proporcion hits/misses tras varias consultas."""
+        mock_cache = MagicMock()
+        shaped = ShapedCache(mock_cache)
+
+        # Miss 1
+        mock_cache.get.return_value = None
+        shaped.get_shaped("prompt_a")
+        assert shaped.hit_rate == 0.0
+
+        # Hit 1
+        mock_cache.get.return_value = {
+            "response": "resp",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+        shaped.get_shaped("prompt_b")
+        assert shaped.hit_rate == 0.5
+
+        # Hit 2
+        shaped.get_shaped("prompt_c")
+        assert shaped.hit_rate == 2 / 3
+
+        assert shaped._hit_count == 2
+        assert shaped._miss_count == 1
+
+    def test_shaped_cache_ttl_expiry(self):
+        """Entrada expirada por TTL retorna None aunque el cache subyacente responda."""
+        mock_cache = MagicMock()
+        old_ts = datetime(2020, 1, 1, tzinfo=timezone.utc).isoformat()
+        mock_cache.get.return_value = {
+            "response": "stale data",
+            "timestamp": old_ts,
+        }
+        # TTL de 1 segundo — la entrada de 2020 esta vencida
+        shaped = ShapedCache(mock_cache, ttl_sec=1.0)
+
+        result = shaped.get_shaped("stale prompt")
+
+        assert result is None, "Entrada expirada debe retornar None"
+        assert shaped._hit_count == 1  # Se cuenta como hit antes de verificar TTL
+        assert shaped._miss_count == 0
+
+    def test_shaped_cache_lru_eviction(self):
+        """LRU eviction remueve las entradas mas viejas cuando se excede max_tokens."""
+        mock_cache = MagicMock()
+        mock_cache.set.return_value = True
+        # Poblamos _entries para que el sum() en set_shaped tenga datos
+        mock_cache._entries = {
+            "hash_a": {"token_cost": 300},
+            "hash_b": {"token_cost": 400},
+        }
+
+        shaped = ShapedCache(mock_cache, max_tokens=100)
+
+        # Poblar LRU con entradas previas (orden de insercion = orden LRU)
+        shaped._lru["hash_a"] = 1000.0
+        shaped._lru["hash_b"] = 2000.0
+
+        # Esta llamada supera max_tokens y dispara LRU eviction
+        shaped.set_shaped("new prompt", "new response", token_cost=500)
+
+        # Se debe haber eliminado al menos hash_a (el mas viejo)
+        assert "hash_a" not in shaped._lru, "hash_a debe ser evictado"
+        mock_cache.delete.assert_any_call("hash_a")
+        assert shaped._cache.delete.call_count >= 1
+
+    def test_shaped_cache_clear_expired(self):
+        """clear_expired elimina solo entradas cuyo TTL haya vencido."""
+        mock_cache = MagicMock()
+        shaped = ShapedCache(mock_cache, ttl_sec=1.0)
+
+        now = datetime.now(timezone.utc).timestamp()
+        old_ts = now - 100.0  # muy vencida
+
+        # Dos entradas vencidas + una reciente
+        shaped._lru["old_entry_1"] = old_ts
+        shaped._lru["old_entry_2"] = old_ts - 50.0
+        shaped._lru["fresh_entry"] = now
+
+        removed = shaped.clear_expired()
+
+        assert removed == 2
+        assert "old_entry_1" not in shaped._lru
+        assert "old_entry_2" not in shaped._lru
+        assert "fresh_entry" in shaped._lru
+        assert mock_cache.delete.call_count == 2
+        mock_cache.delete.assert_any_call("old_entry_1")
+        mock_cache.delete.assert_any_call("old_entry_2")
+
+    def test_shaped_cache_get_stats(self):
+        """get_stats retorna dict completo con hit_rate, hits, misses, lru_size, max_tokens, ttl_sec."""
+        mock_cache = MagicMock()
+        shaped = ShapedCache(mock_cache)
+
+        # Simular actividad
+        shaped._hit_count = 4
+        shaped._miss_count = 1
+        shaped._lru["k1"] = 1000.0
+        shaped._lru["k2"] = 2000.0
+        shaped._lru["k3"] = 3000.0
+
+        stats = shaped.get_stats()
+
+        assert stats["hit_rate"] == 4 / 5  # 0.8
+        assert stats["hits"] == 4
+        assert stats["misses"] == 1
+        assert stats["lru_size"] == 3
+        assert stats["max_tokens"] == 10000
+        assert stats["ttl_sec"] == 3600.0
 
 
 class TestHashPrompt:

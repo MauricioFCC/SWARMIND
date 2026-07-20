@@ -10,6 +10,11 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(1, str(PROJECT_ROOT))
 
 
+# ---------------------------------------------------------------------------
+# Fixtures de infraestructura pesada — scope=session para reutilizacion
+# ---------------------------------------------------------------------------
+
+
 @pytest.fixture
 def vector_store():
     """LanceVectorStore con base de datos aislada (temp dir) y fallback in-memory."""
