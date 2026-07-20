@@ -604,6 +604,7 @@ class TestDebateOrchestratorIntegration:
         result = task_orch.process_message("debate sobre diseño de base de datos")
         assert result.debate_strategy == "consensus"
 
+    @pytest.mark.slow
     def test_orchestrator_run_debate(self, task_orch):
         """run_debate() should produce a valid DebateResult."""
         result = task_orch.process_message("debate sobre arquitectura de microservicios")
@@ -654,6 +655,7 @@ class TestDebateOrchestratorIntegration:
         )
         assert debate_result.strategy == DebateStrategy.DELIBERATION
 
+    @pytest.mark.slow
     def test_orchestrator_debate_result_has_rounds(self, task_orch, mock_dispatch):
         """Debate result from orchestrator should contain rounds."""
         result = task_orch.process_message("debate sobre optimización de queries")

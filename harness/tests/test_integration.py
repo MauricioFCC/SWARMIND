@@ -155,6 +155,7 @@ class TestErrorHandling:
         cb.record_failure()
         assert cb.state == "open", f"Expected open, got {cb.state}"
 
+    @pytest.mark.slow
     def test_circuit_breaker_recovers(self):
         """2c. Circuit breaker se recupera tras timeout."""
         from orchestrator.task_orchestrator import CircuitBreaker
@@ -391,6 +392,7 @@ class TestOrchestratorEdgeCases:
         result = orchestrator.process_message("")
         assert result is not None
 
+    @pytest.mark.slow
     def test_rapid_consecutive_tasks(self, orchestrator):
         """6b. Tasks rápidas consecutivas."""
         for i in range(3):

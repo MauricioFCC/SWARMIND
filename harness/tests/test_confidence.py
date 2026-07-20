@@ -518,6 +518,7 @@ class TestConfidenceImpactInPlanner:
 class TestConfidenceInOrchestrator:
     """Verify that process_completion logs confidence scores."""
 
+    @pytest.mark.slow
     def test_process_completion_logs_confidence(self, caplog):
         """After completing a subtask, confidence is evaluated and logged."""
         from harness.orchestrator.task_orchestrator import TaskOrchestrator

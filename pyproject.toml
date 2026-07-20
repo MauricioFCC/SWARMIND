@@ -2,6 +2,11 @@
 requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["harness*"]
+exclude = ["docs*", ".opencode*"]
+
 [project]
 name = "agentic-harness"
 version = "0.1.0"
@@ -20,19 +25,33 @@ dev = [
     "pytest>=8",
     "pytest-cov>=5",
     "pytest-mock>=3",
+    "pytest-xdist>=3",
+    "pytest-split>=0.9",
     "ruff>=0.4",
     "mypy>=1.8",
 ]
-test = ["pytest>=8", "pytest-cov>=5", "pytest-mock>=3"]
+test = ["pytest>=8", "pytest-cov>=5", "pytest-mock>=3", "pytest-xdist>=3", "pytest-split>=0.9"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["harness/tests"]
 python_files = ["test_*.py"]
+# Parallel ejecucion: pytest -n auto (requiere pytest-xdist)
+# Por defecto secuencial: la mayoria de tests comparten LanceDB temp
+addopts = ""
+markers = [
+    "slow: tests lentos (>1s) que requieren integracion real",
+    "integration: tests que dependen de LanceDB real u otros servicios externos",
+    "unit: tests unitarios puros sin dependencias externas (default)",
+]
 
 [tool.coverage.run]
 source = ["harness"]
 omit = ["harness/tests/*", "harness/scripts/*"]
 
 [tool.coverage.report]
-fail_under = 30
+# Jul 2026: coverage actual 43.55%
+fail_under = 43
+# Proximo PR: fail_under = 55
+# Siguiente:   fail_under = 70
+# Objetivo:    fail_under = 80

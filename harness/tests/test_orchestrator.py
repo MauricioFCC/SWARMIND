@@ -51,6 +51,7 @@ class TestTaskOrchestrator:
         result = self.orch.process_message("test")
         assert len(result.previous_results) == 0
 
+    @pytest.mark.slow
     def test_process_completion(self):
         """After completing a subtask → next level available."""
         result = self.orch.process_message("implementar API")
@@ -65,6 +66,7 @@ class TestTaskOrchestrator:
         assert len(next_result.previous_results) >= 1
         assert next_result.previous_results[0]["id"] == first_id
 
+    @pytest.mark.slow
     def test_process_completion_all(self):
         """Complete all subtasks → plan complete."""
         result = self.orch.process_message("implementar API")
@@ -117,6 +119,7 @@ class TestTaskOrchestrator:
 
     # ── Tests for bugfix: 3 agentes con mismo request ──
 
+    @pytest.mark.slow
     def test_broadcast_plan_envia_subtask_especifica(self):
         """Cada agente recibe SU subtask especifica, no el mensaje generico."""
         result = self.orch.process_message("implementar una API REST en Rust")
@@ -143,6 +146,7 @@ class TestTaskOrchestrator:
                 if st.description:
                     assert "TU TAREA" in msg.get("message", "") or "⏳" in msg.get("message", "")
 
+    @pytest.mark.slow
     def test_broadcast_plan_no_envia_request_sin_subtask(self):
         """Agentes sin trabajo en el nivel actual reciben notification, no request."""
         result = self.orch.process_message("implementar API")
@@ -172,6 +176,7 @@ class TestTaskOrchestrator:
             f"Status deberia mencionar duplicado: {result2.session_status}"
         )
 
+    @pytest.mark.slow
     def test_process_message_dedup_permite_diferente(self):
         """Mensajes diferentes NO son rechazados por dedup."""
         r1 = self.orch.process_message("hacer tarea A")
