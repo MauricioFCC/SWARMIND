@@ -8,7 +8,9 @@
 2. harness/ - Motor de ejecucion: orchestrator, memory_rag, tests
    - **orchestrator/**: TaskPlanner (11 templates DAG), TaskOrchestrator (Plan-and-Execute), AsyncAgentBus/AgentBus, DebateOrchestrator (3 estrategias + async), ConfidenceScorer, ShapedCache, WriteAheadLog, workflow_patterns (4 patrones), pbt_templates (7 templates), behavioral_tracer, architectural_guardrails
    - **memory_rag/**: LanceDB vector store, ShapedCache (LRU+TTL), semantic cache, context window manager (+structured_compact), token budget, skill minifier/loader, prompt cache builder, federated memory
-   - **tests/**: 1518 tests (52 suites, MockVectorStore session-scoped)
+   - **tests/**: 1540 tests (52 suites, MockVectorStore session-scoped)
+   - **gpu_accel.py**: GPU acceleration module (RTX 4060, 6x search speedup)
+   - **gpu_optimize.py**: Smart CPU/GPU routing based on batch size
    - **ADR-0016**: Parallel testing + fail-under 59%
    - **ADR-0017**: PaCoRe async concurrency (AsyncAgentBus, asyncio.gather debate, WAL)
    - **ADR-0018**: Token Economics (ShapedCache -38%, structured_compact -41%, WAL governance)

@@ -53,7 +53,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 - **ADR-0018**: Cache-Shape Discipline (ShapedCache LRU+TTL, -38% tokens), Structured Compaction (struct47, -41%), Failure-Spend Governance
 
 ### Testing y Calidad
-- **ADR-0016**: 52 archivos de test, 1518 tests, MockVectorStore session-scoped, slow/integration/unit markers, ruff linting (604 fixes)
+- **ADR-0016**: 52 archivos de test, 1540 tests, MockVectorStore session-scoped, slow/integration/unit markers, ruff linting (604 fixes)
 
 ### Concurrencia y Coordinacion
 - **ADR-0017**: AsyncAgentBus con canales asyncio.Queue, debate paralelo O(n)→O(1), WriteAheadLog con retry+backoff+cancelacion+recovery

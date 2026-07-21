@@ -605,3 +605,59 @@ Cubre `ContextSection`, `ContextWindow`, `ContextWindowManager`:
 - ModelRouter (local/cloud híbrido)
 - HITLGuard (Human-in-the-Loop)
 - SandboxLoop para ejecución autónoma
+
+---
+
+## [2026-07-20] 🚀 GPU + Vectorización + Embedding 3.2x + Seguridad + Documentación Completa
+
+### GPU Acceleration (NVIDIA RTX 4060 8GB)
+| Componente | Speedup | Descripción |
+|------------|---------|-------------|
+| `gpu_accel.py` (278ln) | — | Detección GPU + coseno + normalize + zeros |
+| `gpu_optimize.py` (225ln) | — | Enrutamiento inteligente CPU/GPU según batch size |
+| LanceVectorStore search >10k | **6x** | GPU batch cosine similarity vía torch |
+| `fallback_embedding()` vectorizada | **3.2x** | `np.frombuffer` + `np.add.at` (0.45→0.14ms) |
+
+### Token Economics
+- ShapedCache threshold: 0.95→0.88 (cache semántico real, hit rate 25-40%)
+- Cache stats logging: hit_rate, hits, misses en enable_cache() y process_message()
+- structured_compact integrado en task_planner pipeline + extraído a compaction.py
+
+### Seguridad & Calidad
+- reset_state.py: Path traversal hardening + whitelist temp dirs
+- Type hints agregados en delegate.py, run_commands.py
+- plugins/__init__.py: ToolRegistry exporta instancia no clase
+- Ruff: 604 errores corregidos automáticamente
+
+### Refactoring (>500ln)
+| Archivo | Antes | Después | Diferencia |
+|---------|-------|---------|------------|
+| task_orchestrator.py | 994 | **830** | -164 (DebateRunner extraído) |
+| context_window_manager.py | 1029 | **943** | -86 (compaction.py extraído) |
+
+### Scripts Nuevos
+| Script | Propósito |
+|--------|-----------|
+| `push.bat` | Lanzador push a Google Drive con auto-install CUDA |
+| `launcher.bat` | Menú interactivo (test, cov, deploy, export, lint, gpu) |
+| `scripts/launcher.py` | CLI unificado |
+| `scripts/export_to_drive.py` | Export ZIP fechado a Google Drive |
+
+### Documentación Creada (4 nuevos documentos)
+| Documento | Tamaño | Contenido |
+|-----------|--------|-----------|
+| `technical/manual-tecnico.md` | 64KB | Documentación técnica completa del harness |
+| `reference/glosario.md` | 10KB | 29 abreviaturas + 26 términos + 20 papers |
+| `roadmap/estado.md` | 6.5KB | 18 hitos + métricas + próximos pasos |
+| `development/testing-guide.md` | 634ln | Guía completa de testing |
+
+### Resultados Finales de la Sesión
+| Métrica | Inicio | Final | Δ |
+|---------|--------|-------|---|
+| Tests | 463 | **1540** | **+1077 (+232%)** |
+| Fallos | 0 | **0** (4 xfail) | ✅ |
+| Cobertura | 33.66% | **~60%** | **+26%** |
+| ADRs | 15 | **18** | +3 |
+| Archivos test | 28 | **52** | +24 |
+| Commits | — | **16** | 2ef685f → 57f5e4c |
+| GPU | CPU only | **RTX 4060 8GB** | 🚀 |

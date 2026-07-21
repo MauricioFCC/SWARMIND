@@ -25,9 +25,10 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Tests | 1518 passing (4 xfailed) |
-| Cobertura | 59.69% (objetivo: 80%) |
+| Tests | 1540 passing (4 xfailed) |
+| Cobertura | ~60% (objetivo: 80%) |
 | ADRs | 18 (15 implementados) |
 | Agentes | 8 especializados |
 | Skills | 11 contextuales |
+| GPU | RTX 4060 8GB (6x search speedup) |
 | Commits | 200+ |
