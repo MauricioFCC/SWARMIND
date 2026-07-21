@@ -579,18 +579,26 @@ class LanceVectorStore:
         if not candidates:
             return []
 
-        # Compute cosine similarity
-        q_norm = query_vector / (np.linalg.norm(query_vector) + 1e-12)
-
+        # Compute cosine similarity (GPU acelerada si batch > 10k)
         vectors = np.array(
             [c.vector for c in candidates if c.vector is not None]
         )
         if vectors.size == 0:
             return []
 
-        # (n, dim) -> (n,) dot product
-        sims = vectors @ q_norm
-        top_indices = np.argsort(sims)[-top_k:][::-1]
+        if vectors.shape[0] >= 10000:
+            # GPU-accelerated search for large batches
+            from harness.gpu_optimize import gpu_similarity_search
+            results = gpu_similarity_search(
+                query_vector, vectors, top_k=top_k
+            )
+            top_indices = np.array([r[0] for r in results])
+            sims = np.array([r[1] for r in results])
+        else:
+            # CPU path for small batches (faster for <10k)
+            q_norm = query_vector / (np.linalg.norm(query_vector) + 1e-12)
+            sims = vectors @ q_norm
+            top_indices = np.argsort(sims)[-top_k:][::-1]
 
         results: List[Dict[str, Any]] = []
         for idx in top_indices:

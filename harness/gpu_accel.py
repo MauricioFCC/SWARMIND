@@ -30,7 +30,8 @@ logger = logging.getLogger(__name__)
 # GPU Detection
 # ---------------------------------------------------------------------------
 
-HAVE_CUDA: bool = False
+HAVE_CUDA: bool = False      # Current state (may be overridden by force_cpu/gpu)
+_HARDWARE_CUDA: bool = False  # Actual hardware capability (read-only)
 DEVICE: str = "cpu"
 DEVICE_NAME: str = "CPU"
 GPU_MEMORY_GB: float = 0.0
@@ -48,6 +49,7 @@ try:
     import torch
     if torch.cuda.is_available():
         HAVE_CUDA = True
+        _HARDWARE_CUDA = True
         DEVICE = "cuda:0"
         DEVICE_NAME = torch.cuda.get_device_name(0)
         GPU_MEMORY_GB = torch.cuda.get_device_properties(0).total_memory / 1024**3
@@ -74,7 +76,9 @@ def force_cpu() -> None:
 def force_gpu() -> None:
     """Forzar uso de GPU si esta disponible."""
     global HAVE_CUDA, DEVICE
-    if HAVE_CUDA:
+    global _HARDWARE_CUDA
+    if _HARDWARE_CUDA:
+        HAVE_CUDA = True
         DEVICE = "cuda:0"
         logger.info("GPU acceleration enabled: %s", DEVICE_NAME)
     else:
