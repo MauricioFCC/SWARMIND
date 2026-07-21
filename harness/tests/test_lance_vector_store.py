@@ -13,13 +13,12 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
-from unittest.mock import MagicMock, PropertyMock, patch, call
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 
+from harness.memory_rag.lance_schemas import DEFAULT_COLLECTIONS
 from harness.memory_rag.lance_vector_store import (
     COLLECTION_PROCEDURAL_SKILLS,
     COLLECTION_PROMPT_EVOLUTION_LOG,
@@ -30,7 +29,6 @@ from harness.memory_rag.lance_vector_store import (
     _Collection,
     _StoredItem,
 )
-from harness.memory_rag.lance_schemas import DEFAULT_COLLECTIONS
 from harness.memory_rag.memory_config import MemoryConfig
 
 # ---------------------------------------------------------------------------

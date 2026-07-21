@@ -14,12 +14,11 @@ REFACTOR: Elimina ~150 líneas de código duplicado entre run.py y delegate.py.
 """
 from __future__ import annotations
 
-import os
+import logging
 import re
 import sys
-import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -276,8 +275,9 @@ def check_first_run(harness_root: Path) -> bool:
     if rag == "y":
         logger.info("  Ingestando codigo fuente...")
         try:
-            from harness.memory_rag.doc_ingester import ingest_project_directory
             import time as _t
+
+            from harness.memory_rag.doc_ingester import ingest_project_directory
             _start = _t.time()
             _stats = ingest_project_directory(str(get_project_root()))
             _elapsed = _t.time() - _start

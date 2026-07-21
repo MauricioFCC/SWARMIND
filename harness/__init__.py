@@ -12,6 +12,7 @@ hasta que se accede explicitamente a un simbolo. Cold-start: ~10ms vs ~2800ms.
 """
 
 from __future__ import annotations
+
 import importlib
 import logging
 from typing import Any, Dict, Optional

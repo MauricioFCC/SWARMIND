@@ -1,7 +1,9 @@
 """Tests para reset_state.py — limpieza de estado del harness."""
 from __future__ import annotations
+
 from pathlib import Path
-from harness.reset_state import rm_dir, rm_file, empty_dir_keep_gitkeep
+
+from harness.reset_state import empty_dir_keep_gitkeep, rm_dir, rm_file
 
 
 class TestRmDir:

@@ -14,15 +14,19 @@ para navegar por la lista de reports.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from .config import (
-    HARNESS_ROOT, _safe_print, _ok, _err, _warn, _bold,
-    _supports_unicode, _print_banner,
+    HARNESS_ROOT,
+    _bold,
+    _err,
+    _ok,
+    _print_banner,
+    _safe_print,
+    _supports_unicode,
+    _warn,
 )
-
 
 # ---------------------------------------------------------------------------
 # Report persistence
@@ -278,7 +282,7 @@ def show_iteration_diff(n: int = 1):
     if hitl_savings:
         _safe_print(f"     Ahorro HITL:    {hitl_savings:,} tokens")
     if eficiencia:
-        _safe_print(f"     Eficiencia:")
+        _safe_print("     Eficiencia:")
         for k, v in eficiencia.items():
             display = v
             if isinstance(v, str) and '%' in v:
@@ -302,7 +306,7 @@ def show_iteration_diff(n: int = 1):
         first_line = commit.split('\n')[0].strip()
         _safe_print(f"     {first_line}")
         if len(commit) > 200:
-            _safe_print(f"     ... (commit message truncated)")
+            _safe_print("     ... (commit message truncated)")
 
     # Archivos
     files = r.get("files_changed", []) or []

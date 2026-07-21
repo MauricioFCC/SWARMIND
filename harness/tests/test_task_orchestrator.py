@@ -1,17 +1,14 @@
 """Tests for TaskOrchestrator — plan-and-execute pipeline with self-healing."""
 from __future__ import annotations
 
-import json
 import time
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+from harness.orchestrator.session_context import SessionContext, SessionState
 from harness.orchestrator.task_orchestrator import TaskOrchestrator
 from harness.orchestrator.task_planner import SubTask, TaskPlan
-from harness.orchestrator.session_context import SessionContext, SessionState
-from harness.orchestrator.orchestration_result import OrchestratorResult
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -403,7 +400,7 @@ class TestGetSummaryAndHealing:
         orch._session_ctx = MagicMock()
         orch._session_ctx.get_session.return_value = session
         orch._session_ctx.get_status.return_value = "status"
-        from harness.orchestrator.self_healing import SelfHealingContext, CircuitBreaker
+        from harness.orchestrator.self_healing import CircuitBreaker, SelfHealingContext
         healing = SelfHealingContext(session_id=session.session_id)
         healing.circuit_breakers["builder"] = CircuitBreaker(failure_threshold=3)
         orch._healing_contexts[session.session_id] = healing
@@ -427,6 +424,79 @@ class TestGetSummaryAndHealing:
         status = orch.get_healing_status(session.session_id)
         assert status is not None
         assert "session_id" in status
+
+
+# ===================================================================
+# ShapedCache Integration  (ADR-0018)
+# ===================================================================
+
+class TestShapedCacheIntegration:
+    """Verifica integracion de ShapedCache en el pipeline."""
+
+    def test_enable_cache(self) -> None:
+        """enable_cache configura _shaped_cache en el orquestador."""
+        from harness.orchestrator.task_orchestrator import enable_cache
+        orch = _make_orch()
+        assert orch._shaped_cache is None
+
+        with patch('harness.memory_rag.semantic_cache.SemanticCache') as mock_sc, \
+             patch('harness.memory_rag.semantic_cache.ShapedCache') as mock_shaped:
+
+            mock_sc_instance = MagicMock()
+            mock_sc.return_value = mock_sc_instance
+            mock_shaped_instance = MagicMock()
+            mock_shaped_instance._max_tokens = 10000
+            mock_shaped.return_value = mock_shaped_instance
+
+            enable_cache(orch, max_tokens=10000)
+
+        assert orch._shaped_cache is mock_shaped_instance
+        assert orch._shaped_cache._max_tokens == 10000
+
+    def test_cache_hit_in_process_message(self) -> None:
+        """Cache hit en process_message retorna resultado directo."""
+        orch = _make_orch()
+        mock_cb = MagicMock()
+        mock_cb.is_available = True
+        orch._global_cb = mock_cb
+
+        # Crear un mock de shaped_cache que devuelva un hit
+        mock_cache = MagicMock()
+        mock_cache.get_shaped.return_value = {
+            "response": "respuesta cacheada para test",
+        }
+        orch._shaped_cache = mock_cache
+
+        result = orch.process_message("mi consulta de prueba")
+
+        # Debe retornar resultado completo sin pasar por planner
+        assert result.is_complete is True
+        assert result.session_status == "completed"
+        mock_cache.get_shaped.assert_called_once_with(
+            "mi consulta de prueba", threshold=0.95,
+        )
+
+    def test_cache_miss_proceeds_normal(self) -> None:
+        """Cache miss no interfiere con el flujo normal."""
+        from harness.orchestrator.session_context import SessionContext
+        orch = _make_orch()
+        mock_cb = MagicMock()
+        mock_cb.is_available = True
+        orch._global_cb = mock_cb
+
+        # Cache miss: get_shaped retorna None
+        mock_cache = MagicMock()
+        mock_cache.get_shaped.return_value = None
+        orch._shaped_cache = mock_cache
+        orch._session_ctx = SessionContext()
+        orch._bus = MagicMock()
+
+        result = orch.process_message("consulta sin cache")
+
+        # No debe ser cache hit
+        assert result.is_complete is not True or result.session_status != "completed"
+        # Procesamiento normal: debe crear plan
+        assert result.session_id != ""
 
 
 # ===================================================================

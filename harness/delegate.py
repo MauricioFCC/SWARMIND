@@ -18,26 +18,25 @@ y cli_common (funcionalidad compartida con run.py).
 from __future__ import annotations
 
 import re
-import sys
-import os
 import subprocess
-import logging
-from pathlib import Path
+import sys
 from typing import List, Optional, Tuple
 
 # Importar funcionalidad compartida
 from harness.cli_common import (
-    setup_logging, get_harness_root, get_project_root,
-    parse_message, _safe_print, _ok, _warn, _err, _bold,
+    get_harness_root,
+    get_project_root,
+    setup_logging,
 )
 
 # Importar descubrimiento recursivo de agentes
 # (reemplaza AGENTS list y _INTENT_AGENTS hardcodeados)
 from harness.orchestrator.agent_discovery import (
-    discover_agents_recursive,
     build_intent_map,
+    discover_agents_recursive,
+)
+from harness.orchestrator.agent_discovery import (
     resolve_agent_name as discovery_resolve_agent,
-    list_agents,
 )
 
 logger = setup_logging()

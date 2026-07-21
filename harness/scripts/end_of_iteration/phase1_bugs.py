@@ -6,12 +6,16 @@ from __future__ import annotations
 import ast
 import os
 import re
-from typing import Any, Dict, List, Optional, Set
+from typing import List, Optional
 
 from .config import (
-    BugFinding, PROJECT_ROOT, _load_config, _read_file_lines, _ok, _err,
-    _safe_print, _warn, _walk_py_files, _should_exclude, _is_python_file,
-    _print_banner, _get_changed_files_since_last_commit, _get_git_uncommitted,
+    PROJECT_ROOT,
+    BugFinding,
+    _is_python_file,
+    _load_config,
+    _read_file_lines,
+    _should_exclude,
+    _walk_py_files,
 )
 
 

@@ -23,22 +23,39 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .cli import parse_args
 from .config import (
-    BugFinding, SecurityFinding, DocsStaleness, TokenReport, IterationReport,
-    HARNESS_ROOT, PROJECT_ROOT, _safe_print, _ok, _err, _warn, _bold, _cyan,
-    _print_banner, _supports_unicode, _load_config,
-    _get_changed_files_since_last_commit, _get_git_uncommitted,
+    HARNESS_ROOT,
+    PROJECT_ROOT,
+    BugFinding,
+    DocsStaleness,
+    IterationReport,
+    SecurityFinding,
+    TokenReport,
+    _bold,
+    _cyan,
+    _err,
+    _get_changed_files_since_last_commit,
+    _get_git_uncommitted,
+    _load_config,
+    _ok,
+    _print_banner,
+    _safe_print,
+    _supports_unicode,
+    _warn,
 )
-from .phase1_bugs import scan_for_bugs, auto_fix_bugs
+from .display import (
+    get_last_report,
+    list_iteration_reports,
+    print_last_report,
+    show_iteration_diff,
+    show_iteration_history,
+)
+from .phase1_bugs import auto_fix_bugs, scan_for_bugs
 from .phase2_security import security_scan
 from .phase3_docs import check_and_update_docs
 from .phase4_tokens import calculate_iteration_cost
-from .phase5_commit import prepare_commit, interactive_commit
-from .cli import parse_args
-from .display import (
-    print_last_report, get_last_report,
-    list_iteration_reports, show_iteration_history, show_iteration_diff,
-)
+from .phase5_commit import interactive_commit, prepare_commit
 
 __all__ = [
     "BugFinding", "SecurityFinding", "DocsStaleness", "TokenReport",
@@ -335,7 +352,7 @@ def run_pipeline_recursive(phases, index: int, context: Dict[str, Any]) -> Dict[
     # Caso base: no hay más fases
     if index >= len(phases):
         return context
-    
+
     # Caso recursivo: ejecutar fase actual y pasar a la siguiente
     phase_name, phase_func = phases[index]
     try:
@@ -344,7 +361,7 @@ def run_pipeline_recursive(phases, index: int, context: Dict[str, Any]) -> Dict[
         _safe_print(f"  {_err(f'[ERROR] Fase {phase_name}: {exc}')}")
         if not context.get("auto_commit", False):
             raise
-    
+
     return run_pipeline_recursive(phases, index + 1, context)
 
 
@@ -588,7 +605,7 @@ def _run_pre_commit_pipeline(skip_security: bool = False) -> int:
         staged = []
 
     if not staged:
-        _safe_print(f"    No staged files to check.")
+        _safe_print("    No staged files to check.")
         return 0
 
     scope_files = [f for f in staged if f.startswith("harness/") or f.startswith(".opencode/")]
@@ -598,7 +615,7 @@ def _run_pre_commit_pipeline(skip_security: bool = False) -> int:
     ]
 
     if not scope_files:
-        _safe_print(f"    No relevant files in scope (harness/ or .opencode/).")
+        _safe_print("    No relevant files in scope (harness/ or .opencode/).")
         return 0
 
     _safe_print(f"  Scoping {len(scope_files)} staged file(s) in scope...")
@@ -662,7 +679,7 @@ def _run_pre_commit_pipeline(skip_security: bool = False) -> int:
 
     if critical_bugs or sec_critical_found:
         _safe_print(f"\n  {_err('[ABORT]')} Critical issues found. Commit blocked.")
-        _safe_print(f"  Fix issues or use `git commit --no-verify` to skip.")
+        _safe_print("  Fix issues or use `git commit --no-verify` to skip.")
         return 1
     if has_warnings:
         _safe_print(f"\n  {_warn('[WARN]')} Minor issues found. Commit allowed with --no-verify.")

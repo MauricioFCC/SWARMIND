@@ -19,19 +19,18 @@ from __future__ import annotations
 
 import json
 import logging
-import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 from harness.memory_rag.memory_config import (
     MemoryConfig,
-    get_memory_config,
     TelemetryLevel,
+    get_memory_config,
 )
 
 logger = logging.getLogger(__name__)

@@ -3,14 +3,17 @@ Phase 4: Token Report — estimate consumption and efficiency.
 """
 from __future__ import annotations
 
-import os
 import re
 import subprocess
 from typing import Optional
 
 from .config import (
-    TokenReport, PROJECT_ROOT, _safe_print, _warn, _load_config,
+    PROJECT_ROOT,
+    TokenReport,
     _get_git_uncommitted,
+    _load_config,
+    _safe_print,
+    _warn,
 )
 
 

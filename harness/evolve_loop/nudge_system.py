@@ -27,13 +27,13 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from harness.memory_rag.lance_vector_store import LanceVectorStore
 from harness.evolve_loop.cognition_sync import CognitionSync
+from harness.memory_rag.lance_vector_store import LanceVectorStore
 
 logger = logging.getLogger(__name__)
 

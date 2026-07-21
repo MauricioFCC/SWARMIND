@@ -8,12 +8,12 @@ Now with:
   - MCP server setup wizard
   - Renamed DB: lancedb_store → lancedb
 """
-import os
+import logging
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -309,8 +309,8 @@ def _auto_ingest_project() -> None:
     import time as _time
 
     from harness.memory_rag.doc_ingester import (
-        RAG_EXTENSIONS,
         RAG_EXCLUDE,
+        RAG_EXTENSIONS,
         ingest_project_directory,
     )
 
@@ -452,7 +452,10 @@ def main() -> None:
 
     # Generate LLMs documentation index
     try:
-        from harness.scripts.generate_llms_txt import generate_llms_txt, generate_llms_full_txt
+        from harness.scripts.generate_llms_txt import (
+            generate_llms_full_txt,
+            generate_llms_txt,
+        )
         generate_llms_txt()
         generate_llms_full_txt()
     except Exception as exc:

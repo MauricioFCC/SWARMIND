@@ -14,6 +14,6 @@ Uso:
     tool = registry.get("my-tool")
     tool.execute(...)
 """
-from harness.plugins.registry import ToolRegistry, registry, PluginBase
+from harness.plugins.registry import PluginBase, ToolRegistry, registry
 
 __all__ = ["ToolRegistry", "registry", "PluginBase"]

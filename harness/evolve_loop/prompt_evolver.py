@@ -14,13 +14,11 @@ import logging
 import os
 import shutil
 import time
-import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-import yaml
 
 from harness.memory_rag.lance_vector_store import (
     COLLECTION_PROMPT_EVOLUTION_LOG,

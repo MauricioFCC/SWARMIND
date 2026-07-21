@@ -20,7 +20,7 @@ Ahorro estimado: 30-50% de tokens en historial de conversacion.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 

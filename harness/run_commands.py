@@ -3,14 +3,13 @@ Command handlers for harness/run.py — extracted for file size compliance.
 """
 from __future__ import annotations
 
+import logging
 import os
-import subprocess as _subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -19,7 +18,6 @@ logger = logging.getLogger(__name__)
 def _handle_rag_ingest(store, cmd: str) -> None:
     """Handle ``!rag ingest [--dir <path>]``."""
     from harness.memory_rag.doc_ingester import ingest_project_directory
-    import time
 
     parts = cmd.split()
     target_dir = None
@@ -196,9 +194,9 @@ def _handle_iteration_end(cmd: str, harness_root) -> None:
         _handle_iteration_auto(cmd, harness_root)
         return
 
-    logger.info(f"[Harness] Iniciando pipeline de fin de iteracion...")
+    logger.info("[Harness] Iniciando pipeline de fin de iteracion...")
     if flags["dry_run"]:
-        logger.info(f"[Harness] Modo DRY-RUN — no se modificaran archivos")
+        logger.info("[Harness] Modo DRY-RUN — no se modificaran archivos")
     if any([flags["skip_bugs"], flags["skip_sec"], flags["skip_docs"]]):
         skips = []
         if flags["skip_bugs"]:
@@ -303,6 +301,7 @@ def _handle_hooks_status() -> None:
 def _handle_evolve_mutate(store, cmd: str) -> None:
     """Handle ``!evolve mutate @<agent> \"<task>\"``."""
     import shlex
+
     from harness.evolve_loop.prompt_evolver import PromptEvolver
     parts = shlex.split(cmd)
     if len(parts) < 4:
@@ -352,12 +351,13 @@ def _handle_evolve_mutate(store, cmd: str) -> None:
         else:
             logger.info("[Harness] No se pudo determinar el ganador.")
     else:
-        logger.info(f"[Harness] Original conservado (ningun mutante supero el score original).")
+        logger.info("[Harness] Original conservado (ningun mutante supero el score original).")
 
 
 def _handle_schedule_add(store, cmd: str) -> None:
     """Handle ``!schedule add <name> --cron \"<cron>\" --task \"<cmd>\"``."""
     import shlex
+
     from harness.orchestrator.scheduler import Scheduler
     parts = shlex.split(cmd)
     if len(parts) < 5:
@@ -422,10 +422,10 @@ def _apply_model_routing(task: str, target_agent: str, force_cloud: bool = False
         if not router._is_ollama_available():
             logger.info(f"[ROUTER] ⚠️  Ollama no detectado. Modelo local '{decision.model}' no disponible.")
             if router.config.get("local", {}).get("fallback_to_cloud", True):
-                logger.info(f"[ROUTER] ⚠️  Fallback a cloud automatico activado.")
+                logger.info("[ROUTER] ⚠️  Fallback a cloud automatico activado.")
             else:
-                logger.info(f"[ROUTER] 💡 Instala Ollama: https://ollama.com")
-                logger.info(f"[ROUTER] 💡 O usa --force-cloud para modo cloud")
+                logger.info("[ROUTER] 💡 Instala Ollama: https://ollama.com")
+                logger.info("[ROUTER] 💡 O usa --force-cloud para modo cloud")
     return source
 
 
@@ -477,6 +477,7 @@ def _handle_watch_mode(harness_root: Path) -> None:
     """Handle --watch flag - monitors harness/ and .opencode/ for changes."""
     import time as _time
     from datetime import datetime as _datetime
+
     from harness.cli_common import get_project_root
 
     logger.info("[Harness] Watch mode activado - monitoreando:")
@@ -495,7 +496,7 @@ def _handle_watch_mode(harness_root: Path) -> None:
     debounce_seconds = 3.0
 
     _safe_print(f"  {_cyan('[WATCH]')} Waiting for changes...")
-    _safe_print(f"  Press Ctrl+C to stop.")
+    _safe_print("  Press Ctrl+C to stop.")
     _safe_print()
 
     try:

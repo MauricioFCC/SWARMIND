@@ -7,10 +7,10 @@ Cubre: fallback_embedding, estimate_tokens, compression_pct,
 """
 
 import numpy as np
-import pytest
+
 from harness.common import (
-    EMPTY_VECTOR,
     EMBEDDING_DIM,
+    EMPTY_VECTOR,
     StatsMixin,
     avg_compression_pct,
     compression_pct,

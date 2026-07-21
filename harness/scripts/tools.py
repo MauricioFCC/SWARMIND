@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """CLI para gestion de plugins."""
 from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path
+
 sys.path.insert(1, str(Path(__file__).resolve().parent.parent.parent))
 from harness.plugins.registry import registry
 
@@ -19,7 +21,7 @@ def main():
     pr.add_argument("args", nargs="*")
     sub.add_parser("discover", help="Rediscover")
     args = p.parse_args()
-    
+
     if args.command == "list":
         for t in registry.list_tools():
             print(f"  {t['name']:<20} {t['description'][:60]}")

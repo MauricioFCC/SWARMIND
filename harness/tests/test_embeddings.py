@@ -8,7 +8,6 @@ harness.common.fallback_embedding.
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from harness.memory_rag.embeddings import EMBEDDING_DIM, make_embedding
 

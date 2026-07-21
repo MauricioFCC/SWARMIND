@@ -10,11 +10,11 @@ Removes:
 
 Run this before copying the harness to a new project.
 """
+import logging
 import os
 import shutil
-import sys
 from pathlib import Path
-import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -105,7 +105,7 @@ def main() -> None:
         scheduler_jobs.write_text("jobs: []\n", encoding="utf-8")
         banner(f"Vaciado: {scheduler_jobs.name}")
     else:
-        banner(f"(no existe, se omite): scheduler_jobs.yaml")
+        banner("(no existe, se omite): scheduler_jobs.yaml")
 
     # 5. Python cache
     clean_pycache(project_root / "harness")

@@ -1,5 +1,6 @@
 """Tool Registry — Auto-discovery via import-time registration."""
 from __future__ import annotations
+
 import importlib
 import logging
 from pathlib import Path

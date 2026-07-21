@@ -19,7 +19,6 @@ import shutil
 import stat
 import subprocess
 import sys
-import time as _time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -239,9 +238,9 @@ def install_hook() -> bool:
         _print()
         _print(f"  {_bold('Hook autocontenido — no depende de rutas externas.')}")
         _print(f"  {_bold('En cada commit ejecutará (modo rápido):')}")
-        _print(f"    harness/scripts/end_of_iteration.py --pre-commit --quick")
+        _print("    harness/scripts/end_of_iteration.py --pre-commit --quick")
         _print()
-        _print(f"  Para saltar el hook: git commit --no-verify")
+        _print("  Para saltar el hook: git commit --no-verify")
         return True
     except Exception as exc:
         _print(f"  {_err('[ERROR]')} No se pudo escribir el hook: {exc}")
@@ -359,10 +358,10 @@ def show_status() -> None:
             pass
 
     _print()
-    _print(f"  Comandos:")
-    _print(f"    python harness/scripts/install_hooks.py --install")
-    _print(f"    python harness/scripts/install_hooks.py --uninstall")
-    _print(f"    python harness/scripts/install_hooks.py --status")
+    _print("  Comandos:")
+    _print("    python harness/scripts/install_hooks.py --install")
+    _print("    python harness/scripts/install_hooks.py --uninstall")
+    _print("    python harness/scripts/install_hooks.py --status")
     _print()
 
 

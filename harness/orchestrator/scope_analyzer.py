@@ -10,10 +10,8 @@ Determina cuantos agentes lanzar segun la cantidad de trabajo detectada:
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
-
+from typing import Dict, List
 
 # Keywords que indican cantidad de modulos/archivos
 SCALE_INDICATORS: Dict[str, int] = {

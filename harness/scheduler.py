@@ -23,7 +23,7 @@ import os
 import threading
 import time
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -762,6 +762,7 @@ class LanceScheduler(BaseScheduler, JobStore):
 
         try:
             import numpy as np  # type: ignore[import-untyped]
+
             from harness.memory_rag.lance_vector_store import (
                 COLLECTION_SCHEDULER_LOG,
             )

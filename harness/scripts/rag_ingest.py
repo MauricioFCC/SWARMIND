@@ -79,7 +79,7 @@ def _ingest(
 
     if dry_run:
         # Solo contar archivos, sin ingerir
-        from harness.memory_rag.doc_ingester import RAG_EXTENSIONS, RAG_EXCLUDE
+        from harness.memory_rag.doc_ingester import RAG_EXCLUDE, RAG_EXTENSIONS
         count = 0
         for fpath in sorted(target.rglob("*")):
             if not fpath.is_file():

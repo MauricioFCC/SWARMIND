@@ -1,7 +1,9 @@
 """Benchmark: Semantic Cache."""
 from __future__ import annotations
+
 import time
 from typing import Any, Dict
+
 from harness.memory_rag.semantic_cache import SemanticCache
 
 
@@ -12,7 +14,7 @@ def bench_cache() -> Dict[str, Any]:
     for i in range(n):
         cache.set(f"test prompt {i}", f"response_{i}", agent_role="test")
     t_set = time.perf_counter() - t0
-    
+
     hits = 0
     n_get = 100
     t0 = time.perf_counter()
@@ -20,7 +22,7 @@ def bench_cache() -> Dict[str, Any]:
         r = cache.get(f"test prompt {i % n}", agent_role="test")
         if r: hits += 1
     t_get = time.perf_counter() - t0
-    
+
     return {
         "name": "Semantic Cache",
         "set_time_ms": round(t_set * 1000, 2),

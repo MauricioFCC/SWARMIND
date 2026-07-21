@@ -6,12 +6,9 @@ vectorizes, and inserts into LanceVectorStore rag_chunks collection.
 from __future__ import annotations
 
 import logging
-import os
 import re
 import time
-import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 

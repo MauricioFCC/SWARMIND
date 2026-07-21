@@ -10,10 +10,9 @@ from __future__ import annotations
 import logging
 import os
 import re
-import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -46,15 +45,15 @@ class ProceduralSkill:
         """To markdown."""
         lines = [
             f"# {self.name}",
-            f"",
+            "",
             f"**Agent:** @{self.agent}",
             f"**Descripcion:** {self.description}",
             f"**Version:** {self.version}",
             f"**Creado:** {self.created_at}",
             f"**Tags:** {', '.join(self.tags)}",
-            f"",
-            f"## Pasos",
-            f"",
+            "",
+            "## Pasos",
+            "",
         ]
         for i, step in enumerate(self.steps, 1):
             lines.append(f"{i}. {step}")

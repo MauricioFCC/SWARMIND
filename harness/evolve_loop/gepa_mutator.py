@@ -6,7 +6,6 @@ and promotes the winner. Implements the "Evolucion Genetica de Prompts" pattern.
 """
 from __future__ import annotations
 
-import hashlib
 import logging
 import random
 import re

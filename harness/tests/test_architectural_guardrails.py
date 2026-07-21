@@ -1,10 +1,14 @@
 """Tests para Architectural Guardrails — validacion de reglas en codigo."""
 from __future__ import annotations
-import pytest
+
 from harness.orchestrator.architectural_guardrails import (
-    check_type_hints, check_function_length, check_no_except_pass,
-    check_forbidden_imports, check_all, builtin_guardrails,
     GuardrailResult,
+    builtin_guardrails,
+    check_all,
+    check_forbidden_imports,
+    check_function_length,
+    check_no_except_pass,
+    check_type_hints,
 )
 
 

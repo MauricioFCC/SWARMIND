@@ -7,10 +7,10 @@ Scans ``harness/`` and ``.opencode/`` recursively, building a curated index
 
 from __future__ import annotations
 
-import os
+import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Set
-import logging
+
 logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parent.parent.parent  # AGENTIC/

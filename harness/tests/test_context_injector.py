@@ -1,6 +1,5 @@
 """Tests para ContextInjector — inyeccion de estandares + validate_docstrings."""
 from __future__ import annotations
-import pytest
 
 
 class TestContextInjector:

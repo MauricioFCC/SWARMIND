@@ -22,18 +22,20 @@ Elimina HAS_GUARDRAILS bypass silencioso — ahora es error EXPLICITO.
 """
 from __future__ import annotations
 
-import sys
 import os
-import re
-import logging
-from pathlib import Path
-from typing import Any, Dict, Optional
+import sys
+from typing import Any, Dict
 
 # Importar funcionalidad compartida (DRY con delegate.py)
 from harness.cli_common import (
-    setup_logging, get_harness_root, get_project_root,
-    parse_message, load_vector_store, check_first_run,
-    _safe_print, _ok, _warn, _err, _bold, _cyan,
+    _cyan,
+    _ok,
+    _safe_print,
+    _warn,
+    check_first_run,
+    get_harness_root,
+    get_project_root,
+    setup_logging,
 )
 
 logger = setup_logging()
@@ -55,14 +57,12 @@ except ImportError:
         "LanceDB no encontrado. Ejecuta: pip install lancedb && python harness/scripts/init.py"
     )
 
-from harness.orchestrator.task_manager import TaskManager
-from harness.orchestrator.delegation_engine import DelegationEngine
-from harness.memory_rag.context_assembler import ContextAssembler
-from harness.memory_rag.lance_vector_store import LanceVectorStore
 from harness.evolve_loop.cognition_sync import CognitionSync
+from harness.memory_rag.context_assembler import ContextAssembler
 from harness.memory_rag.doc_ingester import DocumentChunker, ingest_directory
-from harness.model_router.router import ModelRouter
+from harness.memory_rag.lance_vector_store import LanceVectorStore
 from harness.orchestrator.hitl_guard import HITLGuard
+from harness.orchestrator.task_manager import TaskManager
 
 # ---------------------------------------------------------------------------
 # Guardrails - AHORA ES ERROR EXPLICITO si no está disponible
@@ -83,16 +83,31 @@ except ImportError:
 
 # Import command handlers
 from harness.run_commands import (
-    _handle_db_migrate, _handle_db_list_imports, _handle_db_stats, _handle_db_rollback,
-    _parse_iteration_flags, _handle_iteration_end, _handle_iteration_report,
-    _handle_iteration_quick, _handle_iteration_auto,
-    _handle_iteration_history, _handle_iteration_diff,
-    _handle_hooks_install, _handle_hooks_uninstall, _handle_hooks_status,
-    _handle_evolve_mutate, _handle_schedule_add, _handle_schedule_list,
-    _handle_rag_ingest, _handle_rag_stats,
-    _apply_model_routing, _check_hitl, _get_files_to_watch,
-    _handle_watch_mode, _handle_hermes, _run_guardrails,
+    _apply_model_routing,
+    _check_hitl,
+    _handle_db_list_imports,
+    _handle_db_migrate,
+    _handle_db_rollback,
+    _handle_db_stats,
+    _handle_evolve_mutate,
+    _handle_hermes,
+    _handle_hooks_install,
+    _handle_hooks_status,
+    _handle_hooks_uninstall,
+    _handle_iteration_auto,
+    _handle_iteration_diff,
+    _handle_iteration_end,
+    _handle_iteration_history,
+    _handle_iteration_quick,
+    _handle_iteration_report,
+    _handle_rag_ingest,
+    _handle_rag_stats,
+    _handle_schedule_add,
+    _handle_schedule_list,
+    _handle_watch_mode,
+    _run_guardrails,
 )
+
 
 def _show_usage() -> None:
     """Show usage information."""
@@ -236,8 +251,9 @@ def _handle_gateway_mode(parsed: Dict[str, Any]) -> None:
 
 def _handle_daemon_mode() -> None:
     """Handle --daemon mode."""
-    from harness.orchestrator.scheduler import Scheduler
     import time
+
+    from harness.orchestrator.scheduler import Scheduler
 
     logger.info("[Harness] Daemon mode - iniciando scheduler en background...")
     store = LanceVectorStore()
@@ -341,7 +357,7 @@ def _display_plan(orch_result: Any, task: str) -> None:
     if orch_result.current_level:
         if len(orch_result.current_level) == 1:
             st = orch_result.current_level[0]
-            _safe_print(f"  {_cyan(f'▶ Ejecutando:')} [{st['agent']}] {st['description']}")
+            _safe_print(f"  {_cyan('▶ Ejecutando:')} [{st['agent']}] {st['description']}")
         else:
             _safe_print(f"  {_cyan(f'▶ Ejecutando {len(orch_result.current_level)} subtareas en PARALELO:')}")
             for st in orch_result.current_level:
@@ -369,6 +385,7 @@ def _dispatch_task(store: Any, orch_result: Any, task: str) -> str:
     }
 
     import asyncio
+
     from harness.orchestrator.agent_dispatcher import AgentDispatcher
     dispatcher = AgentDispatcher(vector_store=store)
 
@@ -462,7 +479,7 @@ def _display_final_output(orch_result: Any, target_agent: str, routing_source: s
         pending = len(orch_result.plan.subtasks) - sum(1 for s in orch_result.plan.subtasks if s.completed)
         if pending > 0:
             _safe_print(f"\n  {_warn(f'⏳ Quedan {pending} subtareas pendientes.')}")
-            _safe_print(f"  Para continuar, escribe 'continuar' o el siguiente paso.")
+            _safe_print("  Para continuar, escribe 'continuar' o el siguiente paso.")
         else:
             _safe_print(f"\n  {_cyan('ℹ️  Usa este plan como guía para la implementación.')}")
 
@@ -482,8 +499,8 @@ def _start_sandbox_if_needed(
     if target_agent not in ("builder", "software-engineer") or not new_task:
         return
 
-    from harness.orchestrator.sandbox_loop import SandboxLoop
     from harness.orchestrator.agent_bus import AgentBus
+    from harness.orchestrator.sandbox_loop import SandboxLoop
 
     task_id = getattr(new_task, 'id', 'N/A')
     logger.info("\n[Harness] [Sandbox] Iniciando SandboxLoop para task_id=%s", task_id)

@@ -17,28 +17,19 @@ Covers:
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional
-from unittest.mock import MagicMock, patch
-
-import numpy as np
-import pytest
+from unittest.mock import MagicMock
 
 from harness.memory_rag.agent_kpi_tracker import (
-    COLL_AGENT_INTERACTIONS,
     COLL_AGENT_PERFORMANCE,
     COLL_SESSION_KPIS,
     COLL_SKILL_EFFECTIVENESS,
-    COLL_TELEMETRY_EVENTS,
-    ALL_KPI_COLLECTIONS,
     AgentKpiTracker,
     AgentPerformanceRecord,
+    SessionKPIRecord,
     SkillEffectivenessRecord,
     TelemetryEventRecord,
-    SessionKPIRecord,
 )
 from harness.memory_rag.memory_config import MemoryConfig, TelemetryLevel
-
 
 # ---------------------------------------------------------------------------
 # Dataclass tests

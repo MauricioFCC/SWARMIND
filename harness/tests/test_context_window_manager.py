@@ -7,8 +7,6 @@ Cubre: TokenEstimator, ContextSection, ContextWindow, ContextWindowManager,
 
 from __future__ import annotations
 
-import re
-from typing import Any, Dict, List
 from unittest import mock
 
 import pytest
@@ -20,13 +18,11 @@ from harness.memory_rag.context_window_manager import (
     PRIORITY_HIGH,
     PRIORITY_LOW,
     PRIORITY_NORMAL,
-    SLIDING_WINDOW_SIZE,
     ContextSection,
     ContextWindow,
     ContextWindowManager,
     TokenEstimator,
 )
-
 
 # ===========================================================================
 # Fixtures

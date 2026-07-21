@@ -15,12 +15,10 @@ Cubre:
 
 from __future__ import annotations
 
-import time
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import numpy as np
-import pytest
 
 from harness.memory_rag.semantic_cache import (
     COLLECTION_SEMANTIC_CACHE,
@@ -30,7 +28,6 @@ from harness.memory_rag.semantic_cache import (
     SemanticCache,
     ShapedCache,
 )
-
 
 # ---------------------------------------------------------------------------
 # CacheEntry tests

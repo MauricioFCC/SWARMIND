@@ -30,12 +30,12 @@ from __future__ import annotations
 EMBEDDING_DIM = 384
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
-from harness.orchestrator.agent_bus import AgentBus
-from harness.tools_sandbox.mcp_executor import MCPExecutor, SandboxResult
 from harness.evolve_loop.cognition_sync import CognitionSync
 from harness.memory_rag.lance_vector_store import LanceVectorStore
+from harness.orchestrator.agent_bus import AgentBus
+from harness.tools_sandbox.mcp_executor import MCPExecutor, SandboxResult
 
 logger = logging.getLogger(__name__)
 

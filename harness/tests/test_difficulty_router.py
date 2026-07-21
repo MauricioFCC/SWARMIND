@@ -12,16 +12,15 @@ import pytest
 
 from harness.orchestrator.difficulty_router import (
     AMBIGUITY_PATTERNS,
+    HIGH_COMPLEXITY_KEYWORDS,
+    LOW_COMPLEXITY_KEYWORDS,
+    TECH_VERBS,
     ComplexityFeatures,
     ComplexityLevel,
     DifficultyRouter,
-    HIGH_COMPLEXITY_KEYWORDS,
-    LOW_COMPLEXITY_KEYWORDS,
     PipelineType,
     RoutingDecision,
-    TECH_VERBS,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

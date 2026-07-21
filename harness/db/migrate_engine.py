@@ -23,12 +23,10 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 
 from harness.db.migrate_discovery import (
-    discover_collections_recursive,
     detect_format,
     probe_db,
 )
 from harness.memory_rag.lance_migration import (
-    serialize_for_schema,
     adapt_vector,
 )
 

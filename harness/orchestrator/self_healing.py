@@ -27,7 +27,6 @@ from typing import Dict, Optional
 
 from harness.orchestrator.structured_log import StructuredLogRecord
 
-
 # ---------------------------------------------------------------------------
 # Circuit Breaker
 # ---------------------------------------------------------------------------

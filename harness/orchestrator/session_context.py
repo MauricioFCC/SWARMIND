@@ -275,14 +275,14 @@ class SessionContext:
             if all(s.id in {st.id for st in next_level} for s in level):
                 continue
             if not future_found:
-                lines.append(f"\n⏸️  Próximos pasos:")
+                lines.append("\n⏸️  Próximos pasos:")
                 future_found = True
             for s in level:
                 if not s.completed and s not in next_level:
                     lines.append(f"   ⏸️  [{s.agent}] {s.description}")
 
         if session.completed:
-            lines.append(f"\n🎉 ¡Sesión COMPLETA!")
+            lines.append("\n🎉 ¡Sesión COMPLETA!")
 
         return "\n".join(lines)
 

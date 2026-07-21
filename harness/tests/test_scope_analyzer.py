@@ -1,7 +1,6 @@
 """Tests para ScopeAnalyzer — analisis de alcance de tareas."""
 from __future__ import annotations
 
-import pytest
 from harness.orchestrator.scope_analyzer import ScopeAnalyzer, ScopeEstimate
 
 

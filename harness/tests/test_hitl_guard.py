@@ -10,18 +10,14 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
 
 from harness.orchestrator.hitl_guard import (
-    DEFAULT_CONFIG_PATH,
     DEFAULT_TIMEOUT,
     HITLGuard,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

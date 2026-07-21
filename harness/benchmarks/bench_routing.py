@@ -1,7 +1,9 @@
 """Benchmark: Routing precision y velocidad."""
 from __future__ import annotations
+
 import time
 from typing import Any, Dict, List, Tuple
+
 from harness.orchestrator.delegation_engine import DelegationEngine
 
 GOLDEN_SET: List[Tuple[str, str]] = [

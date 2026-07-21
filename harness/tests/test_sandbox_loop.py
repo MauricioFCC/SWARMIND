@@ -8,15 +8,12 @@ notificaciones internas, get_status.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
 
-from harness.orchestrator.sandbox_loop import SandboxLoop, _DEFAULT_MAX_ITERATIONS
+from harness.orchestrator.sandbox_loop import _DEFAULT_MAX_ITERATIONS, SandboxLoop
 from harness.tools_sandbox.mcp_executor import SandboxResult
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -94,7 +91,6 @@ class TestInit:
 
     def test_default_construction(self):
         """Debe crear instancias por defecto si no se pasan."""
-        from unittest.mock import MagicMock
         with patch("harness.orchestrator.sandbox_loop.LanceVectorStore") as mock_store:
             with patch("harness.orchestrator.sandbox_loop.AgentBus") as mock_bus:
                 with patch("harness.orchestrator.sandbox_loop.MCPExecutor") as mock_exec:

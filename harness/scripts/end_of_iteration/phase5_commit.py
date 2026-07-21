@@ -10,9 +10,21 @@ import sys
 from typing import Dict, List
 
 from .config import (
-    BugFinding, SecurityFinding, TokenReport, DocsStaleness, IterationReport,
-    HARNESS_ROOT, PROJECT_ROOT, _safe_print, _ok, _err, _warn, _bold, _cyan,
-    _print_banner, _supports_unicode, _get_git_uncommitted,
+    HARNESS_ROOT,
+    PROJECT_ROOT,
+    BugFinding,
+    DocsStaleness,
+    SecurityFinding,
+    TokenReport,
+    _bold,
+    _cyan,
+    _err,
+    _get_git_uncommitted,
+    _ok,
+    _print_banner,
+    _safe_print,
+    _supports_unicode,
+    _warn,
 )
 
 
@@ -122,7 +134,7 @@ def prepare_commit(
     lines.append("")
     lines.append(f"# Docs: {len(docs_staleness)} archivos desactualizados")
     lines.append("")
-    lines.append(f"# Token Report:")
+    lines.append("# Token Report:")
     lines.append(f"#   Input: {token_report.tokens_input_total:,} tokens")
     lines.append(f"#   Output: {token_report.tokens_output_total:,} tokens")
     if token_report.eficiencia:
@@ -274,4 +286,4 @@ def interactive_commit(commit_msg: str) -> None:
                     os.remove(msg_path)
             break
         else:
-            _safe_print(f"  Opcion invalida. Responde Y, n, o --edit.")
+            _safe_print("  Opcion invalida. Responde Y, n, o --edit.")

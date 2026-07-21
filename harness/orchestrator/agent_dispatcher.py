@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import functools
 import logging
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -265,6 +264,7 @@ class AgentDispatcher:
                          previous_results, communication_log.
         """
         import asyncio
+
         from harness.memory_rag.context_assembler import ContextAssembler
         from harness.orchestrator.agent_bus import AgentBus
 

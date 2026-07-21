@@ -19,7 +19,7 @@ Uso:
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 # ---------------------------------------------------------------------------
 # Codificacion ultra-compacta de estandares (<100 chars cada uno)

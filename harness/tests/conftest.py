@@ -1,9 +1,12 @@
 """Fixtures compartidas para todos los tests."""
 from __future__ import annotations
+
 import sys
-import tempfile
 from pathlib import Path
+
 import pytest
+
+from harness.tests.mock_vector_store import MockVectorStore
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
@@ -11,16 +14,62 @@ if str(PROJECT_ROOT) not in sys.path:
 
 
 # ---------------------------------------------------------------------------
+# Colecciones por defecto (compatibles con LanceVectorStore.DEFAULT_COLLECTIONS)
+# para que los tests existentes sigan funcionando sin cambios.
+# ---------------------------------------------------------------------------
+
+_MOCK_DEFAULT_COLLECTIONS = [
+    "asi_cognition_store",
+    "rag_chunks",
+    "tasks_board",
+    "agent_workspace_logs",
+    "procedural_skills",
+    "prompt_evolution_log",
+    "scheduler_log",
+    "hitl_approval_log",
+    "semantic_cache",
+    "iteration_reports",
+    "agent_performance",
+    "skill_effectiveness",
+    "telemetry_events",
+    "session_kpis",
+    "agent_interactions",
+]
+
+
+def _mock_store_with_defaults() -> MockVectorStore:
+    """Crea MockVectorStore con las colecciones por defecto pre-creadas."""
+    store = MockVectorStore()
+    for name in _MOCK_DEFAULT_COLLECTIONS:
+        store.create_collection(name)
+    return store
+
+
+# ---------------------------------------------------------------------------
 # Fixtures de infraestructura pesada — scope=session para reutilizacion
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture(scope="session")
+def mock_store():
+    """MockVectorStore compartido por toda la sesion de tests (session scope).
+
+    Incluye las colecciones por defecto. Permite paralelismo real con
+    pytest-xdist al evitar locks de base de datos.
+    No requiere LanceDB instalado.
+    """
+    return _mock_store_with_defaults()
+
+
 @pytest.fixture
 def vector_store():
-    """LanceVectorStore con base de datos aislada (temp dir) y fallback in-memory."""
-    from harness.memory_rag.lance_vector_store import LanceVectorStore
-    tmpdir = tempfile.mkdtemp(prefix="agentic_test_")
-    return LanceVectorStore(db_path=tmpdir, allow_fallback=True)
+    """VectorStore aislado por test (function scope) usando MockVectorStore.
+
+    Reemplaza LanceVectorStore real con implementacion en memoria.
+    Incluye las colecciones por defecto para compatibilidad con tests existentes.
+    No requiere LanceDB instalado y permite tests paralelos.
+    """
+    return _mock_store_with_defaults()
 
 
 @pytest.fixture
@@ -59,10 +108,10 @@ def cognition_sync(vector_store):
 
 
 @pytest.fixture
-def semantic_cache():
-    """SemanticCache."""
+def semantic_cache(vector_store):
+    """SemanticCache con MockVectorStore (evita dependencia de LanceDB)."""
     from harness.memory_rag.semantic_cache import SemanticCache
-    return SemanticCache()
+    return SemanticCache(vector_store=vector_store)
 
 
 @pytest.fixture

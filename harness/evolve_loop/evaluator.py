@@ -13,9 +13,8 @@ Each dimension returns a score (0.0 – 1.0) and qualitative feedback.
 from __future__ import annotations
 
 import logging
-import re
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 

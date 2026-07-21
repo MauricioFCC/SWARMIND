@@ -4,9 +4,8 @@ from __future__ import annotations
 import json
 from unittest.mock import MagicMock
 
-import pytest
-from harness.orchestrator.task_planner import SubTask, TaskPlan, TaskPlanner
 from harness.orchestrator.session_context import SessionContext, SessionState
+from harness.orchestrator.task_planner import SubTask, TaskPlan, TaskPlanner
 
 
 class TestSessionContext:

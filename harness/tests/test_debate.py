@@ -12,11 +12,11 @@ Verifies:
 from __future__ import annotations
 
 import json
-import pytest
-from dataclasses import asdict
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from harness.orchestrator.debate_orchestrator import (
     DebateOrchestrator,
@@ -25,12 +25,11 @@ from harness.orchestrator.debate_orchestrator import (
     DebateStrategy,
     DispatchFn,
 )
-from harness.orchestrator.task_planner import (
-    TaskPlanner,
-    SUBTASK_TEMPLATES,
-)
 from harness.orchestrator.task_orchestrator import TaskOrchestrator
-
+from harness.orchestrator.task_planner import (
+    SUBTASK_TEMPLATES,
+    TaskPlanner,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures

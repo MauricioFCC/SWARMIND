@@ -5,12 +5,10 @@ Cubre: ContextSection, ContextWindow, ContextWindowManager,
        optimize(), compact_history(), get_stats() via StatsMixin.
 """
 
-import pytest
 from harness.memory_rag.context_window_manager import (
     PRIORITY_CRITICAL,
     PRIORITY_HIGH,
     PRIORITY_LOW,
-    PRIORITY_NORMAL,
     ContextSection,
     ContextWindow,
     ContextWindowManager,

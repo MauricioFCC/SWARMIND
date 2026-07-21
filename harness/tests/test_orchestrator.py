@@ -1,7 +1,8 @@
 """Tests for TaskOrchestrator — Plan-and-Execute orchestration."""
 
 import pytest
-from harness.orchestrator.task_orchestrator import TaskOrchestrator, OrchestratorResult
+
+from harness.orchestrator.task_orchestrator import TaskOrchestrator
 
 
 class TestTaskOrchestrator:

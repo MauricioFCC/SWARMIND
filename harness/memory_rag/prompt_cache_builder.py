@@ -12,12 +12,9 @@ Ahorro estimado: 50-90% en tokens de input para llamadas repetitivas.
 
 from __future__ import annotations
 
-import hashlib
-import json
 import logging
-import re
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from dataclasses import dataclass
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 

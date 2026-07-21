@@ -5,10 +5,10 @@ Displays available models if Ollama is accessible.
 
 from __future__ import annotations
 
-import sys
-import subprocess
-from typing import Optional
 import logging
+import subprocess
+import sys
+
 logger = logging.getLogger(__name__)
 
 

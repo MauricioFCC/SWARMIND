@@ -21,13 +21,10 @@ el contenido del archivo mediante búsqueda de keywords.
 """
 from __future__ import annotations
 
-import os
+import functools
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-
-import functools
-
 
 # ---------------------------------------------------------------------------
 # Path resolution
@@ -343,15 +340,15 @@ def discover_agents_recursive(agents_dir: Optional[str] = None) -> Dict[str, Dic
         Cada perfil contiene: name, domain, triggers, capabilities, aliases, description
     """
     agents: Dict[str, Dict[str, Any]] = {}
-    
+
     if agents_dir:
         search_path = Path(agents_dir)
     else:
         search_path = _get_agents_dir()
-    
+
     if not search_path.exists():
         return agents
-    
+
     # RECURSIVO: rglob encuentra todos los .md recursivamente
     # NOTA: Saltamos archivos .agent.min.md porque se cargan via el .md original
     for md_file in sorted(search_path.rglob("*.md")):
@@ -360,7 +357,7 @@ def discover_agents_recursive(agents_dir: Optional[str] = None) -> Dict[str, Dic
         agent = parse_agent_profile(md_file)
         if agent and agent.get("name"):
             agents[agent["name"]] = agent
-    
+
     return agents
 
 
@@ -381,19 +378,19 @@ def build_alias_map(agents: Dict[str, Dict[str, Any]]) -> Dict[str, str]:
         Dict[str, str] con alias → nombre canónico del agente
     """
     alias_map: Dict[str, str] = {}
-    
+
     for name, info in agents.items():
         # Alias explícitos del frontmatter
         for alias in info.get("aliases", []):
             alias_map[alias.lower()] = name
-        
+
         # Alias por convención: parte antes del primer guión
         # (e.g., "software-engineer" → "software")
         # pero solo si no hay conflicto
         primary = name.split("-")[0]
         if primary != name and primary not in alias_map:
             alias_map[primary] = name
-    
+
     # Aliases hardcodeados para compatibilidad con @roles antiguos.
     # Ahora apuntan a los 5 roles universales (los viejos agentes se eliminaron).
     hardcoded_aliases = {
@@ -448,7 +445,7 @@ def build_alias_map(agents: Dict[str, Dict[str, Any]]) -> Dict[str, str]:
     for alias, name in hardcoded_aliases.items():
         if alias not in alias_map:
             alias_map[alias] = name
-    
+
     return alias_map
 
 
@@ -465,16 +462,16 @@ def resolve_agent_name(alias_or_name: str, agents: Optional[Dict[str, Any]] = No
     """
     if agents is None:
         agents = discover_agents_recursive()
-    
+
     key = alias_or_name.lower().replace("-", "_")
-    
+
     # Búsqueda directa
     if alias_or_name in agents:
         return alias_or_name
-    
+
     # Construir alias map
     alias_map = build_alias_map(agents)
-    
+
     return alias_map.get(key, "")
 
 
@@ -494,7 +491,7 @@ def get_all_capabilities(agents: Optional[Dict[str, Any]] = None) -> Dict[str, L
     """
     if agents is None:
         agents = discover_agents_recursive()
-    
+
     return {
         name: info.get("capabilities", [])
         for name, info in agents.items()
@@ -514,11 +511,11 @@ def get_agent_for_domain(domain: str, agents: Optional[Dict[str, Any]] = None) -
     """
     if agents is None:
         agents = discover_agents_recursive()
-    
+
     for name, info in agents.items():
         if info.get("domain") == domain:
             return name
-    
+
     return "project-manager"
 
 
@@ -552,12 +549,12 @@ def build_intent_map(agents: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
     """
     if agents is None:
         agents = discover_agents_recursive()
-    
+
     intent_map: Dict[str, str] = {}
     for name, info in agents.items():
         for trigger in info.get("triggers", []):
             trigger_lower = trigger.lower().strip()
             if trigger_lower:
                 intent_map[trigger_lower] = name
-    
+
     return intent_map

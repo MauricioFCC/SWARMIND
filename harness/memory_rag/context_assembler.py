@@ -24,7 +24,6 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 
 from harness.common import (
-    EMPTY_VECTOR,
     estimate_tokens,
     fallback_embedding,
     truncate_by_budget,

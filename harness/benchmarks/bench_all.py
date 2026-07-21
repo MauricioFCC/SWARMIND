@@ -9,6 +9,7 @@ Uso:
     python harness/benchmarks/bench_all.py --compare
 """
 from __future__ import annotations
+
 import argparse
 import json
 import logging
@@ -34,16 +35,16 @@ def _print_result(r: Dict[str, Any]):
 
 
 def run_all() -> List[Dict[str, Any]]:
-    from harness.benchmarks.bench_routing import bench_routing
-    from harness.benchmarks.bench_memory import bench_memory
     from harness.benchmarks.bench_cache import bench_cache
     from harness.benchmarks.bench_compression import bench_compression
-    
+    from harness.benchmarks.bench_memory import bench_memory
+    from harness.benchmarks.bench_routing import bench_routing
+
     print("=" * 60)
     print("  AGENTIC Benchmark Suite")
     print("  " + datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"))
     print("=" * 60)
-    
+
     results = []
     for name, fn in [("1. Routing", bench_routing), ("2. Memory", bench_memory),
                      ("3. Cache", bench_cache), ("4. Compression", bench_compression)]:
@@ -51,7 +52,7 @@ def run_all() -> List[Dict[str, Any]]:
         r = fn()
         _print_result(r)
         results.append(r)
-    
+
     print("\n" + "=" * 60)
     print("  Complete")
     print("=" * 60)
@@ -84,10 +85,10 @@ def _run_single(name: str, fn) -> List[Dict]:
 
 
 def main():
-    from harness.benchmarks.bench_routing import bench_routing
-    from harness.benchmarks.bench_memory import bench_memory
     from harness.benchmarks.bench_cache import bench_cache
     from harness.benchmarks.bench_compression import bench_compression
+    from harness.benchmarks.bench_memory import bench_memory
+    from harness.benchmarks.bench_routing import bench_routing
 
     p = argparse.ArgumentParser()
     p.add_argument("--routing", action="store_true")
@@ -97,7 +98,7 @@ def main():
     p.add_argument("--json", action="store_true")
     p.add_argument("--compare", action="store_true")
     args = p.parse_args()
-    
+
     if args.routing:
         selected = _run_single("Routing", bench_routing)
     elif args.memory:
@@ -108,7 +109,7 @@ def main():
         selected = _run_single("Compression", bench_compression)
     else:
         selected = run_all()
-    
+
     if args.json:
         print(json.dumps(selected, indent=2))
     if args.compare:

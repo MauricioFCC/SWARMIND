@@ -8,18 +8,16 @@ lectura de skill .md, stats, dispatch_async y dispatch_batch.
 from __future__ import annotations
 
 import asyncio
-from pathlib import Path
-from typing import Any, Dict, Optional
-from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
+from typing import Any, Dict
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 
 from harness.orchestrator.agent_dispatcher import (
-    AgentDispatcher,
     SIMILARITY_THRESHOLD,
+    AgentDispatcher,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

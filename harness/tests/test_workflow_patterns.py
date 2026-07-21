@@ -1,9 +1,11 @@
 """Tests para Workflow Patterns — Evaluator-Optimizer, Voting, Critique-Revise, Parallel-Transform."""
 from __future__ import annotations
-import pytest
+
 from harness.orchestrator.workflow_patterns import (
-    evaluator_optimizer, voting, critique_revise, parallel_transform,
-    PatternResult,
+    critique_revise,
+    evaluator_optimizer,
+    parallel_transform,
+    voting,
 )
 
 

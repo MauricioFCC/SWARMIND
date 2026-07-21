@@ -1,8 +1,8 @@
 """Tests para lazy loading y warm start de harness."""
 from __future__ import annotations
-import sys
+
 import importlib
-import pytest
+import sys
 
 
 class TestLazyLoading:
@@ -15,7 +15,6 @@ class TestLazyLoading:
             if mod.startswith("harness.") and mod != "harness":
                 del sys.modules[mod]
 
-        import harness
 
         # Verificar que submodulos NO estan cargados
         submodulos_pesados = [
@@ -98,11 +97,11 @@ class TestWarmStart:
     def test_import_subsequent_instant(self):
         """Segundo import de harness debe ser instantaneo (<50ms)."""
         import time
+
         import harness  # primer import (puede ser lento si primera vez)
 
         # Segundo import (debe ser cacheado en sys.modules)
         s = time.perf_counter()
-        import importlib
         importlib.reload(harness)  # Recarga forcada
         t = time.perf_counter()
         # Nota: reload() es mas lento que import normal
@@ -117,7 +116,6 @@ class TestWarmStart:
 
         import time
         s = time.perf_counter()
-        import harness
         elapsed_ms = (time.perf_counter() - s) * 1000
         assert elapsed_ms < 100, (
             f"import harness tardo {elapsed_ms:.1f}ms (esperado <100ms)"
@@ -131,7 +129,6 @@ class TestWarmStart:
                 del sys.modules[mod]
         import time
         s = time.perf_counter()
-        import harness
         lazy_ms = (time.perf_counter() - s) * 1000
 
         # Lazy debe ser <100ms (antes era ~2800ms)

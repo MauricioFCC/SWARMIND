@@ -17,12 +17,10 @@ from __future__ import annotations
 
 import argparse
 import logging
-import os
 import shutil
-import sys
 import time
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -73,7 +71,7 @@ def cleanup(
 ) -> dict:
     """Run cleanup and return stats."""
     stats = {"dirs_removed": 0, "files_removed": 0, "bytes_freed": 0}
-    
+
     if cache:
         for d in _find_cached_dirs():
             size = sum(f.stat().st_size for f in d.rglob("*") if f.is_file()) if not dry_run else 0
@@ -83,7 +81,7 @@ def cleanup(
                 shutil.rmtree(d, ignore_errors=True)
                 stats["dirs_removed"] += 1
                 stats["bytes_freed"] += size
-    
+
     if temp:
         for f in _find_temp_patterns():
             size = f.stat().st_size if not dry_run else 0
@@ -93,7 +91,7 @@ def cleanup(
                 f.unlink(missing_ok=True)
                 stats["files_removed"] += 1
                 stats["bytes_freed"] += size
-    
+
     if aged_days > 0:
         for f in _find_aged_files(aged_days):
             size = f.stat().st_size if not dry_run else 0
@@ -103,7 +101,7 @@ def cleanup(
                 f.unlink(missing_ok=True)
                 stats["files_removed"] += 1
                 stats["bytes_freed"] += size
-    
+
     return stats
 
 
@@ -114,20 +112,20 @@ def main():
     parser.add_argument("--temp-only", action="store_true", help="Only temp files")
     parser.add_argument("--aged-days", type=int, default=0, help="Remove files aged N+ days")
     args = parser.parse_args()
-    
+
     do_cache = not args.temp_only
     do_temp = not args.cache_only
     aged = args.aged_days
-    
+
     logger.info("Cleanup %s (dry-run=%s)", ROOT, args.dry_run)
-    
+
     stats = cleanup(
         dry_run=args.dry_run,
         cache=do_cache,
         temp=do_temp,
         aged_days=aged,
     )
-    
+
     if args.dry_run:
         logger.info(
             "Would remove %d dirs and %d files (%s)",

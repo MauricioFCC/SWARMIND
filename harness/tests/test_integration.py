@@ -13,14 +13,13 @@ Cubre:
 
 from __future__ import annotations
 
-import os
-import sys
-import time
 import json
-import tempfile
+import os
 import shutil
+import sys
+import tempfile
+import time
 from pathlib import Path
-from typing import Any, Dict
 
 # ---------------------------------------------------------------------------
 # Ensure harness is in path
@@ -33,17 +32,14 @@ if str(_HARNESS.parent) not in sys.path:
     sys.path.insert(0, str(_HARNESS.parent))
 
 import pytest
-
-from orchestrator.agent_bus import AgentBus
-from orchestrator.task_planner import TaskPlanner, TaskPlan
-from orchestrator.task_orchestrator import TaskOrchestrator
 from orchestrator.agent_discovery import discover_agents_recursive
 from orchestrator.health import AgentHealthChecker, CognitiveState
+from orchestrator.task_orchestrator import TaskOrchestrator
+from orchestrator.task_planner import TaskPlan, TaskPlanner
 from orchestrator.telemetry import (
-    TelemetryTracker, SessionTelemetry,
-    LevelRecord, SubtaskRecord,
+    SubtaskRecord,
+    TelemetryTracker,
 )
-
 
 # ===================================================================
 # Fixtures
@@ -401,7 +397,6 @@ class TestOrchestratorEdgeCases:
 
     def test_orchestrator_with_custom_planner(self):
         """6c. Orchestrator con TaskPlanner personalizado."""
-        from orchestrator.task_planner import TaskPlanner
         orch = TaskOrchestrator(
             max_retries=1,
         )

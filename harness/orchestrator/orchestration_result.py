@@ -24,7 +24,6 @@ from typing import Any, Dict, List
 
 from harness.orchestrator.task_planner import TaskPlan
 
-
 # ---------------------------------------------------------------------------
 # Result
 # ---------------------------------------------------------------------------

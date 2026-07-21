@@ -1,6 +1,8 @@
 """Tests para Behavioral Tracer — trazabilidad de decisiones."""
 from __future__ import annotations
+
 import pytest
+
 from harness.orchestrator.behavioral_tracer import BehavioralTracer
 
 

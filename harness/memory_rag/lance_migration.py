@@ -14,8 +14,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
-
+from typing import Any, Dict, List
 
 # ---------------------------------------------------------------------------
 # Recursive schema inference
@@ -36,10 +35,10 @@ def _infer_schema_recursive(metadata: Dict[str, Any], prefix: str = "") -> Dict[
         Dict[str, str] con field_name → type_string
     """
     schema: Dict[str, str] = {}
-    
+
     for key, value in metadata.items():
         full_key = f"{prefix}.{key}" if prefix else key
-        
+
         if isinstance(value, dict):
             # RECURSIVO: explorar sub-dicts
             schema.update(_infer_schema_recursive(value, full_key))
@@ -59,7 +58,7 @@ def _infer_schema_recursive(metadata: Dict[str, Any], prefix: str = "") -> Dict[
             schema[full_key] = "float64"
         else:
             schema[full_key] = "string"
-    
+
     return schema
 
 
@@ -202,7 +201,7 @@ def diff_schemas(old_schema: Dict[str, str], new_schema: Dict[str, str]) -> Dict
     """
     old_keys = set(old_schema.keys())
     new_keys = set(new_schema.keys())
-    
+
     return {
         "added": sorted(new_keys - old_keys),
         "removed": sorted(old_keys - new_keys),

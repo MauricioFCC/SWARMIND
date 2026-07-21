@@ -20,7 +20,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -150,7 +150,7 @@ def _ensure_logger_setup(content: str, filepath: str) -> str:
         import_end += 1
 
     if not has_logger:
-        lines.insert(import_end, f"logger = logging.getLogger(__name__)")
+        lines.insert(import_end, "logger = logging.getLogger(__name__)")
 
     return "\n".join(lines)
 

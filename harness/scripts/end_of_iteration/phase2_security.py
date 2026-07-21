@@ -5,11 +5,16 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from .config import (
-    SecurityFinding, PROJECT_ROOT, _load_config, _read_file_lines,
-    _should_exclude, _is_python_file, _walk_py_files,
+    PROJECT_ROOT,
+    SecurityFinding,
+    _is_python_file,
+    _load_config,
+    _read_file_lines,
+    _should_exclude,
+    _walk_py_files,
 )
 
 

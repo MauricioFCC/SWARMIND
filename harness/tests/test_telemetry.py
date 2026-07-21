@@ -10,8 +10,6 @@ from __future__ import annotations
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List
-from unittest import mock
 
 import pytest
 
@@ -22,7 +20,6 @@ from harness.orchestrator.telemetry import (
     TelemetryTracker,
     track_subtask,
 )
-
 
 # ===========================================================================
 # Fixtures

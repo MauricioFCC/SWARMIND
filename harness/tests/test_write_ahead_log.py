@@ -1,13 +1,11 @@
 """Tests para WriteAheadLog — resiliencia, retry, persistencia y recovery."""
 from __future__ import annotations
 
-import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from harness.orchestrator.write_ahead_log import WALEntry, WALStatus, WriteAheadLog
-
 
 # ============================================================================
 # Tests basicos de WALEntry

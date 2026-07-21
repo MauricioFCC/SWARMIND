@@ -14,15 +14,14 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import numpy as np
 
-from collections import OrderedDict
-
-from harness.common import EMPTY_VECTOR, fallback_embedding
+from harness.common import EMPTY_VECTOR
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 
 logger = logging.getLogger(__name__)

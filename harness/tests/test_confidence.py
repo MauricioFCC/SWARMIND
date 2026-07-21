@@ -5,16 +5,17 @@ Cubre: ConfidenceScore dataclass, signal evaluators, score_completion,
       score_debate_agreement, and integration with task_orchestrator.
 """
 
-import pytest
-from unittest.mock import patch, ANY
-from harness.orchestrator.confidence_scorer import (
-    ConfidenceScorer,
-    ConfidenceScore,
-    CONFIDENCE_HIGH,
-    CONFIDENCE_MEDIUM,
-    CONFIDENCE_LOW,
-)
+from unittest.mock import patch
 
+import pytest
+
+from harness.orchestrator.confidence_scorer import (
+    CONFIDENCE_HIGH,
+    CONFIDENCE_LOW,
+    CONFIDENCE_MEDIUM,
+    ConfidenceScore,
+    ConfidenceScorer,
+)
 
 # ===========================================================================
 # ConfidenceScore data class

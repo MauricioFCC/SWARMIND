@@ -8,8 +8,14 @@ import sys
 from typing import List, Tuple
 
 from .config import (
-    DocsStaleness, HARNESS_ROOT, PROJECT_ROOT, _safe_print, _ok, _err,
-    _warn, _cyan, _has_changed_files_in_dir,
+    HARNESS_ROOT,
+    DocsStaleness,
+    _cyan,
+    _err,
+    _has_changed_files_in_dir,
+    _ok,
+    _safe_print,
+    _warn,
 )
 
 

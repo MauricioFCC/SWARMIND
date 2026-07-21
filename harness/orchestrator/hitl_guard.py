@@ -22,9 +22,7 @@ import os
 import re
 import sys
 import time
-import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Pattern
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +156,7 @@ class HITLGuard:
         logger.info("=" * 65)
         logger.info()
         logger.info(f"  Agente: @{agent_role}")
-        logger.info(f"  Accion propuesta:")
+        logger.info("  Accion propuesta:")
         logger.info()
         for line in action.strip().split("\n"):
             logger.info(f"    | {line}")
@@ -382,8 +380,6 @@ try:
     import select
 except ImportError:
     # Fallback for platforms without select (unlikely)
-    import sys as _sys
-    import select as _select_mod
 
     class _SelectFallback:
         @staticmethod

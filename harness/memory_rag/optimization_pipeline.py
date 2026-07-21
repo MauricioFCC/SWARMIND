@@ -19,19 +19,20 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-import numpy as np
-
-from harness.memory_rag.semantic_cache import SemanticCache
-from harness.memory_rag.token_budget import (
-    BudgetManager, TokenBudget,
-    PRIORITY_CRITICAL, PRIORITY_HIGH, PRIORITY_NORMAL, PRIORITY_LOW,
+from harness.memory_rag.context_window_manager import (
+    ContextWindow,
+    ContextWindowManager,
 )
-from harness.memory_rag.skill_loader import LazySkillLoader, SkillInfo
-from harness.memory_rag.context_window_manager import ContextWindowManager, ContextWindow
 from harness.memory_rag.prompt_cache_builder import PromptCacheBuilder
+from harness.memory_rag.semantic_cache import SemanticCache
+from harness.memory_rag.skill_loader import LazySkillLoader
+from harness.memory_rag.token_budget import (
+    PRIORITY_NORMAL,
+    BudgetManager,
+    TokenBudget,
+)
 from harness.memory_rag.trajectory_compressor import TrajectoryCompressor
 
 logger = logging.getLogger(__name__)

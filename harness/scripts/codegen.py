@@ -17,11 +17,9 @@ from __future__ import annotations
 
 import argparse
 import logging
-import os
 import sys
-from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -241,33 +239,33 @@ def cmd_generate(args: argparse.Namespace) -> None:
     if template_name not in TEMPLATES:
         logger.error("Unknown template '%s'. Use 'list' to see available.", template_name)
         sys.exit(1)
-    
+
     tmpl = TEMPLATES[template_name]
     name = args.name or "example"
     out_dir = Path(args.dir or name)
-    
+
     # Convert name variants
     Name = name[0].upper() + name[1:] if name else "Example"
     title = args.title or Name
-    
+
     out_dir.mkdir(parents=True, exist_ok=True)
-    
+
     generated = 0
     for relpath, content in tmpl["files"].items():
         filepath = out_dir / relpath.format(name=name, Name=Name, title=title, description=args.description or Name)
         filepath.parent.mkdir(parents=True, exist_ok=True)
-        
+
         formatted = content.format(
             name=name.lower(),
             Name=Name,
             title=title,
             description=args.description or Name,
         )
-        
+
         filepath.write_text(formatted)
         generated += 1
         logger.info("  Created %s", filepath)
-    
+
     logger.info("Generated %d files for '%s' in %s/", generated, template_name, out_dir)
 
 
@@ -278,13 +276,13 @@ def main():
     parser.add_argument("--title", "-t", help="Display title (default: same as name)")
     parser.add_argument("--description", "-d", default="", help="Description")
     parser.add_argument("--dir", help="Output directory (default: ./<name>)")
-    
+
     args = parser.parse_args()
-    
+
     if not args.template or args.template == "list":
         cmd_list()
         return
-    
+
     cmd_generate(args)
 
 

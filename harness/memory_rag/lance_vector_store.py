@@ -31,8 +31,8 @@ LANCEDB_ROOT = os.path.join(
     "lancedb",
 )
 
-from .lance_schemas import DEFAULT_COLLECTIONS  # noqa: E402
 from .lance_migration import generate_sample_row, serialize_for_schema  # noqa: E402
+from .lance_schemas import DEFAULT_COLLECTIONS  # noqa: E402
 from .memory_config import MemoryConfig, get_memory_config  # noqa: E402
 
 # Collection name constants for external consumption

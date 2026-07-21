@@ -1,11 +1,9 @@
 """Tests for TaskPlanner — decomposition of user messages into DAG plans."""
 
-import pytest
 from harness.orchestrator.task_planner import (
-    TaskPlanner,
     SubTask,
     TaskPlan,
-    SUBTASK_TEMPLATES,
+    TaskPlanner,
 )
 
 
@@ -211,6 +209,78 @@ class TestTaskPlan:
         assert d["original_message"] == "test msg"
         assert len(d["subtasks"]) == 1
         assert d["subtasks"][0]["agent"] == "builder"
+
+
+# ===================================================================
+# Structured Compact Integration  (ADR-0018 — Token Economics)
+# ===================================================================
+
+class TestStructuredCompactIntegration:
+    """Verifica que structured_compact se integra en el planner."""
+
+    def test_structured_compact_in_planner(self) -> None:
+        """Compactacion ocurre para contextos grandes en decompose."""
+        planner = TaskPlanner()
+
+        # Contexto grande simulado con stack + framework + domain largos
+        message = (
+            "implementa un sistema complejo en Rust con framework axum "
+            "usando las siguientes tecnologías: "
+            + " ".join(f"libreria_{i} " for i in range(100))
+            + "y ademas considera estas alternativas: "
+            + " ".join(f"alternativa_{i} " for i in range(100))
+        )
+
+        plan = planner.decompose(message)
+
+        # El plan debe generarse sin errores
+        assert plan is not None
+        assert len(plan.subtasks) > 0
+
+        # Verificar que las descripciones o context_hint no son excesivas
+        for st in plan.subtasks:
+            assert len(st.description) < 2000, (
+                f"Descripcion demasiado larga para {st.id}: {len(st.description)} chars"
+            )
+            if st.context_hint:
+                assert len(st.context_hint) < 2000, (
+                    f"Context hint demasiado largo para {st.id}: {len(st.context_hint)} chars"
+                )
+
+    def test_structured_compact_preserves_critical_content(self) -> None:
+        """Compactacion preserva cabeceras y secciones criticas."""
+        from harness.memory_rag.compaction import structured_compact
+
+        # Texto con bloques de codigo grandes (trigger de compactacion)
+        texto_largo = (
+            "# Plan de Implementacion\n\n"
+            "## Arquitectura\n"
+            "Vamos a usar una arquitectura hexagonal.\n"
+            "```rust\n"
+            + "\n".join(
+                f"fn funcion_detallada_{i}() -> Result<()> {{ /* logica extensa */ }}"
+                for i in range(50)
+            )
+            + "\n```\n\n"
+            "## Decisiones\n"
+            "Usar Rust con Axum por rendimiento.\n"
+            + "\n".join(
+                f"Alternativa descartada {i} por razones de compatibilidad."
+                for i in range(30)
+            )
+        )
+
+        compactado = structured_compact(texto_largo, budget_ratio=0.6)
+
+        # Verificar que las cabeceras se preservaron
+        assert "# Plan de Implementacion" in compactado
+        assert "## Arquitectura" in compactado
+        assert "## Decisiones" in compactado
+        # El resultado debe ser mas corto que el original
+        assert len(compactado) < len(texto_largo), (
+            f"compactado ({len(compactado)}) == original ({len(texto_largo)})"
+        )
+        assert len(compactado) >= 50  # min_chars
 
 
 class TestSubTask:

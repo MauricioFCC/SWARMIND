@@ -5,6 +5,7 @@ Exporta las clases principales del modulo de orquestacion con carga perezosa.
 Cold-start: ~1ms vs ~500ms con imports eager.
 """
 from __future__ import annotations
+
 import importlib
 from typing import Any, Dict
 

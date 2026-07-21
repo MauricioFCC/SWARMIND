@@ -13,16 +13,13 @@ without modification.
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import Path
-from typing import Any
 
 # Re-export the unified implementations with their original names.
 #   Scheduler    → LanceScheduler  (was Scheduler in orchestrator)
 #   ScheduledJob → ScheduledJob    (unified)
 from harness.scheduler import (  # noqa: F401  — public re-export
     LanceScheduler as Scheduler,
-    ScheduledJob,
 )
 
 logger = logging.getLogger(__name__)

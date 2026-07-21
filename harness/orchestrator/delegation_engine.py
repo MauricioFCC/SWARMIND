@@ -29,18 +29,23 @@ try:
 except ImportError:
     HAS_YAML = False
 
-from harness.orchestrator.task_manager import TaskManager
-
 # Importar descubrimiento recursivo de agentes
 # (reemplaza _DEFAULT_CAPABILITIES, _DEFAULT_INTENT_AGENTS, _DEFAULT_DOMAIN_MAP)
 from harness.orchestrator.agent_discovery import (
-    discover_agents_recursive,
     build_intent_map,
+    discover_agents_recursive,
     get_all_capabilities,
+)
+from harness.orchestrator.agent_discovery import (
     get_agent_for_domain as discovery_get_agent_for_domain,
-    resolve_agent_name as discovery_resolve_agent_name,
+)
+from harness.orchestrator.agent_discovery import (
     list_agents as discovery_list_agents,
 )
+from harness.orchestrator.agent_discovery import (
+    resolve_agent_name as discovery_resolve_agent_name,
+)
+from harness.orchestrator.task_manager import TaskManager
 
 
 def _find_routing_rules_path() -> str:
@@ -212,17 +217,17 @@ class DelegationEngine:
           5. Coordinator (default — analiza y delega)
         """
         text = message.lower()
-        
+
         # Universal role routing by intent keywords
         # Ordenado por especificidad: los más específicos primero
-        
+
         # @evolve: auto-mejora del sistema
         evolve_patterns = ["!evolve", "evolve", "skill improvement", "cognition",
                           "self-improve", "auto-improve"]
         for pat in evolve_patterns:
             if pat in text:
                 return "evolve"
-        
+
         # @scientist: investigación, arquitectura, AI/ML, patrones
         scientist_patterns = ["research", "paper", "architecture", "pattern",
                              "methodology", "algorithm", "study", "ml model",
@@ -236,7 +241,7 @@ class DelegationEngine:
         for pat in scientist_patterns:
             if pat in text:
                 return "scientist"
-        
+
         # @guardian: calidad, seguridad, riesgo, docs
         # NOTA: va ANTES que builder para que "documentacion" no sea atrapado por "api"
         guardian_patterns = ["test", "testing", "security", "audit", "risk",
@@ -248,7 +253,7 @@ class DelegationEngine:
         for pat in guardian_patterns:
             if pat in text:
                 return "guardian"
-        
+
         # @builder: toda implementación
         builder_patterns = ["implement", "build", "create", "develop", "code",
                            "api", "endpoint", "rust", "go lang", "golang",
@@ -261,7 +266,7 @@ class DelegationEngine:
         for pat in builder_patterns:
             if pat in text:
                 return "builder"
-        
+
         # Default: coordinator (analiza y delega)
         return "coordinator"
 
@@ -280,7 +285,7 @@ class DelegationEngine:
         # !comandos van al coordinator (que los procesa directamente)
         if message.startswith("!"):
             return "coordinator"
-        
+
         # @rol: mensaje — ruteo explícito (backward compatible)
         mentions = re.findall(r"@(\w[\w-]*)", message)
         if mentions:
