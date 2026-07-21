@@ -58,6 +58,3 @@ fail_under = 59
 # Siguiente:   fail_under = 70
 # Objetivo:    fail_under = 80
 
-[tool.uv]
-extra-index-urls = ["https://download.pytorch.org/whl/cu124"]
-
