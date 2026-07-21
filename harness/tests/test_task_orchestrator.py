@@ -473,7 +473,7 @@ class TestShapedCacheIntegration:
         assert result.is_complete is True
         assert result.session_status == "completed"
         mock_cache.get_shaped.assert_called_once_with(
-            "mi consulta de prueba", threshold=0.95,
+            "mi consulta de prueba", threshold=0.88,
         )
 
     def test_cache_miss_proceeds_normal(self) -> None:

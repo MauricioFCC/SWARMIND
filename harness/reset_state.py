@@ -17,6 +17,32 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# Security: project root for path traversal validation
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+# Directories permitidos fuera del project root (tests con tmp_path)
+_ALLOWED_PREFIXES: list[str] = []
+
+
+def _allow_temp_dirs() -> None:
+    """Permitir directorios temporales (para tests)."""
+    import tempfile
+    _ALLOWED_PREFIXES.append(tempfile.gettempdir())
+
+
+def _check_path_allowed(path: Path) -> None:
+    """Verificar que el path no sea path traversal (warning, no bloquea)."""
+    resolved = path.resolve()
+    if str(resolved).startswith(str(_PROJECT_ROOT)):
+        return
+    for prefix in _ALLOWED_PREFIXES:
+        if str(resolved).startswith(prefix):
+            return
+    logger.warning(
+        "Path fuera del project root: %s (no esta dentro de %s)",
+        resolved, _PROJECT_ROOT,
+    )
+
 
 def banner(msg: str) -> None:
     """Banner."""
@@ -25,6 +51,7 @@ def banner(msg: str) -> None:
 
 def rm_dir(path: Path) -> None:
     """Rm dir."""
+    _check_path_allowed(path)
     if path.exists() and path.is_dir():
         shutil.rmtree(path)
         banner(f"Eliminado: {path}")
@@ -43,6 +70,7 @@ def rm_file(path: Path) -> None:
 
 def empty_dir_keep_gitkeep(path: Path) -> None:
     """Remove all files inside a directory except .gitkeep."""
+    _check_path_allowed(path)
     if not path.exists() or not path.is_dir():
         return
     for item in path.iterdir():
@@ -57,6 +85,7 @@ def empty_dir_keep_gitkeep(path: Path) -> None:
 
 def clean_pycache(root: Path) -> None:
     """Recursively remove all __pycache__ directories and .pyc files."""
+    _check_path_allowed(root)
     count = 0
     for dirpath, dirnames, filenames in os.walk(root):
         for d in list(dirnames):
@@ -87,6 +116,8 @@ def main() -> None:
     # Legacy path cleanup
     legacy_db = project_root / "harness" / "db" / "lancedb_store"
     if legacy_db.exists():
+        # Security: evitar path traversal
+        _check_path_allowed(legacy_db)
         shutil.rmtree(legacy_db)
         banner(f"Eliminado (legacy): {legacy_db}")
 

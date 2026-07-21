@@ -14,6 +14,8 @@ Uso:
     tool = registry.get("my-tool")
     tool.execute(...)
 """
-from harness.plugins.registry import PluginBase, ToolRegistry, registry
+from harness.plugins.registry import PluginBase, registry
+
+ToolRegistry = registry  # es una instancia, no una clase
 
 __all__ = ["ToolRegistry", "registry", "PluginBase"]

@@ -50,7 +50,7 @@ if str(get_project_root()) not in sys.path:
 _AGENTS_CACHE = None
 
 
-def _get_agents():
+def _get_agents() -> list[dict]:
     """Retorna agentes descubiertos, con cache."""
     global _AGENTS_CACHE
     if _AGENTS_CACHE is None:

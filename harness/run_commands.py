@@ -120,7 +120,7 @@ def _handle_db_list_imports() -> None:
         logger.info("[DB] No se detectaron bases de datos en import/")
 
 
-def _handle_db_stats(store) -> None:
+def _handle_db_stats(store: Any) -> None:
     """Handle ``!db stats``."""
     from harness.db.migrate_db import DBMigrator
     migrator = DBMigrator()

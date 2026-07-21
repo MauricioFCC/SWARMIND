@@ -167,7 +167,7 @@ class TaskOrchestrator:
         if hasattr(self, '_shaped_cache') and self._shaped_cache is not None:
             import hashlib
             _cache_hash = hashlib.sha256((message or "").encode()).hexdigest()[:16]
-            cached = self._shaped_cache.get_shaped(message, threshold=0.95)
+            cached = self._shaped_cache.get_shaped(message, threshold=0.88)
             if cached is not None:
                 response = cached.get("response", "")
                 if response:
@@ -188,6 +188,12 @@ class TaskOrchestrator:
                         is_new_plan=False,
                         is_complete=True,
                     )
+            else:
+                StructuredLogRecord.info(
+                    "cache_miss",
+                    message=f"Cache miss para: {message[:50]}...",
+                    session_id="",
+                )
 
         # --- 0. Idempotencia: evitar duplicados del mismo mensaje ---
         import hashlib
@@ -951,4 +957,11 @@ def enable_cache(orchestrator: "TaskOrchestrator", max_tokens: int = 50000) -> N
     orchestrator._shaped_cache = ShapedCache(
         semantic_cache=sem_cache,
         max_tokens=max_tokens,
+    )
+    stats = orchestrator._shaped_cache.get_stats()
+    StructuredLogRecord.info(
+        "cache_enabled",
+        message=f"ShapedCache activado: max_tokens={max_tokens}",
+        session_id="",
+        **stats,
     )
