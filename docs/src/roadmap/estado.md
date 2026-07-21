@@ -9,8 +9,8 @@
 
 | Metrica | Valor |
 |---------|-------|
-| **Tests** | 1540 passing, 4 xfailed |
-| **Cobertura** | ~60% |
+| **Tests** | 1789 passing, 4 xfailed |
+| **Cobertura** | ~65% |
 | **ADRs** | 18 (16 implementados, 2 propuestos) |
 | **Commits totales** | ~220+ |
 | **Archivos fuente** | ~170 Python files |
@@ -90,6 +90,7 @@ Objetivo: 80%    (proximo hito)
 | ✅ | Session-scoped fixtures | Velocidad tests | MockVectorStore session-scoped creado | **HECHO** |
 | ✅ | GPU acceleration | Rendimiento | RTX 4060 + 6x search + embedding 3.2x | **HECHO** |
 | ✅ | Coverage MCP + Federated | Calidad | mcp_client 100%, mcp_manager 100%, federated 100% | **HECHO** |
+| ✅ | Coverage optimizer+plugins | Calidad | optimization_pipeline 62t, skill_loader 73t, plugins 46t, mcp_executor 68t | **HECHO** |
 | ✅ | ShapedCache + threshold | Token Economics | 0.95→0.88 cache semantico real | **HECHO** |
 
 ### Legado de Deuda Tecnica
