@@ -29,6 +29,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 
+from harness.orchestrator.skill_bundler import SkillBundler, AgentConfig as BundledAgent
+
 logger = logging.getLogger(__name__)
 
 
@@ -261,23 +263,110 @@ class Worktable:
         self._round = 0
         self._log: List[Dict[str, Any]] = []
 
+    def compose_agents(
+        self,
+        topic: str,
+        available_agents: Optional[List[str]] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Componer agentes dinamicamente usando SkillBundler (SIGMA pattern).
+
+        Para temas NO relacionados con software, usa los 13 perfiles clasicos.
+        Para temas de software, compone agentes desde skills del registry.
+
+        Args:
+            topic: Tema del debate.
+            available_agents: Agentes disponibles para componer.
+
+        Returns:
+            Lista de perfiles de agente compuestos.
+        """
+        # Detectar si el tema es de software
+        software_keywords = [
+            "software", "api", "web", "app", "codigo", "code", "rust", "python",
+            "javascript", "typescript", "frontend", "backend", "database", "arquitectura",
+            "architecture", "testing", "test", "devops", "deploy", "microservicio",
+            "microservice", "algoritmo", "algorithm", "sistema", "system",
+        ]
+        topic_lower = topic.lower()
+        is_software = any(kw in topic_lower for kw in software_keywords)
+
+        if not is_software:
+            # Usar perfiles clasicos de AGENT_PROFILES
+            if available_agents:
+                return [
+                    {**AGENT_PROFILES[a], "agent_name": a}
+                    for a in available_agents if a in AGENT_PROFILES
+                ]
+            return [
+                {**p, "agent_name": name}
+                for name, p in AGENT_PROFILES.items()
+            ]
+
+        # Componer desde skills usando SkillBundler
+        bundler = SkillBundler()
+        configs = bundler.compose(topic, available_agents=available_agents or [
+            "coordinator", "builder", "scientist", "guardian", "evolve",
+        ])
+
+        # Convertir a formato de perfiles de Worktable
+        profiles = []
+        for config in configs:
+            skills_str = ", ".join(config.bundled_skills[:3])
+            profiles.append({
+                "agent_name": config.name,
+                "name": config.name.capitalize(),
+                "abbr": config.name[:4].upper(),
+                "description": f"{config.name} con skills: {skills_str}",
+                "bias": f"Especializado en {config.domain} via {config.lead_skill}",
+                "questions": [
+                    f"Como {config.name}, cual es tu enfoque?",
+                    f"Que skills ({skills_str}) aplicas?",
+                ],
+            })
+
+        return profiles
+
     def debate(
         self,
         topic: str,
         agents: Optional[List[str]] = None,
         rounds: int = 3,
+        use_bundler: bool = False,
     ) -> Compendium:
         """
         Ejecutar un debate completo sobre un tema.
-        
+
         Args:
             topic: Tema a debatir (ej: "Disenar API REST para pagos").
             agents: Lista de agentes participantes. Si es None, usa todos.
             rounds: Numero de rondas (1-3, default 3).
-            
+            use_bundler: Usar SkillBundler para componer agentes dinamicamente.
+
         Returns:
             Compendium con el resultado del debate.
         """
+        # Componer agentes desde SkillBundler si se solicita
+        if use_bundler:
+            # Obtener perfiles desde SkillBundler
+            bundle_agents = self.compose_agents(topic, agents)
+            # Mapear a nombres de agentes (usar los que existen en AGENT_PROFILES)
+            valid_agents = [a["agent_name"] for a in bundle_agents if a["agent_name"] in AGENT_PROFILES]
+            # Agregar agentes del bundler que no estan en AGENT_PROFILES
+            for ba in bundle_agents:
+                aname = ba["agent_name"]
+                if aname not in AGENT_PROFILES:
+                    # Crear perfil temporal
+                    AGENT_PROFILES[aname] = {
+                        "name": ba.get("name", aname),
+                        "abbr": ba.get("abbr", aname[:4].upper()),
+                        "description": ba.get("description", ""),
+                        "bias": ba.get("bias", ""),
+                        "questions": ba.get("questions", []),
+                    }
+            if valid_agents:
+                agents = valid_agents
+
         if agents is None:
             agents = list(AGENT_PROFILES.keys())
         else:
