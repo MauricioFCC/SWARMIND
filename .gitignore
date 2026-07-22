@@ -89,3 +89,5 @@ fuzz/artifacts/
 
 # Coverage artifacts
 *.py,cover
+# Prompt archive (test artifacts)
+harness/evolve_loop/prompt_archive/

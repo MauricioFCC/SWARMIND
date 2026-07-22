@@ -1,4 +1,0 @@
-# my-agent
-
-## Role
-content
