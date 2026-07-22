@@ -3,14 +3,13 @@ title = "AGENTIC Harness Manual"
 authors = ["AGENTIC Team"]
 description = "Documentacion completa del sistema multi-agente AGENTIC Swiss Watch"
 language = "es"
-multilingual = false
+src = "docs/src"
 
 [output.html]
 theme = "docs/theme"
 default-theme = "ayu"
 preferred-dark-theme = "ayu"
 mathjax-support = false
-copy-fonts = true
 additional-css = ["docs/theme/custom.css"]
 
 [output.html.search]
@@ -19,4 +18,4 @@ teaser-word-count = 10
 
 [build]
 build-dir = "docs/book"
-create-missing = false
+create-missing = true
