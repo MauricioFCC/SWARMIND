@@ -95,4 +95,28 @@ skills:
     version: 1.0.0
     project_agnostic: true
 
+  - name: business-strategy
+    domain: business
+    description: "Analisis estrategico de negocios, modelos de negocio, DOFA, Porter, Canvas, OKRs, ROI, planes de negocio y toma de decisiones estrategicas."
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: communication
+    domain: communication
+    description: "Comunicacion profesional: escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural y liderazgo."
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: project-management
+    domain: management
+    description: "Gestion de proyectos: metodologias agiles (Scrum, Kanban), planificacion, seguimiento, riesgos, estimaciones y comunicacion con stakeholders."
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: creative-design
+    domain: design
+    description: "Pensamiento creativo y diseno: design thinking, ideacion, prototipado, branding, identidad visual y experiencia de usuario (no-code)."
+    version: 1.0.0
+    project_agnostic: true
+
 
