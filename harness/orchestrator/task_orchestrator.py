@@ -163,6 +163,17 @@ class TaskOrchestrator:
                 "Sistema en recuperación. Intenta de nuevo en unos segundos.",
             )
 
+        # --- 0. WAL: Write-Ahead Log para operaciones criticas ---
+        if not hasattr(self, '_wal'):
+            from harness.orchestrator.write_ahead_log import WriteAheadLog
+            self._wal = WriteAheadLog()
+
+        # Registrar operacion en WAL
+        wal_entry = self._wal.begin(
+            operation_type="process_message",
+            payload={"message": message[:100], "force_agent": force_agent},
+        )
+
         # --- 0. Verificar cache semantico (ShapedCache - Token Economics) ---
         if hasattr(self, '_shaped_cache') and self._shaped_cache is not None:
             import hashlib
@@ -194,6 +205,13 @@ class TaskOrchestrator:
                     message=f"Cache miss para: {message[:50]}...",
                     session_id="",
                 )
+                # Ajuste dinamico de threshold segun hit rate
+                if hasattr(self, '_shaped_cache') and self._shaped_cache is not None:
+                    hr = self._shaped_cache.hit_rate
+                    if hr > 0.9 and hasattr(self._shaped_cache, '_threshold'):
+                        self._shaped_cache._threshold = max(0.80, self._shaped_cache._threshold - 0.02)
+                    elif hr < 0.5 and hasattr(self._shaped_cache, '_threshold'):
+                        self._shaped_cache._threshold = min(0.95, self._shaped_cache._threshold + 0.02)
 
         # --- 0. Idempotencia: evitar duplicados del mismo mensaje ---
         import hashlib
