@@ -207,11 +207,15 @@ class TaskOrchestrator:
                 )
                 # Ajuste dinamico de threshold segun hit rate
                 if hasattr(self, '_shaped_cache') and self._shaped_cache is not None:
-                    hr = self._shaped_cache.hit_rate
-                    if hr > 0.9 and hasattr(self._shaped_cache, '_threshold'):
-                        self._shaped_cache._threshold = max(0.80, self._shaped_cache._threshold - 0.02)
-                    elif hr < 0.5 and hasattr(self._shaped_cache, '_threshold'):
-                        self._shaped_cache._threshold = min(0.95, self._shaped_cache._threshold + 0.02)
+                    try:
+                        hr = float(self._shaped_cache.hit_rate)
+                        current_t = float(getattr(self._shaped_cache, '_threshold', 0.88))
+                        if hr > 0.9:
+                            self._shaped_cache._threshold = max(0.80, current_t - 0.02)
+                        elif hr < 0.5:
+                            self._shaped_cache._threshold = min(0.95, current_t + 0.02)
+                    except (TypeError, ValueError):
+                        pass
 
         # --- 0. Idempotencia: evitar duplicados del mismo mensaje ---
         import hashlib
