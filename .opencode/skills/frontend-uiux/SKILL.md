@@ -665,18 +665,16 @@ const useUIStore = create<UIStore>((set) => ({
 
 ---
 
-### Responsive Design & Core Web Vitals
-
-(Heredado de responsive-ui skill, fusionado 2026-07-22)
+### Responsive Design (fusionado desde responsive-ui skill)
 
 **Principios Mobile-First:**
 - Grid CSS: `grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr))`
 - Flexbox para componentes lineales
 - Container Queries: `@container (min-width: 400px) { ... }`
-- Tipografia fluida: `clamp(1rem, 2.5vw, 1.5rem)`
-- Breakpoints consistentes: sm (640px), md (768px), lg (1024px), xl (1280px)
+- Tipografia fluida: `clamp()`
+- Breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px)
 
-**WCAG 2.2 AA Checklist (2024 nuevos criterios):**
+**WCAG 2.2 Checklist:**
 - 2.4.11 Focus Not Obscured (AA)
 - 2.4.12 Focus Not Obscured (AAA)
 - 2.4.13 Focus Appearance (AAA)
@@ -684,13 +682,4 @@ const useUIStore = create<UIStore>((set) => ({
 - 3.3.8 Accessible Authentication (No Exception)
 
 **Core Web Vitals:**
-| Metrica | Bueno | Regular | Malo |
-|---------|-------|---------|------|
-| LCP | ≤2.5s | ≤4.0s | >4.0s |
-| INP (nuevo 2024) | ≤200ms | ≤500ms | >500ms |
-| CLS | ≤0.1 | ≤0.25 | >0.25 |
-
-**Herramientas de Auditoria:**
-- axe-core: testing automatizado de accesibilidad
-- Lighthouse: metricas de performance y accesibilidad
-- WAVE: evaluacion visual de accesibilidad
+- LCP ≤2.5s | INP ≤200ms | CLS ≤0.1
