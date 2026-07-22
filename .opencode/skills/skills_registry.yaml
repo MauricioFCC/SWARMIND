@@ -59,28 +59,10 @@ skills:
     domain: data
     description: "Data Science & ML — pandas, numpy, polars, scikit-learn, PyTorch, feature engineering, model evaluation protocols, GPU acceleration (AMP, DDP, torch.compile), reproducible pipelines"
 
-# === 2026-07-22: Nuevos skills especializados ===
+  - name: security-audit
+    domain: security
+    description: "Experto en seguridad de aplicaciones: SAST, DAST, threat modeling, SBOM, compliance OWASP/STRIDE/SOC2"
+    version: 1.0.0
+    project_agnostic: true
 
-- name: rust-lang
-  domain: rust
-  description: "Experto en Rust, ownership, borrowing, async runtimes, crates, FFI con Python"
-  version: 1.0.0
-  project_agnostic: true
 
-- name: architecture
-  domain: architecture
-  description: "Arquitecto de software, patrones GoF, clean/hexagonal architecture, DDD, C4 model"
-  version: 1.0.0
-  project_agnostic: true
-
-- name: responsive-ui
-  domain: frontend
-  description: "Experto en UI/UX responsive, WCAG 2.2 AA/AAA, design systems, Core Web Vitals"
-  version: 1.0.0
-  project_agnostic: true
-
-- name: data-science
-  domain: data
-  description: "Experto en Data Science/ML, pandas, pytorch, feature engineering, GPU acceleration"
-  version: 1.0.0
-  project_agnostic: true

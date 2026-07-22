@@ -16,22 +16,47 @@ routing_rules:
   # =============================================================================
   domain_routes:
     - domain: "quantitative-analysis"
-      agents: ["quant-developer", "quant-scientist"]
+      agents: ["scientist", "builder"]
       priority: 9
     - domain: "risk-management"
-      agents: ["risk-manager"]
+      agents: ["guardian"]
       priority: 8
     - domain: "trading"
-      agents: ["trading-operations"]
+      agents: ["builder", "scientist"]
       priority: 8
     - domain: "architecture"
-      agents: ["enterprise-architect"]
+      agents: ["scientist", "coordinator"]
       priority: 9
     - domain: "ai-ml"
-      agents: ["ai-engineer"]
+      agents: ["scientist", "evolve"]
+      priority: 8
+    - domain: "memory"
+      agents: ["evolve", "coordinator"]
+      priority: 9
+    - domain: "quality"
+      agents: ["guardian"]
+      priority: 8
+    - domain: "documentation"
+      agents: ["builder", "scientist"]
+      priority: 7
+    - domain: "security"
+      agents: ["guardian"]
+      priority: 9
+    - domain: "devops"
+      agents: ["builder"]
+      priority: 7
+    - domain: "mobile"
+      agents: ["builder"]
+      priority: 7
+    - domain: "data"
+      agents: ["scientist"]
+      priority: 7
+    - domain: "frontend"
+      agents: ["builder"]
       priority: 8
     - domain: "universal"
-      agents: ["software-engineer", "frontend-engineer", "data-architect", "devops-sre", "security-engineer", "mobile-engineer", "documentation-specialist", "project-manager", "requirements-analyst", "quality-gate", "enterprise-architect", "ai-engineer", "evolve"]
+      agents: ["coordinator", "builder", "scientist", "guardian", "evolve",
+               "evolve-researcher", "evolve-engineer", "evolve-analyzer"]
       priority: 10
 
   # =============================================================================
