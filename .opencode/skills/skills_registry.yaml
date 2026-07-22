@@ -119,4 +119,40 @@ skills:
     version: 1.0.0
     project_agnostic: true
 
+  - name: psychology
+    domain: psychology
+    description: "Psicologia aplicada a sistemas multi-agente: psicologia cognitiva, organizacional, del aprendizaje y positiva para mejorar la interaccion, motivacion y efectividad de agentes y equipos multi-agente."
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: education
+    domain: education
+    description: "Ciencias de la educacion: diseno instruccional (ADDIE, SAM, Agile), taxonomia de Bloom, andragogia, microlearning, spaced repetition y evaluacion educativa."
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: ethics
+    domain: philosophy
+    description: "Etica de IA y filosofia aplicada: marcos eticos para agentes (deontologia, utilitarismo, virtud, cuidado, justicia), alineamiento de valores, auditoria etica y filosofia de la mente."
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: behavioral-economics
+    domain: economics
+    description: "Economia del comportamiento: teoria de juegos (cooperativos/no-cooperativos), sesgos cognitivos, heurísticas, diseno de incentivos/mechanismos, y toma de decisiones bajo incertidumbre."
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: linguistics
+    domain: linguistics
+    description: "Linguistica aplicada: linguistica cognitiva, semiotica, pragmatica (Grice, Searle), analisis del discurso (RST, Toulmin), y argumentacion."
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: sociology
+    domain: sociology
+    description: "Sociologia y antropologia para sistemas multi-agente: dinamicas de grupos (Tuckman, Belbin), teoria de redes (SNA), sociologia del conocimiento (SECI) y antropologia de la tecnologia."
+    version: 1.0.0
+    project_agnostic: true
+
 
