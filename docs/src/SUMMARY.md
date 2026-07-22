@@ -5,6 +5,7 @@
 # Guia de Uso
 - [Filosofia del Sistema](guide/filosofia.md)
 - [Como Usar AGENTIC](guide/como-usar.md)
+- [Agentes y Skills (completo)](guide/agentes-y-skills.md)
 - [Velocidad y Paralelismo](guide/velocidad.md)
 - [Estandares Automaticos](guide/estandares.md)
 

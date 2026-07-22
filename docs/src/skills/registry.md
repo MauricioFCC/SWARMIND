@@ -1,34 +1,120 @@
 ﻿# Registro de Skills — AGENTIC Harness
 
-16 skills disponibles en `.opencode/skills/`. Cada skill tiene formato dual (SKILL.md + SKILL.min.md).
+**29 skills** disponibles en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado).
 
-| Skill | Dominio | Propósito | SKILL.md | .min.md |
-|-------|---------|-----------|----------|---------|
-| **evolve** | self-improvement | Meta-skill de auto-mejora continua (ASI-Evolve loop) | ✅ | ✅ |
-| **hedgefund** | finance | Doctrina fundacional: todo proyecto como Hedge Fund | ✅ | ✅ |
-| **quant-trading** | trading | Estrategias cuantitativas con CQE Rust | ✅ | ✅ |
-| **alpha-research** | research | Investigación de alpha, factores, ML avanzado | ✅ | ✅ |
-| **risk-execution** | trading | Risk management y ejecución algorítmica | ✅ | ✅ |
-| **frontend-uiux** | frontend | UI/UX profesional con Generative UI 2026 (fusionado con responsive-ui) | ✅ | ✅ |
-| **responsive-ui** | frontend | UI responsive, WCAG 2.2, Core Web Vitals | ✅ | ✅ |
-| **rust-lang** | systems | Desarrollo Rust: ownership, async, FFI, crates | ✅ | ✅ |
-| **architecture** | architecture | Arquitectura de software: GoF, hexagonal, DDD, C4 | ✅ | ✅ |
-| **data-science** | data | Data Science/ML: pandas, PyTorch, GPU, feature engineering | ✅ | ✅ |
-| **security-audit** | security | AppSec/DevSecOps: SAST, DAST, threat modeling, SBOM | ✅ | ✅ |
-| **math-doc** | science | Documentación matemática y científica | ✅ | ✅ |
-| **science-doc** | science | Documentación científica general | ✅ | ✅ |
-| **legal-doc** | legal | Análisis jurídico colombiano multi-especialidad | ✅ | ✅ |
-| **healthtech** | health | Salud e interoperabilidad de sistemas clínicos | ✅ | ✅ |
-| **pos-retail** | retail | Punto de venta y retail | ✅ | ✅ |
+## Tabla Completa de Skills
 
-## Carga de Skills
-Los skills se cargan automáticamente según el dominio del proyecto:
-- **Trading**: evolve, hedgefund, quant-trading, alpha-research, risk-execution, math-doc, science-doc
-- **Healthtech**: evolve, hedgefund, healthtech, legal-doc, science-doc
-- **Retail**: evolve, hedgefund, pos-retail, legal-doc
-- **General**: evolve, hedgefund, math-doc, legal-doc, science-doc, healthtech, pos-retail, quant-trading, risk-execution
+### 💻 Tecnología y Desarrollo
+| Skill | Dominio | Propósito |
+|-------|---------|-----------|
+| **architecture** | architecture | Patrones GoF, Clean/Hexagonal, DDD, C4, ADRs |
+| **rust-lang** | systems | Rust: ownership, async, FFI con Python, crates, optimización |
+| **frontend-uiux** | frontend | Generative UI 2026, design tokens, A2UI/OpenUI, WCAG 2.2 |
+| **responsive-ui** | frontend | UI responsive, mobile-first, Core Web Vitals, accesibilidad axe-core |
+| **data-science** | data | ML pipelines, PyTorch/JAX, GPU acceleration, feature engineering |
+| **devops-infra** | devops | CI/CD, Docker, Kubernetes, Terraform, monitoreo, OpenTelemetry |
 
-## Comandos
-- `!skill load <skill>` — Carga un skill específico
-- `!skill list` — Lista skills disponibles
-- `!skill status` — Muestra skills activos
+### 🔒 Seguridad
+| Skill | Dominio | Propósito |
+|-------|---------|-----------|
+| **security-audit** | security | SAST, DAST, threat modeling (STRIDE), SBOM, compliance OWASP/SOC2 |
+
+### 💼 Negocio y Gestión
+| Skill | Dominio | Propósito |
+|-------|---------|-----------|
+| **hedgefund** | finance | Doctrina hedge fund: riesgo/reward, capital allocation, stop-loss |
+| **business-strategy** | business | DOFA, Porter, Canvas, OKR, ROI, planificación estratégica |
+| **project-management** | management | Scrum, Kanban, WBS, riesgos, estimaciones, stakeholders |
+| **communication** | communication | Escritura ejecutiva, presentaciones, storytelling, negociación |
+
+### 📈 Finanzas y Trading
+| Skill | Dominio | Propósito |
+|-------|---------|-----------|
+| **quant-trading** | trading | Estrategias cuantitativas CQE Rust, backtesting, execution |
+| **risk-execution** | trading | Risk management, position sizing, market making, TCA |
+| **behavioral-economics** | economics | Teoría de juegos, sesgos, incentivos, nudges |
+
+### 🔬 Ciencia e Investigación
+| Skill | Dominio | Propósito |
+|-------|---------|-----------|
+| **alpha-research** | research | Factor research, ML, feature engineering, validación estadística |
+| **math-doc** | academic | Documentos matemáticos, LaTeX, proofs, estadística |
+| **science-doc** | academic | Documentos científicos, peer review, revisiones sistemáticas |
+| **physical-sciences** | science | Física, química, biología, método científico experimental |
+
+### 🧠 Humanidades y Ciencias Sociales
+| Skill | Dominio | Propósito |
+|-------|---------|-----------|
+| **psychology** | psychology | Psicología cognitiva, organizacional, del aprendizaje, neurociencia |
+| **education** | education | Diseño instruccional (ADDIE), Bloom, andragogía, microlearning |
+| **ethics** | philosophy | Ética de IA, alineamiento de valores (Floridi, Russell), gobernanza |
+| **linguistics** | linguistics | Lingüística cognitiva, semiótica, pragmática, análisis del discurso |
+| **sociology** | sociology | Dinámicas de grupo, teoría de redes, cultura digital, antropología |
+| **creative-design** | design | Design Thinking, branding, prototipado, ideación creativa |
+
+### 🏥 Salud y Legal
+| Skill | Dominio | Propósito |
+|-------|---------|-----------|
+| **healthtech** | health | Sistemas clínicos, interoperabilidad, HIPAA, FHIR |
+| **legal-doc** | legal | Análisis jurídico colombiano multi-especialidad, RTF+C |
+
+### 🛒 Retail
+| Skill | Dominio | Propósito |
+|-------|---------|-----------|
+| **pos-retail** | retail | Punto de venta, operaciones retail, inventario, facturación |
+
+### 🌱 Sostenibilidad
+| Skill | Dominio | Propósito |
+|-------|---------|-----------|
+| **sustainability** | environment | ESG, huella de carbono, reportes GRI/SASB/TCFD, economía circular |
+
+### 🔄 Meta
+| Skill | Dominio | Propósito |
+|-------|---------|-----------|
+| **evolve** | meta | Auto-mejora continua, ciclo ASI-Evolve (Learn→Design→Experiment→Analyze→Deploy) |
+
+## Carga de Skills por Proyecto
+
+Los skills se despliegan selectivamente según el tipo de proyecto:
+
+| Tipo | Skills |
+|------|--------|
+| **Trading** (CQE, Onyx) | evolve, hedgefund, quant-trading, alpha-research, risk-execution, math-doc, science-doc |
+| **Healthtech** (HC) | evolve, hedgefund, healthtech, legal-doc, science-doc |
+| **Retail** (PDV) | evolve, hedgefund, pos-retail, legal-doc |
+| **General** (Hermes) | evolve, hedgefund, math-doc, legal-doc, science-doc, healthtech, pos-retail, quant-trading, risk-execution |
+
+## Carga Manual de Skills
+
+```bash
+!skill load rust-lang          # Carga skill de Rust
+!skill load frontend-uiux      # Carga skill de UI/UX
+!skill list                    # Lista todos los skills disponibles
+!skill status                  # Muestra skills activos en la sesión
+```
+
+## Formato de Skills
+
+Cada skill tiene dos archivos:
+
+- **`SKILL.md`** — Versión completa con frontmatter YAML, descripción, responsabilidades, técnicas, comandos y referencias (~200-400 líneas)
+- **`SKILL.min.md`** — Versión minificada con solo frontmatter + responsabilidades esenciales + comandos (~15-20 líneas). Usada para carga rápida cuando el contexto es limitado.
+
+### Estructura de un SKILL.md
+
+```yaml
+---
+name: rust-lang
+domain: systems
+description: "Experto en Rust..."
+version: 1.0.0
+project_agnostic: true
+inherit:
+  - core/base_principles.md
+variables:
+  - RUST_TOOLCHAIN: stable, nightly
+  - ASYNC_RUNTIME: tokio, smol, async-std
+---
+```
+
+Luego incluye secciones de: Descripción, Responsabilidades, Técnicas, Comandos y Referencias.
