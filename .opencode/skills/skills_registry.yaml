@@ -155,4 +155,22 @@ skills:
     version: 1.0.0
     project_agnostic: true
 
+  - name: devops-infra
+    domain: devops
+    description: "DevOps, infraestructura como codigo, CI/CD, Docker, Kubernetes, Terraform, monitoreo, observabilidad, y plataforma como servicio."
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: sustainability
+    domain: environment
+    description: "Sostenibilidad, ESG, impacto ambiental, economia circular, cambio climatico, y reportes de sostenibilidad corporativa."
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: physical-sciences
+    domain: science
+    description: "Ciencias naturales experimentales: fisica, quimica, biologia, metodos cientificos, diseno experimental, y analisis de datos cientificos."
+    version: 1.0.0
+    project_agnostic: true
+
 
