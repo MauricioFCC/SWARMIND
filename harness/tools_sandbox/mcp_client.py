@@ -183,8 +183,8 @@ class MCPClient:
                     json=payload,
                     timeout=5,
                 )
-            except Exception:
-            logger.debug("MCP best-effort operation failed: %s", exc)
+            except Exception as exc:
+                logger.debug("MCP best-effort operation failed: %s", exc)
 
         self._connected = False
         self._server_url = None

@@ -29,6 +29,11 @@ _SYMBOL_MAP: Dict[str, str] = {
     "PBTTemplate": "harness.orchestrator.pbt_templates",
     "BehavioralTracer": "harness.orchestrator.behavioral_tracer",
     "check_all": "harness.orchestrator.architectural_guardrails",
+    # Agent Capsules (arXiv:2605.00410)
+    "AgentCapsule": "harness.orchestrator.agent_capsules",
+    "AgentCall": "harness.orchestrator.agent_capsules",
+    "CapsuleResult": "harness.orchestrator.agent_capsules",
+    "FusionStrategy": "harness.orchestrator.agent_capsules",
 }
 
 
