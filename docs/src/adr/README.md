@@ -21,7 +21,9 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | **0015** | **[Frontier Agents & Skills 2026 — MetaClaw, AdaptOrch, MuTON, SWE-Master, ShapleyFlow + frontend-uiux](adr0015-frontier-agents-skills-2026.md)** | **ACEPTADO** | **306e9c4** |
 | **0016** | **[Parallel Test Execution & Fail-Under Progresivo](adr0016-parallel-testing-fail-under.md)** | **ACEPTADO** | **2ef685f** |
 | **0017** | **[PaCoRe Async Concurrency — AsyncAgentBus + asyncio.gather + WAL](adr0017-pacore-async-concurrency.md)** | **IMPLEMENTADO** | **061e114** |
-| **0018** | **[Token Economics — Cache Shape + Structured Compaction + WAL](adr0018-token-economics-cache-shape.md)** | **IMPLEMENTADO** | **7e9e8b8** |
+| **0018** | **[Token Economics - Cache Shape + Structured Compaction + WAL](adr0018-token-economics-cache-shape.md)** | **IMPLEMENTADO** | **7e9e8b8** |
+| **0019** | **[Agent & Skill Optimization 2026](adr0019-agent-skill-optimization-2026.md)** | **ACEPTADO** | **754b6cb** |
+| **0020** | **[MCP + A2A Architecture 2026](adr0020-mcp-a2a-architecture-2026.md)** | **ACEPTADO** | **20933a3** |
 
 ## Resumen por Categoria
 
@@ -68,3 +70,4 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 - **ADR-0001**: Mejoras base transversales
 - **ADR-0006**: Legal-Doc Colombia (RTF+C, derecho comparado)
 - **ADR-0015**: Frontend-UIUX skill (Generative UI, Design Systems AI-native, 7 PBT templates UI)
+
