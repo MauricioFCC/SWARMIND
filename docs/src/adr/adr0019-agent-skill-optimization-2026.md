@@ -48,18 +48,20 @@ Sistema de debate estructurado entre N agentes especializados en atributos de ca
 - **Mock dispatch** para modo offline deterministico
 - **Compendium final** con acuerdos, trade-offs y recomendaciones
 
-### 4. Investigación Web Frontera 2026 (15 papers aplicados)
-| Paper | Hallazgo | Aplicación |
-|-------|----------|------------|
-| **arXiv:2606.30775** | Skill collision detection (79.2% F1, 32x) | Frontmatter + triggers validados |
-| **arXiv:2606.04465** | SePO self-referential prompt optimization (+4.49 pts) | Auto-mejora de system prompts |
-| **arXiv:2606.23127** | AFTER Benchmark: 382 tareas, 22 skills procedurales | Refinement loop validado |
-| **arXiv:2607.15257** | SearchOS chunking jerárquico | Hierarchy base_principles > skills > agents |
-| **arXiv:2606.19758** | SIGMA skill-incidence matrix (+2.06 pts) | Composición dinámica de skills |
-| **arXiv:2606.04896** | Channel Fracture (13-dim CADVP, 0% fallos) | Verificación A2A router |
-| **arXiv:2606.27492** | QueenBee topologías auto-evolutivas (RMSE 12.53→7.87) | Coordinación dinámica |
-| **arXiv:2607.06101** | SHIELD: Agents that Teach (6 principios) | Dimensión educativa complementaria |
-| **arXiv:2607.13027** | PalmClaw on-device agent (+11.5% success, -94.9% time) | Paradigma mobile agent |
+### 4. Investigación Web Frontera 2026 (18 papers aplicados)
+| Paper | Hallazgo | Aplicación | Prioridad |
+|-------|----------|------------|-----------|
+| **arXiv:2606.23127** | AFTER: 382 tareas enterprise, 22 skills procedurales. +3.7-6.7 pts por ronda de refinamiento. Skills multi-modelo: 73.1% accuracy cross-model | Refinement loop validado para skills AGENTIC | 🔴 Alta |
+| **arXiv:2606.19758** | SIGMA: Skill-incidence graphs. +2.06 pts vs CARD. Agentes como bundles de skills reusables. Robusto a skill libraries no vistas (drop 0.96 pts) | Composición dinámica de agentes desde skills | 🔴 Alta |
+| **arXiv:2605.27864** | FundaPod: Declarative skill registry → typed task graphs. Aislamiento cognitivo entre agentes. Knowledge graph "second brain" | Skills_registry.yaml → task graphs automáticos | 🔴 Alta |
+| **arXiv:2607.05377** | Cortex: 32 canonical skill primitives estandarizadas para manipulación | Estandarización de primitivas de skill | 🟡 Media |
+| **arXiv:2606.30775** | Skill collision detection (79.2% F1, 32x speedup) | Frontmatter + triggers validados | 🟢 Hecho |
+| **arXiv:2606.04465** | SePO self-referential prompt optimization (+4.49 pts) | Auto-mejora de system prompts | 🟡 Media |
+| **arXiv:2607.15257** | SearchOS chunking jerárquico | Hierarchy base_principles > skills > agents | 🟢 Hecho |
+| **arXiv:2606.04896** | Channel Fracture (13-dim CADVP, 0% fallos) | Verificación A2A router | 🟡 Media |
+| **arXiv:2606.27492** | QueenBee topologías auto-evolutivas (RMSE 12.53→7.87) | Coordinación dinámica | 🟡 Media |
+| **arXiv:2607.06101** | SHIELD: Agents that Teach (6 principios) | Dimensión educativa complementaria | 🟢 Baja |
+| **arXiv:2607.13027** | PalmClaw on-device agent (+11.5% success, -94.9% time) | Paradigma mobile agent | 🟢 Baja |
 
 ### 5. Estado Actual del Sistema
 | Componente | Cantidad |
