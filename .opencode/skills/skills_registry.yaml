@@ -42,3 +42,45 @@ skills:
   - name: frontend-uiux
     domain: frontend
     description: "UI/UX professional frontend engineering with Generative UI 2026 | Design systems AI-native (Geeklego 3-tier, 7onic, useVyre, StyleSeed), Semantic Guidance hierarchical generation, A2UI/OpenUI declarative rendering, Bayesian preference learning, WCAG 2.2 AA compliance, WiserUI-Bench validation, 7 PBT templates, Core Web Vitals optimization, visual regression testing"
+
+  - name: rust-lang
+    domain: systems
+    description: "Rust systems engineering — ownership, borrowing, lifetimes, async runtimes (tokio, smol, async-std), web frameworks (axum, actix, rocket), FFI with Python via PyO3/maturin, performance optimization, cargo tooling"
+
+  - name: architecture
+    domain: architecture
+    description: "Software architecture — GoF patterns, SOLID, Clean Architecture, Hexagonal, DDD, C4 model, ADRs, architectural decision records, fitness functions, domain-driven design"
+
+  - name: responsive-ui
+    domain: frontend
+    description: "Responsive UI/UX — WCAG 2.2 AA/AAA, mobile-first design, design tokens, component libraries, CSS Grid/Flexbox/Container Queries, Core Web Vitals, accessibility auditing with axe-core"
+
+  - name: data-science
+    domain: data
+    description: "Data Science & ML — pandas, numpy, polars, scikit-learn, PyTorch, feature engineering, model evaluation protocols, GPU acceleration (AMP, DDP, torch.compile), reproducible pipelines"
+
+# === 2026-07-22: Nuevos skills especializados ===
+
+- name: rust-lang
+  domain: rust
+  description: "Experto en Rust, ownership, borrowing, async runtimes, crates, FFI con Python"
+  version: 1.0.0
+  project_agnostic: true
+
+- name: architecture
+  domain: architecture
+  description: "Arquitecto de software, patrones GoF, clean/hexagonal architecture, DDD, C4 model"
+  version: 1.0.0
+  project_agnostic: true
+
+- name: responsive-ui
+  domain: frontend
+  description: "Experto en UI/UX responsive, WCAG 2.2 AA/AAA, design systems, Core Web Vitals"
+  version: 1.0.0
+  project_agnostic: true
+
+- name: data-science
+  domain: data
+  description: "Experto en Data Science/ML, pandas, pytorch, feature engineering, GPU acceleration"
+  version: 1.0.0
+  project_agnostic: true
