@@ -100,10 +100,10 @@ class TestTaskOrchestrator:
         result = self.orch.process_message("implementar API en Rust")
         # With SWARM pattern, multiple agents launch in parallel at level 0
         # Coordinator is the orchestrator that dispatches to all
-    def test_target_agent_scientist(self):
+    @pytest.mark.slow\n    def test_target_agent_scientist(self):
         """Research task → target agent is scientist."""
         result = self.orch.process_message("investigar patrones")
-    def test_target_agent_guardian(self):
+    @pytest.mark.slow\n    def test_target_agent_guardian(self):
         """Security task → target agent is guardian."""
         result = self.orch.process_message("auditar seguridad")
     def test_orchestrator_result_dict(self):
@@ -191,3 +191,4 @@ class TestTaskOrchestrator:
         result = self.orch.process_message("x")
         # No deberia explotar
         assert result is not None
+

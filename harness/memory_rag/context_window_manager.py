@@ -21,7 +21,6 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
 from harness.common import CHARS_PER_TOKEN, StatsMixin, compression_pct
-from harness.memory_rag.compaction import structured_compact, _flush_buffer
 
 logger = logging.getLogger(__name__)
 

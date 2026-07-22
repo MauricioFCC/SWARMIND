@@ -38,7 +38,7 @@ def bench(name: str, cpu_fn, gpu_fn, n_iter: int = 50):
         try:
             cpu_fn()
         except Exception:
-            pass
+        pass  # expected: CPU fallback for GPU functions
 
     t0 = time.perf_counter()
     for _ in range(n_iter):
@@ -53,7 +53,7 @@ def bench(name: str, cpu_fn, gpu_fn, n_iter: int = 50):
             try:
                 gpu_fn()
             except Exception:
-                pass
+        pass  # expected: CPU fallback for GPU functions
         t0 = time.perf_counter()
         for _ in range(n_iter):
             gpu_fn()
@@ -177,4 +177,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

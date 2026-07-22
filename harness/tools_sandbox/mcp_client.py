@@ -184,7 +184,7 @@ class MCPClient:
                     timeout=5,
                 )
             except Exception:
-                pass  # best-effort
+            logger.debug("MCP best-effort operation failed: %s", exc)
 
         self._connected = False
         self._server_url = None
@@ -397,3 +397,4 @@ class MCPClient:
         """Force-clear the tool cache."""
         self._tools_cache = []
         self._cache_ts = 0.0
+
