@@ -453,11 +453,27 @@ def deploy_project(
 
     if not dry_run:
         # Backup project-specific configs BEFORE cleanup
+        # NOTE: routing_rules.yaml NO se restaura si contiene agentes obsoletos
+        #       (se usa la version actualizada de AGENTIC en su lugar)
         backup_files = {}
         for fname in ["project_config.yaml", "routing_rules.yaml", "skills_registry.yaml"]:
             src = dst_opencode / "config" / fname
             if src.exists():
-                backup_files[fname] = src.read_text(encoding="utf-8")
+                content = src.read_text(encoding="utf-8")
+                # Detectar routing obsoleto con agentes fantasma
+                if fname == "routing_rules.yaml":
+                    old_agents = [
+                        "quant-developer", "quant-scientist", "risk-manager",
+                        "trading-operations", "enterprise-architect", "ai-engineer",
+                        "software-engineer", "frontend-engineer", "data-architect",
+                        "devops-sre", "security-engineer", "mobile-engineer",
+                        "documentation-specialist", "project-manager", "requirements-analyst",
+                        "quality-gate",
+                    ]
+                    if any(a in content for a in old_agents):
+                        logger.warning("  ⚠️  routing_rules.yaml obsoleto detectado (agentes fantasma). Usando version actualizada de AGENTIC.")
+                        continue  # No restaurar, usar la version fresh de AGENTIC
+                backup_files[fname] = content
 
         # Ensure target exists
         _ensure_dir(dst_opencode)
