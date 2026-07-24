@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 EXPORT_BASE = Path(r"C:\Users\USUARIO\Mi unidad\DEV\SIDEPROYECT\exports")
 TODAY = date.today().isoformat()
 
+# SOLO proyectos AGENTIC - NO agregar proyectos externos
+# Los archivos ZIP de proyectos NO listados aqui NO deben eliminarse
 PROJECTS = [
     ("AGENTIC", Path(__file__).resolve().parent.parent),
     ("CQE", Path(r"C:\Users\USUARIO\Documents\DEV-SPACE\core-quant-engine")),
@@ -23,6 +25,9 @@ PROJECTS = [
     ("PDV", Path(r"C:\Users\USUARIO\Documents\DEV-SPACE\PDV Basic")),
     ("Alfa", Path(r"C:\Users\USUARIO\Documents\DEV-SPACE\de_0_a_Alfa")),
 ]
+
+# Tags de proyectos AGENTIC (para NO eliminar archivos externos)
+_KNOWN_TAGS = {p[0] for p in PROJECTS}
 
 
 def export_project(tag: str, root: Path) -> int:
@@ -51,6 +56,11 @@ def export_project(tag: str, root: Path) -> int:
     zip_path = EXPORT_BASE / f"{folder}.zip"
     
     # Clean previous
+    # Safety: solo eliminar archivos de proyectos AGENTIC conocidos
+    if tag not in _KNOWN_TAGS:
+        logger.warning(f"  Safety: {tag} not in known projects, skipping cleanup")
+        return 0
+    
     if folder_path.exists():
         shutil.rmtree(folder_path)
     if zip_path.exists():
