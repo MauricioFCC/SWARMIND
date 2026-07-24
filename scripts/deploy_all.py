@@ -47,6 +47,7 @@ _HARNESS = _ROOT / "harness"                      # AGENTIC/harness/
 
 _DEV_SPACE = Path(os.environ.get("DEV_SPACE_ROOT", r"C:\Users\USUARIO\Documents\DEV-SPACE"))
 _HERMES_PATH = Path(os.environ.get("HERMES_ROOT", r"C:\Users\USUARIO\Documents\Hermes_Memory_Proyects"))
+_ALFA_PATH = Path(os.environ.get("ALFA_ROOT", r"C:\Users\USUARIO\Documents\DEV-SPACE\de_0_a_Alfa"))
 
 
 def _project_path(name: str, env_var: str, default: str) -> str:
@@ -101,6 +102,13 @@ PROJECTS = {
         "add_skills": ["math-doc", "legal-doc", "science-doc", "healthtech", "pos-retail",
                        "quant-trading", "risk-execution"],
         "description": "Repositorio central de memoria y conocimiento multi-proyecto",
+    },
+    "de_0_a_Alfa": {
+        "path": str(_ALFA_PATH),
+        "type": "general",
+        "keep_skills": ["evolve", "hedgefund"],
+        "add_skills": ["math-doc", "science-doc", "architecture", "rust-lang"],
+        "description": "Proyecto de trading sistematico y automatizacion",
     },
 }
 
