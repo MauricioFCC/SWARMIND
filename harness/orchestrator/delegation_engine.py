@@ -292,12 +292,15 @@ class DelegationEngine:
                 scores["scientist"] = scores.get("scientist", 0) + len(w)
 
         # Palabras de guardian (segundo nivel)
-        guardian_words = ["test", "security", "audit", "risk", "documentation",
+        guardian_words = ["testing", "security", "audit", "risk", "documentation",
                          "hardening", "coverage", "seguridad", "auditoria",
-                         "calidad", "documentacion"]
+                         "calidad", "documentacion", "pruebas", "cobertura"]
         for w in guardian_words:
-            if word_in_text(w):
+            if w in text.split():
                 scores["guardian"] = scores.get("guardian", 0) + len(w)
+        # test como palabra corta (match exacto con espacio)
+        if " test " in ' ' + text + ' ':
+            scores["guardian"] = scores.get("guardian", 0) + 4
 
         # Elegir el de mayor score
         best = max(scores, key=scores.get)
