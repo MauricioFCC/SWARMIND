@@ -67,8 +67,20 @@ Verificador de calidad, seguridad y riesgo. Aplica **Verify First**: su función
 
 **Triggers:** test, security, audit, quality, review, check, validate, ci, compliance, hardening
 
-### Evolve
-Meta-agente de auto-mejora. Orquesta el ciclo **ASI-Evolve**.
+### Evolve (con Creative AI)
+Meta-agente de auto-mejora. Orquesta el ciclo **ASI-Evolve**. Incorpora **Creative AI** (ADR-0023) para generacion divergente de ideas.
+
+**Modo Creativo (ReDNA pipeline):**
+- `debate(topic, creative_mode=True)` — Activa el pipeline divergente→convergente
+- **Divergente**: Agentes generan ideas libremente, sin restricciones, de forma aislada
+- **Convergente**: Las ideas se evaluan contra restricciones (novedad*0.4 + factibilidad*0.6)
+- **Integracion**: Top 3 ideas se combinan en una propuesta final
+
+**Proteccion contra Diversity Collapse:**
+- Topologia sparse (no fully-connected)
+- Rondas de generacion aislada antes de compartir
+- Presion divergente para opiniones disidentes
+- Penalizacion a deferencia de autoridad
 
 **Ciclo ASI-Evolve:**
 ```
@@ -207,9 +219,9 @@ Los skills se despliegan selectivamente según el tipo de proyecto:
 
 ## Sistema de Debate: Worktable
 
-El **Worktable** es un sistema de debate multi-agente donde 13 expertos en calidad de software discuten una propuesta y llegan a un compendio.
+El **Worktable** es un sistema de debate multi-agente donde 13 expertos en calidad de software discuten una propuesta y llegan a un compendio. Soporta dos modos: **critico** (debate tradicional) y **creativo** (generacion de ideas).
 
-**Los 13 expertos:**
+### Modo Crítico (13 expertos en calidad)
 1. Separation of Concerns (SoC)
 2. Low Coupling
 3. High Cohesion
@@ -224,12 +236,28 @@ El **Worktable** es un sistema de debate multi-agente donde 13 expertos en calid
 12. DevOps Principles
 13. Trade-offs Manager
 
-**Las 3 rondas de debate:**
-1. **Opening**: Cada experto presenta su postura inicial
-2. **Critique**: Los expertos se critican entre sí
-3. **Refinement**: Refinamiento de posturas y votación final
+**3 rondas:** Opening → Critique → Refinement → Compendium
 
-**Resultado:** Un `Compendium` con acuerdos, trade-offs identificados y recomendaciones.
+### Modo Creativo (ReDNA pipeline)
+Activa el pipeline divergente→convergente para generacion de ideas innovadoras:
+
+```python
+# Uso programatico
+wt = Worktable()
+compendio = wt.debate("Disenar una API innovadora", creative_mode=True)
+```
+
+**Fase Divergente:** Agentes generan N ideas libremente (independientes, sin compartir aun)
+**Fase Convergente:** Ideas evaluadas por novedad (40%) y factibilidad (60%)
+**Fase Integracion:** Top 3 ideas se combinan en propuesta final
+
+**Proteccion contra Diversity Collapse:**
+- Topologia sparse (no acoplamiento estructural)
+- 2 rondas de generacion aislada antes de compartir
+- Presion divergente del 30% para opiniones disidentes
+- Penalizacion del 10% a deferencia de autoridad
+
+**Resultado:** Compendium con propuesta integrada, ideas seleccionadas y metricas de innovacion.
 
 ---
 
