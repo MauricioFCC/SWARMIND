@@ -195,80 +195,113 @@ class DelegationEngine:
         return "coordinator"
 
     def _match_intent(self, text: str) -> str:
-        for keyword, agent in sorted(
-            self._intent_map.items(), key=lambda x: -len(x[0])
-        ):
+        """Match por keyword con scoring (mas especifico = mayor peso)."""
+        scores: dict[str, float] = {}
+        for keyword, agent in self._intent_map.items():
             if keyword in text:
-                return agent
+                # Mas larga la keyword = mas especifica = mas peso
+                weight = len(keyword) / max(len(text), 1)
+                scores[agent] = scores.get(agent, 0) + weight
+        if scores:
+            return max(scores, key=scores.get)
         return ""
 
     def auto_route(self, message: str) -> str:
         """
         Auto-detecta el rol universal a partir del contenido del mensaje.
         
-        NO requiere @. Analiza keywords y enruta al rol universal apropiado.
-        Si no hay match, el coordinador maneja la tarea directamente.
+        NO requiere @. Analiza keywords con scoring ponderado y enruta
+        al agente mas especifico. Si no hay match, el coordinador maneja.
         
-        Orden de precedencia:
+        Orden de precedencia (por scoring, no por orden de busqueda):
           1. Evolve (auto-mejora del sistema)
-          2. Scientist (investigación, papers, AI/ML, patrones)
+          2. Scientist (investigacion, papers, AI/ML, patrones)
           3. Guardian (calidad, seguridad, riesgo, docs)
-          4. Builder (toda implementación: Rust, Go, Python, Web, Mobile, Trading)
-          5. Coordinator (default — analiza y delega)
+          4. Builder (toda implementacion)
+          5. Coordinator (default)
         """
         text = message.lower()
+        scores: dict[str, float] = {"coordinator": 0.0}
 
-        # Universal role routing by intent keywords
-        # Ordenado por especificidad: los más específicos primero
+        # Scoring ponderado: cada keyword suma segun su longitud
+        # Se usa word boundary para evitar falsos positivos parciales
+        
+        def word_in_text(word: str) -> bool:
+            """Check if word appears as whole word in text."""
+            return ' ' + word + ' ' in ' ' + text + ' '
 
-        # @evolve: auto-mejora del sistema
-        evolve_patterns = ["!evolve", "evolve", "skill improvement", "cognition",
-                          "self-improve", "auto-improve"]
-        for pat in evolve_patterns:
+        # evolve: auto-mejora del sistema
+        for pat in ["!evolve", "asi-evolve", "self-improve", "auto-improve",
+                    "skill improvement", "cognition store", "evolve loop",
+                    "mejora continua", "auto-mejora", "mejora el sistema",
+                    "mejora el rendimiento", "optimiza el skill"]:
             if pat in text:
-                return "evolve"
+                scores["evolve"] = scores.get("evolve", 0) + len(pat) * 2
 
-        # @scientist: investigación, arquitectura, AI/ML, patrones
-        scientist_patterns = ["research", "paper", "architecture", "pattern",
-                             "methodology", "algorithm", "study", "ml model",
-                             "deep learning", "neural", "train model",
-                             "experiment design", "statistical", "causal",
-                             "literature", "survey", "novel approach",
-                             "system design", "trade-off", "capacity plan",
-                             "arquitectura", "investigacion", "patron de diseno",
-                             "modelo ml", "modelo ia", "entrenar modelo",
-                             "analisis", "experimento", "validacion"]
-        for pat in scientist_patterns:
+        # scientist: investigacion, arquitectura, experimentos, papers
+        for pat in ["research paper", "scientific paper", "literature review",
+                    "machine learning", "deep learning", "train model",
+                    "experiment design", "statistical validation",
+                    "causal inference", "system design",
+                    "investigacion", "investiga", "experimento",
+                    "patrones de diseno", "patron de diseno",
+                    "analisis de datos", "arquitectura del sistema",
+                    "arquitectura hexagonal", "trade-off",
+                    "algorithm design", "survey paper", "capacity planning",
+                    "papers sobre", "articulos sobre", "investiga papers"]:
             if pat in text:
-                return "scientist"
+                scores["scientist"] = scores.get("scientist", 0) + len(pat) * 2
 
-        # @guardian: calidad, seguridad, riesgo, docs
-        # NOTA: va ANTES que builder para que "documentacion" no sea atrapado por "api"
-        guardian_patterns = ["test", "testing", "security", "audit", "risk",
-                            "documentation", "documentacion", "monitor", "monitoring",
-                            "quality gate", "code review", "lint", "coverage",
-                            "hardening", "compliance", "observability", "alert",
-                            "calidad", "seguridad", "auditoria", "riesgo",
-                            "cobertura", "revision de codigo"]
-        for pat in guardian_patterns:
+        # guardian: calidad, seguridad, riesgo, documentacion, testing
+        for pat in ["security audit", "threat model", "code review",
+                    "quality gate", "mutation test", "adversarial test",
+                    "performance test", "load test", "fuzz test",
+                    "hardening", "compliance", "observability",
+                    "documentacion tecnica", "technical writing",
+                    "auditoria de seguridad", "audita la seguridad",
+                    "pruebas de rendimiento", "cobertura de tests",
+                    "revision de codigo", "haz una auditoria"]:
             if pat in text:
-                return "guardian"
+                scores["guardian"] = scores.get("guardian", 0) + len(pat) * 2
 
-        # @builder: toda implementación
-        builder_patterns = ["implement", "build", "create", "develop", "code",
-                           "api", "endpoint", "rust", "go lang", "golang",
-                           "python", "typescript", "web", "frontend", "backend",
-                           "fullstack", "mobile", "android", "ios", "app",
-                           "server", "database", "sql", "deploy", "docker",
-                           "kubernetes", "ci/cd", "trading", "strategy",
-                           "algorithm", "library", "refactor", "migrate",
-                           "cli tool", "microservice", "rest api", "graphql"]
-        for pat in builder_patterns:
+        # builder: implementacion, desarrollo, codigo
+        for pat in ["implementa una", "crea un modulo", "crea un frontend",
+                    "desarrolla un", "implementa una api", "rest api",
+                    "graphql api", "microservicio", "microservice",
+                    "database schema", "deploy service",
+                    "docker container", "kubernetes deployment",
+                    "trading strategy", "market making",
+                    "cli tool", "api endpoint", "funcion de ordenamiento",
+                    "modulo de autenticacion", "api rest"]:
             if pat in text:
-                return "builder"
+                scores["builder"] = scores.get("builder", 0) + len(pat) * 2
 
-        # Default: coordinator (analiza y delega)
-        return "coordinator"
+        # Palabras individuales (segundo nivel, menos peso)
+        builder_words = ["implement", "create", "build", "code", "api",
+                        "rust", "golang", "python", "frontend", "backend",
+                        "database", "docker", "deploy", "app"]
+        for w in builder_words:
+            if word_in_text(w):
+                scores["builder"] = scores.get("builder", 0) + len(w)
+
+        # Palabras de scientist (segundo nivel)
+        scientist_words = ["research", "paper", "architecture", "pattern",
+                          "study", "survey", "analyse", "investiga"]
+        for w in scientist_words:
+            if word_in_text(w):
+                scores["scientist"] = scores.get("scientist", 0) + len(w)
+
+        # Palabras de guardian (segundo nivel)
+        guardian_words = ["test", "security", "audit", "risk", "documentation",
+                         "hardening", "coverage", "seguridad", "auditoria",
+                         "calidad", "documentacion"]
+        for w in guardian_words:
+            if word_in_text(w):
+                scores["guardian"] = scores.get("guardian", 0) + len(w)
+
+        # Elegir el de mayor score
+        best = max(scores, key=scores.get)
+        return best if scores[best] > 0 else "coordinator"
 
     def route_message(self, message: str) -> str:
         """
