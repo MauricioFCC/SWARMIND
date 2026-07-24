@@ -111,3 +111,57 @@ Generar: conclusiones técnicas, hoja de ruta procesal, matriz de riesgos, recom
 - Matriz comparativa internacional contextualizada
 - Documentación en español jurídico colombiano preciso
 - Glosario integrado de términos técnicos
+
+### NLP Juridico 2026
+
+**SaulLM-7B** (2025): LLM juridico entrenado con 570B tokens legales EN/FR/DE/ES.
+- LexGLUE y CaseHOLD: supera GPT-4 en tareas juridicas
+- NER juridico con taxonomia de 100+ entidades (normas, cortes, cargos)
+- Integrable via HuggingFace para clasificacion de documentos
+
+**LexBERT + Legal-RE**: Extraccion de relaciones juridicas
+- Deteccion de entidades nombradas (normas, jurisprudencia, sujetos procesales)
+- Relaciones entre entidades (deroga, modifica, interpreta, desarrolla)
+
+**MiningLegalBench** (2026): Benchmark mineria de contratos
+- Clausulas abusivas, compliance, obligaciones
+- Deteccion de riesgos contractuales
+
+### Argument Mining (Extraccion de Argumentos)
+
+**Arg-LLaDA** (2025): Summarization sufficiency-aware para argumentos legales.
+- Extrae premisa -> claim -> evidence en 3 niveles jerarquicos
+- Identifica ratio decidendi y obiter dicta en sentencias
+- Mapea estructura argumentativa con RST trees
+
+**Hierarchical Argument Mining**:
+- Nivel 1: Premisas mayores (normas aplicables)
+- Nivel 2: Premisas menores (hechos del caso)
+- Nivel 3: Conclusion (decision)
+
+**Deteccion de falacias**:
+- 12 tipos de falacias juridicas (ad hominem, ad populum, falsa causalidad)
+- Fine-tuning sobre LogicalFallacyBench (2025)
+
+### Discourse Analysis (Analisis del Discurso)
+
+**Multi-Granularity Discourse Parsing**:
+- Segmentacion tematica de documentos extensos (>100k tokens)
+- Sliding window + overlapping + contexto preservado
+- Arboles RST (Rhetorical Structure Theory) para mapear relaciones
+
+**SegBot** (2025): Segmentacion automatica
+- Chunking jerarquico con deteccion de topic boundaries
+- Preservacion de contexto entre segmentos
+
+### Generacion de Documentos Legales
+
+**Outlines + Guidance**: Generacion estructurada con gramaticas CFG
+- Formatos vinculados a metodologia RTF+C
+- Constraints de formato juridico colombiano
+- Drafting de demandas, recursos, conceptos
+
+**Constitutional AI**:
+- Redaccion asistida con principios constitucionales
+- Verificacion de consistencia normativa
+- Deteccion de contradicciones con el ordenamiento
