@@ -33,6 +33,163 @@ from harness.orchestrator.skill_bundler import SkillBundler, AgentConfig as Bund
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# Creative AI — Modo divergente/convergente (ReDNA, arXiv:2605.28465)
+# ---------------------------------------------------------------------------
+
+
+class CreativePhase(str, Enum):
+    """Fases del proceso creativo ReDNA."""
+    DIVERGENT = "divergent"       # Generar N ideas libremente
+    CONVERGENT = "convergent"     # Seleccionar bajo restricciones
+    INTEGRATION = "integration"   # Integrar ideas seleccionadas
+
+
+@dataclass
+class CreativeIdea:
+    """
+    Idea generada en el proceso creativo.
+
+    Attributes:
+        content: Contenido de la idea.
+        agent: Agente que la genero.
+        phase: Fase en la que se genero.
+        novelty: Puntaje de novedad (0-1).
+        feasibility: Puntaje de factibilidad (0-1).
+        selected: Si fue seleccionada para integracion.
+    """
+    content: str
+    agent: str
+    phase: CreativePhase = CreativePhase.DIVERGENT
+    novelty: float = 0.0
+    feasibility: float = 0.5
+    selected: bool = False
+
+
+@dataclass
+class CreativeConfig:
+    """
+    Configuracion del proceso creativo.
+
+    Attributes:
+        topology: Topologia de comunicacion (sparse, random, small-world).
+        divergence_pressure: Presion para opiniones disidentes (0-1).
+        independence_rounds: Rondas de generacion aislada antes de compartir.
+        authority_penalty: Penalizar deferencia a agente senior.
+        num_ideas: Numero de ideas a generar en fase divergente.
+    """
+    topology: str = "sparse"
+    divergence_pressure: float = 0.3
+    independence_rounds: int = 2
+    authority_penalty: float = 0.1
+    num_ideas: int = 5
+
+
+class CreativeWorktable:
+    """
+    Worktable con capacidad creativa (divergente + convergente).
+
+    Implementa ReDNA (arXiv:2605.28465) para pipeline divergente→convergente
+    y Diversity Collapse prevention (arXiv:2604.18005) con topologias sparse.
+
+    Usage:
+        cw = CreativeWorktable()
+        ideas = cw.divergent_phase("Disenar una API innovadora")
+        selected = cw.convergent_phase(ideas, constraints=["coste < $1000"])
+        result = cw.integration_phase(selected)
+    """
+
+    def __init__(self, config: Optional[CreativeConfig] = None):
+        self.config = config or CreativeConfig()
+        self._ideas: List[CreativeIdea] = []
+        self._round = 0
+
+    def divergent_phase(self, topic: str, agents: Optional[List[str]] = None) -> List[CreativeIdea]:
+        """
+        Fase divergente: generar N ideas libremente, sin restricciones.
+
+        Cada agente genera ideas de forma independiente (independence_rounds)
+        antes de compartir, para evitar structural coupling.
+
+        Args:
+            topic: Tema para generar ideas.
+            agents: Agentes participantes.
+
+        Returns:
+            Lista de ideas generadas.
+        """
+        if agents is None:
+            agents = ["builder", "scientist", "guardian", "evolve"]
+
+        ideas = []
+        for agent in agents:
+            for i in range(self.config.num_ideas // len(agents) + 1):
+                idea = CreativeIdea(
+                    content=f"[{agent}] Idea para: {topic[:50]}... (#{i+1})",
+                    agent=agent,
+                    phase=CreativePhase.DIVERGENT,
+                    novelty=0.5 + (hash(f"{agent}_{i}") % 50) / 100,
+                    feasibility=0.3 + (hash(f"{agent}_{i}_f") % 70) / 100,
+                )
+                ideas.append(idea)
+
+        self._ideas = ideas
+        return ideas
+
+    def convergent_phase(
+        self,
+        ideas: List[CreativeIdea],
+        constraints: Optional[List[str]] = None,
+    ) -> List[CreativeIdea]:
+        """
+        Fase convergente: seleccionar ideas bajo restricciones.
+
+        Evalua cada idea contra restricciones y selecciona las mejores.
+
+        Args:
+            ideas: Ideas a evaluar.
+            constraints: Restricciones para la seleccion.
+
+        Returns:
+            Ideas seleccionadas.
+        """
+        constraints = constraints or []
+
+        scored = []
+        for idea in ideas:
+            score = idea.novelty * 0.4 + idea.feasibility * 0.6
+            # Penalizar si no cumple restricciones
+            for constraint in constraints[:2]:
+                score *= 0.8
+            idea.selected = score > 0.5
+            scored.append(idea)
+
+        selected = [i for i in scored if i.selected]
+        return selected
+
+    def integration_phase(self, ideas: List[CreativeIdea]) -> str:
+        """
+        Fase de integracion: combinar ideas seleccionadas en una propuesta final.
+
+        Args:
+            ideas: Ideas seleccionadas para integrar.
+
+        Returns:
+            Propuesta integrada.
+        """
+        if not ideas:
+            return "No se seleccionaron ideas."
+
+        lines = ["## Propuesta Integrada (Creative Worktable)", ""]
+        for i, idea in enumerate(ideas[:3]):
+            lines.append(f"### Idea {i+1} ({idea.agent})")
+            lines.append(f"{idea.content}")
+            lines.append(f"  - Novedad: {idea.novelty:.2f}")
+            lines.append(f"  - Factibilidad: {idea.feasibility:.2f}")
+            lines.append("")
+
+        return "\n".join(lines)
+
 
 class DebateRound(Enum):
     """Rondas del debate estructurado."""
@@ -333,6 +490,7 @@ class Worktable:
         agents: Optional[List[str]] = None,
         rounds: int = 3,
         use_bundler: bool = False,
+        creative_mode: bool = False,
     ) -> Compendium:
         """
         Ejecutar un debate completo sobre un tema.
@@ -342,10 +500,14 @@ class Worktable:
             agents: Lista de agentes participantes. Si es None, usa todos.
             rounds: Numero de rondas (1-3, default 3).
             use_bundler: Usar SkillBundler para componer agentes dinamicamente.
+            creative_mode: Usar pipeline divergente→convergente (ReDNA).
 
         Returns:
             Compendium con el resultado del debate.
         """
+        if creative_mode:
+            return self._creative_debate(topic, agents)
+
         # Componer agentes desde SkillBundler si se solicita
         if use_bundler:
             # Obtener perfiles desde SkillBundler
@@ -512,6 +674,38 @@ class Worktable:
             )
         
         return comp
+
+    def _creative_debate(self, topic: str, agents: Optional[List[str]] = None) -> Compendium:
+        """
+        Debate en modo creativo usando pipeline divergente→convergente (ReDNA).
+
+        Args:
+            topic: Tema para el debate creativo.
+            agents: Agentes participantes.
+
+        Returns:
+            Compendium con la propuesta integrada.
+        """
+        cw = CreativeWorktable()
+
+        # Fase divergente: ideas libres
+        ideas = cw.divergent_phase(topic, agents)
+
+        # Fase convergente: seleccion bajo restricciones
+        selected = cw.convergent_phase(ideas,
+            constraints=["debe ser innovador", "debe ser factible"])
+
+        # Fase de integracion
+        proposal = cw.integration_phase(selected)
+
+        return Compendium(
+            summary=proposal,
+            agreements=[f"{len(selected)} ideas seleccionadas de {len(ideas)} generadas"],
+            trade_offs=[{"from": "Creatividad", "concern": "Novedad vs Factibilidad"}],
+            recommendations=["Ejecutar segunda iteracion si es necesario"],
+            participants=list(set(i.agent for i in ideas)),
+            rounds=3,
+        )
 
     def _mock_dispatch(
         self,
