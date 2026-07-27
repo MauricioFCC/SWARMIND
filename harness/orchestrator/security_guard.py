@@ -36,7 +36,7 @@ INJECTION_PATTERNS = [
     r"(?i)CHATGPT\s+(SYSTEM|INITIAL|PROMPT)",
     r"(?i)DAN|jailbreak|friday|dev\s+mode",
     r"(?i)\{\{.*\{\{|%>.*<%.*\}%.*%\}",
-    r"(?i)\\\\(?!n|t|r|'|\|"|u|x|U|N)system|\\\\(?!n|t|r|'|\"|u|x|U|N)prompt",
+    r"(?i)\\system|\\prompt",
     r"(?i)<\|im_start\|>|<\|im_end\|>|<\|system\|>",
 ]
 
