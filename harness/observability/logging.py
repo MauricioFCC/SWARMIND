@@ -243,3 +243,4 @@ def reset_metrics() -> None:
         "error_count": 0,
         "total_duration": 0.0,
     }
+
