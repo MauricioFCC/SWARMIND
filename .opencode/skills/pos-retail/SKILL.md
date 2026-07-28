@@ -1,3 +1,11 @@
+---
+name: pos-retail
+domain: pos-retail
+description: "Skill contextual para el dominio Pos-Retail — punto de venta, retail, e-commerce, inventario, facturación, pagos y logística."
+version: 1.0.0
+project_agnostic: true
+---
+
 # Pos-Retail Contextual Skill
 
 Skill contextual para el dominio **Pos-Retail** (punto de venta, retail, e-commerce, inventario, facturación).

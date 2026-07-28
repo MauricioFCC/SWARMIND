@@ -223,3 +223,4 @@ let pikan = PIKANPortfolio::new()
 - Slippage: siempre incluir `slippage::SlippageModel::estimate()` en backtests
 - Overfitting: `WalkForwardOptimizer::min_ratio(0.8)` mínimo
 - Drawdown: stop automático si `portfolio_risk::measures::drawdown() > max_dd`
+

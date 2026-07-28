@@ -352,3 +352,4 @@ design-system/
 ---
 
 > 💡 **Nota**: Este skill integra con frontend-uiux para diseno avanzado de UI/UX. La accesibilidad no es opcional — es un requisito de calidad. Todo componente debe pasar auditoria axe-core antes de considerar completo.
+

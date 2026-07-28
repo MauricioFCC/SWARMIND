@@ -214,3 +214,4 @@ let risk_portfolio = PIKANPortfolio::new()
 - `margin::MarginCalculator::maintenance()` → monitoreo en tiempo real
 - **NUEVO**: Mean Field Control para crowding risk en mercados concentrados
 - **NUEVO**: PIKAN para portfolio optimization con regularizacion fisica
+

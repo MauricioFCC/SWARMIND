@@ -196,3 +196,4 @@ let portfolio = PIKANPortfolio::new()
 - [ ] Benchmark: buy & hold + igual-ponderado + risk-parity
 - [ ] Feature importance: SHAP values + permutation importance
 - [ ] Código en Rust para hot path, Python para prototipado
+

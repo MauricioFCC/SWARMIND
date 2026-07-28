@@ -348,3 +348,4 @@ Cualquier etapa → [Fail] → Cognition + Archivo + Lección aprendida
 ---
 
 > 💡 **Nota**: Esta skill NO reemplaza a las otras skills. Es la **doctrina fundacional** que contextualiza todas las demás. Cada skill opera DENTRO de este marco de hedge fund. El CIO (coordinator) es el guardián de esta doctrina.
+

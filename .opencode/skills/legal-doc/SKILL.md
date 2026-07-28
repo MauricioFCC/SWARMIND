@@ -1,3 +1,11 @@
+---
+name: legal-doc
+domain: legal
+description: "Skill contextual para el dominio jurídico colombiano — análisis de jurisprudencia, normas, casos multi-especialidad, redacción de demandas, conceptos, derecho comparado y consulta de fuentes oficiales colombianas."
+version: 1.0.0
+project_agnostic: true
+---
+
 # Legal-Doc: Procesamiento de Documentos Jurídicos Colombianos
 
 Skill contextual para el dominio **jurídico colombiano**: análisis de jurisprudencia, normas, casos multi-especialidad, redacción de demandas, conceptos, derecho comparado y consulta de fuentes oficiales colombianas.

@@ -303,3 +303,4 @@ fn my_rust_lib(m: &Bound<'_, PyModule>) -> PyResult<()> {
 ---
 
 > 💡 **Nota**: Este skill complementa a hedgefund, quant-trading y risk-execution. Rust es el lenguaje de implementacion para sistemas de baja latencia, alta concurrencia y mision critica. Todo codigo Rust debe cumplir con los principios universales de base_principles.md.
+

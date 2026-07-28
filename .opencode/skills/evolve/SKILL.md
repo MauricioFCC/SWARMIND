@@ -180,3 +180,4 @@ El loop Evolve incorpora los siguientes frameworks de frontera para auto-mejora:
 - 🚀 FDE Principles: `.opencode/core/fde_principles.md`
 - 📋 Base Principles: `.opencode/core/base_principles.md`
 - ⚙️ Loop Config: `.opencode/loop/config.yaml`
+

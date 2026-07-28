@@ -388,3 +388,4 @@ print(classification_report(y_test, y_pred))
 ---
 
 > 💡 **Nota**: Este skill integra con hedgefund para doctrina de decision cientifica y con quant-trading para estrategias cuantitativas. Prioriza pipelines modulares, experimentos reproducibles y validacion estadistica rigurosa sobre scikit-learn, PyTorch y JAX segun el problema.
+
