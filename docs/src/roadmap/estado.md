@@ -9,9 +9,9 @@
 
 | Metrica | Valor |
 |---------|-------|
-| **Tests** | 1789 passing, 4 xfailed |
+| **Tests** | 2628 passing, 2 flaky |
 | **Cobertura** | ~65% |
-| **ADRs** | 18 (16 implementados, 2 propuestos) |
+| **ADRs** | 25 (todos implementados) |
 | **Commits totales** | ~220+ |
 | **Archivos fuente** | ~170 Python files |
 | **Tiempo full suite** | ~150s |

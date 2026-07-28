@@ -9,7 +9,7 @@
 
 | Abreviatura | Significado | Descripcion |
 |-------------|-------------|-------------|
-| ADR | Architecture Decision Record | Decision arquitectonica documentada con contexto, decision y consecuencias |
+| ADR | Architecture Decision Record | Decision arquitectonica documentada (25 en total) |
 | WAL | Write-Ahead Log | Log de operaciones con soporte de retry y cancelacion para tolerancia a fallos |
 | MCP | Model Context Protocol | Protocolo estandarizado de contexto para interaccion con LLMs (spec v2025-11-25) |
 | HITL | Human In The Loop | Supervision humana obligatoria para acciones criticas o de alto riesgo |

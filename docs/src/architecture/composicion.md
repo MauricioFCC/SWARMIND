@@ -3,17 +3,24 @@
 ## Capas
 1. .opencode/ - Cerebro: agentes, skills, config
    - **agents/**: 5 perfiles (coordinator, builder, scientist, guardian, evolve) con ~25 técnicas frontier 2026
-   - **skills/**: 11 skills registrados (evolve, hedgefund, quant-trading, alpha-research, risk-execution, math-doc, legal-doc, science-doc, frontend-uiux, auto, science-doc)
+   - **skills/**: 29 skills registrados (en 10 categorias: tecnologia, seguridad, negocio, finanzas, ciencia, humanidades, salud, legal, retail, sostenibilidad)
    - **core/**: base_principles.md (3 niveles, 18 principios + 50+ abreviaturas)
 2. harness/ - Motor de ejecucion: orchestrator, memory_rag, tests
    - **orchestrator/**: TaskPlanner (11 templates DAG), TaskOrchestrator (Plan-and-Execute), AsyncAgentBus/AgentBus, DebateOrchestrator (3 estrategias + async), ConfidenceScorer, ShapedCache, WriteAheadLog, workflow_patterns (4 patrones), pbt_templates (7 templates), behavioral_tracer, architectural_guardrails
    - **memory_rag/**: LanceDB vector store, ShapedCache (LRU+TTL), semantic cache, context window manager (+structured_compact), token budget, skill minifier/loader, prompt cache builder, federated memory
-   - **tests/**: 1540 tests (52 suites, MockVectorStore session-scoped)
+   - **tests/**: 2628 tests (66 suites, MockVectorStore session-scoped)
    - **gpu_accel.py**: GPU acceleration module (RTX 4060, 6x search speedup)
    - **gpu_optimize.py**: Smart CPU/GPU routing based on batch size
    - **ADR-0016**: Parallel testing + fail-under 59%
    - **ADR-0017**: PaCoRe async concurrency (AsyncAgentBus, asyncio.gather debate, WAL)
    - **ADR-0018**: Token Economics (ShapedCache -38%, structured_compact -41%, WAL governance)
+   - **ADR-0019**: Agent & Skill Optimization (29 skills, routing fix)
+   - **ADR-0020**: MCP + A2A Protocol Architecture
+   - **ADR-0021**: Frontier Gaps 2026 (Agent Capsules -51%)
+   - **ADR-0022**: Frontier Optimization (Knowledge Graph, testing)
+   - **ADR-0023**: Creative AI Frameworks (ReDNA, Diversity Collapse)
+   - **ADR-0024**: Comparative Analysis ASDT + Traycer
+   - **ADR-0025**: Frontier Coding Quality (PBT, Refinement Types)
 3. scripts/ - Herramientas: deploy_all, export_archive, session_log, agentic_bridge_sync
 4. knowledge/ - Documentos de referencia
 
@@ -53,4 +60,4 @@ La documentación completa incluye:
 | **Desarrollo** | 4 docs (NUEVO testing-guide) | Testing, modificación, commits, export |
 | **Referencia** | 1 doc (NUEVO glosario) | Términos y abreviaturas |
 | **Roadmap** | 1 doc (NUEVO estado) | Estado del proyecto y próximos pasos |
-| **ADRs** | 18 docs | Architecture Decision Records |
+| **ADRs** | 25 docs | Architecture Decision Records (0001-0025) |

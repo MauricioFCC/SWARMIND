@@ -96,7 +96,7 @@ Learn → Design → Experiment → Analyze → Deploy
 
 ---
 
-## Los 29 Skills
+## Los 29 Skills (25 ADRs)
 
 Los skills se organizan por dominio. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado para carga rápida).
 
