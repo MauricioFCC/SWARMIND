@@ -174,3 +174,15 @@ Keywords largas tienen más peso que cortas (evita falsos positivos). Dos nivele
 | Vector stores | 3 (LanceDB, Chroma, Qdrant) | ✅ |
 | Observabilidad | OpenTelemetry (trazas, métricas, OTLP) | ✅ |
 | Benchmarks | AgentBenchmark (4 métricas) | ✅ |
+
+## ToolGuardian
+**Paper:** arXiv:2607.21835 (Ravindran & Deochake, Jul 2026)
+**Implementacion:** harness/orchestrator/tool_guardian.py (50 tests)
+
+Seguridad declarativa para interacciones agente-herramienta con 4-stage progressive characterization pipeline. Alcanza 88% accuracy en deteccion de comportamiento malicioso.
+
+## StrategicMemory
+**Paper:** arXiv:2607.22562 (SF-AMS)
+**Implementacion:** harness/memory_rag/strategic_memory.py (38 tests)
+
+Memoria con forget estrategico basado en utilidad. +9.65 F1 en multi-hop reasoning. Reemplaza decaimiento heuristico por scoring compuesto (importancia 40%, acceso 30%, entidades 20%, tags 10%).

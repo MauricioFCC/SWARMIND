@@ -45,3 +45,4 @@
 | Observabilidad | OpenTelemetry (trazas, métricas, exportación OTLP) |
 | Benchmarks | AgentBenchmark (accuracy, latencia, tokens, éxito) |
 | Commits | 350+ |
+
