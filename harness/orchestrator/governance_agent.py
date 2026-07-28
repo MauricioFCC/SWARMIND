@@ -229,8 +229,8 @@ class GovernanceAgent:
             "context": v.context,
             "alternatives": v.alternatives,
             "justification": v.justification,
-            "risk_level": v.risk_level.value,
-            "status": v.status.value,
+    "risk_level": v.risk_level.value if hasattr(v.risk_level, 'value') else v.risk_level,
+    "status": v.status.value if hasattr(v.status, 'value') else v.status,
             "timestamp": v.timestamp,
             "approved_by": v.approved_by,
         } for k, v in self._records.items()}
@@ -242,6 +242,8 @@ class GovernanceAgent:
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
                 for k, v in data.items():
+                    v['risk_level'] = RiskLevel(v['risk_level']) if isinstance(v.get('risk_level'), str) else v.get('risk_level', RiskLevel.LOW)
+                    v['status'] = DecisionStatus(v['status']) if isinstance(v.get('status'), str) else v.get('status', DecisionStatus.PROPOSED)
                     self._records[k] = GovernanceRecord(**v)
             except Exception as e:
                 logger.warning(f"Failed to load governance log: {e}")
