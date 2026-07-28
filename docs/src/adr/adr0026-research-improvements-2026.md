@@ -43,9 +43,42 @@ Investigacion de 4 documentos en PROP-INVEST-PAPERS + referencias web:
 | DDIA (Kleppmann) | Sistemas distribuidos | Principios arquitectonicos |
 | DevOps Handbook | Tres vias DevOps | CI/CD principles |
 
+## Implementacion
+
+### Skill meta-ads-optimizer
+**Archivo:** .opencode/skills/meta-ads-optimizer/SKILL.md (completo + .min.md)
+
+**12 sub-skills:**
+| Sub-skill | Agente | Tecnica |
+|-----------|--------|---------|
+| campaign-architect | builder | BOAD Bandit Optimization |
+| creative-analyzer | scientist | CLIP/ViT + MetaClaw |
+| audience-builder | scientist | Lookalike embeddings |
+| budget-allocator | builder | Multi-arm bandit + ShapleyFlow |
+| bid-optimizer | builder | RL (PPO) |
+| compliance-guardian | guardian | Policy verification |
+| attribution-modeler | scientist | Shapley values + Markov |
+| creative-generator | builder | DALL-E + GPT-4 |
+| lead-scorer | scientist | XGBoost + SHAP |
+| competitive-spy | scientist | Ad Library API + NLP |
+| reporting-dashboard | builder | Generative UI A2UI/OpenUI |
+| account-safety | guardian | Anomaly detection |
+
+**Flujo Swiss Watch:** 4 niveles (paralelo + secuencial) para optimizacion completa.
+
+## Metricas de Exito
+| Metrica | Objetivo | Tecnica |
+|---------|----------|---------|
+| ROAS improvement | +30% | A/B testing causal |
+| CPA reduction | -25% | Shapley attribution |
+| Creative hit rate | >40% | CLIP prediction |
+| Budget efficiency | <5% waste | BOAD regret |
+| Time to launch | <2 horas | Swiss Watch parallelism |
+
 ## Consecuencias
 - **Nuevos skills:** 1 (meta-ads-optimizer)
 - **Skills totales:** 30
 - **Modulos nuevos:** governance_agent.py
 - **Knowledge Graph:** Mejorado con C4 model y NLP queries
 - **ADRs totales:** 26
+
