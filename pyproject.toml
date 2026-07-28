@@ -58,8 +58,9 @@ omit = ["harness/tests/*", "harness/scripts/*"]
 
 [tool.coverage.report]
 # Jul 2026: coverage actual 59.69%
-fail_under = 59
+fail_under = 62
 # Proximo PR: fail_under = 55
 # Siguiente:   fail_under = 70
 # Objetivo:    fail_under = 80
+
 
