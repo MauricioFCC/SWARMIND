@@ -244,7 +244,18 @@ class AgentBus:
 
         Raises:
             InvalidMessageError: Si los parametros no son validos.
+            AssertionError: Si los parametros no pasan las validaciones refinement.
         """
+        # Refinement type validations (fail-fast con assert)
+        assert len(channel) > 0, "channel must not be empty"
+        assert len(from_agent) > 0, "from_agent must not be empty"
+        assert len(to_agent) > 0, "to_agent must not be empty"
+        assert len(message) > 0, "message must not be empty"
+        assert message_type in _VALID_MESSAGE_TYPES, (
+            f"invalid message_type: {message_type!r}"
+        )
+        assert iteration >= 0, f"iteration must be >= 0: {iteration}"
+
         self._validate_message_params(channel, from_agent, to_agent, message, message_type)
 
         msg_id = str(uuid.uuid4())
@@ -653,7 +664,14 @@ class AsyncAgentBus:
         Args:
             channel: Nombre del canal.
             message: Mensaje a publicar.
+
+        Raises:
+            AssertionError: Si los parametros no pasan las validaciones refinement.
         """
+        # Refinement type validations
+        assert isinstance(channel, str) and len(channel) > 0, (
+            "channel must be a non-empty string"
+        )
         async with self._lock:
             if channel not in self._queues:
                 import asyncio
@@ -672,8 +690,16 @@ class AsyncAgentBus:
             Mensaje del canal.
 
         Raises:
+            AssertionError: Si los parametros no pasan las validaciones refinement.
             asyncio.TimeoutError: Si no hay mensaje dentro del timeout.
         """
+        # Refinement type validations
+        assert isinstance(channel, str) and len(channel) > 0, (
+            "channel must be a non-empty string"
+        )
+        assert isinstance(timeout, (int, float)) and timeout > 0, (
+            f"timeout must be > 0: {timeout}"
+        )
         async with self._lock:
             if channel not in self._queues:
                 import asyncio
