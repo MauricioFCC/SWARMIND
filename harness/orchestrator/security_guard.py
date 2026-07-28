@@ -1,5 +1,5 @@
-"""
-SecurityGuard — Defensa contra inyeccion de prompt y boundaries de confianza.
+ï»¿"""
+SecurityGuard - Defensa contra inyeccion de prompt y boundaries de confianza.
 
 Implementa controles de seguridad criticos para sistemas multi-agente:
 - Prompt Injection Defense (OWASP Top 10 for LLMs 2025)
@@ -201,4 +201,5 @@ class SecurityGuard:
     def clear_alerts(self) -> None:
         """Limpiar alertas."""
         self._alerts.clear()
+
 

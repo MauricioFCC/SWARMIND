@@ -1,5 +1,5 @@
-"""
-Agent Capsules — Fusion inteligente de agentes (arXiv:2605.00410).
+ï»¿"""
+Agent Capsules - Fusion inteligente de agentes (arXiv:2605.00410).
 
 arXiv:2605.00410: Reduce input tokens hasta 51% fusionando llamadas de agentes
 sin perdida de calidad. Tres estrategias con escalera de calidad:
@@ -306,4 +306,5 @@ class AgentCapsule:
     def _mock_dispatch(agent: str, prompt: str) -> str:
         """Dispatch simulado para testing."""
         return f"[{agent}] Procesado: {prompt[:50]}..."
+
 

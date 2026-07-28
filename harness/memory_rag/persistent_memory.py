@@ -1,5 +1,5 @@
-"""
-PersistentMemory — Memoria cross-session tipo Engram para AGENTIC.
+ï»¿"""
+PersistentMemory - Memoria cross-session tipo Engram para AGENTIC.
 
 Inspirado en Engram (ASDT): persiste el contexto entre sesiones de trabajo
 para que los agentes retomen donde dejaron.
@@ -178,4 +178,5 @@ class PersistentMemory:
                 json.dumps(data, indent=2, ensure_ascii=False, default=str),
                 encoding="utf-8",
             )
+
 
