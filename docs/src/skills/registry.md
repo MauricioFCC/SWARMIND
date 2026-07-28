@@ -1,81 +1,82 @@
-Ôªø# Registro de Skills ‚Äî AGENTIC Harness
+# Registro de Skills ó AGENTIC Harness
 
-**29 skills** disponibles en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado).
+**31 skills** disponibles en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado).
 
 ## Tabla Completa de Skills
 
-### üíª Tecnolog√≠a y Desarrollo
-| Skill | Dominio | Prop√≥sito |
+### ?? TecnologÌa y Desarrollo
+| Skill | Dominio | PropÛsito |
 |-------|---------|-----------|
 | **architecture** | architecture | Patrones GoF, Clean/Hexagonal, DDD, C4, ADRs |
-| **rust-lang** | systems | Rust: ownership, async, FFI con Python, crates, optimizaci√≥n |
+| **rust-lang** | systems | Rust: ownership, async, FFI con Python, crates, optimizaciÛn |
 | **frontend-uiux** | frontend | Generative UI 2026, design tokens, A2UI/OpenUI, WCAG 2.2 |
 | **responsive-ui** | frontend | UI responsive, mobile-first, Core Web Vitals, accesibilidad axe-core |
 | **data-science** | data | ML pipelines, PyTorch/JAX, GPU acceleration, feature engineering |
 | **devops-infra** | devops | CI/CD, Docker, Kubernetes, Terraform, monitoreo, OpenTelemetry |
 
-### üîí Seguridad
-| Skill | Dominio | Prop√≥sito |
+### ?? Seguridad
+| Skill | Dominio | PropÛsito |
 |-------|---------|-----------|
 | **security-audit** | security | SAST, DAST, threat modeling (STRIDE), SBOM, compliance OWASP/SOC2 |
 
-### üíº Negocio y Gesti√≥n
-| Skill | Dominio | Prop√≥sito |
+### ?? Negocio y GestiÛn
+| Skill | Dominio | PropÛsito |
 |-------|---------|-----------|
 | **hedgefund** | finance | Doctrina hedge fund: riesgo/reward, capital allocation, stop-loss |
-| **business-strategy** | business | DOFA, Porter, Canvas, OKR, ROI, planificaci√≥n estrat√©gica |
+| **business-strategy** | business | DOFA, Porter, Canvas, OKR, ROI, planificaciÛn estratÈgica |
 | **project-management** | management | Scrum, Kanban, WBS, riesgos, estimaciones, stakeholders |
-| **communication** | communication | Escritura ejecutiva, presentaciones, storytelling, negociaci√≥n |
+| **communication** | communication | Escritura ejecutiva, presentaciones, storytelling, negociaciÛn |
 
-### üìà Finanzas y Trading
-| Skill | Dominio | Prop√≥sito |
+### ?? Finanzas y Trading
+| Skill | Dominio | PropÛsito |
 |-------|---------|-----------|
 | **quant-trading** | trading | Estrategias cuantitativas CQE Rust, backtesting, execution |
 | **risk-execution** | trading | Risk management, position sizing, market making, TCA |
-| **behavioral-economics** | economics | Teor√≠a de juegos, sesgos, incentivos, nudges |
+| **behavioral-economics** | economics | TeorÌa de juegos, sesgos, incentivos, nudges |
 
-### üî¨ Ciencia e Investigaci√≥n
-| Skill | Dominio | Prop√≥sito |
+### ?? Ciencia e InvestigaciÛn
+| Skill | Dominio | PropÛsito |
 |-------|---------|-----------|
-| **alpha-research** | research | Factor research, ML, feature engineering, validaci√≥n estad√≠stica |
-| **math-doc** | academic | Documentos matem√°ticos, LaTeX, proofs, estad√≠stica |
-| **science-doc** | academic | Documentos cient√≠ficos, peer review, revisiones sistem√°ticas |
-| **physical-sciences** | science | F√≠sica, qu√≠mica, biolog√≠a, m√©todo cient√≠fico experimental |
+| **alpha-research** | research | Factor research, ML, feature engineering, validaciÛn estadÌstica |
+| **math-doc** | academic | Documentos matem·ticos, LaTeX, proofs, estadÌstica |
+| **science-doc** | academic | Documentos cientÌficos, peer review, revisiones sistem·ticas |
+| **physical-sciences** | science | FÌsica, quÌmica, biologÌa, mÈtodo cientÌfico experimental |
 
-### üß† Humanidades y Ciencias Sociales
-| Skill | Dominio | Prop√≥sito |
+### ?? Humanidades y Ciencias Sociales
+| Skill | Dominio | PropÛsito |
 |-------|---------|-----------|
-| **psychology** | psychology | Psicolog√≠a cognitiva, organizacional, del aprendizaje, neurociencia |
-| **education** | education | Dise√±o instruccional (ADDIE), Bloom, andragog√≠a, microlearning |
-| **ethics** | philosophy | √âtica de IA, alineamiento de valores (Floridi, Russell), gobernanza |
-| **linguistics** | linguistics | Ling√º√≠stica cognitiva, semi√≥tica, pragm√°tica, an√°lisis del discurso |
-| **sociology** | sociology | Din√°micas de grupo, teor√≠a de redes, cultura digital, antropolog√≠a |
-| **creative-design** | design | Design Thinking, branding, prototipado, ideaci√≥n creativa |
+| **psychology** | psychology | PsicologÌa cognitiva, organizacional, del aprendizaje, neurociencia |
+| **education** | education | DiseÒo instruccional (ADDIE), Bloom, andragogÌa, microlearning |
+| **ethics** | philosophy | …tica de IA, alineamiento de valores (Floridi, Russell), gobernanza |
+| **linguistics** | linguistics | Ling¸Ìstica cognitiva, semiÛtica, pragm·tica, an·lisis del discurso |
+| **sociology** | sociology | Din·micas de grupo, teorÌa de redes, cultura digital, antropologÌa |
+| **creative-design** | design | Design Thinking, branding, prototipado, ideaciÛn creativa |
 
-### üè• Salud y Legal
-| Skill | Dominio | Prop√≥sito |
+### ?? Salud y Legal
+| Skill | Dominio | PropÛsito |
 |-------|---------|-----------|
-| **healthtech** | health | Sistemas cl√≠nicos, interoperabilidad, HIPAA, FHIR |
-| **legal-doc** | legal | An√°lisis jur√≠dico colombiano multi-especialidad, RTF+C |
+| **healthtech** | health | Sistemas clÌnicos, interoperabilidad, HIPAA, FHIR |
+| **legal-doc** | legal | An·lisis jurÌdico colombiano multi-especialidad, RTF+C |
 
-### üõí Retail
-| Skill | Dominio | Prop√≥sito |
+### ?? Retail
+| Skill | Dominio | PropÛsito |
 |-------|---------|-----------|
-| **pos-retail** | retail | Punto de venta, operaciones retail, inventario, facturaci√≥n |
+| **pos-retail** | retail | Punto de venta, operaciones retail, inventario, facturaciÛn |
 
-### üå± Sostenibilidad
-| Skill | Dominio | Prop√≥sito |
+### ?? Sostenibilidad
+| Skill | Dominio | PropÛsito |
 |-------|---------|-----------|
-| **sustainability** | environment | ESG, huella de carbono, reportes GRI/SASB/TCFD, econom√≠a circular |
+| **sustainability** | environment | ESG, huella de carbono, reportes GRI/SASB/TCFD, economÌa circular |
 
-### üîÑ Meta
-| Skill | Dominio | Prop√≥sito |
+### ?? Meta
+| Skill | Dominio | PropÛsito |
 |-------|---------|-----------|
-| **evolve** | meta | Auto-mejora continua, ciclo ASI-Evolve (Learn‚ÜíDesign‚ÜíExperiment‚ÜíAnalyze‚ÜíDeploy) |
+| **meta-ads-optimizer** | marketing | Optimizacion Meta Ads con 12 sub-skills (BOAD, ShapleyFlow, MetaClaw) |
+| **evolve** | meta | Auto-mejora continua, ciclo ASI-Evolve (Learn?Design?Experiment?Analyze?Deploy) |
 
 ## Carga de Skills por Proyecto
 
-Los skills se despliegan selectivamente seg√∫n el tipo de proyecto:
+Los skills se despliegan selectivamente seg˙n el tipo de proyecto:
 
 | Tipo | Skills |
 |------|--------|
@@ -90,15 +91,15 @@ Los skills se despliegan selectivamente seg√∫n el tipo de proyecto:
 !skill load rust-lang          # Carga skill de Rust
 !skill load frontend-uiux      # Carga skill de UI/UX
 !skill list                    # Lista todos los skills disponibles
-!skill status                  # Muestra skills activos en la sesi√≥n
+!skill status                  # Muestra skills activos en la sesiÛn
 ```
 
 ## Formato de Skills
 
 Cada skill tiene dos archivos:
 
-- **`SKILL.md`** ‚Äî Versi√≥n completa con frontmatter YAML, descripci√≥n, responsabilidades, t√©cnicas, comandos y referencias (~200-400 l√≠neas)
-- **`SKILL.min.md`** ‚Äî Versi√≥n minificada con solo frontmatter + responsabilidades esenciales + comandos (~15-20 l√≠neas). Usada para carga r√°pida cuando el contexto es limitado.
+- **`SKILL.md`** ó VersiÛn completa con frontmatter YAML, descripciÛn, responsabilidades, tÈcnicas, comandos y referencias (~200-400 lÌneas)
+- **`SKILL.min.md`** ó VersiÛn minificada con solo frontmatter + responsabilidades esenciales + comandos (~15-20 lÌneas). Usada para carga r·pida cuando el contexto es limitado.
 
 ### Estructura de un SKILL.md
 
@@ -117,4 +118,5 @@ variables:
 ---
 ```
 
-Luego incluye secciones de: Descripci√≥n, Responsabilidades, T√©cnicas, Comandos y Referencias.
+Luego incluye secciones de: DescripciÛn, Responsabilidades, TÈcnicas, Comandos y Referencias.
+

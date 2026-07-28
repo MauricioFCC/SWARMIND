@@ -3,7 +3,7 @@
 **AGENTIC** es un sistema multi-agente de orquestación, ejecución y auto-mejora continua. Combina:
 
 - **8 agentes especializados**: coordinator, builder, scientist, guardian, evolve, evolve-researcher, evolve-engineer, evolve-analyzer
-- **29 skills contextuales**: 10 categorias (tecnologia, seguridad, negocio, finanzas, ciencia, humanidades, salud, legal, retail, sostenibilidad)
+- **31 skills contextuales**: 10 categorias (tecnologia, seguridad, negocio, finanzas, ciencia, humanidades, salud, legal, retail, sostenibilidad)
 - **30+ técnicas frontier 2026**: MetaClaw, SWE-Master, AdaptOrch, MuTON, ShapleyFlow, PaCoRe, MARS, ReDNA, Agent Capsules, etc.
 - **Motor de ejecución Plan-and-Execute** con DAG parallelism, memoria vectorial LanceDB, federated memory, knowledge graph
 - **GPU Acceleration**: RTX 4060 8GB (6x search speedup, 3.2x embedding)
@@ -30,7 +30,7 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Tests | 2628 passing (2 flaky pre-existentes) |
+| Tests | 2680 passing (4 flaky pre-existentes) |
 | Cobertura | ~65% (objetivo: 80%) |
 | ADRs | 25 (todos implementados) |
 | Agentes | 8 especializados |
@@ -39,3 +39,4 @@
 | Token savings | -51% capsulas, -40% structured output |
 | Proyectos | 6 activos |
 | Commits | 350+ |
+
