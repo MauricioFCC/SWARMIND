@@ -68,7 +68,7 @@ El sistema aplica **Swiss Watch**: todos los agentes relevantes arrancan simult�
 |---------|-------------|
 | `!health` | Estado del sistema: agentes activos, skills cargados, sesión actual |
 | `!metrics` | Métricas de rendimiento: tokens consumidos, latencia, hits de caché |
-| `!skill list` | Lista todos los skills disponibles (29 skills en 12 dominios) |
+| `!skill list` | Lista todos los skills disponibles (30 skills en 12 dominios) |
 | `!session` | Muestra el estado de la sesión actual y subtareas pendientes |
 | `!reset` | Reinicia el contexto de la sesión actual |
 | `!help` | Muestra esta guía rápida de comandos |

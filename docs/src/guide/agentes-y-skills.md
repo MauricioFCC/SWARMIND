@@ -2,7 +2,7 @@
 
 ## Arquitectura General
 
-AGENTIC opera con **8 agentes** que ejecutan **29 skills** especializados. Cada agente es un perfil con capacidades y responsabilidades definidas. Los skills son módulos de conocimiento que los agentes pueden cargar según la tarea.
+AGENTIC opera con **8 agentes** que ejecutan **30 skills** especializados. Cada agente es un perfil con capacidades y responsabilidades definidas. Los skills son módulos de conocimiento que los agentes pueden cargar según la tarea.
 
 ### Los 8 Agentes
 
@@ -96,7 +96,7 @@ Learn → Design → Experiment → Analyze → Deploy
 
 ---
 
-## Los 29 Skills (25 ADRs)
+## Los 30 Skills (27 ADRs)
 
 Los skills se organizan por dominio. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado para carga rápida).
 
@@ -294,7 +294,7 @@ Asigna presupuestos de tokens diferenciables por rol de agente, permitiendo cont
 ```
 .opencode/
 ├── agents/           ← 8 perfiles de agente (coordinator, builder, scientist, guardian, evolve + 3 sub)
-├── skills/           ← 29 skills especializados (cada uno con SKILL.md)
+├── skills/           ← 30 skills especializados (cada uno con SKILL.md)
 ├── core/             ← Principios base, guardrails, router, registry
 └── config/           ← routing_rules.yaml, project_config.yaml, token_budgets.yaml
 

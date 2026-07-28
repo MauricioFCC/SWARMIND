@@ -4,7 +4,7 @@
 **ACEPTADO** — Investigacion completada con 3 especialistas paralelos. Implementacion progresiva.
 
 ## Contexto
-AGENTIC alcanzo 2213 tests, 29 skills (100% minificados), 8 agentes, 22 ADRs. Se realizo una auditoria integral con 3 especialistas (scientist+guardian+architect) investigando 40+ papers julio 2026.
+AGENTIC alcanzo 2213 tests, 30 skills (100% minificados), 8 agentes, 22 ADRs. Se realizo una auditoria integral con 3 especialistas (scientist+guardian+architect) investigando 40+ papers julio 2026.
 
 ## Investigacion Realizada
 
@@ -31,7 +31,7 @@ AGENTIC alcanzo 2213 tests, 29 skills (100% minificados), 8 agentes, 22 ADRs. Se
 | Tecnologia | Prioridad | Decision |
 |-----------|-----------|----------|
 | **A2A SDK oficial** v1.0.1 | 🔴 ALTA | Migrar router_a2a.py a SDK Linux Foundation |
-| **Knowledge Graph** (FundaPod) | 🟡 MEDIA | Unificar trazabilidad 29 skills + 22 ADRs |
+| **Knowledge Graph** (FundaPod) | 🟡 MEDIA | Unificar trazabilidad 30 skills + 22 ADRs |
 | **QueenBee** topologias evolutivas | ⚪ MONITOREAR | Solo si cuellos de botella en coordinacion |
 | **Phionyx** ejecucion determinista | ⚪ MONITOREAR | Solo si bugs de reproducibilidad |
 | **Multi-Modal** input | ⚪ DIFERIDO | Sin demanda concreta de usuarios |

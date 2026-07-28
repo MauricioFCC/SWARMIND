@@ -6,7 +6,7 @@ AGENTIC es un **sistema multi-agente evolutivo** diseñado para operar como un r
 
 ## 1. Multi-Agente Evolutivo con 8 Especialistas
 
-El sistema cuenta con **8 agentes** que ejecutan **29 skills** especializados, organizados en una jerarquía funcional:
+El sistema cuenta con **8 agentes** que ejecutan **30 skills** especializados, organizados en una jerarquía funcional:
 
 ```
 coordinator → Punto de entrada. Planifica, delega y consolida.

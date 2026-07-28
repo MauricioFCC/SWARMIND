@@ -107,7 +107,7 @@ Cada interacción optimiza el consumo de tokens con estas técnicas obligatorias
 |---------|-------|
 | **Cache Shape** | Antes de generar, consultar ShapedCache. Si hay hit semántico, reusar. |
 | **Structured Compaction** | Respuestas en JSON Schema, no en texto libre. Aplica compressor de contexto en sesiones >5 iteraciones. |
-| **Scoped Context** | Solo inyectar skills relevantes a la tarea detectada. No cargar los 29 skills en cada prompt. |
+| **Scoped Context** | Solo inyectar skills relevantes a la tarea detectada. No cargar los 30 skills en cada prompt. |
 | **Token Budget** | Respetar presupuestos por rol. Si se excede, escalar al coordinator. |
 
 **Métrica de eficiencia**: Tokens por unidad de trabajo (TPU). El sistema monitoriza y alerta si el TPU supera el baseline del proyecto.

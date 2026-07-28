@@ -3,7 +3,7 @@
 ## Capas
 1. .opencode/ - Cerebro: agentes, skills, config
    - **agents/**: 5 perfiles (coordinator, builder, scientist, guardian, evolve) con ~25 técnicas frontier 2026
-   - **skills/**: 29 skills registrados (en 10 categorias: tecnologia, seguridad, negocio, finanzas, ciencia, humanidades, salud, legal, retail, sostenibilidad)
+   - **skills/**: 30 skills registrados (en 10 categorias: tecnologia, seguridad, negocio, finanzas, ciencia, humanidades, salud, legal, retail, sostenibilidad)
    - **core/**: base_principles.md (3 niveles, 18 principios + 50+ abreviaturas)
 2. harness/ - Motor de ejecucion: orchestrator, memory_rag, tests
    - **orchestrator/**: TaskPlanner (11 templates DAG), TaskOrchestrator (Plan-and-Execute), AsyncAgentBus/AgentBus, DebateOrchestrator (3 estrategias + async), ConfidenceScorer, ShapedCache, WriteAheadLog, workflow_patterns (4 patrones), pbt_templates (7 templates), behavioral_tracer, architectural_guardrails
@@ -14,7 +14,7 @@
    - **ADR-0016**: Parallel testing + fail-under 59%
    - **ADR-0017**: PaCoRe async concurrency (AsyncAgentBus, asyncio.gather debate, WAL)
    - **ADR-0018**: Token Economics (ShapedCache -38%, structured_compact -41%, WAL governance)
-   - **ADR-0019**: Agent & Skill Optimization (29 skills, routing fix)
+   - **ADR-0019**: Agent & Skill Optimization (30 skills, routing fix)
    - **ADR-0020**: MCP + A2A Protocol Architecture
    - **ADR-0021**: Frontier Gaps 2026 (Agent Capsules -51%)
    - **ADR-0022**: Frontier Optimization (Knowledge Graph, testing)

@@ -4,7 +4,7 @@
 **ACEPTADO e IMPLEMENTADO** — Commits: `2ef685f`, `e10caed`, `061e114`.
 
 ## Contexto
-El suite de tests creció de 463 a 1518 tests (+1055, 228%) en una semana. El tiempo de ejecución pasó de ~35s a ~130s (271% aumento). Sin paralelización ni categorización, el ciclo de retroalimentación se degrada linealmente.
+El suite de tests creció de 463 a 2900+ tests (+1055, 228%) en una semana. El tiempo de ejecución pasó de ~35s a ~130s (271% aumento). Sin paralelización ni categorización, el ciclo de retroalimentación se degrada linealmente.
 
 Además, `fail_under = 30` en `pyproject.toml` quedó desactualizado frente a la cobertura real (59.69%), eliminando la protección contra regresiones.
 
@@ -120,7 +120,7 @@ def vector_store(mock_store):
 
 ### Positivas
 - Cobertura total: **59.69%** (+16.14% en la sesión)
-- 1518 tests pasando, solo 4 xfail conocidos por polución
+- 2900+ tests pasando, solo 4 xfail conocidos por polución
 - CI rápido con `pytest -m "not slow"` (elimina ~10 tests lentos)
 - MockVectorStore permite tests sin LanceDB instalado
 - Ruff corrigió 604 errores de estilo automáticamente
