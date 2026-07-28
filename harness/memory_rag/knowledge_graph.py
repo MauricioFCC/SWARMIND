@@ -1,5 +1,5 @@
 """
-Knowledge Graph — Memoria asociativa para AGENTIC.
+Knowledge Graph — Grafo de conocimiento local-first para AGENTIC.
 
 Implementa un grafo de conocimiento local-first (similar a LanceDB) que conecta:
 - Skills con agentes (que agente usa cada skill)
