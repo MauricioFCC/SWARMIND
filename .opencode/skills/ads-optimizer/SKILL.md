@@ -1,5 +1,5 @@
-ï»¿---
-name: meta-ads-optimizer
+---
+name: ads-optimizer
 domain: marketing
 description: "Optimizacion end-to-end de campanas Meta Ads con tecnicas frontier 2026: BOAD, ShapleyFlow, MetaClaw, RL Bidding"
 version: 1.0.0
@@ -12,7 +12,7 @@ variables:
   - BUDGET_STRATEGY: boad, shapley, rl
 ---
 
-# Meta Ads Optimizer â€” Skill de Publicidad Digital
+# Meta Ads Optimizer — Skill de Publicidad Digital
 
 ## Descripcion
 Optimizacion end-to-end de campanas Meta Ads. Integra 12 sub-skills con tecnicas frontier 2026 para maximizar ROAS y minimizar CPA.
@@ -62,12 +62,12 @@ Nivel 2: account-safety
 Nivel 3: dashboard consolidado
 
 ## Comandos
-- !meta campaign <objetivo> â€” Disenar campana
-- !meta analyze <creativo> â€” Analizar creativo
-- !meta budget <total> â€” Optimizar budget
-- !meta bid <cpa_target> â€” Optimizar bids
-- !meta spy <competitor> â€” Analisis competitivo
-- !meta safety â€” Verificar estado de cuenta
+- !meta campaign <objetivo> — Disenar campana
+- !meta analyze <creativo> — Analizar creativo
+- !meta budget <total> — Optimizar budget
+- !meta bid <cpa_target> — Optimizar bids
+- !meta spy <competitor> — Analisis competitivo
+- !meta safety — Verificar estado de cuenta
 
 ## Referencias
 - BOAD: Bandit Optimization for Agent Design
@@ -75,3 +75,4 @@ Nivel 3: dashboard consolidado
 - MetaClaw: arXiv:2603.17187
 - Advantage+ AI: Meta 2026
 - CLIP/ViT: Computer Vision 2026
+

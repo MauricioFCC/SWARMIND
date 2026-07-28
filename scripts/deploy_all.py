@@ -72,7 +72,7 @@ _ALL_SKILLS = [
     "math-doc", "science-doc", "physical-sciences",
     "psychology", "education", "ethics", "linguistics", "sociology", "creative-design",
     "healthtech", "legal-doc", "pos-retail", "sustainability",
-    "meta-ads-optimizer",
+    "ads-optimizer",
 ]
 
 # Skills de analisis de documentos (legales, papers, cientificos)
@@ -661,3 +661,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

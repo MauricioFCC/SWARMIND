@@ -1,5 +1,5 @@
-ï»¿---
-name: meta-ads-optimizer
+---
+name: ads-optimizer
 domain: marketing
 description: "Optimizacion de campanas Meta Ads con 12 sub-skills frontier 2026"
 version: 1.0.0
@@ -16,6 +16,7 @@ project_agnostic: true
 - account-safety: Prevencion de bans
 
 ## Comandos
-- !meta campaign <objetivo> â€” Disenar campana
-- !meta analyze <creativo> â€” Analizar creativo
-- !meta budget <total> â€” Optimizar presupuesto
+- !meta campaign <objetivo> — Disenar campana
+- !meta analyze <creativo> — Analizar creativo
+- !meta budget <total> — Optimizar presupuesto
+

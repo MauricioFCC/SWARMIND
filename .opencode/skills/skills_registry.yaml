@@ -175,14 +175,15 @@ skills:
 
 
 
-- name: meta-ads-optimizer
+- name: ads-optimizer
   domain: marketing
-  description: "Optimizacion de campanas Meta Ads con 12 sub-skills: BOAD, ShapleyFlow, MetaClaw, RL bidding"
+  description: "Optimizacion de campanas Ads con 12 sub-skills: BOAD, ShapleyFlow, MetaClaw, RL bidding"
   version: 1.0.0
   project_agnostic: true
 
-- name: meta-ads-optimizer
+- name: ads-optimizer
   domain: marketing
-  description: "Optimizacion de campanas Meta Ads con 12 sub-skills: BOAD, ShapleyFlow, MetaClaw, RL bidding"
+  description: "Optimizacion de campanas Ads con 12 sub-skills: BOAD, ShapleyFlow, MetaClaw, RL bidding"
   version: 1.0.0
   project_agnostic: true
+
