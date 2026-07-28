@@ -61,53 +61,75 @@ def _project_path(name: str, env_var: str, default: str) -> str:
     return default
 
 
+# Todos los skills disponibles (29)
+_ALL_SKILLS = [
+    "evolve", "hedgefund",
+    "quant-trading", "alpha-research", "risk-execution",
+    "frontend-uiux", "responsive-ui", "rust-lang", "architecture", "data-science",
+    "security-audit", "devops-infra",
+    "business-strategy", "communication", "project-management",
+    "behavioral-economics",
+    "math-doc", "science-doc", "physical-sciences",
+    "psychology", "education", "ethics", "linguistics", "sociology", "creative-design",
+    "healthtech", "legal-doc", "pos-retail", "sustainability",
+]
+
+# Skills de analisis de documentos (legales, papers, cientificos)
+_DOC_SKILLS = ["legal-doc", "science-doc", "math-doc", "data-science"]
+
+
 # Proyectos destino (rutas portables via env vars)
 PROJECTS = {
     "core-quant-engine": {
         "path": _project_path("core-quant-engine", "CQE_ROOT",
                               r"C:\Users\USUARIO\Documents\DEV-SPACE\core-quant-engine"),
         "type": "trading",
+        # Mantiene skills de trading + document analysis
         "keep_skills": ["evolve", "hedgefund", "quant-trading", "alpha-research", "risk-execution"],
-        "add_skills": ["math-doc", "science-doc"],
+        "add_skills": ["math-doc", "science-doc", "data-science", "legal-doc",
+                       "rust-lang", "architecture", "security-audit"],
         "description": "Motor cuantitativo de trading en Rust",
     },
     "Historia Clinica": {
         "path": _project_path("Historia Clinica", "HC_ROOT",
                               r"C:\Users\USUARIO\Documents\DEV-SPACE\Historia Clinica"),
         "type": "healthtech",
-        "keep_skills": ["evolve", "hedgefund"],
-        "add_skills": ["healthtech", "legal-doc", "science-doc"],
+        "keep_skills": ["evolve", "hedgefund", "healthtech"],
+        "add_skills": ["legal-doc", "science-doc", "data-science", "security-audit",
+                       "psychology", "ethics", "communication"],
         "description": "Sistema de historias clínicas electrónicas",
     },
     "Onyx-Quan-AIBot": {
         "path": _project_path("Onyx-Quan-AIBot", "ONYX_ROOT",
                               r"C:\Users\USUARIO\Documents\DEV-SPACE\Onyx-Quan-AIBot"),
         "type": "trading",
-        "keep_skills": ["evolve", "hedgefund", "quant-trading", "alpha-research", "risk-execution"],
-        "add_skills": ["math-doc", "science-doc"],
+        # Todos los skills para analisis completo
+        "keep_skills": _ALL_SKILLS,
+        "add_skills": [],
         "description": "Bot de trading cuantitativo con IA",
     },
     "PDV Basic": {
         "path": _project_path("PDV Basic", "PDV_ROOT",
                               r"C:\Users\USUARIO\Documents\DEV-SPACE\PDV Basic"),
         "type": "retail",
-        "keep_skills": ["evolve", "hedgefund"],
-        "add_skills": ["pos-retail", "legal-doc"],
+        "keep_skills": ["evolve", "hedgefund", "pos-retail", "legal-doc"],
+        "add_skills": ["data-science", "science-doc", "communication",
+                       "business-strategy", "project-management"],
         "description": "Sistema de punto de venta básico",
     },
     "Hermes_Memory_Proyects": {
         "path": str(_HERMES_PATH),
         "type": "general",
-        "keep_skills": ["evolve", "hedgefund"],
-        "add_skills": ["math-doc", "legal-doc", "science-doc", "healthtech", "pos-retail",
-                       "quant-trading", "risk-execution"],
+        # Todos los 29 skills para analisis completo de documentos
+        "keep_skills": _ALL_SKILLS,
+        "add_skills": [],
         "description": "Repositorio central de memoria y conocimiento multi-proyecto",
     },
     "de_0_a_Alfa": {
         "path": str(_ALFA_PATH),
         "type": "general",
-        "keep_skills": ["evolve", "hedgefund"],
-        "add_skills": ["math-doc", "science-doc", "architecture", "rust-lang"],
+        "keep_skills": _ALL_SKILLS,
+        "add_skills": [],
         "description": "Proyecto de trading sistematico y automatizacion",
     },
 }
