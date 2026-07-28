@@ -1,91 +1,150 @@
-# Guia de Testing — AGENTIC Harness
+# Guía de Testing — AGENTIC Harness
 
-> **Ultima actualizacion:** Julio 2026  
+> **Última actualización:** Julio 2026  
 > **Framework:** pytest 8+ con plugins oficiales  
-> **Total:** 2628 tests · 66 suites · 50+ modulos
+> **Total:** 2900+ tests · 92 archivos de test · 96 archivos en suite
 
 ---
 
 ## 1. Estructura de Tests
 
-Todos los tests residen en `harness/tests/` y siguen la convencion `test_<modulo>.py`:
+Todos los tests residen en `harness/tests/` y siguen la convención `test_<modulo>.py`:
 
 ```
 harness/tests/
 ├── __init__.py
 ├── conftest.py                  # Fixtures compartidas (session-scoped)
 ├── mock_vector_store.py         # Mock de LanceDB en memoria
+├── bench_gpu_speedup.py         # Benchmark de aceleración GPU
+├── test_adaptive_planner.py
+├── test_agent_benchmark.py      # Benchmark de agentes
+├── test_agent_builder.py
 ├── test_agent_bus.py
+├── test_agent_bus_refinement.py
+├── test_agent_capsules.py
+├── test_agent_cost_controller.py # Control de costos y detección de loops
 ├── test_agent_dispatcher.py
 ├── test_agent_kpi_tracker.py
 ├── test_agent_selector.py
 ├── test_architectural_guardrails.py
 ├── test_async_agent_bus.py
 ├── test_behavioral_tracer.py
+├── test_business_context.py     # Glosario de términos de negocio
 ├── test_cache.py
+├── test_cognition_sync.py
 ├── test_common.py
+├── test_compaction.py
 ├── test_compressor.py
 ├── test_confidence.py
 ├── test_context_injector.py
+├── test_context_scoped.py
 ├── test_context_window.py
 ├── test_context_window_manager.py
+├── test_creative_worktable.py
 ├── test_debate.py
+├── test_delegate.py
 ├── test_difficulty_router.py
 ├── test_discovery.py
+├── test_embedding_service.py
 ├── test_embeddings.py
+├── test_epic_mode.py
+├── test_evaluator.py
 ├── test_federated_memory.py
+├── test_fts_search.py
+├── test_gepa_mutator.py
+├── test_governance_agent.py    # Gobernanza multi-agente
+├── test_gpu_accel.py           # Aceleración GPU
 ├── test_hermes.py
+├── test_hermes_bridge.py
 ├── test_hitl_guard.py
 ├── test_integration.py
+├── test_knowledge_graph.py
 ├── test_lance_vector_store.py
+├── test_lance_vector_store_crud.py
+├── test_lance_vector_store_init.py
+├── test_lance_vector_store_search.py
 ├── test_lazy_loading.py
+├── test_legal_analyzer.py
 ├── test_mcp_client.py
+├── test_mcp_executor.py
 ├── test_mcp_manager.py
 ├── test_memory.py
+├── test_memory_config.py
 ├── test_mock_vector_store.py
+├── test_opentelemetry_agent.py # Trazabilidad OpenTelemetry
+├── test_optimization_pipeline.py
 ├── test_orchestrator.py
-├── test_pbt_templates.py
+├── test_pbt_core.py             # Property-Based Testing (20 propiedades)
+├── test_pbt_templates.py        # Templates PBT
+├── test_persistent_memory.py
+├── test_plugins.py
+├── test_procedural_memory.py
+├── test_propagation.py
 ├── test_reset_state.py
 ├── test_routing.py
+├── test_routing_accuracy.py
 ├── test_run.py
 ├── test_run_commands.py
 ├── test_sandbox_loop.py
 ├── test_scheduler.py
 ├── test_scope_analyzer.py
+├── test_security_guard.py
+├── test_self_improver.py
 ├── test_semantic_cache_extended.py
 ├── test_session_context.py
+├── test_skill_bundler.py
+├── test_skill_loader.py
+├── test_skill_minifier.py
 ├── test_skill_router.py
 ├── test_structured_log.py
 ├── test_task_manager.py
 ├── test_task_orchestrator.py
 ├── test_task_planner.py
 ├── test_telemetry.py
+├── test_token_budget.py
+├── test_token_optimizer.py
+├── test_trajectory_compressor.py
+├── test_vector_store_adapter.py # Adaptador multi-DB
 ├── test_workflow_patterns.py
-├── test_write_ahead_log.py
+├── test_worktable.py
+└── test_write_ahead_log.py
 ```
 
-### Stack tecnologico
+### Nuevas suites incorporadas
 
-| Herramienta       | Version  | Proposito                          |
+| Suite | Archivos | Propósito |
+|-------|----------|-----------|
+| Evolve Loop | `test_agent_builder.py`, `test_cognition_sync.py`, `test_evaluator.py`, `test_gepa_mutator.py`, `test_procedural_memory.py`, `test_self_improver.py` | Pruebas del ciclo ASI-Evolve |
+| Vector Store Adapter | `test_vector_store_adapter.py` | Abstracción multi-DB (LanceDB, Chroma, Qdrant) |
+| OpenTelemetry | `test_opentelemetry_agent.py` | Trazabilidad distribuida y métricas |
+| Benchmarks | `test_agent_benchmark.py`, `bench_gpu_speedup.py` | Evaluación de agentes y aceleración GPU |
+| Governance | `test_governance_agent.py` | Políticas de gobernanza y compliance |
+| Cost Controller | `test_agent_cost_controller.py` | Detección de loops y control de costos |
+| Business Context | `test_business_context.py` | Glosario de términos de negocio |
+
+### Stack tecnológico
+
+| Herramienta       | Versión  | Propósito                          |
 |-------------------|----------|------------------------------------|
 | pytest            | >= 8.0   | Runner principal                   |
-| pytest-cov        | >= 5     | Cobertura de codigo                |
+| pytest-cov        | >= 5     | Cobertura de código                |
 | pytest-mock       | >= 3     | Mocking simplificado               |
-| pytest-xdist      | >= 3     | Ejecucion paralela (experimental)  |
-| pytest-asyncio    | >= 1.4   | Tests asincronos                   |
+| pytest-xdist      | >= 3     | Ejecución paralela (experimental)  |
+| pytest-asyncio    | >= 1.4   | Tests asíncronos                   |
+| Hypothesis        | >= 6     | Property-Based Testing             |
 | unittest.mock     | stdlib   | MagicMock, patch                   |
 
 ### Convenciones
 
 - **Nombre de archivo:** `test_<modulo>.py` (ej: `test_agent_bus.py`)
 - **Nombre de clase:** `Test<NombreModulo>` o `Test<Funcionalidad>` (ej: `TestAgentBus`, `TestCreateCollection`)
-- **Nombre de funcion:** `test_<descripcion>` con snake_case (ej: `test_post_message`, `test_cache_miss`)
-- **Docstring:** Toda funcion de test DEBE tener docstring en ES-UTF8 describiendo el escenario y lo que verifica
+- **Nombre de función:** `test_<descripcion>` con snake_case (ej: `test_post_message`, `test_cache_miss`)
+- **Docstring:** Toda función de test DEBE tener docstring en ES-UTF8 describiendo el escenario y lo que verifica
 - **Importaciones:** Usar `from __future__ import annotations` al inicio
 
 ---
 
-## 2. Como Ejecutar Tests
+## 2. Cómo Ejecutar Tests
 
 ### Todos los tests
 
@@ -106,13 +165,13 @@ pytest --cov=harness --cov-report=html
 # Abrir htmlcov/index.html en el navegador
 ```
 
-### Tests rapidos (sin slow)
+### Tests rápidos (sin slow)
 
 ```bash
 pytest -m "not slow"
 ```
 
-Este es el comando que se ejecuta en cada commit — evita los tests de integracion que requieren LanceDB real.
+Este es el comando que se ejecuta en cada commit — evita los tests de integración que requieren LanceDB real.
 
 ### Tests paralelos (experimental)
 
@@ -120,9 +179,9 @@ Este es el comando que se ejecuta en cada commit — evita los tests de integrac
 pytest -n auto
 ```
 
-Requiere `pytest-xdist`. **Importante:** La mayoria de los tests usan `MockVectorStore` en memoria, lo que permite paralelismo real sin locks de base de datos. Sin embargo, algunos tests con estado global pueden ser flaky en paralelo.
+Requiere `pytest-xdist`. **Importante:** La mayoría de los tests usan `MockVectorStore` en memoria, lo que permite paralelismo real sin locks de base de datos. Sin embargo, algunos tests con estado global pueden ser flaky en paralelo.
 
-### Test especifico
+### Test específico
 
 ```bash
 # Por archivo
@@ -149,7 +208,7 @@ pytest -m "slow"          # Tests lentos (>1s)
 pytest -v --tb=short
 ```
 
-### Sin cache de resultados
+### Sin caché de resultados
 
 ```bash
 pytest -p no:cacheprovider
@@ -157,14 +216,14 @@ pytest -p no:cacheprovider
 
 ---
 
-## 3. Categorias de Tests
+## 3. Categorías de Tests
 
-| Marcador      | Descripcion                                        | Tiempo   |
+| Marcador      | Descripción                                        | Tiempo   |
 |---------------|----------------------------------------------------|----------|
 | `unit`        | Tests unitarios puros (default). Sin dependencias externas. | < 1s     |
-| `slow`        | Tests lentos que requieren integracion real (LanceDB, red, etc.) | > 1s |
+| `slow`        | Tests lentos que requieren integración real (LanceDB, red, etc.) | > 1s |
 | `integration` | Tests con LanceDB real, MCP servers, u otros servicios externos | variable |
-| `asyncio`     | Tests asincronos (requieren `pytest-asyncio`)       | < 1s     |
+| `asyncio`     | Tests asíncronos (requieren `pytest-asyncio`)       | < 1s     |
 | `xfail`       | Tests esperados como fallidos por flakiness conocida | N/A      |
 
 Los marcadores se definen en `pyproject.toml`:
@@ -178,13 +237,13 @@ markers = [
 ]
 ```
 
-**Nota:** `pytest.mark.asyncio` no esta registrado oficialmente en `pyproject.toml` — si aparece un warning, se puede agregar a la lista de marcadores.
+**Nota:** `pytest.mark.asyncio` no está registrado oficialmente en `pyproject.toml` — si aparece un warning, se puede agregar a la lista de marcadores.
 
 ---
 
 ## 4. Escribir Tests
 
-### 4.1 Estructura basica
+### 4.1 Estructura básica
 
 ```python
 """Tests para MiModulo."""
@@ -233,7 +292,7 @@ def agent_bus(vector_store):
 
 Las fixtures disponibles globalmente incluyen:
 
-| Fixture              | Scope    | Descripcion                                    |
+| Fixture              | Scope    | Descripción                                    |
 |----------------------|----------|------------------------------------------------|
 | `mock_store`         | session  | MockVectorStore con 15 colecciones por defecto |
 | `vector_store`       | function | MockVectorStore fresco por test                |
@@ -246,10 +305,12 @@ Las fixtures disponibles globalmente incluyen:
 | `agent_discovery`    | function | discover_agents_recursive()                    |
 | `trajectory_compressor` | function | TrajectoryCompressor                        |
 | `context_injector`   | function | ContextInjector                                |
+| `governance_agent`   | function | GovernanceAgent para tests de gobernanza       |
+| `agent_benchmark`    | function | AgentBenchmark para tests de evaluación         |
 
 ### 4.3 Mocking de LanceDB con MockVectorStore
 
-`MockVectorStore` es una implementacion falsa de `LanceVectorStore` que almacena datos en memoria (dicts + lists). No requiere LanceDB instalado y permite paralelismo real.
+`MockVectorStore` es una implementación falsa de `LanceVectorStore` que almacena datos en memoria (dicts + lists). No requiere LanceDB instalado y permite paralelismo real.
 
 ```python
 from harness.tests.mock_vector_store import MockVectorStore
@@ -290,7 +351,7 @@ stats = store.get_collection_stats("col")
 store.delete_collection("col")
 ```
 
-### 4.4 Tests asincronos
+### 4.4 Tests asíncronos
 
 Usar `@pytest.mark.asyncio` para tests con `async/await`:
 
@@ -371,7 +432,7 @@ class TestOrchestrator:
 
 ### 4.6 Tests con xfail por flakiness
 
-Cuando un test falla intermitentemente por polucion de estado entre tests:
+Cuando un test falla intermitentemente por polución de estado entre tests:
 
 ```python
 import pytest
@@ -479,7 +540,7 @@ class TestAgentBus:
 
 ### 4.9 Mocking avanzado con patch
 
-Para tests que necesitan evitar imports de modulos pesados o simular comportamientos:
+Para tests que necesitan evitar imports de módulos pesados o simular comportamientos:
 
 ```python
 from unittest.mock import MagicMock, patch
@@ -515,9 +576,9 @@ def mem_store():
         yield store
 ```
 
-### 4.10 Tests de integracion
+### 4.10 Tests de integración
 
-Los tests de integracion real (con LanceDB) usan `@pytest.mark.slow` o `@pytest.mark.integration`:
+Los tests de integración real (con LanceDB) usan `@pytest.mark.slow` o `@pytest.mark.integration`:
 
 ```python
 @pytest.fixture
@@ -535,6 +596,80 @@ def test_full_pipeline(orchestrator, temp_data_dir):
     pass
 ```
 
+### 4.11 Property-Based Testing con Hypothesis
+
+```python
+from hypothesis import given, strategies as st
+
+
+@given(
+    st.lists(st.integers(min_value=0, max_value=100), min_size=1),
+    st.integers(min_value=1, max_value=10),
+)
+def test_mock_vector_store_search_properties(vectors, top_k):
+    """
+    Propiedades de busqueda en MockVectorStore:
+    - Numero de resultados <= top_k
+    - Todos los resultados tienen el campo 'id'
+    - Resultados ordenados por score descendente
+    """
+    store = MockVectorStore()
+    store.create_collection("test")
+    for i, v in enumerate(vectors):
+        store.insert("test", [float(v)] * 384, [{"id": str(i)}])
+    results = store.search("test", [0.5] * 384, top_k=top_k)
+    assert len(results) <= top_k
+    for r in results:
+        assert "id" in r
+    scores = [r.get("_score", 0) for r in results]
+    assert all(scores[i] >= scores[i + 1] for i in range(len(scores) - 1))
+```
+
+Las propiedades verificadas con Hypothesis incluyen:
+
+| Componente | Propiedades |
+|-----------|-------------|
+| Semantic Cache | Roundtrip, idempotencia, monotonicidad hits+misses |
+| Token Optimizer DAG | Sin ciclos, speedup >= 1.0, orden topológico |
+| Structured Prompt | Formatos distinguibles, no vacío |
+| Token Budget | Remaining no negativo, usage_pct <= 100% |
+| Vector Store | Resultados <= top_k, ids únicos, scores ordenados |
+| Agent Capsules | Ahorro de tokens >= 0, calidad >= floor configurado |
+
+### 4.12 Refinement Types Tests
+
+Validaciones de tipos refinados en tiempo de ejecución:
+
+```python
+class TestRefinementTypes:
+    """Tests de tipos refinados en AgentBus y AsyncAgentBus."""
+
+    def test_channel_no_vacio(self, agent_bus):
+        """Canal vacio debe ser rechazado.  (linea 14)"""
+        with pytest.raises(ValueError, match="cannot be empty"):
+            agent_bus.post_message("", "@a", "@b", "msg", "notification")
+
+    def test_message_type_valido(self, agent_bus):
+        """Tipo de mensaje debe estar en el conjunto permitido.  (linea 20)"""
+        with pytest.raises(ValueError, match="Invalid message type"):
+            agent_bus.post_message("#ch", "@a", "@b", "msg", "invalid_type")
+
+    def test_iteracion_no_negativa(self, agent_bus):
+        """Iteracion debe ser >= 0.  (linea 26)"""
+        msg_id = agent_bus.post_message("#ch", "@a", "@b", "msg", "notification", iteration=0)
+        assert msg_id is not None
+        with pytest.raises(ValueError, match="cannot be negative"):
+            agent_bus.post_message("#ch", "@a", "@b", "msg", "notification", iteration=-1)
+
+    def test_timeout_positivo(self):
+        """Timeout debe ser > 0.  (linea 32)"""
+        from harness.orchestrator.agent_bus import AsyncAgentBus
+        bus = AsyncAgentBus()
+        import asyncio
+        with pytest.raises(asyncio.TimeoutError):
+            bus.consume("ch", timeout=-1)
+```
+
 ---
 
 ## 5. Cobertura
@@ -543,12 +678,12 @@ def test_full_pipeline(orchestrator, temp_data_dir):
 
 | Metric               | Valor  |
 |----------------------|--------|
-| Cobertura total      | 59.69% |
+| Cobertura total      | ~65%   |
 | fail_under actual    | 59     |
 | Objetivo             | 80%    |
-| Ultima actualizacion | Jul 2026 |
+| Última actualización | Jul 2026 |
 
-La configuracion de cobertura esta en `pyproject.toml`:
+La configuración de cobertura está en `pyproject.toml`:
 
 ```toml
 [tool.coverage.run]
@@ -578,16 +713,16 @@ pytest --cov=harness --cov-report=xml
 
 ### Estrategia de mejora
 
-1. **Priorizar modulos con menor cobertura** (ejecutar `coverage report -m` para listarlos)
+1. **Priorizar módulos con menor cobertura** (ejecutar `coverage report -m` para listarlos)
 2. **Escribir tests unitarios para ramas no cubiertas** (revisar reporte HTML)
 3. **Incrementar fail_under gradualmente** (59 -> 65 -> 70 -> 80)
-4. **No incluir tests ni scripts en la medicon** (ya estan omitidos)
+4. **No incluir tests ni scripts en la medición** (ya están omitidos)
 
 ---
 
 ## 6. CI Pipeline
 
-### Flujo de integracion continua
+### Flujo de integración continua
 
 ```
 Commit -> pre-commit hooks -> tests unitarios -> (opcional) tests lentos
@@ -642,11 +777,11 @@ pytest --cov=harness --cov-config=pyproject.toml
 
 ## 7. Troubleshooting
 
-### Tests flaky por polucion de estado
+### Tests flaky por polución de estado
 
-**Sintoma:** Un test falla intermitentemente solo cuando se ejecuta despues de otro test especifico.
+**Síntoma:** Un test falla intermitentemente solo cuando se ejecuta después de otro test específico.
 
-**Solucion temporal:** Marcar como `xfail` con la razon documentada:
+**Solución temporal:** Marcar como `xfail` con la razón documentada:
 
 ```python
 @pytest.mark.xfail(reason="Flaky por polucion entre tests (test_mcp_client corre primero)")
@@ -654,15 +789,15 @@ def test_load_success(self, manager):
     """..."""
 ```
 
-**Solucion permanente:** Identificar la fuente de polucion (estado global, variables de clase, modulos con efectos secundarios en importacion) y aislarla con `@pytest.fixture(autouse=True)` o `patch` en `conftest.py`.
+**Solución permanente:** Identificar la fuente de polución (estado global, variables de clase, módulos con efectos secundarios en importación) y aislarla con `@pytest.fixture(autouse=True)` o `patch` en `conftest.py`.
 
-### Errores de importacion
+### Errores de importación
 
-**Sintoma:** `ModuleNotFoundError: No module named 'harness'`
+**Síntoma:** `ModuleNotFoundError: No module named 'harness'`
 
-**Causa:** `sys.path` no incluye la raiz del proyecto.
+**Causa:** `sys.path` no incluye la raíz del proyecto.
 
-**Solucion:** El `conftest.py` ya lo maneja:
+**Solución:** El `conftest.py` ya lo maneja:
 
 ```python
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -670,7 +805,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(1, str(PROJECT_ROOT))
 ```
 
-Si el error persiste, ejecutar los tests desde la raiz del proyecto:
+Si el error persiste, ejecutar los tests desde la raíz del proyecto:
 
 ```bash
 cd C:\Users\USUARIO\Documents\DEV-SPACE\AGENTIC
@@ -679,9 +814,9 @@ pytest
 
 ### LanceDB no instalado
 
-**Sintoma:** `ImportError: No module named 'lancedb'`
+**Síntoma:** `ImportError: No module named 'lancedb'`
 
-**Solucion:** Usar `MockVectorStore` como reemplazo (es el comportamiento por defecto en los tests). No es necesario tener LanceDB instalado para la mayoria de los tests.
+**Solución:** Usar `MockVectorStore` como reemplazo (es el comportamiento por defecto en los tests). No es necesario tener LanceDB instalado para la mayoría de los tests.
 
 Si se necesita probar con LanceDB real:
 
@@ -690,19 +825,19 @@ pip install lancedb
 pytest -m "integration"
 ```
 
-### Tests asincronos no se ejecutan
+### Tests asíncronos no se ejecutan
 
-**Sintoma:** Los tests con `@pytest.mark.asyncio` se saltan o dan warning.
+**Síntoma:** Los tests con `@pytest.mark.asyncio` se saltan o dan warning.
 
-**Causa:** `pytest-asyncio` no esta instalado o configurado.
+**Causa:** `pytest-asyncio` no está instalado o configurado.
 
-**Solucion:**
+**Solución:**
 
 ```bash
 pip install pytest-asyncio
 ```
 
-Verificar que esta en las dependencias:
+Verificar que está en las dependencias:
 
 ```bash
 pip install -e ".[dev]"
@@ -710,12 +845,12 @@ pip install -e ".[dev]"
 
 ### Warning: Unknown pytest.mark.asyncio
 
-**Sintoma:**
+**Síntoma:**
 ```
 PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?
 ```
 
-**Solucion:** Agregar el marcador a `pyproject.toml`:
+**Solución:** Agregar el marcador a `pyproject.toml`:
 
 ```toml
 [tool.pytest.ini_options]
@@ -727,27 +862,27 @@ markers = [
 
 ### Tests paralelos fallan intermitentemente
 
-**Sintoma:** Tests que funcionan secuencialmente fallan con `pytest -n auto`.
+**Síntoma:** Tests que funcionan secuencialmente fallan con `pytest -n auto`.
 
-**Causa:** Estado global compartido entre procesos (archivos temporales, variables de modulo, conexiones de red).
+**Causa:** Estado global compartido entre procesos (archivos temporales, variables de módulo, conexiones de red).
 
-**Solucion:**
+**Solución:**
 1. Usar `MockVectorStore` (thread-safe por usar estructuras en memoria locales)
 2. Usar `tmp_path` de pytest para archivos temporales (aislado por test)
 3. Marcar tests con estado global como `@pytest.mark.serial` (requiere `pytest-xdist` con `--dist loadscope`)
 4. No compartir instancias entre tests sin `scope="session"`
 
-### Cache de pytest causando falsos positivos
+### Caché de pytest causando falsos positivos
 
-**Sintoma:** Un test pasa en isolation pero falla en suite completa.
+**Síntoma:** Un test pasa en isolation pero falla en suite completa.
 
-**Solucion:** Descarta el cache de resultados:
+**Solución:** Descarta el caché de resultados:
 
 ```bash
 pytest -p no:cacheprovider
 ```
 
-O limpiar el cache manualmente:
+O limpiar el caché manualmente:
 
 ```bash
 rm -rf .pytest_cache
@@ -770,24 +905,24 @@ log_cli_level = "WARNING"
 
 ---
 
-## Apendice A: MockVectorStore API Reference
+## Apéndice A: MockVectorStore API Reference
 
 `MockVectorStore` (definido en `harness/tests/mock_vector_store.py`) implementa la misma interfaz que `LanceVectorStore`:
 
 ### API nativa
 
-| Metodo              | Descripcion                                    |
+| Método              | Descripción                                    |
 |---------------------|------------------------------------------------|
-| `create_collection` | Crea una coleccion (idempotente)               |
-| `add`               | Agrega items a una coleccion                   |
-| `search`            | Busqueda con filtros opcionales                |
+| `create_collection` | Crea una colección (idempotente)               |
+| `add`               | Agrega items a una colección                   |
+| `search`            | Búsqueda con filtros opcionales                |
 | `delete`            | Elimina un item por key                        |
 | `list_tables`       | Lista todas las colecciones                    |
 | `clear`             | Limpia todas las colecciones                   |
 
 ### Alias de compatibilidad con LanceVectorStore
 
-| Metodo              | Delega en       |
+| Método              | Delega en       |
 |---------------------|-----------------|
 | `insert`            | `add`           |
 | `list_collections`  | `list_tables`   |
@@ -818,23 +953,23 @@ _MOCK_DEFAULT_COLLECTIONS = [
 ]
 ```
 
-Estas 15 colecciones se crean automaticamente en las fixtures `mock_store` (session) y `vector_store` (function).
+Estas 15 colecciones se crean automáticamente en las fixtures `mock_store` (session) y `vector_store` (function).
 
 ---
 
-## Apendice B: Comandos rapidos
+## Apéndice B: Comandos rápidos
 
 ```bash
 # Todo
 pytest
 
-# Unitarios (rapido, cada commit)
+# Unitarios (rápido, cada commit)
 pytest -m "not slow"
 
 # Lentos (pre-release)
 pytest -m "slow"
 
-# Un archivo especifico
+# Un archivo específico
 pytest harness/tests/test_agent_bus.py -v
 
 # Con cobertura HTML
@@ -846,7 +981,7 @@ pytest --tb=long -v
 # En paralelo (4 workers)
 pytest -n 4 -m "not slow"
 
-# Sin cache
+# Sin caché
 pytest -p no:cacheprovider
 
 # Listar tests sin ejecutar

@@ -1,82 +1,82 @@
-# Registro de Skills ó AGENTIC Harness
+# Registro de Skills ‚Äî AGENTIC Harness
 
-**31 skills** disponibles en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado).
+**30 skills** disponibles en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado). Cobertura: 100% con ambos formatos.
 
 ## Tabla Completa de Skills
 
-### ?? TecnologÌa y Desarrollo
-| Skill | Dominio | PropÛsito |
+### Tecnolog√≠a y Desarrollo
+| Skill | Dominio | Prop√≥sito |
 |-------|---------|-----------|
-| **architecture** | architecture | Patrones GoF, Clean/Hexagonal, DDD, C4, ADRs |
-| **rust-lang** | systems | Rust: ownership, async, FFI con Python, crates, optimizaciÛn |
-| **frontend-uiux** | frontend | Generative UI 2026, design tokens, A2UI/OpenUI, WCAG 2.2 |
+| **architecture** | software | Patrones GoF, Clean/Hexagonal, DDD, C4, ADRs, decisi√≥n arquitect√≥nica |
+| **rust-lang** | systems | Rust: ownership, async, FFI con Python, crates, optimizaci√≥n systems-level |
+| **frontend-uiux** | frontend | Generative UI 2026, design tokens, A2UI/OpenUI, WCAG 2.2, StyleSeed |
 | **responsive-ui** | frontend | UI responsive, mobile-first, Core Web Vitals, accesibilidad axe-core |
-| **data-science** | data | ML pipelines, PyTorch/JAX, GPU acceleration, feature engineering |
-| **devops-infra** | devops | CI/CD, Docker, Kubernetes, Terraform, monitoreo, OpenTelemetry |
+| **data-science** | data | ML pipelines, PyTorch/JAX, GPU acceleration, feature engineering, validaci√≥n estad√≠stica |
+| **devops-infra** | devops | CI/CD, Docker, Kubernetes, Terraform, monitoreo, OpenTelemetry, observabilidad |
 
-### ?? Seguridad
-| Skill | Dominio | PropÛsito |
+### Seguridad
+| Skill | Dominio | Prop√≥sito |
 |-------|---------|-----------|
-| **security-audit** | security | SAST, DAST, threat modeling (STRIDE), SBOM, compliance OWASP/SOC2 |
+| **security-audit** | security | SAST, DAST, threat modeling (STRIDE), SBOM, compliance OWASP/SOC2/ISO27001 |
 
-### ?? Negocio y GestiÛn
-| Skill | Dominio | PropÛsito |
+### Negocio y Gesti√≥n
+| Skill | Dominio | Prop√≥sito |
 |-------|---------|-----------|
-| **hedgefund** | finance | Doctrina hedge fund: riesgo/reward, capital allocation, stop-loss |
-| **business-strategy** | business | DOFA, Porter, Canvas, OKR, ROI, planificaciÛn estratÈgica |
-| **project-management** | management | Scrum, Kanban, WBS, riesgos, estimaciones, stakeholders |
-| **communication** | communication | Escritura ejecutiva, presentaciones, storytelling, negociaciÛn |
+| **hedgefund** | finance | Doctrina hedge fund: riesgo/reward, capital allocation, stop-loss, institutional risk |
+| **business-strategy** | business | DOFA, Porter, Canvas, OKR, ROI, planificaci√≥n estrat√©gica, KPIs de negocio |
+| **project-management** | management | Scrum, Kanban, WBS, riesgos, estimaciones, comunicaci√≥n con stakeholders |
+| **communication** | communication | Escritura ejecutiva, presentaciones, storytelling, negociaci√≥n, liderazgo |
 
-### ?? Finanzas y Trading
-| Skill | Dominio | PropÛsito |
+### Finanzas y Trading
+| Skill | Dominio | Prop√≥sito |
 |-------|---------|-----------|
-| **quant-trading** | trading | Estrategias cuantitativas CQE Rust, backtesting, execution |
-| **risk-execution** | trading | Risk management, position sizing, market making, TCA |
-| **behavioral-economics** | economics | TeorÌa de juegos, sesgos, incentivos, nudges |
+| **quant-trading** | trading | Estrategias cuantitativas CQE Rust, backtesting, execution, generaci√≥n de alpha |
+| **risk-execution** | trading | Risk management, position sizing, market making, TCA, execution algor√≠tmica |
+| **behavioral-economics** | economics | Teor√≠a de juegos, sesgos cognitivos, incentivos, nudges, toma de decisiones |
 
-### ?? Ciencia e InvestigaciÛn
-| Skill | Dominio | PropÛsito |
+### Ciencia e Investigaci√≥n
+| Skill | Dominio | Prop√≥sito |
 |-------|---------|-----------|
-| **alpha-research** | research | Factor research, ML, feature engineering, validaciÛn estadÌstica |
-| **math-doc** | academic | Documentos matem·ticos, LaTeX, proofs, estadÌstica |
-| **science-doc** | academic | Documentos cientÌficos, peer review, revisiones sistem·ticas |
-| **physical-sciences** | science | FÌsica, quÌmica, biologÌa, mÈtodo cientÌfico experimental |
+| **alpha-research** | research | Factor research, ML avanzado, feature engineering, validaci√≥n estad√≠stica con CQE Rust |
+| **math-doc** | academic | Documentos matem√°ticos, LaTeX, proofs, estad√≠stica, notaci√≥n formal |
+| **science-doc** | academic | Documentos cient√≠ficos, peer review, revisiones sistem√°ticas, paper drafting |
+| **physical-sciences** | science | F√≠sica, qu√≠mica, biolog√≠a, m√©todo cient√≠fico experimental, an√°lisis de datos |
 
-### ?? Humanidades y Ciencias Sociales
-| Skill | Dominio | PropÛsito |
+### Humanidades y Ciencias Sociales
+| Skill | Dominio | Prop√≥sito |
 |-------|---------|-----------|
-| **psychology** | psychology | PsicologÌa cognitiva, organizacional, del aprendizaje, neurociencia |
-| **education** | education | DiseÒo instruccional (ADDIE), Bloom, andragogÌa, microlearning |
-| **ethics** | philosophy | …tica de IA, alineamiento de valores (Floridi, Russell), gobernanza |
-| **linguistics** | linguistics | Ling¸Ìstica cognitiva, semiÛtica, pragm·tica, an·lisis del discurso |
-| **sociology** | sociology | Din·micas de grupo, teorÌa de redes, cultura digital, antropologÌa |
-| **creative-design** | design | Design Thinking, branding, prototipado, ideaciÛn creativa |
+| **psychology** | psychology | Psicolog√≠a cognitiva, organizacional, del aprendizaje, neurociencia aplicada |
+| **education** | education | Dise√±o instruccional (ADDIE), Bloom, andragog√≠a, microlearning, evaluaci√≥n educativa |
+| **ethics** | philosophy | √âtica de IA, alineamiento de valores, marcos √©ticos para agentes aut√≥nomos |
+| **linguistics** | linguistics | Ling√º√≠stica cognitiva, semi√≥tica, pragm√°tica, an√°lisis del discurso, PLN te√≥rico |
+| **sociology** | sociology | Din√°micas de grupo, teor√≠a de redes, cultura digital, antropolog√≠a, sociolog√≠a del conocimiento |
+| **creative-design** | design | Design Thinking, branding, prototipado, ideaci√≥n, identidad visual, experiencia de usuario |
 
-### ?? Salud y Legal
-| Skill | Dominio | PropÛsito |
+### Salud y Legal
+| Skill | Dominio | Prop√≥sito |
 |-------|---------|-----------|
-| **healthtech** | health | Sistemas clÌnicos, interoperabilidad, HIPAA, FHIR |
-| **legal-doc** | legal | An·lisis jurÌdico colombiano multi-especialidad, RTF+C |
+| **healthtech** | health | Sistemas cl√≠nicos, interoperabilidad, HIPAA, FHIR, historia cl√≠nica electr√≥nica |
+| **legal-doc** | legal | An√°lisis jur√≠dico colombiano multi-especialidad, RTF+C, argumentaci√≥n legal |
 
-### ?? Retail
-| Skill | Dominio | PropÛsito |
+### Retail
+| Skill | Dominio | Prop√≥sito |
 |-------|---------|-----------|
-| **pos-retail** | retail | Punto de venta, operaciones retail, inventario, facturaciÛn |
+| **pos-retail** | retail | Punto de venta, operaciones retail, inventario, facturaci√≥n, comercio unificado |
 
-### ?? Sostenibilidad
-| Skill | Dominio | PropÛsito |
+### Sostenibilidad
+| Skill | Dominio | Prop√≥sito |
 |-------|---------|-----------|
-| **sustainability** | environment | ESG, huella de carbono, reportes GRI/SASB/TCFD, economÌa circular |
+| **sustainability** | environment | ESG, huella de carbono, reportes GRI/SASB/TCFD, econom√≠a circular, cambio clim√°tico |
 
-### ?? Meta
-| Skill | Dominio | PropÛsito |
+### Meta
+| Skill | Dominio | Prop√≥sito |
 |-------|---------|-----------|
-| **meta-ads-optimizer** | marketing | Optimizacion Meta Ads con 12 sub-skills (BOAD, ShapleyFlow, MetaClaw) |
-| **evolve** | meta | Auto-mejora continua, ciclo ASI-Evolve (Learn?Design?Experiment?Analyze?Deploy) |
+| **meta-ads-optimizer** | marketing | Optimizaci√≥n Meta Ads con 12 sub-skills (BOAD, ShapleyFlow, MetaClaw, MuTON) |
+| **evolve** | meta | Auto-mejora continua, ciclo ASI-Evolve (Learn ‚Üí Design ‚Üí Experiment ‚Üí Analyze ‚Üí Deploy) |
 
 ## Carga de Skills por Proyecto
 
-Los skills se despliegan selectivamente seg˙n el tipo de proyecto:
+Los skills se despliegan selectivamente seg√∫n el tipo de proyecto:
 
 | Tipo | Skills |
 |------|--------|
@@ -91,15 +91,15 @@ Los skills se despliegan selectivamente seg˙n el tipo de proyecto:
 !skill load rust-lang          # Carga skill de Rust
 !skill load frontend-uiux      # Carga skill de UI/UX
 !skill list                    # Lista todos los skills disponibles
-!skill status                  # Muestra skills activos en la sesiÛn
+!skill status                  # Muestra skills activos en la sesi√≥n
 ```
 
 ## Formato de Skills
 
 Cada skill tiene dos archivos:
 
-- **`SKILL.md`** ó VersiÛn completa con frontmatter YAML, descripciÛn, responsabilidades, tÈcnicas, comandos y referencias (~200-400 lÌneas)
-- **`SKILL.min.md`** ó VersiÛn minificada con solo frontmatter + responsabilidades esenciales + comandos (~15-20 lÌneas). Usada para carga r·pida cuando el contexto es limitado.
+- **`SKILL.md`** ‚Äî Versi√≥n completa con frontmatter YAML, descripci√≥n, responsabilidades, t√©cnicas, comandos y referencias (~200-400 l√≠neas)
+- **`SKILL.min.md`** ‚Äî Versi√≥n minificada con solo frontmatter + responsabilidades esenciales + comandos (~15-20 l√≠neas). Usada para carga r√°pida cuando el contexto es limitado.
 
 ### Estructura de un SKILL.md
 
@@ -118,5 +118,4 @@ variables:
 ---
 ```
 
-Luego incluye secciones de: DescripciÛn, Responsabilidades, TÈcnicas, Comandos y Referencias.
-
+Luego incluye secciones de: Descripci√≥n, Responsabilidades, T√©cnicas, Comandos y Referencias.
