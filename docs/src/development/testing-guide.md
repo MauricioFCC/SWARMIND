@@ -2,7 +2,7 @@
 
 > **Ultima actualizacion:** Julio 2026  
 > **Framework:** pytest 8+ con plugins oficiales  
-> **Total:** 1522 tests · 287 suites · 47 modulos
+> **Total:** 2628 tests · 66 suites · 50+ modulos
 
 ---
 
