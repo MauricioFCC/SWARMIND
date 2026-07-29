@@ -245,3 +245,9 @@ Seguridad declarativa para interacciones agente-herramienta con 4-stage progress
 **Implementacion:** harness/memory_rag/strategic_memory.py (38 tests)
 
 Memoria con forget estrategico basado en utilidad. +9.65 F1 en multi-hop reasoning. Reemplaza decaimiento heuristico por scoring compuesto (importancia 40%, acceso 30%, entidades 20%, tags 10%).
+
+## RiskAnalyzer
+**Framework:** CRO Forum 2026 — Emerging Risks Initiative
+**Implementacion:** harness/orchestrator/risk_analyzer.py (14 tests)
+
+Identificacion y analisis de riesgos emergentes en 5 dominios: tecnologia, geopolitica, clima, salud y finanzas.

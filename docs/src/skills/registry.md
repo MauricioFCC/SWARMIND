@@ -17,6 +17,7 @@
 ### Seguridad
 | Skill | Dominio | Propósito |
 |-------|---------|-----------|
+| **risk-intelligence** | risk | Identificacion de riesgos emergentes (CRO Forum 2026) |
 | **security-audit** | security | SAST, DAST, threat modeling (STRIDE), SBOM, compliance OWASP/SOC2/ISO27001 |
 
 ### Negocio y Gestión
@@ -119,3 +120,4 @@ variables:
 ```
 
 Luego incluye secciones de: Descripción, Responsabilidades, Técnicas, Comandos y Referencias.
+
