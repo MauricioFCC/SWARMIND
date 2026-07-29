@@ -100,15 +100,70 @@ Canal no vacío, message_type válido, iteración no negativa, timeout positivo.
 
 Keywords largas tienen más peso que cortas (evita falsos positivos). Dos niveles: frases completas (alto peso) + palabras individuales (bajo peso). Bilingüe español/inglés.
 
-## GovernanceAgent (ADR-0027)
-**Implementación:** `harness/orchestrator/governance_agent.py`
+## GovernanceGuard (arXiv:2606.22528)
+**Paper:** arXiv:2606.22528 (Governance Decay Detection, 2026)
+**Implementacion:** `harness/orchestrator/governance_guard.py`
 
-| Capacidad | Descripción |
+| Capacidad | Descripcion |
 |-----------|-------------|
-| Políticas de gobernanza | Reglas de compliance aplicadas a decisiones multi-agente |
-| Auditoría | Trazabilidad de decisiones con metadata de governance |
-| Validación de acciones | Verificación contra políticas antes de ejecución |
-| Reportes | Generación de reportes de cumplimiento por agente y operación |
+| Governance Decay Detection | Identifica erosion progresiva de politicas de gobierno en cadenas multi-agente |
+| Policy Drift Monitor | Alerta cuando las decisiones se desvian del baseline de compliance |
+| Auto-Reinforcement | Refuerza politicas debiles antes de que ocurra una violacion |
+| Audit Trail | Traza la linea de tiempo de decaimiento de gobernanza por agente |
+
+## GovernanceAgent (ADR-0027)
+**Implementacion:** `harness/orchestrator/governance_agent.py`
+
+| Capacidad | Descripcion |
+|-----------|-------------|
+| Politicas de gobernanza | Reglas de compliance aplicadas a decisiones multi-agente |
+| Auditoria | Trazabilidad de decisiones con metadata de governance |
+| Validacion de acciones | Verificacion contra politicas antes de ejecucion |
+| Reportes | Generacion de reportes de cumplimiento por agente y operacion |
+
+## NaturalLanguageToolkit (arXiv:2607.03953)
+**Paper:** arXiv:2607.03953 (Natural Language Tools for Agentic Systems, 2026)
+**Implementacion:** `harness/orchestrator/natural_language_toolkit.py`
+
+| Capacidad | Descripcion |
+|-----------|-------------|
+| Command Parsing | Parseo de comandos en lenguaje natural a intenciones ejecutables |
+| Tool Discovery | Descubrimiento de herramientas disponibles mediante consultas semanticas |
+| Ambiguity Resolution | Resolucion de ambiguedades linguisticas usando contexto de sesion |
+| Multi-turn Correction | Correccion interactiva multi-turno para comandos malinterpretados |
+
+## MultiUserGovernance (arXiv:2606.21856)
+**Paper:** arXiv:2606.21856 (Multi-User Governance in Agentic Systems, 2026)
+**Implementacion:** `harness/orchestrator/multi_user_governance.py`
+
+| Capacidad | Descripcion |
+|-----------|-------------|
+| Role-Based Access | Permisos granulares por usuario/rol sobre acciones de agentes |
+| Conflict Resolution | Resolucion de conflictos cuando multiples usuarios emiten ordenes contradictorias |
+| Session Isolation | Aislamiento de sesiones de usuario con contexto de governance independiente |
+| Escalation Workflow | Flujo de escalacion automatico para acciones que requieren aprobacion superior |
+
+## OrganizationalLayer (arXiv:2607.25446)
+**Paper:** arXiv:2607.25446 (Organizational Science for Agent Collectives, 2026)
+**Implementacion:** `harness/orchestrator/organizational_layer.py`
+
+| Capacidad | Descripcion |
+|-----------|-------------|
+| Team Structure | Definicion de estructuras organizacionales (jerarquica, plana, matricial) para agentes |
+| Role Specialization | Especializacion de roles con responsabilidades y limites claros |
+| Communication Protocols | Protocolos de comunicacion formalizados entre unidades organizacionales |
+| Performance Feedback | Retroalimentacion de desempeno organizacional con metricas de eficiencia |
+
+## Learned Adaptive Memory (arXiv:2607.13591)
+**Paper:** arXiv:2607.13591 (Learned Adaptive Memory for LLM Agents, 2026)
+**Implementacion:** `harness/memory_rag/strategic_memory.py` (integrado con SF-AMS)
+
+| Capacidad | Descripcion |
+|-----------|-------------|
+| Adaptive Retention | Retencion adaptativa basada en relevancia aprendida en lugar de heuristicas fijas |
+| Memory Consolidation | Consolidacion de recuerdos dispersos en representaciones compactas |
+| Forgetting Curve | Curva de olvido modelada dinamicamente segun patrones de acceso |
+| Context-Aware Recall | Recuperacion contextual que prioriza memorias segun la tarea actual |
 
 ## AgentCostController
 **Implementación:** `harness/orchestrator/agent_cost_controller.py`
@@ -161,19 +216,23 @@ Keywords largas tienen más peso que cortas (evita falsos positivos). Dos nivele
 
 **API unificada:** create_collection, add, search, delete, list_tables, clear — independientemente del backend subyacente.
 
-## Métricas del Sistema
+## Metricas del Sistema
 
 | Componente | Test | Estado |
 |-----------|------|--------|
-| Tests totales | 2,900+ | ✅ |
+| Tests totales | 3,350+ | ✅ |
 | Skills | 30 (100% SKILL.md + SKILL.min.md) | ✅ |
-| ADRs | 27 | ✅ |
+| ADRs | 28 | ✅ |
+| Agentes | 20 (100% perfiles) | ✅ |
 | Proyectos | 6 activos | ✅ |
+| Modulos Orchestrator | 48 | ✅ |
+| Modulos Memory/RAG | 30 | ✅ |
 | GPU | RTX 4060 8GB (6x search, 3.2x embedding) | ✅ |
-| Token savings | -51% cápsulas, -40% structured output | ✅ |
+| Token savings | -51% capsulas, -40% structured output | ✅ |
 | Vector stores | 3 (LanceDB, Chroma, Qdrant) | ✅ |
-| Observabilidad | OpenTelemetry (trazas, métricas, OTLP) | ✅ |
-| Benchmarks | AgentBenchmark (4 métricas) | ✅ |
+| Observabilidad | OpenTelemetry (trazas, metricas, OTLP) | ✅ |
+| Benchmarks | AgentBenchmark (4 metricas) | ✅ |
+| Papers implementados | 15 (Gap Analysis 2026) | ✅ |
 
 ## ToolGuardian
 **Paper:** arXiv:2607.21835 (Ravindran & Deochake, Jul 2026)

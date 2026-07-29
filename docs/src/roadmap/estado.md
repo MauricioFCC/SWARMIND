@@ -1,31 +1,36 @@
 # Roadmap y Estado del Proyecto
 
-> Estado actual del sistema AGENTIC Harness a 2026-07-20.
+> Estado actual del sistema AGENTIC Harness a 2026-07-29.
 > Documento vivo que refleja el progreso, hitos y proximos objetivos.
 
 ---
 
-## Estado Actual (2026-07-20)
+## Estado Actual (2026-07-29)
 
 | Metrica | Valor |
 |---------|-------|
-| **Tests** | 2628 passing, 2 flaky |
+| **Tests** | 3350+ passing |
 | **Cobertura** | ~65% |
-| **ADRs** | 25 (todos implementados) |
-| **Commits totales** | ~220+ |
-| **Archivos fuente** | ~170 Python files |
+| **ADRs** | 28 (todos implementados) |
+| **Agentes** | 20 especializados (100% perfiles) |
+| **Skills** | 30 contextuales (100% SKILL.md + SKILL.min.md) |
+| **Modulos Orchestrator** | 48 |
+| **Modulos Memory/RAG** | 30 |
+| **Commits totales** | 196+ |
+| **Archivos fuente** | 258 Python files |
 | **Tiempo full suite** | ~150s |
 | **Tiempo sin slow** | ~45s |
-| **Tecnicas 2026 integradas** | 20+ |
+| **Tecnicas 2026 integradas** | 30+ |
+| **Papers implementados** | 15 (Gap Analysis 2026) |
 | **GPU** | RTX 4060 8GB (6x search speedup) |
 
 ### Resumen de Cobertura por Modulo
 
 | Modulo | Archivos | Cobertura | Estado |
 |--------|----------|-----------|--------|
-| Orchestrator | 32 | ~80% | Robusto |
-| Memory/RAG | 25 | ~60% | Estable |
-| Tests | 52 | N/A | Base solida |
+| Orchestrator | 48 | ~80% | Robusto |
+| Memory/RAG | 30 | ~60% | Estable |
+| Tests | 52+ | N/A | Base solida |
 | Evolve Loop | 10 | ~70% | Estable |
 | Tools Sandbox | 4 | ~80% | Cubierto (MCP client+manager) |
 | Scheduler | 1 | 95% | Robusto |
@@ -62,6 +67,14 @@
 | **Refactor >500ln** | 2026-07-20 | task_orchestrator 994→830, context_window 1029→943 |
 | **Embedding 3.2x** | 2026-07-20 | fallback_embedding vectorizada con np.frombuffer + np.add.at |
 | **ShapedCache threshold** | 2026-07-20 | 0.95→0.88 para cache semantico real |
+| **Gap Analysis 2026** | 2026-07-29 | 15 papers implementados, mapeo completo de gaps frontier |
+| **GovernanceGuard** | 2026-07-29 | arXiv:2606.22528 — deteccion de governance decay en cadenas multi-agente |
+| **NaturalLanguageToolkit** | 2026-07-29 | arXiv:2607.03953 — herramientas de lenguaje natural para agentes |
+| **MultiUserGovernance** | 2026-07-29 | arXiv:2606.21856 — gobierno multi-usuario con aislamiento de sesiones |
+| **OrganizationalLayer** | 2026-07-29 | arXiv:2607.25446 — ciencia organizacional aplicada a colectivos de agentes |
+| **Learned Adaptive Memory** | 2026-07-29 | arXiv:2607.13591 — memoria adaptativa con retencion aprendida |
+| **Expansion agentes** | 2026-07-29 | 8 → 20 agentes especializados (100% perfiles) |
+| **28 ADRs** | 2026-07-29 | De 27 a 28 ADRs documentados e implementados |
 
 ### Evolucion de Cobertura
 
@@ -108,29 +121,27 @@ Objetivo: 80%    (proximo hito)
 
 | Metrica | Actual | Objetivo | Tendencia |
 |---------|--------|----------|-----------|
-| Cobertura de tests | ~60% | 80% | :arrow_up: (+26% en sesion) |
-| Tests totales | 1540 | ~2000 | :arrow_up: |
-| Archivos <900LC | 100% | 100% | :white_check_mark: |
-| DocStrings ES-UTF8 | ~95% | 100% | :arrow_up: |
-| Tiempo full suite | ~150s | <60s | :arrow_down: |
-| Tiempo sin slow | ~45s | <30s | :arrow_down: |
-| ADRs implementados | 16/18 | 18/18 | :arrow_up: |
-| Commits totales | ~220+ | N/A | :arrow_up: |
-| Tecnicas 2026 | 20+ | 25+ | :arrow_up: |
-| GPU Speedup | 6x search | 10x full pipeline | :arrow_up: |
-
-### ADRs Pendientes de Implementacion
-
-| ADR | Titulo | Estado |
-|-----|--------|--------|
-| ADR-0016 | Parallel Testing & Fail-Under | :package: Implementado parcialmente |
-| ADR-0017 | PaCoRe Async Concurrency | :package: Implementado parcialmente |
-| ADR-0018 | Token Economics Cache Shape | :package: Implementado parcialmente |
+| Cobertura de tests | ~65% | 80% | Subiendo |
+| Tests totales | 3350+ | ~4000 | Subiendo |
+| Agentes | 20 | 30+ | Subiendo |
+| Skills | 30 | 50+ | Subiendo |
+| Modulos Orchestrator | 48 | 55+ | Subiendo |
+| Modulos Memory/RAG | 30 | 35+ | Subiendo |
+| Archivos <900LC | 100% | 100% | Mantenido |
+| DocStrings ES-UTF8 | ~95% | 100% | Subiendo |
+| Tiempo full suite | ~150s | <60s | Bajando |
+| Tiempo sin slow | ~45s | <30s | Bajando |
+| ADRs implementados | 28/28 | 28/28 | Completo |
+| Commits totales | 196+ | N/A | Subiendo |
+| Tecnicas 2026 | 30+ | 40+ | Subiendo |
+| Papers implementados | 15 | 20+ | Subiendo |
+| GPU Speedup | 6x search | 10x full pipeline | Subiendo |
 
 ---
 
 ## Notas de la Version
 
+- **2026-07-29**: Gap Analysis 2026 completo (15 papers implementados). Nuevos modulos: GovernanceGuard (arXiv:2606.22528), NaturalLanguageToolkit (arXiv:2607.03953), MultiUserGovernance (arXiv:2606.21856), OrganizationalLayer (arXiv:2607.25446), Learned Adaptive Memory (arXiv:2607.13591). Expansion de 8 a 20 agentes. 3350+ tests, 28 ADRs, 30 skills, 48 modulos orchestrator, 30 modulos memory/rag.
 - **2026-07-20 (final)**: GPU acceleration (RTX 4060, 6x search, 3.2x embedding). Refactor task_orch 994→830, ctx_window 1029→943. ShapedCache threshold 0.88. Seguridad: path traversal hardening. 2900+ tests, ~60% coverage.
 - **2026-07-20**: Documentacion completa del sistema. Se anaden glosario, roadmap, y se completa SUMMARY con todas las secciones. Cobertura en ~60% con 2900+ tests pasando.
 - **2026-07-09**: Frontier Upgrade 2026 con MetaClaw, AdaptOrch, MuTON, SWE-Master, ShapleyFlow.
