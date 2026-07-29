@@ -187,3 +187,9 @@ skills:
   version: 1.0.0
   project_agnostic: true
 
+
+- name: risk-intelligence
+  domain: risk
+  description: "Identificacion de riesgos emergentes (CRO Forum 2026): tecnologicos, geopoliticos, climaticos, salud, financieros"
+  version: 1.0.0
+  project_agnostic: true
