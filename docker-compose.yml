@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  agentic:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./.opencode:/app/.opencode
+    environment:
+      - PYTHONUNBUFFERED=1
