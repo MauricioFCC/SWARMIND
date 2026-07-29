@@ -36,8 +36,8 @@
 | Tests | 2900+ passing (2825 funciones + parametrizados) |
 | Cobertura | ~65% (objetivo: 80%) |
 | ADRs | 27 (todos implementados) |
-| Agentes | 8 especializados |
-| Skills | 30 (100% SKILL.md + SKILL.min.md) |
+| Agentes | 20 especializados |
+| Skills | 30 (100% min) (100% SKILL.md + SKILL.min.md) |
 | GPU | RTX 4060 8GB (6x search speedup, 3.2x embedding) |
 | Token savings | -51% cápsulas, -40% structured output |
 | Proyectos | 6 activos |
@@ -45,4 +45,5 @@
 | Observabilidad | OpenTelemetry (trazas, métricas, exportación OTLP) |
 | Benchmarks | AgentBenchmark (accuracy, latencia, tokens, éxito) |
 | Commits | 350+ |
+
 
