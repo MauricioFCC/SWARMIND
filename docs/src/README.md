@@ -1,55 +1,112 @@
 # AGENTIC — Sistema Multi-Agente Evolutivo
 
-**AGENTIC** es un sistema multi-agente de orquestación, ejecución y auto-mejora continua. Combina:
+**AGENTIC** es un sistema multi-agente de orquestación, ejecución y auto-mejora continua con 31 skills contextuales, orquestación multi-nivel, GPU acceleration y token economics.
 
-- **20 agentes especializados**: coordinator, builder, scientist, guardian, evolve, evolve-researcher, evolve-engineer, evolve-analyzer, architect, backend-engineer, frontend-engineer, mobile-engineer, data-engineer, devops, database-administrator, security-engineer, qa-engineer, reviewer, product-manager, researcher
-- **30 skills contextuales**: 10 categorias (tecnologia, seguridad, negocio, finanzas, ciencia, humanidades, salud, legal, retail, sostenibilidad)
-- **30+ tecnicas frontier 2026**: MetaClaw, SWE-Master, AdaptOrch, MuTON, ShapleyFlow, PaCoRe, MARS, ReDNA, Agent Capsules, GovernanceGuard, NaturalLanguageToolkit, MultiUserGovernance, OrganizationalLayer, StrategicMemory, ToolGuardian, etc.
-- **Motor de ejecucion Plan-and-Execute** con DAG parallelism, memoria vectorial LanceDB/Chroma/Qdrant, federated memory, knowledge graph
-- **GPU Acceleration**: RTX 4060 8GB (6x search speedup, 3.2x embedding)
-- **OpenTelemetry integrado**: trazabilidad end-to-end de agentes, spans, metricas y exportacion OTLP
-- **VectorStoreAdapter**: abstraccion multi-DB (LanceDB, Chroma, Qdrant) con conmutacion en caliente
-- **Creative AI**: Pipeline divergente/convergente ReDNA para generacion de ideas
-- **Token Economics**: Agent Capsules (-51%), Structured Output (-40%), ShapedCache, DAG parallelism
-- **Auto-mejora via ASI-Evolve**: Learn -> Design -> Experiment -> Analyze -> Deploy con cognition store persistente
-- **Evaluacion con benchmarks**: AgentBenchmark para medir accuracy, latencia, uso de tokens y tasa de exito
-
-## Documentación
-
-- [Guía de uso](guide/como-usar.md) — Cómo delegar tareas a los agentes
-- [Agentes y Skills (completo)](guide/agentes-y-skills.md) — Documentación detallada de todo el sistema
-- [Arquitectura](architecture/swiss-watch.md) — Patrón Swiss Watch, Dynamic Scaling, Composición
-- [Manual Técnico](technical/manual-tecnico.md) — Documentación técnica completa del harness
-- [ADR](adr/README.md) — Architecture Decision Records (27 documentos)
-- [Agentes](agents/coordinator.md) — Perfiles de cada agente
-- [Skills](skills/registry.md) — Registro completo de skills (30)
-- [Testing Guide](development/testing-guide.md) — Cómo escribir y ejecutar tests
-- [Glosario](reference/glosario.md) — Términos y abreviaturas
-- [Roadmap](roadmap/estado.md) — Estado del proyecto y próximos pasos
-- [Desarrollo](development/modificar.md) — Cómo modificar y contribuir
-- [Análisis Arquitectura](guide/analisis-arquitectura.md) — Python vs Rust, Monolith vs Microservicios
-
-## Estado Actual
+## Estado Actual (Julio 2026)
 
 | Metrica | Valor |
 |---------|-------|
-| Tests | 3350+ passing |
+| Tests | 3400+ passing |
 | Cobertura | ~65% (objetivo: 80%) |
-| ADRs | 28 (todos implementados) |
-| Agentes | 20 especializados (100% perfiles) |
-| Skills | 30 contextuales (100% SKILL.md + SKILL.min.md) |
+| ADRs | 33 (todos implementados) |
+| Agentes | 20 especializados (100% perfiles + .min.md) |
+| Skills | 31 contextuales (100% SKILL.md + SKILL.min.md) |
 | Modulos Orchestrator | 48 |
 | Modulos Memory/RAG | 30 |
+| Modulos Hooks | 4 (security_validator, permission_checker, audit_logger, metrics) |
+| Modulos Security | Zero Trust (TokenManager, PolicyEngine, verify_agent_identity) |
+| Modulos Multi-Harness | 12 (runtime_detector, converter_base, 5 adapters, CLI) |
 | GPU | RTX 4060 8GB (6x search speedup, 3.2x embedding) |
-| Token savings | -51% capsulas, -40% structured output |
+| Token savings | -51% capsulas, -40% structured output, -38% cache-shape |
 | Proyectos | 6 activos |
-| Vector stores | LanceDB, Chroma, Qdrant (via VectorStoreAdapter) |
+| Vector stores | LanceDB, Chroma, Qdrant + SQLite-vec (edge) |
+| Federated Search | Paralelo 3 backends + MMR re-ranking |
 | Observabilidad | OpenTelemetry (trazas, metricas, exportacion OTLP) |
 | Benchmarks | AgentBenchmark (accuracy, latencia, tokens, exito) |
-| Commits | 196+ |
+| Commits | 200+ |
 | Papers implementados | 15 (Gap Analysis 2026) |
 
-## Gap Analysis 2026 — 15 Papers Implementados
+## Novedades en Julio 2026
+
+### Multi-Harness Adapter Layer
+AGENTIC ahora funciona nativamente desde **5 runtimes** sin perder compatibilidad con OpenCode:
+
+| Runtime | Deteccion | Formato |
+|---------|-----------|---------|
+| **OpenCode** | `.opencode/` + OPENCODE_AGENT_MD | Nativo (SSOT) |
+| **Claude Code** | `ANTHROPIC_API_KEY` + `.claude/` | AGENTS.md + settings.json |
+| **Codex CLI** | `OPENAI_API_KEY` + `.codex/` | config.toml + prompts/ |
+| **Cursor** | `CURSOR_MODE` + `.cursor/` | .cursorrules + agents/ |
+| **Gemini CLI** | `GOOGLE_API_KEY` + `.gemini/` | instructions.md |
+
+Uso: `python harness/run.py !harness export --target claude`
+
+### Hook System — Automatizacion Determinista
+4 hooks incorporados que el LLM no puede controlar:
+
+| Hook | Tipo | Prioridad | Proposito |
+|------|------|-----------|-----------|
+| Security Validator | PRE_TOOL | CRITICAL | Bloquea `rm -rf /`, DROP TABLE, etc. |
+| Permission Checker | PRE_TOOL | HIGH | Protege .opencode/opencode.json, pyproject.toml |
+| Audit Logger | POST_TOOL | NORMAL | Registra toda operacion en .opencode/audit.log |
+| Metrics Collector | ON_NOTIFICATION | LOW | Recolecta metricas del sistema |
+
+### Zero Trust Architecture
+- **TokenManager**: Tokens HMAC-SHA256 con rotacion automatica
+- **PolicyEngine**: Mini-OPA con wildcards y roles
+- **verify_agent_identity**: Verificacion multi-paso (token + identidad + permisos)
+
+### Federated Vector Search
+Busqueda paralela en **LanceDB + Chroma + Qdrant** con re-ranking MMR.
+
+### SQLite-vec Backend
+Backend vectorial portable **sin dependencias externas** (ideal para edge/offline).
+
+### Async TaskOrchestrator
+Refactorizado a **asyncio completo** con 4.8x speedup (ADR-0017).
+
+## Documentacion
+
+- [Guia de uso](guide/como-usar.md) — Como delegar tareas a los agentes
+- [Agentes y Skills (completo)](guide/agentes-y-skills.md) — Documentacion detallada de todo el sistema
+- [Arquitectura](architecture/swiss-watch.md) — Patron Swiss Watch, Dynamic Scaling, Composicion
+- [Manual Tecnico](technical/manual-tecnico.md) — Documentacion tecnica completa del harness
+- [ADR](adr/README.md) — Architecture Decision Records (33 documentos)
+- [Agentes](agents/coordinator.md) — Perfiles de cada agente
+- [Skills](skills/registry.md) — Registro completo de skills (31)
+- [Testing Guide](development/testing-guide.md) — Como escribir y ejecutar tests
+- [Glosario](reference/glosario.md) — Terminos y abreviaturas
+- [Roadmap](roadmap/estado.md) — Estado del proyecto y proximos pasos
+- [Desarrollo](development/modificar.md) — Como modificar y contribuir
+- [Analisis Arquitectura](guide/analisis-arquitectura.md) — Python vs Rust, Monolith vs Microservicios
+
+## Arquitectura
+
+```
+AGENTIC/
+├── .opencode/                  ← SSOT (fuente unica de verdad)
+│   ├── agents/                 → 20 agentes
+│   ├── skills/                 → 31 skills (cada uno en su directorio)
+│   └── config/                 → configuracion del proyecto
+├── .claude/ .codex/ .cursor/ .gemini/  ← GENERADO por multi-harness
+├── harness/
+│   ├── orchestrator/           → 48 modulos (TaskOrchestrator, AgentBus, etc.)
+│   │   ├── multi_harness/      → 12 modulos (runtime_detector, 5 adapters, CLI)
+│   │   └── ...
+│   ├── memory_rag/             → 30 modulos (StrategicMemory, FederatedSearch, etc.)
+│   ├── hooks/                  → 4 modulos (HookRegistry, HookManager, BuiltinHooks)
+│   ├── security/               → Zero Trust (TokenManager, PolicyEngine)
+│   └── tests/                  → 3400+ tests
+├── docs/
+│   └── src/                    → mdbook (73 paginas HTML)
+│       ├── adr/                → 33 ADRs (0001-0033)
+│       ├── agents/             → 20 paginas de agentes
+│       ├── skills/             → 31 paginas de skills
+│       └── ...
+└── pyproject.toml
+```
+
+## 15 Papers 2026 Implementados
 
 | Gap | Paper | Implementacion |
 |-----|-------|---------------|
@@ -69,47 +126,37 @@
 | Agentic PBT | arXiv:2510.09907 | Hypothesis + PBT Core |
 | Legal NLP | SaulLM-7B + MiningLegalBench | LegalAnalyzer |
 
-## Benchmark Projects 2026 — Ecosistema
+## Benchmark Projects 2026
 
 | Proyecto | Stars | Lenguaje | Agentes | Skills | Diferenciador |
 |----------|-------|----------|---------|--------|---------------|
-| **ECC** | 235k | TypeScript | 67 | 281 | Sistema operativo para agentes, multi-harness, instincts |
-| **DeerFlow** | 78.1k | Python | — | — | SuperAgent de largo horizonte (Long-horizon) |
-| **CowAgent** | 46.2k | Python | — | — | Auto-evolucion, multi-canal (Web, WeChat, Telegram, Slack) |
-| **CodeWhale** | 40.2k | Rust | — | — | Fleet execution, multi-provider, equipos paralelos |
-| **AGENTIC** | — | Python | 20 | 30 | GPU acceleration, token economics, governance, calidad |
+| **ECC** | 235k | TypeScript | 67 | 281 | Sistema operativo para agentes |
+| **DeerFlow** | 78.1k | Python | — | — | SuperAgent de largo horizonte |
+| **CowAgent** | 46.2k | Python | — | — | Auto-evolucion, multi-canal |
+| **CodeWhale** | 40.2k | Rust | — | — | Fleet execution, multi-provider |
+| **AGENTIC** | — | Python | 20 | 31 | GPU + token economics + governance + calidad |
 
-## Fortalezas Diferenciales de AGENTIC
+## Diferenciacion AGENTIC
 
 | Capacidad | ECC | CowAgent | CodeWhale | **AGENTIC** |
 |-----------|-----|----------|-----------|-------------|
-| GPU Acceleration | ❌ | ❌ | ❌ | **RTX 4060 6x** |
-| Token Economics (-51%) | ❌ | ❌ | ❌ | **Capsules + ShapedCache** |
-| Governance Framework | ❌ | ❌ | ❌ | **GovernanceAgent + GovernanceGuard** |
-| Creative AI (ReDNA) | ❌ | ❌ | ❌ | **CreativeWorktable** |
-| Multi-User Governance | ❌ | ❌ | ❌ | **MultiUserGovernance** |
-| Organizational Science | ❌ | ❌ | ❌ | **OrganizationalLayer** |
-| Natural Language Tools | ❌ | ❌ | ❌ | **NaturalLanguageToolkit** |
-| Strategic Memory | ❌ | ❌ | ❌ | **SF-AMS utility-driven** |
-| ToolGuardian Security | ❌ | ❌ | ❌ | **ToolGuardian (88% accuracy)** |
-| Knowledge Graph | ❌ | ✅ | ❌ | **KnowledgeGraph** |
-| Multi-DB Vector | ❌ | ❌ | ❌ | **LanceDB + Chroma + Qdrant** |
-| OpenTelemetry | ❌ | ❌ | ❌ | **Agent tracer** |
-| Tests | ❌ | ❌ | ❌ | **3350+ tests** |
-| Property-Based Testing | ❌ | ❌ | ❌ | **Hypothesis integrado** |
-| ADRs documentados | ❌ | ❌ | ❌ | **28 ADRs** |
-| Multi-harness (IDEs) | ✅ | ❌ | ❌ | Pendiente |
-| Fleet execution | ❌ | ❌ | ✅ | Pendiente (Swarm mode) |
-| Skill marketplace | ❌ | ✅ | ❌ | Pendiente |
-
-## Nicho de AGENTIC
-
-AGENTIC ocupa un nicho unico en el ecosistema de harness 2026:
-
-- **Calidad de codigo**: 3350+ tests, PBT, refinement types, 28 ADRs documentados
-- **Optimizacion de costos**: token economics (-51% capsulas, -40% structured output), GPU acceleration (6x search)
-- **Gobernanza enterprise**: GovernanceAgent, GovernanceGuard, MultiUserGovernance, OrganizationalLayer, SecurityGuard, ToolGuardian, AgentCostController
-- **Research-first**: 15 papers 2026 implementados, gap analysis riguroso, validacion estadistica
-
-
-
+| GPU Acceleration (6x) | ❌ | ❌ | ❌ | **✅** |
+| Token Economics (-51%) | ❌ | ❌ | ❌ | **✅** |
+| Governance Framework | ❌ | ❌ | ❌ | **✅ GovernanceAgent + GovernanceGuard** |
+| Zero Trust Architecture | ❌ | ❌ | ❌ | **✅ TokenManager + PolicyEngine** |
+| Hook System (determinista) | ❌ | ❌ | ❌ | **✅ 4 hooks pre/post/on_edit** |
+| Multi-Harness (5 runtimes) | ✅ | ❌ | ❌ | **✅** |
+| Creative AI (ReDNA) | ❌ | ❌ | ❌ | **✅ CreativeWorktable** |
+| Multi-User Governance | ❌ | ❌ | ❌ | **✅ MultiUserGovernance** |
+| Organizational Science | ❌ | ❌ | ❌ | **✅ OrganizationalLayer** |
+| Natural Language Tools | ❌ | ❌ | ❌ | **✅ NaturalLanguageToolkit** |
+| Strategic Memory | ❌ | ❌ | ❌ | **✅ SF-AMS utility-driven** |
+| ToolGuardian Security | ❌ | ❌ | ❌ | **✅ ToolGuardian (88% accuracy)** |
+| Knowledge Graph | ❌ | ✅ | ❌ | **✅ KnowledgeGraph** |
+| Federated Vector Search | ❌ | ❌ | ❌ | **✅ 3 backends + MMR** |
+| SQLite-vec (edge) | ❌ | ❌ | ❌ | **✅** |
+| OpenTelemetry | ❌ | ❌ | ❌ | **✅ Agent tracer** |
+| 3400+ tests | ❌ | ❌ | ❌ | **✅** |
+| 33 ADRs documentados | ❌ | ❌ | ❌ | **✅** |
+| Async TaskOrchestrator | ❌ | ❌ | ❌ | **✅ 4.8x speedup** |
+| Multi-DB Vector | ❌ | ❌ | ❌ | **✅ LanceDB + Chroma + Qdrant** |

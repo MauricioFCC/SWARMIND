@@ -13,13 +13,14 @@ version = "0.1.0"
 description = "Multi-Agent Evolutionary Harness"
 requires-python = ">=3.10"
 dependencies = [
+    "hypothesis>=6.163.0",
     "lancedb>=0.33",
     "numpy>=1.24",
     "pytest-asyncio>=1.4.0",
     "pyyaml>=6.0",
     "requests>=2.31",
-     "schedule>=1.2",
-     "torch>=2.0",
+    "schedule>=1.2",
+    "torch>=2.0",
 ]
 
 [project.optional-dependencies]

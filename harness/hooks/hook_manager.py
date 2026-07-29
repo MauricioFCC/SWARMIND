@@ -96,6 +96,7 @@ class HookManager:
             registry: Registro de hooks a usar. Si es None, usa el singleton.
         """
         self._registry: HookRegistry = registry or HookRegistry.get_instance()
+        self._cached_hooks: Dict[HookType, List[HookRegistration]] = {}
 
     def execute_pre_tool(
         self,
@@ -194,6 +195,11 @@ class HookManager:
     ) -> List[HookResult]:
         """Ejecuta todos los hooks de un tipo en orden de prioridad.
 
+        Optimizaciones de rendimiento:
+        - Cache de hooks por tipo (_cached_hooks) para evitar sorted() repetido.
+        - Solo mide con perf_counter si priority <= HIGH (CRITICAL/HIGH).
+        - NORMAL/LOW saltan medicion para reducir overhead en hooks no criticos.
+
         Args:
             hook_type: Tipo de hook a ejecutar.
             ctx: Contexto de ejecucion compartido.
@@ -201,7 +207,10 @@ class HookManager:
         Returns:
             Lista de resultados ordenada por prioridad.
         """
-        hooks: List[HookRegistration] = self._registry.get_hooks(hook_type)
+        # Cache: evitar sorted() y get_hooks() repetido en cada llamada
+        if hook_type not in self._cached_hooks:
+            self._cached_hooks[hook_type] = self._registry.get_hooks(hook_type)
+        hooks: List[HookRegistration] = self._cached_hooks[hook_type]
         results: List[HookResult] = []
 
         for hook in hooks:
@@ -213,31 +222,38 @@ class HookManager:
                 ))
                 continue
 
-            start: float = time.perf_counter()
+            # Solo medir con perf_counter si priority <= HIGH (CRITICAL=0, HIGH=1)
+            _measure: bool = hook.priority.value <= HookPriority.HIGH.value
+            _start: float = 0.0
+            if _measure:
+                _start = time.perf_counter()
+
             try:
                 hook_result: Any = hook.func(ctx)
-                duration: float = (time.perf_counter() - start) * 1000
+                _duration: float = (
+                    (time.perf_counter() - _start) * 1000 if _measure else 0.0
+                )
 
                 # Interpretar el resultado del hook
                 if hook_result is False:
                     results.append(HookResult(
                         hook_name=hook.name,
                         status=HookResultStatus.BLOCKED,
-                        duration_ms=duration,
+                        duration_ms=_duration,
                         message=hook.description or "Hook rechazo la operacion",
                     ))
                     # Fail-fast para hooks CRITICAL
                     if hook.priority == HookPriority.CRITICAL:
                         logger.warning(
                             "[HookManager] Hook CRITICAL '%s' BLOQUEO operacion (%dms)",
-                            hook.name, duration,
+                            hook.name, _duration,
                         )
                         break
                 else:
                     results.append(HookResult(
                         hook_name=hook.name,
                         status=HookResultStatus.SUCCESS,
-                        duration_ms=duration,
+                        duration_ms=_duration,
                         message=hook.description or "Ejecutado exitosamente",
                         data=hook_result if isinstance(hook_result, dict) else None,
                     ))
@@ -246,15 +262,17 @@ class HookManager:
                     "[HookManager] Hook '%s' %s (%dms)",
                     hook.name,
                     "BLOQUEO" if hook_result is False else "OK",
-                    duration,
+                    _duration,
                 )
 
             except Exception as exc:
-                duration = (time.perf_counter() - start) * 1000
+                _duration = (
+                    (time.perf_counter() - _start) * 1000 if _measure else 0.0
+                )
                 results.append(HookResult(
                     hook_name=hook.name,
                     status=HookResultStatus.ERROR,
-                    duration_ms=duration,
+                    duration_ms=_duration,
                     message=f"Error: {exc}",
                 ))
                 logger.error(

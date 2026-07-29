@@ -160,6 +160,7 @@ class TokenManager:
         self._lock: threading.Lock = threading.Lock()
         self._active_tokens: Dict[str, AgentToken] = {}
         self._revoked_tokens: Set[str] = set()
+        self._revoked_cache: Set[str] = set()
 
     def create_token(
         self,
@@ -213,24 +214,40 @@ class TokenManager:
     def verify_token(self, token_id: str) -> Optional[AgentToken]:
         """Verifica y retorna un token si es valido.
 
+        Fast-path:
+        - Cache negativo _revoked_cache para O(1) lookup sin lock de tokens revocados.
+        - Si strict_mode es False, salta verificacion HMAC (confia en TTL).
+
         Args:
             token_id: ID del token a verificar.
 
         Returns:
             AgentToken si es valido, None si no.
         """
+        # Fast-path lock-free: cache negativo de tokens revocados
+        if token_id in self._revoked_cache:
+            logger.warning("[ZeroTrust] Token revocado (cache): %s", token_id)
+            return None
+
         with self._lock:
+            # Doble check bajo lock para consistencia
             if token_id in self._revoked_tokens:
-                logger.warning("[ZeroTrust] Token revocado: %s", token_id)
                 return None
 
             token: Optional[AgentToken] = self._active_tokens.get(token_id)
             if token is None:
                 return None
 
-            if not token.is_valid(self._config.secret_key):
+            # Verificar expiracion siempre
+            if time.time() > token.expires_at:
                 self._revoke_token_internal(token_id)
                 return None
+
+            # Saltar verificacion HMAC si strict_mode es False (confiar en TTL)
+            if self._config.strict_mode:
+                if not token.is_valid(self._config.secret_key):
+                    self._revoke_token_internal(token_id)
+                    return None
 
             return token
 
@@ -258,6 +275,7 @@ class TokenManager:
         if token_id in self._active_tokens:
             del self._active_tokens[token_id]
             self._revoked_tokens.add(token_id)
+            self._revoked_cache.add(token_id)
             logger.info("[ZeroTrust] Token revocado: %s", token_id)
             return True
         return False

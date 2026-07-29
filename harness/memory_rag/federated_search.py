@@ -154,6 +154,10 @@ class FederatedVectorSearch:
         self._mmr_lambda = mmr_lambda
         self._embedding_dim = embedding_dim
 
+        # Detectar si colapsar a 1 backend en single-harness
+        self._collapse_backends: bool = False
+        self._detect_collapse()
+
         # Inicializar backends
         self._backends: Dict[str, VectorStoreAdapter] = {}
         self._init_backends(backends)
@@ -194,6 +198,38 @@ class FederatedVectorSearch:
     # ------------------------------------------------------------------
     # Inicializacion de backends
     # ------------------------------------------------------------------
+
+    def _detect_collapse(self) -> None:
+        """Detecta si el runtime actual es single-harness para colapsar backends.
+
+        Si solo hay un runtime activo (single-harness), colapsa a 1 backend
+        (LanceDB) para reducir overhead innecesario en busquedas vectoriales.
+        En multi-harness se usan los 3 backends para federacion completa.
+        """
+        try:
+            from harness.orchestrator.multi_harness.runtime_detector import (
+                detect_runtime,
+            )
+            runtime = detect_runtime()
+            self._collapse_backends = runtime.detected
+            if self._collapse_backends:
+                logger.info(
+                    "FederatedSearch: runtime '%s' detectado, "
+                    "colapsando a 1 backend (single-harness)",
+                    runtime.name,
+                )
+        except ImportError:
+            self._collapse_backends = False
+
+    @property
+    def is_collapsed(self) -> bool:
+        """Indica si la busqueda federada esta colapsada a 1 backend.
+
+        Returns:
+            True si solo se usa LanceDB (single-harness), False si
+            se usan los 3 backends completos (multi-harness).
+        """
+        return self._collapse_backends
 
     def _init_backends(
         self, backends: Optional[Dict[str, VectorStoreAdapter]]
@@ -241,14 +277,27 @@ class FederatedVectorSearch:
     def _create_default_backends(self) -> None:
         """Crea los backends por defecto (LanceDB, Chroma, Qdrant).
 
+        Si estamos en un entorno single-harness (runtime detectado),
+        colapsa a solo 1 backend (LanceDB) para reducir overhead.
+        En multi-harness usa los 3 backends para federacion completa.
+
         Cada backend se crea con configuracion local estandar.
         Si un backend falla al crear, se omite con un warning.
         """
-        configs: List[Tuple[str, str, Dict[str, Any]]] = [
-            ("lancedb", "lancedb", {"db_path": "data/lancedb"}),
-            ("chroma", "chroma", {"db_path": "data/chromadb"}),
-            ("qdrant", "qdrant", {"location": ":memory:"}),
-        ]
+        if self._collapse_backends:
+            configs: List[Tuple[str, str, Dict[str, Any]]] = [
+                ("lancedb", "lancedb", {"db_path": "data/lancedb"}),
+            ]
+            logger.info(
+                "FederatedSearch: colapsado a 1 backend (LanceDB) "
+                "por single-harness runtime",
+            )
+        else:
+            configs = [
+                ("lancedb", "lancedb", {"db_path": "data/lancedb"}),
+                ("chroma", "chroma", {"db_path": "data/chromadb"}),
+                ("qdrant", "qdrant", {"location": ":memory:"}),
+            ]
         for name, backend_type, kwargs in configs:
             try:
                 adapter = create_vector_store(backend_type, **kwargs)
