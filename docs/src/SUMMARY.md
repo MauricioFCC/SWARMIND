@@ -33,9 +33,12 @@
 - [Como Modificar Archivos](development/modificar.md)
 - [Commits Convencionales](development/commits.md)
 - [Exportacion y Backup](development/export.md)
+- [Analisis Arquitectura](guide/analisis-arquitectura.md)
 
 # Referencia
 - [Glosario de Terminos](reference/glosario.md)
+- [Investigacion Aplicada 2026](reference/investigacion-aplicada.md)
+- [Comparativa Harness 2026](reference/comparativa-harness-2026.md)
 - [Investigacion Aplicada 2026](reference/investigacion-aplicada.md)
 
 # Roadmap
@@ -59,7 +62,7 @@
 - [ADR-0015: Frontier Agents & Skills 2026](adr/adr0015-frontier-agents-skills-2026.md)
 - [ADR-0016: Parallel Testing & Fail-Under](adr/adr0016-parallel-testing-fail-under.md)
 - [ADR-0017: PaCoRe Async Concurrency](adr/adr0017-pacore-async-concurrency.md)
-- [ADR-0018: Token Economics Cache Shape](adr/adr0018-token-economics-cache-shape.md)
+- [ADR-0018: Token Economics Cache Shape
 - [ADR-0019: Agent & Skill Optimization](adr/adr0019-agent-skill-optimization-2026.md)
 - [ADR-0020: MCP + A2A Architecture](adr/adr0020-mcp-a2a-architecture-2026.md)
 - [ADR-0021: Frontier Gaps 2026](adr/adr0021-frontier-gaps-2026.md)
@@ -68,6 +71,7 @@
 - [ADR-0024: Comparative Analysis ASDT+Traycer](adr/adr0024-comparative-analysis-asdt-traycer-2026.md)
 - [ADR-0025: Frontier Coding Quality](adr/adr0025-frontier-coding-quality-2026.md)
 - [ADR-0026: Research Improvements](adr/adr0026-research-improvements-2026.md)
-- [ADR-0027: Agentic Governance CX](adr/adr0027-agentic-governance-cx-2026.md)](adr/adr0018-token-economics-cache-shape.md)
+- [ADR-0027: Agentic Governance CX](adr/adr0027-agentic-governance-cx-2026.md)
+
 
 
