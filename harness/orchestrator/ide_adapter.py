@@ -1,22 +1,30 @@
-"""
-IDEAdapter — Integracion de AGENTIC con multiples IDEs y harness.
+"""IDEAdapter — Fachada de compatibilidad multi-harness.
 
-Soporta: Claude Code, Codex CLI, Cursor, OpenCode, Gemini CLI.
-Basado en el patron de ECC que soporta 7+ harnesses diferentes.
+Refactorizado para delegar en Multi-Harness Adapter Layer manteniendo
+compatibilidad hacia atras. Todos los metodos originales se conservan.
 
-Cada IDE tiene su propio formato de configuracion:
-- Claude Code: .claude/settings.json + AGENTS.md
-- Codex CLI: .codex/config.toml + AGENTS.md
-- Cursor: .cursorrules
-- OpenCode: .opencode/ (nativo AGENTIC)
-- Gemini CLI: .gemini/instructions.md
+La logica ahora reside en `harness/orchestrator/multi_harness/`.
+Este modulo es una fachada que mantiene la API publica original.
 """
+
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+from harness.orchestrator.multi_harness.cli.multi_harness_cli import (
+    cmd_detect,
+    cmd_export,
+    cmd_status,
+    cmd_validate,
+)
+from harness.orchestrator.multi_harness.runtime_detector import (
+    RuntimeInfo,
+    detect_runtime,
+    get_detected_runtimes,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +33,7 @@ logger = logging.getLogger(__name__)
 class IDESupport:
     """Describe el soporte de configuracion para un IDE especifico.
 
-    Args:
+    Attributes:
         name: Nombre comercial del IDE (ej: "Claude Code").
         config_file: Ruta relativa al archivo de configuracion del IDE
             desde la raiz del proyecto.
@@ -38,7 +46,7 @@ class IDESupport:
     skills_path: str
 
 
-# Lista canonica de IDEs soportados (SSOT).
+# Lista canonica de IDEs soportados (SSOT) - mantenida para compatibilidad.
 SUPPORTED_IDES: List[IDESupport] = [
     IDESupport("Claude Code", ".claude/settings.json", "AGENTS.md", ".claude/skills/"),
     IDESupport("Codex CLI", ".codex/config.toml", "AGENTS.md", ".codex/prompts/"),
@@ -49,11 +57,10 @@ SUPPORTED_IDES: List[IDESupport] = [
 
 
 class IDEAdapter:
-    """Adaptador multi-harness para detectar y exportar configuracion entre IDEs.
+    """Adaptador multi-harness — Fachada que delega en Multi-Harness Layer.
 
-    Permite detectar que IDEs estan configurados en un proyecto, exportar
-    agentes AGENTIC al formato nativo de cada IDE, y consultar la lista
-    completa de IDES soportados.
+    Mantiene compatibilidad hacia atras con el codigo existente mientras
+    utiliza la nueva arquitectura de Multi-Harness Adapter Layer.
 
     Args:
         project_root: Ruta raiz del proyecto. Si es None, se usa CWD.
@@ -72,92 +79,95 @@ class IDEAdapter:
     def detect_ides(self) -> List[str]:
         """Detecta que IDEs tienen configuracion presente en el proyecto.
 
-        Recorre SUPPORTED_IDES y verifica si el archivo de configuracion
-        de cada IDE existe dentro de project_root.
+        Delega en get_detected_runtimes() del Multi-Harness Layer.
 
         Returns:
-            Lista con los nombres de los IDEs detectados (orden de
-            SUPPORTED_IDES). Lista vacia si no se detecta ninguno.
+            Lista con los nombres comerciales de los IDEs detectados.
         """
-        self._detected_ides = []
-        for ide in SUPPORTED_IDES:
-            config = self._root / ide.config_file
-            if config.exists():
-                self._detected_ides.append(ide.name)
-                logger.debug("IDE detectado: %s (config: %s)", ide.name, config)
+        runtimes: List[RuntimeInfo] = get_detected_runtimes(self._root)
+        self._detected_ides = [rt.display_name for rt in runtimes if rt.detected]
         return list(self._detected_ides)
 
     def export_agents(self, target_ide: str, dry_run: bool = False) -> bool:
         """Exporta los agentes AGENTIC al formato del IDE destino.
 
-        Lee los agentes desde ``.opencode/agents/`` y los copia al directorio
-        que el IDE destino espera. Si dry_run es True, solo simula la
-        operacion sin copiar archivos.
+        Delega en cmd_export() del Multi-Harness Layer.
 
         Args:
-            target_ide: Nombre del IDE destino (debe estar en
-                SUPPORTED_IDES).
-            dry_run: Si es True, solo simula la exportacion sin copiar.
+            target_ide: Nombre del IDE destino (debe estar en SUPPORTED_IDES).
+            dry_run: Si es True, solo simula la operacion sin copiar.
 
         Returns:
-            True si se exporto al menos un agente, False si no habia
-            agentes origen o el IDE destino no es soportado.
+            True si se exporto al menos un agente.
 
         Raises:
             OSError: Si hay errores de permisos al escribir en el destino.
         """
-        source_agents = self._root / ".opencode" / "agents"
-        if not source_agents.exists():
-            logger.warning(
-                "No se encontraron agentes origen en %s",
-                source_agents,
-            )
-            return False
+        # Mapear nombre comercial a nombre interno de runtime
+        name_to_runtime: Dict[str, str] = {
+            "Claude Code": "claude",
+            "Codex CLI": "codex",
+            "Cursor": "cursor",
+            "OpenCode": "opencode",
+            "Gemini CLI": "gemini",
+        }
+        runtime_name: Optional[str] = name_to_runtime.get(target_ide)
 
-        ide = next((i for i in SUPPORTED_IDES if i.name == target_ide), None)
-        if ide is None:
+        if not runtime_name:
             logger.warning("IDE destino no soportado: %s", target_ide)
             return False
 
-        # Mapeo de IDE -> directorio destino
-        target_map: Dict[str, Path] = {
-            "Claude Code": Path.home() / ".claude" / "agents",
-            "Codex CLI": Path.home() / ".codex" / "prompts",
+        try:
+            return cmd_export(runtime_name, dry_run=dry_run, project_root=self._root)
+        except OSError:
+            raise
+        except Exception as exc:
+            logger.error("Error exportando a %s: %s", target_ide, exc)
+            return False
+
+    def export_all(self, dry_run: bool = False) -> Dict[str, bool]:
+        """Exporta la configuracion a todos los runtimes soportados.
+
+        Args:
+            dry_run: Si es True, solo simula las operaciones.
+
+        Returns:
+            Dict con nombre de runtime -> resultado (True/False).
+        """
+        results: Dict[str, bool] = {}
+        name_to_runtime: Dict[str, str] = {
+            "Claude Code": "claude",
+            "Codex CLI": "codex",
+            "Cursor": "cursor",
+            "OpenCode": "opencode",
+            "Gemini CLI": "gemini",
         }
-        target = target_map.get(target_ide, source_agents)
-
-        if dry_run:
-            logger.info(
-                "[DRY-RUN] Se exportarian %d agentes a %s",
-                len(list(source_agents.glob("*.md"))),
-                target,
+        for display_name, runtime_name in name_to_runtime.items():
+            results[display_name] = cmd_export(
+                runtime_name, dry_run=dry_run, project_root=self._root,
             )
-            return len(list(source_agents.glob("*.md"))) > 0
-
-        target.mkdir(parents=True, exist_ok=True)
-        count = 0
-        for agent_file in source_agents.glob("*.md"):
-            dest = target / agent_file.name
-            try:
-                import shutil
-                shutil.copy2(str(agent_file), str(dest))
-                count += 1
-                logger.debug("Exportado: %s -> %s", agent_file.name, dest)
-            except OSError as exc:
-                logger.error(
-                    "Error al copiar %s a %s: %s",
-                    agent_file.name, dest, exc,
-                )
-                raise
-
-        logger.info("Exportados %d agentes a %s", count, target)
-        return count > 0
+        return results
 
     def get_supported_ides(self) -> List[IDESupport]:
         """Retorna la lista completa de IDEs soportados.
 
         Returns:
-            Copia de la lista SUPPORTED_IDES con todos los IDEs
-            que el adaptador puede manejar.
+            Copia de la lista SUPPORTED_IDES con todos los IDEs.
         """
         return list(SUPPORTED_IDES)
+
+    def detect_runtime(self) -> RuntimeInfo:
+        """Detecta el runtime activo actualmente.
+
+        Returns:
+            RuntimeInfo con la informacion del runtime detectado.
+        """
+        return detect_runtime(self._root)
+
+    def validate(self) -> bool:
+        """Valida la estructura del proyecto para todos los runtimes.
+
+        Returns:
+            True si todo es valido.
+        """
+        return cmd_validate(self._root)

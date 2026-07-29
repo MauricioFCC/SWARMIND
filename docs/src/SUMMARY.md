@@ -39,7 +39,7 @@
 - [Glosario de Terminos](reference/glosario.md)
 - [Investigacion Aplicada 2026](reference/investigacion-aplicada.md)
 - [Comparativa Harness 2026](reference/comparativa-harness-2026.md)
-- [Investigacion Aplicada 2026](reference/investigacion-aplicada.md)
+
 
 # Roadmap
 - [Estado del Proyecto](roadmap/estado.md)

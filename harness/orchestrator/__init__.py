@@ -34,6 +34,23 @@ _SYMBOL_MAP: Dict[str, str] = {
     "AgentCall": "harness.orchestrator.agent_capsules",
     "CapsuleResult": "harness.orchestrator.agent_capsules",
     "FusionStrategy": "harness.orchestrator.agent_capsules",
+    # Natural Language Tools (arXiv:2607.03953)
+    "NaturalLanguageToolkit": "harness.orchestrator.natural_language_tools",
+    "NLTool": "harness.orchestrator.natural_language_tools",
+    "NLTResult": "harness.orchestrator.natural_language_tools",
+    # Multi-User Governance (arXiv:2606.21856)
+    "MultiUserGovernance": "harness.orchestrator.multi_user_governance",
+    "Role": "harness.orchestrator.multi_user_governance",
+    "User": "harness.orchestrator.multi_user_governance",
+    "AuditEntry": "harness.orchestrator.multi_user_governance",
+    "ExecutionHooks": "harness.orchestrator.multi_user_governance",
+    # Organizational Science (arXiv:2607.25446)
+    "OrganizationalLayer": "harness.orchestrator.organizational_layer",
+    "BelbinRole": "harness.orchestrator.organizational_layer",
+    "RACIMatrix": "harness.orchestrator.organizational_layer",
+    "MintzbergCoordination": "harness.orchestrator.organizational_layer",
+    "CollaborationProtocol": "harness.orchestrator.organizational_layer",
+    "TeamSpec": "harness.orchestrator.organizational_layer",
 }
 
 

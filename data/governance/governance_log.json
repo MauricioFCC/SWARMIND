@@ -1,0 +1,125 @@
+{
+  "589513bd": {
+    "decision_id": "589513bd",
+    "agent": "builder",
+    "action": "implement_api",
+    "context": "",
+    "alternatives": [],
+    "justification": "",
+    "risk_level": "low",
+    "status": "proposed",
+    "timestamp": "2026-07-28T17:18:02.043364+00:00",
+    "approved_by": "system"
+  },
+  "65f705d8": {
+    "decision_id": "65f705d8",
+    "agent": "builder",
+    "action": "implement_api",
+    "context": "",
+    "alternatives": [],
+    "justification": "",
+    "risk_level": "low",
+    "status": "proposed",
+    "timestamp": "2026-07-28T17:19:24.301786+00:00",
+    "approved_by": "system"
+  },
+  "8a5e2caf": {
+    "decision_id": "8a5e2caf",
+    "agent": "scientist",
+    "action": "research_paper",
+    "context": "analisis de transformers",
+    "alternatives": [],
+    "justification": "",
+    "risk_level": "low",
+    "status": "proposed",
+    "timestamp": "2026-07-28T17:19:24.305814+00:00",
+    "approved_by": "system"
+  },
+  "3583fcd7": {
+    "decision_id": "3583fcd7",
+    "agent": "builder",
+    "action": "refactor_module",
+    "context": "",
+    "alternatives": [
+      "dejarlo igual",
+      "reescribir"
+    ],
+    "justification": "mejora de legibilidad",
+    "risk_level": "low",
+    "status": "proposed",
+    "timestamp": "2026-07-28T17:19:24.309321+00:00",
+    "approved_by": "system"
+  },
+  "030bd3e4": {
+    "decision_id": "030bd3e4",
+    "agent": "builder",
+    "action": "deploy_to_production",
+    "context": "",
+    "alternatives": [],
+    "justification": "",
+    "risk_level": "low",
+    "status": "proposed",
+    "timestamp": "2026-07-28T17:19:24.313885+00:00",
+    "approved_by": "system"
+  },
+  "d72675d7": {
+    "decision_id": "d72675d7",
+    "agent": "builder",
+    "action": "delete_database",
+    "context": "",
+    "alternatives": [],
+    "justification": "",
+    "risk_level": "low",
+    "status": "proposed",
+    "timestamp": "2026-07-28T17:19:24.317392+00:00",
+    "approved_by": "system"
+  },
+  "cef761b9": {
+    "decision_id": "cef761b9",
+    "agent": "builder",
+    "action": "implement_api",
+    "context": "",
+    "alternatives": [],
+    "justification": "",
+    "risk_level": "low",
+    "status": "approved",
+    "timestamp": "2026-07-28T17:19:24.492815+00:00",
+    "approved_by": "system"
+  },
+  "9fe8d82d": {
+    "decision_id": "9fe8d82d",
+    "agent": "builder",
+    "action": "implement_api",
+    "context": "",
+    "alternatives": [],
+    "justification": "falta informacion",
+    "risk_level": "low",
+    "status": "rejected",
+    "timestamp": "2026-07-28T17:19:24.502390+00:00",
+    "approved_by": "system"
+  },
+  "1e3459a3": {
+    "decision_id": "1e3459a3",
+    "agent": "builder",
+    "action": "task_a",
+    "context": "",
+    "alternatives": [],
+    "justification": "",
+    "risk_level": "low",
+    "status": "proposed",
+    "timestamp": "2026-07-28T17:19:24.512934+00:00",
+    "approved_by": "system"
+  },
+  "c3c23a09": {
+    "decision_id": "c3c23a09",
+    "agent": "builder",
+    "action": "task_b",
+    "context": "",
+    "alternatives": [],
+    "justification": "",
+    "risk_level": "low",
+    "status": "proposed",
+    "timestamp": "2026-07-28T17:19:24.513940+00:00",
+    "approved_by": "system"
+  }
+}
