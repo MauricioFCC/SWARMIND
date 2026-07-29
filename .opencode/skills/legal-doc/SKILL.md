@@ -173,3 +173,44 @@ Generar: conclusiones técnicas, hoja de ruta procesal, matriz de riesgos, recom
 - Redaccion asistida con principios constitucionales
 - Verificacion de consistencia normativa
 - Deteccion de contradicciones con el ordenamiento
+
+### Framework Legal AI Enterprise (LuMay AI)
+
+**Principio:** El mejor AI legal no es el que responde mas rapido, es aquel cuya respuesta
+puede sostenerse ante un General Counsel, Board, Auditor o Regulador.
+
+#### 1. SLM para Ejecucion
+SLMs (Small Language Models) destacan en trabajo legal estructurado y repetitivo:
+- Revision de NDAs
+- Clasificacion de clausulas
+- Extraccion de metadatos de contratos
+- Enrutamiento de solicitudes legales
+- Analisis basado en playbooks
+
+#### 2. RAG para Evidencia
+Cada respuesta debe estar fundamentada en:
+- Contratos aprobados
+- Politicas de la empresa
+- Playbooks legales
+- Guias regulatorias
+- Plantillas
+- Casos legales previos
+
+#### 3. Verificacion Antes de Generar
+Antes de responder, el sistema debe verificar:
+- Es esta la version mas reciente?
+- Es la jurisdiccion correcta?
+- La fuente citada realmente soporta la conclusion?
+- Hay politicas en conflicto?
+- Cual es el nivel de confianza?
+
+#### 4. Juicio Humano
+La decision final siempre debe recaer en profesionales legales.
+El AI debe reducir trabajo repetitivo, no reemplazar la responsabilidad legal.
+
+#### Criterios de Calidad Enterprise
+- Explainable: La respuesta debe poder explicarse
+- Governed: Debe haber gobierno sobre el proceso
+- Auditable: Cada decision debe ser trazable
+- Defensible: Debe poder defenderse ante un regulador
+- Enterprise-ready: Listo para entorno corporativo
