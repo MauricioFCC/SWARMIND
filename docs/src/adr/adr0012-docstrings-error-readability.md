@@ -1,7 +1,7 @@
 # ADR-0012: DocStrings Obligatorios + Error Readability & Actionability
 
 ## Estado
-**ACEPTADO** — Implementado en commit (pendiente).
+**ACEPTADO** — Implementado en commit 4b99fc4.
 
 ## Contexto
 El sistema AGENTIC genera miles de lineas de codigo entre todos los agentes (builder, scientist, guardian, evolve). Dos problemas recurrentes:

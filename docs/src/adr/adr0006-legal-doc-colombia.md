@@ -1,7 +1,7 @@
 ﻿# ADR-0006: legal-doc Colombia — Skill Juridico Multi-Especialidad
 
 ## Estado
-ACEPTADO — Implementado en commit 00ae958.
+**ACEPTADO** — Implementado en commit 00ae958.
 
 ## Contexto
 El skill legal-doc era generico (GDPR, common law). Se necesita analisis juridico colombiano con fuentes oficiales, derecho comparado y multi-especialidad.

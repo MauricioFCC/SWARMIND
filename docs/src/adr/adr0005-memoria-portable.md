@@ -1,7 +1,7 @@
 ﻿# ADR-0005: Memoria Portable — Paths Universales
 
 ## Estado
-ACEPTADO — Implementado en commit cebe7be.
+**ACEPTADO** — Implementado en commit cebe7be.
 
 ## Contexto
 El sistema tenia paths absolutos (C:\Users\USUARIO\...) que rompian al cambiar de maquina o usuario.

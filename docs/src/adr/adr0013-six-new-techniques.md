@@ -1,7 +1,7 @@
 # ADR-0013: Workflow Patterns, PBT Templates, Context Engineering + 3 tecnicas mas
 
 ## Estado
-**ACEPTADO** — Implementado en commit (pendiente).
+**ACEPTADO** — Implementado en commit 152b99f.
 
 ## Contexto
 AGENTIC implementa delegacion a especialistas, buenas practicas de codigo, ejecucion paralela y economia de tokens. Sin embargo, carece de:

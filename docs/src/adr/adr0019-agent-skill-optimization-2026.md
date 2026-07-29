@@ -2,7 +2,7 @@
 
 ## Estado
 
-**ACEPTADO** — Implementado en 2026-07-22. Commits: 754b6cb, 2883404, 20933a3.
+**ACEPTADO** — Implementado en commit 754b6cb.
 
 ## Contexto
 
