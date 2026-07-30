@@ -103,11 +103,13 @@ class SpeculativeDecoder:
         Args:
             draft_fn: Funcion (prompt, n) -> lista de tokens candidatos.
             verify_fn: Funcion (prompt, candidatos) -> lista de booleanos.
-            config: Configuracion.
+            config: Configuracion con parametros de costo.
         """
         self._draft_fn: Callable[[str, int], List[str]] = draft_fn
         self._verify_fn: Callable[[str, List[str]], List[bool]] = verify_fn
         self._config: SpeculativeConfig = config or SpeculativeConfig()
+        self._draft_cost_ms: float = 1.0   # ms por token drafteado
+        self._verify_cost_ms: float = 3.0  # ms por token verificado
         self._stats: Dict[str, int] = {
             "total_calls": 0,
             "total_tokens_drafted": 0,
@@ -119,6 +121,68 @@ class SpeculativeDecoder:
             self._config.n_draft, self._config.strategy.name,
         )
 
+    def _draft_tokens(self, prompt: str, n: int) -> List[str]:
+        """Genera tokens candidatos usando el drafter.
+
+        Args:
+            prompt: Contexto actual.
+            n: Numero de tokens a generar.
+
+        Returns:
+            Lista de tokens candidatos o lista vacia si error.
+        """
+        try:
+            return self._draft_fn(prompt, n)
+        except Exception as exc:
+            logger.error(
+                "[SpecDecoder] Error en drafter: %s. "
+                "WHY: fallo en generacion de candidatos. WHERE: _draft_tokens.",
+                exc,
+            )
+            return []
+
+    def _verify_tokens(self, prompt: str, candidates: List[str]) -> List[bool]:
+        """Verifica tokens candidatos usando el verifier.
+
+        Args:
+            prompt: Contexto original.
+            candidates: Tokens a verificar.
+
+        Returns:
+            Lista de booleanos indicando aceptacion.
+        """
+        try:
+            return self._verify_fn(prompt, candidates)
+        except Exception as exc:
+            logger.error(
+                "[SpecDecoder] Error en verifier: %s. "
+                "WHY: fallo en verificacion. WHERE: _verify_tokens.",
+                exc,
+            )
+            return [False] * len(candidates)
+
+    def _accept_tokens(
+        self,
+        candidates: List[str],
+        accepted: List[bool],
+    ) -> str:
+        """Construye el siguiente prompt con tokens aceptados.
+
+        Args:
+            candidates: Tokens candidatos.
+            accepted: Mascara de aceptacion.
+
+        Returns:
+            Texto aceptado para agregar al prompt.
+        """
+        accepted_text: str = "".join(
+            c for c, a in zip(candidates, accepted) if a
+        )
+        # Si no se acepto ninguno, forzar el primer candidato
+        if not accepted_text and candidates:
+            accepted_text = candidates[0]
+        return accepted_text
+
     def generate(
         self,
         prompt: str,
@@ -128,103 +192,56 @@ class SpeculativeDecoder:
 
         Args:
             prompt: Prompt de entrada.
-            config: Configuracion opcional (usa la del constructor si no se da).
+            config: Configuracion opcional.
 
         Returns:
             SpeculativeResult con texto generado y metricas.
         """
         cfg: SpeculativeConfig = config or self._config
         start_time: float = time.perf_counter()
-
         current_prompt: str = prompt
         total_drafted: int = 0
         total_accepted: int = 0
-        iterations: int = 0
 
         for iteration in range(cfg.max_iterations):
-            iterations += 1
-
-            # Paso 1: Drafter genera candidatos
-            try:
-                candidates: List[str] = self._draft_fn(current_prompt, cfg.n_draft)
-            except Exception as exc:
-                logger.error(
-                    "[SpecDecoder] Error en drafter: %s. "
-                    "WHY: fallo en generacion de candidatos. WHERE: generate.",
-                    exc,
-                )
-                break
-
+            candidates: List[str] = self._draft_tokens(current_prompt, cfg.n_draft)
             if not candidates:
                 break
 
             total_drafted += len(candidates)
+            accepted: List[bool] = self._verify_tokens(current_prompt, candidates)
+            n_accept: int = sum(1 for a in accepted if a)
+            total_accepted += n_accept
 
-            # Paso 2: Verifier valida candidatos
-            try:
-                accepted: List[bool] = self._verify_fn(current_prompt, candidates)
-            except Exception as exc:
-                logger.error(
-                    "[SpecDecoder] Error en verifier: %s. "
-                    "WHY: fallo en verificacion. WHERE: generate.",
-                    exc,
-                )
+            current_prompt += self._accept_tokens(candidates, accepted)
+
+            if n_accept < len(candidates) * 0.5 or any("[DONE]" in c for c in candidates):
                 break
 
-            n_accepted: int = sum(1 for a in accepted if a)
-            total_accepted += n_accepted
-
-            # Paso 3: Construir siguiente prompt
-            if n_accepted > 0:
-                accepted_tokens: List[str] = [
-                    c for c, a in zip(candidates, accepted) if a
-                ]
-                current_prompt += "".join(accepted_tokens)
-            else:
-                # Si no se acepto ninguno, forzar el primer token
-                if candidates:
-                    current_prompt += candidates[0]
-                    total_accepted += 1
-
-            # Si se aceptaron todos, continuar; si no, posiblemente finalizar
-            if n_accepted < len(candidates) * 0.5:
-                break
-
-            # Verificar si hay señal de fin
-            if any("[DONE]" in c for c in candidates):
-                break
-
-        elapsed: float = (time.perf_counter() - start_time) * 1000
-
-        # Actualizar estadisticas
+        elapsed_ms: float = (time.perf_counter() - start_time) * 1000
         self._stats["total_calls"] += 1
         self._stats["total_tokens_drafted"] += total_drafted
         self._stats["total_tokens_accepted"] += total_accepted
 
-        acceptance_rate: float = (
-            total_accepted / total_drafted if total_drafted > 0 else 0.0
-        )
-
-        # Tiempo ahorrado estimado: asumiendo que el verifier es 3x mas lento
-        estimated_saved: float = (
-            (total_accepted * 0.003) - (total_drafted * 0.001)
-        ) * 1000
+        rate: float = total_accepted / total_drafted if total_drafted > 0 else 0.0
+        saved_estimate: float = max(0.0, (
+            (total_accepted * self._verify_cost_ms) - (total_drafted * self._draft_cost_ms)
+        ) - elapsed_ms)
 
         result: SpeculativeResult = SpeculativeResult(
             text=current_prompt[len(prompt):],
             tokens_drafted=total_drafted,
             tokens_accepted=total_accepted,
-            acceptance_rate=acceptance_rate,
-            time_saved_ms=max(0.0, estimated_saved - elapsed),
-            iterations=iterations,
+            acceptance_rate=rate,
+            time_saved_ms=saved_estimate,
+            iterations=iteration + 1 if total_drafted > 0 else 0,
             method=f"speculative_{cfg.strategy.name.lower()}",
         )
 
         logger.debug(
-            "[SpecDecoder] Generate: %d/%d tokens accepted (%.1f%%), %d iters",
-            total_accepted, total_drafted, acceptance_rate * 100, iterations,
+            "[SpecDecoder] %d/%d tokens accepted (%.1f%%), %d iters",
+            total_accepted, total_drafted, rate * 100, result.iterations,
         )
-
         return result
 
     def get_stats(self) -> Dict[str, Any]:

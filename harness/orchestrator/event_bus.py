@@ -277,16 +277,24 @@ class EventBus:
     def publish_async(
         self,
         event: Event,
-    ) -> int:
-        """Publica un evento de forma asincrona (no bloqueante).
+    ) -> "asyncio.Task[int]":
+        """Publica un evento de forma asincrona usando create_task.
 
         Args:
             event: Evento a publicar.
 
         Returns:
-            Numero de suscriptores encontrados.
+            asyncio.Task que ejecutara la publicacion.
         """
-        return self.publish(event)
+        try:
+            loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
+            return loop.create_task(asyncio.to_thread(self.publish, event))
+        except RuntimeError:
+            # Sin loop en ejecucion, publicar sincrono
+            count: int = self.publish(event)
+            future: "asyncio.Future[int]" = asyncio.Future()
+            future.set_result(count)
+            return future
 
     def get_subscriptions(self, agent_id: str = "") -> List[Subscription]:
         """Retora las suscripciones activas.

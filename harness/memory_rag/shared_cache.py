@@ -33,7 +33,7 @@ _DEFAULT_TTL_S: int = 3600
 _SIMILARITY_THRESHOLD: float = 0.92
 
 
-@dataclass(frozen=True)
+@dataclass
 class CacheEntry:
     """Entrada individual en el cache compartido.
 
@@ -45,7 +45,7 @@ class CacheEntry:
         model: Modelo que genero el resultado.
         created_at: Timestamp de creacion.
         ttl: Tiempo de vida en segundos.
-        hit_count: Contador de accesos.
+        hit_count: Contador de accesos (mutable).
         agent_id: ID del agente que creo la entrada.
     """
     key: str
@@ -179,7 +179,7 @@ class SharedSemanticCache:
         norm_b: float = float(np.linalg.norm(b))
         if norm_a == 0 or norm_b == 0:
             return 0.0
-        return max(0.0, min(1.0, dot / (norm_a * norm_b)))
+        return dot / (norm_a * norm_b)
 
     def get(self, text: str, agent_id: str = "") -> Optional[str]:
         """Busca un resultado en cache por similitud semantica.
@@ -207,6 +207,10 @@ class SharedSemanticCache:
             if best_match is not None:
                 key, result, sim = best_match
                 self._hits += 1
+                # Actualizar hit_count en la entrada
+                if key in self._entries:
+                    entry = self._entries[key]
+                    entry.hit_count += 1
                 # Actualizar LRU
                 if key in self._lru_order:
                     self._lru_order.remove(key)
