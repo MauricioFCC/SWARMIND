@@ -12,6 +12,23 @@ name = "Swarmind-harness"
 version = "0.1.0"
 description = "Multi-Agent Evolutionary Harness"
 requires-python = ">=3.10"
+readme = "README.md"
+authors = [
+    {name = "Mauricio Fonseca Cardona", email = "maodevcol@gmail.com"},
+]
+keywords = ["multi-agent", "orchestration", "llm", "ai-agents", "ascii"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "hypothesis>=6.163.0",
     "lancedb>=0.33",
@@ -22,6 +39,14 @@ dependencies = [
     "schedule>=1.2",
     "torch>=2.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/MauricioFCC/SWARMIND"
+Repository = "https://github.com/MauricioFCC/SWARMIND"
+Issues = "https://github.com/MauricioFCC/SWARMIND/issues"
+Changelog = "https://github.com/MauricioFCC/SWARMIND/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/MauricioFCC/SWARMIND/blob/main/docs/src/en/SUMMARY.md"
+Citation = "https://github.com/MauricioFCC/SWARMIND/blob/main/CITATION.cff"
 
 [project.optional-dependencies]
 dev = [

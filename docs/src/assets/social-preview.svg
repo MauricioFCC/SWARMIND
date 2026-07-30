@@ -105,7 +105,7 @@
     </g>
 
     <g transform="translate(640,530)" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#64748B">
-      <text>pip install swarmind   ·   github.com/swarmind/swarmind   ·   Apache 2.0</text>
+      <text>pip install swarmind-harness   ·   github.com/MauricioFCC/SWARMIND   ·   MIT</text>
     </g>
   </g>
 </svg>

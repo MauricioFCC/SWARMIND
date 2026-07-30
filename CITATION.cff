@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Swarmind"
+version: 0.1.0
+date-released: 2026-07-30
+url: "https://github.com/MauricioFCC/SWARMIND"
+repository-code: "https://github.com/MauricioFCC/SWARMIND"
+license: MIT
+authors:
+  - family-names: "Fonseca Cardona"
+    given-names: "Mauricio"
+    email: "maodevcol@gmail.com"
+    affiliation: "Swarmind Contributors"
+keywords:
+  - multi-agent
+  - orchestration
+  - llm
+  - ai-agents
+  - python
+  - ascii

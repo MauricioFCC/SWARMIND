@@ -18,7 +18,7 @@ When the assets are used **separately** from the full Swarmind project
 (for example, embedded in a slide deck, blog post, or third-party site),
 please include the following attribution:
 
-> Swarmind — <https://github.com/swarmind/swarmind>
+> Swarmind — <https://github.com/MauricioFCC/SWARMIND>
 
 ## What this license does NOT cover
 

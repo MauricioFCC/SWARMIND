@@ -17,9 +17,9 @@ mathjax-support = false
 additional-css = ["docs/theme/custom.css"]
 favicon = "assets/favicon.svg"
 no-section-label = false
-git-repository-url = "https://github.com/anomalyco/opencode"
+git-repository-url = "https://github.com/MauricioFCC/SWARMIND"
 git-repository-icon = "fa-github"
-edit-url-template = "https://github.com/anomalyco/opencode/edit/main/{path}"
+edit-url-template = "https://github.com/MauricioFCC/SWARMIND/edit/main/{path}"
 site-url = "/SWARMIND/"
 
 [output.html.fold]

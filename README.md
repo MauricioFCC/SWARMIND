@@ -4,7 +4,19 @@
 
 **Swarmind** — Evolutive Multi-Agent System
 
-[Documentación](docs/src/en/SUMMARY.md) · [Agents](assets/diagrams/agents-hierarchy.svg) · [Skills](assets/icons/skills.svg) · [Architecture](assets/diagrams/architecture.svg)
+[![CI](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml/badge.svg)](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/MauricioFCC/SWARMIND/actions/workflows/codeql.yml/badge.svg)](https://github.com/MauricioFCC/SWARMIND/actions/workflows/codeql.yml)
+[![codecov](https://img.shields.io/badge/coverage-71.56%25-yellow.svg)](https://github.com/MauricioFCC/SWARMIND)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](pyproject.toml)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
+[![Tests](https://img.shields.io/badge/tests-3420_passing-brightgreen.svg)](harness/tests/)
+[![ADRs](https://img.shields.io/badge/ADRs-32-blueviolet.svg)](docs/src/es/adr/README.md)
+[![Skills](https://img.shields.io/badge/skills-31-orange.svg)](.opencode/skills/)
+[![Agents](https://img.shields.io/badge/agents-20-ff69b4.svg)](.opencode/agents/)
+
+[Documentación](docs/src/en/SUMMARY.md) · [Quickstart](#quickstart) · [Architecture](#architecture) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
@@ -13,6 +25,50 @@
 ![Swarmind](assets/logo.svg)
 
 **Swarmind** is a multi-agent system for orchestration, execution, and continuous self-improvement with 31 contextual skills, multi-level orchestration, GPU acceleration, and token economics.
+
+## Quickstart
+
+```bash
+# 1. Clone
+git clone https://github.com/MauricioFCC/SWARMIND.git
+cd SWARMIND
+
+# 2. Install dependencies (uses uv — fast Rust-based package manager)
+pip install uv
+uv sync
+
+# 3. Run tests
+uv run python -m pytest harness/tests/ -q
+
+# 4. Launch interactive menu
+launcher.bat   # Windows
+# o: python harness/run.py
+```
+
+**Or install from PyPI (when published):**
+
+```bash
+pip install swarmind-harness
+swarmind --help
+```
+
+> **Requirements**: Python 3.10+, [uv](https://github.com/astral-sh/uv), optional CUDA-capable GPU.
+
+## Contents
+
+- [What is Swarmind?](#what-is-swarmind)
+- [Quickstart](#quickstart)
+- [Highlights](#highlights)
+- [Current Status](#current-status-july-2026)
+- [Architecture](#architecture)
+- [Multi-Harness Adapter](#multi-harness-adapter-layer)
+- [Documentation](#documentation)
+- [15 Papers 2026 Implemented](#15-papers-2026-implemented)
+- [Benchmark Projects 2026](#benchmark-projects-2026)
+- [Contributing](#contributing)
+- [Security](#security)
+- [Citation](#citation)
+- [License](#license)
 
 ## Current Status (July 2026)
 
@@ -127,3 +183,19 @@ For detailed structure, see [Architecture — Swiss Watch Pattern](docs/src/en/a
 Swarmind competes with **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (46.2k) and **CodeWhale** (40.2k). The full capability comparison table is in [Harness Comparison 2026](docs/src/es/reference/comparativa-harness-2026.md).
 
 **Key differentiators:** GPU Acceleration (6x), Token Economics (-51%), Full Governance, Zero Trust, Deterministic Hook System, Multi-Harness (5 runtimes), 15 papers 2026 implemented, 3420 tests.
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. Please read our [Code of Conduct](CODE_OF_CONDUCT.md) first.
+
+## Security
+
+Report vulnerabilities via [SECURITY.md](SECURITY.md) — please do **not** open public issues. For sensitive reports, email `maodevcol@gmail.com`.
+
+## Citation
+
+If you use Swarmind in academic work, see [CITATION.cff](CITATION.cff) for BibTeX/APA entries.
+
+## License
+
+[MIT](LICENSE) © 2026 Swarmind Contributors
