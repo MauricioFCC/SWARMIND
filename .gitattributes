@@ -1,0 +1,70 @@
+# Swarmind .gitattributes
+# Cross-platform line-ending normalization and binary hints for git.
+
+# Auto detect text files and normalize line endings to LF in the index
+* text=auto eol=lf
+
+# Force LF for shell scripts (POSIX)
+*.sh        text eol=lf
+*.bash      text eol=lf
+*.zsh       text eol=lf
+
+# Force CRLF for Windows-native scripts
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+*.psm1      text eol=crlf
+
+# Python sources: keep LF, mark as text
+*.py        text eol=lf
+*.pyi       text eol=lf
+*.toml      text eol=lf
+*.cfg       text eol=lf
+*.ini       text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+*.mdx       text eol=lf
+*.rst       text eol=lf
+*.txt       text eol=lf
+
+# Rust sources
+*.rs        text eol=lf
+*.toml      text eol=lf
+
+# Documentation & build outputs that should not be diffed as text
+*.min.js    binary
+*.min.css   binary
+
+# SVGs: keep diffable text but mark as binary so git avoids line-ending churn
+# and tooling recognizes the proper content-type on GitHub.
+*.svg       binary
+
+# Common binary assets
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.webp      binary
+*.ico       binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+*.eot       binary
+*.pdf       binary
+*.zip       binary
+*.gz        binary
+*.tar       binary
+*.wasm      binary
+
+# Jupyter notebooks: keep text but mark unrenderable cells explicitly
+*.ipynb     text eol=lf
+
+# Vendored / generated lockfiles stay as text for diffing but pin to LF
+pnpm-lock.yaml   text eol=lf
+yarn.lock        text eol=lf
+package-lock.json text eol=lf
+Cargo.lock       text eol=lf
+poetry.lock      text eol=lf
+uv.lock          text eol=lf

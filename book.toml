@@ -1,9 +1,13 @@
 [book]
 title = "Swarmind Harness Manual"
 authors = ["Swarmind Team"]
-description = "Documentacion completa del sistema multi-agente Swarmind Swiss Watch"
-language = "es"
-src = "docs/src"
+description = "Complete documentation of the Swarmind multi-agent system"
+language = "en"
+src = "docs/src/en"
+multilingual = false
+
+# To build in Spanish, change `src` and `language`:
+#   src = "docs/src/es", language = "es"
 
 [output.html]
 theme = "docs/theme"
@@ -11,11 +15,38 @@ default-theme = "ayu"
 preferred-dark-theme = "ayu"
 mathjax-support = false
 additional-css = ["docs/theme/custom.css"]
+favicon = "assets/favicon.svg"
+no-section-label = false
+git-repository-url = "https://github.com/anomalyco/opencode"
+git-repository-icon = "fa-github"
+edit-url-template = "https://github.com/anomalyco/opencode/edit/main/{path}"
+site-url = "/SWARMIND/"
+
+[output.html.fold]
+enable = true
+level = 1
+
+[output.html.print]
+enable = true
+page-break = true
 
 [output.html.search]
 limit-results = 30
 teaser-word-count = 10
+use-boolean-and = true
+boost-title = 2
+boost-hierarchy = 1
+boost-paragraph = 1
+expand = true
+heading-split-level = 3
+
+[output.html.playground]
+editable = false
+copyable = true
+copy-js = true
+line-numbers = true
 
 [build]
 build-dir = "docs/book"
 create-missing = true
+use-default-preprocessors = true

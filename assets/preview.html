@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Swarmind — Visual Assets Preview</title>
+  <meta name="description" content="Gallery of all visual assets for the Swarmind project: logo, banner, social preview, diagrams and icons." />
+  <style>
+    :root {
+      --bg: #0F172A;
+      --bg-2: #1E293B;
+      --bg-3: #020617;
+      --fg: #F1F5F9;
+      --muted: #94A3B8;
+      --cyan: #22D3EE;
+      --cyan-2: #06B6D4;
+      --gold: #F59E0B;
+      --line: #1E293B;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(1200px 600px at 10% 0%, rgba(6,182,212,0.10), transparent 60%),
+                  radial-gradient(900px 500px at 90% 100%, rgba(245,158,11,0.08), transparent 60%),
+                  var(--bg-3);
+      color: var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.5;
+      padding: 2.5rem 2rem 4rem;
+    }
+    header {
+      max-width: 1200px;
+      margin: 0 auto 2rem;
+    }
+    h1 {
+      font-size: 2rem;
+      margin: 0 0 .25rem;
+      letter-spacing: 1px;
+    }
+    .tag {
+      color: var(--cyan);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .85rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    p.lede { color: var(--muted); margin: .5rem 0 0; max-width: 70ch; }
+    .grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+    .card {
+      background: linear-gradient(180deg, var(--bg-2), var(--bg));
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 1rem 1rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+      box-shadow: 0 10px 30px -20px rgba(0,0,0,.6);
+    }
+    .card.wide { grid-column: 1 / -1; }
+    .card h2 {
+      margin: 0;
+      font-size: .9rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+    .card .file {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .75rem;
+      color: var(--muted);
+    }
+    .stage {
+      background:
+        linear-gradient(45deg, #0b1220 25%, transparent 25%) 0 0/16px 16px,
+        linear-gradient(-45deg, #0b1220 25%, transparent 25%) 0 8px/16px 16px,
+        #0a1020;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      min-height: 160px;
+    }
+    .card.wide .stage { min-height: 260px; padding: 1.5rem; }
+    .stage img { max-width: 100%; height: auto; display: block; }
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: .75rem;
+      color: var(--muted);
+    }
+    .meta code {
+      background: var(--bg);
+      padding: 2px 6px;
+      border-radius: 6px;
+      color: var(--fg);
+    }
+    .icon-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: .75rem;
+    }
+    .icon-cell {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: .75rem;
+      text-align: center;
+    }
+    .icon-cell img { width: 56px; height: 56px; }
+    .icon-cell .name {
+      display: block;
+      margin-top: .5rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: .7rem;
+      color: var(--muted);
+    }
+    footer {
+      max-width: 1200px;
+      margin: 2.5rem auto 0;
+      color: var(--muted);
+      font-size: .85rem;
+      border-top: 1px solid var(--line);
+      padding-top: 1rem;
+    }
+    footer code { color: var(--fg); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="tag">Swarmind · Visual Assets</div>
+    <h1>Swarmind Asset Gallery</h1>
+    <p class="lede">
+      Reference gallery of every SVG shipped under <code>assets/</code>.
+      Open this file locally in a browser, or serve it on GitHub Pages to preview logos, banners, social cards, diagrams and icons.
+    </p>
+  </header>
+
+  <section class="grid" aria-label="Primary assets">
+    <div class="card">
+      <div class="file">assets/logo.svg</div>
+      <h2>Primary Logo</h2>
+      <div class="stage"><img src="logo.svg" alt="Swarmind logo" width="240" /></div>
+      <div class="meta"><span>512 × 512</span><code>&lt;img src="logo.svg" width="200"&gt;</code></div>
+    </div>
+
+    <div class="card">
+      <div class="file">assets/favicon.svg</div>
+      <h2>Favicon</h2>
+      <div class="stage"><img src="favicon.svg" alt="Swarmind favicon" width="96" /></div>
+      <div class="meta"><span>32 × 32 (vector)</span><code>&lt;link rel="icon" href="favicon.svg"&gt;</code></div>
+    </div>
+
+    <div class="card wide">
+      <div class="file">assets/banner.svg</div>
+      <h2>README Banner</h2>
+      <div class="stage"><img src="banner.svg" alt="Swarmind banner" /></div>
+      <div class="meta"><span>Wide aspect</span><code>![banner](banner.svg)</code></div>
+    </div>
+
+    <div class="card wide">
+      <div class="file">assets/social-preview.svg</div>
+      <h2>GitHub Social Preview</h2>
+      <div class="stage"><img src="social-preview.svg" alt="Swarmind social preview" /></div>
+      <div class="meta"><span>1280 × 640</span><code>Settings → Social preview</code></div>
+    </div>
+  </section>
+
+  <section class="grid" aria-label="Diagrams" style="margin-top: 1.5rem;">
+    <div class="card wide">
+      <h2>Diagrams</h2>
+      <div class="file">assets/diagrams/*.svg</div>
+      <div class="icon-row">
+        <div class="icon-cell"><img src="diagrams/architecture.svg" alt="architecture diagram" /><span class="name">architecture</span></div>
+        <div class="icon-cell"><img src="diagrams/agents-hierarchy.svg" alt="agents hierarchy" /><span class="name">agents-hierarchy</span></div>
+        <div class="icon-cell"><img src="diagrams/data-flow.svg" alt="data flow" /><span class="name">data-flow</span></div>
+        <div class="icon-cell"><img src="diagrams/hook-system.svg" alt="hook system" /><span class="name">hook-system</span></div>
+        <div class="icon-cell"><img src="diagrams/multi-harness.svg" alt="multi-harness" /><span class="name">multi-harness</span></div>
+      </div>
+    </div>
+
+    <div class="card wide">
+      <h2>Icons</h2>
+      <div class="file">assets/icons/*.svg</div>
+      <div class="icon-row">
+        <div class="icon-cell"><img src="icons/agents.svg" alt="agents icon" /><span class="name">agents</span></div>
+        <div class="icon-cell"><img src="icons/architecture.svg" alt="architecture icon" /><span class="name">architecture</span></div>
+        <div class="icon-cell"><img src="icons/performance.svg" alt="performance icon" /><span class="name">performance</span></div>
+        <div class="icon-cell"><img src="icons/security.svg" alt="security icon" /><span class="name">security</span></div>
+        <div class="icon-cell"><img src="icons/skills.svg" alt="skills icon" /><span class="name">skills</span></div>
+        <div class="icon-cell"><img src="icons/tokens.svg" alt="tokens icon" /><span class="name">tokens</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      Brand palette: <code>#0F172A</code> navy · <code>#22D3EE</code> cyan · <code>#06B6D4</code> cyan-deep · <code>#F59E0B</code> gold.
+      See <a style="color: var(--cyan);" href="LICENSE-assets.md">LICENSE-assets.md</a> for usage terms.
+    </p>
+  </footer>
+</body>
+</html>

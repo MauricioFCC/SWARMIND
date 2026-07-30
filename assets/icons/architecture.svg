@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Architecture icon">
+  <title>Architecture — Swiss Watch Pattern</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="28" fill="url(#bg)"/>
+  <circle cx="100" cy="100" r="78" fill="none" stroke="#06B6D4" stroke-opacity="0.25" stroke-width="1"/>
+  <circle cx="100" cy="100" r="58" fill="none" stroke="#06B6D4" stroke-opacity="0.35" stroke-width="1"/>
+  <circle cx="100" cy="100" r="38" fill="none" stroke="#06B6D4" stroke-opacity="0.5" stroke-width="1"/>
+
+  <g transform="translate(100,100)">
+    <g fill="url(#cyan)" stroke="#0F172A" stroke-width="2">
+      <circle r="12"/>
+    </g>
+    <g fill="none" stroke="url(#cyan)" stroke-width="3" stroke-linecap="round">
+      <line x1="0" y1="-12" x2="0" y2="-26"/>
+      <line x1="10.4" y1="6" x2="22.5" y2="13"/>
+      <line x1="-10.4" y1="6" x2="-22.5" y2="13"/>
+    </g>
+    <g fill="#0F172A" stroke="url(#cyan)" stroke-width="1.5">
+      <circle cx="0" cy="-30" r="3.5"/>
+      <circle cx="26" cy="15" r="3.5"/>
+      <circle cx="-26" cy="15" r="3.5"/>
+    </g>
+  </g>
+
+  <g transform="translate(100,100)">
+    <g>
+      <g fill="none" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round">
+        <circle r="58" stroke-dasharray="6 4"/>
+      </g>
+      <g fill="#F59E0B" stroke="#0F172A" stroke-width="1.5">
+        <rect x="-5" y="-66" width="10" height="14" rx="2"/>
+        <rect x="-5" y="52"  width="10" height="14" rx="2" transform="rotate(60)"/>
+        <rect x="-5" y="52"  width="10" height="14" rx="2" transform="rotate(120)"/>
+        <rect x="-5" y="52"  width="10" height="14" rx="2" transform="rotate(180)"/>
+        <rect x="-5" y="52"  width="10" height="14" rx="2" transform="rotate(240)"/>
+        <rect x="-5" y="52"  width="10" height="14" rx="2" transform="rotate(300)"/>
+      </g>
+    </g>
+  </g>
+
+  <g fill="none" stroke="#22D3EE" stroke-width="2" stroke-linecap="round">
+    <line x1="40" y1="40" x2="68" y2="68"/>
+    <line x1="160" y1="40" x2="132" y2="68"/>
+    <line x1="40" y1="160" x2="68" y2="132"/>
+    <line x1="160" y1="160" x2="132" y2="132"/>
+  </g>
+  <g fill="#22D3EE">
+    <circle cx="40"  cy="40"  r="4"/>
+    <circle cx="160" cy="40"  r="4"/>
+    <circle cx="40"  cy="160" r="4"/>
+    <circle cx="160" cy="160" r="4"/>
+  </g>
+</svg>

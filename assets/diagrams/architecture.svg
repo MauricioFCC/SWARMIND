@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" role="img" aria-label="Swarmind architecture">
+  <title>Swarmind — Layered Architecture</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+    <pattern id="grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#06B6D4" stroke-opacity="0.06" stroke-width="1"/>
+    </pattern>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#22D3EE"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <rect width="1200" height="800" fill="url(#grid)"/>
+
+  <g font-family="ui-sans-serif, system-ui, sans-serif" fill="#F1F5F9">
+    <text x="40" y="50" font-size="28" font-weight="800">Swarmind — System Architecture</text>
+    <text x="40" y="78" font-size="14" fill="#94A3B8" font-weight="500" letter-spacing="2">SWISS-WATCH PATTERN · DYNAMIC SCALING · ZERO TRUST</text>
+  </g>
+
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" letter-spacing="2" fill="#0F172A">
+    <g transform="translate(40,110)">
+      <rect width="1120" height="80" rx="12" fill="url(#cyan)"/>
+      <text x="20" y="30">LAYER 5 · USER INTERFACE</text>
+      <g font-size="14" font-weight="600" fill="#0F172A">
+        <g transform="translate(20,40)">
+          <rect width="180" height="30" rx="6" fill="#0F172A" stroke="#22D3EE" stroke-width="1.5"/>
+          <text x="90" y="20" text-anchor="middle" fill="#22D3EE">Web Dashboard</text>
+        </g>
+        <g transform="translate(220,40)">
+          <rect width="180" height="30" rx="6" fill="#0F172A" stroke="#22D3EE" stroke-width="1.5"/>
+          <text x="90" y="20" text-anchor="middle" fill="#22D3EE">CLI (swarmind)</text>
+        </g>
+        <g transform="translate(420,40)">
+          <rect width="180" height="30" rx="6" fill="#0F172A" stroke="#22D3EE" stroke-width="1.5"/>
+          <text x="90" y="20" text-anchor="middle" fill="#22D3EE">REST / gRPC API</text>
+        </g>
+        <g transform="translate(620,40)">
+          <rect width="180" height="30" rx="6" fill="#0F172A" stroke="#22D3EE" stroke-width="1.5"/>
+          <text x="90" y="20" text-anchor="middle" fill="#22D3EE">Python SDK</text>
+        </g>
+        <g transform="translate(820,40)">
+          <rect width="280" height="30" rx="6" fill="#0F172A" stroke="#F59E0B" stroke-width="1.5"/>
+          <text x="140" y="20" text-anchor="middle" fill="#F59E0B">OpenTelemetry Traces</text>
+        </g>
+      </g>
+    </g>
+
+    <g transform="translate(40,210)">
+      <rect width="1120" height="100" rx="12" fill="#1E293B" stroke="#06B6D4" stroke-width="2"/>
+      <text x="20" y="30" fill="#22D3EE">LAYER 4 · ORCHESTRATION</text>
+      <g font-size="14" font-weight="600">
+        <g transform="translate(20,42)">
+          <rect width="280" height="46" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="1.5"/>
+          <text x="140" y="22" text-anchor="middle" fill="#F1F5F9">TaskOrchestrator</text>
+          <text x="140" y="40" text-anchor="middle" font-size="10" fill="#94A3B8">DAG · priorities · budgets</text>
+        </g>
+        <g transform="translate(320,42)">
+          <rect width="280" height="46" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="1.5"/>
+          <text x="140" y="22" text-anchor="middle" fill="#F1F5F9">A2A Protocol</text>
+          <text x="140" y="40" text-anchor="middle" font-size="10" fill="#94A3B8">Agent-to-agent messaging</text>
+        </g>
+        <g transform="translate(620,42)">
+          <rect width="280" height="46" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="1.5"/>
+          <text x="140" y="22" text-anchor="middle" fill="#F1F5F9">Event Bus</text>
+          <text x="140" y="40" text-anchor="middle" font-size="10" fill="#94A3B8">pub/sub · streams</text>
+        </g>
+        <g transform="translate(920,42)">
+          <rect width="180" height="46" rx="8" fill="#0F172A" stroke="#F59E0B" stroke-width="1.5"/>
+          <text x="90" y="22" text-anchor="middle" fill="#F59E0B">Hooks</text>
+          <text x="90" y="40" text-anchor="middle" font-size="10" fill="#94A3B8">PRE / POST</text>
+        </g>
+      </g>
+    </g>
+
+    <g transform="translate(40,330)">
+      <rect width="1120" height="130" rx="12" fill="#1E293B" stroke="#06B6D4" stroke-width="2"/>
+      <text x="20" y="30" fill="#22D3EE">LAYER 3 · AGENT ROLES</text>
+      <g font-size="14" font-weight="700">
+        <g transform="translate(20,42)">
+          <rect width="200" height="74" rx="8" fill="#0F172A" stroke="#F59E0B" stroke-width="2"/>
+          <text x="100" y="26" text-anchor="middle" fill="#F59E0B">Coordinator</text>
+          <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">plan · dispatch</text>
+          <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">token-aware</text>
+        </g>
+        <g transform="translate(240,42)">
+          <rect width="200" height="74" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
+          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">Builder</text>
+          <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">code · refactor</text>
+          <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">test · ship</text>
+        </g>
+        <g transform="translate(460,42)">
+          <rect width="200" height="74" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
+          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">Scientist</text>
+          <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">research · analyze</text>
+          <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">alpha · quant</text>
+        </g>
+        <g transform="translate(680,42)">
+          <rect width="200" height="74" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
+          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">Guardian</text>
+          <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">security · audit</text>
+          <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">policy · zero-trust</text>
+        </g>
+        <g transform="translate(900,42)">
+          <rect width="200" height="74" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
+          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">Evolve</text>
+          <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">meta-learning</text>
+          <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">self-improve</text>
+        </g>
+      </g>
+    </g>
+
+    <g transform="translate(40,480)">
+      <rect width="1120" height="100" rx="12" fill="#1E293B" stroke="#06B6D4" stroke-width="2"/>
+      <text x="20" y="30" fill="#22D3EE">LAYER 2 · MEMORY &amp; KNOWLEDGE</text>
+      <g font-size="14" font-weight="600">
+        <g transform="translate(20,42)">
+          <rect width="260" height="46" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="1.5"/>
+          <text x="130" y="22" text-anchor="middle" fill="#F1F5F9">LanceDB</text>
+          <text x="130" y="40" text-anchor="middle" font-size="10" fill="#94A3B8">vector · multimodal</text>
+        </g>
+        <g transform="translate(300,42)">
+          <rect width="260" height="46" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="1.5"/>
+          <text x="130" y="22" text-anchor="middle" fill="#F1F5F9">Chroma</text>
+          <text x="130" y="40" text-anchor="middle" font-size="10" fill="#94A3B8">embeddings · short-term</text>
+        </g>
+        <g transform="translate(580,42)">
+          <rect width="260" height="46" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="1.5"/>
+          <text x="130" y="22" text-anchor="middle" fill="#F1F5F9">Qdrant</text>
+          <text x="130" y="40" text-anchor="middle" font-size="10" fill="#94A3B8">long-term · high-perf</text>
+        </g>
+        <g transform="translate(860,42)">
+          <rect width="240" height="46" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="1.5"/>
+          <text x="120" y="22" text-anchor="middle" fill="#F1F5F9">SQLite-vec</text>
+          <text x="120" y="40" text-anchor="middle" font-size="10" fill="#94A3B8">edge · offline</text>
+        </g>
+      </g>
+    </g>
+
+    <g transform="translate(40,600)">
+      <rect width="1120" height="130" rx="12" fill="#1E293B" stroke="#06B6D4" stroke-width="2"/>
+      <text x="20" y="30" fill="#22D3EE">LAYER 1 · TOOLING &amp; INFRA</text>
+      <g font-size="14" font-weight="600">
+        <g transform="translate(20,42)">
+          <rect width="200" height="74" rx="8" fill="#0F172A" stroke="#F59E0B" stroke-width="2"/>
+          <text x="100" y="26" text-anchor="middle" fill="#F59E0B">MCP Servers</text>
+          <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">tool protocol</text>
+          <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">pluggable</text>
+        </g>
+        <g transform="translate(240,42)">
+          <rect width="200" height="74" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
+          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">Multi-Harness</text>
+          <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">OpenCode</text>
+          <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">Claude · Cursor · …</text>
+        </g>
+        <g transform="translate(460,42)">
+          <rect width="200" height="74" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
+          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">Security</text>
+          <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">Vault · zero-trust</text>
+          <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">SBOM · audit</text>
+        </g>
+        <g transform="translate(680,42)">
+          <rect width="200" height="74" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
+          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">GPU / Rust</text>
+          <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">CQE core</text>
+          <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">CUDA · Metal</text>
+        </g>
+        <g transform="translate(900,42)">
+          <rect width="200" height="74" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
+          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">31 Skills</text>
+          <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">domain experts</text>
+          <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">composable</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748B">
+    <text x="40" y="770">v1.0 · ADR-001 to ADR-032 · 20 agents · 31 skills · 5 runtimes</text>
+    <text x="1160" y="770" text-anchor="end">CC-BY-SA-4.0</text>
+  </g>
+</svg>

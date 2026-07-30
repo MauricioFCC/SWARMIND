@@ -1,28 +1,32 @@
 ﻿---
 name: Bug Report
-about: Reportar un error en Swarmind
+about: Report a bug in Swarmind
 title: ''
 labels: bug
 assignees: ''
 ---
-**Descripcion del error**
-Describe claramente el problema.
 
-**Para reproducir**
-Pasos para reproducir el comportamiento:
-1. Ejecuta '...'
-2. Usa el comando '...'
-3. Observa el error
+**Describe the bug**
+A clear and concise description of what the bug is.
 
-**Comportamiento esperado**
-Que deberia suceder.
+**To Reproduce**
+Steps to reproduce the behavior:
+1. Run '...'
+2. Use command '...'
+3. See error
 
-**Logs/Errores**
-`
-Pega logs o trazas aqui
-`
+**Expected behavior**
+What you expected to happen.
 
-**Entorno**
-- OS: [Windows/Linux/Mac]
+**Logs / Error output**
+```
+Paste logs or stack trace here
+```
+
+**Environment**
+- OS: [Windows / Linux / macOS]
 - Python version:
 - Swarmind version:
+
+**Additional context**
+Add any other context about the problem here.
