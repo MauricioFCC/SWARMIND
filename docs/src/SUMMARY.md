@@ -39,7 +39,7 @@
 - [Scientist](agents/scientist.md)
 - [Security Engineer](agents/security-engineer.md)
 
-# Skills (31)
+# Skills (31 + 1 built-in)
 - [Ads Optimizer](skills/ads-optimizer.md)
 - [Alpha Research](skills/alpha-research.md)
 - [Architecture](skills/architecture.md)
@@ -84,6 +84,9 @@
 - [Glosario de Terminos](reference/glosario.md)
 - [Investigacion Aplicada 2026](reference/investigacion-aplicada.md)
 - [Comparativa Harness 2026](reference/comparativa-harness-2026.md)
+- [Skills Registry](skills/registry.md)
+- [Otras Skills](skills/otras.md)
+- [Alpha Libraries List](reference/alpha_libraries_list.md)
 
 # Roadmap
 - [Estado del Proyecto](roadmap/estado.md)
@@ -126,3 +129,4 @@
 - [ADR-0035: Maximum Parallelism Architecture](adr/adr0035-maximum-parallelism-2026.md)
 - [ADR-0036: Agentic QA Pipeline 5-Capas](adr/adr0036-agentic-qa-pipeline-2026.md)
 - [ADR-0037: AI Factory Stack — Integracion 7-Capas](adr/adr0037-ai-factory-stack-2026.md)
+- [ADR-0038: Comprehensive Audit & Refactoring](adr/adr0038-comprehensive-audit-2026.md)

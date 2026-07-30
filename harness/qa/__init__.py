@@ -97,11 +97,11 @@ class QAContext:
 
 # ── Exportaciones publicas de todas las capas ─────────────────────────────────
 
-from harness.qa.l1_predictor import FailurePredictor, RiskScore, HistorialEjecucion  # noqa: E402, F401
-from harness.qa.l2_detector import VisualAnomalyDetector, AnomalyReport, AnomalyType  # noqa: E402, F401
-from harness.qa.l3_generator import TestCaseGenerator, TestSuite, GuardrailResult  # noqa: E402, F401
-from harness.qa.l4_agent import AutonomousTestAgent, AgentResult, MCPCommand  # noqa: E402, F401
-from harness.qa.l5_orchestrator import QAOrchestrator, OrchestrationReport, PipelineStatus  # noqa: E402, F401
+from harness.qa.predictor import FailurePredictor, RiskScore, HistorialEjecucion  # noqa: E402, F401
+from harness.qa.detector import VisualAnomalyDetector, AnomalyReport, AnomalyType  # noqa: E402, F401
+from harness.qa.generator import TestCaseGenerator, TestSuite, GuardrailResult  # noqa: E402, F401
+from harness.qa.agent import AutonomousTestAgent, AgentResult  # noqa: E402, F401
+from harness.qa.orchestrator import QAOrchestrator, OrchestrationReport, PipelineStatus  # noqa: E402, F401
 
 __all__ = [
     # Enums

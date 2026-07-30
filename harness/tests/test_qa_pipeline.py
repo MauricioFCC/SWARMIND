@@ -12,16 +12,16 @@ from uuid import uuid4
 import pytest
 
 from harness.qa import QALayer, QAMetadata, QAContext
-from harness.qa.l1_predictor import FailurePredictor, HistorialEjecucion, RiskScore
-from harness.qa.l2_detector import (
+from harness.qa.predictor import FailurePredictor, HistorialEjecucion, RiskScore
+from harness.qa.detector import (
     AnomalyFinding,
     AnomalyReport,
     AnomalyType,
     VisualAnomalyDetector,
 )
-from harness.qa.l3_generator import TestCaseGenerator, TestSuite
-from harness.qa.l4_agent import AutonomousTestAgent, AgentResult
-from harness.qa.l5_orchestrator import (
+from harness.qa.generator import TestCaseGenerator, TestSuite
+from harness.qa.agent import AutonomousTestAgent, AgentResult
+from harness.qa.orchestrator import (
     LayerResult,
     OrchestrationReport,
     PipelineStatus,

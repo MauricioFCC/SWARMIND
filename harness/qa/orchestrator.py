@@ -35,10 +35,10 @@ from typing import Any, Optional
 from uuid import uuid4
 
 from harness.qa import QALayer, QAMetadata, QAContext
-from harness.qa.l1_predictor import FailurePredictor, RiskScore
-from harness.qa.l2_detector import VisualAnomalyDetector, AnomalyReport
-from harness.qa.l3_generator import TestCaseGenerator, TestSuite
-from harness.qa.l4_agent import AutonomousTestAgent, AgentResult, TestResultStatus
+from harness.qa.predictor import FailurePredictor, RiskScore
+from harness.qa.detector import VisualAnomalyDetector, AnomalyReport
+from harness.qa.generator import TestCaseGenerator, TestSuite
+from harness.qa.agent import AutonomousTestAgent, AgentResult, TestResultStatus
 
 logger = logging.getLogger(__name__)
 

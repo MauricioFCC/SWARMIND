@@ -6,9 +6,9 @@
 
 | Metrica | Valor |
 |---------|-------|
-| Tests | 3400+ passing |
+| Tests | 3400+ passing (29 QA + AIFactory verificados) |
 | Cobertura | ~65% (objetivo: 80%) |
-| ADRs | 33 (todos implementados) |
+| ADRs | 38 (todos implementados) |
 | Agentes | 20 especializados (100% perfiles + .min.md) |
 | Skills | 31 contextuales (100% SKILL.md + SKILL.min.md) |
 | Modulos Orchestrator | 48 |

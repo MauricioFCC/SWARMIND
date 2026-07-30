@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import enum
 import logging
+import threading
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -525,7 +526,8 @@ class AIFactory:
             "total_latency_ms": 0.0,
             "layer_metrics": {},
         }
-        self._lock: bool = False
+        self._lock: threading.Lock = threading.Lock()
+        self._is_locked: bool = False
         logger.info(
             "[AIFactory] Inicializado | config=guardrails:%s evals:%s "
             "max_retries:%d",
@@ -600,7 +602,7 @@ class AIFactory:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-        if self._lock:
+        if not self._lock.acquire(blocking=False):
             error_msg = (
                 "[AIFactory] Factory ocupado: ya hay un pipeline en ejecucion. "
                 "Use reset() o espere a que finalice."
@@ -612,7 +614,7 @@ class AIFactory:
         active_config = config or self._config
         pipeline_id = uuid.uuid4().hex[:12]
         self._status = FactoryStatus.PROCESSING
-        self._lock = True
+        self._is_locked = True
         pipeline_start = time.perf_counter()
 
         layers: List[LayerTrace] = []
@@ -877,7 +879,7 @@ class AIFactory:
             )
 
         finally:
-            self._lock = False
+            self._lock.release()
 
     # ------------------------------------------------------------------
     # Streaming del pipeline (AsyncGenerator)
@@ -913,7 +915,7 @@ class AIFactory:
         active_config = config or self._config
         pipeline_id = uuid.uuid4().hex[:12]
         self._status = FactoryStatus.PROCESSING
-        self._lock = True
+        self._lock.acquire()
 
         try:
             # Capa 1: Guardrail Input
@@ -996,7 +998,7 @@ class AIFactory:
             )
 
         finally:
-            self._lock = False
+            self._lock.release()
             self._metrics["total_pipelines"] += 1
 
     # ------------------------------------------------------------------

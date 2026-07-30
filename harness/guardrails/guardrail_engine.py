@@ -43,8 +43,7 @@ from harness.guardrails.builtin_rules import (
     tool_allowlist as _tool_allowlist_fn,
     toxicity,
 )
-from harness.orchestrator.governance_guard import GovernanceGuard
-from harness.orchestrator.tool_guardian import ToolGuardian
+
 
 logger = logging.getLogger(__name__)
 
@@ -288,9 +287,11 @@ class GuardrailEngine:
         """
         self._lock: threading.Lock = threading.Lock()
 
-        # Guardianes externos (reuso de modulos existentes)
-        self._tool_guardian: ToolGuardian = tool_guardian or ToolGuardian()
-        self._governance_guard: GovernanceGuard = governance_guard or GovernanceGuard()
+        # Guardianes externos con lazy loading (evitar acoplamiento directo)
+        from harness.orchestrator.tool_guardian import ToolGuardian as _TG
+        from harness.orchestrator.governance_guard import GovernanceGuard as _GG
+        self._tool_guardian: _TG = tool_guardian or _TG()
+        self._governance_guard: _GG = governance_guard or _GG()
 
         # Configuracion
         self._allowed_tools: Set[str] = allowed_tools or set()
