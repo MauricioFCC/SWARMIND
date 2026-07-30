@@ -4,7 +4,7 @@
 **ACEPTADO** — Auditoria completada, fixes aplicados.
 
 ## Contexto
-Auditoria integral del proyecto AGENTIC por 3 especialistas (Architect, Scientist, Guardian) revelo 37 hallazgos: 5 CRITICAL, 8 HIGH, 15 MEDIUM, 9 LOW. Se requiere refactoring para eliminar sobreingenieria, deuda tecnica y mejorar mantenibilidad.
+Auditoria integral del proyecto Swarmind por 3 especialistas (Architect, Scientist, Guardian) revelo 37 hallazgos: 5 CRITICAL, 8 HIGH, 15 MEDIUM, 9 LOW. Se requiere refactoring para eliminar sobreingenieria, deuda tecnica y mejorar mantenibilidad.
 
 ## Hallazgos CRITICAL (todos corregidos)
 
@@ -81,5 +81,5 @@ qa/l5_orchestrator/__init__.py  qa/orchestrator.py
 
 ## Referencias
 - ADR-0022: Multi-Harness Adapter Layer
-- ADR-0028: Agentic QA Pipeline 5-Capas
+- ADR-0028: Swarmind QA Pipeline 5-Capas
 - ADR-0029: AI Factory Stack Integration

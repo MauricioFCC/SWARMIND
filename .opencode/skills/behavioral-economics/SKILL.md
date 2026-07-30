@@ -159,7 +159,7 @@ Skill de economia del comportamiento para mejorar la toma de decisiones de agent
 - `!behav nudge <comportamiento>` — Diseno de nudge (empujon) para modificar comportamiento sin restringir opciones
 - `!behav market <recurso>` — Diseno de mercado o mecanismo de asignacion entre agentes
 
-## Aplicaciones en AGENTIC
+## Aplicaciones en Swarmind
 
 | Contexto | Aplicacion Economia Comportamental | Beneficio |
 |----------|-------------------------------------|-----------|

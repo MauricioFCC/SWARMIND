@@ -1,6 +1,6 @@
 """CodexAdapter — Adaptador para Codex CLI de OpenAI.
 
-Convierte agentes AGENTIC (.opencode/agents/) al formato nativo de Codex CLI:
+Convierte agentes Swarmind (.opencode/agents/) al formato nativo de Codex CLI:
 
 - .codex/config.toml: Configuracion del asistente Codex.
 - .codex/prompts/: Skills convertidos a archivos de prompt.
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class CodexAdapter(HarnessConverter):
-    """Adaptador para exportar agentes AGENTIC a Codex CLI."""
+    """Adaptador para exportar agentes Swarmind a Codex CLI."""
 
     @property
     def runtime_name(self) -> str:
@@ -40,7 +40,7 @@ class CodexAdapter(HarnessConverter):
         return ".codex"
 
     def export_agents(self, dry_run: bool = False) -> ExportResult:
-        """Exporta agentes AGENTIC a .codex/prompts/.
+        """Exporta agentes Swarmind a .codex/prompts/.
 
         Codex CLI utiliza prompts individuales en lugar de un archivo
         central de agentes. Cada agente .md se copia como prompt.
@@ -80,7 +80,7 @@ class CodexAdapter(HarnessConverter):
         )
 
     def export_skills(self, dry_run: bool = False) -> ExportResult:
-        """Exporta skills AGENTIC a .codex/prompts/skills/.
+        """Exporta skills Swarmind a .codex/prompts/skills/.
 
         Args:
             dry_run: Si es True, solo simula la operacion.
@@ -126,7 +126,7 @@ class CodexAdapter(HarnessConverter):
         """
         config_lines: List[str] = [
             "[project]",
-            'name = "AGENTIC"',
+            'name = "Swarmind"',
             'version = "3.0.0"',
             "",
             "[agent]",

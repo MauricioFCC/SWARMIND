@@ -6,7 +6,7 @@ capabilities: [quality_gates, security_review, risk_assessment, documentation, m
 aliases: [guardian, qa, sec, risk, docs, ops]
 description: Guardián universal — calidad, seguridad, riesgo, documentación y operaciones
 quality_metrics:
-  agentic_mutation_score: "≥85%"
+  Swarmind_mutation_score: "≥85%"
   adversarial_resilience: "≥90%"
   property_coverage: "≥80% invariants"
   fuzzer_branch_cov: "≥60%"
@@ -27,7 +27,7 @@ quality_metrics:
 
 | Framework | Tipo | Resultado Clave | Costo |
 |-----------|------|----------------|-------|
-| **PROBE** | Agentic Property Refinement | +9.79% mutation score, 45 bugs reales | Generator↔Validator minimax |
+| **PROBE** | Swarmind Property Refinement | +9.79% mutation score, 45 bugs reales | Generator↔Validator minimax |
 | **SpecOps** | GUI Agent Testing | 164 bugs, F1 0.89 | <$0.73/test, <8 min/test |
 | **AdverTest** | Adversarial Loop | +8.56% fault detection | Test↔Mutant agent loop |
 | **SMART** | Semantic Mutation + RAG | Validity 42.89%→72.24% | Code chunking + SFT |
@@ -44,7 +44,7 @@ quality_metrics:
 - **Static Analysis**: Lint, Type check, SAST, DAST
 - **Performance**: Benchmark, Profiling, Load testing
 - **Code Review**: Style, Best practices, Security, Performance
-- **Agentic Testing**: PROBE (adversarial refinement), SpecOps (GUI agents), AdverTest (test↔mutant loop), FuzzAgent (evolutionary fuzzing)
+- **Swarmind Testing**: PROBE (adversarial refinement), SpecOps (GUI agents), AdverTest (test↔mutant loop), FuzzAgent (evolutionary fuzzing)
 
 ### Mutation Testing Avanzado
 - **SMART** (Semantic Mutation with Adaptive Retrieval and Tuning): RAG sobre dataset de bugs reales + code chunking + SFT. Incrementa validez semantica de mutantes de 42.89% → 72.24%.
@@ -52,7 +52,7 @@ quality_metrics:
 - **TDAD MutationSmith**: Agente que evalúa suites generando variantes faulty del prompt compilado. Mutation scores 86–100% actuando como oracle autónomo.
 - **CDBench**: Code Defenders — juego zero-sum donde Attacker introduce mutantes y Defender escribe tests que los matan. Benchmark estandarizado para evaluación de agentes. Modelos reasoning (Claude Sonnet 4, Gemini 2.5 Pro) fallen 57-80% de turnos como attackers.
 - **AdverTest**: Framework adversarial dual-agent. Test generation agent (T) ↔ Mutant generation agent (M) en loop adversarial bidireccional. +8.56% fault detection vs mejores LLM methods, +63.30% vs EvoSuite. Defects4J + GrowingBugs.
-- **SWE-Mutation** (ACL 2026 Findings): Benchmark para test suites generadas por LLM. 2,636 mutated variants, 9 lenguajes. Solo 10.20% verification rate en LLMs. Agentic mutation strategy reduce detection rate de 71.04% → 39.81%.
+- **SWE-Mutation** (ACL 2026 Findings): Benchmark para test suites generadas por LLM. 2,636 mutated variants, 9 lenguajes. Solo 10.20% verification rate en LLMs. Swarmind mutation strategy reduce detection rate de 71.04% → 39.81%.
 - **UAgent**: Adversarial co-evolution framework. TG Agent (defender) + MG Agent (attacker). Resilience evolution mechanism. 92% accuracy en boundary-case scenarios. Framework-agnostic (Python/Java).
 - **PROBE** (ACL 2026 Findings): Adversarial refinement para Property-Based Testing. Validator genera counter-implementations semanticamente incorrectas que PASAN la propiedad. Generator refina. +9.79% mutation score. 45 bugs reales confirmados en librerias top-tier.
 - **SWE-ABS**: Adversarial benchmark strengthening. Coverage-driven augmentation + mutation-driven adversarial testing. 50.2% instances strengthened (25.1x mejora). Rechaza 19.78% de patches que antes pasaban. Leaderboard reshuffling: top agent 78.80% → 62.20%.

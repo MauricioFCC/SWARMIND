@@ -1,6 +1,6 @@
 """GeminiAdapter — Adaptador para Gemini CLI de Google.
 
-Convierte agentes AGENTIC (.opencode/agents/) al formato nativo de Gemini CLI:
+Convierte agentes Swarmind (.opencode/agents/) al formato nativo de Gemini CLI:
 
 - .gemini/instructions.md: Instrucciones de sistema para Gemini.
 - .gemini/agents/: Agentes individuales en formato compatible.
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class GeminiAdapter(HarnessConverter):
-    """Adaptador para exportar agentes AGENTIC a Gemini CLI."""
+    """Adaptador para exportar agentes Swarmind a Gemini CLI."""
 
     @property
     def runtime_name(self) -> str:
@@ -40,7 +40,7 @@ class GeminiAdapter(HarnessConverter):
         return ".gemini"
 
     def export_agents(self, dry_run: bool = False) -> ExportResult:
-        """Exporta agentes AGENTIC a .gemini/agents/.
+        """Exporta agentes Swarmind a .gemini/agents/.
 
         Args:
             dry_run: Si es True, solo simula la operacion.
@@ -77,7 +77,7 @@ class GeminiAdapter(HarnessConverter):
         )
 
     def export_skills(self, dry_run: bool = False) -> ExportResult:
-        """Exporta skills AGENTIC a .gemini/skills/.
+        """Exporta skills Swarmind a .gemini/skills/.
 
         Args:
             dry_run: Si es True, solo simula la operacion.
@@ -116,7 +116,7 @@ class GeminiAdapter(HarnessConverter):
         """Genera .gemini/instructions.md con instrucciones de sistema.
 
         Las instrucciones definen el comportamiento de Gemini CLI cuando
-        trabaja con el proyecto AGENTIC. Se genera un resumen de todos
+        trabaja con el proyecto Swarmind. Se genera un resumen de todos
         los agentes y skills disponibles.
 
         Args:
@@ -126,12 +126,12 @@ class GeminiAdapter(HarnessConverter):
             ExportResult con el resultado.
         """
         instructions: List[str] = [
-            "# AGENTIC — Instrucciones de Sistema para Gemini CLI",
+            "# Swarmind — Instrucciones de Sistema para Gemini CLI",
             "",
             "> Generado automaticamente por Multi-Harness Adapter Layer.",
             "> Fuente: .opencode/",
             "",
-            "Eres AGENTIC, un sistema multi-agente construido sobre Gemini CLI.",
+            "Eres Swarmind, un sistema multi-agente construido sobre Gemini CLI.",
             "",
             "## Agentes disponibles",
         ]

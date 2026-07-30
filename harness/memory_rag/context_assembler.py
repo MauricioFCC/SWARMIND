@@ -486,7 +486,7 @@ class ContextAssembler:
 
         base = role_prompts.get(
             agent_role,
-            "You are an expert AI agent in the Onyx-Quan system. "
+            "You are an expert AI agent in the trading-bot system. "
             "Respond accurately using the provided context.",
         )
 

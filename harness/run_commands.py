@@ -578,7 +578,7 @@ def _handle_hermes(cmd: str) -> None:
         logger.info("[Hermes] Bridge stats: %s", stats)
     elif sub in ("", "help"):
         logger.info("[Hermes] Commands:")
-        logger.info("  !hermes sync    - Bidirectional sync AGENTIC <-> Hermes_Memory_Proyects")
+        logger.info("  !hermes sync    - Bidirectional sync Swarmind <-> shared_memory")
         logger.info("  !hermes stats   - Show bridge statistics")
     else:
         logger.info("[Hermes] Unknown subcommand: '%s'. Try '!hermes sync' or '!hermes stats'.", sub)

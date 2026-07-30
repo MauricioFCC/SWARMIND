@@ -80,6 +80,6 @@ Implementar 6 mecanismos de token economy y speed optimization en el harness:
 - **Riesgo**: Observation masking puede perder informacion critica si el placeholder es demasiado agresivo — mitigado con phase-aware compression levels
 
 ## Referencias
-- Mojentum, "Harness Effect: Token Economics for Agentic Systems", 2026
+- Mojentum, "Harness Effect: Token Economics for Swarmind Systems", 2026
 - JetBrains, "Observation Masking in SWE-bench", 2026
 - Hamilton, "Token Maxing: When Token Consumption Outpaces Value", 2026

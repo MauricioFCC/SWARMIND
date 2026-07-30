@@ -4,7 +4,7 @@
 **ACEPTADO** — Implementado Julio 2026.
 
 ## Contexto
-Analisis DOFA identifico 5 mejoras prioritarias para completar el stack de AGENTIC. Investigacion web frontier (15+ papers) confirmo las tecnicas optimas.
+Analisis DOFA identifico 5 mejoras prioritarias para completar el stack de Swarmind. Investigacion web frontier (15+ papers) confirmo las tecnicas optimas.
 
 ## Mejoras Implementadas
 

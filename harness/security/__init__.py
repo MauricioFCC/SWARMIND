@@ -1,4 +1,4 @@
-"""Modulo de Seguridad para AGENTIC — Zero Trust Architecture.
+"""Modulo de Seguridad para Swarmind — Zero Trust Architecture.
 
 Implementa los principios de Zero Trust para comunicacion entre agentes:
 

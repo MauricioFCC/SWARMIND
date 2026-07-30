@@ -1,7 +1,7 @@
 """
 Model Router Adapter — Uses Hermes providers when available, falls back to local Ollama.
 
-This adapter allows AGENTIC to leverage Hermes Agent's provider ecosystem
+This adapter allows Swarmind to leverage Hermes Agent's provider ecosystem
  while maintaining backward compatibility with the standalone router.
 """
 

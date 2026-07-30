@@ -1,9 +1,9 @@
 @echo off
-title AGENTIC Multi-Agent System
+title Swarmind Multi-Agent System
 setlocal enabledelayedexpansion
 
 :: ============================================================================
-:: AGENTIC Launcher — Multi-Agent Evolutionary Harness
+:: Swarmind Launcher — Multi-Agent Evolutionary Harness
 :: ============================================================================
 :: Punto de entrada principal. Detecta uv, activa entorno, lanza menu.
 :: Compatible con Windows 10/11.
@@ -67,7 +67,7 @@ if exist "%ROOT%\.venv" (
 :menu
 echo.
 echo %B%  ╔══════════════════════════════════════╗%RESET%
-echo %B%  ║       AGENTIC CONTROL PANEL          ║%RESET%
+echo %B%  ║       Swarmind CONTROL PANEL          ║%RESET%
 echo %B%  ╠══════════════════════════════════════╣%RESET%
 echo %B%  ║                                      ║%RESET%
 echo %B%  ║  %W% 1) 🧪  Run Tests%RESET%                 %B%║%RESET%

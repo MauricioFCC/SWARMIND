@@ -70,14 +70,14 @@ class TestKnowledgeRecord:
         record = KnowledgeRecord(
             id="test:id",
             type=KnowledgeType.PATTERN,
-            source_project="agentic",
+            source_project="Swarmind",
             source_agent="planner",
             key="test:key",
             value=42,
         )
         assert record.id == "test:id"
         assert record.type == KnowledgeType.PATTERN
-        assert record.source_project == "agentic"
+        assert record.source_project == "Swarmind"
         assert record.source_agent == "planner"
         assert record.key == "test:key"
         assert record.value == 42
@@ -93,7 +93,7 @@ class TestKnowledgeRecord:
         record = KnowledgeRecord(
             id="test:id",
             type=KnowledgeType.PATTERN,
-            source_project="agentic",
+            source_project="Swarmind",
             source_agent="planner",
             key="test:key",
             value=42,
@@ -105,7 +105,7 @@ class TestKnowledgeRecord:
         d = record.to_dict()
         assert d["id"] == "test:id"
         assert d["type"] == "pattern"
-        assert d["source_project"] == "agentic"
+        assert d["source_project"] == "Swarmind"
         assert d["key"] == "test:key"
         assert d["value"] == 42
         assert d["tags"] == ["tag1"]
@@ -118,7 +118,7 @@ class TestKnowledgeRecord:
         d = {
             "id": "test:id",
             "type": "pattern",
-            "source_project": "agentic",
+            "source_project": "Swarmind",
             "source_agent": "planner",
             "key": "test:key",
             "value": 42,

@@ -1,11 +1,11 @@
 """
-Hermes Bridge — puente de integración con Hermes_Memory_Proyects.
+Hermes Bridge — puente de integración con shared_memory.
 
-Permite que Agentic use Hermes como backend de memoria alternativo,
+Permite que Swarmind use Hermes como backend de memoria alternativo,
 sincronizando conocimiento entre ambos sistemas.
 
 Arquitectura:
-  Agentic Harness ←→ MemoryConfig ←→ Hermes_Memory_Proyects
+  Swarmind Harness ←→ MemoryConfig ←→ shared_memory
        ↕                           ↕
   LanceVectorStore          Hermes MemoryService
        ↕
@@ -30,10 +30,10 @@ logger = logging.getLogger(__name__)
 
 class HermesBridge:
     """
-    Puente de integración con Hermes_Memory_Proyects.
+    Puente de integración con shared_memory.
 
     Proporciona:
-      - Detección automática de Hermes_Memory_Proyects
+      - Detección automática de shared_memory
       - Sincronización de conocimiento (bidireccional)
       - Acceso a servicios de Hermes (MemoryService, QualityService)
       - Compatibilidad de schemas entre ambos sistemas
@@ -52,7 +52,7 @@ class HermesBridge:
     ) -> None:
         """
         Args:
-            hermes_path: Ruta a Hermes_Memory_Proyects.
+            hermes_path: Ruta a shared_memory.
                          Si es None, busca en ubicaciones por defecto.
             auto_import: Si True, intenta importar módulos de Hermes al iniciar.
         """
@@ -70,22 +70,22 @@ class HermesBridge:
             )
         else:
             logger.info(
-                "HermesBridge initialized | Hermes_Memory_Proyects not found at %s",
+                "HermesBridge initialized | shared_memory not found at %s",
                 self._hermes_path or "(not configured)",
             )
 
     @staticmethod
     def _resolve_hermes_path(custom_path: Optional[str] = None) -> Optional[str]:
-        """Resuelve la ruta a Hermes_Memory_Proyects."""
+        """Resuelve la ruta a shared_memory."""
         if custom_path:
             return custom_path
 
         # Buscar en ubicaciones conocidas
         candidates = [
             os.environ.get("HERMES_PATH", ""),
-            str(Path.home() / "Documents" / "DEV-SPACE" / "Hermes_Memory_Proyects"),
-            str(Path.home() / "Hermes_Memory_Proyects"),
-            str(Path.cwd() / "Hermes_Memory_Proyects"),
+            str(Path.home() / "Documents" / "DEV-SPACE" / "shared_memory"),
+            str(Path.home() / "shared_memory"),
+            str(Path.cwd() / "shared_memory"),
         ]
 
         for path in candidates:
@@ -123,7 +123,7 @@ class HermesBridge:
 
     @property
     def available(self) -> bool:
-        """Indica si Hermes_Memory_Proyects está disponible."""
+        """Indica si shared_memory está disponible."""
         return self._available
 
     @property
@@ -150,7 +150,7 @@ class HermesBridge:
 
     def sync_to_hermes(self, records: List[Dict]) -> int:
         """
-        Sincroniza registros desde Agentic hacia Hermes.
+        Sincroniza registros desde Swarmind hacia Hermes.
 
         Escribe archivos JSON en el directorio de conocimiento de Hermes.
 
@@ -164,7 +164,7 @@ class HermesBridge:
             logger.warning("Hermes not available, cannot sync")
             return 0
 
-        knowledge_dir = Path(self._hermes_path) / "knowledge" / "agentic_bridge"
+        knowledge_dir = Path(self._hermes_path) / "knowledge" / "Swarmind_bridge"
         knowledge_dir.mkdir(parents=True, exist_ok=True)
 
         count = 0
@@ -186,7 +186,7 @@ class HermesBridge:
 
     def sync_from_hermes(self, pattern: str = "*.json") -> List[Dict]:
         """
-        Sincroniza registros desde Hermes hacia Agentic.
+        Sincroniza registros desde Hermes hacia Swarmind.
 
         Lee archivos JSON del directorio de conocimiento de Hermes.
 
@@ -199,7 +199,7 @@ class HermesBridge:
         if not self._available or not self._hermes_path:
             return []
 
-        knowledge_dir = Path(self._hermes_path) / "knowledge" / "agentic_bridge"
+        knowledge_dir = Path(self._hermes_path) / "knowledge" / "Swarmind_bridge"
         if not knowledge_dir.exists():
             return []
 
@@ -217,10 +217,10 @@ class HermesBridge:
 
     def sync_skills_to_hermes(self, skills_dir: str) -> int:
         """
-        Sincroniza skills de Agentic hacia Hermes.
+        Sincroniza skills de Swarmind hacia Hermes.
 
         Args:
-            skills_dir: Directorio de skills de Agentic (.opencode/skills/).
+            skills_dir: Directorio de skills de Swarmind (.opencode/skills/).
 
         Returns:
             Cantidad de skills sincronizados.
@@ -228,7 +228,7 @@ class HermesBridge:
         if not self._available:
             return 0
 
-        hermes_skills_dir = Path(self._hermes_path) / "skills" / "agentic_bridge"
+        hermes_skills_dir = Path(self._hermes_path) / "skills" / "Swarmind_bridge"
         hermes_skills_dir.mkdir(parents=True, exist_ok=True)
 
         source = Path(skills_dir)

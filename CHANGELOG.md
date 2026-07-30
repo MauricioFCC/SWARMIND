@@ -1,4 +1,4 @@
-# CHANGELOG — AGENTIC Multi-Agent Harness
+# CHANGELOG — Swarmind Multi-Agent Harness
 
 > Documento de trazabilidad de cambios.
 
@@ -102,30 +102,30 @@
 ### Deploy final
 | Proyecto | .opencode | harness | skills |
 |----------|-----------|---------|--------|
-| core-quant-engine | 58 | 2033 | 7 |
-| Historia Clinica | 58 | 3170 | 5 |
-| Onyx-Quan-AIBot | 58 | 337 | 7 |
-| PDV Basic | 62 | 715 | 4 |
-| Hermes_Memory_Proyects | 58 | 1723 | 9 |
+| quant-engine | 58 | 2033 | 7 |
+| health-record | 58 | 3170 | 5 |
+| trading-bot-AIBot | 58 | 337 | 7 |
+| pos-system | 62 | 715 | 4 |
+| shared_memory | 58 | 1723 | 9 |
 
 ---
 
-## [2026-07-07] 🔗 Hermes_Memory_Proyects como nodo central + .env loader + sync bidireccional
+## [2026-07-07] 🔗 shared_memory como nodo central + .env loader + sync bidireccional
 
 ### Problema detectado
 - `HERMES_ROOT` no estaba configurado en el entorno (faltaba `.env`)
-- Hermes_Memory_Proyects no recibía deploy de `.opencode` ni `harness/`
+- shared_memory no recibía deploy de `.opencode` ni `harness/`
 - Dos bridges separados con el mismo nombre (`HermesBridge` en dos archivos)
 - La cognición no se sincronizaba con Hermes
 
 ### Soluciones implementadas
 
 #### 1. `.env` creado con HERMES_ROOT
-- `.env` generado desde `.env.example` con `HERMES_ROOT=C:\Users\USUARIO\Documents\Hermes_Memory_Proyects`
+- `.env` generado desde `.env.example` con `HERMES_ROOT=$HOME\Documents\shared_memory`
 - `hermes_bridge.py` ahora carga automáticamente `.env` al importarse (busca en 3 ubicaciones)
 - No sobreescribe variables de entorno ya existentes
 
-#### 2. Hermes_Memory_Proyects como proyecto destino en deploy_all.py
+#### 2. shared_memory como proyecto destino en deploy_all.py
 - Nueva entrada con all 10 skills desplegadas
 - `_ensure_dir()` agregado para crear directorios faltantes antes de copiar
 - `dst.parent.mkdir(parents=True, exist_ok=True)` para archivos en subdirectorios nuevos
@@ -138,11 +138,11 @@
 ### Deploy final
 | Proyecto | .opencode | harness | skills |
 |----------|-----------|---------|--------|
-| core-quant-engine | 53 | 672 | 7 |
-| Historia Clinica | 53 | 3137 | 5 |
-| Onyx-Quan-AIBot | 53 | 302 | 7 |
-| PDV Basic | 57 | 682 | 4 |
-| **Hermes_Memory_Proyects** | **50** | **299** | **10** |
+| quant-engine | 53 | 672 | 7 |
+| health-record | 53 | 3137 | 5 |
+| trading-bot-AIBot | 53 | 302 | 7 |
+| pos-system | 57 | 682 | 4 |
+| **shared_memory** | **50** | **299** | **10** |
 
 ### Tests
 - 369/369 pasan
@@ -167,10 +167,10 @@
 ### Distribución por proyecto
 | Proyecto | Skills adicionales |
 |----------|-------------------|
-| core-quant-engine | math-doc, science-doc (papers cuantitativos) |
-| Historia Clinica | legal-doc, science-doc (compliance salud + papers médicos) |
-| Onyx-Quan-AIBot | math-doc, science-doc (análisis cuantitativo) |
-| PDV Basic | legal-doc (contratos, compliance retail) |
+| quant-engine | math-doc, science-doc (papers cuantitativos) |
+| health-record | legal-doc, science-doc (compliance salud + papers médicos) |
+| trading-bot-AIBot | math-doc, science-doc (análisis cuantitativo) |
+| pos-system | legal-doc (contratos, compliance retail) |
 
 ### skills_registry.yaml actualizado
 Registro completo con 10 skills documentadas (7 existentes + 3 nuevas).
@@ -298,10 +298,10 @@ Cubre `ContextSection`, `ContextWindow`, `ContextWindowManager`:
 ### Deploy a proyectos
 | Proyecto | Tipo | .opencode | harness | skills |
 |----------|------|-----------|---------|--------|
-| core-quant-engine | trading | 59 files | 649 files | 5 |
-| Historia Clinica | healthtech | 59 files | 3114 files | 3 |
-| Onyx-Quan-AIBot | trading | 59 files | 279 files | 5 |
-| PDV Basic | retail | 63 files | 659 files | 3 |
+| quant-engine | trading | 59 files | 649 files | 5 |
+| health-record | healthtech | 59 files | 3114 files | 3 |
+| trading-bot-AIBot | trading | 59 files | 279 files | 5 |
+| pos-system | retail | 63 files | 659 files | 3 |
 
 ---
 
@@ -426,11 +426,11 @@ Cubre `ContextSection`, `ContextWindow`, `ContextWindowManager`:
 - Validación manual: BudgetManager (2 agents), LazySkillLoader (12 skills), ContextWindow (1000 budget), PromptCacheBuilder
 
 ### Despliegue
-- core-quant-engine: 6/6 archivos nuevos, 5 minified skills
-- Historia Clinica: 6/6 archivos nuevos, 3 minified skills
-- Onyx-Quan-AIBot: 6/6 archivos nuevos, 5 minified skills
-- PDV Basic: 6/6 archivos nuevos, 3 minified skills
-- Hermes_Memory_Proyects: sync completado (15 archivos)
+- quant-engine: 6/6 archivos nuevos, 5 minified skills
+- health-record: 6/6 archivos nuevos, 3 minified skills
+- trading-bot-AIBot: 6/6 archivos nuevos, 5 minified skills
+- pos-system: 6/6 archivos nuevos, 3 minified skills
+- shared_memory: sync completado (15 archivos)
 
 ---
 
@@ -463,7 +463,7 @@ Cubre `ContextSection`, `ContextWindow`, `ContextWindowManager`:
 - Ahora usa mapping directo idx_to_id (template index → subtask ID)
 - API template ahora produce 2 niveles: 1 builder + 3 guardian en paralelo
   - Antes producía 4 niveles secuenciales por el bug de dependencias
-- Eliminados 18 directorios muertos de skills antiguas en AGENTIC
+- Eliminados 18 directorios muertos de skills antiguas en Swarmind
 - Deploy script (deploy_v2.py) ahora limpia automáticamente dead dirs
 
 ### Tests
@@ -473,7 +473,7 @@ Cubre `ContextSection`, `ContextWindow`, `ContextWindowManager`:
 ### Archivos modificados
 - `harness/orchestrator/task_planner.py` — Fix dep_ids con idx_to_id mapping
 - `harness/tests/test_task_planner.py` — Test actualizado para nuevo DAG (2 niveles)
-- `C:\Users\USUARIO\AppData\Local\Temp\opencode\deploy_v2.py` — Clean dead dirs automático
+- `$HOME\AppData\Local\Temp\opencode\deploy_v2.py` — Clean dead dirs automático
 
 ---
 
@@ -540,7 +540,7 @@ Cubre `ContextSection`, `ContextWindow`, `ContextWindowManager`:
   - Eliminado código muerto de parsing async_mode
 - **Embedding centralizado**: `harness/memory_rag/embeddings.py` como ÚNICA fuente
   - Reemplaza `_make_embedding` duplicado en 4+ módulos
-- **.env.example actualizado**: `HERMES_ROOT` con ruta default a Hermes_Memory_Proyects
+- **.env.example actualizado**: `HERMES_ROOT` con ruta default a shared_memory
 
 ### Archivos
 - `harness/memory_rag/embeddings.py` — Nueva función centralizada make_embedding()
@@ -574,7 +574,7 @@ Cubre `ContextSection`, `ContextWindow`, `ContextWindowManager`:
 ## [2026-06-??] Hermes Bridge + Evolve Loop
 
 ### Nuevos módulos
-- Hermes Bridge: sincronización bidireccional AGENTIC ↔ Hermes_Memory_Proyects
+- Hermes Bridge: sincronización bidireccional Swarmind ↔ shared_memory
 - Trajectory Compressor: compresión de conversaciones (45% savings)
 - FTS5 Search: búsqueda full-text con SQLite FTS5
 - Nudge System: persistencia automática de contexto valioso

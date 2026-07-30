@@ -4,9 +4,9 @@
 **ACEPTADO** — Implementado en commit 306e9c4.
 
 ## Contexto
-AGENTIC implementa agentes especializados (builder, scientist, guardian, coordinator, evolve) con skills registrados. Hasta ahora las técnicas incorporadas cubrían patrones de flujo (WFP), testing (PBT), contexto (CEN), trazabilidad (BTR), guardrails (AGR) y versionado (SVE) — ADR-0008 — y lazy loading — ADR-0009.
+Swarmind implementa agentes especializados (builder, scientist, guardian, coordinator, evolve) con skills registrados. Hasta ahora las técnicas incorporadas cubrían patrones de flujo (WFP), testing (PBT), contexto (CEN), trazabilidad (BTR), guardrails (AGR) y versionado (SVE) — ADR-0008 — y lazy loading — ADR-0009.
 
-Sin embargo, el panorama de investigación 2026 ha producido **25+ frameworks y papers nuevos** en 5 especialidades que AGENTIC debe incorporar para mantenerse en la frontera:
+Sin embargo, el panorama de investigación 2026 ha producido **25+ frameworks y papers nuevos** en 5 especialidades que Swarmind debe incorporar para mantenerse en la frontera:
 
 1. **Builder**: SWE-Master (post-training SWE agents), BOAD (bandit agent design discovery), SWE-World (Docker-free training), AOrchestra (dynamic sub-agent creation), ParaManager (lightweight orchestrator), ShapleyFlow (game-theoretic workflow attribution)
 2. **Scientist**: MetaClaw (continual meta-learning), MARS (metacognitive reflection), Hyperagents/DGM-H (self-referential self-improvement), Memento-Skills (skill-as-memory), Native Self-Evolution, ERL (experiential reflective learning), POLARIS (policy repair for small models)
@@ -19,7 +19,7 @@ Sin embargo, el panorama de investigación 2026 ha producido **25+ frameworks y 
 ## Decision
 Actualizar los 4 agentes, 2 skills (evolve, base_principles) y crear 1 skill nuevo (frontend-uiux) con los hallazgos de investigación web frontera 2026.
 
-### 1. Builder — Nuevas técnicas de codificación agentic
+### 1. Builder — Nuevas técnicas de codificación Swarmind
 
 | Técnica | Referencia | Impacto |
 |---------|-----------|---------|
@@ -48,7 +48,7 @@ Actualizar los 4 agentes, 2 skills (evolve, base_principles) y crear 1 skill nue
 |---------|-----------|---------|
 | **MuTON/mewt** | Trail of Bits 2026 | Tree-sitter parsing language-agnostic (FunC, Tolk, Tact, Solidity, Rust, Go). SQLite persistence, two-phase campaigns, AI skill para campaign optimization. |
 | **AdverTest** | Adversarial dual-agent | +8.56% fault detection vs mejores LLM methods, +63.30% vs EvoSuite. Test generation agent ↔ Mutant generation agent. |
-| **SWE-Mutation** | ACL 2026 Findings | 2,636 mutated variants, 9 lenguajes. Solo 10.20% verification rate en LLMs. Agentic mutation strategy reduce detection rate 71.04% → 39.81%. |
+| **SWE-Mutation** | ACL 2026 Findings | 2,636 mutated variants, 9 lenguajes. Solo 10.20% verification rate en LLMs. Swarmind mutation strategy reduce detection rate 71.04% → 39.81%. |
 | **CDBench** | Zero-sum game benchmark | Code Defenders: Attacker introduce mutantes, Defender escribe tests. Modelos reasoning fallan 57-80% como attackers. |
 | **UAgent** | Adversarial co-evolution | TG Agent + MG Agent. 92% accuracy en boundary-case. Framework-agnostic (Python/Java). |
 | **SWE-ABS** | Adversarial benchmark strengthening | 50.2% instances strengthened (25.1x mejora). Rechaza 19.78% de patches que antes pasaban. |
@@ -112,11 +112,11 @@ Creación de `.opencode/skills/frontend-uiux/SKILL.md` (~580 líneas, 18 seccion
 Propagado a 5 proyectos via `scripts/deploy_all.py`:
 | Proyecto | Tipo | .opencode | harness | skills |
 |----------|------|-----------|---------|--------|
-| core-quant-engine | trading | 58 | 2033 | 7 |
-| Historia Clinica | healthtech | 58 | 3170 | 5 |
-| Onyx-Quan-AIBot | trading | 58 | 337 | 7 |
-| PDV Basic | retail | 62 | 715 | 4 |
-| Hermes_Memory_Proyects | general | 58 | 1723 | 9 |
+| quant-engine | trading | 58 | 2033 | 7 |
+| health-record | healthtech | 58 | 3170 | 5 |
+| trading-bot-AIBot | trading | 58 | 337 | 7 |
+| pos-system | retail | 62 | 715 | 4 |
+| shared_memory | general | 58 | 1723 | 9 |
 
 ## Consecuencias
 - **Positivas**: Los 4 agentes ahora incluyen 25+ técnicas de frontera 2026; nuevo skill UI/UX profesional con 10 frameworks; evolve loop potenciado con MetaClaw, MARS, Hyperagents; deploy inmediato a 5 proyectos.

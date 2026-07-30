@@ -24,7 +24,7 @@ Investigacion de 15+ papers julio 2026 + analisis de proyectos similares (VoltAg
 **Archivo:** `harness/orchestrator/multi_user_governance.py`
 
 ## Proyectos Analizados
-| Proyecto | Stars | Gap en AGENTIC |
+| Proyecto | Stars | Gap en Swarmind |
 |----------|-------|----------------|
 | VoltAgent/subagents | 23.8k | Marketplace de skills |
 | trigger.dev | 15.8k | Despliegue serverless |

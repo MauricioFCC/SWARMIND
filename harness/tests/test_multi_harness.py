@@ -82,14 +82,14 @@ class TestRuntimeDetector:
         assert runtime.detected is True
 
     def test_detect_explicit_override(self, temp_project: Path) -> None:
-        """Debe respetar la variable AGENTIC_RUNTIME explicita."""
-        os.environ["AGENTIC_RUNTIME"] = "claude"
+        """Debe respetar la variable Swarmind_RUNTIME explicita."""
+        os.environ["Swarmind_RUNTIME"] = "claude"
         try:
             runtime = detect_runtime(temp_project)
             assert runtime.name == "claude"
             assert runtime.detected is True
         finally:
-            del os.environ["AGENTIC_RUNTIME"]
+            del os.environ["Swarmind_RUNTIME"]
 
     def test_get_detected_runtimes_empty(self, temp_project: Path) -> None:
         """Sin directorios de runtime, solo detecta .opencode/."""
@@ -253,7 +253,7 @@ class TestCursorAdapter:
         cursorrules = temp_project / ".cursorrules"
         assert cursorrules.exists()
         content = cursorrules.read_text(encoding="utf-8")
-        assert "AGENTIC" in content
+        assert "Swarmind" in content
         assert "Test Skill" in content
 
 
@@ -267,7 +267,7 @@ class TestGeminiAdapter:
         instructions = temp_project / ".gemini" / "instructions.md"
         assert instructions.exists()
         content = instructions.read_text(encoding="utf-8")
-        assert "AGENTIC" in content
+        assert "Swarmind" in content
 
 
 # ============================================================================

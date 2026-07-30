@@ -1,8 +1,8 @@
-# Manual Técnico — AGENTIC Harness
+# Manual Técnico — Swarmind Harness
 
 **Versión:** 0.1.0  
 **Última actualización:** Julio 2026  
-**Repositorio:** `agentic-harness`  
+**Repositorio:** `Swarmind-harness`  
 **Python mínimo:** 3.10+
 
 ---
@@ -26,7 +26,7 @@
 
 ### 1.1 Visión General
 
-AGENTIC Harness es un **orquestador multi-agente** con arquitectura **Plan-and-Execute** que descompone tareas del usuario en un DAG (Directed Acyclic Graph) de subtareas atómicas, las asigna a agentes especializados y coordina su ejecución paralela con auto-recuperación.
+Swarmind Harness es un **orquestador multi-agente** con arquitectura **Plan-and-Execute** que descompone tareas del usuario en un DAG (Directed Acyclic Graph) de subtareas atómicas, las asigna a agentes especializados y coordina su ejecución paralela con auto-recuperación.
 
 ```
                     ┌─────────────────────────────────────┐
@@ -83,7 +83,7 @@ El `ScopeAnalyzer` determina cuántos builders y guardians lanzar según la comp
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                     AGENTIC HARNESS                              │
+│                     Swarmind HARNESS                              │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │                    orchestrator/                         │   │
@@ -645,7 +645,7 @@ from harness.orchestrator.federated_memory import (
 )
 
 store = FederatedMemoryStore(
-    project_name="agentic",
+    project_name="Swarmind",
     auto_sync=True,
     sync_interval_sec=300,
 )
@@ -1280,7 +1280,7 @@ LanceDB (db/lancedb/)
 Proyecto A                    Proyecto B                    Proyecto C
 (LanceDB_A)                  (LanceDB_B)                   (LanceDB_C)
      │                            │                            │
-     │  knowledge_agentic.json    │  knowledge_otro.json       │
+     │  knowledge_Swarmind.json    │  knowledge_otro.json       │
      │  ┌─────────────────┐       │  ┌─────────────────┐       │
      │  │ patterns: [...]  │       │  │ patterns: [...]  │       │
      │  │ prompts: [...]   │       │  │ prompts: [...]   │       │
@@ -1748,7 +1748,7 @@ results = store.search("test", np.random.randn(384))
 
 ```bash
 # Todos los tests
-cd agentic-harness
+cd Swarmind-harness
 pytest
 
 # Con cobertura
@@ -1788,4 +1788,4 @@ fail_under = 59     # Jul 2026: 59.69%
 
 ---
 
-*Documentación generada a partir del código fuente de AGENTIC Harness. Julio 2026.*
+*Documentación generada a partir del código fuente de Swarmind Harness. Julio 2026.*

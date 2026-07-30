@@ -101,7 +101,7 @@ def clean_pycache(root: Path) -> None:
 
 def main() -> None:
     """Main."""
-    project_root = Path(__file__).resolve().parent.parent  # AGENTIC/
+    project_root = Path(__file__).resolve().parent.parent  # Swarmind/
 
     logger.info("")
     banner("[Harness reset] Limpiando estado...")

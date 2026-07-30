@@ -1,5 +1,5 @@
 """
-Onyx-Quan-AIBot Core Framework
+trading-bot-AIBot Core Framework
 Enterprise-grade skill orchestration system with guardrails, routing & optimization.
 """
 from .registry import SkillRegistry, SkillContract, registry

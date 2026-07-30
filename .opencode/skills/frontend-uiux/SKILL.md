@@ -8,7 +8,7 @@ description: >
   personalizacion sample-efficient (Bayesian active preference learning),
   y validacion UX (WiserUI-Bench, WCAG 2.2 AA).
   Genera interfaces LLM-native con A2UI/OpenUI, componentes con StyleSeed design rules,
-  y especificaciones machine-readable para el ecosistema AGENTIC.
+  y especificaciones machine-readable para el ecosistema Swarmind.
 version: 1.0.0
 project_agnostic: true
 inherit:
@@ -225,7 +225,7 @@ user-role: { admin: "full-access", trader: "read-write", analyst: "read-only", v
 ```yaml
 # .opencode/design-system/manifest.yaml
 design_system:
-  name: "agentic-ui"
+  name: "Swarmind-ui"
   version: "1.0.0"
   framework: "a2ui"  # Framework-agnostic via A2UI
   layers:

@@ -64,7 +64,7 @@ Skill de psicologia aplicada para mejorar la interaccion, motivacion y efectivid
 - `!psyc cognitive <problema>` — Analisis de carga cognitiva y modelos mentales en un proceso agente
 - `!psyc conflict <situacion>` — Diagnostico y resolucion de conflictos entre agentes
 
-## Aplicaciones en AGENTIC
+## Aplicaciones en Swarmind
 
 | Dominio | Aplicacion Psicologica | Beneficio |
 |---------|----------------------|-----------|

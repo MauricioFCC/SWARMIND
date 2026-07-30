@@ -1,9 +1,9 @@
 ---
 name: scientist
 domain: research
-triggers: [research, paper, architecture, design, pattern, methodology, algorithm, study, analysis, experiment, validate, benchmark, train, model, machine learning, deep learning, ai, llm, statistics, causal, inference, optimization, theory, whitepaper, review, survey, novel, approach, agentic, multi-agent, serving, scheduling, coordination, sharing, token, economics, paradigm, evaluation, metric]
-capabilities: [research, architecture_design, pattern_analysis, ml_ai_design, experiment_design, statistical_validation, causal_analysis, literature_review, agentic_systems, token_economics, multi_agent_evaluation]
-aliases: [scientist, researcher, architect, analyst, agentic_researcher]
+triggers: [research, paper, architecture, design, pattern, methodology, algorithm, study, analysis, experiment, validate, benchmark, train, model, machine learning, deep learning, ai, llm, statistics, causal, inference, optimization, theory, whitepaper, review, survey, novel, approach, Swarmind, multi-agent, serving, scheduling, coordination, sharing, token, economics, paradigm, evaluation, metric]
+capabilities: [research, architecture_design, pattern_analysis, ml_ai_design, experiment_design, statistical_validation, causal_analysis, literature_review, Swarmind_systems, token_economics, multi_agent_evaluation]
+aliases: [scientist, researcher, architect, analyst, Swarmind_researcher]
 description: Científico e investigador — papers, patrones, AI/ML, arquitectura de sistemas, sistemas agenticos
 ---
 
@@ -62,7 +62,7 @@ Metodologias de investigacion para interfaces generadas por IA:
 3. Benchmarks (WiserUI-Bench, PAGEN dataset)
 4. Design judgment rules (StyleSeed 74 rules, Geeklego 45 rules)
 
-### Agentic Systems (v2026)
+### Swarmind Systems (v2026)
 - Parallel Coordinated Reasoning (PaCoRe), LTS shared memory
 - Workflow-aware serving (Helium, Agentix, SwarmX)
 - Token economics, Harness Effect, Cache-shape discipline
@@ -76,7 +76,7 @@ Metodologias de investigacion para interfaces generadas por IA:
 | **LTS** | Learning to Share — memoria compartida aprendida con controller RL que decide qué pasos intermedios son útiles globalmente | Reduce runtime 8.4 min en AssistantBench |
 | **Helium** | Workflow-aware serving que modela workloads agenticos como query plans. Proactive caching + cache-aware scheduling | 1.56x speedup |
 | **Agentix** | Serving con programas como first-class citizens. PLAS/ATLAS scheduling | 4–15x throughput improvement |
-| **SwarmX** | Agentic scheduling con neural predictors para baja latencia | Scheduling latencia optimizada |
+| **SwarmX** | Swarmind scheduling con neural predictors para baja latencia | Scheduling latencia optimizada |
 | **Harness Effect** | El orquestador define la economía de tokens. Cache-shape discipline, structured compaction, failure-spend governance, sub-agents con scoped context | 41% cost reduction, 44% faster, 38% fewer tokens |
 | **CDBench** | Zero-sum benchmark basado en Code Defenders mutation testing game. Attacker vs Defender dinámico | Evaluación adversarial de agentes |
 | **Token Maxing** | Fenómeno donde tokens/task crecen más rápido que el valor entregado. El harness es la palanca decisiva | Guía diseño de orquestadores |
@@ -151,7 +151,7 @@ Aplicar estas técnicas para análisis profundo de documentos:
 
 ## Auto-Mejora e Investigacion Continua (2026 Frontier)
 
-| Framework | Descripcion | Impacto | Aplicacion en AGENTIC |
+| Framework | Descripcion | Impacto | Aplicacion en Swarmind |
 |-----------|-------------|---------|----------------------|
 | **MetaClaw** | Continual meta-learning: skill-driven fast adaptation + opportunistic policy optimization via RL con process reward model. Skill library + base LLM policy evolucionan juntos | +32% accuracy, 8.25x task completion. Sin GPU local via proxy architecture | Evolve loop: skills como behavioral instructions, RL optimization en ventanas de inactividad |
 | **MARS** | Metacognitive Agent Reflective Self-improvement. Principio-based reflection (que evitar) + procedural reflection (como tener exito). Un solo ciclo de recurrencia | Supera multi-turn recursive con mucho menos costo. Single-cycle eficiente | Scientist usa MARS para analisis: reflexion estructurada -> principios -> mejora sin multi-turn loops |

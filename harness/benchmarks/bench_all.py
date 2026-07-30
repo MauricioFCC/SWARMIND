@@ -41,7 +41,7 @@ def run_all() -> List[Dict[str, Any]]:
     from harness.benchmarks.bench_routing import bench_routing
 
     print("=" * 60)
-    print("  AGENTIC Benchmark Suite")
+    print("  Swarmind Benchmark Suite")
     print("  " + datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"))
     print("=" * 60)
 

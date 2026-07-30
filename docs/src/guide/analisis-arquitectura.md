@@ -1,6 +1,6 @@
 # Analisis de Arquitectura: Python vs Rust, Monolith vs Microservicios
 
-## Estado Actual de AGENTIC
+## Estado Actual de Swarmind
 
 | Metrica | Valor |
 |---------|-------|
@@ -57,8 +57,8 @@ def fallback_embedding(text):
     return vec / np.linalg.norm(vec)
 
 # Con PyO3 (Rust, ~0.005ms, 28x speedup)
-import agentic_rs
-vec = agentic_rs.fallback_embedding(text)
+import Swarmind_rs
+vec = Swarmind_rs.fallback_embedding(text)
 ```
 
 Esto solo cuando el perfilador muestre que embeddings es bottleneck (hoy no lo es).

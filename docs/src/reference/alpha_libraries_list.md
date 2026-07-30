@@ -90,7 +90,7 @@ Outlines(structured generation),
 LMQL(query language para LLMs),
 Guidance(structured prompting),
 
-# ===== AGENTIC FRAMEWORKS =====
+# ===== Swarmind FRAMEWORKS =====
 AutoGen-Microsoft(multi-agent conversations),
 CrewAI(agent teams),
 LangGraph(agent workflows con estado),

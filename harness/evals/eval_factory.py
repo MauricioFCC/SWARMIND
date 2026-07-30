@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-EvalFactory — Framework de Evaluacion Multi-Capa para AGENTIC.
+EvalFactory — Framework de Evaluacion Multi-Capa para Swarmind.
 
 Evalua las 7 capas del AI Factory Stack:
     1. LLM Eval:         Mide accuracy, latencia, costos por modelo

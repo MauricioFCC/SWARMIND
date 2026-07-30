@@ -1,6 +1,6 @@
 """RuntimeDetector — Deteccion automatica del runtime activo.
 
-Detecta automaticamente cual asistente AI esta ejecutando AGENTIC
+Detecta automaticamente cual asistente AI esta ejecutando Swarmind
 basado en variables de entorno, archivos de configuracion y heurísticas.
 
 Runtimes soportados:
@@ -84,7 +84,7 @@ def detect_runtime(project_root: Optional[Path] = None) -> RuntimeInfo:
     """Detecta automaticamente el runtime activo.
 
     El orden de deteccion es:
-    1. Variable de entorno AGENTIC_RUNTIME (explicita, override total).
+    1. Variable de entorno Swarmind_RUNTIME (explicita, override total).
     2. Variable de entorno especifica de cada runtime.
     3. Presencia del directorio de configuracion en project_root.
     4. Variable de entorno de API key del proveedor (fallback heuristico).
@@ -106,7 +106,7 @@ def detect_runtime(project_root: Optional[Path] = None) -> RuntimeInfo:
     root: Path = project_root or Path.cwd()
 
     # 1. Override explicito via variable de entorno
-    explicit: Optional[str] = os.environ.get("AGENTIC_RUNTIME")
+    explicit: Optional[str] = os.environ.get("Swarmind_RUNTIME")
     if explicit:
         for rt in RUNTIME_REGISTRY:
             if rt.name == explicit.lower():
@@ -114,7 +114,7 @@ def detect_runtime(project_root: Optional[Path] = None) -> RuntimeInfo:
                 _resolve_config_path(rt, root)
                 logger.info("[RuntimeDetector] Override explicito: %s", rt.display_name)
                 return rt
-        logger.warning("[RuntimeDetector] AGENTIC_RUNTIME desconocido: %s", explicit)
+        logger.warning("[RuntimeDetector] Swarmind_RUNTIME desconocido: %s", explicit)
 
     # 2-3. Deteccion por env var + directorio de configuracion
     for rt in RUNTIME_REGISTRY:

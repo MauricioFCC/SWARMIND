@@ -32,17 +32,17 @@ logger = logging.getLogger(__name__)
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Sync AGENTIC cognition store with Hermes_Memory_Proyects",
+        description="Sync Swarmind cognition store with shared_memory",
     )
     parser.add_argument(
         "--to-hermes",
         action="store_true",
-        help="Export AGENTIC → Hermes (syntheses + knowledge)",
+        help="Export Swarmind → Hermes (syntheses + knowledge)",
     )
     parser.add_argument(
         "--from-hermes",
         action="store_true",
-        help="Import Hermes → AGENTIC asi_cognition_store",
+        help="Import Hermes → Swarmind asi_cognition_store",
     )
     parser.add_argument(
         "--hermes-root",

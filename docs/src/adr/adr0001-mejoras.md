@@ -1,4 +1,4 @@
-# ADR-0001: AGENTIC Harness — Sistema Multi-Agente Evolutivo
+# ADR-0001: Swarmind Harness — Sistema Multi-Agente Evolutivo
 
 ## Estado
 **ACEPTADO** — Implementado y en producción desde Julio 2026.
@@ -15,7 +15,7 @@ Se necesita un sistema de orquestación multi-agente que permita a LLMs (Large L
 
 ## Decisión
 
-Construir **AGENTIC Harness**, un sistema multi-agente con las siguientes características fundamentales:
+Construir **Swarmind Harness**, un sistema multi-agente con las siguientes características fundamentales:
 
 ### 1. Arquitectura Swiss Watch
 
@@ -110,7 +110,7 @@ Los siguientes ADRs han sido deprecados y su contenido esta resumido aqui:
 | 0002 | Dynamic Scaling | ScopeAnalyzer analiza el mensaje y escala de 1-11 agentes segun complejidad (small→xlarge). 4 niveles, integrado en TaskPlanner.decompose(). |
 | 0003 | Context Injector | Inyecta recordatorio ultra-compacto (~23 tokens) en CADA subtarea: `[F]!DOC_ES_OBLIG!+!ERR_ACTION!+!TH!+!HEX!+CleanCode+DRY+KISS+SSOT+<900LC+fn<60ln+YAGNI+Patrones+DoD+tests>80+Seg+CacheShape+obsMask+scopedCtx+parMax+ResearchFirst+Idempotencia`. Ahorra ~400 tokens por sesion. |
 | 0004 | Skill Router | Selecciona solo 1-2 skills relevantes por tarea usando keyword matching + embedding. Reduce 60-80% tokens en skills. |
-| 0005 | Memoria Portable | Sistema de paths con 3 niveles de fallback: HERMES_ROOT env var → ~/Documents/Hermes_Memory_Proyects/ → ~/Documents/AGENTIC_MEMORY/. Elimina paths absolutos. |
+| 0005 | Memoria Portable | Sistema de paths con 3 niveles de fallback: HERMES_ROOT env var → ~/Documents/shared_memory/ → ~/Documents/Swarmind_MEMORY/. Elimina paths absolutos. |
 | 0006 | Legal Doc Colombia | Skill legal-doc reescrito con metodologia RTF+C, 8 roles, fuentes colombianas (SUIN, Relatoria CC), 8 especialidades, 7 fases. |
 
 ## Estado Actual (Julio 2026)
@@ -126,7 +126,7 @@ Los siguientes ADRs han sido deprecados y su contenido esta resumido aqui:
 
 ## Referencias
 
-- [GUIA_AGENTIC.md](../../GUIA_AGENTIC.md) — Guía completa de uso
+- [GUIA_Swarmind.md](../../GUIA_Swarmind.md) — Guía completa de uso
 - [AgentVerse (arXiv 2308.10848)](https://arxiv.org/abs/2308.10848) — Multi-agent collaboration
 - [AutoGen (Microsoft)](https://www.microsoft.com/en-us/research/blog/autogen-enabling-next-generation-large-language-model-applications/) — Multi-agent conversation framework
 - [CrewAI](https://docs.crewai.com/) — Multi-agent orchestration patterns

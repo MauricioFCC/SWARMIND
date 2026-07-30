@@ -4,7 +4,7 @@
 **ACEPTADO** — Implementado en julio 2026.
 
 ## Contexto
-El archivo AI agents.txt enfatiza: "Hooks = AUTOMATION. Pre-tool, post-tool, on-edit, on-notification. Deterministic — the LLM doesn't control them." AGENTIC carecia de un sistema de hooks deterministas, lo que limitaba la automatizacion de validaciones de seguridad, formato y auditoria.
+El archivo AI agents.txt enfatiza: "Hooks = AUTOMATION. Pre-tool, post-tool, on-edit, on-notification. Deterministic — the LLM doesn't control them." Swarmind carecia de un sistema de hooks deterministas, lo que limitaba la automatizacion de validaciones de seguridad, formato y auditoria.
 
 ## Decision
 Implementar un sistema de hooks con 4 componentes:

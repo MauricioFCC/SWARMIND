@@ -1,5 +1,5 @@
 @echo off
-title AGENTIC - Push to Drive
+title Swarmind - Push to Drive
 cd /d "%~dp0"
 
 :: ── Colors ───────────────────────────────────────────────────────────────
@@ -46,7 +46,7 @@ if %errorlevel% neq 0 (
 
 :: ── Export to Google Drive ──────────────────────────────────────────────
 echo.
-echo %B%  📤 Exporting AGENTIC to Google Drive...%RESET%
+echo %B%  📤 Exporting Swarmind to Google Drive...%RESET%
 echo.
 
 uv run python scripts/export_to_drive.py
@@ -55,7 +55,7 @@ set "EXIT_CODE=%errorlevel%"
 echo.
 if %EXIT_CODE% equ 0 (
     echo %G%  ✅ Push complete!%RESET%
-    echo %W%  📍 C:\Users\USUARIO\Mi unidad\DEV\SIDEPROYECT\exports%RESET%
+    echo %W%  📍 $HOME\Mi unidad\DEV\SIDEPROYECT\exports%RESET%
 ) else (
     echo %R%  ❌ Push failed (exit %EXIT_CODE%)%RESET%
 )

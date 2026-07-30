@@ -117,7 +117,7 @@ Intervalos optimos: 1 dia → 7 dias → 16 dias → 35 dias
 - `!edu lesson <tema>` — Plan de clase/secuencia didactica completa
 - `!edu andragogy <objetivo>` — Diseno andragogico para aprendizaje de adultos
 
-## Aplicaciones en AGENTIC
+## Aplicaciones en Swarmind
 
 | Contexto | Aplicacion Educativa | Beneficio |
 |----------|---------------------|-----------|

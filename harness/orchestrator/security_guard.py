@@ -8,7 +8,7 @@ Implementa controles de seguridad criticos para sistemas multi-agente:
 - Behavioral Monitoring
 - Runtime Security Checks
 
-Basado en: OWASP Agentic AI Top 10, NIST AI RMF, Zero Trust Model.
+Basado en: OWASP Swarmind AI Top 10, NIST AI RMF, Zero Trust Model.
 """
 
 from __future__ import annotations

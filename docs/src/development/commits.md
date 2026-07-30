@@ -1,4 +1,4 @@
-﻿# Commits Convencionales — AGENTIC Harness
+﻿# Commits Convencionales — Swarmind Harness
 
 > **Estandar:** Conventional Commits v1.0 · **Idioma:** Espanol · **Branch:** main (commits directos)
 
@@ -37,7 +37,7 @@ feat(tests): +245 tests para archivos 0%
 feat(skills): 13 SKILL.min.md creados - cobertura 100% (29/29)
 feat(legal-nlp): LegalAnalyzer con SaulLM/Arg-LLaDA + 13 tests
 feat: Agent Capsules -51% tokens + ADR-0021 frontier gaps
-fix: safety check on export for non-AGENTIC files
+fix: safety check on export for non-Swarmind files
 fix: dynamic cache threshold type-safe para tests con mock
 docs(mdbook): configuracion actualizada con src=docs/src
 docs(full): documentacion 1:1 de agentes y skills completa

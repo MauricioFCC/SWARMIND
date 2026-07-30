@@ -29,7 +29,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
 
 # Raiz del proyecto
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # AGENTIC/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # Swarmind/
 SKILLS_DIR = PROJECT_ROOT / ".opencode" / "skills"
 
 # Frontmatter keys que preservar en version minificada

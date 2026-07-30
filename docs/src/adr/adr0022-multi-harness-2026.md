@@ -4,14 +4,14 @@
 **ACEPTADO** — Investigacion y diseno completados.
 
 ## Contexto
-AGENTIC nacio como un sistema disenado exclusivamente para OpenCode (.opencode/).
+Swarmind nacio como un sistema disenado exclusivamente para OpenCode (.opencode/).
 Sin embargo, el ecosistema de AI coding assistants se ha diversificado: Claude Code,
 Codex CLI, Cursor, Gemini CLI. Cada uno tiene su propio formato de configuracion,
 agentes, skills y reglas de proyecto.
 
 El archivo `AI agents.txt` (Julio 2026) explicita que una arquitectura multi-harness
 es esencial para la supervivencia del proyecto. ECC soporta 7+ harnesses.
-CowAgent soporta 11 canales. AGENTIC necesita abrirse sin perder compatibilidad.
+CowAgent soporta 11 canales. Swarmind necesita abrirse sin perder compatibilidad.
 
 ## Decisiones
 
@@ -21,7 +21,7 @@ CowAgent soporta 11 canales. AGENTIC necesita abrirse sin perder compatibilidad.
 - El unico runtime que lee/escribe nativamente .opencode/ es OpenCode
 
 ### 2. Deteccion automatica de runtime
-Se detecta automaticamente cual runtime esta ejecutando AGENTIC:
+Se detecta automaticamente cual runtime esta ejecutando Swarmind:
 
 | Runtime | Señal de deteccion |
 |---|---|
@@ -30,7 +30,7 @@ Se detecta automaticamente cual runtime esta ejecutando AGENTIC:
 | Codex CLI | `CODEX_CLI_SESSION` o `OPENAI_API_KEY` + `.codex/` |
 | Cursor | `CURSOR_MODE` o `CURSOR_TRACE_ID` |
 | Gemini CLI | `GEMINI_CLI` o `GOOGLE_API_KEY` + `.gemini/` |
-| Fallback | Variable `AGENTIC_RUNTIME` explicita |
+| Fallback | Variable `Swarmind_RUNTIME` explicita |
 
 ### 3. Capa de abstraccion: Converter Base + 5 adaptadores
 ```
@@ -54,12 +54,12 @@ compatibilidad hacia atras. Todos los metodos existentes se mantienen.
 ### 5. Hooks System (derivado del analisis)
 El archivo `AI agents.txt` enfatiza: *"Hooks = AUTOMATION. Pre-tool, post-tool,
 on-edit, on-notification. Deterministic — the LLM doesn't control them."*
-AGENTIC no tenia hooks hasta ahora. Se implementa como parte de esta iniciativa.
+Swarmind no tenia hooks hasta ahora. Se implementa como parte de esta iniciativa.
 
 ## Consecuencias
 
 ### Positivas
-- AGENTIC funciona desde 5+ runtimes sin cambios al codigo usuario
+- Swarmind funciona desde 5+ runtimes sin cambios al codigo usuario
 - El CLI `!harness export/status/detect` abstrae toda la complejidad
 - Compatibilidad hacia atras total: IDEAdapter y .opencode/ intactos
 - Hooks proporcionan automatizacion determinista (validacion, formato, linting, seguridad)

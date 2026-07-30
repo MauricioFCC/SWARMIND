@@ -1,6 +1,6 @@
 # Roadmap y Estado del Proyecto
 
-> Estado actual del sistema AGENTIC Harness a 2026-07-29.
+> Estado actual del sistema Swarmind Harness a 2026-07-29.
 > Documento vivo que refleja el progreso, hitos y proximos objetivos.
 
 ---

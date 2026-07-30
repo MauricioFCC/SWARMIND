@@ -1,7 +1,7 @@
 [book]
-title = "AGENTIC Harness Manual"
-authors = ["AGENTIC Team"]
-description = "Documentacion completa del sistema multi-agente AGENTIC Swiss Watch"
+title = "Swarmind Harness Manual"
+authors = ["Swarmind Team"]
+description = "Documentacion completa del sistema multi-agente Swarmind Swiss Watch"
 language = "es"
 src = "docs/src"
 

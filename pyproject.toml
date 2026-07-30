@@ -8,7 +8,7 @@ include = ["harness*"]
 exclude = ["docs*", ".opencode*"]
 
 [project]
-name = "agentic-harness"
+name = "Swarmind-harness"
 version = "0.1.0"
 description = "Multi-Agent Evolutionary Harness"
 requires-python = ">=3.10"

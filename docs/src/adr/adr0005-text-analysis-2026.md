@@ -76,7 +76,7 @@ El scientist.md incorpora:
 - Seccion de tecnicas 2026 (Doc-Researcher, Arg-LLaDA, discourse parsing, argument mining)
 
 ## Archivos Modificados
-- `.opencode/agents/scientist.md`: 133 lineas con paradigmas agentic + text analysis + metricas
+- `.opencode/agents/scientist.md`: 133 lineas con paradigmas Swarmind + text analysis + metricas
 - `.opencode/agents/scientist.agent.min.md`: triggers, capabilities y descripcion ampliados
 - `harness/memory_rag/context_injector.py`: STANDARDS_ENCODED con text-analysis techniques
 

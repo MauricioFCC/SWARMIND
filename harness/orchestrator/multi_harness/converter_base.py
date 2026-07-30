@@ -1,7 +1,7 @@
 """HarnessConverter — Clase base abstracta para adaptadores de runtime.
 
 Define el contrato que todos los adaptadores de runtime deben implementar.
-Cada adaptador convierte agentes, skills y configuracion de AGENTIC (.opencode/)
+Cada adaptador convierte agentes, skills y configuracion de Swarmind (.opencode/)
 al formato nativo del runtime destino.
 
 Principios:
@@ -45,10 +45,10 @@ class HarnessConverter(ABC):
 
     Cada runtime (Claude Code, Codex CLI, Cursor, Gemini CLI, OpenCode)
     debe implementar esta interfaz para exportar agentes, skills y
-    configuracion desde el formato SSOT de AGENTIC.
+    configuracion desde el formato SSOT de Swarmind.
 
     Args:
-        project_root: Raiz del proyecto AGENTIC.
+        project_root: Raiz del proyecto Swarmind.
     """
 
     def __init__(self, project_root: Optional[Path] = None) -> None:
@@ -85,7 +85,7 @@ class HarnessConverter(ABC):
 
     @abstractmethod
     def export_agents(self, dry_run: bool = False) -> ExportResult:
-        """Exporta los agentes AGENTIC al formato nativo del runtime.
+        """Exporta los agentes Swarmind al formato nativo del runtime.
 
         Args:
             dry_run: Si es True, solo simula la operacion sin escribir.
@@ -97,7 +97,7 @@ class HarnessConverter(ABC):
 
     @abstractmethod
     def export_skills(self, dry_run: bool = False) -> ExportResult:
-        """Exporta los skills AGENTIC al formato nativo del runtime.
+        """Exporta los skills Swarmind al formato nativo del runtime.
 
         Args:
             dry_run: Si es True, solo simula la operacion sin escribir.
@@ -109,7 +109,7 @@ class HarnessConverter(ABC):
 
     @abstractmethod
     def export_config(self, dry_run: bool = False) -> ExportResult:
-        """Exporta la configuracion general de AGENTIC al runtime.
+        """Exporta la configuracion general de Swarmind al runtime.
 
         Args:
             dry_run: Si es True, solo simula la operacion sin escribir.
@@ -146,7 +146,7 @@ class HarnessConverter(ABC):
         return results
 
     def validate(self) -> List[str]:
-        """Valida que el proyecto AGENTIC tenga los archivos minimos necesarios.
+        """Valida que el proyecto Swarmind tenga los archivos minimos necesarios.
 
         Returns:
             Lista de errores de validacion. Lista vacia si todo esta correcto.

@@ -1,5 +1,5 @@
 """
-AGENTIC Launcher — CLI entry point for the Multi-Agent System.
+Swarmind Launcher — CLI entry point for the Multi-Agent System.
 
 Provides a unified command-line interface for all common operations.
 The .bat wrapper calls this script for advanced functions.
@@ -117,7 +117,7 @@ def do_menu() -> int:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="AGENTIC Multi-Agent System Launcher"
+        description="Swarmind Multi-Agent System Launcher"
     )
     parser.add_argument("command", nargs="?", default="menu",
         choices=["test", "cov", "deploy", "export", "lint", "gpu",

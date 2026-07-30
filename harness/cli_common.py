@@ -204,7 +204,7 @@ def check_first_run(harness_root: Path) -> bool:
     logger = logging.getLogger(__name__)
 
     logger.info("=" * 60)
-    logger.info("  AGENTIC Harness -- Primera ejecucion detectada")
+    logger.info("  Swarmind Harness -- Primera ejecucion detectada")
     logger.info("=" * 60)
     logger.info("")
 

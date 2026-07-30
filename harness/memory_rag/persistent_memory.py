@@ -1,5 +1,5 @@
 ﻿"""
-PersistentMemory - Memoria cross-session tipo Engram para AGENTIC.
+PersistentMemory - Memoria cross-session tipo Engram para Swarmind.
 
 Inspirado en Engram (ASDT): persiste el contexto entre sesiones de trabajo
 para que los agentes retomen donde dejaron.
@@ -46,7 +46,7 @@ class PersistentMemory:
     Memoria persistente cross-session.
 
     Almacena y recupera contexto entre sesiones de trabajo.
-    Similar a Engram pero integrado con el ecosistema AGENTIC.
+    Similar a Engram pero integrado con el ecosistema Swarmind.
 
     Usage:
         pm = PersistentMemory()

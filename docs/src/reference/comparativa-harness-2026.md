@@ -1,4 +1,4 @@
-# Comparativa de Harness 2026 — AGENTIC vs Ecosistema
+# Comparativa de Harness 2026 — Swarmind vs Ecosistema
 
 ## Proyectos Analizados
 
@@ -8,11 +8,11 @@
 | **DeerFlow** | 78.1k | Python | — | — | SuperAgent de largo horizonte |
 | **CowAgent** | 46.2k | Python | — | — | Harness multi-canal con auto-evolucion |
 | **CodeWhale** | 40.2k | Rust | — | — | Fleet execution, multi-provider |
-| **AGENTIC** | — | Python | 20 | 30 | GPU, token economics, governance, calidad |
+| **Swarmind** | — | Python | 20 | 30 | GPU, token economics, governance, calidad |
 
-## Fortalezas de AGENTIC vs Otros Harness
+## Fortalezas de Swarmind vs Otros Harness
 
-| Capacidad | ECC | CowAgent | CodeWhale | **AGENTIC** |
+| Capacidad | ECC | CowAgent | CodeWhale | **Swarmind** |
 |-----------|-----|----------|-----------|-------------|
 | GPU Acceleration | ❌ | ❌ | ❌ | **RTX 4060 6x** |
 | Token Economics | ❌ | ❌ | ❌ | **-51% capsules, -40% structured** |
@@ -32,9 +32,9 @@
 | ADRs documentados | ❌ | ❌ | ❌ | **28 ADRs** |
 | Governance Decay Detection | ❌ | ❌ | ❌ | **GovernanceGuard** |
 
-## Gaps de AGENTIC vs Otros Harness
+## Gaps de Swarmind vs Otros Harness
 
-| Capacidad | Lider | Que tiene | AGENTIC necesita |
+| Capacidad | Lider | Que tiene | Swarmind necesita |
 |-----------|-------|-----------|-----------------|
 | Agentes | ECC | 67 agentes especializados | Mas agentes especializados |
 | Skills | ECC | 281 skills | Mas skills (marketplace) |
@@ -47,10 +47,10 @@
 
 ## Conclusion
 
-AGENTIC ocupa un **nicho unico** en el ecosistema de harness:
+Swarmind ocupa un **nicho unico** en el ecosistema de harness:
 - **Calidad de codigo**: 3350+ tests, PBT, refinement types, 28 ADRs
 - **Optimizacion de costos**: token economics (-51% capsules, -40% structured), GPU acceleration (6x search)
 - **Gobernanza enterprise**: GovernanceAgent, GovernanceGuard, MultiUserGovernance, OrganizationalLayer, SecurityGuard, ToolGuardian, AgentCostController
 - **Research-first**: 15 papers 2026 implementados con gap analysis riguroso
 
-Mientras ECC domina en cantidad de agentes/skills (67/281, 235k stars), AGENTIC domina en calidad, testing, gobierno e investigacion aplicada. La combinacion ideal seria AGENTIC + ECC: calidad AGENTIC con cantidad ECC.
+Mientras ECC domina en cantidad de agentes/skills (67/281, 235k stars), Swarmind domina en calidad, testing, gobierno e investigacion aplicada. La combinacion ideal seria Swarmind + ECC: calidad Swarmind con cantidad ECC.

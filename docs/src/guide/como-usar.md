@@ -1,6 +1,6 @@
-﻿# Cómo Usar AGENTIC
+﻿# Cómo Usar Swarmind
 
-AGENTIC es un sistema multi-agente que recibe tareas en **lenguaje natural** y las ejecuta con calidad automática. No necesitas preámbulos ni mencionar estándares — todo está embebido.
+Swarmind es un sistema multi-agente que recibe tareas en **lenguaje natural** y las ejecuta con calidad automática. No necesitas preámbulos ni mencionar estándares — todo está embebido.
 
 ---
 
@@ -93,7 +93,7 @@ python harness/run.py "!health"
 
 ## 5. Modo Iterativo
 
-AGENTIC preserva contexto entre interacciones. Puedes refinar:
+Swarmind preserva contexto entre interacciones. Puedes refinar:
 
 ```bash
 python harness/run.py "@builder: anade un endpoint DELETE a la API anterior"

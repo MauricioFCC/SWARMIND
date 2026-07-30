@@ -6,7 +6,7 @@
 hermes:
   enabled: true
   auto_detect: true  # Automatically use Hermes if HERMES_HOME exists
-  skill_prefix: "@agentic-"  # Prefix for AGENTIC-specific skills in Hermes
+  skill_prefix: "@Swarmind-"  # Prefix for Swarmind-specific skills in Hermes
 
 local:
   enabled: true

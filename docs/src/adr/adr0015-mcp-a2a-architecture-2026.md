@@ -4,7 +4,7 @@
 **ACEPTADO** — Implementado parcialmente en codebase, documentado formalmente ahora.
 
 ## Contexto
-El sistema AGENTIC utiliza dos protocolos fundamentales de comunicacion:
+El sistema Swarmind utiliza dos protocolos fundamentales de comunicacion:
 - **MCP (Model Context Protocol)**: Para integracion con herramientas externas vía MCPClient/MCPManager
 - **A2A (Agent-to-Agent)**: Para descubrimiento y handoff entre agentes vía router_a2a.py
 

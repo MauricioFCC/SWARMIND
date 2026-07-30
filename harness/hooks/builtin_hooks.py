@@ -1,4 +1,4 @@
-"""BuiltinHooks — Hooks incorporados del sistema AGENTIC.
+"""BuiltinHooks — Hooks incorporados del sistema Swarmind.
 
 Registra automaticamente los hooks esenciales para seguridad, calidad
 y monitoreo del sistema.

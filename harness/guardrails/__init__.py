@@ -1,4 +1,4 @@
-"""Modulo de Guardrails Multi-Capa para AGENTIC.
+"""Modulo de Guardrails Multi-Capa para Swarmind.
 
 Implementa un sistema de guardrails en 5 capas inspirado en el AI Factory Stack:
 1. Input Guardrails: Filtra prompts maliciosos antes del LLM.

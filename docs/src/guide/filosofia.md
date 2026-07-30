@@ -1,6 +1,6 @@
 ﻿# Filosofía del Sistema
 
-AGENTIC es un **sistema multi-agente evolutivo** diseñado para operar como un reloj suizo: múltiples especialistas trabajando en paralelo, sincronizados, sin fricción. Todo está gobernado por principios inmutables que garantizan calidad, eficiencia y escalabilidad.
+Swarmind es un **sistema multi-agente evolutivo** diseñado para operar como un reloj suizo: múltiples especialistas trabajando en paralelo, sincronizados, sin fricción. Todo está gobernado por principios inmutables que garantizan calidad, eficiencia y escalabilidad.
 
 ---
 
@@ -68,7 +68,7 @@ El **cognition store** (LanceDB vector store) almacena todo: decisiones, fragmen
 
 ## 5. Token Economics
 
-AGENTIC trata los tokens como un **recurso económico** con presupuestos asignados por rol:
+Swarmind trata los tokens como un **recurso económico** con presupuestos asignados por rol:
 
 | Técnica | Ahorro | Mecanismo |
 |---------|--------|-----------|

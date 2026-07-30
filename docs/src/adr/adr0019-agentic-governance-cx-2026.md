@@ -1,4 +1,4 @@
-# ADR-0019: Agentic Governance & Business Context
+# ADR-0019: Swarmind Governance & Business Context
 
 ## Estado
 **ACEPTADO** — Implementado.
@@ -43,7 +43,7 @@ Analisis del documento "Hablamos de Orquestacion Agentica CX" + referencias del 
 - Revisión pre-produccion obligatoria
 
 ## Referencias
-- CX Agentic Orchestration: Governance frameworks, shadow AI risks
+- CX Swarmind Orchestration: Governance frameworks, shadow AI risks
 - Google BigQuery conversational (Jul 2026): NLP analitico
 - Databricks governance: Control de agentes, modelos y herramientas
 - Snowflake semantic layer: Contexto compartido de negocio

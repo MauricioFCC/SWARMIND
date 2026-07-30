@@ -159,7 +159,7 @@ def _show_usage() -> None:
     logger.info("  !rag ingest                 Ingiere codigo fuente como RAG")
     logger.info("  !rag ingest --dir <path>    Ingiere solo un directorio")
     logger.info("  !rag stats                  Estadisticas de la BD RAG")
-    logger.info("  !hermes sync                Sync bidireccional AGENTIC <-> Hermes_Memory_Proyects")
+    logger.info("  !hermes sync                Sync bidireccional Swarmind <-> shared_memory")
     logger.info("  !hermes stats               Estadisticas del puente Hermes")
     logger.info("")
 

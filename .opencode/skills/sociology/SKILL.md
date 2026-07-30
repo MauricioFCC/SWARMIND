@@ -187,7 +187,7 @@ Metodo para estudiar agentes como cultura:
 - `!socio diversity <equipo>` — Evaluacion de diversidad cultural entre agentes y recomendaciones de integracion
 - `!socio ethnography <sistema>` — Diseno de estudio etnografico de sistema multi-agente
 
-## Aplicaciones en AGENTIC
+## Aplicaciones en Swarmind
 
 | Contexto | Aplicacion Sociologica | Beneficio |
 |----------|------------------------|-----------|

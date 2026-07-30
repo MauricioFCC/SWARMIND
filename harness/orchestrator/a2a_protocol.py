@@ -5,7 +5,7 @@ agentes, permitiendo discovery, mensajeria, invocacion de herramientas
 y orquestacion entre agentes de diferentes sistemas.
 
 Basado en:
-- A2A v1.0 (Google / Linux Foundation Agentic AI Foundation, 2025-2026)
+- A2A v1.0 (Google / Linux Foundation Swarmind AI Foundation, 2025-2026)
 - EACP (Liu et al., 2026): Protocolo en 5 capas
 - AMACP (Wu et al., ICLR 2026): Adaptive Multi-Agent Communication Protocol
 

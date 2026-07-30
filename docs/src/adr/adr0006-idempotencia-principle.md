@@ -4,7 +4,7 @@
 **ACEPTADO** — Implementado en commit a7dcfee.
 
 ## Contexto
-El sistema AGENTIC ejecuta cientos de tareas de implementacion, investigacion y testing.
+El sistema Swarmind ejecuta cientos de tareas de implementacion, investigacion y testing.
 En cada ejecucion existe el riesgo de reimplementar funcionalidad que ya existe, lo cual:
 
 1. **Desperdicia tokens**: Cada reimplementacion cuesta tokens de entrada (contexto + codigo) y salida (codigo nuevo) sin valor agregado.
@@ -99,5 +99,5 @@ Nueva seccion completa como **Regla #2** despues de Research First.
 - **Idempotencia en sistemas distribuidos**: "Idempotence is not a single thing", Pat Helland, 2012
 - **Principio DRY (Don't Repeat Yourself)**: The Pragmatic Programmer, Hunt & Thomas, 1999
 - **SSOT (Single Source of Truth)**: Concepto de Data Warehousing, Dataversity
-- **Token Economics AGENTIC**: ADR-0003 Token Economy & Speed Optimization v2026
+- **Token Economics Swarmind**: ADR-0003 Token Economy & Speed Optimization v2026
 - **Research First Principle**: ADR-0003, ADR-0004, ADR-0005, base_principles.md

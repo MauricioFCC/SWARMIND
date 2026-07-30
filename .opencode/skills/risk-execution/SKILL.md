@@ -12,7 +12,7 @@ Prioriza: preservación de capital > Sharpe > alpha bruto.
 ## 📐 Risk Management (`domain::risk_management`)
 
 ```rust
-use core_quant_engine::domain::risk_management::{
+use quant-engine::domain::risk_management::{
     bet_sizing::{
         KellyCriterion, HalfKelly, QuarterKelly, 
         FixedFraction, VolatilityParity, ConfidenceWeighted,
@@ -54,7 +54,7 @@ let es_975 = evt.expected_shortfall(0.975);  // CVaR 97.5% EVT
 ## 🛡️ Portfolio Risk (`domain::portfolio_risk`)
 
 ```rust
-use core_quant_engine::domain::portfolio_risk::{
+use quant-engine::domain::portfolio_risk::{
     portfolio::{
         PortfolioOptimizer, HRP, MV, RiskParity, BlackLitterman,
     },
@@ -99,7 +99,7 @@ if daily_risk.cvar_99 > PORTFOLIO_CVAR_LIMIT {
 ## ⚡ Execution (`domain::execution`)
 
 ```rust
-use core_quant_engine::domain::execution::{
+use quant-engine::domain::execution::{
     execution::{
         ExecutionEngine, ExecutionAlgorithm, TWAP, VWAP, 
         POV, ImplementationShortfall, AdaptiveAlgo,

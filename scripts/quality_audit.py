@@ -1,4 +1,4 @@
-"""Auditoria de memoria y principios de calidad para AGENTIC."""
+"""Auditoria de memoria y principios de calidad para Swarmind."""
 import os
 import re
 import subprocess

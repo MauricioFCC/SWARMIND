@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Set
 
 logger = logging.getLogger(__name__)
 
-ROOT = Path(__file__).resolve().parent.parent.parent  # AGENTIC/
+ROOT = Path(__file__).resolve().parent.parent.parent  # Swarmind/
 DOCS_DIR = ROOT / "harness" / "docs"
 LLMS_TXT = DOCS_DIR / "llms.txt"
 LLMS_FULL_TXT = DOCS_DIR / "llms-full.txt"
@@ -154,7 +154,7 @@ def generate_llms_txt() -> str:
     ]
 
     lines: List[str] = [
-        "# AGENTIC Harness",
+        "# Swarmind Harness",
         "> LLMs.txt — contexto curado para LLMs (generado automaticamente)",
         "",
         "## Core",

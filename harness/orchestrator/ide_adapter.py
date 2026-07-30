@@ -89,7 +89,7 @@ class IDEAdapter:
         return list(self._detected_ides)
 
     def export_agents(self, target_ide: str, dry_run: bool = False) -> bool:
-        """Exporta los agentes AGENTIC al formato del IDE destino.
+        """Exporta los agentes Swarmind al formato del IDE destino.
 
         Delega en cmd_export() del Multi-Harness Layer.
 

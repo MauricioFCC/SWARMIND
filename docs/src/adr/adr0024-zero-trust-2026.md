@@ -4,7 +4,7 @@
 **ACEPTADO** — Implementado en julio 2026.
 
 ## Contexto
-AI agents.txt identifica Zero Trust Architecture y Token/Identity Security como gaps criticos. AGENTIC necesitaba autenticacion mutua entre agentes, politicas de acceso granular y rotacion de credenciales para operar en entornos institucionales.
+AI agents.txt identifica Zero Trust Architecture y Token/Identity Security como gaps criticos. Swarmind necesitaba autenticacion mutua entre agentes, politicas de acceso granular y rotacion de credenciales para operar en entornos institucionales.
 
 ## Decision
 Implementar Zero Trust siguiendo los principios de Google BeyondCorp y NIST SP 800-207:

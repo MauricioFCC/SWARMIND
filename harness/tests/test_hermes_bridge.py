@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Tests para HermesBridge (memory_rag/hermes_bridge.py) — puente de
-integración con Hermes_Memory_Proyects.
+integración con shared_memory.
 
 Cubre: inicialización, resolución de paths, propiedades, sincronización
 (to/from/skills), acceso a servicios, status y edge cases.
@@ -38,13 +38,13 @@ def hermes_bridge_no_path():
 @pytest.fixture
 def hermes_bridge_available(tmp_path):
     """HermesBridge con path temporal disponible."""
-    hermes_dir = tmp_path / "Hermes_Memory_Proyects"
+    hermes_dir = tmp_path / "shared_memory"
     hermes_dir.mkdir(parents=True, exist_ok=True)
     brain_dir = hermes_dir / "99_Hermes_Brain"
     brain_dir.mkdir(exist_ok=True)
 
     # Crear directorio knowledge
-    knowledge_dir = hermes_dir / "knowledge" / "agentic_bridge"
+    knowledge_dir = hermes_dir / "knowledge" / "Swarmind_bridge"
     knowledge_dir.mkdir(parents=True, exist_ok=True)
 
     bridge = HermesBridge(hermes_path=str(hermes_dir), auto_import=False)
@@ -191,7 +191,7 @@ class TestProperties:
 
 
 class TestSyncToHermes:
-    """Tests para sincronización Agentic → Hermes."""
+    """Tests para sincronización Swarmind → Hermes."""
 
     def test_sync_to_hermes_not_available(self, hermes_bridge_no_path, caplog):
         """Sin disponibilidad, sync_to_hermes debe retornar 0."""
@@ -210,7 +210,7 @@ class TestSyncToHermes:
         assert count == 2
 
         # Verificar que los archivos se crearon
-        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "agentic_bridge"
+        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "Swarmind_bridge"
         files = list(knowledge_dir.glob("*.json"))
         assert len(files) == 2
 
@@ -219,7 +219,7 @@ class TestSyncToHermes:
         records = [{"key": "test_record", "data": "hello", "domain": "test"}]
         hermes_bridge_available.sync_to_hermes(records)
 
-        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "agentic_bridge"
+        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "Swarmind_bridge"
         filepath = knowledge_dir / "test_record.json"
         assert filepath.exists()
         with open(filepath, "r", encoding="utf-8") as f:
@@ -255,7 +255,7 @@ class TestSyncToHermes:
 
 
 class TestSyncFromHermes:
-    """Tests para sincronización Hermes → Agentic."""
+    """Tests para sincronización Hermes → Swarmind."""
 
     def test_sync_from_hermes_not_available(self, hermes_bridge_no_path):
         """Sin disponibilidad, sync_from_hermes debe retornar []."""
@@ -265,7 +265,7 @@ class TestSyncFromHermes:
     def test_sync_from_hermes_reads_files(self, hermes_bridge_available):
         """sync_from_hermes debe leer archivos JSON del directorio."""
         # Primero escribir algunos archivos
-        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "agentic_bridge"
+        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "Swarmind_bridge"
         with open(knowledge_dir / "record1.json", "w", encoding="utf-8") as f:
             json.dump({"key": "record1", "data": "val1"}, f)
         with open(knowledge_dir / "record2.json", "w", encoding="utf-8") as f:
@@ -280,7 +280,7 @@ class TestSyncFromHermes:
     def test_sync_from_hermes_no_directory(self, hermes_bridge_available):
         """Sin directorio knowledge, debe retornar []."""
         import shutil
-        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "agentic_bridge"
+        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "Swarmind_bridge"
         if knowledge_dir.exists():
             shutil.rmtree(knowledge_dir)
         result = hermes_bridge_available.sync_from_hermes()
@@ -293,7 +293,7 @@ class TestSyncFromHermes:
 
     def test_sync_from_hermes_corrupted_file(self, hermes_bridge_available, caplog):
         """Archivo JSON corrupto debe saltarse."""
-        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "agentic_bridge"
+        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "Swarmind_bridge"
         (knowledge_dir / "bad.json").write_text("not valid json", encoding="utf-8")
         with caplog.at_level(logging.WARNING):
             records = hermes_bridge_available.sync_from_hermes()
@@ -302,7 +302,7 @@ class TestSyncFromHermes:
 
     def test_sync_from_hermes_pattern(self, hermes_bridge_available):
         """Patrón glob debe filtrar archivos."""
-        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "agentic_bridge"
+        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "Swarmind_bridge"
         with open(knowledge_dir / "record1.json", "w", encoding="utf-8") as f:
             json.dump({"key": "r1"}, f)
         with open(knowledge_dir / "record2.json", "w", encoding="utf-8") as f:
@@ -345,7 +345,7 @@ class TestSyncSkills:
         count = hermes_bridge_available.sync_skills_to_hermes(str(skills_dir))
         assert count == 1
 
-        hermes_skills = Path(hermes_bridge_available.path) / "skills" / "agentic_bridge"
+        hermes_skills = Path(hermes_bridge_available.path) / "skills" / "Swarmind_bridge"
         assert (hermes_skills / "test_skill" / "SKILL.md").exists()
 
     def test_sync_skills_skips_non_skill_dirs(self, hermes_bridge_available, tmp_path):
@@ -494,7 +494,7 @@ class TestEdgeCases:
         count = hermes_bridge_available.sync_to_hermes(records)
         assert count == 1
 
-        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "agentic_bridge"
+        knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "Swarmind_bridge"
         # Los caracteres :, / y espacios deben reemplazarse
         files = list(knowledge_dir.glob("*.json"))
         assert len(files) == 1

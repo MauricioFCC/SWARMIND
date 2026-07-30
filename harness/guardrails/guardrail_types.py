@@ -30,7 +30,7 @@ class GuardrailLayer(Enum):
     """Capas de proteccion del sistema de guardrails.
 
     Cada capa corresponde a un punto de control en el pipeline
-    de ejecucion de AGENTIC.
+    de ejecucion de Swarmind.
     """
 
     INPUT = "input"

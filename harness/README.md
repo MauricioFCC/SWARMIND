@@ -1,4 +1,4 @@
-# AGENTIC — Multi-Agent Evolutionary Harness
+# Swarmind — Multi-Agent Evolutionary Harness
 
 **Template portable de sistema multi-agente evolutivo con LanceDB, RAG, auto-mejora, enrutamiento híbrido local/cloud, supervisión humana (HITL) y conectividad MCP universal.**
 
@@ -81,8 +81,8 @@ tu-proyecto/
 
 ```bash
 # 1. Copiar a tu proyecto
-# cp -r AGENTIC/harness/   /tu-proyecto/harness/
-# cp -r AGENTIC/.opencode/ /tu-proyecto/.opencode/
+# cp -r Swarmind/harness/   /tu-proyecto/harness/
+# cp -r Swarmind/.opencode/ /tu-proyecto/.opencode/
 
 # 2. Inicializar el entorno
 cd /tu-proyecto/
@@ -388,7 +388,7 @@ Cuando haces `git commit`, el hook ejecuta 3 fases rápidas (<5 segundos):
 python harness/run.py '!hooks uninstall'
 ```
 
-Restaura el hook original (si existía) o elimina el hook de Agentic.
+Restaura el hook original (si existía) o elimina el hook de Swarmind.
 
 ### Alcance del hook
 

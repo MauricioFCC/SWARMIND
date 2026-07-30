@@ -1,6 +1,6 @@
 """CursorAdapter — Adaptador para Cursor IDE.
 
-Convierte agentes AGENTIC (.opencode/agents/) al formato nativo de Cursor:
+Convierte agentes Swarmind (.opencode/agents/) al formato nativo de Cursor:
 
 - .cursorrules: Reglas de comportamiento para Cursor AI.
 - .cursor/agents/: Agentes individuales en formato Cursor.
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class CursorAdapter(HarnessConverter):
-    """Adaptador para exportar agentes AGENTIC a Cursor IDE."""
+    """Adaptador para exportar agentes Swarmind a Cursor IDE."""
 
     @property
     def runtime_name(self) -> str:
@@ -40,7 +40,7 @@ class CursorAdapter(HarnessConverter):
         return ".cursor"
 
     def export_agents(self, dry_run: bool = False) -> ExportResult:
-        """Exporta agentes AGENTIC a .cursor/agents/.
+        """Exporta agentes Swarmind a .cursor/agents/.
 
         Args:
             dry_run: Si es True, solo simula la operacion.
@@ -77,7 +77,7 @@ class CursorAdapter(HarnessConverter):
         )
 
     def export_skills(self, dry_run: bool = False) -> ExportResult:
-        """Exporta skills AGENTIC a .cursor/skills/.
+        """Exporta skills Swarmind a .cursor/skills/.
 
         Args:
             dry_run: Si es True, solo simula la operacion.
@@ -117,7 +117,7 @@ class CursorAdapter(HarnessConverter):
 
         .cursorrules define el comportamiento del asistente Cursor AI
         en formato YAML-like. Se genera a partir de la configuracion
-        de los skills y agentes de AGENTIC.
+        de los skills y agentes de Swarmind.
 
         Args:
             dry_run: Si es True, only simula la operacion.
@@ -126,11 +126,11 @@ class CursorAdapter(HarnessConverter):
             ExportResult con el resultado.
         """
         rules_lines: List[str] = [
-            "# .cursorrules — Generado por AGENTIC Multi-Harness Adapter",
+            "# .cursorrules — Generado por Swarmind Multi-Harness Adapter",
             "# Fuente: .opencode/",
             "",
             "# Reglas de comportamiento del asistente",
-            "you are AGENTIC, a multi-agent system specialized in:",
+            "you are Swarmind, a multi-agent system specialized in:",
             "- Software architecture and development",
             "- Legal and compliance document analysis",
             "- Quantitative trading and alpha research",
@@ -138,7 +138,7 @@ class CursorAdapter(HarnessConverter):
             "- Security auditing and penetration testing",
             "",
             "# Contexto del proyecto",
-            "- Project: AGENTIC",
+            "- Project: Swarmind",
             "- Language: Python 3.12+",
             "- Testing: pytest with property-based testing",
             "- Docs: mdbook in docs/",

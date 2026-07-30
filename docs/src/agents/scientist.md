@@ -8,9 +8,9 @@ El **scientist** es el agente de investigación del sistema. Investiga papers ac
 |-------|-------|
 | `name` | `scientist` |
 | `domain` | `research` |
-| `triggers` | research, paper, architecture, design, pattern, methodology, algorithm, study, analysis, experiment, validate, benchmark, train, model, machine learning, deep learning, ai, llm, statistics, causal, inference, optimization, theory, whitepaper, review, survey, novel, approach, agentic, multi-agent, serving, scheduling, coordination, sharing, token, economics, paradigm, evaluation, metric |
-| `capabilities` | research, architecture_design, pattern_analysis, ml_ai_design, experiment_design, statistical_validation, causal_analysis, literature_review, agentic_systems, token_economics, multi_agent_evaluation |
-| `aliases` | scientist, researcher, architect, analyst, agentic_researcher |
+| `triggers` | research, paper, architecture, design, pattern, methodology, algorithm, study, analysis, experiment, validate, benchmark, train, model, machine learning, deep learning, ai, llm, statistics, causal, inference, optimization, theory, whitepaper, review, survey, novel, approach, Swarmind, multi-agent, serving, scheduling, coordination, sharing, token, economics, paradigm, evaluation, metric |
+| `capabilities` | research, architecture_design, pattern_analysis, ml_ai_design, experiment_design, statistical_validation, causal_analysis, literature_review, Swarmind_systems, token_economics, multi_agent_evaluation |
+| `aliases` | scientist, researcher, architect, analyst, Swarmind_researcher |
 
 ## Capacidades
 
@@ -62,7 +62,7 @@ El **scientist** es el agente de investigación del sistema. Investiga papers ac
 
 ## Activación
 
-Se activa con triggers de investigación: `research`, `paper`, `architecture`, `design`, `pattern`, `methodology`, `algorithm`, `study`, `analysis`, `experiment`, `validate`, `benchmark`, `train`, `model`, `machine learning`, `deep learning`, `ai`, `llm`, `statistics`, `causal`, `inference`, `optimization`, `theory`, `whitepaper`, `review`, `survey`, `novel`, `approach`, `agentic`, `multi-agent`, `serving`, `scheduling`, `coordination`, `sharing`, `token`, `economics`, `paradigm`, `evaluation`, `metric`. También vía `@scientist`, `@researcher` o `@architect`.
+Se activa con triggers de investigación: `research`, `paper`, `architecture`, `design`, `pattern`, `methodology`, `algorithm`, `study`, `analysis`, `experiment`, `validate`, `benchmark`, `train`, `model`, `machine learning`, `deep learning`, `ai`, `llm`, `statistics`, `causal`, `inference`, `optimization`, `theory`, `whitepaper`, `review`, `survey`, `novel`, `approach`, `Swarmind`, `multi-agent`, `serving`, `scheduling`, `coordination`, `sharing`, `token`, `economics`, `paradigm`, `evaluation`, `metric`. También vía `@scientist`, `@researcher` o `@architect`.
 
 ## Reproducibilidad y estándares
 

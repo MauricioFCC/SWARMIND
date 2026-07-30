@@ -1,6 +1,6 @@
 # .opencode/config/project_config.yaml — v2.1.0
 # =============================================================================
-# PROJECT CONFIG — AGENTIC Harness
+# PROJECT CONFIG — Swarmind Harness
 # =============================================================================
 # Sistema multi-agente evolutivo con orquestacion DAG, memoria vectorial LanceDB,
 # auto-mejora (ASI-Evolve), enrutamiento adaptativo y federated memory.
@@ -8,7 +8,7 @@
 # =============================================================================
 
 # ── Universal Project Metadata ────────────────────────────────────────────────
-PROJECT_NAME: "AGENTIC"
+PROJECT_NAME: "Swarmind"
 PROJECT_VERSION: "2.1.0"
 DOMAIN: "universal"
 TECH_STACK: "Python"
@@ -30,7 +30,7 @@ OUTPUTS_DIRS:
 
 # ── FDE / EVOLVE Config ───────────────────────────────────────────────────────
 FDE_MISSION: "Proveer un harness de orquestacion multi-agente robusto, auto-curativo y auto-mejorable"
-FDE_STAKEHOLDER: "Todos los proyectos que usan AGENTIC (CQE, Hermes, etc.)"
+FDE_STAKEHOLDER: "Todos los proyectos que usan Swarmind (CQE, Hermes, etc.)"
 FDE_METRIC: "Tests pasando + tiempo medio entre fallos + cobertura de skills"
 FDE_DAY2: "Mantenimiento por el equipo ASI-Evolve, mejora continua via cognition store"
 FDE_DELTA: "Token Economics v2026 implementado: -38% tokens, -41% costo, -44% tiempo"

@@ -1,4 +1,4 @@
-"""GuardrailEngine — Sistema de Guardrails Multi-Capa para AGENTIC.
+"""GuardrailEngine — Sistema de Guardrails Multi-Capa para Swarmind.
 
 Implementa 5 capas de proteccion inspiradas en el AI Factory Stack:
 
@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 class GuardrailEngine:
-    """Motor de guardrails multi-capa para AGENTIC.
+    """Motor de guardrails multi-capa para Swarmind.
 
     Orquesta 5 capas de proteccion: Input, Output, Content, Tool, Policy.
     Cada capa puede tener multiples reglas que se ejecutan secuencialmente.

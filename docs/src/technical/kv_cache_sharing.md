@@ -6,7 +6,7 @@
 `harness/memory_rag/kv_cache_sharing.py`
 
 ## Dependencias
-- Ninguna externa (stdlib + modulos internos de AGENTIC)
+- Ninguna externa (stdlib + modulos internos de Swarmind)
 
 ## Tests
 `harness/tests/test_kv_cache_sharing`

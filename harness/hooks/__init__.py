@@ -1,4 +1,4 @@
-"""Sistema de Hooks deterministas para AGENTIC.
+"""Sistema de Hooks deterministas para Swarmind.
 
 Los hooks son puntos de extension deterministas que se ejecutan antes/despues
 de operaciones clave. A diferencia de los agentes LLM, los hooks son 100%

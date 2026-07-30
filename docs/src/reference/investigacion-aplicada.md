@@ -1,4 +1,4 @@
-# Investigación Aplicada — AGENTIC 2026
+# Investigación Aplicada — Swarmind 2026
 
 Técnicas frontera 2026 investigadas e implementadas en el sistema multi-agente.
 
@@ -43,7 +43,7 @@ Construye grafo de dependencias y ejecuta tareas independientes en paralelo.
 Grafo local-first (NetworkX + JSON) que conecta: skills con agentes, ADRs con skills, decisiones con conceptos. Seed automático desde skills_registry.yaml y ADRs.
 
 ## SecurityGuard
-**Fuente:** OWASP Top 10 for LLMs 2025, OWASP Agentic AI Top 10
+**Fuente:** OWASP Top 10 for LLMs 2025, OWASP Swarmind AI Top 10
 **Implementación:** `harness/orchestrator/security_guard.py`
 
 | Defensa | Descripción |
@@ -66,7 +66,7 @@ Memoria cross-session en JSON local. Métodos: store(), recall(), get_session(),
 Workflow multi-paso: Plan -> Execute -> Review -> Iterate hasta completar. Max 3 iteraciones por defecto.
 
 ## Property-Based Testing
-**Paper:** arXiv:2510.09907 (Agentic PBT, NeurIPS 2025)
+**Paper:** arXiv:2510.09907 (Swarmind PBT, NeurIPS 2025)
 **Implementación:** `harness/tests/test_pbt_core.py` (20 tests de propiedad) + Hypothesis en toda la suite
 
 | Componente | Propiedades verificadas |
@@ -122,7 +122,7 @@ Keywords largas tienen más peso que cortas (evita falsos positivos). Dos nivele
 | Reportes | Generacion de reportes de cumplimiento por agente y operacion |
 
 ## NaturalLanguageToolkit (arXiv:2607.03953)
-**Paper:** arXiv:2607.03953 (Natural Language Tools for Agentic Systems, 2026)
+**Paper:** arXiv:2607.03953 (Natural Language Tools for Swarmind Systems, 2026)
 **Implementacion:** `harness/orchestrator/natural_language_toolkit.py`
 
 | Capacidad | Descripcion |
@@ -133,7 +133,7 @@ Keywords largas tienen más peso que cortas (evita falsos positivos). Dos nivele
 | Multi-turn Correction | Correccion interactiva multi-turno para comandos malinterpretados |
 
 ## MultiUserGovernance (arXiv:2606.21856)
-**Paper:** arXiv:2606.21856 (Multi-User Governance in Agentic Systems, 2026)
+**Paper:** arXiv:2606.21856 (Multi-User Governance in Swarmind Systems, 2026)
 **Implementacion:** `harness/orchestrator/multi_user_governance.py`
 
 | Capacidad | Descripcion |
@@ -247,7 +247,7 @@ Seguridad declarativa para interacciones agente-herramienta con 4-stage progress
 Memoria con forget estrategico basado en utilidad. +9.65 F1 en multi-hop reasoning. Reemplaza decaimiento heuristico por scoring compuesto (importancia 40%, acceso 30%, entidades 20%, tags 10%).
 
 ## RiskAnalyzer
-**Framework:** CRO Forum 2026 � Emerging Risks Initiative
+**Framework:** CRO Forum 2026 � Emerging Risks Initiative
 **Implementacion:** harness/orchestrator/risk_analyzer.py (14 tests)
 
 Identificacion y analisis de riesgos emergentes en 5 dominios: tecnologia, geopolitica, clima, salud y finanzas.

@@ -1,9 +1,9 @@
 """
-install_hooks.py — Git pre-commit hook installer for the AGENTIC Harness.
+install_hooks.py — Git pre-commit hook installer for the Swarmind Harness.
 
 Installs a **self-contained local** pre-commit hook that runs the
 end-of-iteration pipeline. The hook is project-local and does NOT
-depend on any external AGENTIC template path or symlink.
+depend on any external Swarmind template path or symlink.
 
 Usage:
     python harness/scripts/install_hooks.py --install     # Install hook
@@ -30,7 +30,7 @@ _PROJECT_ROOT = _HARNESS_ROOT.parent                # project root (where .git l
 
 _HOOKS_DIR = _PROJECT_ROOT / ".git" / "hooks"
 _HOOK_PATH = _HOOKS_DIR / "pre-commit"
-_BACKUP_PATH = _HOOKS_DIR / "pre-commit.agentic.bak"
+_BACKUP_PATH = _HOOKS_DIR / "pre-commit.Swarmind.bak"
 _STATUS_PATH = _HARNESS_ROOT / "db" / ".hook_status.json"
 
 # ── Self-contained hook template ──────────────────────────────────────
@@ -38,7 +38,7 @@ _STATUS_PATH = _HARNESS_ROOT / "db" / ".hook_status.json"
 # It uses ONLY stdlib, resolves paths relative to __file__, and is
 # fully autonomous — no external template dependency.
 _LOCAL_HOOK_TEMPLATE = r'''#!/usr/bin/env python3
-"""PRE-COMMIT HOOK — Auto-generado por AGENTIC Harness"""
+"""PRE-COMMIT HOOK — Auto-generado por Swarmind Harness"""
 import sys, os, subprocess
 _HOOK_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _HARNESS = os.path.join(_HOOK_DIR, "harness")
@@ -156,14 +156,14 @@ def _is_hook_ours(hook_path: Path = _HOOK_PATH) -> bool:
 def _is_legacy_hook(hook_path: Path = _HOOK_PATH) -> bool:
     """Return True if the existing hook is a legacy (template-bound) hook.
 
-    Legacy hooks contain the *old* ``Agentic Harness`` marker but do
+    Legacy hooks contain the *old* ``Swarmind Harness`` marker but do
     **not** contain the new ``PRE-COMMIT HOOK`` marker.
     """
     if not hook_path.exists():
         return False
     try:
         content = hook_path.read_text(encoding="utf-8", errors="ignore")
-        return "Agentic Harness" in content and "PRE-COMMIT HOOK" not in content
+        return "Swarmind Harness" in content and "PRE-COMMIT HOOK" not in content
     except Exception:
         return False
 
@@ -203,7 +203,7 @@ def install_hook() -> bool:
     if _HOOK_PATH.exists():
         if _is_legacy_hook():
             _print()
-            _print(f"  {_warn('[!]')} Se detectó un hook legacy apuntando al template AGENTIC.")
+            _print(f"  {_warn('[!]')} Se detectó un hook legacy apuntando al template Swarmind.")
             _print(f"  {_warn('[!]')} Este hook deja de funcionar si el template se mueve o elimina.")
             _print()
             if _prompt_yes_no("  ¿Migrar a hook local autocontenido?", default="Y"):
@@ -269,7 +269,7 @@ def uninstall_hook() -> bool:
         _HOOK_PATH.unlink()
         _print(f"  {_ok('[OK]')} Hook eliminado (no había backup previo).")
     else:
-        _print(f"  {_warn('[WARN]')} El hook actual no fue instalado por AGENTIC Harness.")
+        _print(f"  {_warn('[WARN]')} El hook actual no fue instalado por Swarmind Harness.")
         _print(f"  {_warn('[WARN]')} No se modificó. Backup disponible: {_BACKUP_PATH}")
         return False
 
@@ -306,7 +306,7 @@ def _classify_hook() -> str:
         content = _HOOK_PATH.read_text(encoding="utf-8", errors="ignore")
         if "PRE-COMMIT HOOK" in content:
             return "local"
-        if "Agentic Harness" in content:
+        if "Swarmind Harness" in content:
             return "legacy"
         return "foreign"
     except Exception:
@@ -335,7 +335,7 @@ def show_status() -> None:
         _print(f"  Estado:   {_warn('INSTALADO (LEGACY)')}")
         _print(f"  {_warn('  -> Migrar: python harness/scripts/install_hooks.py --install')}")
     elif hook_type == "foreign":
-        _print(f"  Estado:   {_warn('OTRO HOOK')} (no de AGENTIC Harness)")
+        _print(f"  Estado:   {_warn('OTRO HOOK')} (no de Swarmind Harness)")
     else:
         _print(f"  Estado:   {_cyan('NO INSTALADO')}")
 
@@ -368,7 +368,7 @@ def show_status() -> None:
 def main() -> None:
     """CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="Install/Uninstall/Check Git pre-commit hook for AGENTIC Harness",
+        description="Install/Uninstall/Check Git pre-commit hook for Swarmind Harness",
     )
     parser.add_argument("--install", action="store_true", help="Install the pre-commit hook")
     parser.add_argument("--uninstall", action="store_true", help="Uninstall the pre-commit hook")

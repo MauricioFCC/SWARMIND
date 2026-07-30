@@ -138,7 +138,7 @@ class FederatedMemoryStore:
     que el conocimiento fluya entre proyectos.
 
     Uso:
-        store = FederatedMemoryStore(project_name="agentic")
+        store = FederatedMemoryStore(project_name="Swarmind")
         
         # Exportar conocimiento
         store.store_knowledge(
@@ -160,7 +160,7 @@ class FederatedMemoryStore:
 
     def __init__(
         self,
-        project_name: str = "agentic",
+        project_name: str = "Swarmind",
         federated_dir: Optional[str] = None,
         auto_sync: bool = False,
         sync_interval_sec: int = 300,

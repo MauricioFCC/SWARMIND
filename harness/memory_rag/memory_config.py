@@ -2,7 +2,7 @@
 Memory Configuration — configuración modular del sistema de memoria.
 
 Permite:
-  - Configurar rutas de LanceDB y Hermes_Memory_Proyects
+  - Configurar rutas de LanceDB y shared_memory
   - Cambiar backend (LanceDB / memoria / Hermes)
   - Ajustar dimensiones de embedding
   - Activar/desactivar colecciones de telemetría y KPIs
@@ -13,11 +13,11 @@ Uso:
     # Default: usa LanceDB en harness/db/lancedb/
     config = MemoryConfig()
     
-    # Custom: apunta a Hermes_Memory_Proyects
+    # Custom: apunta a shared_memory
     config = MemoryConfig(
         backend="lancedb",
-        lancedb_path="C:/Users/USUARIO/Documents/DEV-SPACE/Hermes_Memory_Proyects/99_Hermes_Brain/lancedb_data",
-        hermes_path="C:/Users/USUARIO/Documents/DEV-SPACE/Hermes_Memory_Proyects",
+        lancedb_path="$HOME/Documents/DEV-SPACE/shared_memory/99_Hermes_Brain/lancedb_data",
+        hermes_path="$HOME/Documents/DEV-SPACE/shared_memory",
     )
     
     # Modo memoria (sin persistencia)
@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 class MemoryBackend(str, Enum):
     LANCEDB = "lancedb"          # LanceDB (default, recomendado)
     MEMORY = "memory"            # In-memory (sin persistencia, tests)
-    HERMES = "hermes"            # Hermes_Memory_Proyects (estructura de carpetas)
+    HERMES = "hermes"            # shared_memory (estructura de carpetas)
 
 
 class TelemetryLevel(str, Enum):
@@ -64,13 +64,13 @@ class MemoryConfig:
     Attributes:
         backend: Backend de almacenamiento.
         lancedb_path: Ruta a la base LanceDB.
-        hermes_path: Ruta raíz de Hermes_Memory_Proyects.
+        hermes_path: Ruta raíz de shared_memory.
         embedding_dim: Dimensión de vectores de embedding.
         allow_fallback: Permitir fallback a memoria si LanceDB no está.
         telemetry_level: Nivel de telemetría a registrar.
         kpi_collections: Conjunto de colecciones KPI activas.
         auto_create_collections: Crear colecciones automáticamente al iniciar.
-        enable_hermes_bridge: Sincronizar con Hermes_Memory_Proyects.
+        enable_hermes_bridge: Sincronizar con shared_memory.
     """
     backend: MemoryBackend = MemoryBackend.LANCEDB
 
@@ -107,7 +107,7 @@ class MemoryConfig:
             candidate = (
                 Path(os.environ.get("HERMES_PATH", ""))
                 if "HERMES_PATH" in os.environ
-                else Path.home() / "Documents" / "DEV-SPACE" / "Hermes_Memory_Proyects"
+                else Path.home() / "Documents" / "DEV-SPACE" / "shared_memory"
             )
             if candidate.exists():
                 self.hermes_path = str(candidate)
@@ -128,7 +128,7 @@ class MemoryConfig:
 
     @property
     def is_hermes_available(self) -> bool:
-        """Checkea si Hermes_Memory_Proyects está accesible."""
+        """Checkea si shared_memory está accesible."""
         if not self.hermes_path or not self.enable_hermes_bridge:
             return False
         return Path(self.hermes_path).exists()

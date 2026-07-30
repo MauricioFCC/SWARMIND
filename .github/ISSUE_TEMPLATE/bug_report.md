@@ -1,6 +1,6 @@
 ﻿---
 name: Bug Report
-about: Reportar un error en AGENTIC
+about: Reportar un error en Swarmind
 title: ''
 labels: bug
 assignees: ''
@@ -25,4 +25,4 @@ Pega logs o trazas aqui
 **Entorno**
 - OS: [Windows/Linux/Mac]
 - Python version:
-- AGENTIC version:
+- Swarmind version:

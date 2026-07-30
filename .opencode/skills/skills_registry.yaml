@@ -7,7 +7,7 @@ skills:
 
   - name: evolve
     domain: meta
-    description: "Self-improvement loop ASI-Evolve | Token Economics, Agentic RL Scaling (KAT-Coder, PaCoRe Train, LTS Control), Spec Evolution (TDAD), Role Evolution (AOSE Hybrid), FDE, Autobuilder"
+    description: "Self-improvement loop ASI-Evolve | Token Economics, Swarmind RL Scaling (KAT-Coder, PaCoRe Train, LTS Control), Spec Evolution (TDAD), Role Evolution (AOSE Hybrid), FDE, Autobuilder"
     version: 1.0.0
     project_agnostic: true
 

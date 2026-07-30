@@ -1,6 +1,6 @@
 ﻿# Velocidad y Rendimiento
 
-AGENTIC está diseñado para máxima velocidad sin sacrificar calidad. Cada milisegundo y cada token cuentan. Este documento detalla las técnicas de optimización que operan automáticamente en cada ejecución.
+Swarmind está diseñado para máxima velocidad sin sacrificar calidad. Cada milisegundo y cada token cuentan. Este documento detalla las técnicas de optimización que operan automáticamente en cada ejecución.
 
 ---
 

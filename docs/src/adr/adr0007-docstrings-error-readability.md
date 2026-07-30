@@ -4,7 +4,7 @@
 **ACEPTADO** — Implementado en commit 4b99fc4.
 
 ## Contexto
-El sistema AGENTIC genera miles de lineas de codigo entre todos los agentes (builder, scientist, guardian, evolve). Dos problemas recurrentes:
+El sistema Swarmind genera miles de lineas de codigo entre todos los agentes (builder, scientist, guardian, evolve). Dos problemas recurrentes:
 
 ### Problema 1: Docstrings omitidos
 Los agentes priorizan la logica de codigo sobre la documentacion. Aunque `DocStringsES` existia en la firma comprimida, era un token mas entre 40+, sin peso real. El resultado: funciones sin docstring, docstrings en ingles, o docstrings incompletos (sin Args/Returns/Raises).

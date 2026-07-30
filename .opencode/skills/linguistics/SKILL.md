@@ -167,7 +167,7 @@ Skill de linguistica para mejorar el procesamiento de lenguaje y la comunicacion
 - `!ling semiotics <signo>` — Analisis semiotico: niveles, triangulo, dimensiones peirceanas
 - `!ling coop <dialogo>` — Evaluar cooperatividad comunicativa entre agentes segun Grice
 
-## Aplicaciones en AGENTIC
+## Aplicaciones en Swarmind
 
 | Contexto | Aplicacion Linguistica | Beneficio |
 |----------|------------------------|-----------|

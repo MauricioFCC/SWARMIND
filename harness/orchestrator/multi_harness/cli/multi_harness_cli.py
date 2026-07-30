@@ -1,7 +1,7 @@
 """MultiHarnessCLI — Interfaz de linea de comandos para Multi-Harness.
 
 Provee los comandos !harness para exportar, detectar, validar y monitorear
-la compatibilidad multi-runtime de AGENTIC.
+la compatibilidad multi-runtime de Swarmind.
 
 Comandos disponibles:
     !harness export --target <runtime> [--dry-run]
@@ -53,7 +53,7 @@ def _import_adapter(adapter_path: str) -> Any:
 
 
 def cmd_export(target: str, dry_run: bool = False, project_root: Optional[Path] = None) -> bool:
-    """Exporta la configuracion de AGENTIC al runtime destino.
+    """Exporta la configuracion de Swarmind al runtime destino.
 
     Args:
         target: Nombre del runtime destino ('claude', 'codex', 'cursor',
@@ -151,7 +151,7 @@ def cmd_status(project_root: Optional[Path] = None) -> Dict[str, Any]:
 
     # Mostrar resumen en consola
     print(f"\n{'='*60}")
-    print(f"  Multi-Harness Status — AGENTIC")
+    print(f"  Multi-Harness Status — Swarmind")
     print(f"{'='*60}")
     print(f"  Runtime activo: {active.display_name} {'✅' if active.detected else '⬜'}")
     if active.config_path:

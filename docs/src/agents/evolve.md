@@ -1,6 +1,6 @@
 ﻿# Evolve — Meta-Agente de Auto-Mejora Continua (ASI-Evolve)
 
-El **evolve** es el meta-agente de auto-mejora del sistema. Orquesta el ciclo **ASI-Evolve** (Learn → Design → Experiment → Analyze → Deploy) para mejorar todos los skills, agentes y configuraciones del ecosistema AGENTIC. Cada mejora debe pagar sus propios tokens (Token Economics): sin delta medible, no hay deploy. Implementa **Forward Deployment Engineering (FDE)**: cada mejora resuelve un delta real identificado en logs y métricas.
+El **evolve** es el meta-agente de auto-mejora del sistema. Orquesta el ciclo **ASI-Evolve** (Learn → Design → Experiment → Analyze → Deploy) para mejorar todos los skills, agentes y configuraciones del ecosistema Swarmind. Cada mejora debe pagar sus propios tokens (Token Economics): sin delta medible, no hay deploy. Implementa **Forward Deployment Engineering (FDE)**: cada mejora resuelve un delta real identificado en logs y métricas.
 
 ## Frontmatter (refleja `.opencode/agents/evolve.md`)
 

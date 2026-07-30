@@ -1,4 +1,4 @@
-# ADR-0028: Agentic QA Pipeline 5-Capas
+# ADR-0028: Swarmind QA Pipeline 5-Capas
 
 ## Estado
 **ACEPTADO** — Implementado y verificado con 15 tests.
@@ -10,7 +10,7 @@ Auditoria de 50 equipos de control de calidad (Julio 2026) revelo:
 - **5% en L1** (datos/ML)
 - **5% construyendo L5** (orquestacion agencial)
 
-AGENTIC necesitaba un pipeline QA completo que saltara directamente a L5:
+Swarmind necesitaba un pipeline QA completo que saltara directamente a L5:
 orquestacion de calidad de extremo a extremo con ejecucion autonoma,
 deteccion de alucinaciones y autorreparacion.
 

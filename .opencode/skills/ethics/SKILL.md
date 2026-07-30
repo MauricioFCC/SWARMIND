@@ -150,7 +150,7 @@ Accion propuesta
 - `!ethics consciousness <sistema>` — Analizar implicaciones de conciencia artificial en un sistema
 - `!ethics fairness <decision>` — Evaluar equidad y sesgos en una decision algoritmica
 
-## Aplicaciones en AGENTIC
+## Aplicaciones en Swarmind
 
 | Contexto | Aplicacion Etica | Beneficio |
 |----------|-----------------|-----------|

@@ -1,5 +1,5 @@
 """
-GPU Optimization Module — AGENTIC Acceleration Engine.
+GPU Optimization Module — Swarmind Acceleration Engine.
 
 Integra GPU acceleration en los puntos críticos del sistema multi-agente:
 

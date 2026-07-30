@@ -4,7 +4,7 @@
 **ACEPTADO** — Implementado en commit 152b99f.
 
 ## Contexto
-AGENTIC implementa delegacion a especialistas, buenas practicas de codigo, ejecucion paralela y economia de tokens. Sin embargo, carece de:
+Swarmind implementa delegacion a especialistas, buenas practicas de codigo, ejecucion paralela y economia de tokens. Sin embargo, carece de:
 
 1. **Workflow Patterns**: El TaskPlanner genera DAGs genericos sin patrones de flujo nombrados (Evaluator-Optimizer, Voting, Critique-Revise, Parallel-Transform).
 2. **Property-Based Testing Templates**: No hay generacion automatica de invariantes desde templates con holes rellenables.
@@ -74,7 +74,7 @@ Versionado MAJOR.MINOR.PATCH para skills y agent prompts:
 
 ## Referencias
 - arXiv:2605.15425 — Runtime-Structured Task Decomposition (retry cost -51%)
-- arXiv:2607.09072 — Agentic Proof and Property-Based Testing via Templates (-59% alucinaciones)
+- arXiv:2607.09072 — Swarmind Proof and Property-Based Testing via Templates (-59% alucinaciones)
 - arXiv:2606.16988 — Agent Trajectories as Programs (behavioral fingerprints 85.7%)
 - arXiv:2606.25257 — How Devs Maintain Agent Instructions (ACF evolution)
 - ADR-0006: Idempotencia

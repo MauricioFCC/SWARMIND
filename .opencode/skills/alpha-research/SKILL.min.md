@@ -4,11 +4,11 @@ name: alpha-research
 ---
 
 # Alpha Research — CQE Rust Engine
-Investigación sistemática de alpha usando **core-quant-engine** (CQE).
+Investigación sistemática de alpha usando **quant-engine** (CQE).
 Enfoque: falsificación de hipótesis nula, walk-forward, out-of-sample robusto.
 ## 🧪 Factor Zoo (`domain::models::factor_zoo`)
 ```rust
-use core_quant_engine::domain::models::factor_zoo::{
+use quant-engine::domain::models::factor_zoo::{
     FactorDefinition, FactorZoo, FactorType,
     momentum::{MomentumFactor, TrendFactor},
     value::{BookToMarket, EarningsYield, CashFlowYield},
@@ -33,7 +33,7 @@ use core_quant_engine::domain::models::factor_zoo::{
 | _... 4 more rows_ |
 ## 🤖 ML Avanzado (`domain::ml`)
 ```rust
-use core_quant_engine::domain::ml::{
+use quant-engine::domain::ml::{
     causal::CausalDiscovery,
     conformal::ConformalPredictor,
     copula::CopulaModel,
@@ -65,7 +65,7 @@ use core_quant_engine::domain::ml::{
 | _... 4 more rows_ |
 ## 📊 Validación (`domain::validation`)
 ```rust
-use core_quant_engine::domain::validation::{
+use quant-engine::domain::validation::{
     performance::PerformanceMetrics,
     cv::CrossValidator,
     bootstrap::BootstrapTest,
@@ -93,7 +93,7 @@ fn compute_dsr(strategies: &[StrategyReturns], n_trials: usize) -> f64 {
 ```
 ## 🎯 Portfolio Construction (`domain::portfolio_risk`)
 ```rust
-use core_quant_engine::domain::portfolio_risk::{
+use quant-engine::domain::portfolio_risk::{
     portfolio::PortfolioOptimizer,
     risk::RiskModel,
     measures::RiskMeasures,

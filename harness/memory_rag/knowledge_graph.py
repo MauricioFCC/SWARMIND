@@ -1,5 +1,5 @@
 """
-Knowledge Graph — Grafo de conocimiento local-first para AGENTIC.
+Knowledge Graph — Grafo de conocimiento local-first para Swarmind.
 
 Implementa un grafo de conocimiento local-first (similar a LanceDB) que conecta:
 - Skills con agentes (que agente usa cada skill)
@@ -50,7 +50,7 @@ NODE_TYPES = {
 
 class KnowledgeGraph:
     """
-    Grafo de conocimiento local-first para AGENTIC.
+    Grafo de conocimiento local-first para Swarmind.
     
     Almacena relaciones entre skills, agentes, ADRs y decisiones
     en un grafo NetworkX persistido como JSON.

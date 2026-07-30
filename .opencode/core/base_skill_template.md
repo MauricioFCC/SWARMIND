@@ -154,7 +154,7 @@ Este skill hereda los principios de context engineering (Anthropic, Sep 2025). E
 2. **Sectioned Prompts**: Organizar instrucciones en secciones con XML tags o Markdown headers
 3. **Just-in-Time Retrieval**: Preferir exploración progresiva (glob, grep, head/tail) sobre pre-carga de datos completos
 4. **Tool Call Clearing**: Limpiar tool calls y resultados raw después de uso profundo en el historial
-5. **Structured Note-Taking**: Persistir notas fuera de context window (NOTES.md, to-do lists, agentic memory)
+5. **Structured Note-Taking**: Persistir notas fuera de context window (NOTES.md, to-do lists, Swarmind memory)
 6. **Compaction**: Resumir ventanas near el límite, preservando decisiones arquitectónicas y bugs activos
 7. **Token Budgeting**: Definir y monitorizar presupuesto de tokens por sección y por rol
 

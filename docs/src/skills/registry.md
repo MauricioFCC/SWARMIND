@@ -1,4 +1,4 @@
-# Registro de Skills — AGENTIC Harness
+# Registro de Skills — Swarmind Harness
 
 **30 skills** disponibles en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado). Cobertura: 100% con ambos formatos.
 

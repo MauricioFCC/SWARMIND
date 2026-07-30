@@ -60,7 +60,7 @@ description: Meta-agente de auto-mejora del sistema — orquesta ASI-Evolve con 
 
 ---
 
-## 2. Agentic RL Scaling
+## 2. Swarmind RL Scaling
 
 ### PaCoRe Training (Parallel Consensus Reasoning)
 RL outcome-based: generar N trayectorias paralelas → reconciliar evidencia conflictiva → solucion unificada sintetizada. Reward por coherencia + accuracy + token efficiency.

@@ -1,4 +1,4 @@
-# Pre-commit configuration for AGENTIC project
+# Pre-commit configuration for Swarmind project
 # Versionado para que install_hooks.py pueda referenciarlo.
 # See https://pre-commit.com for more information
 

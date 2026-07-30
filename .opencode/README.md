@@ -62,7 +62,7 @@ y routing adaptativo con cutting-edge competitive programming y text analysis te
 | **builder** | Implementacion + optimizacion algoritmica | TDAD/TDFlow (92-94% pass), PaCoRe parallel reasoning, PROBE/AdverTest adversarial loop, 30+ tecnicas CP (Stoer-Wagner, SMAWK, HLD, Segment Tree, Matrix Exp.) |
 | **scientist** | Investigacion + papers + AI/ML + text analysis | PaCoRe/LTS/Helium (1.56x speedup), 38-metric catalogue, Doc-Researcher multimodal, Arg-LLaDA sufficiency-aware, Multi-Granularity Discourse Parsing |
 | **guardian** | Calidad + testing vanguardia + seguridad | PROBE (+9.79% mutation), SpecOps (F1 0.89), AdverTest (+8.56%), SMART (72.24% validity), FuzzAgent (179K branches), PBT, Mutation Testing |
-| **evolve** (meta) | Auto-mejora ASI-Evolve | Agentic RL Scaling (KAT-Coder, PaCoRe Train, 6.2x speedup), Spec Evolution (SURS), Role Evolution (AOSE), FDE Checklist, Autobuilder |
+| **evolve** (meta) | Auto-mejora ASI-Evolve | Swarmind RL Scaling (KAT-Coder, PaCoRe Train, 6.2x speedup), Spec Evolution (SURS), Role Evolution (AOSE), FDE Checklist, Autobuilder |
 
 ---
 
@@ -107,7 +107,7 @@ Pre-checks (arquitectura + discovery) y post-checks (seguridad + commits + docs 
 | **alpha-research** | quantitative | PaCoRe parallel exploration, LTS shared memory, Harness Effect |
 | **quant-trading** | quantitative | PaCoRe parallel exploration, Helium scheduling, Agentix programs |
 | **risk-execution** | quantitative | Circuit breaker, failure classification, Token Budget Governance |
-| **evolve** | meta | Token Economics, Agentic RL Scaling, Spec Evolution, FDE, Autobuilder |
+| **evolve** | meta | Token Economics, Swarmind RL Scaling, Spec Evolution, FDE, Autobuilder |
 | **healthtech** | healthtech | PROBE adversarial testing, PBT, SMART mutation testing |
 | **legal-doc** | legal | AOSE Hybrid Roles, structured output contracts, RTF+C methodology |
 | **math-doc** | academic | PaCoRe parallel reasoning, REPOREASON diagnostic metrics |

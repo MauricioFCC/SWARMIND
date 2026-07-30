@@ -1,6 +1,6 @@
 """Multi-Harness Adapter Layer — Compatibilidad con 5+ runtimes.
 
-Permite que AGENTIC funcione nativamente desde OpenCode, Claude Code, Codex CLI,
+Permite que Swarmind funcione nativamente desde OpenCode, Claude Code, Codex CLI,
 Cursor y Gemini CLI sin perder compatibilidad con .opencode/ como SSOT.
 """
 

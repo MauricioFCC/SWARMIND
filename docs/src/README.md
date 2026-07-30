@@ -1,6 +1,6 @@
-# AGENTIC — Sistema Multi-Agente Evolutivo
+# Swarmind — Sistema Multi-Agente Evolutivo
 
-**AGENTIC** es un sistema multi-agente de orquestación, ejecución y auto-mejora continua con 31 skills contextuales, orquestación multi-nivel, GPU acceleration y token economics.
+**Swarmind** es un sistema multi-agente de orquestación, ejecución y auto-mejora continua con 31 skills contextuales, orquestación multi-nivel, GPU acceleration y token economics.
 
 ## Estado Actual (Julio 2026)
 
@@ -29,7 +29,7 @@
 ## Novedades en Julio 2026
 
 ### Multi-Harness Adapter Layer
-AGENTIC ahora funciona nativamente desde **5 runtimes** sin perder compatibilidad con OpenCode:
+Swarmind ahora funciona nativamente desde **5 runtimes** sin perder compatibilidad con OpenCode:
 
 | Runtime | Deteccion | Formato |
 |---------|-----------|---------|
@@ -83,7 +83,7 @@ Refactorizado a **asyncio completo** con 4.8x speedup (ADR-0017).
 ## Arquitectura
 
 ```
-AGENTIC/
+Swarmind/
 ├── .opencode/                  ← SSOT (fuente unica de verdad)
 │   ├── agents/                 → 20 agentes
 │   ├── skills/                 → 31 skills (cada uno en su directorio)
@@ -123,7 +123,7 @@ AGENTIC/
 | Structured Output | arXiv:2604.12301 | TokenOptimizer (-40%) |
 | DAG Parallelism | arXiv:2606.01533 / arXiv:2604.15186 | Kahn Algorithm in TokenOptimizer |
 | Knowledge Graph | arXiv:2605.27864 | KnowledgeGraph |
-| Agentic PBT | arXiv:2510.09907 | Hypothesis + PBT Core |
+| Swarmind PBT | arXiv:2510.09907 | Hypothesis + PBT Core |
 | Legal NLP | SaulLM-7B + MiningLegalBench | LegalAnalyzer |
 
 ## Benchmark Projects 2026
@@ -134,11 +134,11 @@ AGENTIC/
 | **DeerFlow** | 78.1k | Python | — | — | SuperAgent de largo horizonte |
 | **CowAgent** | 46.2k | Python | — | — | Auto-evolucion, multi-canal |
 | **CodeWhale** | 40.2k | Rust | — | — | Fleet execution, multi-provider |
-| **AGENTIC** | — | Python | 20 | 31 | GPU + token economics + governance + calidad |
+| **Swarmind** | — | Python | 20 | 31 | GPU + token economics + governance + calidad |
 
-## Diferenciacion AGENTIC
+## Diferenciacion Swarmind
 
-| Capacidad | ECC | CowAgent | CodeWhale | **AGENTIC** |
+| Capacidad | ECC | CowAgent | CodeWhale | **Swarmind** |
 |-----------|-----|----------|-----------|-------------|
 | GPU Acceleration (6x) | ❌ | ❌ | ❌ | **✅** |
 | Token Economics (-51%) | ❌ | ❌ | ❌ | **✅** |

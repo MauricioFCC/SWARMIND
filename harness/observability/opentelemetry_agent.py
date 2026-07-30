@@ -7,7 +7,7 @@ Provee decoradores para automaticamente trazar llamadas de agentes.
 Usage:
     from harness.observability.opentelemetry_agent import AgentTracer, trace_agent
 
-    tracer = AgentTracer(service_name="agentic")
+    tracer = AgentTracer(service_name="Swarmind")
 
     @trace_agent("builder", "implement_api")
     def implement_api():
@@ -45,7 +45,7 @@ class AgentTracer:
     - agent.delegation_depth: Profundidad de delegacion
     """
 
-    def __init__(self, service_name: str = "agentic", otlp_endpoint: Optional[str] = None):
+    def __init__(self, service_name: str = "Swarmind", otlp_endpoint: Optional[str] = None):
         """
         Inicializa el tracer OpenTelemetry.
 

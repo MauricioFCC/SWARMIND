@@ -31,9 +31,9 @@ logger = logging.getLogger(__name__)
 # Paths
 # ---------------------------------------------------------------------------
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # AGENTIC/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # Swarmind/
 HARNESS_ROOT = PROJECT_ROOT / "harness"
-WORKSPACE_ROOT = PROJECT_ROOT  # AGENTIC/
+WORKSPACE_ROOT = PROJECT_ROOT  # Swarmind/
 
 AGENTS_DIR = PROJECT_ROOT / ".opencode" / "agents"
 PROMPT_ARCHIVE_DIR = HARNESS_ROOT / "evolve_loop" / "prompt_archive"

@@ -1,6 +1,6 @@
 """ClaudeAdapter — Adaptador para Claude Code por Anthropic.
 
-Convierte agentes AGENTIC (.opencode/agents/) al formato nativo de Claude Code:
+Convierte agentes Swarmind (.opencode/agents/) al formato nativo de Claude Code:
 
 - AGENTS.md: Lista de agentes disponibles con descripcion y comandos.
 - .claude/settings.json: Configuracion de tiempo de ejecucion.
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class ClaudeAdapter(HarnessConverter):
-    """Adaptador para exportar agentes AGENTIC a Claude Code.
+    """Adaptador para exportar agentes Swarmind a Claude Code.
 
     Genera archivos en .claude/ compatibles con Claude Code CLI.
     """
@@ -44,7 +44,7 @@ class ClaudeAdapter(HarnessConverter):
         return ".claude"
 
     def export_agents(self, dry_run: bool = False) -> ExportResult:
-        """Exporta agentes AGENTIC a AGENTS.md + directorio .claude/agents/.
+        """Exporta agentes Swarmind a AGENTS.md + directorio .claude/agents/.
 
         Cada agente se convierte a una entrada en AGENTS.md y se copia
         el archivo .md individual a .claude/agents/.
@@ -72,7 +72,7 @@ class ClaudeAdapter(HarnessConverter):
 
         # Generar AGENTS.md (indice de agentes)
         agents_md_lines: List[str] = [
-            "# AGENTES DISPONIBLES — Exportados desde AGENTIC\n",
+            "# AGENTES DISPONIBLES — Exportados desde Swarmind\n",
             "",
             "> Generado automaticamente por Multi-Harness Adapter Layer.",
             "> Fuente: .opencode/agents/",
@@ -114,7 +114,7 @@ class ClaudeAdapter(HarnessConverter):
         )
 
     def export_skills(self, dry_run: bool = False) -> ExportResult:
-        """Exporta skills AGENTIC a .claude/skills/.
+        """Exporta skills Swarmind a .claude/skills/.
 
         Cada skill .md se copia al directorio de skills de Claude Code.
 
@@ -163,7 +163,7 @@ class ClaudeAdapter(HarnessConverter):
             ExportResult con el resultado.
         """
         settings: Dict = {
-            "project": "AGENTIC",
+            "project": "Swarmind",
             "version": "3.0.0",
             "agents_path": ".claude/agents/AGENTS.md",
             "skills_path": ".claude/skills/",

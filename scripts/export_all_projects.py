@@ -12,21 +12,21 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
-EXPORT_BASE = Path(r"C:\Users\USUARIO\Mi unidad\DEV\SIDEPROYECT\exports")
+EXPORT_BASE = Path(r"$HOME\Mi unidad\DEV\SIDEPROYECT\exports")
 TODAY = date.today().isoformat()
 
-# SOLO proyectos AGENTIC - NO agregar proyectos externos
+# SOLO proyectos Swarmind - NO agregar proyectos externos
 # Los archivos ZIP de proyectos NO listados aqui NO deben eliminarse
 PROJECTS = [
-    ("AGENTIC", Path(__file__).resolve().parent.parent),
-    ("CQE", Path(r"C:\Users\USUARIO\Documents\DEV-SPACE\core-quant-engine")),
-    ("HC", Path(r"C:\Users\USUARIO\Documents\DEV-SPACE\Historia Clinica")),
-    ("Onyx", Path(r"C:\Users\USUARIO\Documents\DEV-SPACE\Onyx-Quan-AIBot")),
-    ("PDV", Path(r"C:\Users\USUARIO\Documents\DEV-SPACE\PDV Basic")),
-    ("Alfa", Path(r"C:\Users\USUARIO\Documents\DEV-SPACE\de_0_a_Alfa")),
+    ("Swarmind", Path(__file__).resolve().parent.parent),
+    ("CQE", Path(r"$HOME\Documents\DEV-SPACE\quant-engine")),
+    ("HC", Path(r"$HOME\Documents\DEV-SPACE\health-record")),
+    ("Onyx", Path(r"$HOME\Documents\DEV-SPACE\trading-bot-AIBot")),
+    ("PDV", Path(r"$HOME\Documents\DEV-SPACE\pos-system")),
+    ("Alfa", Path(r"$HOME\Documents\DEV-SPACE\from_zero")),
 ]
 
-# Tags de proyectos AGENTIC (para NO eliminar archivos externos)
+# Tags de proyectos Swarmind (para NO eliminar archivos externos)
 _KNOWN_TAGS = {p[0] for p in PROJECTS}
 
 
@@ -56,7 +56,7 @@ def export_project(tag: str, root: Path) -> int:
     zip_path = EXPORT_BASE / f"{folder}.zip"
     
     # Clean previous
-    # Safety: solo eliminar archivos de proyectos AGENTIC conocidos
+    # Safety: solo eliminar archivos de proyectos Swarmind conocidos
     if tag not in _KNOWN_TAGS:
         logger.warning(f"  Safety: {tag} not in known projects, skipping cleanup")
         return 0

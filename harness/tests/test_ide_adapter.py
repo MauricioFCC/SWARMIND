@@ -2,7 +2,7 @@
 Tests para IDEAdapter — Integracion con multiples IDEs.
 
 Verifica deteccion de IDEs presentes en el proyecto, exportacion de
-agentes AGENTIC a formatos de IDEs destino, y consistencia de la
+agentes Swarmind a formatos de IDEs destino, y consistencia de la
 lista de IDEs soportados.
 """
 from __future__ import annotations
@@ -205,7 +205,7 @@ class TestIDEAdapterIntegration:
     def test_detect_opencode_in_real_project(self) -> None:
         """En el proyecto real, OpenCode debe ser detectable.
 
-        Verifica que el proyecto AGENTIC (que tiene .opencode/) sea
+        Verifica que el proyecto Swarmind (que tiene .opencode/) sea
         detectado correctamente.
         """
         project_root = Path(__file__).resolve().parent.parent.parent

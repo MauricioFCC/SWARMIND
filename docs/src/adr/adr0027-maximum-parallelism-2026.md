@@ -4,7 +4,7 @@
 **ACEPTADO** — Implementado y verificado.
 
 ## Contexto
-AGENTIC opera como sistema multi-agente con multiples capas (hooks, zero-trust,
+Swarmind opera como sistema multi-agente con multiples capas (hooks, zero-trust,
 federated search, task orchestration). Cada capa introduce overhead paralelizable.
 Tras la expansion de Julio 2026, se identificaron oportunidades de paralelismo
 maximo no explotadas.

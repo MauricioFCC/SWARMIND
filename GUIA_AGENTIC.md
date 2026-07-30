@@ -1,8 +1,8 @@
-# Guía del Sistema AGENTIC — Swiss Watch Multi-Agente
+# Guía del Sistema Swarmind — Swiss Watch Multi-Agente
 
 ## 📋 Índice
 1. [Filosofía del Sistema](#-filosofía-del-sistema)
-2. [Cómo Usar AGENTIC Correctamente](#-cómo-usar-agentic-correctamente)
+2. [Cómo Usar Swarmind Correctamente](#-cómo-usar-Swarmind-correctamente)
 3. [Velocidad y Paralelismo Máximo](#-velocidad-y-paralelismo-máximo)
 4. [Estrategias para que el LLM no pierda memoria](#-estrategias-para-que-el-llm-no-pierda-memoria)
 5. [Máximo Provecho del Sistema](#-máximo-provecho-del-sistema)
@@ -19,7 +19,7 @@
 
 ## 🎯 Filosofía del Sistema
 
-AGENTIC es un **sistema multi-agente evolutivo** diseñado para operar como un **reloj suizo**: múltiples especialistas trabajando en paralelo, sincronizados, sin fricción.
+Swarmind es un **sistema multi-agente evolutivo** diseñado para operar como un **reloj suizo**: múltiples especialistas trabajando en paralelo, sincronizados, sin fricción.
 
 ### Principios Clave
 
@@ -32,7 +32,7 @@ AGENTIC es un **sistema multi-agente evolutivo** diseñado para operar como un *
 
 ---
 
-## 🚀 Cómo Usar AGENTIC Correctamente
+## 🚀 Cómo Usar Swarmind Correctamente
 
 ### ✅ FORMA CORRECTA (sin preámbulo)
 
@@ -67,7 +67,7 @@ Simplemente escribe tu tarea en lenguaje natural. **No necesitas agregar:**
 
 ### La Magia
 
-El sistema AGENTIC **ya tiene todo configurado** en los prompts de los agentes:
+El sistema Swarmind **ya tiene todo configurado** en los prompts de los agentes:
 
 - `coordinator.md` → Orquestación Swiss Watch, delega en paralelo
 - `builder.md` → Escribe código con Clean Code, DRY, KISS, SSOT, <900LC, patrones, DocStrings ES-UTF8, tests >80%
@@ -164,7 +164,7 @@ La respuesta es SIEMPRE "sí" — porque trabajan en directorios diferentes (src
 ## 🧠 Estrategias para que el LLM no pierda memoria
 
 Uno de los mayores desafíos al trabajar con LLMs es la **pérdida de contexto** entre sesiones.
-AGENTIC está diseñado con mecanismos para mitigar esto, pero hay estrategias que el usuario
+Swarmind está diseñado con mecanismos para mitigar esto, pero hay estrategias que el usuario
 (es decir, TÚ leyendo este documento) puede aplicar para mantener la memoria del sistema.
 
 ### 📌 Estrategia 1: Este documento como prompt de sistema
@@ -172,7 +172,7 @@ AGENTIC está diseñado con mecanismos para mitigar esto, pero hay estrategias q
 Cuando inicies una nueva sesión con el LLM, **este documento debe ser el contexto inicial**.
 
 El LLM que lee este documento DEBE:
-1. Recordar que existe un sistema AGENTIC con 5 agentes especializados
+1. Recordar que existe un sistema Swarmind con 5 agentes especializados
 2. Recordar que los estándares de calidad están embebidos (no necesita mencionarlos)
 3. Recordar que debe delegar al coordinator para tareas multi-agente
 4. Recordar la estructura del proyecto (.opencode, harness/)
@@ -180,10 +180,10 @@ El LLM que lee este documento DEBE:
 
 **Forma correcta de iniciar una sesión:**
 ```
-He leído y comprendo la GUIA_AGENTIC.md. 
-Soy un sistema AGENTIC Swiss Watch con 5 agentes (coordinator, builder, scientist, guardian, evolve).
+He leído y comprendo la GUIA_Swarmind.md. 
+Soy un sistema Swarmind Swiss Watch con 5 agentes (coordinator, builder, scientist, guardian, evolve).
 Tengo estándares automáticos: Clean Code, DRY, KISS, SSOT, <900LC, patrones, DocStrings ES-UTF8, tests >80%.
-Mi proyecto está en C:\Users\USUARIO\Documents\DEV-SPACE\AGENTIC
+Mi proyecto está en $HOME\Documents\DEV-SPACE\Swarmind
 ```
 
 ### 📌 Estrategia 2: Recordatorios estructurados al iniciar tareas
@@ -191,7 +191,7 @@ Mi proyecto está en C:\Users\USUARIO\Documents\DEV-SPACE\AGENTIC
 Para tareas largas o complejas, incluir un **brief recordatorio** al inicio:
 
 ```
-Contexto actual del proyecto AGENTIC:
+Contexto actual del proyecto Swarmind:
 - .opencode/agents/ → perfiles de 5 agentes
 - harness/ → motor de ejecución con 327 tests
 - skills disponibles: 10 skills en .opencode/skills/
@@ -213,7 +213,7 @@ ls .opencode/skills/
 
 ### 📌 Estrategia 4: El archivo cognition_store como memoria persistente
 
-AGENTIC usa `asi_cognition_store` en LanceDB para persistir lecciones aprendidas.
+Swarmind usa `asi_cognition_store` en LanceDB para persistir lecciones aprendidas.
 Cada vez que completas una tarea importante, el sistema guarda:
 
 - Qué funcionó (patrones de éxito)
@@ -453,7 +453,7 @@ Usuario -> Coordinator -> SWARM (Nivel 0) --------------------------------
 ## 📁 Estructura del Proyecto
 
 ```
-AGENTIC/
+Swarmind/
 ├── .opencode/                          # CEREBRO DEL SISTEMA (memoria del LLM)
 │   ├── agents/                         # Perfiles de agentes (5)
 │   │   ├── coordinator.md              # Orquestador Swiss Watch
@@ -518,9 +518,9 @@ AGENTIC/
 │   └── tests/                          # 327 tests de integración
 ├── scripts/
 │   ├── export_archive.py               # Script universal de exportación
-│   ├── hermes_bridge.py                # Puente con Hermes_Memory_Proyects
+│   ├── hermes_bridge.py                # Puente con shared_memory
 │   └── ... (ingest, consolidation, etc.)
-└── GUIA_AGENTIC.md                     # Este documento
+└── GUIA_Swarmind.md                     # Este documento
 ```
 
 ---
@@ -690,7 +690,7 @@ python scripts/export_archive.py
 
 ```bash
 # Exportar a Google Drive
-python scripts/export_archive.py --format zip --output "C:\Users\USUARIO\Mi unidad\DEV\SIDEPROYECT"
+python scripts/export_archive.py --format zip --output "$HOME\Mi unidad\DEV\SIDEPROYECT"
 
 # Backup rápido
 python scripts/export_archive.py --format zip
@@ -720,7 +720,7 @@ Antes de dar una tarea por completada, verificar:
 
 ## 🏁 Conclusión
 
-AGENTIC está diseñado para que **no tengas que pensar en la infraestructura**.
+Swarmind está diseñado para que **no tengas que pensar en la infraestructura**.
 Solo describe **qué** necesitas, y el sistema se encarga de:
 
 1. **Orquestar** los agentes correctos en paralelo
@@ -733,5 +733,5 @@ Solo describe **qué** necesitas, y el sistema se encarga de:
 
 ---
 
-*Documento generado: 2026-07-10 | AGENTIC Harness v2.0*  
+*Documento generado: 2026-07-10 | Swarmind Harness v2.0*  
 *Commit: `d102c2f` — feat: optimizacion tokens + purga <900LC + Swiss Watch multi-agente*

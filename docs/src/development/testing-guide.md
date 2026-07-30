@@ -1,4 +1,4 @@
-# Guía de Testing — AGENTIC Harness
+# Guía de Testing — Swarmind Harness
 
 > **Última actualización:** Julio 2026  
 > **Framework:** pytest 8+ con plugins oficiales  
@@ -808,7 +808,7 @@ if str(PROJECT_ROOT) not in sys.path:
 Si el error persiste, ejecutar los tests desde la raíz del proyecto:
 
 ```bash
-cd C:\Users\USUARIO\Documents\DEV-SPACE\AGENTIC
+cd $HOME\Documents\DEV-SPACE\Swarmind
 pytest
 ```
 

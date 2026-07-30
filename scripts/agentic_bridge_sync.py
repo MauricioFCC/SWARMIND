@@ -1,13 +1,13 @@
 """
-AGENTIC BRIDGE SYNC
+Swarmind BRIDGE SYNC
 ===================
-Script de sincronización entre Hermes_Memory_Proyects y Agentic Harness.
+Script de sincronización entre shared_memory y Swarmind Harness.
 
 Uso:
-    python scripts/agentic_bridge_sync.py          # Sync bidireccional completo
-    python scripts/agentic_bridge_sync.py --status  # Solo estado
-    python scripts/agentic_bridge_sync.py --to-hermes   # Agentic → Hermes
-    python scripts/agentic_bridge_sync.py --to-agentic  # Hermes → Agentic
+    python scripts/Swarmind_bridge_sync.py          # Sync bidireccional completo
+    python scripts/Swarmind_bridge_sync.py --status  # Solo estado
+    python scripts/Swarmind_bridge_sync.py --to-hermes   # Swarmind → Hermes
+    python scripts/Swarmind_bridge_sync.py --to-Swarmind  # Hermes → Swarmind
 """
 
 import json
@@ -22,9 +22,9 @@ logger = logging.getLogger(__name__)
 
 # Rutas
 HERMES_PATH = Path(__file__).resolve().parent.parent
-AGENTIC_PATH = Path(os.environ.get(
-    "AGENTIC_PATH",
-    r"C:\Users\USUARIO\Documents\DEV-SPACE\AGENTIC",
+Swarmind_PATH = Path(os.environ.get(
+    "Swarmind_PATH",
+    r"$HOME\Documents\DEV-SPACE\Swarmind",
 ))
 
 
@@ -34,37 +34,37 @@ def check_status() -> dict:
         "timestamp": datetime.now().isoformat(),
         "hermes_path": str(HERMES_PATH),
         "hermes_exists": HERMES_PATH.exists(),
-        "agentic_path": str(AGENTIC_PATH),
-        "agentic_exists": AGENTIC_PATH.exists(),
+        "Swarmind_path": str(Swarmind_PATH),
+        "Swarmind_exists": Swarmind_PATH.exists(),
         "hermes_brain": (HERMES_PATH / "99_Hermes_Brain").exists(),
-        "agentic_harness": (AGENTIC_PATH / "harness").exists(),
+        "Swarmind_harness": (Swarmind_PATH / "harness").exists(),
     }
 
     # Contar conocimiento
-    knowledge_dir = HERMES_PATH / "knowledge" / "agentic_bridge"
+    knowledge_dir = HERMES_PATH / "knowledge" / "Swarmind_bridge"
     status["knowledge_files"] = len(list(knowledge_dir.glob("*.json"))) if knowledge_dir.exists() else 0
 
     # Contar skills
-    skills_dir = HERMES_PATH / "skills" / "agentic_bridge"
+    skills_dir = HERMES_PATH / "skills" / "Swarmind_bridge"
     status["skill_dirs"] = len([d for d in skills_dir.iterdir() if d.is_dir()]) if skills_dir.exists() else 0
 
     return status
 
 
-def sync_hermes_to_agentic() -> int:
-    """Sincroniza Hermes → Agentic: escribe conocimiento de Hermes en formato Agentic.
+def sync_hermes_to_Swarmind() -> int:
+    """Sincroniza Hermes → Swarmind: escribe conocimiento de Hermes en formato Swarmind.
 
     Returns:
         Cantidad de archivos sincronizados.
     """
     count = 0
 
-    # 1. Conocimiento personal → Federated Memory de Agentic
+    # 1. Conocimiento personal → Federated Memory de Swarmind
     hermes_knowledge = HERMES_PATH / "knowledge"
-    agentic_federated = AGENTIC_PATH / ".opencode" / "federated"
+    Swarmind_federated = Swarmind_PATH / ".opencode" / "federated"
 
-    if hermes_knowledge.exists() and agentic_federated.exists():
-        target = agentic_federated / "hermes_knowledge"
+    if hermes_knowledge.exists() and Swarmind_federated.exists():
+        target = Swarmind_federated / "hermes_knowledge"
         target.mkdir(parents=True, exist_ok=True)
 
         for fpath in hermes_knowledge.rglob("*.md"):
@@ -73,7 +73,7 @@ def sync_hermes_to_agentic() -> int:
                 record = {
                     "id": f"hermes:knowledge:{fpath.relative_to(hermes_knowledge)}",
                     "type": "knowledge",
-                    "source_project": "Hermes_Memory_Proyects",
+                    "source_project": "shared_memory",
                     "source_agent": "hermes",
                     "key": str(fpath.relative_to(hermes_knowledge)),
                     "value": content[:2000],
@@ -87,39 +87,39 @@ def sync_hermes_to_agentic() -> int:
                     json.dump(record, f, indent=2, ensure_ascii=False)
                 count += 1
 
-    # 2. Skills de Hermes → Skills de Agentic
+    # 2. Skills de Hermes → Skills de Swarmind
     hermes_skills = HERMES_PATH / "skills"
-    agentic_skills = AGENTIC_PATH / ".opencode" / "skills"
+    Swarmind_skills = Swarmind_PATH / ".opencode" / "skills"
 
-    if hermes_skills.exists() and agentic_skills.exists():
+    if hermes_skills.exists() and Swarmind_skills.exists():
         for skill_dir in hermes_skills.iterdir():
             if skill_dir.is_dir() and (skill_dir / "SKILL.md").exists():
-                target = agentic_skills / skill_dir.name
+                target = Swarmind_skills / skill_dir.name
                 target.mkdir(parents=True, exist_ok=True)
                 content = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
                 (target / "SKILL.md").write_text(content, encoding="utf-8")
                 count += 1
 
-    logger.info(f"Hermes → Agentic: {count} archivos sincronizados")
+    logger.info(f"Hermes → Swarmind: {count} archivos sincronizados")
     return count
 
 
-def sync_agentic_to_hermes() -> int:
-    """Sincroniza Agentic → Hermes: lee conocimiento de Agentic y lo almacena en Hermes.
+def sync_Swarmind_to_hermes() -> int:
+    """Sincroniza Swarmind → Hermes: lee conocimiento de Swarmind y lo almacena en Hermes.
 
     Returns:
         Cantidad de archivos sincronizados.
     """
     count = 0
 
-    # 1. Federated Memory de Agentic → conocimiento de Hermes
-    agentic_federated = AGENTIC_PATH / ".opencode" / "federated"
-    hermes_bridge_knowledge = HERMES_PATH / "knowledge" / "agentic_bridge"
+    # 1. Federated Memory de Swarmind → conocimiento de Hermes
+    Swarmind_federated = Swarmind_PATH / ".opencode" / "federated"
+    hermes_bridge_knowledge = HERMES_PATH / "knowledge" / "Swarmind_bridge"
 
-    if agentic_federated.exists():
+    if Swarmind_federated.exists():
         hermes_bridge_knowledge.mkdir(parents=True, exist_ok=True)
 
-        for fpath in agentic_federated.rglob("*.json"):
+        for fpath in Swarmind_federated.rglob("*.json"):
             try:
                 data = json.loads(fpath.read_text(encoding="utf-8"))
                 records = data.get("records", [data] if isinstance(data, dict) else [])
@@ -133,13 +133,13 @@ def sync_agentic_to_hermes() -> int:
             except (json.JSONDecodeError, OSError):
                 continue
 
-    # 2. Skills de Agentic → Skills de Hermes
-    agentic_skills = AGENTIC_PATH / ".opencode" / "skills"
-    hermes_skills_bridge = HERMES_PATH / "skills" / "agentic_bridge"
+    # 2. Skills de Swarmind → Skills de Hermes
+    Swarmind_skills = Swarmind_PATH / ".opencode" / "skills"
+    hermes_skills_bridge = HERMES_PATH / "skills" / "Swarmind_bridge"
 
-    if agentic_skills.exists():
+    if Swarmind_skills.exists():
         hermes_skills_bridge.mkdir(parents=True, exist_ok=True)
-        for skill_dir in agentic_skills.iterdir():
+        for skill_dir in Swarmind_skills.iterdir():
             if skill_dir.is_dir() and (skill_dir / "SKILL.md").exists():
                 target = hermes_skills_bridge / skill_dir.name
                 target.mkdir(parents=True, exist_ok=True)
@@ -147,27 +147,27 @@ def sync_agentic_to_hermes() -> int:
                 (target / "SKILL.md").write_text(content, encoding="utf-8")
                 count += 1
 
-    logger.info(f"Agentic → Hermes: {count} archivos sincronizados")
+    logger.info(f"Swarmind → Hermes: {count} archivos sincronizados")
     return count
 
 
 def sync_full() -> dict:
     """Sincronización bidireccional completa."""
     logger.info("=" * 60)
-    logger.info("AGENTIC BRIDGE — SINCRONIZACIÓN COMPLETA")
+    logger.info("Swarmind BRIDGE — SINCRONIZACIÓN COMPLETA")
     logger.info("=" * 60)
     logger.info(f"Hermes: {HERMES_PATH}")
-    logger.info(f"Agentic: {AGENTIC_PATH}")
+    logger.info(f"Swarmind: {Swarmind_PATH}")
     logger.info("")
 
-    to_agentic = sync_hermes_to_agentic()
-    to_hermes = sync_agentic_to_hermes()
+    to_Swarmind = sync_hermes_to_Swarmind()
+    to_hermes = sync_Swarmind_to_hermes()
 
     result = {
         "timestamp": datetime.now().isoformat(),
-        "hermes_to_agentic": to_agentic,
-        "agentic_to_hermes": to_hermes,
-        "total": to_agentic + to_hermes,
+        "hermes_to_Swarmind": to_Swarmind,
+        "Swarmind_to_hermes": to_hermes,
+        "total": to_Swarmind + to_hermes,
     }
 
     logger.info("")
@@ -179,10 +179,10 @@ def sync_full() -> dict:
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Agentic Bridge Sync")
+    parser = argparse.ArgumentParser(description="Swarmind Bridge Sync")
     parser.add_argument("--status", action="store_true", help="Mostrar estado")
-    parser.add_argument("--to-hermes", action="store_true", help="Agentic → Hermes")
-    parser.add_argument("--to-agentic", action="store_true", help="Hermes → Agentic")
+    parser.add_argument("--to-hermes", action="store_true", help="Swarmind → Hermes")
+    parser.add_argument("--to-Swarmind", action="store_true", help="Hermes → Swarmind")
 
     args = parser.parse_args()
 
@@ -190,8 +190,8 @@ if __name__ == "__main__":
         s = check_status()
         print(json.dumps(s, indent=2))
     elif args.to_hermes:
-        sync_agentic_to_hermes()
-    elif args.to_agentic:
-        sync_hermes_to_agentic()
+        sync_Swarmind_to_hermes()
+    elif args.to_Swarmind:
+        sync_hermes_to_Swarmind()
     else:
         sync_full()

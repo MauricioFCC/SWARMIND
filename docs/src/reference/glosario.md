@@ -1,6 +1,6 @@
 # Glosario de Terminos y Abreviaturas
 
-> Referencia rapida de abreviaturas, terminos y frameworks del proyecto AGENTIC Harness.
+> Referencia rapida de abreviaturas, terminos y frameworks del proyecto Swarmind Harness.
 > Version del sistema: 2026-07-20
 
 ---
@@ -23,7 +23,7 @@
 | SSOT | Single Source of Truth | Principio de una unica fuente de verdad para cada dato del sistema |
 | CB | Circuit Breaker | Interruptor de circuito que previene llamadas repetidas a componentes fallidos |
 | FDE | Forward Deployment Engineering | Ingenieria que prioriza despliegues incrementales con validacion continua |
-| CQE | Core Quant Engine | Motor cuantitativo central implementado en Rust para computacion de alta perfomance |
+| CQE | quant-engine | Motor cuantitativo central implementado en Rust para computacion de alta perfomance |
 | TCA | Transaction Cost Analysis | Analisis de costos de transaccion para optimizacion de ejecuciones |
 | FSM | Finite State Machine | Maquina de estados finitos para modelar ciclos de vida de tareas y agentes |
 | LC | Line Count | Conteo de lineas por archivo, con limite riguroso de <900 |

@@ -46,7 +46,7 @@ class TestDetectDomain:
         ("Estrategia de trading cuantitativo", "trading"),
         ("Investigacion de papers sobre transformers", "research"),
         ("Documento juridico contrato de arrendamiento", "legal"),
-        ("Sistema de historia clinica electronica", "health"),
+        ("Sistema de health-record electronica", "health"),
         ("Punto de venta para tienda minorista", "retail"),
         ("Hola mundo", "general"),
         ("", "general"),

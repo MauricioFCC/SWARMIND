@@ -4,7 +4,7 @@
 **ACEPTADO** — Investigacion completada con 3 especialistas paralelos. Implementacion progresiva.
 
 ## Contexto
-AGENTIC alcanzo 2213 tests, 30 skills (100% minificados), 8 agentes, 22 ADRs. Se realizo una auditoria integral con 3 especialistas (scientist+guardian+architect) investigando 40+ papers julio 2026.
+Swarmind alcanzo 2213 tests, 30 skills (100% minificados), 8 agentes, 22 ADRs. Se realizo una auditoria integral con 3 especialistas (scientist+guardian+architect) investigando 40+ papers julio 2026.
 
 ## Investigacion Realizada
 

@@ -1,4 +1,4 @@
-"""QA Pipeline 5-Capas — Sistema de Calidad Agentico para AGENTIC.
+"""QA Pipeline 5-Capas — Sistema de Calidad Agentico para Swarmind.
 
 Implementa el stack completo de madurez QA segun auditoria de 50 equipos (Julio 2026):
 
@@ -6,7 +6,7 @@ L1 — AI/ML: FailurePredictor (prediccion de fallos antes de ejecutar)
 L2 — Neural Networks: VisualAnomalyDetector (deteccion de patrones anomalos)
 L3 — Gen AI: TestCaseGenerator (generacion de casos con guardrails anti-alucinacion)
 L4 — AI Agents: AutonomousTestAgent (ejecucion autonoma con MCP)
-L5 — Agentic AI: QAOrchestrator (orquestacion extremo a extremo)
+L5 — Swarmind AI: QAOrchestrator (orquestacion extremo a extremo)
 
 Referencia: ToolGuardian arXiv:2607.21835, IMACS arXiv:2607.25446
 

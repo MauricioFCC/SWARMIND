@@ -208,7 +208,7 @@ class TestMemoryConfigProperties:
 
     def test_is_hermes_available_true(self, tmp_path: Path):
         """is_hermes_available es True si el path existe y bridge activo."""
-        hermes_dir = tmp_path / "Hermes_Memory_Proyects"
+        hermes_dir = tmp_path / "shared_memory"
         hermes_dir.mkdir(parents=True)
         config = MemoryConfig(
             hermes_path=str(hermes_dir),

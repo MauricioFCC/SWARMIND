@@ -19,11 +19,11 @@ import pytest
 # ---------------------------------------------------------------------------
 
 PROJECTS: Dict[str, Path] = {
-    "CQE": Path(r"C:\Users\USUARIO\Documents\DEV-SPACE\core-quant-engine"),
-    "HC": Path(r"C:\Users\USUARIO\Documents\DEV-SPACE\Historia Clinica"),
-    "Onyx": Path(r"C:\Users\USUARIO\Documents\DEV-SPACE\Onyx-Quan-AIBot"),
-    "PDV": Path(r"C:\Users\USUARIO\Documents\DEV-SPACE\PDV Basic"),
-    "Hermes": Path(r"C:\Users\USUARIO\Documents\Hermes_Memory_Proyects"),
+    "CQE": Path(r"$HOME\Documents\DEV-SPACE\quant-engine"),
+    "HC": Path(r"$HOME\Documents\DEV-SPACE\health-record"),
+    "Onyx": Path(r"$HOME\Documents\DEV-SPACE\trading-bot-AIBot"),
+    "PDV": Path(r"$HOME\Documents\DEV-SPACE\pos-system"),
+    "Hermes": Path(r"$HOME\Documents\shared_memory"),
 }
 
 # Agentes fantasma que NO deben aparecer en routing_rules.yaml

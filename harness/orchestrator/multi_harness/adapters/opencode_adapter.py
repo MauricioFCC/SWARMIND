@@ -1,6 +1,6 @@
 """OpenCodeAdapter — Adaptador nativo para OpenCode.
 
-OpenCode es el runtime nativo de AGENTIC. Este adaptador es un passthrough:
+OpenCode es el runtime nativo de Swarmind. Este adaptador es un passthrough:
 no convierte nada porque .opencode/ YA esta en el formato correcto.
 
 Proposito:

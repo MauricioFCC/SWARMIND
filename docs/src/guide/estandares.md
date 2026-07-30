@@ -1,6 +1,6 @@
 ﻿# Estándares Automáticos
 
-AGENTIC aplica **estándares de calidad institucional** en cada tarea, sin que el usuario tenga que mencionarlos. Están embebidos en los prompts de los agentes y se verifican en cada ciclo.
+Swarmind aplica **estándares de calidad institucional** en cada tarea, sin que el usuario tenga que mencionarlos. Están embebidos en los prompts de los agentes y se verifican en cada ciclo.
 
 ---
 

@@ -157,7 +157,7 @@ class TestSessionKPIRecord:
 
     def test_to_lancedb_row(self):
         rec = SessionKPIRecord(
-            session_id="s1", task="implement API", project="agentic",
+            session_id="s1", task="implement API", project="Swarmind",
             status="completed", total_duration_ms=150000.0,
             total_subtasks=5, total_errors=1, total_warnings=2,
             success_rate=0.8, levels_completed=3, agents_involved=2,
@@ -167,7 +167,7 @@ class TestSessionKPIRecord:
         row = rec.to_lancedb_row()
         assert row["session_id"] == "s1"
         assert row["task"] == "implement API"
-        assert row["project"] == "agentic"
+        assert row["project"] == "Swarmind"
         assert row["status"] == "completed"
         assert row["total_duration_ms"] == 150000.0
         assert row["total_subtasks"] == 5

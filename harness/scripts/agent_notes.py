@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Agent Notes — Structured note-taking tool (Anthropic-style agentic memory).
+Agent Notes — Structured note-taking tool (Anthropic-style Swarmind memory).
 
 Los agentes pueden escribir notas estructuradas que persisten entre sesiones.
 Implementa el patron NOTES.md de Anthropic: el agente escribe notas regularmente

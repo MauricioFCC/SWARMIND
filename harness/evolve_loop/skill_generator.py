@@ -29,9 +29,9 @@ logger = logging.getLogger(__name__)
 # Paths
 # ---------------------------------------------------------------------------
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # AGENTIC/
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # Swarmind/
 HARNESS_ROOT = PROJECT_ROOT / "harness"
-WORKSPACE_ROOT = PROJECT_ROOT  # AGENTIC/
+WORKSPACE_ROOT = PROJECT_ROOT  # Swarmind/
 
 AUTO_SKILLS_DIR = PROJECT_ROOT / ".opencode" / "skills" / "auto"
 REGISTRY_PATH = PROJECT_ROOT / ".opencode" / "skills" / "skills_registry.yaml"

@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 SKILL_REGISTRY: List[Dict[str, Any]] = [
     {"name": "alpha-research",     "domain": "quantitative", "keywords": "factor research ml machine learning feature engineering statistical validation alpha backtest"},
     {"name": "evolve",             "domain": "meta",         "keywords": "self-improvement evolution loop cognition auto-mejora continua"},
-    {"name": "healthtech",         "domain": "healthtech",   "keywords": "health healthcare clinical hipaa ehr interoperabilidad paciente historia clinica medico"},
+    {"name": "healthtech",         "domain": "healthtech",   "keywords": "health healthcare clinical hipaa ehr interoperabilidad paciente health-record medico"},
     {"name": "hedgefund",          "domain": "financial",    "keywords": "hedge fund institutional risk reward capital allocation portfolio"},
     {"name": "legal-doc",          "domain": "legal",        "keywords": "legal contract compliance law jurisprudence documento juridico"},
     {"name": "math-doc",           "domain": "academic",     "keywords": "math latex theorem proof equation estadistica algebra calculo"},

@@ -1,4 +1,4 @@
-"""Reglas de guardrails incorporadas para AGENTIC.
+"""Reglas de guardrails incorporadas para Swarmind.
 
 Cada regla es una funcion pura con firma: ``(text: str) -> tuple[bool, str]``
 donde el primer elemento indica si hubo violacion (True = violado) y el

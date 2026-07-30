@@ -1,4 +1,4 @@
-# Architecture Decision Records — AGENTIC
+# Architecture Decision Records — Swarmind
 
 Indice de todas las decisiones arquitectónicas del proyecto.
 

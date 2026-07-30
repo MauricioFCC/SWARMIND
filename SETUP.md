@@ -1,4 +1,4 @@
-# AGENTIC — Onboarding Seguro + Research First
+# Swarmind — Onboarding Seguro + Research First
 
 > **Research First**: Antes de ejecutar cualquier comando en este proyecto,
 > INVESTIGA el estado del arte. Busca mejoras, herramientas, frameworks
@@ -60,8 +60,8 @@ winget install OpenCode
 
 ```powershell
 # Clonar
-git clone <repo-url> AGENTIC
-cd AGENTIC
+git clone <repo-url> Swarmind
+cd Swarmind
 
 # 🔬 RESEARCH FIRST: Antes de instalar, investiga
 # ?Que ha cambiado desde la ultima vez?
@@ -118,7 +118,7 @@ print(hc.check_liveness())
 ```powershell
 # Antes de empezar a trabajar, investiga el estado del arte:
 # 1. Token Economics: ?Sigue siendo el Harness Effect lo mas avanzado?
-#    Buscar: "token optimization agentic systems 2026"
+#    Buscar: "token optimization Swarmind systems 2026"
 # 2. Competitive Programming: ?Hay algoritmos mejores que Stoer-Wagner?
 #    Buscar: "competitive programming algorithms 2026 state of the art"
 # 3. Text Analysis: ?Sigue Doc-Researcher siendo el mejor?
@@ -132,7 +132,7 @@ print(hc.check_liveness())
 ## 🧠 Arquitectura del Sistema
 
 ```
-AGENTIC/
+Swarmind/
 ├── .opencode/             # Framework de agentes (5 core + configs)
 │   ├── agents/            # coordinator, builder, scientist, guardian, evolve
 │   ├── config/            # routing_rules, token_budgets, project_config
@@ -262,7 +262,7 @@ python harness/run.py "@builder: implementa un segment tree"
 
 ```powershell
 # 🔬 RESEARCH FIRST: Investiga antes de ejecutar
-# Buscar: "AGENTIC project improvements 2026"
+# Buscar: "Swarmind project improvements 2026"
 # Buscar: "opencode multi-agent framework latest"
 # Buscar: "token economics for LLM agents 2026"
 

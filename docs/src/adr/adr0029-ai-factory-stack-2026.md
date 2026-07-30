@@ -6,7 +6,7 @@
 ## Contexto
 La mayoria de equipos AI cree que construir sistemas AI es elegir el mejor LLM.
 En realidad, las aplicaciones AI modernas combinan 7 capas que trabajan juntas.
-AGENTIC necesitaba integrar formalmente todas las capas del AI Factory Stack
+Swarmind necesitaba integrar formalmente todas las capas del AI Factory Stack
 en un unico orquestador.
 
 ## AI Factory Stack 7-Capas
@@ -21,7 +21,7 @@ Guardrails → Protect
 Evals → Improve
 ```
 
-## Implementacion en AGENTIC
+## Implementacion en Swarmind
 
 ### Gap Analysis: Antes vs Despues
 
@@ -80,7 +80,7 @@ AGENT_EXECUTION, MCP_CALL, COMPLETED, FAILED, COMPENSATED
 Archivo: `harness/aifactory/` (1,270 lines, 2 archivos)
 
 ## Consecuencias
-- AGENTIC ahora cubre las 7 capas del AI Factory Stack
+- Swarmind ahora cubre las 7 capas del AI Factory Stack
 - Guardrails protegen contra prompt injection, PII leak, codigo malicioso
 - Evals permiten mejora continua basada en datos
 - AIFactory orquesta todo en un pipeline unificado
@@ -95,4 +95,4 @@ Archivo: `harness/aifactory/` (1,270 lines, 2 archivos)
 ## Referencias
 - AI Factory Stack: LLM + RAG + VectorDB + Agent + MCP + Guardrails + Evals
 - arXiv:2607.21835 — ToolGuardian
-- ADR-0028: Agentic QA Pipeline 5-Capas
+- ADR-0028: Swarmind QA Pipeline 5-Capas

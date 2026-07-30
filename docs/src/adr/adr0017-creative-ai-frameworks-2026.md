@@ -4,7 +4,7 @@
 **ACEPTADO** — Implementado en commit eb9e1ec.
 
 ## Contexto
-AGENTIC no incorporaba ningún framework de creatividad computacional. Investigación de 10+ papers julio 2026 identificó 3 brechas críticas:
+Swarmind no incorporaba ningún framework de creatividad computacional. Investigación de 10+ papers julio 2026 identificó 3 brechas críticas:
 
 1. **Diversity Collapse** (arXiv:2604.18005): Sistemas multi-agente para ideación sufren *structural coupling* — la interacción entre agentes *contrae* la exploración. Topologías densas aceleran convergencia prematura. **Crítico**: modelos más fuertes → diversidad marginal decreciente.
 

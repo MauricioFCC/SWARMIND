@@ -96,12 +96,12 @@ Aplicar estas tecnicas automaticamente para optimizar rendimiento:
 | **Lazy Evaluation** | No computar hasta que sea necesario |
 | **Early Exit** | Terminar loop tan pronto como el resultado sea determinado |
 
-## Tecnicas de Vanguardia para Codificacion Agentic
+## Tecnicas de Vanguardia para Codificacion Swarmind
 
 | Tecnica | Descripcion | Aplicacion |
 |---------|-------------|-----------|
 | **TDAD** | Test-Driven AI Agent Definition: prompts como artefactos compilados. Roles: Test-Smith (tests), PromptSmith (compila prompts), MutationSmith (mutaciones semanticas), Built Agent (runtime). Hidden/visible test splits, semantic mutation testing, spec evolution. 92% v1 success | Escribir tests primero → compilar prompt hasta pasar → mutar semantica para validar robustez |
-| **TDFlow** | Workflow agentic test-driven para SWE a escala repositorio. Sub-agentes: patch proposer, debugger, patch reviser, test generator opcional. 88.8% pass SWE-Bench Lite, 94.3% SWE-Bench Verified | Patch proposer → debugger → patch reviser → iterar hasta pasar todos los tests del repo |
+| **TDFlow** | Workflow Swarmind test-driven para SWE a escala repositorio. Sub-agentes: patch proposer, debugger, patch reviser, test generator opcional. 88.8% pass SWE-Bench Lite, 94.3% SWE-Bench Verified | Patch proposer → debugger → patch reviser → iterar hasta pasar todos los tests del repo |
 | **PaCoRe** | Parallel Coordinated Reasoning: exploracion paralela + message-passing entre agentes + RL training. Escala test-time compute a millones de tokens sin exceder context window | Dividir exploracion en agentes paralelos, sincronizar via message-passing, entrenar con RL |
 | **REPOREASON** | White-box diagnostic con Abductive Assertion Verification y Execution-Driven Mutation para identificar bugs precisos en la codebase | Diagnosticar causas raiz con verificacion abductiva y mutacion dirigida por ejecucion |
 | **ABC-Bench** | Full-lifecycle backend coding benchmark: 8 lenguajes, 19 frameworks. Evalua agentes en escenarios reales multi-lenguaje | Usar como referencia de calidad para evaluaciones multi-lenguaje |

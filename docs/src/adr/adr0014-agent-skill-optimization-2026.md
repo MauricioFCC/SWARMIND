@@ -6,7 +6,7 @@
 
 ## Contexto
 
-El sistema AGENTIC cuenta con 8 agentes y 16 skills desplegados en 5 proyectos. Auditoría profunda con 3 especialistas (scientist+guardian+builder) más investigación web frontera de 15 papers 2026 reveló:
+El sistema Swarmind cuenta con 8 agentes y 16 skills desplegados en 5 proyectos. Auditoría profunda con 3 especialistas (scientist+guardian+builder) más investigación web frontera de 15 papers 2026 reveló:
 
 ### Problemas sistémicos identificados y corregidos:
 
@@ -60,7 +60,7 @@ Sistema de debate estructurado entre N agentes especializados en atributos de ca
 
 | Paper | Hallazgo | Aplicación | Prioridad |
 |-------|----------|------------|-----------|
-| __arXiv:2606.23127__ | AFTER: 382 tareas enterprise, 22 skills procedurales. +3.7-6.7 pts por ronda de refinamiento. Skills multi-modelo: 73.1% accuracy cross-model | Refinement loop validado para skills AGENTIC | 🔴 Alta |
+| __arXiv:2606.23127__ | AFTER: 382 tareas enterprise, 22 skills procedurales. +3.7-6.7 pts por ronda de refinamiento. Skills multi-modelo: 73.1% accuracy cross-model | Refinement loop validado para skills Swarmind | 🔴 Alta |
 | __arXiv:2606.19758__ | SIGMA: Skill-incidence graphs. +2.06 pts vs CARD. Agentes como bundles de skills reusables. Robusto a skill libraries no vistas (drop 0.96 pts) | Composición dinámica de agentes desde skills | 🔴 Alta |
 | __arXiv:2605.27864__ | FundaPod: Declarative skill registry → typed task graphs. Aislamiento cognitivo entre agentes. Knowledge graph "second brain" | Skills_registry.yaml → task graphs automáticos | 🔴 Alta |
 | __arXiv:2607.05377__ | Cortex: 32 canonical skill primitives estandarizadas para manipulación | Estandarización de primitivas de skill | 🟡 Media |

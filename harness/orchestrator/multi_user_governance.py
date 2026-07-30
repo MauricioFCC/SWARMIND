@@ -10,7 +10,7 @@ Roles: admin, editor, viewer, auditor. El admin hereda todos los permisos;
 editor hereda de viewer; auditor tiene permisos de lectura y auditoria.
 
 Basado en: arXiv:2606.21856 — Multi-Principal Permission Governance with
-Execution Hooks for Agentic Systems.
+Execution Hooks for Swarmind Systems.
 """
 from __future__ import annotations
 

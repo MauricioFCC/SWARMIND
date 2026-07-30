@@ -1,5 +1,5 @@
 """
-Benchmark: GPU vs CPU speedup for AGENTIC hot paths.
+Benchmark: GPU vs CPU speedup for Swarmind hot paths.
 
 Mide el speedup real de GPU en:
 1. fallback_embedding (single + batch)
@@ -73,7 +73,7 @@ def main():
     N = 1000
 
     print(f"\n{'='*65}")
-    print(f"  AGENTIC GPU BENCHMARK")
+    print(f"  Swarmind GPU BENCHMARK")
     print(f"  Device: {DEVICE_NAME} | VRAM: {GPU_MEMORY_GB:.1f}GB | CUDA: {HAVE_CUDA}")
     print(f"{'='*65}\n")
 

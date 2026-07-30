@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-builtin_evals — Evaluaciones incorporadas para las 7 capas del stack AGENTIC.
+builtin_evals — Evaluaciones incorporadas para las 7 capas del stack Swarmind.
 
 Cada funcion implementa una evaluacion concreta que produce una lista de
 EvalResult con metricas cuantitativas. Las evaluaciones son deterministicas

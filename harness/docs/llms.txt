@@ -1,4 +1,4 @@
-# AGENTIC Harness
+# Swarmind Harness
 > LLMs.txt — contexto curado para LLMs (generado automaticamente)
 
 ## Core
@@ -9,16 +9,16 @@
 - [AGENTS.md — Onyx Multi-Agent System (Hermes-style manifest)](harness/AGENTS.md)
 - [!/usr/bin/env python3](harness/delegate.py)
 - [Evolve Analyzer](harness/docs/llms-full.txt)
-- [AGENTIC Harness](harness/docs/llms.txt)
+- [Swarmind Harness](harness/docs/llms.txt)
 - [!/usr/bin/env python3](harness/hermes_bridge.py)
 - [site_name: Onyx Multi-Agent System](harness/mkdocs.yml)
-- [AGENTIC — Multi-Agent Evolutionary Harness](harness/README.md)
+- [Swarmind — Multi-Agent Evolutionary Harness](harness/README.md)
 - [1. Vector database (new name)](harness/reset_state.py)
 - [---------------------------------------------------------------------------](harness/run.py)
 - [── DB Commands ──────────────────────────────────────────────────────](harness/run_commands.py)
 - [!/usr/bin/env python3](harness/run_hermes.py)
 - ["""Cron-based task scheduler with JSON persistence.](harness/scheduler.py)
-- [AGENTIC Hermes Integration](harness/skills/agentic-hermes.md)
+- [Swarmind Hermes Integration](harness/skills/Swarmind-hermes.md)
 
 ## Agents (.opencode/)
 
@@ -167,9 +167,9 @@
 
 - [!/usr/bin/env python3](code_quality_assessor.py)
 - [!/usr/bin/env python3](observability_logging.py)
-- [Análisis de Aplicación de Principios Universales de Programación al Proyecto AGENTIC](PRINCIPIOS_APLICADO_AGENTIC.md)
+- [Análisis de Aplicación de Principios Universales de Programación al Proyecto Swarmind](PRINCIPIOS_APLICADO_Swarmind.md)
 - [Refactor proposal for run.py main() function to apply KISS and SRP principles](REFACTOR_RUN_PY_PROPOSAL.md)
-- [RESUMEN: APLICACIÓN DE PRINCIPIOS UNIVERSALES DE PROGRAMACIÓN AL PROYECTO AGENTIC](RESUMEN_APLICACION_PRINCIPIOS.md)
+- [RESUMEN: APLICACIÓN DE PRINCIPIOS UNIVERSALES DE PROGRAMACIÓN AL PROYECTO Swarmind](RESUMEN_APLICACION_PRINCIPIOS.md)
 - [{](task_schema.json)
 
 ## Quick Reference

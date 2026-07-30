@@ -46,7 +46,7 @@ description: "Investigador académico especializado en revisión de literatura, 
 
 ## Metodologias de Investigacion
 
-| Metodologia | Descripcion | Aplicacion en AGENTIC |
+| Metodologia | Descripcion | Aplicacion en Swarmind |
 |-------------|-------------|----------------------|
 | **PRISMA 2020** | Checklist 27 items para systematic reviews | Revision de literatura sobre multi-agente systems |
 | **PICOS** | Population, Intervention, Comparison, Outcome, Study design | Formulacion de preguntas de investigacion |
@@ -79,7 +79,7 @@ description: "Investigador académico especializado en revisión de literatura, 
 - **Hallazgos Clave**: ...
 - **Fortalezas**: ...
 - **Debilidades**: ...
-- **Conexion AGENTIC**: ...
+- **Conexion Swarmind**: ...
 - **Citas Clave**: "..." (pag. X)
 ```
 
@@ -118,6 +118,6 @@ def revisar_literatura(topicos: List[str]) -> Dict:
 - [ ] Busqueda realizada en fuentes academicas (Google Scholar, Semantic Scholar, arXiv)
 - [ ] Papers relevantes identificados y fichados
 - [ ] Sintesis de hallazgos completa
-- [ ] Conexion con sistema AGENTIC documentada
+- [ ] Conexion con sistema Swarmind documentada
 - [ ] DocStrings ES-UTF8 en todo codigo generado
 - [ ] Errores legibles y accionables

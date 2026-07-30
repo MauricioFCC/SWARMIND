@@ -1,4 +1,4 @@
-﻿# Cómo Modificar el Proyecto — AGENTIC Harness
+﻿# Cómo Modificar el Proyecto — Swarmind Harness
 
 > **Última actualización:** Julio 2026 · Python 3.10+ · 92 archivos test · 2900+ tests · cobertura ~65%
 

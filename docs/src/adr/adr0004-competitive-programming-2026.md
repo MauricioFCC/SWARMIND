@@ -74,7 +74,7 @@ Mantenidos del repertorio anterior pero con precision aumentada:
 
 El builder.md incorpora tabla completa de 30+ tecnicas con:
 - Tabla de tecnicas clasicas (12 items)
-- Tabla de vanguardia agentic (TDAD, TDFlow, PaCoRe, REPOREASON, ABC-Bench)
+- Tabla de vanguardia Swarmind (TDAD, TDFlow, PaCoRe, REPOREASON, ABC-Bench)
 - Testing avanzado (PROBE, AdverTest, PBT, FuzzAgent, SMART)
 - Optimizacion de tokens (Cache-Shape, Failure-Spend, Structured Compaction, Harness Effect)
 

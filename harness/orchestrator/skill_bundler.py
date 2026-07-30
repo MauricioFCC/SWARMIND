@@ -82,7 +82,7 @@ DOMAIN_KEYWORDS: Dict[str, List[str]] = {
     "trading": ["trading", "quant", "estrategia trading", "mercado financiero"],
     "research": ["research", "investigacion", "paper", "estudio academico"],
     "legal": ["legal", "juridico", "contrato", "norma legal", "regulacion"],
-    "health": ["historia clinica", "salud", "hospital", "paciente", "hipaa"],
+    "health": ["health-record", "salud", "hospital", "paciente", "hipaa"],
     "retail": ["retail", "punto de venta", "pos", "tienda", "inventario", "facturacion"],
     "devops": ["devops", "ci/cd", "deploy", "kubernetes", "docker", "infraestructura"],
 }

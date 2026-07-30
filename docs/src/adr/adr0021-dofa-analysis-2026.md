@@ -4,7 +4,7 @@
 **ACEPTADO** — Investigacion completada.
 
 ## Contexto
-Analisis comparativo de AGENTIC vs 4 proyectos benchmark (ECC, DeerFlow, CowAgent, CodeWhale)
+Analisis comparativo de Swarmind vs 4 proyectos benchmark (ECC, DeerFlow, CowAgent, CodeWhale)
 para identificar fortalezas, debilidades, oportunidades y amenazas.
 
 ## Matriz DOFA
@@ -26,10 +26,10 @@ para identificar fortalezas, debilidades, oportunidades y amenazas.
 
 ### Oportunidades (Externas)
 1. Mercado Legal AI: Crecimiento acelerado, demanda de explicabilidad y auditoria
-2. Token Economics 2.0: AGENTIC es lider en optimizacion de costos LLM
-3. GPU democratizada: Cada vez mas equipos con GPU, AGENTIC las aprovecha
+2. Token Economics 2.0: Swarmind es lider en optimizacion de costos LLM
+3. GPU democratizada: Cada vez mas equipos con GPU, Swarmind las aprovecha
 4. Governance AI: Regulacion creciente (EU AI Act), demanda de sistemas auditables
-5. Nicho calidad/precio: AGENTIC compite en calidad a costo menor
+5. Nicho calidad/precio: Swarmind compite en calidad a costo menor
 
 ### Amenazas (Externas)
 1. ECC escala: 235k⭐, 67 agents, 281 skills, comunidad activa
@@ -40,7 +40,7 @@ para identificar fortalezas, debilidades, oportunidades y amenazas.
 
 ## Posicionamiento Recomendado
 
-AGENTIC debe posicionarse como el **harness enterprise para calidad y gobernanza**:
+Swarmind debe posicionarse como el **harness enterprise para calidad y gobernanza**:
 - Diferenciacion: GPU + token economics + governance + testing
 - Nicho: Equipos legales, financieros y regulados que necesitan auditoria
 - Mensaje: "No el mas rapido, sino el mas defendible"

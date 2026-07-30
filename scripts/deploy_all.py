@@ -4,10 +4,10 @@ También optimiza skills por tipo de proyecto, actualiza README, y configura mem
 
 Proyectos destino:
   - Aeternus                   → tipo: general
-  - core-quant-engine          → tipo: trading
-  - Historia Clinica           → tipo: healthtech
-  - Onyx-Quan-AIBot            → tipo: trading
-  - PDV Basic                  → tipo: retail
+  - quant-engine          → tipo: trading
+  - health-record           → tipo: healthtech
+  - trading-bot-AIBot            → tipo: trading
+  - pos-system                  → tipo: retail
 
 Uso:
     python scripts/deploy_all.py                       # Deploy completo
@@ -33,9 +33,9 @@ logger = logging.getLogger(__name__)
 # Config
 # ---------------------------------------------------------------------------
 
-_HERE = Path(__file__).resolve().parent          # AGENTIC/scripts/
-_ROOT = _HERE.parent                              # AGENTIC/
-_HARNESS = _ROOT / "harness"                      # AGENTIC/harness/
+_HERE = Path(__file__).resolve().parent          # Swarmind/scripts/
+_ROOT = _HERE.parent                              # Swarmind/
+_HARNESS = _ROOT / "harness"                      # Swarmind/harness/
 
 # ---------------------------------------------------------------------------
 # Resolucion de rutas de proyectos (portable via env vars)
@@ -45,9 +45,9 @@ _HARNESS = _ROOT / "harness"                      # AGENTIC/harness/
 # Si DEV_SPACE_ROOT tampoco esta definido, se usa el default local.
 # ---------------------------------------------------------------------------
 
-_DEV_SPACE = Path(os.environ.get("DEV_SPACE_ROOT", r"C:\Users\USUARIO\Documents\DEV-SPACE"))
-_HERMES_PATH = Path(os.environ.get("HERMES_ROOT", r"C:\Users\USUARIO\Documents\Hermes_Memory_Proyects"))
-_ALFA_PATH = Path(os.environ.get("ALFA_ROOT", r"C:\Users\USUARIO\Documents\DEV-SPACE\de_0_a_Alfa"))
+_DEV_SPACE = Path(os.environ.get("DEV_SPACE_ROOT", r"$HOME\Documents\DEV-SPACE"))
+_HERMES_PATH = Path(os.environ.get("HERMES_ROOT", r"$HOME\Documents\shared_memory"))
+_ALFA_PATH = Path(os.environ.get("ALFA_ROOT", r"$HOME\Documents\DEV-SPACE\from_zero"))
 
 
 def _project_path(name: str, env_var: str, default: str) -> str:
@@ -56,7 +56,7 @@ def _project_path(name: str, env_var: str, default: str) -> str:
     if env_val:
         return env_val
     # Si DEV_SPACE_ROOT fue cambiado, usar relativo
-    if _DEV_SPACE != Path(r"C:\Users\USUARIO\Documents\DEV-SPACE"):
+    if _DEV_SPACE != Path(r"$HOME\Documents\DEV-SPACE"):
         return str(_DEV_SPACE / name)
     return default
 
@@ -81,9 +81,9 @@ _DOC_SKILLS = ["legal-doc", "science-doc", "math-doc", "data-science"]
 
 # Proyectos destino (rutas portables via env vars)
 PROJECTS = {
-    "core-quant-engine": {
-        "path": _project_path("core-quant-engine", "CQE_ROOT",
-                              r"C:\Users\USUARIO\Documents\DEV-SPACE\core-quant-engine"),
+    "quant-engine": {
+        "path": _project_path("quant-engine", "CQE_ROOT",
+                              r"$HOME\Documents\DEV-SPACE\quant-engine"),
         "type": "trading",
         # Mantiene skills de trading + document analysis
         "keep_skills": ["evolve", "hedgefund", "quant-trading", "alpha-research", "risk-execution"],
@@ -91,34 +91,34 @@ PROJECTS = {
                        "rust-lang", "architecture", "security-audit"],
         "description": "Motor cuantitativo de trading en Rust",
     },
-    "Historia Clinica": {
-        "path": _project_path("Historia Clinica", "HC_ROOT",
-                              r"C:\Users\USUARIO\Documents\DEV-SPACE\Historia Clinica"),
+    "health-record": {
+        "path": _project_path("health-record", "HC_ROOT",
+                              r"$HOME\Documents\DEV-SPACE\health-record"),
         "type": "healthtech",
         "keep_skills": ["evolve", "hedgefund", "healthtech"],
         "add_skills": ["legal-doc", "science-doc", "data-science", "security-audit",
                        "psychology", "ethics", "communication"],
         "description": "Sistema de historias clínicas electrónicas",
     },
-    "Onyx-Quan-AIBot": {
-        "path": _project_path("Onyx-Quan-AIBot", "ONYX_ROOT",
-                              r"C:\Users\USUARIO\Documents\DEV-SPACE\Onyx-Quan-AIBot"),
+    "trading-bot-AIBot": {
+        "path": _project_path("trading-bot-AIBot", "ONYX_ROOT",
+                              r"$HOME\Documents\DEV-SPACE\trading-bot-AIBot"),
         "type": "trading",
         # Todos los skills para analisis completo
         "keep_skills": _ALL_SKILLS,
         "add_skills": [],
         "description": "Bot de trading cuantitativo con IA",
     },
-    "PDV Basic": {
-        "path": _project_path("PDV Basic", "PDV_ROOT",
-                              r"C:\Users\USUARIO\Documents\DEV-SPACE\PDV Basic"),
+    "pos-system": {
+        "path": _project_path("pos-system", "PDV_ROOT",
+                              r"$HOME\Documents\DEV-SPACE\pos-system"),
         "type": "retail",
         "keep_skills": ["evolve", "hedgefund", "pos-retail", "legal-doc"],
         "add_skills": ["data-science", "science-doc", "communication",
                        "business-strategy", "project-management"],
         "description": "Sistema de punto de venta básico",
     },
-    "Hermes_Memory_Proyects": {
+    "shared_memory": {
         "path": str(_HERMES_PATH),
         "type": "general",
         # Todos los 29 skills para analisis completo de documentos
@@ -126,7 +126,7 @@ PROJECTS = {
         "add_skills": [],
         "description": "Repositorio central de memoria y conocimiento multi-proyecto",
     },
-    "de_0_a_Alfa": {
+    "from_zero": {
         "path": str(_ALFA_PATH),
         "type": "general",
         "keep_skills": _ALL_SKILLS,
@@ -262,7 +262,7 @@ class READMEGenerator:
 
 **{desc}**
 
-> Este proyecto utiliza el **AGENTIC Harness**, un sistema multi-agente evolutivo
+> Este proyecto utiliza el **Swarmind Harness**, un sistema multi-agente evolutivo
 > con Plan-and-Execute, memoria vectorial LanceDB, auto-mejora, y enrutamiento
 > adaptativo.
 
@@ -325,7 +325,7 @@ Usuario → Coordinator → TaskPlanner → DAG de subtasks → AgentBus → Age
               ↕                                           ↕
          SessionContext                              FederatedMemory
               ↕                                           ↕
-          LanceDB 🗄️                              Hermes_Memory_Proyects
+          LanceDB 🗄️                              shared_memory
 ```
 
 ### Pipeline de Ejecución
@@ -378,7 +378,7 @@ El sistema aprende de cada ejecución:
 
 ## 🔗 Memoria Federada
 
-Comparte conocimiento entre proyectos mediante `Hermes_Memory_Proyects`:
+Comparte conocimiento entre proyectos mediante `shared_memory`:
 
 - Patrones de éxito/fracaso
 - Prompts optimizados por agente
@@ -387,10 +387,10 @@ Comparte conocimiento entre proyectos mediante `Hermes_Memory_Proyects`:
 
 ```bash
 # Sync manual
-python scripts/agentic_bridge_sync.py
+python scripts/Swarmind_bridge_sync.py
 
 # Ver estado del bridge
-python scripts/agentic_bridge_sync.py --status
+python scripts/Swarmind_bridge_sync.py --status
 ```
 
 ---
@@ -437,7 +437,7 @@ print(json.dumps(tracker.get_dashboard_summary(), indent=2))
 
 ---
 
-*Generado por AGENTIC Harness — {datetime.now().strftime('%Y-%m-%d')}*
+*Generado por Swarmind Harness — {datetime.now().strftime('%Y-%m-%d')}*
 """
 
 
@@ -485,7 +485,7 @@ def deploy_project(
     if not dry_run:
         # Backup project-specific configs BEFORE cleanup
         # NOTE: routing_rules.yaml NO se restaura si contiene agentes obsoletos
-        #       (se usa la version actualizada de AGENTIC en su lugar)
+        #       (se usa la version actualizada de Swarmind en su lugar)
         backup_files = {}
         for fname in ["project_config.yaml", "routing_rules.yaml", "skills_registry.yaml"]:
             src = dst_opencode / "config" / fname
@@ -502,8 +502,8 @@ def deploy_project(
                         "quality-gate",
                     ]
                     if any(a in content for a in old_agents):
-                        logger.warning("  ⚠️  routing_rules.yaml obsoleto detectado (agentes fantasma). Usando version actualizada de AGENTIC.")
-                        continue  # No restaurar, usar la version fresh de AGENTIC
+                        logger.warning("  ⚠️  routing_rules.yaml obsoleto detectado (agentes fantasma). Usando version actualizada de Swarmind.")
+                        continue  # No restaurar, usar la version fresh de Swarmind
                 backup_files[fname] = content
 
         # Ensure target exists
@@ -600,13 +600,13 @@ def deploy_project(
 
     logger.info("  ✅ README.md updated")
 
-    # ── 5. Sync agentic_bridge_sync.py ──
-    bridge_src = _HERE / "agentic_bridge_sync.py"
+    # ── 5. Sync Swarmind_bridge_sync.py ──
+    bridge_src = _HERE / "Swarmind_bridge_sync.py"
     if bridge_src.exists() and not dry_run:
         dst_scripts = project_path / "scripts"
         _ensure_dir(dst_scripts)
-        shutil.copy2(str(bridge_src), str(dst_scripts / "agentic_bridge_sync.py"))
-        logger.info("  ✅ agentic_bridge_sync.py copied")
+        shutil.copy2(str(bridge_src), str(dst_scripts / "Swarmind_bridge_sync.py"))
+        logger.info("  ✅ Swarmind_bridge_sync.py copied")
 
     return stats
 
@@ -620,7 +620,7 @@ def main():
     args = parser.parse_args()
 
     logger.info("=" * 60)
-    logger.info("🚀 AGENTIC DEPLOY & SYNC")
+    logger.info("🚀 Swarmind DEPLOY & SYNC")
     logger.info("   Source: %s", _ROOT)
     logger.info("   Dry run: %s", args.dry_run)
     logger.info("   Sync only: %s", args.sync_only)

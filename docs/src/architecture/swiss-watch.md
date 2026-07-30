@@ -1,6 +1,6 @@
 ﻿# Swiss Watch Pattern — Arquitectura de Coordinacion
 
-El patron **Swiss Watch** es el modelo arquitectonico central de AGENTIC. Toma su nombre de los relojes suizos: multiples engranajes (agentes) trabajando en perfecta coordinacion, impulsados por un mecanismo central (coordinator).
+El patron **Swiss Watch** es el modelo arquitectonico central de Swarmind. Toma su nombre de los relojes suizos: multiples engranajes (agentes) trabajando en perfecta coordinacion, impulsados por un mecanismo central (coordinator).
 
 ## Concepto
 

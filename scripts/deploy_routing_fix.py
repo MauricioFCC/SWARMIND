@@ -2,7 +2,7 @@
 Fix routing_rules.yaml for all projects.
 
 Reemplaza routing_rules.yaml en cada proyecto con la version actualizada
-de AGENTIC, eliminando las referencias a agentes fantasma.
+de Swarmind, eliminando las referencias a agentes fantasma.
 
 Los proyectos preservaban routing_rules.yaml antiguos via backup/restore
 en deploy_all.py, nunca recibiendo las actualizaciones de agentes.
@@ -23,14 +23,14 @@ _SOURCE_ROUTING = _ROOT / ".opencode" / "config" / "routing_rules.yaml"
 
 # Same project configs as deploy_all.py
 _DEV_SPACE = Path("C:\\Users\\USUARIO\\Documents\\DEV-SPACE")
-_HERMES_PATH = Path("C:\\Users\\USUARIO\\Documents\\Hermes_Memory_Proyects")
+_HERMES_PATH = Path("C:\\Users\\USUARIO\\Documents\\shared_memory")
 
 PROJECTS = [
-    ("core-quant-engine", _DEV_SPACE / "core-quant-engine"),
-    ("Historia Clinica", _DEV_SPACE / "Historia Clinica"),
-    ("Onyx-Quan-AIBot", _DEV_SPACE / "Onyx-Quan-AIBot"),
-    ("PDV Basic", _DEV_SPACE / "PDV Basic"),
-    ("Hermes_Memory_Proyects", _HERMES_PATH),
+    ("quant-engine", _DEV_SPACE / "quant-engine"),
+    ("health-record", _DEV_SPACE / "health-record"),
+    ("trading-bot-AIBot", _DEV_SPACE / "trading-bot-AIBot"),
+    ("pos-system", _DEV_SPACE / "pos-system"),
+    ("shared_memory", _HERMES_PATH),
 ]
 
 

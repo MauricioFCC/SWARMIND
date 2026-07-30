@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Structured logging utility for AGENTIC with JSON format, correlation IDs,
+Structured logging utility for Swarmind with JSON format, correlation IDs,
 and RED metrics (Rate, Errors, Duration).
 
 Integrado desde observability_logging.py (raíz) → harness/observability/logging.py

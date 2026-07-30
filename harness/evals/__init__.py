@@ -1,5 +1,5 @@
 """
-Evals — Evaluacion Multi-Capa para el AI Factory Stack de AGENTIC.
+Evals — Evaluacion Multi-Capa para el AI Factory Stack de Swarmind.
 
 Provee un framework unificado para medir calidad, rendimiento y confiabilidad
 a traves de las 7 capas del stack. Cada evaluacion produce metricas accionables,

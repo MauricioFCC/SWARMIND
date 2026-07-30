@@ -1,4 +1,4 @@
-"""Zero Trust Architecture — Seguridad institucional para AGENTIC.
+"""Zero Trust Architecture — Seguridad institucional para Swarmind.
 
 Implementa un modelo de confianza cero donde cada agente debe:
 1. Autenticarse antes de cualquier operacion.

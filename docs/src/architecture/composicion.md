@@ -21,7 +21,7 @@
    - **ADR-0023**: Creative AI Frameworks (ReDNA, Diversity Collapse)
    - **ADR-0024**: Comparative Analysis ASDT + Traycer
    - **ADR-0025**: Frontier Coding Quality (PBT, Refinement Types)
-3. scripts/ - Herramientas: deploy_all, export_archive, session_log, agentic_bridge_sync
+3. scripts/ - Herramientas: deploy_all, export_archive, session_log, Swarmind_bridge_sync
 4. knowledge/ - Documentos de referencia
 
 ## Técnicas Frontier Incorporadas (2026)

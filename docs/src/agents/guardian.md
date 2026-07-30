@@ -16,7 +16,7 @@ El **guardian** es el agente de verificación y calidad del sistema. Aplica **Ve
 
 | Métrica | Objetivo |
 |---------|----------|
-| Agentic Mutation Score | ≥85% |
+| Swarmind Mutation Score | ≥85% |
 | Adversarial Resilience | ≥90% |
 | Property Coverage | ≥80% invariants |
 | Fuzzer Branch Coverage | ≥60% |

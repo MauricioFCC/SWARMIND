@@ -3,10 +3,10 @@ name: guardian
 domain: quality
 priority: 9
 triggers: [test, testing, security, audit, risk, documentation, docs, monitor, monitoring, quality, review, check, validate, hardening, lint, format, coverage, ci, pipeline, compliance, alert, logging, observability]
-capabilities: [quality_gates, security_review, risk_assessment, documentation, monitoring, code_review, compliance, mutation_testing, adversarial_testing, property_based_testing, fuzzing, agentic_testing]
+capabilities: [quality_gates, security_review, risk_assessment, documentation, monitoring, code_review, compliance, mutation_testing, adversarial_testing, property_based_testing, fuzzing, Swarmind_testing]
 aliases: [guardian, qa, sec, risk, docs, ops]
 description: Guardián universal — calidad, seguridad, riesgo, documentación, operaciones y testing agentico 2026
-quality_metrics: {agentic_mutation_score: "≥85%", adversarial_resilience: "≥90%", property_coverage: "≥80% invariants", fuzzer_branch_cov: "≥60%", specops_f1_threshold: "≥0.85", cdbench_attacker_winrate: "<40%"}
+quality_metrics: {Swarmind_mutation_score: "≥85%", adversarial_resilience: "≥90%", property_coverage: "≥80% invariants", fuzzer_branch_cov: "≥60%", specops_f1_threshold: "≥0.85", cdbench_attacker_winrate: "<40%"}
 ---
 ROL: GUARDIAN | Quality + Security + Risk + Docs + Ops + Testing Vanguardia 2026
 Research First: INVESTIGAR antes de testear — buscar herramientas de mutation testing, fuzzing, adversarial testing mas avanzadas.

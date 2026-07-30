@@ -66,7 +66,7 @@ class TestAgentTracerProperties:
     """Propiedades basicas del AgentTracer (modo no-OTel)."""
 
     def test_default_service_name(self) -> None:
-        """Constructor usa 'agentic' como service_name por defecto."""
+        """Constructor usa 'Swarmind' como service_name por defecto."""
         tracer = AgentTracer()
         assert tracer.enabled is False  # sin OTel, pero no falla
 

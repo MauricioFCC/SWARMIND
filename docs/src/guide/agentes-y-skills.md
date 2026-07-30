@@ -1,4 +1,4 @@
-# Agentes y Skills — Sistema Multi-Agente AGENTIC
+# Agentes y Skills — Sistema Multi-Agente Swarmind
 
 > **Version:** Julio 2026 | **20 agentes** | **31 skills** | **5 nuevos modulos**
 
@@ -6,7 +6,7 @@
 
 ## Agentes (20)
 
-El sistema AGENTIC opera con **20 perfiles de agente** organizados en 4 categorias. Cada agente tiene dominio, triggers de activacion y capacidades especificas. Los agentes principales (coordinator, builder, scientist, guardian, evolve) son el nucleo; los agentes especializados complementan areas especificas.
+El sistema Swarmind opera con **20 perfiles de agente** organizados en 4 categorias. Cada agente tiene dominio, triggers de activacion y capacidades especificas. Los agentes principales (coordinator, builder, scientist, guardian, evolve) son el nucleo; los agentes especializados complementan areas especificas.
 
 ### Agentes Principales (5)
 
@@ -128,7 +128,7 @@ Los skills se organizan por categoria funcional. Cada skill tiene formato dual: 
 | Skill | Categoria | Descripcion |
 |-------|-----------|-------------|
 | **sustainability** | Sostenibilidad | ESG, huella de carbono (Scope 1/2/3), economia circular, cambio climatico, reportes GRI/SASB/TCFD, doble materialidad. |
-| **evolve** | Meta | Auto-mejora continua del sistema: ciclo ASI-Evolve (Learn -> Design -> Experiment -> Analyze -> Deploy), Token Economics, Agentic RL Scaling (KAT-Coder, PaCoRe Train), Spec Evolution (TDAD), Role Evolution (AOSE Hybrid), FDE, Autobuilder. |
+| **evolve** | Meta | Auto-mejora continua del sistema: ciclo ASI-Evolve (Learn -> Design -> Experiment -> Analyze -> Deploy), Token Economics, Swarmind RL Scaling (KAT-Coder, PaCoRe Train), Spec Evolution (TDAD), Role Evolution (AOSE Hybrid), FDE, Autobuilder. |
 
 ---
 
@@ -398,7 +398,7 @@ patterns = fm.import_knowledge(KnowledgeType.PATTERN, tags=["task_planner"])
 from harness.memory_rag.sqlite_vec_adapter import SQLiteVecAdapter
 
 # Inicializar almacen vectorial portable
-adapter = SQLiteVecAdapter("agentic_memory.db", dimension=384)
+adapter = SQLiteVecAdapter("Swarmind_memory.db", dimension=384)
 
 # Crear colecciones
 adapter.create_collection("tactical")   # Memoria a corto plazo
@@ -649,4 +649,4 @@ harness debate <topic> --creative           # Ejecutar debate creativo
 
 ---
 
-*Documentacion generada el 29 Julio 2026. Sistema AGENTIC v4.0 — 20 agentes, 31 skills, 5 nuevos modulos.*
+*Documentacion generada el 29 Julio 2026. Sistema Swarmind v4.0 — 20 agentes, 31 skills, 5 nuevos modulos.*

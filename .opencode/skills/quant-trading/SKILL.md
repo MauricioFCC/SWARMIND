@@ -1,18 +1,18 @@
 ---
 name: quant-trading
 domain: trading
-description: Estrategias cuantitativas de trading con core-quant-engine (CQE) en Rust — prioriza rendimiento, baja latencia y generación de alpha
+description: Estrategias cuantitativas de trading con quant-engine (CQE) en Rust — prioriza rendimiento, baja latencia y generación de alpha
 ---
 
 # Quant Trading — CQE Rust Engine
 
-Estrategias cuantitativas implementadas sobre **core-quant-engine** (CQE) v2.1.0.
+Estrategias cuantitativas implementadas sobre **quant-engine** (CQE) v2.1.0.
 Stack: Rust 🦀 + Python bindings. Prioridad: rendimiento > legibilidad cuando hay trade-off.
 
 ## 📡 Data Processing (`domain::data_processing`)
 
 ```rust
-use core_quant_engine::domain::data_processing::{
+use quant-engine::domain::data_processing::{
     bars::{BarBuilder, BarType, TimeBar, VolumeBar, TickBar, DollarBar},
     features::FeatureExtractor,
     robust_stats::RobustStats,
@@ -43,7 +43,7 @@ use core_quant_engine::domain::data_processing::{
 ## 📈 Señales (`domain::signal_processing`)
 
 ```rust
-use core_quant_engine::domain::signal_processing::{
+use quant-engine::domain::signal_processing::{
     signal::{Signal, SignalType, normalize, combine_signals, alpha_decay},
     regime::RegimeDetector,
     volatility::VolatilityEstimator,
@@ -83,7 +83,7 @@ use core_quant_engine::domain::signal_processing::{
 ## 📊 Indicadores (`domain::indicators`)
 
 ```rust
-use core_quant_engine::domain::indicators::{
+use quant-engine::domain::indicators::{
     moving_averages::{SMA, EMA, WMA, HMA, ZLEMA, ALMA, KAMA, FRAMA, VIDYA},
     momentum::{RSI, MFI, Stochastic, WilliamsR, TSIFloor, ROC, TRIX, CCIMomentum},
     oscillators::{MACD, AO, AC, Bop, FisherTransform, Coppock},
@@ -121,7 +121,7 @@ fn ema_simd(data: &[f64], period: usize) -> Vec<f64> {
 ## 🧠 Machine Learning (`domain::ml`)
 
 ```rust
-use core_quant_engine::domain::ml::{
+use quant-engine::domain::ml::{
     features::FeatureStore,
     causal::CausalInference,
     copula::CopulaModel,
@@ -143,7 +143,7 @@ use core_quant_engine::domain::ml::{
 ## 📐 Backtesting (`domain::backtesting`)
 
 ```rust
-use core_quant_engine::domain::backtesting::{
+use quant-engine::domain::backtesting::{
     engine::BacktestEngine,
     metrics::PerformanceMetrics,
     vectorized::VectorizedBacktest,

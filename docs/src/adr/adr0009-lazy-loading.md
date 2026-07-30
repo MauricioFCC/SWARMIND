@@ -4,7 +4,7 @@
 **ACEPTADO** — Implementado en commit c1ea3fd.
 
 ## Contexto
-Al abrir OpenCode en el proyecto AGENTIC, `import harness` cargaba EAGERLY todos los submodulos:
+Al abrir OpenCode en el proyecto Swarmind, `import harness` cargaba EAGERLY todos los submodulos:
 - 20+ modulos en cascada (task_manager, agent_bus, lance_vector_store, evolve_loop, etc.)
 - Cada modulo importaba numpy, LanceDB, etc.
 - Cold start: ~2800ms antes de que el usuario pudiera hacer cualquier cosa

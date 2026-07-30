@@ -1,6 +1,6 @@
 """Modulo de Paralelismo Maximo — Estrategias frontier 2026.
 
-Implementa 5 estrategias de paralelismo para AGENTIC basadas en
+Implementa 5 estrategias de paralelismo para Swarmind basadas en
 investigacion frontier (Scepsy, MACU, PEP 684):
 
 1. Async I/O Fusion: BatchAccumulator para operaciones I/O batch.

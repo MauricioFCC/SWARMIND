@@ -1,13 +1,13 @@
 """
-Export AGENTIC to Google Drive mirror with dated ZIP.
+Export Swarmind to Google Drive mirror with dated ZIP.
 
 Crea:
-    C:\\Users\\USUARIO\\Mi unidad\\DEV\\SIDEPROYECT\\exports\\AGENTIC_YYYY-MM-DD.zip
+    C:\\Users\\USUARIO\\Mi unidad\\DEV\\SIDEPROYECT\\exports\\Swarmind_YYYY-MM-DD.zip
 
 Cada proyecto tiene su propio ZIP con fecha en el mismo directorio:
-    core-quant-engine-2026-07-20.zip
+    quant-engine-2026-07-20.zip
     HistoriaClinica-2026-07-20.zip
-    AGENTIC_YYYY-MM-DD.zip  ← este script
+    Swarmind_YYYY-MM-DD.zip  ← este script
 
 Usage:
     python scripts/export_to_drive.py              # Export + ZIP (default)
@@ -32,14 +32,14 @@ _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent
 
 _EXPORT_BASE = Path(
-    r"C:\Users\USUARIO\Mi unidad\DEV\SIDEPROYECT\exports"
+    r"$HOME\Mi unidad\DEV\SIDEPROYECT\exports"
 )
 
 # Date-based naming matching other projects
 _TODAY = date.today().isoformat()  # 2026-07-20
-_PROJECT = "AGENTIC"
-_FOLDER_NAME = f"{_PROJECT}_{_TODAY}"  # AGENTIC_2026-07-20
-_ZIP_NAME = f"{_FOLDER_NAME}.zip"       # AGENTIC_2026-07-20.zip
+_PROJECT = "Swarmind"
+_FOLDER_NAME = f"{_PROJECT}_{_TODAY}"  # Swarmind_2026-07-20
+_ZIP_NAME = f"{_FOLDER_NAME}.zip"       # Swarmind_2026-07-20.zip
 
 _EXPORT_DIR = _EXPORT_BASE / _FOLDER_NAME
 _ZIP_PATH = _EXPORT_BASE / _ZIP_NAME
@@ -157,7 +157,7 @@ def create_zip() -> Path:
     logger.info(f"\n📦 Creating ZIP: {_ZIP_PATH}")
 
     # Create ZIP with the folder itself as root (not just its contents)
-    # This ensures when unzipped, everything is inside AGENTIC_YYYY-MM-DD/
+    # This ensures when unzipped, everything is inside Swarmind_YYYY-MM-DD/
     base_dir = _EXPORT_DIR.parent
     folder_name = _EXPORT_DIR.name
     shutil.make_archive(

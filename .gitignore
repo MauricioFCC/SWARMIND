@@ -1,4 +1,4 @@
-﻿# AGENTIC es el REPOSITORIO CENTRAL del framework.
+﻿# Swarmind es el REPOSITORIO CENTRAL del framework.
 # NO ignorar harness/ ni .opencode/ porque ES la fuente.
 # Otros proyectos usan un .gitignore diferente que SI los ignora.
 
@@ -91,3 +91,11 @@ fuzz/artifacts/
 *.py,cover
 # Prompt archive (test artifacts)
 harness/evolve_loop/prompt_archive/
+
+# Hypothesis cache
+.hypothesis/
+
+# Generated files
+*.hook_status.json
+direct_url.json
+__editable__*

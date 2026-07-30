@@ -4,7 +4,7 @@
 **ACEPTADO** — Implementado en julio 2026.
 
 ## Contexto
-AGENTIC soportaba busqueda vectorial solo en backends individuales (LanceDB, Chroma, Qdrant). Para mejorar velocidad, cobertura y portabilidad, se necesitaban dos sistemas complementarios: busqueda federada multi-backend y un backend ligero para edge computing.
+Swarmind soportaba busqueda vectorial solo en backends individuales (LanceDB, Chroma, Qdrant). Para mejorar velocidad, cobertura y portabilidad, se necesitaban dos sistemas complementarios: busqueda federada multi-backend y un backend ligero para edge computing.
 
 ## Decision
 
