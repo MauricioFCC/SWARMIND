@@ -125,3 +125,4 @@
 - [ADR-0034: Performance Optimization Post-Expansion](adr/adr0034-performance-optimization-2026.md)
 - [ADR-0035: Maximum Parallelism Architecture](adr/adr0035-maximum-parallelism-2026.md)
 - [ADR-0036: Agentic QA Pipeline 5-Capas](adr/adr0036-agentic-qa-pipeline-2026.md)
+- [ADR-0037: AI Factory Stack — Integracion 7-Capas](adr/adr0037-ai-factory-stack-2026.md)
