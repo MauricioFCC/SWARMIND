@@ -112,7 +112,7 @@ Los siguientes ADRs han sido deprecados y su contenido esta resumido aqui:
 |---------|-------|
 | Agentes | 20 especializados |
 | Skills | 31 contextuales |
-| ADRs | 28 nucleos + 8 fusionados (38 archivos) |
+| ADRs | 30 activos (numeracion secuencial 0001-0030) |
 | Tests | 3400+ pasando |
 | Modulos | 48 orchestrator + 30 memory_rag + 12 multi-harness |
 | Lineas Python | ~35,000 |
