@@ -8,7 +8,7 @@
 |---------|-------|
 | Tests | 3400+ passing (29 QA + AIFactory verificados) |
 | Cobertura | ~65% (objetivo: 80%) |
-| ADRs | 38 (todos implementados) |
+| ADRs | 32 (todos implementados, secuenciales 0001-0032) |
 | Agentes | 20 especializados (100% perfiles + .min.md) |
 | Skills | 31 contextuales (100% SKILL.md + SKILL.min.md) |
 | Modulos Orchestrator | 48 |
@@ -71,7 +71,7 @@ Refactorizado a **asyncio completo** con 4.8x speedup (ADR-0017).
 - [Agentes y Skills (completo)](guide/agentes-y-skills.md) — Documentacion detallada de todo el sistema
 - [Arquitectura](architecture/swiss-watch.md) — Patron Swiss Watch, Dynamic Scaling, Composicion
 - [Manual Tecnico](technical/manual-tecnico.md) — Documentacion tecnica completa del harness
-- [ADR](adr/README.md) — Architecture Decision Records (33 documentos)
+- [ADR](adr/README.md) — Architecture Decision Records (32 documentos)
 - [Agentes](agents/coordinator.md) — Perfiles de cada agente
 - [Skills](skills/registry.md) — Registro completo de skills (31)
 - [Testing Guide](development/testing-guide.md) — Como escribir y ejecutar tests
@@ -99,7 +99,7 @@ AGENTIC/
 │   └── tests/                  → 3400+ tests
 ├── docs/
 │   └── src/                    → mdbook (73 paginas HTML)
-│       ├── adr/                → 33 ADRs (0001-0033)
+│   ├── adr/                → 32 ADRs (0001-0032)
 │       ├── agents/             → 20 paginas de agentes
 │       ├── skills/             → 31 paginas de skills
 │       └── ...
