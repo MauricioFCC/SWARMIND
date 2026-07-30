@@ -1,0 +1,164 @@
+# Summary
+
+[Introduccion](README.md)
+
+# Guia de Uso
+
+- [Filosofia del Sistema](guide/filosofia.md)
+- [Como Usar Swarmind](guide/como-usar.md)
+- [Agentes y Skills (completo)](guide/agentes-y-skills.md) — **SSOT** de agentes, skills, modulos y novedades
+- [Velocidad y Paralelismo](guide/velocidad.md)
+- [Estandares Automaticos](guide/estandares.md)
+- [Analisis de Arquitectura](guide/analisis-arquitectura.md) — Python vs Rust, Monolith vs Microservicios
+
+# Arquitectura
+
+- [Swiss Watch Pattern](architecture/swiss-watch.md) — **SSOT** arquitectura
+- [Dynamic Scaling](architecture/dynamic-scaling.md) — Estrategias de planificacion
+- [Composicion del Sistema](architecture/composicion.md) — Tecnicas frontier por agente y skill
+
+# Manual Tecnico — Modulos Core
+
+- [Manual Tecnico Completo](technical/manual-tecnico.md)
+- [Multi-API Router](technical/multi_provider.md)
+- [Prompt Compression Engine](technical/prompt_compressor.md)
+- [Shared Semantic Cache](technical/shared_cache.md)
+- [Event Bus Pub/Sub](technical/event_bus.md)
+- [Speculative Decoder](technical/speculative_decoder.md)
+- [KV Cache Sharing](technical/kv_cache_sharing.md)
+- [A2A Protocol](technical/a2a_protocol.md)
+- [Graph-of-Thought Planner](technical/got_planner.md)
+- [I/O Fusion](technical/io_fusion.md)
+- [Adaptive Pool](technical/adaptive_pool.md)
+- [Pipeline MACU](technical/pipeline_macu.md)
+- [Guardrail Engine](technical/guardrail_engine.md)
+- [Eval Factory](technical/eval_factory.md)
+- [AI Factory](technical/factory.md)
+- [QA Predictor](technical/predictor.md)
+- [QA Detector](technical/detector.md)
+- [QA Generator](technical/generator.md)
+- [QA Agent](technical/agent.md)
+- [QA Orchestrator](technical/orchestrator.md)
+
+# Agentes (20)
+
+- [Architect](agents/architect.md)
+- [Backend Engineer](agents/backend-engineer.md)
+- [Builder](agents/builder.md)
+- [Coordinator](agents/coordinator.md)
+- [Data Engineer](agents/data-engineer.md)
+- [Database Administrator](agents/database-administrator.md)
+- [DevOps](agents/devops.md)
+- [Evolve](agents/evolve.md)
+- [Evolve Analyzer](agents/evolve-analyzer.md)
+- [Evolve Engineer](agents/evolve-engineer.md)
+- [Evolve Researcher](agents/evolve-researcher.md)
+- [Frontend Engineer](agents/frontend-engineer.md)
+- [Guardian](agents/guardian.md)
+- [Mobile Engineer](agents/mobile-engineer.md)
+- [Product Manager](agents/product-manager.md)
+- [QA Engineer](agents/qa-engineer.md)
+- [Researcher](agents/researcher.md)
+- [Reviewer](agents/reviewer.md)
+- [Scientist](agents/scientist.md)
+- [Security Engineer](agents/security-engineer.md)
+
+# Skills (31)
+
+- [Ads Optimizer](skills/ads-optimizer.md)
+- [Alpha Research](skills/alpha-research.md)
+- [Architecture](skills/architecture.md)
+- [Behavioral Economics](skills/behavioral-economics.md)
+- [Business Strategy](skills/business-strategy.md)
+- [Communication](skills/communication.md)
+- [Creative Design](skills/creative-design.md)
+- [Data Science](skills/data-science.md)
+- [DevOps Infra](skills/devops-infra.md)
+- [Education](skills/education.md)
+- [Ethics](skills/ethics.md)
+- [Evolve](skills/evolve.md)
+- [Frontend UI/UX](skills/frontend-uiux.md)
+- [HealthTech](skills/healthtech.md)
+- [HedgeFund](skills/hedgefund.md)
+- [Legal Doc Colombia](skills/legal-doc.md)
+- [Linguistics](skills/linguistics.md)
+- [Math Doc](skills/math-doc.md)
+- [Physical Sciences](skills/physical-sciences.md)
+- [POS Retail](skills/pos-retail.md)
+- [Project Management](skills/project-management.md)
+- [Psychology](skills/psychology.md)
+- [Quant Trading](skills/quant-trading.md)
+- [Responsive UI](skills/responsive-ui.md)
+- [Risk Execution](skills/risk-execution.md)
+- [Risk Intelligence](skills/risk-intelligence.md)
+- [Rust Lang](skills/rust-lang.md)
+- [Science Doc](skills/science-doc.md)
+- [Security Audit](skills/security-audit.md)
+- [Sociology](skills/sociology.md)
+- [Sustainability](skills/sustainability.md)
+
+# Desarrollo
+
+- [Testing Guide](development/testing-guide.md)
+- [Como Modificar Archivos](development/modificar.md)
+- [Commits Convencionales](development/commits.md)
+- [Exportacion y Backup](development/export.md)
+
+# Referencia
+
+- [Glosario de Terminos](reference/glosario.md)
+- [Investigacion Aplicada 2026](reference/investigacion-aplicada.md)
+- [Comparativa Harness 2026](reference/comparativa-harness-2026.md)
+- [Skills Registry](skills/registry.md)
+- [Otras Skills](skills/otras.md)
+- [Alpha Libraries List](reference/alpha_libraries_list.md)
+- [Analisis Retrospectivo y Comparativo 2026](reference/analisis-retrospectivo-2026.md)
+- [Referencias Academicas](reference/referencias-academicas.md)
+
+# Roadmap
+
+- [Estado del Proyecto](roadmap/estado.md) — **SSOT** estado y roadmap
+
+# ADR - Architecture Decision Records (32 activos)
+
+### Fundacion
+- [ADR-0001: Sistema Multi-Agente Evolutivo](adr/adr0001-mejoras.md)
+- [ADR-0002: Memoria de Estandares](adr/adr0002-memoria-estandares.md)
+- [ADR-0003: Token Economy & Speed Optimization](adr/adr0003-token-economy-speed.md)
+- [ADR-0004: Competitive Programming 2026](adr/adr0004-competitive-programming-2026.md)
+- [ADR-0005: Text Analysis 2026](adr/adr0005-text-analysis-2026.md)
+
+### Calidad y Testing
+- [ADR-0006: Idempotencia](adr/adr0006-idempotencia-principle.md)
+- [ADR-0007: DocStrings Obligatorios](adr/adr0007-docstrings-error-readability.md)
+- [ADR-0008: Workflow Patterns](adr/adr0008-six-new-techniques.md)
+- [ADR-0009: Lazy Loading](adr/adr0009-lazy-loading.md)
+- [ADR-0010: Frontier Agents & Skills 2026](adr/adr0010-frontier-agents-skills-2026.md)
+- [ADR-0011: Parallel Test Execution](adr/adr0011-parallel-testing-fail-under.md)
+- [ADR-0012: PaCoRe Async Concurrency](adr/adr0012-pacore-async-concurrency.md)
+- [ADR-0013: Token Economics](adr/adr0013-token-economics-cache-shape.md)
+- [ADR-0014: Agent & Skill Optimization](adr/adr0014-agent-skill-optimization-2026.md)
+
+### Frontier Research
+- [ADR-0015: MCP + A2A Architecture](adr/adr0015-mcp-a2a-architecture-2026.md)
+- [ADR-0016: Frontier Optimization](adr/adr0016-frontier-optimization-2026.md)
+- [ADR-0017: Creative AI Frameworks](adr/adr0017-creative-ai-frameworks-2026.md)
+- [ADR-0018: Comparative Analysis](adr/adr0018-comparative-analysis-asdt-traycer-2026.md)
+- [ADR-0019: Swarmind Governance](adr/adr0019-agentic-governance-cx-2026.md)
+- [ADR-0020: Frontier Gaps 2026](adr/adr0020-frontier-gaps-2026-v2.md)
+- [ADR-0021: DOFA Analysis](adr/adr0021-dofa-analysis-2026.md)
+
+### Arquitectura Moderna
+- [ADR-0022: Multi-Harness Adapter Layer](adr/adr0022-multi-harness-2026.md)
+- [ADR-0023: Hook System](adr/adr0023-hooks-system-2026.md)
+- [ADR-0024: Zero Trust Architecture](adr/adr0024-zero-trust-2026.md)
+- [ADR-0025: Federated Vector Search](adr/adr0025-federated-vector-sqlite-2026.md)
+- [ADR-0026: Performance Optimization](adr/adr0026-performance-optimization-2026.md)
+- [ADR-0027: Maximum Parallelism](adr/adr0027-maximum-parallelism-2026.md)
+- [ADR-0028: Swarmind QA Pipeline 5-Capas](adr/adr0028-agentic-qa-pipeline-2026.md)
+- [ADR-0029: AI Factory Stack](adr/adr0029-ai-factory-stack-2026.md)
+- [ADR-0030: Comprehensive Audit](adr/adr0030-comprehensive-audit-2026.md)
+
+### Improvements
+- [ADR-0031: Frontier Improvements 2026](adr/adr0031-frontier-improvements-2026.md)
+- [ADR-0032: Remaining Improvements](adr/adr0032-remaining-improvements-2026.md)
