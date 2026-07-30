@@ -129,4 +129,5 @@
 - [ADR-0028: Agentic QA Pipeline 5-Capas](adr/adr0028-agentic-qa-pipeline-2026.md)
 - [ADR-0029: AI Factory Stack â€” Integracion 7-Capas](adr/adr0029-ai-factory-stack-2026.md)
 - [ADR-0030: Comprehensive Audit & Refactoring](adr/adr0030-comprehensive-audit-2026.md)
-- [ADR-0031: Frontier Improvements 2026 — Multi-API, Prompt Compression, GoT](adr/adr0031-frontier-improvements-2026.md) & Refactoring](adr/adr0030-comprehensive-audit-2026.md)
+- [ADR-0031: Frontier Improvements 2026 — Multi-API, Prompt Compression, GoT](adr/adr0031-frontier-improvements-2026.md)
+- [ADR-0032: Remaining Improvements — Shared Cache, Event Bus, Spec Decoding, KV Cache, A2A](adr/adr0032-remaining-improvements-2026.md) 2026 — Multi-API, Prompt Compression, GoT](adr/adr0031-frontier-improvements-2026.md) & Refactoring](adr/adr0030-comprehensive-audit-2026.md)
