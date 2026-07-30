@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import ast
 import logging
-import os
 import re
 import sys
 from pathlib import Path
@@ -457,7 +456,7 @@ def fix_file(filepath: Path, dry_run: bool = False) -> Dict[str, int]:
         return stats
 
     content = original_content
-    rel_path = os.path.relpath(str(filepath), str(PROJECT_ROOT))
+    rel_path = str(filepath.relative_to(PROJECT_ROOT))
 
     # 1. Fix print() → logging
     if ".py" in filepath.suffix:

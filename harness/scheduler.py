@@ -19,11 +19,11 @@ from __future__ import annotations
 import datetime
 import json
 import logging
-import os
 import threading
 import time
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -42,11 +42,11 @@ except ImportError:
 # Default paths
 # ---------------------------------------------------------------------------
 
-_HARNESS_ROOT = os.path.dirname(os.path.abspath(__file__))
+_HARNESS_ROOT = Path(__file__).resolve().parent
 
-_DEFAULT_SIMPLE_JOBS_PATH = os.path.join(_HARNESS_ROOT, "scheduler_jobs.json")
-_DEFAULT_LANCE_JOBS_PATH = os.path.join(
-    _HARNESS_ROOT, "orchestrator", "scheduler_jobs.yaml",
+_DEFAULT_SIMPLE_JOBS_PATH = str(_HARNESS_ROOT / "scheduler_jobs.json")
+_DEFAULT_LANCE_JOBS_PATH = str(
+    _HARNESS_ROOT / "orchestrator" / "scheduler_jobs.yaml",
 )
 
 
@@ -177,7 +177,7 @@ class JobStore:
     def _load_jobs(self) -> None:
         """Load jobs from the persistence file."""
         try:
-            if not os.path.isfile(self._jobs_path):
+            if not Path(self._jobs_path).is_file():
                 self._ensure_jobs_file()
                 return
             data = self._read_file()
@@ -199,10 +199,11 @@ class JobStore:
 
     def _ensure_jobs_file(self) -> None:
         """Create the jobs file parent directory and file if missing."""
-        parent = os.path.dirname(self._jobs_path)
-        if parent:
-            os.makedirs(parent, exist_ok=True)
-        if not os.path.isfile(self._jobs_path):
+        jobs_path = Path(self._jobs_path)
+        parent = jobs_path.parent
+        if str(parent):
+            parent.mkdir(parents=True, exist_ok=True)
+        if not jobs_path.is_file():
             self._write_file(self._default_empty_data())
 
     # ------------------------------------------------------------------
@@ -211,7 +212,7 @@ class JobStore:
 
     def _detect_format(self) -> str:
         """Detect file format from extension: ``'json'`` or ``'yaml'``."""
-        ext = os.path.splitext(self._jobs_path)[1].lower()
+        ext = Path(self._jobs_path).suffix.lower()
         if ext in (".yaml", ".yml"):
             return "yaml"
         return "json"

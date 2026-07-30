@@ -14,7 +14,6 @@ Cubre:
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import sys
 import tempfile
@@ -277,7 +276,7 @@ class TestTelemetry:
         # Check export
         export_path = telemetry_tracker.export("test-3")
         assert export_path is not None
-        assert os.path.exists(export_path)
+        assert Path(export_path).exists()
 
         with open(export_path, "r") as f:
             data = json.load(f)

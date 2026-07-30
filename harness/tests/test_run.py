@@ -507,7 +507,7 @@ class TestMain:
              patch("harness.run.LanceVectorStore"), \
              patch("harness.orchestrator.task_orchestrator.TaskOrchestrator"), \
              patch("harness.run.HITLGuard"), \
-             patch("harness.run.os.path.exists", return_value=True):
+             patch.object(Path, "exists", return_value=True):
             yield
 
     def test_main_help(self):

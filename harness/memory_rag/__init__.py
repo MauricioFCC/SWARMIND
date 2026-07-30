@@ -6,6 +6,8 @@ from .optimization_pipeline import (
 )
 from .prompt_cache_builder import CacheSection, PromptCacheBuilder
 from .semantic_cache import COLLECTION_SEMANTIC_CACHE, CacheEntry, SemanticCache
+from .shaped_cache import ShapedCache
+from .shapley_flow import ShapleyAllocation, ShapleyFlow, create_shapley_flow
 from .skill_loader import LazySkillLoader, SkillInfo, create_loader
 from .skill_minifier import SkillMinifier, minify_all_skills
 from .token_budget import (
@@ -21,6 +23,7 @@ from .token_budget import (
 __all__ = [
     # Existing
     "SemanticCache",
+    "ShapedCache",
     "COLLECTION_SEMANTIC_CACHE",
     "CacheEntry",
 
@@ -55,4 +58,9 @@ __all__ = [
     "OptimizationPipeline",
     "OptimizationResult",
     "create_pipeline",
+
+    # ShapleyFlow (ADR-0010, B26)
+    "ShapleyFlow",
+    "ShapleyAllocation",
+    "create_shapley_flow",
 ]

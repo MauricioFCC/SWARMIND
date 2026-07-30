@@ -71,10 +71,18 @@ def mi_funcion(param1: str, param2: int) -> bool:
 
 ## Codificacion en el Sistema
 
-### context_injector.py
-- `!DOC_ES_OBLIG!` — primer token en UNIVERSAL_FIRMA y STANDARDS_ENCODED
-- `!ERR_ACTION!` — segundo token en UNIVERSAL_FIRMA y STANDARDS_ENCODED
-- `validate_docstrings()` — metodo estatico para validacion automatica post-generacion
+### context_injector.py — Principios inyectados
+- `!DOC_ES_OBLIG!` — DocStrings ES obligatorios con Args/Returns/Raises
+- `!ERR_ACTION!` — Errores con WHAT+WHY+WHERE, except:pass prohibido
+- `!TH!` — Type hints obligatorios en todas las funciones publicas
+- `!HEX!` — Hexagonal Architecture: puertos/adaptadores, core sin dependencias externas
+- `CleanCode+DRY+KISS+SSOT` — Principios base de codigo limpio
+- `<900LC+fn<60ln` — Limites: archivos < 900 lines, funciones < 60 lines
+- `YAGNI+Patrones` — Solo lo necesario, patrones GoF/DI
+- `tests>80+CacheShape+obsMask+scopedCtx` — Tests ≥80%, token economics
+- `parMax` — Maximo paralelismo posible
+- `ResearchFirst+Idempotencia` — Investigar antes de ejecutar, no reimplementar
+- `validate_docstrings()` — Metodo estatico para validacion automatica post-generacion
 
 ### base_principles.md
 - Nivel 1: `ERR: Errores legibles y accionables | WHAT+WHY+WHERE | sin except silencioso`

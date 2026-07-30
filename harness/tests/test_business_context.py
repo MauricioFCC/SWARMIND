@@ -6,12 +6,12 @@ filtrado por industria y gestion de terminos personalizados.
 """
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import sys
 
 import pytest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from harness.orchestrator.business_context import BusinessContext, BusinessTerm
 

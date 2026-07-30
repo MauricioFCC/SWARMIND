@@ -5,10 +5,10 @@ Verifica que solo se activen los agentes necesarios.
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from harness.orchestrator.agent_selector import AgentSelector
 

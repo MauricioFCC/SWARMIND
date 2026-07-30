@@ -18,10 +18,10 @@ Usage:
 from __future__ import annotations
 
 import logging
-import os
 import re
 import sys
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -31,10 +31,8 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 DEFAULT_TIMEOUT = 300  # seconds (5 minutes)
-DEFAULT_CONFIG_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "hitl",
-    "hitl_config.yaml",
+DEFAULT_CONFIG_PATH = str(
+    Path(__file__).resolve().parent / "hitl" / "hitl_config.yaml"
 )
 
 
@@ -355,7 +353,7 @@ class HITLGuard:
         try:
             import yaml
 
-            if not os.path.exists(config_path):
+            if not Path(config_path).exists():
                 logger.warning("HITL config not found at %s, using defaults", config_path)
                 return {"timeout": DEFAULT_TIMEOUT}
 

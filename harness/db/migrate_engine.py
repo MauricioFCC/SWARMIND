@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -36,10 +35,10 @@ logger = logging.getLogger(__name__)
 # Paths (resolved relative to this file's location)
 # ---------------------------------------------------------------------------
 
-HARNESS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_IMPORT_DIR = os.path.join(HARNESS_DIR, "db", "import")
-DEFAULT_TARGET_DIR = os.path.join(HARNESS_DIR, "db", "lancedb")
-DEFAULT_ARCHIVE_DIR = os.path.join(HARNESS_DIR, "db", "_archived")
+HARNESS_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_IMPORT_DIR = str(HARNESS_DIR / "db" / "import")
+DEFAULT_TARGET_DIR = str(HARNESS_DIR / "db" / "lancedb")
+DEFAULT_ARCHIVE_DIR = str(HARNESS_DIR / "db" / "_archived")
 
 
 def _get_current_collections() -> Dict[str, Any]:
@@ -380,10 +379,7 @@ class DBMigrator:
     def _backup_import(self, import_path: str) -> Optional[str]:
         """Copia import_path a _backup_<timestamp>/."""
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-        backup_dir = os.path.join(
-            os.path.dirname(import_path),
-            f"_backup_{timestamp}",
-        )
+        backup_dir = str(Path(import_path).parent / f"_backup_{timestamp}")
         try:
             shutil.copytree(import_path, backup_dir)
             return backup_dir
@@ -396,14 +392,14 @@ class DBMigrator:
         Archiva una coleccion que ya no existe en el schema nuevo.
         Lee todos sus datos y los guarda como JSON en _archived/.
         """
-        os.makedirs(self.archive_dir, exist_ok=True)
+        Path(self.archive_dir).mkdir(parents=True, exist_ok=True)
         tbl = old_db.open_table(collection_name)
         row_count = tbl.count_rows()
         data = tbl.head(row_count).to_pylist() if row_count > 0 else []
 
         ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         archive_name = f"{collection_name}_{ts}.json"
-        archive_path = os.path.join(self.archive_dir, archive_name)
+        archive_path = str(Path(self.archive_dir) / archive_name)
 
         with open(archive_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, default=str, ensure_ascii=False)

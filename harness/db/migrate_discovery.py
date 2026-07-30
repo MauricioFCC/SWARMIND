@@ -11,7 +11,6 @@ Patrón RECURSIVO:
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -153,7 +152,7 @@ def probe_db(path: str) -> Optional[Dict[str, Any]]:
         size = sum(f.stat().st_size for f in Path(path).rglob("*") if f.is_file())
         return {
             "path": path,
-            "name": os.path.basename(path),
+            "name": Path(path).name,
             "collections": tables,
             "estimated_size": size,
             "estimated_size_human": _human_size(size),

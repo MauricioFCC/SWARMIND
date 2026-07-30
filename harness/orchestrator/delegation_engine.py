@@ -18,9 +18,9 @@ Ver agent_discovery.py para el patrón recursivo aplicado.
 
 from __future__ import annotations
 
-import os
 import re
 import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 try:
@@ -49,12 +49,10 @@ from harness.orchestrator.task_manager import TaskManager
 
 
 def _find_routing_rules_path() -> str:
-    base = os.path.dirname(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    )
-    candidate = os.path.join(base, ".opencode", "config", "routing_rules.yaml")
-    if os.path.isfile(candidate):
-        return candidate
+    base = Path(__file__).resolve().parent.parent.parent
+    candidate = base / ".opencode" / "config" / "routing_rules.yaml"
+    if candidate.is_file():
+        return str(candidate)
     return ""
 
 
@@ -157,7 +155,7 @@ class DelegationEngine:
             from opencode.core import router_v2  # type: ignore
             self._router_v2 = router_v2
         except ImportError:
-            sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            sys.path.insert(1, str(Path(__file__).resolve().parent.parent.parent))
             try:
                 from opencode.core import router_v2  # type: ignore
                 self._router_v2 = router_v2

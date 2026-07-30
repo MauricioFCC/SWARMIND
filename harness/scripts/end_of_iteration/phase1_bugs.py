@@ -4,8 +4,8 @@ Phase 1: Bug Hunting — scan code for common bugs.
 from __future__ import annotations
 
 import ast
-import os
 import re
+from pathlib import Path
 from typing import List, Optional
 
 from .config import (
@@ -106,7 +106,7 @@ def _scan_long_files(all_files: List[str]) -> List[BugFinding]:
     for filepath in all_files:
         _lines, total = _read_file_lines(filepath)
         if total > max_lines:
-            rel_path = os.path.relpath(filepath, str(PROJECT_ROOT))
+            rel_path = str(Path(filepath).relative_to(PROJECT_ROOT))
             findings.append(BugFinding(
                 file=rel_path, line=0, severity="major",
                 category="long_file",
@@ -144,7 +144,7 @@ def _scan_missing_docstrings(lines: List[str], filepath: str) -> List[BugFinding
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             if not ast.get_docstring(node):
                 findings.append(BugFinding(
-                    file=os.path.relpath(filepath, str(PROJECT_ROOT)),
+                    file=str(Path(filepath).relative_to(PROJECT_ROOT)),
                     line=node.lineno or 0, severity="minor",
                     category="missing_docstring",
                     message=f"Funcion '{node.name}' sin docstring", auto_fixable=False,
@@ -152,7 +152,7 @@ def _scan_missing_docstrings(lines: List[str], filepath: str) -> List[BugFinding
         elif isinstance(node, ast.ClassDef):
             if not ast.get_docstring(node):
                 findings.append(BugFinding(
-                    file=os.path.relpath(filepath, str(PROJECT_ROOT)),
+                    file=str(Path(filepath).relative_to(PROJECT_ROOT)),
                     line=node.lineno or 0, severity="minor",
                     category="missing_docstring",
                     message=f"Clase '{node.name}' sin docstring", auto_fixable=False,
@@ -185,7 +185,7 @@ def _scan_missing_type_hints(lines: List[str], filepath: str) -> List[BugFinding
             params_hinted = all(a.annotation is not None for a in all_args)
             if not has_return_hint or not params_hinted:
                 findings.append(BugFinding(
-                    file=os.path.relpath(filepath, str(PROJECT_ROOT)),
+                    file=str(Path(filepath).relative_to(PROJECT_ROOT)),
                     line=node.lineno or 0, severity="minor",
                     category="missing_type_hint",
                     message=f"Funcion '{node.name}' sin type hints completos",
@@ -215,7 +215,7 @@ def _scan_inconsistent_returns(lines: List[str], filepath: str) -> List[BugFindi
                         returns_value = True
             if returns_value and returns_none:
                 findings.append(BugFinding(
-                    file=os.path.relpath(filepath, str(PROJECT_ROOT)),
+                    file=str(Path(filepath).relative_to(PROJECT_ROOT)),
                     line=node.lineno or 0, severity="major",
                     category="inconsistent_return",
                     message=f"Funcion '{node.name}' retorna inconsistentemente (valor y None)",
@@ -238,15 +238,15 @@ def scan_for_bugs(
     """
     config = _load_config()
     exclude = config.get("bug_hunting", {}).get("exclude_patterns", [])
-    abs_dir = str(PROJECT_ROOT if directory == "." else os.path.join(PROJECT_ROOT, directory))
+    abs_dir = str(PROJECT_ROOT if directory == "." else Path(PROJECT_ROOT) / directory)
 
     if changed_files is not None:
         all_files = []
         for rel_f in changed_files:
-            abs_f = os.path.join(PROJECT_ROOT, rel_f)
-            if os.path.isfile(abs_f) and _is_python_file(abs_f):
-                if not _should_exclude(abs_f, exclude):
-                    all_files.append(abs_f)
+            abs_f = Path(PROJECT_ROOT) / rel_f
+            if abs_f.is_file() and _is_python_file(str(abs_f)):
+                if not _should_exclude(str(abs_f), exclude):
+                    all_files.append(str(abs_f))
     else:
         all_files = _walk_py_files(abs_dir, exclude)
 
@@ -255,7 +255,7 @@ def scan_for_bugs(
         lines, _total = _read_file_lines(filepath)
         if not lines:
             continue
-        rel_path = os.path.relpath(filepath, str(PROJECT_ROOT))
+        rel_path = str(Path(filepath).relative_to(PROJECT_ROOT))
         findings.extend(_scan_silent_except(lines, rel_path))
         findings.extend(_scan_print_statements(lines, rel_path))
         findings.extend(_scan_hardcoded_creds(lines, rel_path))
@@ -278,8 +278,8 @@ def auto_fix_bugs(bugs: List[BugFinding], dry_run: bool = False) -> List[BugFind
             continue
         if bug.category != "silent_except":
             continue
-        abs_path = os.path.join(PROJECT_ROOT, bug.file)
-        if not os.path.exists(abs_path):
+        abs_path = str(Path(PROJECT_ROOT) / bug.file)
+        if not Path(abs_path).exists():
             bug.status = "needs_review"
             continue
         lines, _ = _read_file_lines(abs_path)

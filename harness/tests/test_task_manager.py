@@ -10,8 +10,8 @@ Estrategia de testing:
 from __future__ import annotations
 
 import json
-import os
 import tempfile
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -128,13 +128,13 @@ class TestTaskManagerSQLite:
         """
         tmpdir = tempfile.mkdtemp(prefix="tm_init_")
         try:
-            parent = os.path.join(tmpdir, "inexistente")
-            db_path = os.path.join(parent, "lancedb")
-            os.makedirs(db_path, exist_ok=True)  # necesario para SQLite
+            parent = Path(tmpdir) / "inexistente"
+            db_path = str(parent / "lancedb")
+            Path(db_path).mkdir(parents=True, exist_ok=True)  # necesario para SQLite
             tm = tm_module.TaskManager(db_path=db_path)
-            # Parent es creado por os.makedirs(db_path) indirectamente,
-            # pero la logica interna (linea 154-156) tambien lo crearia
-            assert os.path.isdir(parent)
+            # Parent es creado por Path(db_path).mkdir() indirectamente,
+            # pero la logica interna tambien lo crearia
+            assert parent.is_dir()
             tm.close()
         finally:
             import shutil
@@ -552,19 +552,19 @@ class TestTaskManagerLanceDB:
         assert tm._conn_lancedb is not None
 
     def test_initialize_lancedb_creates_parent_dir(self):
-        """_initialize crea el directorio padre via LanceDB path (linea 156).
+        """_initialize crea el directorio padre via LanceDB path.
 
         Usamos un path cuyo directorio padre no existe para ejercitar
-        el ``if not os.path.exists`` y el ``os.makedirs``.
+        el Path.exists() y Path.mkdir().
         """
         import tempfile
         tmpdir = tempfile.mkdtemp(prefix="tm_lancedb_dir_")
         try:
-            parent = os.path.join(tmpdir, "sub_no_existe")
-            db_path = os.path.join(parent, "lancedb")
+            parent = Path(tmpdir) / "sub_no_existe"
+            db_path = str(parent / "lancedb")
             tm = tm_module.TaskManager(db_path=db_path)
             # El padre debe haber sido creado por _initialize
-            assert os.path.isdir(parent)
+            assert parent.is_dir()
         finally:
             import shutil
             shutil.rmtree(tmpdir, ignore_errors=True)

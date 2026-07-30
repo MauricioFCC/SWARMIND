@@ -3,8 +3,8 @@ Phase 2: Security Review — scan for secrets, dangerous functions, HTTP URLs.
 """
 from __future__ import annotations
 
-import os
 import re
+from pathlib import Path
 from typing import List, Optional
 
 from .config import (
@@ -94,13 +94,13 @@ def security_scan(directory: str = ".", changed_files: Optional[List[str]] = Non
     config = _load_config()
     secret_patterns = config.get("security", {}).get("secret_patterns", [])
     exclude = config.get("bug_hunting", {}).get("exclude_patterns", [])
-    abs_dir = str(PROJECT_ROOT if directory == "." else os.path.join(PROJECT_ROOT, directory))
+    abs_dir = str(PROJECT_ROOT if directory == "." else Path(PROJECT_ROOT) / directory)
 
     if changed_files is not None:
         all_files = []
         for rel_f in changed_files:
-            abs_f = os.path.join(PROJECT_ROOT, rel_f)
-            if os.path.isfile(abs_f) and _is_python_file(abs_f):
+            abs_f = str(Path(PROJECT_ROOT) / rel_f)
+            if Path(abs_f).is_file() and _is_python_file(abs_f):
                 if not _should_exclude(abs_f, exclude):
                     all_files.append(abs_f)
     else:
@@ -111,7 +111,7 @@ def security_scan(directory: str = ".", changed_files: Optional[List[str]] = Non
         lines, _total = _read_file_lines(filepath)
         if not lines:
             continue
-        rel_path = os.path.relpath(filepath, str(PROJECT_ROOT))
+        rel_path = str(Path(filepath).relative_to(PROJECT_ROOT))
         findings.extend(_scan_secret_patterns(lines, rel_path, secret_patterns))
         findings.extend(_scan_dangerous_functions(lines, rel_path))
         findings.extend(_scan_http_urls(lines, rel_path))

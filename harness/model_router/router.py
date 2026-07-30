@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+from pathlib import Path
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -618,10 +619,7 @@ class ModelRouter:
             Diccionario con la configuración resuelta.
         """
         if config_path is None:
-            config_path = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "router_config.yaml",
-            )
+            config_path = str(Path(__file__).resolve().parent / "router_config.yaml")
 
         try:
             import yaml

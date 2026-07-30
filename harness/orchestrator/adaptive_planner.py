@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -809,8 +810,7 @@ class AdaptivePlanner:
         if not self._storage_path:
             return
 
-        import os
-        os.makedirs(os.path.dirname(self._storage_path), exist_ok=True)
+        Path(self._storage_path).parent.mkdir(parents=True, exist_ok=True)
 
         data = {
             "strategy_stats": {
@@ -832,8 +832,7 @@ class AdaptivePlanner:
         if not self._storage_path:
             return
 
-        import os
-        if not os.path.exists(self._storage_path):
+        if not Path(self._storage_path).exists():
             return
 
         try:

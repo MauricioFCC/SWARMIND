@@ -3,27 +3,15 @@
 Implementa 5 capas de proteccion inspiradas en el AI Factory Stack:
 
 1. **Input Guardrails**: Filtra prompts maliciosos antes del LLM.
-   - Anti prompt injection, toxicidad, longitud excesiva.
-
 2. **Output Guardrails**: Valida respuestas antes de entregar al usuario.
-   - Anti code injection, PII leak, toxicidad, max length.
-
 3. **Content Guardrails**: Bloquea contenido peligroso (PII, codigo).
-   - Anti PII, anti code injection, toxicidad.
-
 4. **Tool Guardrails**: Valida llamadas a herramientas (reusa ToolGuardian).
-   - Tool allowlist, validacion de argumentos via ToolGuardian.
-
 5. **Policy Guardrails**: Enforce politicas de negocio (reusa GovernanceGuard).
-   - Constraints de governance, reglas de compliance.
 
-Cada guardrail retorna un ``GuardrailResult`` con:
-    - verdict: PASS, BLOCK, FLAG, REWRITE
-    - score: [0, 1] donde 0 = seguro, 1 = peligroso
-    - violations: lista de descripciones de violaciones
-    - metadata: informacion adicional del chequeo
-
-Basado en: AI Factory Stack — 5-Layer Guardrail Architecture.
+Tipos y utilidades extraidos a:
+    guardrail_types.py   — Enums, GuardrailResult, GuardrailRule
+    guardrail_tool.py    — check_tool, check_policy, _check_governance
+    guardrail_content.py — check_content
 """
 
 from __future__ import annotations
@@ -31,8 +19,6 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from harness.guardrails.builtin_rules import (
@@ -43,204 +29,20 @@ from harness.guardrails.builtin_rules import (
     tool_allowlist as _tool_allowlist_fn,
     toxicity,
 )
+from harness.guardrails.guardrail_types import (
+    GuardrailLayer,
+    GuardrailResult,
+    GuardrailRule,
+    GuardrailSeverity,
+    GuardrailVerdict,
+)
+
+# Importar funciones extraidas de tool/content
+from harness.guardrails.guardrail_tool import check_policy, check_tool
+from harness.guardrails.guardrail_content import check_content
 
 
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Enumeraciones
-# ---------------------------------------------------------------------------
-
-
-class GuardrailVerdict(Enum):
-    """Veredicto de un guardrail tras evaluar un texto.
-
-    PASS:    No se detectaron problemas, paso libre.
-    BLOCK:   Se debe bloquear la operacion (contenido peligroso).
-    FLAG:    Se detectaron anomalias leves, requiere revision.
-    REWRITE: El contenido debe ser reescrito (contenido mejorable).
-    """
-
-    PASS = "pass"
-    BLOCK = "block"
-    FLAG = "flag"
-    REWRITE = "rewrite"
-
-
-class GuardrailLayer(Enum):
-    """Capas de proteccion del sistema de guardrails.
-
-    Cada capa corresponde a un punto de control en el pipeline
-    de ejecucion de AGENTIC.
-    """
-
-    INPUT = "input"
-    OUTPUT = "output"
-    CONTENT = "content"
-    TOOL = "tool"
-    POLICY = "policy"
-
-
-class GuardrailSeverity(Enum):
-    """Nivel de severidad de una regla de guardrail.
-
-    CRITICAL: Violacion bloqueante, detiene ejecucion.
-    HIGH:     Violacion importante, requiere accion inmediata.
-    MEDIUM:   Violacion moderada, debe revisarse.
-    LOW:      Violacion menor, informativa.
-    INFO:     Solo informativo, no bloquea.
-    """
-
-    CRITICAL = "critical"
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
-    INFO = "info"
-
-
-# ---------------------------------------------------------------------------
-# Estructuras de datos inmutables
-# ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class GuardrailResult:
-    """Resultado de la evaluacion de uno o varios guardrails.
-
-    Attributes:
-        verdict: Veredicto final de la evaluacion.
-        score: Puntaje de riesgo en [0, 1] (0 = seguro, 1 = peligroso).
-        violations: Lista de descripciones de violaciones encontradas.
-        metadata: Informacion adicional del chequeo (capas evaluadas, reglas,
-            tiempos de ejecucion, etc.).
-    """
-    verdict: GuardrailVerdict
-    score: float = 0.0
-    violations: Tuple[str, ...] = field(default_factory=tuple)
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-    def is_blocked(self) -> bool:
-        """Indica si el resultado implica bloqueo de la operacion.
-
-        Returns:
-            True si el veredicto es BLOCK.
-        """
-        return self.verdict == GuardrailVerdict.BLOCK
-
-    def is_pass(self) -> bool:
-        """Indica si el resultado es completamente limpio.
-
-        Returns:
-            True si el veredicto es PASS.
-        """
-        return self.verdict == GuardrailVerdict.PASS
-
-    def merge(self, other: GuardrailResult) -> GuardrailResult:
-        """Combina dos resultados, priorizando el veredicto mas restrictivo.
-
-        El score es el maximo de ambos. Las violaciones se concatenan.
-        Los metadata se fusionan (los de ``other`` sobrescriben en caso
-        de conflicto).
-
-        Args:
-            other: Otro GuardrailResult a fusionar.
-
-        Returns:
-            Nuevo GuardrailResult combinado.
-        """
-        # Orden de severidad: BLOCK > REWRITE > FLAG > PASS
-        severity_order: Dict[GuardrailVerdict, int] = {
-            GuardrailVerdict.PASS: 0,
-            GuardrailVerdict.FLAG: 1,
-            GuardrailVerdict.REWRITE: 2,
-            GuardrailVerdict.BLOCK: 3,
-        }
-
-        merged_verdict: GuardrailVerdict = (
-            self.verdict
-            if severity_order.get(self.verdict, 0) >= severity_order.get(other.verdict, 0)
-            else other.verdict
-        )
-
-        merged_metadata: Dict[str, Any] = {**self.metadata, **other.metadata}
-
-        return GuardrailResult(
-            verdict=merged_verdict,
-            score=max(self.score, other.score),
-            violations=self.violations + other.violations,
-            metadata=merged_metadata,
-        )
-
-    @staticmethod
-    def pass_result(metadata: Optional[Dict[str, Any]] = None) -> GuardrailResult:
-        """Crea un resultado PASS limpio.
-
-        Args:
-            metadata: Metadatos opcionales.
-
-        Returns:
-            GuardrailResult con verdict PASS y score 0.
-        """
-        return GuardrailResult(
-            verdict=GuardrailVerdict.PASS,
-            score=0.0,
-            violations=(),
-            metadata=metadata or {},
-        )
-
-    @staticmethod
-    def block_result(
-        reason: str,
-        score: float = 1.0,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> GuardrailResult:
-        """Crea un resultado BLOCK.
-
-        Args:
-            reason: Descripcion de la violacion.
-            score: Puntaje de riesgo (default 1.0).
-            metadata: Metadatos opcionales.
-
-        Returns:
-            GuardrailResult con verdict BLOCK.
-        """
-        return GuardrailResult(
-            verdict=GuardrailVerdict.BLOCK,
-            score=score,
-            violations=(reason,),
-            metadata=metadata or {},
-        )
-
-
-@dataclass(frozen=True)
-class GuardrailRule:
-    """Regla de guardrail configurable en el sistema.
-
-    Attributes:
-        name: Identificador unico de la regla.
-        layer: Capa a la que pertenece (INPUT, OUTPUT, CONTENT, TOOL, POLICY).
-        check_fn: Funcion que evalua el texto y retorna (violado, razon).
-        severity: Nivel de severidad de la violacion.
-        enabled: Si la regla esta activa actualmente.
-        action: Accion por defecto ante violacion (BLOCK, FLAG, LOG, REWRITE).
-    """
-    name: str
-    layer: GuardrailLayer
-    check_fn: Callable[[str], Tuple[bool, str]] = field(compare=False)
-    severity: GuardrailSeverity = GuardrailSeverity.HIGH
-    enabled: bool = True
-    action: GuardrailVerdict = GuardrailVerdict.BLOCK
-
-    def __post_init__(self) -> None:
-        """Valida que la accion sea compatible con BLOCK/FLAG/REWRITE."""
-        if self.action not in (GuardrailVerdict.BLOCK, GuardrailVerdict.FLAG,
-                               GuardrailVerdict.REWRITE):
-            object.__setattr__(self, 'action', GuardrailVerdict.BLOCK)
-
-
-# ---------------------------------------------------------------------------
-# GuardrailEngine
-# ---------------------------------------------------------------------------
 
 
 class GuardrailEngine:
@@ -266,8 +68,8 @@ class GuardrailEngine:
 
     def __init__(
         self,
-        tool_guardian: Optional[ToolGuardian] = None,
-        governance_guard: Optional[GovernanceGuard] = None,
+        tool_guardian: Optional[Any] = None,
+        governance_guard: Optional[Any] = None,
         allowed_tools: Optional[Set[str]] = None,
         max_output_tokens: int = 4096,
     ) -> None:
@@ -287,7 +89,7 @@ class GuardrailEngine:
         """
         self._lock: threading.Lock = threading.Lock()
 
-        # Guardianes externos con lazy loading (evitar acoplamiento directo)
+        # Guardianes externos con lazy loading
         from harness.orchestrator.tool_guardian import ToolGuardian as _TG
         from harness.orchestrator.governance_guard import GovernanceGuard as _GG
         self._tool_guardian: _TG = tool_guardian or _TG()
@@ -297,7 +99,7 @@ class GuardrailEngine:
         self._allowed_tools: Set[str] = allowed_tools or set()
         self._max_output_tokens: int = max_output_tokens
 
-        # Reglas activas (capas INPUT, OUTPUT, CONTENT, TOOL, POLICY)
+        # Reglas activas
         self._rules: Dict[GuardrailLayer, List[GuardrailRule]] = {
             layer: [] for layer in GuardrailLayer
         }
@@ -431,7 +233,7 @@ class GuardrailEngine:
             layer=GuardrailLayer.POLICY,
             severity=GuardrailSeverity.HIGH,
             action=GuardrailVerdict.FLAG,
-            check_fn=self._check_governance,
+            check_fn=lambda t: self._check_governance(t),
         ))
 
     def _add_rule_unchecked(self, rule: GuardrailRule) -> None:
@@ -463,7 +265,6 @@ class GuardrailEngine:
             raise ValueError("El nombre de la regla no puede estar vacio")
 
         with self._lock:
-            # Remover regla existente con el mismo nombre en la misma capa
             self._rules[rule.layer] = [
                 r for r in self._rules[rule.layer] if r.name != rule.name
             ]
@@ -564,13 +365,12 @@ class GuardrailEngine:
     def check_content(self, text: str) -> GuardrailResult:
         """Evalua contenido arbitrario contra Content Guardrails (Capa 3).
 
+        Delega en ``guardrail_content.check_content``.
+
         Verifica:
             - PII leak (REWRITE si detecta datos personales).
             - Code injection (BLOCK si detecta codigo peligroso).
             - Toxicidad (FLAG si detecta lenguaje ofensivo).
-
-        Nota: Esta capa es para contenido interno que no es input directo
-        ni output final, como datos de memoria intermedia o logs.
 
         Args:
             text: Texto del contenido a evaluar.
@@ -578,12 +378,7 @@ class GuardrailEngine:
         Returns:
             GuardrailResult con el resultado acumulado de las reglas CONTENT.
         """
-        start: float = time.perf_counter()
-        result: GuardrailResult = self._check_layer(
-            GuardrailLayer.CONTENT, text,
-        )
-        self._update_stats(GuardrailLayer.CONTENT, result, start)
-        return result
+        return check_content(self, text)
 
     def check_tool(
         self,
@@ -592,105 +387,29 @@ class GuardrailEngine:
     ) -> GuardrailResult:
         """Valida una llamada a herramienta contra Tool Guardrails (Capa 4).
 
-        Reusa ToolGuardian para validar la tool contra politicas de seguridad
-        declarativas (acciones bloqueadas, permitidas, contexto).
+        Delega en ``guardrail_tool.check_tool``.
 
         Args:
             tool_name: Nombre de la herramienta a validar.
             args: Argumentos de la llamada (para validacion contextual).
 
         Returns:
-            GuardrailResult con:
-                - BLOCK si la tool no esta permitida.
-                - PASS si la tool es segura y permitida.
+            GuardrailResult con BLOCK si no esta permitida, PASS si es segura.
         """
-        start: float = time.perf_counter()
-        violations: List[str] = []
-
-        # 1. Validar contra ToolGuardian
-        is_allowed: bool = self._tool_guardian.validate_tool_call(
-            tool_name=tool_name,
-            action=args.get("action", "execute") if args else "execute",
-            args=args,
-        )
-        if not is_allowed:
-            violations.append(
-                f"Tool '{tool_name}' bloqueada por ToolGuardian "
-                "(accion no permitida o politica violada)"
-            )
-
-        # 2. Ejecutar reglas de capa TOOL (tool_allowlist)
-        tool_text: str = f"tool_name={tool_name}, args={args}"
-        layer_result: GuardrailResult = self._check_layer(
-            GuardrailLayer.TOOL, tool_text,
-        )
-        violations.extend(layer_result.violations)
-
-        if violations:
-            result: GuardrailResult = GuardrailResult(
-                verdict=GuardrailVerdict.BLOCK,
-                score=min(1.0, len(violations) * 0.4),
-                violations=tuple(violations),
-                metadata={
-                    "tool_name": tool_name,
-                    "args": args,
-                    "checked_layer": GuardrailLayer.TOOL.value,
-                },
-            )
-        else:
-            result = GuardrailResult.pass_result({
-                "tool_name": tool_name,
-                "args": args,
-                "checked_layer": GuardrailLayer.TOOL.value,
-            })
-
-        self._update_stats(GuardrailLayer.TOOL, result, start)
-        return result
+        return check_tool(self, tool_name, args)
 
     def check_policy(self, code: str) -> GuardrailResult:
         """Evalua codigo/politicas contra Policy Guardrails (Capa 5).
 
-        Reusa GovernanceGuard para verificar constraints de governance
-        como no_except_pass, docstrings, no_eval_exec, etc.
+        Delega en ``guardrail_tool.check_policy``.
 
         Args:
             code: Codigo fuente a evaluar contra politicas de governance.
 
         Returns:
-            GuardrailResult con:
-                - FLAG si hay violaciones de governance.
-                - PASS si cumple todas las politicas.
+            GuardrailResult con FLAG si hay violaciones, PASS si cumple.
         """
-        start: float = time.perf_counter()
-        violations: List[str] = []
-
-        # 1. GovernanceGuard check
-        governance_violations: List[str] = self._governance_guard.check(code)
-        violations.extend(governance_violations)
-
-        # 2. Reglas de capa POLICY
-        layer_result: GuardrailResult = self._check_layer(
-            GuardrailLayer.POLICY, code,
-        )
-        violations.extend(layer_result.violations)
-
-        if violations:
-            result = GuardrailResult(
-                verdict=GuardrailVerdict.FLAG,
-                score=min(1.0, len(violations) * 0.2),
-                violations=tuple(violations),
-                metadata={
-                    "governance_violations": len(governance_violations),
-                    "checked_layer": GuardrailLayer.POLICY.value,
-                },
-            )
-        else:
-            result = GuardrailResult.pass_result({
-                "checked_layer": GuardrailLayer.POLICY.value,
-            })
-
-        self._update_stats(GuardrailLayer.POLICY, result, start)
-        return result
+        return check_policy(self, code)
 
     # ------------------------------------------------------------------
     # Logica interna de evaluacion
@@ -741,7 +460,6 @@ class GuardrailEngine:
                     "WHERE=rule.check_fn(%s), error=%s",
                     rule.name, layer.value, rule.name, exc,
                 )
-                # En caso de error, FLAG para no bloquear silenciosamente
                 violated = True
                 reason = f"Error interno en regla '{rule.name}': {exc}"
 
@@ -749,12 +467,10 @@ class GuardrailEngine:
                 violations.append(f"[{rule.severity.value}] {rule.name}: {reason}")
                 rule_hits.append(rule.name)
 
-                # Registrar hit en estadisticas
                 with self._lock:
                     self._stats["rule_hits"][rule.name] = \
                         self._stats["rule_hits"].get(rule.name, 0) + 1
 
-                # Determinar accion
                 if rule.action == GuardrailVerdict.BLOCK:
                     has_block = True
                 elif rule.action == GuardrailVerdict.REWRITE:
@@ -762,7 +478,6 @@ class GuardrailEngine:
                 elif rule.action == GuardrailVerdict.FLAG:
                     has_flag = True
 
-                # Registrar severidad maxima
                 sev_map: Dict[str, int] = {
                     "critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0,
                 }
@@ -781,13 +496,11 @@ class GuardrailEngine:
         else:
             verdict = GuardrailVerdict.PASS
 
-        # Calcular score basado en numero de violaciones y severidad
+        # Calcular score
         score: float = 0.0
         if violations:
-            # Score base: proporcion de reglas violadas
             total_enabled: int = sum(1 for r in rules if r.enabled)
             score = min(1.0, len(violations) / max(total_enabled, 1))
-            # Penalizar por severidad
             score = min(1.0, score + (max_severity * 0.15))
 
         return GuardrailResult(
@@ -805,8 +518,7 @@ class GuardrailEngine:
     def _check_governance(self, text: str) -> Tuple[bool, str]:
         """Wrapper que evalua GovernanceGuard contra el texto.
 
-        Convierte la salida de GovernanceGuard.check() en el formato
-        (violated, reason) esperado por las reglas.
+        Delega en ``guardrail_tool._check_governance``.
 
         Args:
             text: Codigo fuente a evaluar.
@@ -814,13 +526,8 @@ class GuardrailEngine:
         Returns:
             tuple[bool, str]: (True si hay violaciones, detalle).
         """
-        violations: List[str] = self._governance_guard.check(text)
-        if violations:
-            detail: str = "; ".join(violations[:5])
-            if len(violations) > 5:
-                detail += f" (y {len(violations) - 5} mas)"
-            return True, detail
-        return False, ""
+        from harness.guardrails.guardrail_tool import _check_governance as _cg
+        return _cg(self, text)
 
     # ------------------------------------------------------------------
     # Estadisticas
@@ -845,7 +552,6 @@ class GuardrailEngine:
             self._stats["total_checks"] += 1
             self._stats["last_checked"] = time.time()
 
-            # Actualizar por capa
             layer_stats: Dict[str, Any] = self._stats["by_layer"][layer.value]
             layer_stats["checks"] += 1
 
@@ -859,7 +565,6 @@ class GuardrailEngine:
             else:
                 self._stats["passed"] += 1
 
-            # Average check time (exponential moving average)
             prev_avg: float = self._stats["avg_check_time_ms"]
             total: int = self._stats["total_checks"]
             self._stats["avg_check_time_ms"] = prev_avg + (
@@ -870,15 +575,8 @@ class GuardrailEngine:
         """Obtiene estadisticas de uso del motor de guardrails.
 
         Retorna un diccionario con:
-            - total_checks: Total de evaluaciones realizadas.
-            - blocked: Cantidad de operaciones bloqueadas.
-            - flagged: Cantidad de operaciones marcadas.
-            - passed: Cantidad de operaciones limpias.
-            - rewrites: Cantidad de reescrituras sugeridas.
-            - by_layer: Desglose por capa.
-            - rule_hits: Conteo de violaciones por regla.
-            - last_checked: Timestamp de la ultima evaluacion.
-            - avg_check_time_ms: Tiempo promedio por evaluacion (ms).
+            - total_checks, blocked, flagged, passed, rewrites
+            - by_layer, rule_hits, last_checked, avg_check_time_ms
 
         Returns:
             Dict con las estadisticas actuales.
@@ -900,10 +598,7 @@ class GuardrailEngine:
             }
 
     def reset_stats(self) -> None:
-        """Resetea todas las estadisticas de uso a cero.
-
-        Util para comenzar una nueva sesion de monitoreo limpia.
-        """
+        """Resetea todas las estadisticas de uso a cero."""
         with self._lock:
             self._stats["total_checks"] = 0
             self._stats["blocked"] = 0
@@ -922,12 +617,12 @@ class GuardrailEngine:
     # ------------------------------------------------------------------
 
     @property
-    def tool_guardian(self) -> ToolGuardian:
+    def tool_guardian(self) -> Any:
         """Acceso al ToolGuardian interno para configuracion avanzada."""
         return self._tool_guardian
 
     @property
-    def governance_guard(self) -> GovernanceGuard:
+    def governance_guard(self) -> Any:
         """Acceso al GovernanceGuard interno para configuracion avanzada."""
         return self._governance_guard
 
@@ -978,7 +673,7 @@ class GuardrailEngine:
         ])
 
         if stats["rule_hits"]:
-            lines.extend(["",             "  -- Reglas mas violadas --"])
+            lines.extend(["", "  -- Reglas mas violadas --"])
             for name, count in sorted(
                 stats["rule_hits"].items(),
                 key=lambda x: -x[1],

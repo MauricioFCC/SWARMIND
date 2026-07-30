@@ -3,7 +3,7 @@ Phase 3: Documentation Update — check staleness and auto-regenerate.
 """
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import sys
 from typing import List, Tuple
 
@@ -84,7 +84,7 @@ def check_and_update_docs(changed_files: List[str], dry_run: bool = False) -> Tu
             staleness_type="outdated",
             message="Agentes en .opencode/agents/ cambiaron → actualizar AGENTS.md",
         ))
-        names = ", ".join(os.path.basename(a).replace(".md", "") for a in agent_changed[:5])
+        names = ", ".join(Path(a).stem for a in agent_changed[:5])
         _safe_print(f"    {_warn('[REVIEW]')} Agentes modificados: {names} — AGENTS.md requiere revision manual")
         updated_count += 1
 

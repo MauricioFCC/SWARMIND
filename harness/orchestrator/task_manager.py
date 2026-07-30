@@ -7,9 +7,9 @@ and agent-based querying. Uses Pydantic models when available.
 from __future__ import annotations
 
 import json
-import os
 import sqlite3
 import uuid
+from pathlib import Path
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional, Tuple
@@ -137,11 +137,7 @@ class TaskManager:
         if vector_store is not None:
             db_path = getattr(vector_store, 'db_path', db_path)
         if not db_path:
-            db_path = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                "db",
-                "lancedb",
-            )
+            db_path = str(Path(__file__).resolve().parent.parent / "db" / "lancedb")
         self._db_path: str = db_path
         self._table_name: str = "tasks_board"
         self._conn_lancedb: Any = None
@@ -151,8 +147,9 @@ class TaskManager:
         self._initialize()
 
     def _initialize(self) -> None:
-        if not os.path.exists(os.path.dirname(self._db_path)):
-            os.makedirs(os.path.dirname(self._db_path), exist_ok=True)
+        db_dir = Path(self._db_path).parent
+        if not db_dir.exists():
+            db_dir.mkdir(parents=True, exist_ok=True)
         if HAS_LANCEDB:
             try:
                 self._conn_lancedb = lancedb.connect(self._db_path)
@@ -173,8 +170,8 @@ class TaskManager:
                 logger.warning("task_manager: %s", _exc)
 
         self._use_sqlite = True
-        os.makedirs(os.path.dirname(self._db_path), exist_ok=True)
-        sqlite_path = os.path.join(self._db_path, "tasks_board.sqlite")
+        Path(self._db_path).parent.mkdir(parents=True, exist_ok=True)
+        sqlite_path = str(Path(self._db_path) / "tasks_board.sqlite")
         self._sqlite_conn = sqlite3.connect(sqlite_path)
         self._sqlite_conn.row_factory = sqlite3.Row
         self._sqlite_conn.execute(

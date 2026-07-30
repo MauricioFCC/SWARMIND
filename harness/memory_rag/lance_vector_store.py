@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import uuid
+from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -25,10 +25,8 @@ logger = logging.getLogger(__name__)
 # Constants & Schemas (extracted to lance_schemas.py for file size)
 # ---------------------------------------------------------------------------
 
-LANCEDB_ROOT = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "db",
-    "lancedb",
+LANCEDB_ROOT = str(
+    Path(__file__).resolve().parent.parent / "db" / "lancedb"
 )
 
 from .lance_migration import generate_sample_row, serialize_for_schema  # noqa: E402
@@ -132,7 +130,7 @@ class LanceVectorStore:
         lancedb = self._try_import_lancedb()
         if lancedb is not None:
             try:
-                os.makedirs(self.db_path, exist_ok=True)
+                Path(self.db_path).mkdir(parents=True, exist_ok=True)
                 self._db = lancedb.connect(self.db_path)
                 self._lancedb_available = True
                 logger.info("LanceVectorStore connected to %s", self.db_path)

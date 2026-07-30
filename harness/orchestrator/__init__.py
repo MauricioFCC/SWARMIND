@@ -51,6 +51,15 @@ _SYMBOL_MAP: Dict[str, str] = {
     "MintzbergCoordination": "harness.orchestrator.organizational_layer",
     "CollaborationProtocol": "harness.orchestrator.organizational_layer",
     "TeamSpec": "harness.orchestrator.organizational_layer",
+    # MetaClaw (ADR-0010, S26)
+    "MetaClaw": "harness.orchestrator.metaclaw",
+    "ToolRecord": "harness.orchestrator.metaclaw",
+    "SelectionRecord": "harness.orchestrator.metaclaw",
+    # MARS Scheduler (ADR-0010, C26)
+    "MARSScheduler": "harness.orchestrator.mars_scheduler",
+    "AgentProfile": "harness.orchestrator.mars_scheduler",
+    "TaskSpec": "harness.orchestrator.mars_scheduler",
+    "Assignment": "harness.orchestrator.mars_scheduler",
 }
 
 

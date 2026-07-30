@@ -8,7 +8,7 @@ _execute_job/_execute_job_once/_log_execution), backward-compat aliases.
 """
 from __future__ import annotations
 
-import os
+from pathlib import Path
 from datetime import datetime, timezone
 from typing import Any, Dict
 from unittest.mock import MagicMock, patch
@@ -118,7 +118,7 @@ class TestJobStore:
         """_load_jobs con archivo nuevo debe crear estructura vacia."""
         p = tmp_path / "empty.json"
         s = store_class(p)
-        assert os.path.isfile(p)
+        assert p.is_file()
         assert s._jobs == {}
 
     def test_save_and_load_json(self, tmp_path, store_class):
@@ -266,9 +266,9 @@ class TestSimpleScheduler:
         """__init__ debe crear el archivo de jobs si no existe."""
         from harness.scheduler import SimpleScheduler
         p = tmp_path / "new_jobs.json"
-        assert not os.path.isfile(p)
+        assert not p.is_file()
         SimpleScheduler(jobs_path=str(p))
-        assert os.path.isfile(p)
+        assert p.is_file()
 
     def test_add_job(self, scheduler):
         """add_job debe agregar un job y retornarlo."""
@@ -472,7 +472,7 @@ class TestLanceScheduler:
         p = tmp_path / "init_test.yaml"
         store = MagicMock()
         s = LanceScheduler(vector_store=store, jobs_path=str(p))
-        assert os.path.isfile(p)
+        assert p.is_file()
         assert s._jobs == {}
 
     def test_add_job_interval(self, scheduler):

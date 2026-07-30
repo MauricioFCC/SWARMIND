@@ -6,12 +6,12 @@ registro de llamadas y reinicio de estados.
 """
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import sys
 
 import pytest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from harness.orchestrator.agent_cost_controller import AgentCostController
 

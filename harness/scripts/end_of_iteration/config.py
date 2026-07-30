@@ -3,7 +3,6 @@ Configuration, data types and shared utilities for the end-of-iteration pipeline
 """
 from __future__ import annotations
 
-import os
 import re
 import sys
 from dataclasses import dataclass, field
@@ -264,14 +263,14 @@ def _is_python_file(filepath: str) -> bool:
 def _walk_py_files(directory: str, exclude_patterns: List[str]) -> List[str]:
     """Walk directory yielding Python files that are not excluded."""
     results: List[str] = []
-    for root, _dirs, files in os.walk(directory):
-        for fname in files:
-            if not _is_python_file(fname):
-                continue
-            fpath = os.path.join(root, fname)
-            if _should_exclude(fpath, exclude_patterns):
-                continue
-            results.append(fpath)
+    for fpath in Path(directory).rglob("*"):
+        if not fpath.is_file():
+            continue
+        if not _is_python_file(str(fpath)):
+            continue
+        if _should_exclude(str(fpath), exclude_patterns):
+            continue
+        results.append(str(fpath))
     return results
 
 
@@ -349,9 +348,9 @@ def _get_changed_files_since_last_commit() -> List[str]:
 
 def _has_changed_files_in_dir(changed_files: List[str], prefix: str) -> bool:
     """Check if any changed file lives under a given directory prefix."""
-    prefix_norm = prefix.replace("/", os.sep)
+    prefix_norm = Path(prefix).as_posix()
     for f in changed_files:
-        f_norm = f.replace("/", os.sep)
+        f_norm = Path(f).as_posix()
         if f_norm.startswith(prefix_norm):
             return True
     return False

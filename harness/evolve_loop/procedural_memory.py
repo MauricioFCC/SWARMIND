@@ -8,19 +8,16 @@ the steps next time.
 from __future__ import annotations
 
 import logging
-import os
 import re
+from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-AUTO_SKILLS_DIR = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    ".opencode",
-    "skills",
-    "auto",
+AUTO_SKILLS_DIR = str(
+    Path(__file__).resolve().parent.parent.parent / ".opencode" / "skills" / "auto"
 )
 
 
@@ -74,18 +71,18 @@ class ProceduralMemory:
     def __init__(self, skills_dir: str = "") -> None:
         """Inicializa la instancia de la clase."""
         self._skills_dir = skills_dir or AUTO_SKILLS_DIR
-        os.makedirs(self._skills_dir, exist_ok=True)
+        Path(self._skills_dir).mkdir(parents=True, exist_ok=True)
         self._skills: Dict[str, ProceduralSkill] = {}
         self._load_skills()
 
     def _load_skills(self) -> None:
-        if not os.path.isdir(self._skills_dir):
+        skills_path = Path(self._skills_dir)
+        if not skills_path.is_dir():
             return
-        for fname in sorted(os.listdir(self._skills_dir)):
-            if fname.endswith(".md"):
-                name = fname[:-3]
-                path = os.path.join(self._skills_dir, fname)
-                with open(path, encoding="utf-8") as f:
+        for fpath in sorted(skills_path.iterdir()):
+            if fpath.suffix == ".md":
+                name = fpath.stem
+                with open(fpath, encoding="utf-8") as f:
                     content = f.read()
                 lines = content.split("\n")
                 description = ""
@@ -146,11 +143,11 @@ class ProceduralMemory:
         )
 
         # Avoid overwriting
-        existing_path = os.path.join(self._skills_dir, f"{safe_name}.md")
-        if os.path.exists(existing_path):
+        existing_path = Path(self._skills_dir) / f"{safe_name}.md"
+        if existing_path.exists():
             skill.version = self._skills.get(safe_name, skill).version + 1
 
-        filepath = os.path.join(self._skills_dir, f"{safe_name}.md")
+        filepath = str(Path(self._skills_dir) / f"{safe_name}.md")
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(skill.to_markdown())
 

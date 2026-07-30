@@ -9,138 +9,28 @@ Basado en arXiv:2607.03953 (Vaswani et al., Jul 2026):
   - Semantic overlap scoring para matching tool → intent
   - Confidence-weighted parameter extraction con patrones
   - Tool chaining desde una sola frase en lenguaje natural
-  - Example-based disambiguation para colisiones semánticas
+  - Example-based disambiguation para colisiones semanticas
 
-Algoritmo de parseo:
-  1. Tokenización y normalización del texto de entrada.
-  2. Semantic overlap scoring contra cada tool (descripción + nombre + ejemplos).
-  3. Selección de la tool con mayor confianza sobre el umbral configurable.
-  4. Extracción de parámetros estructurados desde el texto libre.
-  5. Encadenamiento opcional de herramientas si el texto contiene
-     múltiples intenciones separadas por conectores.
+Tipos y constantes extraidos a nlt_types.py.
 """
+
 from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass, field
 from difflib import SequenceMatcher
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+from harness.orchestrator.nlt_types import (
+    NLTResult,
+    NLTool,
+    _CHAIN_CONNECTORS,
+    _PARAM_PATTERNS,
+    _STOPWORDS,
+    DEFAULT_CONFIDENCE_THRESHOLD,
+)
 
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Constantes
-# ---------------------------------------------------------------------------
-
-# Umbral por defecto para considerar un match como válido
-DEFAULT_CONFIDENCE_THRESHOLD = 0.35
-
-# Palabras vacías (stopwords) ignoradas durante el scoring
-_STOPWORDS: Set[str] = {
-    "el", "la", "los", "las", "un", "una", "unos", "unas", "de", "del",
-    "en", "por", "para", "con", "sin", "y", "e", "o", "u", "a", "ante",
-    "bajo", "cabe", "contra", "desde", "durante", "entre", "hacia",
-    "hasta", "mediante", "para", "según", "so", "sobre", "tras",
-    "que", "es", "se", "su", "lo", "le", "ya", "este", "esta",
-    "como", "más", "pero", "sus", "ha", "han", "puede", "todo",
-    "también", "fue", "era", "son", "ser", "haber", "tener",
-    "the", "a", "an", "and", "or", "in", "on", "at", "to", "for",
-    "of", "with", "by", "from", "is", "it", "as", "be", "are",
-    "was", "were", "been", "being", "have", "has", "had", "do",
-    "does", "did", "will", "would", "could", "should", "may",
-    "might", "shall", "can", "need", "dare", "ought", "used",
-}
-
-# Conectores para detectar encadenamiento de herramientas
-_CHAIN_CONNECTORS: List[str] = [
-    " y ", " e ", " luego ", " después ", " además ", " también ",
-    " and ", " then ", " plus ", " also ",
-]
-
-# Patrones de extracción de parámetros comunes
-_PARAM_PATTERNS: Dict[str, List[str]] = {
-    "query": [
-        r"(?:sobre|acerca\s+de|acerca\s+del|de[l]?\s+)(.+?)(?:$|\.|\,|\sy\s)",
-        r"(?:buscar|encuentra|localiza)\s+(.+?)(?:$|\.|\,|\smax|\sen\s)",
-        r"'(.*?)'",
-        r"\"(.*?)\"",
-    ],
-    "documento": [
-        r"(?:documento|doc|archivo|expediente|caso)\s+(?:N[o°]?\.?\s*)?([\w\-\.]+)",
-        r"'([\w\-\.]+)'",
-        r"\"([\w\-\.]+)\"",
-    ],
-    "doc1": [
-        r"(?:entre|comparar)\s+(.+?)\s+(?:y|vs|versus|contra)",
-        r"primer[oaù]?\s+(?:documento|archivo|versi[oó]?n)?\s*(.+?)(?:$|\.|\,)",
-        r"^(.+?)\s+(?:y|vs|versus|contra)\s+",
-    ],
-    "doc2": [
-        r"(?:y|vs|versus|contra)\s+(.+?)(?:$|\.|\,)",
-        r"segund[oaù]?\s+(?:documento|archivo|versi[oó]?n)?\s*(.+?)(?:$|\.|\,)",
-    ],
-    "tipo": [
-        r"(?:tipo\s+de\s+)?an[áa]lisis\s+(?:de\s+)?(.+?)(?:$|\.|\,)",
-        r"modo\s+(.+?)(?:$|\.|\,)",
-    ],
-    "longitud": [
-        r"(breve|normal|detallado|extenso|corto|largo|resumido|ejecutivo)",
-        r"(?:resumen|longitud)\s+(.+?)(?:$|\.|\,)",
-    ],
-    "max": [
-        r"(?:m[áa]ximo|top|l[íi]mite)\s*(?::\s*)?(\d+)",
-        r"(\d+)\s*(?:resultados|docs|documentos|items)",
-    ],
-}
-
-
-@dataclass
-class NLTool:
-    """Definición de una herramienta invocable por lenguaje natural.
-
-    Cada NLTool encapsula el nombre, descripción semántica, parámetros
-    esperados, ejemplos de uso y un handler opcional para ejecución.
-
-    Attributes:
-        name: Nombre único de la herramienta (ej: 'buscar').
-        description: Descripción en lenguaje natural de su funcionalidad.
-        parameters: Diccionario {nombre_parametro: descripción_textual}.
-        examples: Lista de frases de ejemplo en lenguaje natural.
-        handler: Callable opcional que ejecuta la herramienta.
-    """
-
-    name: str
-    description: str
-    parameters: Dict[str, str] = field(default_factory=dict)
-    examples: List[str] = field(default_factory=list)
-    handler: Optional[Callable[..., Any]] = None
-
-
-@dataclass
-class NLTResult:
-    """Resultado del parseo de lenguaje natural a tool call estructurada.
-
-    Attributes:
-        tool: Nombre de la herramienta seleccionada.
-        natural_input: Texto original ingresado por el usuario.
-        structured_output: Diccionario con la acción y parámetros extraídos.
-        confidence: Nivel de confianza del matching (0.0 a 1.0).
-        alternatives: Lista de (tool_name, confidence) con alternativas.
-        chain: Lista de NLTResult para encadenamiento de herramientas.
-    """
-
-    tool: str
-    natural_input: str
-    structured_output: Dict[str, Any]
-    confidence: float = 1.0
-    alternatives: List[Tuple[str, float]] = field(default_factory=list)
-    chain: List[NLTResult] = field(default_factory=list)
-
-
-# ---------------------------------------------------------------------------
-# NaturalLanguageToolkit
-# ---------------------------------------------------------------------------
 
 
 class NaturalLanguageToolkit:
@@ -148,8 +38,8 @@ class NaturalLanguageToolkit:
 
     Implementa el pipeline de Natural Language Tool Calling (arXiv:2607.03953):
       1. Semantic overlap scoring entre texto de entrada y cada tool.
-      2. Selección de mejor candidato sobre umbral de confianza.
-      3. Extracción de parámetros mediante patrones lingüísticos.
+      2. Seleccion de mejor candidato sobre umbral de confianza.
+      3. Extraccion de parametros mediante patrones lingueisticos.
       4. Encadenamiento de herramientas para intenciones compuestas.
 
     Examples:
@@ -170,8 +60,8 @@ class NaturalLanguageToolkit:
         """Inicializa el toolkit con herramientas por defecto.
 
         Args:
-            confidence_threshold: Umbral mínimo de confianza (0-1) para
-                considerar un match como válido. Por defecto 0.35.
+            confidence_threshold: Umbral minimo de confianza (0-1) para
+                considerar un match como valido. Por defecto 0.35.
         """
         self._tools: Dict[str, NLTool] = {}
         self._threshold = confidence_threshold
@@ -193,16 +83,16 @@ class NaturalLanguageToolkit:
                 name="buscar",
                 description=(
                     "Buscar documentos legales por contenido textual. "
-                    "Útil para encontrar jurisprudencia, contratos, "
-                    "cláusulas o cualquier texto dentro de documentos."
+                    "Util para encontrar jurisprudencia, contratos, "
+                    "clausulas o cualquier texto dentro de documentos."
                 ),
                 parameters={
-                    "query": "texto o términos a buscar",
-                    "max": "máximo de resultados a retornar (opcional)",
+                    "query": "texto o terminos a buscar",
+                    "max": "maximo de resultados a retornar (opcional)",
                 },
                 examples=[
                     "buscar contratos de servicios 2024",
-                    "encuentra todas las cláusulas de confidencialidad",
+                    "encuentra todas las clausulas de confidencialidad",
                     "buscar jurisprudencia sobre debido proceso",
                     "localizar demandas por incumplimiento",
                 ],
@@ -211,21 +101,21 @@ class NaturalLanguageToolkit:
                 name="analizar",
                 description=(
                     "Analizar un documento legal extrayendo entidades, "
-                    "partes, riesgos, cláusulas relevantes y metadatos. "
-                    "Soporta análisis de riesgos, de partes y de entidades."
+                    "partes, riesgos, clausulas relevantes y metadatos. "
+                    "Soporta analisis de riesgos, de partes y de entidades."
                 ),
                 parameters={
                     "documento": "ruta o identificador del documento",
                     "tipo": (
-                        "tipo de análisis: riesgos / partes / entidades "
+                        "tipo de analisis: riesgos / partes / entidades "
                         "(opcional, por defecto completo)"
                     ),
                 },
                 examples=[
                     "analizar contrato de arrendamiento",
-                    "analiza demanda por daños y perjuicios",
+                    "analiza demanda por danos y perjuicios",
                     "analizar el documento 1234 en modo riesgos",
-                    "análisis completo del expediente X-2024",
+                    "analisis completo del expediente X-2024",
                 ],
             ),
             NLTool(
@@ -233,25 +123,25 @@ class NaturalLanguageToolkit:
                 description=(
                     "Comparar dos documentos legales y mostrar sus "
                     "diferencias estructurales y de contenido. "
-                    "Identifica cláusulas añadidas, eliminadas o modificadas."
+                    "Identifica clausulas anadidas, eliminadas o modificadas."
                 ),
                 parameters={
-                    "doc1": "primer documento o versión a comparar",
-                    "doc2": "segundo documento o versión",
+                    "doc1": "primer documento o version a comparar",
+                    "doc2": "segundo documento o version",
                 },
                 examples=[
                     "comparar contratos de proveedor A y B",
-                    "compara versión 1 y 2 del acuerdo de confidencialidad",
+                    "compara version 1 y 2 del acuerdo de confidencialidad",
                     "diferencias entre el documento X y el Y",
-                    "comparar cláusulas de indemnización",
+                    "comparar clausulas de indemnizacion",
                 ],
             ),
             NLTool(
                 name="resumir",
                 description=(
-                    "Resumir un documento legal en uno o más párrafos "
+                    "Resumir un documento legal en uno o mas parrafos "
                     "con diferentes niveles de detalle. "
-                    "Genera resúmenes ejecutivos, normales o detallados."
+                    "Genera resumenes ejecutivos, normales o detallados."
                 ),
                 parameters={
                     "documento": "ruta o identificador del documento",
@@ -262,9 +152,9 @@ class NaturalLanguageToolkit:
                 },
                 examples=[
                     "resumir sentencia de la corte suprema",
-                    "resume el contrato en 3 párrafos",
+                    "resume el contrato en 3 parrafos",
                     "resumen ejecutivo del dictamen legal",
-                    "detallado del caso Pérez vs Empresa S.A.",
+                    "detallado del caso Perez vs Empresa S.A.",
                 ],
             ),
         ]
@@ -272,7 +162,7 @@ class NaturalLanguageToolkit:
             self._tools[t.name] = t
 
     # ------------------------------------------------------------------
-    # API pública — Gestión de herramientas
+    # API publica — Gestion de herramientas
     # ------------------------------------------------------------------
 
     def register_tool(self, tool: NLTool) -> None:
@@ -284,17 +174,17 @@ class NaturalLanguageToolkit:
 
         Raises:
             TypeError: Si tool no es una instancia de NLTool.
-            ValueError: Si el nombre de la herramienta está vacío.
+            ValueError: Si el nombre de la herramienta esta vacio.
         """
         if not isinstance(tool, NLTool):
             raise TypeError(
-                f"Se esperaba NLTool, se recibió {type(tool).__name__}"
+                f"Se esperaba NLTool, se recibio {type(tool).__name__}"
             )
         if not tool.name or not tool.name.strip():
             raise ValueError("El nombre de la herramienta no puede estar vacío")
         self._tools[tool.name] = tool
         logger.info(
-            "Tool registrada: '%s' (descripción: %s)",
+            "Tool registrada: '%s' (descripcion: %s)",
             tool.name, tool.description[:60],
         )
 
@@ -305,7 +195,7 @@ class NaturalLanguageToolkit:
             name: Nombre de la herramienta a eliminar.
 
         Returns:
-            True si fue eliminada, False si no existía.
+            True si fue eliminada, False si no existia.
         """
         if name in self._tools:
             del self._tools[name]
@@ -329,12 +219,12 @@ class NaturalLanguageToolkit:
         """Lista los nombres de todas las herramientas registradas.
 
         Returns:
-            Lista ordenada alfabéticamente de nombres de herramientas.
+            Lista ordenada alfabeticamente de nombres de herramientas.
         """
         return sorted(self._tools.keys())
 
     def get_tool_count(self) -> int:
-        """Retorna el número de herramientas registradas.
+        """Retorna el numero de herramientas registradas.
 
         Returns:
             Cantidad de herramientas en el toolkit.
@@ -348,25 +238,25 @@ class NaturalLanguageToolkit:
             threshold: Nuevo umbral entre 0.0 y 1.0.
 
         Raises:
-            ValueError: Si el umbral está fuera del rango [0.0, 1.0].
+            ValueError: Si el umbral esta fuera del rango [0.0, 1.0].
         """
         if not 0.0 <= threshold <= 1.0:
             raise ValueError(
-                f"El umbral debe estar entre 0.0 y 1.0, se recibió {threshold}"
+                f"El umbral debe estar entre 0.0 y 1.0, se recibio {threshold}"
             )
         self._threshold = threshold
         logger.info("Umbral de confianza ajustado a %.2f", threshold)
 
     # ------------------------------------------------------------------
-    # API pública — Parseo de lenguaje natural
+    # API publica — Parseo de lenguaje natural
     # ------------------------------------------------------------------
 
     def parse(self, text: str) -> Optional[NLTResult]:
         """Parsea texto en lenguaje natural a una llamada de herramienta.
 
-        Ejecuta el pipeline completo: tokenización, semantic overlap
-        scoring, selección de mejor candidato, y extracción de
-        parámetros.
+        Ejecuta el pipeline completo: tokenizacion, semantic overlap
+        scoring, seleccion de mejor candidato, y extraccion de
+        parametros.
 
         Args:
             text: Texto en lenguaje natural del usuario.
@@ -376,7 +266,7 @@ class NaturalLanguageToolkit:
             suficiente, None en caso contrario.
 
         Raises:
-            ValueError: Si el texto está vacío o es solo espacios.
+            ValueError: Si el texto esta vacio o es solo espacios.
         """
         if not text or not text.strip():
             raise ValueError("El texto de entrada no puede estar vacío")
@@ -418,7 +308,7 @@ class NaturalLanguageToolkit:
         ]
 
         logger.debug(
-            "Parse: input='%s' → tool='%s' confidence=%.3f alternatives=%d",
+            "Parse: input='%s' -> tool='%s' confidence=%.3f alternatives=%d",
             text_stripped[:50], best_name, best_score, len(alternatives),
         )
 
@@ -441,7 +331,7 @@ class NaturalLanguageToolkit:
         self,
         texts: List[str],
     ) -> List[Optional[NLTResult]]:
-        """Parsea múltiples textos en lote.
+        """Parsea multiples textos en lote.
 
         Args:
             texts: Lista de textos en lenguaje natural.
@@ -452,53 +342,46 @@ class NaturalLanguageToolkit:
         return [self.parse(t) for t in texts]
 
     # ------------------------------------------------------------------
-    # Métodos internos — Scoring semántico
+    # Metodos internos — Scoring semantico
     # ------------------------------------------------------------------
 
     @staticmethod
     def _stem(word: str) -> str:
-        """Reduce una palabra a su raíz (stemming simple español/inglés).
+        """Reduce una palabra a su raiz (stemming simple espanol/ingles).
 
-        Aplica reglas de stemming para verbos y nombres españoles,
+        Aplica reglas de stemming para verbos y nombres espanoles,
         eliminando sufijos de infinitivo, conjugaciones y derivaciones
-        nominales comunes. No utiliza single-letter suffixes para
-        evitar falsos positivos.
+        nominales comunes.
 
         Args:
-            word: Palabra en minúsculas.
+            word: Palabra en minusculas.
 
         Returns:
-            Raíz estimada de la palabra.
+            Raiz estimada de la palabra.
         """
         if len(word) < 5:
             return word
 
-        # Sufijos de infinitivo
         for suffix in ("ar", "er", "ir"):
             if word.endswith(suffix) and len(word) > 4:
                 return word[:-2]
 
-        # Sufijos verbales compuestos (orden descendente)
         for suffix in (
-            "ándo", "iendo", "ando",
+            "ando", "iendo", "ando",
             "asteis", "isteis", "abais",
             "aron", "eron", "aban", "asen",
-            "aría", "ería", "iría",
-            "arías", "erías", "irías",
-            "íamos", "erais",
+            "aria", "eria", "iria",
+            "arias", "erias", "irias",
+            "iamos", "erais",
             "aste", "iste",
             "aba", "ada", "ado", "ido",
-            "ían", "ías",
+            "ian", "ias",
         ):
             if word.endswith(suffix) and len(word) - len(suffix) >= 3:
                 return word[:-len(suffix)]
 
-        # Sufijos nominales: convertir nombre a raíz verbal
-        # "resumen" → "resum", "dictamen" → NO tocar (falso amigo)
-        if word.endswith("ción") and len(word) > 6:
-            base = word[:-4]
-            # "búsqueda" no aplica, pero "comparación" → "compar"
-            return base
+        if word.endswith("cion") and len(word) > 6:
+            return word[:-4]
         if word.endswith("miento") and len(word) > 8:
             return word[:-6]
         if word.endswith("encia") and len(word) > 6:
@@ -513,11 +396,11 @@ class NaturalLanguageToolkit:
     ) -> Tuple[float, Dict[str, Any]]:
         """Calcula la confianza del matching entre texto y herramienta.
 
-        Combina múltiples señales con pesos adaptativos:
+        Combina multiples senales con pesos adaptativos:
           - Overlap de tokens con el nombre de la tool (peso 0.15)
           - Stem match del nombre contra tokens de entrada (peso 0.20)
           - Substring detection del nombre en el texto (peso 0.10)
-          - Overlap de tokens con descripción (peso 0.20)
+          - Overlap de tokens con descripcion (peso 0.20)
           - Overlap con ejemplos (peso 0.20)
           - Fuzzy matching de stems (peso 0.15)
 
@@ -526,7 +409,7 @@ class NaturalLanguageToolkit:
             tool: Herramienta a evaluar.
 
         Returns:
-            Tupla (confianza, parámetros_extraídos).
+            Tupla (confianza, parametros_extraidos).
         """
         text_lower = text.lower()
         tokens_input = self._tokenize(text_lower)
@@ -541,14 +424,11 @@ class NaturalLanguageToolkit:
 
         score = 0.0
 
-        # Señal 1: Overlap de tokens con nombre (peso 0.15)
+        # Senal 1: Overlap de tokens con nombre (peso 0.15)
         name_overlap = self._token_overlap(tokens_input, name_tokens)
         score += 0.15 * name_overlap
 
-        # Señal 2: Stem match — nombre stem es prefijo de algún token de entrada
-        # Detecta conjugaciones y nominalizaciones:
-        #   'analiza' y 'analizar' → stem 'analiz'
-        #   'resumen' contiene 'resum' (stem de 'resumir')
+        # Senal 2: Stem match
         stem_matched = any(
             t.startswith(name_stem) for t in tokens_input
         ) or any(
@@ -557,17 +437,16 @@ class NaturalLanguageToolkit:
         if stem_matched:
             score += 0.20
 
-        # Señal 3: Substring detection — nombre aparece como substring (peso 0.10)
-        # Útil para 'resumen' ~ 'resumir' porque 'resum' está en ambos
+        # Senal 3: Substring detection (peso 0.10)
         if name_lower in text_lower or (len(name_stem) > 3 and name_stem in text_lower):
             score += 0.10
 
-        # Señal 4: Overlap con descripción (peso 0.20)
+        # Senal 4: Overlap con descripcion (peso 0.20)
         desc_tokens = self._tokenize(tool.description.lower())
         desc_overlap = self._token_overlap(tokens_input, desc_tokens)
         score += 0.20 * desc_overlap
 
-        # Señal 5: Overlap con ejemplos (peso 0.20)
+        # Senal 5: Overlap con ejemplos (peso 0.20)
         example_score = 0.0
         if tool.examples:
             best_example_overlap = 0.0
@@ -579,14 +458,12 @@ class NaturalLanguageToolkit:
             example_score = best_example_overlap
         score += 0.20 * example_score
 
-        # Señal 6: Fuzzy match sobre stems (peso 0.15)
-        # Compara secuencias de stems en lugar de texto completo
+        # Senal 6: Fuzzy match sobre stems (peso 0.15)
         input_stem_text = " ".join(sorted(stems_input))
         name_stem_text = name_stem if name_stem else name_lower
         fuzzy_stem = SequenceMatcher(None, name_stem_text, input_stem_text).ratio()
         score += 0.15 * fuzzy_stem
 
-        # Extraer parámetros
         params = self._extract_parameters(text_lower, tool)
 
         return min(score, 1.0), params
@@ -603,8 +480,7 @@ class NaturalLanguageToolkit:
             tokens_b: Segundo conjunto de tokens.
 
         Returns:
-            Coeficiente de Jaccard (0.0 a 1.0). Retorna 0 si ambos
-            conjuntos están vacíos.
+            Coeficiente de Jaccard (0.0 a 1.0).
         """
         if not tokens_a or not tokens_b:
             return 0.0
@@ -622,16 +498,14 @@ class NaturalLanguageToolkit:
         Returns:
             Conjunto de tokens significativos (sin stopwords).
         """
-        # Separar por caracteres no alfabéticos
         tokens = re.findall(r"[a-záéíóúüñ]+", text.lower())
-        # Remover stopwords y tokens muy cortos
         return {
             t for t in tokens
             if t not in _STOPWORDS and len(t) > 1
         }
 
     # ------------------------------------------------------------------
-    # Métodos internos — Extracción de parámetros
+    # Metodos internos — Extraccion de parametros
     # ------------------------------------------------------------------
 
     def _extract_parameters(
@@ -639,17 +513,14 @@ class NaturalLanguageToolkit:
         text: str,
         tool: NLTool,
     ) -> Dict[str, Any]:
-        """Extrae parámetros estructurados desde el texto en lenguaje natural.
-
-        Aplica patrones lingüísticos predefinidos para cada parámetro
-        conocido de la herramienta.
+        """Extrae parametros estructurados desde el texto en lenguaje natural.
 
         Args:
-            text: Texto del usuario en minúsculas.
+            text: Texto del usuario en minusculas.
             tool: Herramienta objetivo.
 
         Returns:
-            Diccionario con parámetros extraídos.
+            Diccionario con parametros extraidos.
         """
         params: Dict[str, Any] = {}
 
@@ -660,9 +531,7 @@ class NaturalLanguageToolkit:
                 if match:
                     value = match.group(1).strip()
                     if value:
-                        # Limpiar artefactos
                         value = re.sub(r"\s+", " ", value).strip()
-                        # Convertir numéricos
                         if param_name == "max":
                             try:
                                 value = int(value)
@@ -674,27 +543,22 @@ class NaturalLanguageToolkit:
         return params
 
     # ------------------------------------------------------------------
-    # Métodos internos — Encadenamiento de herramientas
+    # Metodos internos — Encadenamiento de herramientas
     # ------------------------------------------------------------------
 
     def _has_chain_connectors(self, text: str) -> bool:
-        """Verifica si el texto contiene conectores de encadenamiento válidos.
-
-        Solo considera conectores si al menos dos segmentos independientes
-        parsean a herramientas válidas. Esto evita que 'y' en expresiones
-        como 'contrato A y contrato B' se interprete como encadenamiento.
+        """Verifica si el texto contiene conectores de encadenamiento validos.
 
         Args:
             text: Texto a evaluar.
 
         Returns:
-            True si se detecta encadenamiento válido.
+            True si se detecta encadenamiento valido.
         """
         segments = self._split_by_connectors(text)
         if len(segments) < 2:
             return False
 
-        # Contar segmentos que parsean independientemente a una tool
         match_count = 0
         for seg in segments:
             seg = seg.strip()
@@ -712,18 +576,14 @@ class NaturalLanguageToolkit:
         return False
 
     def _parse_chain(self, text: str) -> Optional[NLTResult]:
-        """Parsea un texto con múltiples intenciones encadenadas.
-
-        Divide el texto por conectores y parsea cada segmento
-        individualmente. El resultado principal es el primer segmento
-        con suficiente confianza; los demás van en la lista 'chain'.
+        """Parsea un texto con multiples intenciones encadenadas.
 
         Args:
             text: Texto con conectores de encadenamiento.
 
         Returns:
             NLTResult con el primer match y el resto encadenado,
-            o None si ningún segmento supera el umbral.
+            o None si ningun segmento supera el umbral.
         """
         segments = self._split_by_connectors(text)
 
@@ -809,7 +669,6 @@ class NaturalLanguageToolkit:
             Lista de segmentos.
         """
         text_lower = text.lower()
-        # Encontrar todas las posiciones de conectores
         split_points = []
         for connector in _CHAIN_CONNECTORS:
             conn_clean = connector.strip()
@@ -824,10 +683,8 @@ class NaturalLanguageToolkit:
         if not split_points:
             return [text]
 
-        # Ordenar por posición
         split_points.sort(key=lambda x: x[0])
 
-        # Dividir
         segments: List[str] = []
         last_end = 0
         for pos, length, _ in split_points:
@@ -835,9 +692,8 @@ class NaturalLanguageToolkit:
                 segment = text[last_end:pos].strip()
                 if segment:
                     segments.append(segment)
-                last_end = pos + length + 1  # +1 por espacio
+                last_end = pos + length + 1
 
-        # Último segmento
         remainder = text[last_end:].strip()
         if remainder:
             segments.append(remainder)
@@ -845,7 +701,7 @@ class NaturalLanguageToolkit:
         return segments
 
     # ------------------------------------------------------------------
-    # API pública — Utilidades
+    # API publica — Utilidades
     # ------------------------------------------------------------------
 
     def suggest_tools(
@@ -857,7 +713,7 @@ class NaturalLanguageToolkit:
 
         Args:
             text: Texto en lenguaje natural.
-            top_n: Número máximo de sugerencias a retornar.
+            top_n: Numero maximo de sugerencias a retornar.
 
         Returns:
             Lista de (tool_name, confidence) ordenada por confianza
@@ -880,7 +736,7 @@ class NaturalLanguageToolkit:
         self,
         keyword: str,
     ) -> List[str]:
-        """Busca herramientas cuya descripción contenga una palabra clave.
+        """Busca herramientas cuya descripcion contenga una palabra clave.
 
         Args:
             keyword: Palabra clave a buscar en nombres y descripciones.
@@ -904,8 +760,6 @@ class NaturalLanguageToolkit:
 
     def match_exact(self, text: str) -> Optional[str]:
         """Verifica si el texto coincide exactamente con el nombre de una tool.
-
-        Útil para comandos directos sin ambigüedad.
 
         Args:
             text: Texto a verificar.

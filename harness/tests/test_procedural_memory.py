@@ -3,7 +3,6 @@ Tests para procedural_memory — ProceduralMemory, ProceduralSkill.
 """
 from __future__ import annotations
 
-import os
 import tempfile
 from pathlib import Path
 
@@ -79,9 +78,9 @@ class TestProceduralMemoryInit:
     def test_init_defaults(self):
         """Test init crea directorio skills por defecto."""
         with tempfile.TemporaryDirectory() as tmp:
-            skills_dir = os.path.join(tmp, "auto_skills")
-            pm = ProceduralMemory(skills_dir=skills_dir)
-            assert os.path.isdir(skills_dir)
+            skills_dir = Path(tmp) / "auto_skills"
+            pm = ProceduralMemory(skills_dir=str(skills_dir))
+            assert skills_dir.is_dir()
             assert pm._skills == {}
 
     def test_init_loads_existing_skills(self):
@@ -92,7 +91,7 @@ class TestProceduralMemoryInit:
         esa validacion hasta que se corrija el parseo.
         """
         with tempfile.TemporaryDirectory() as tmp:
-            skill_path = os.path.join(tmp, "existing_skill.md")
+            skill_path = Path(tmp) / "existing_skill.md"
             with open(skill_path, "w", encoding="utf-8") as f:
                 f.write(
                     "# existing_skill\n"
@@ -107,7 +106,7 @@ class TestProceduralMemoryInit:
                     "---\n"
                     "*Generado automaticamente por Procedural Memory*\n"
                 )
-            pm = ProceduralMemory(skills_dir=tmp)
+            pm = ProceduralMemory(skills_dir=str(tmp))
             assert "existing_skill" in pm._skills
             skill = pm._skills["existing_skill"]
             assert skill.name == "existing_skill"
@@ -121,7 +120,7 @@ class TestProceduralMemoryRegister:
     def test_register_new_skill(self):
         """Test register_skill crea nuevo archivo .md."""
         with tempfile.TemporaryDirectory() as tmp:
-            pm = ProceduralMemory(skills_dir=tmp)
+            pm = ProceduralMemory(skills_dir=str(tmp))
             skill = pm.register_skill(
                 name="Deploy App",
                 description="Deploy application to production",
@@ -134,8 +133,8 @@ class TestProceduralMemoryRegister:
             assert skill.version == 1
             assert skill.agent == "devops"
             # Verificar que se escribio el archivo
-            filepath = os.path.join(tmp, "deploy_app.md")
-            assert os.path.exists(filepath)
+            filepath = Path(tmp) / "deploy_app.md"
+            assert filepath.exists()
             content = open(filepath, encoding="utf-8").read()
             assert "deploy_app" in content
 

@@ -63,11 +63,18 @@ El sistema analiza el mensaje del usuario y determina cuántos agentes lanzar:
 ### 4. Memoria de Estándares (ContextInjector)
 
 Para evitar que el LLM olvide los estándares durante sesiones largas, cada subtarea
-lleva un recordatorio ultra-compacto (~23 tokens):
+lleva un recordatorio ultra-compacto con principios base:
 
 ```
-[F]CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Resiliencia+DoD+DocStringsES+tests>80+Seg
+[F]!DOC_ES_OBLIG!+!ERR_ACTION!+!TH!+!HEX!+CleanCode+DRY+KISS+SSOT+<900LC+fn<60ln
+   +YAGNI+Patrones+DoD+tests>80+Seg+CacheShape+obsMask+scopedCtx+parMax
+   +ResearchFirst+Idempotencia
 ```
+
+Los principios se dividen en 3 categorias:
+- **Universales** (todos los agentes): !DOC_ES_OBLIG!, !ERR_ACTION!, !TH!, !HEX!, CleanCode, DRY, KISS, SSOT, <900LC, fn<60ln, YAGNI
+- **Calidad**: tests>80, Patrones, DoD, ResearchFirst, Idempotencia
+- **Token Economics**: CacheShape, obsMask, scopedCtx, parMax
 
 ### 5. Framework de Skills
 
@@ -101,7 +108,7 @@ Los siguientes ADRs han sido deprecados y su contenido esta resumido aqui:
 | ADR | Titulo | Resumen |
 |-----|--------|---------|
 | 0002 | Dynamic Scaling | ScopeAnalyzer analiza el mensaje y escala de 1-11 agentes segun complejidad (small→xlarge). 4 niveles, integrado en TaskPlanner.decompose(). |
-| 0003 | Context Injector | Inyecta recordatorio ultra-compacto (~23 tokens) en CADA subtarea: `[F]CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Resiliencia+DoD+DocStringsES+tests>80+Seg`. Ahorra ~400 tokens por sesion. |
+| 0003 | Context Injector | Inyecta recordatorio ultra-compacto (~23 tokens) en CADA subtarea: `[F]!DOC_ES_OBLIG!+!ERR_ACTION!+!TH!+!HEX!+CleanCode+DRY+KISS+SSOT+<900LC+fn<60ln+YAGNI+Patrones+DoD+tests>80+Seg+CacheShape+obsMask+scopedCtx+parMax+ResearchFirst+Idempotencia`. Ahorra ~400 tokens por sesion. |
 | 0004 | Skill Router | Selecciona solo 1-2 skills relevantes por tarea usando keyword matching + embedding. Reduce 60-80% tokens en skills. |
 | 0005 | Memoria Portable | Sistema de paths con 3 niveles de fallback: HERMES_ROOT env var → ~/Documents/Hermes_Memory_Proyects/ → ~/Documents/AGENTIC_MEMORY/. Elimina paths absolutos. |
 | 0006 | Legal Doc Colombia | Skill legal-doc reescrito con metodologia RTF+C, 8 roles, fuentes colombianas (SUIN, Relatoria CC), 8 especialidades, 7 fases. |

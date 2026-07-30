@@ -22,7 +22,7 @@ Elimina HAS_GUARDRAILS bypass silencioso — ahora es error EXPLICITO.
 """
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import sys
 from typing import Any, Dict
 
@@ -588,7 +588,7 @@ def main() -> None:
 
     logger.info("[Harness] Inicializando...")
     store = LanceVectorStore()
-    if not os.path.exists(os.path.join(HARNESS_ROOT, "db", "lancedb")):
+    if not (Path(HARNESS_ROOT) / "db" / "lancedb").exists():
         logger.warning("harness/db/lancedb/ no existe. Los datos se perderan al reiniciar.")
 
     # Orchestrate

@@ -38,11 +38,11 @@ GPU_MEMORY_GB: float = 0.0
 
 # Asegurar que torch/lib con DLLs CUDA este en PATH (Windows)
 import os as _os
-_torch_lib = _os.path.join(
-    _os.path.dirname(__file__), "..", ".venv", "Lib", "site-packages", "torch", "lib"
+from pathlib import Path as _Path
+_torch_lib = str(
+    _Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages" / "torch" / "lib"
 )
-_torch_lib = _os.path.normpath(_torch_lib)
-if _os.path.isdir(_torch_lib) and _torch_lib not in _os.environ.get("PATH", ""):
+if _Path(_torch_lib).is_dir() and _torch_lib not in _os.environ.get("PATH", ""):
     _os.environ["PATH"] = _torch_lib + _os.pathsep + _os.environ.get("PATH", "")
 
 try:

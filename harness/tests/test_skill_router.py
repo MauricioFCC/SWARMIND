@@ -5,10 +5,10 @@ Verifica que solo se activen los skills relevantes para cada tarea.
 
 from __future__ import annotations
 
-import os
+from pathlib import Path
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from harness.memory_rag.skill_router import SkillRouter
 

@@ -7,7 +7,7 @@ schedule, model routing, HITL, watch mode, hermes, guardrails, ANSI helpers.
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, PropertyMock
 
 import pytest
 
@@ -431,7 +431,7 @@ class TestEvolveCommands:
 
     def test_evolve_mutate_agent_not_found(self, mock_store, patch_evolver):
         """!evolve mutate con agente inexistente debe loggear error."""
-        with patch("harness.run_commands.os.path.exists", return_value=False):
+        with patch.object(Path, "exists", return_value=False):
             from harness.run_commands import _handle_evolve_mutate
             _handle_evolve_mutate(mock_store, '!evolve mutate @ghost "tarea"')
 
@@ -440,7 +440,7 @@ class TestEvolveCommands:
         mock_evolver = MagicMock()
         mock_evolver.mutate_prompt.return_value = []
         patch_evolver.return_value = mock_evolver
-        with patch("harness.run_commands.os.path.exists", return_value=True):
+        with patch.object(Path, "exists", return_value=True):
             from harness.run_commands import _handle_evolve_mutate
             _handle_evolve_mutate(mock_store, '!evolve mutate @builder "mejora"')
 
@@ -454,7 +454,7 @@ class TestEvolveCommands:
         }
         mock_evolver.promote_winner.return_value = True
         patch_evolver.return_value = mock_evolver
-        with patch("harness.run_commands.os.path.exists", return_value=True):
+        with patch.object(Path, "exists", return_value=True):
             from harness.run_commands import _handle_evolve_mutate
             _handle_evolve_mutate(mock_store, '!evolve mutate @builder "mejora"')
         mock_evolver.promote_winner.assert_called_once()
@@ -468,7 +468,7 @@ class TestEvolveCommands:
             "mutant_v1.md": {"score": 50, "tokens": 120, "success": True, "time": 1.5},
         }
         patch_evolver.return_value = mock_evolver
-        with patch("harness.run_commands.os.path.exists", return_value=True):
+        with patch.object(Path, "exists", return_value=True):
             from harness.run_commands import _handle_evolve_mutate
             _handle_evolve_mutate(mock_store, '!evolve mutate @builder "mejora"')
         mock_evolver.promote_winner.assert_not_called()
@@ -704,22 +704,10 @@ class TestGetFilesToWatch:
         (opencode_dir / ".git").mkdir()
         (opencode_dir / ".git" / "HEAD").write_text("ref")
 
-        with patch("harness.run_commands.os.path.isdir", return_value=True), \
-             patch("harness.run_commands.os.walk") as mock_walk:
-            mock_walk.side_effect = [
-                iter([
-                    (str(harness_dir), ["__pycache__"],
-                     ["test.py", "readme.md", "data.json", "ignored.txt"]),
-                    (str(harness_dir / "__pycache__"), [], ["cache.py"]),
-                ]),
-                iter([
-                    (str(opencode_dir), [".git"], ["config.yaml"]),
-                    (str(opencode_dir / ".git"), [], ["HEAD"]),
-                ]),
-            ]
-            from harness.run_commands import _get_files_to_watch
-            result = _get_files_to_watch(harness_dir)
+        from harness.run_commands import _get_files_to_watch
+        result = _get_files_to_watch(harness_dir)
 
+        # With the real rglob, the files are created on disk
         keys = list(result.keys())
         assert any(k.endswith("test.py") for k in keys)
         assert any(k.endswith("readme.md") for k in keys)
@@ -729,7 +717,7 @@ class TestGetFilesToWatch:
 
     def test_watch_dir_no_existe(self, tmp_path):
         """Si un directorio no existe, debe omitirlo silenciosamente."""
-        with patch("harness.run_commands.os.path.isdir", return_value=False):
+        with patch.object(Path, "is_dir", return_value=False):
             from harness.run_commands import _get_files_to_watch
             result = _get_files_to_watch(tmp_path / "no_existe")
         assert result == {}

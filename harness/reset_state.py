@@ -11,7 +11,6 @@ Removes:
 Run this before copying the harness to a new project.
 """
 import logging
-import os
 import shutil
 from pathlib import Path
 
@@ -87,16 +86,13 @@ def clean_pycache(root: Path) -> None:
     """Recursively remove all __pycache__ directories and .pyc files."""
     _check_path_allowed(root)
     count = 0
-    for dirpath, dirnames, filenames in os.walk(root):
-        for d in list(dirnames):
-            if d == "__pycache__":
-                shutil.rmtree(os.path.join(dirpath, d))
-                count += 1
-                dirnames.remove(d)
-        for f in filenames:
-            if f.endswith(".pyc"):
-                os.remove(os.path.join(dirpath, f))
-                count += 1
+    for fpath in root.rglob("*"):
+        if fpath.name == "__pycache__" and fpath.is_dir():
+            shutil.rmtree(fpath)
+            count += 1
+        elif fpath.suffix == ".pyc" and fpath.is_file():
+            fpath.unlink()
+            count += 1
     if count:
         banner(f"Cache de Python eliminado: {count} archivos/dirs")
     else:

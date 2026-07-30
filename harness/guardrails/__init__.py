@@ -17,8 +17,8 @@ Exporta:
 
 from __future__ import annotations
 
-from harness.guardrails.guardrail_engine import (
-    GuardrailEngine,
+from harness.guardrails.guardrail_engine import GuardrailEngine
+from harness.guardrails.guardrail_types import (
     GuardrailLayer,
     GuardrailResult,
     GuardrailRule,

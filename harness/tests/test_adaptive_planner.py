@@ -588,8 +588,7 @@ class TestPersistence:
     def test_save_creates_file(self, planner_with_storage, sample_feedback):
         """_save debe crear archivo en storage_path."""
         planner_with_storage.record_feedback(sample_feedback)
-        import os
-        assert os.path.exists(planner_with_storage._storage_path)
+        assert Path(planner_with_storage._storage_path).exists()
 
     def test_save_content_valid_json(self, planner_with_storage, sample_feedback):
         """El archivo guardado debe ser JSON válido."""

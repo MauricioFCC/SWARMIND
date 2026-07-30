@@ -11,10 +11,10 @@ from harness.memory_rag.lance_vector_store import LanceVectorStore
 
 def bench_memory() -> Dict[str, Any]:
     # Usar db_path temporal para forzar modo in-memory (evita schema conflicts con tablas LanceDB existentes)
-    import os
     import tempfile
+    from pathlib import Path
     tmpdir = tempfile.mkdtemp()
-    store = LanceVectorStore(db_path=os.path.join(tmpdir, "bench.lancedb"), allow_fallback=True)
+    store = LanceVectorStore(db_path=str(Path(tmpdir) / "bench.lancedb"), allow_fallback=True)
     n = 100
     dim = 384
     vectors = np.random.randn(n, dim).astype(np.float32)

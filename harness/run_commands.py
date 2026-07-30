@@ -4,7 +4,6 @@ Command handlers for harness/run.py — extracted for file size compliance.
 from __future__ import annotations
 
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -309,11 +308,8 @@ def _handle_evolve_mutate(store, cmd: str) -> None:
         return
     agent_arg = parts[2].lstrip("@")
     task_arg = parts[3]
-    agent_path = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)),
-        ".opencode", "agents", f"{agent_arg}.md"
-    )
-    if not os.path.exists(agent_path):
+    agent_path = str(Path(__file__).resolve().parent.parent / ".opencode" / "agents" / f"{agent_arg}.md")
+    if not Path(agent_path).exists():
         logger.info(f"[Harness] Agente '{agent_arg}' no encontrado en {agent_path}")
         return
     evolver = PromptEvolver(vector_store=store)
@@ -451,22 +447,25 @@ def _check_hitl(action: str, agent_role: str, guard) -> bool:
 def _get_files_to_watch(harness_root: Path) -> dict:
     """Get file modification times for harness/ and .opencode/."""
     snapshots = {}
-    watch_dirs = [str(harness_root), str(harness_root.parent / ".opencode")]
+    watch_dirs = [harness_root, harness_root.parent / ".opencode"]
     exclude_patterns = ["__pycache__", "harness/db/", ".git/", ".git"]
     for watch_dir in watch_dirs:
-        if not os.path.isdir(watch_dir):
+        if not watch_dir.is_dir():
             continue
-        for root, dirs, files in os.walk(watch_dir):
-            dirs[:] = [d for d in dirs if not any(p in os.path.join(root, d) for p in exclude_patterns)]
-            for fname in files:
-                if not any(fname.endswith(ext) for ext in (".py", ".md", ".yaml", ".yml", ".json")):
-                    continue
-                fpath = os.path.join(root, fname)
-                try:
-                    st = os.stat(fpath)
-                    snapshots[fpath] = st.st_mtime
-                except (FileNotFoundError, OSError):
-                    pass
+        for fpath in watch_dir.rglob("*"):
+            if not fpath.is_file():
+                continue
+            if fpath.suffix not in (".py", ".md", ".yaml", ".yml", ".json"):
+                continue
+            # Check exclude patterns
+            rel = fpath.relative_to(watch_dir)
+            if any(p in str(rel) for p in exclude_patterns):
+                continue
+            try:
+                st = fpath.stat()
+                snapshots[str(fpath)] = st.st_mtime
+            except (FileNotFoundError, OSError):
+                pass
     return snapshots
 
 
@@ -529,7 +528,7 @@ def _handle_watch_mode(harness_root: Path) -> None:
 
             timestamp = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             for f in changed_files[:5]:
-                rel = os.path.relpath(f, str(get_project_root()))
+                rel = str(Path(f).relative_to(get_project_root()))
                 _safe_print(f"  [{timestamp}] change detected: {rel}")
             if len(changed_files) > 5:
                 _safe_print(f"  [{timestamp}] ... and {len(changed_files) - 5} more")

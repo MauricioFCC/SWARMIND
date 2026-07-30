@@ -3,10 +3,10 @@ Phase 5: Commit Preparation — classify changes, suggest message, interactive c
 """
 from __future__ import annotations
 
-import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 from typing import Dict, List
 
 from .config import (
@@ -205,16 +205,16 @@ def _check_secrets_in_diff() -> bool:
 def _do_git_commit(commit_msg: str) -> bool:
     """Execute git commit and git push."""
     try:
-        msg_path = os.path.join(HARNESS_ROOT, ".commit_msg.tmp")
+        msg_path = Path(HARNESS_ROOT) / ".commit_msg.tmp"
         with open(msg_path, "w", encoding="utf-8") as f:
             f.write(commit_msg)
 
         result = subprocess.run(
-            ["git", "commit", "-F", msg_path],
+            ["git", "commit", "-F", str(msg_path)],
             capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT),
         )
-        if os.path.exists(msg_path):
-            os.remove(msg_path)
+        if msg_path.exists():
+            msg_path.unlink()
         if result.returncode != 0:
             _safe_print(f"    {_err('[ERROR]')} Commit fallo: {result.stderr.strip()}")
             return False
@@ -265,14 +265,14 @@ def interactive_commit(commit_msg: str) -> None:
             break
         elif response == "--edit":
             _safe_print(f"  {_cyan('[EDIT]')} Abriendo editor para modificar el mensaje...")
-            msg_path = os.path.join(HARNESS_ROOT, ".commit_msg_edit.tmp")
+            msg_path = Path(HARNESS_ROOT) / ".commit_msg_edit.tmp"
             try:
                 with open(msg_path, "w", encoding="utf-8") as f:
                     f.write(commit_msg)
                 editor = os.environ.get("EDITOR", "")
                 if not editor:
                     editor = "notepad" if sys.platform == "win32" else "vim"
-                subprocess.run([editor, msg_path], cwd=str(PROJECT_ROOT))
+                subprocess.run([editor, str(msg_path)], cwd=str(PROJECT_ROOT))
                 with open(msg_path, "r", encoding="utf-8") as f:
                     edited_msg = f.read()
                 if edited_msg.strip():
@@ -282,8 +282,8 @@ def interactive_commit(commit_msg: str) -> None:
             except Exception as exc:
                 _safe_print(f"  {_err('[ERROR]')} Error al editar: {exc}")
             finally:
-                if os.path.exists(msg_path):
-                    os.remove(msg_path)
+                if msg_path.exists():
+                    msg_path.unlink()
             break
         else:
             _safe_print("  Opcion invalida. Responde Y, n, o --edit.")
