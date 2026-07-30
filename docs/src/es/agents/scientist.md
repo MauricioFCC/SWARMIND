@@ -1,6 +1,6 @@
 ﻿# Scientist — Investigación + Arquitectura + Experimentos
 
-El **scientist** es el agente de investigación del sistema. Investiga papers académicos, diseña experimentos, evalúa arquitecturas de software y sistemas agenticos, y aplica técnicas de frontera en AI/ML. Es la fuente única de verdad para decisiones basadas en evidencia científica. Opera con paradigma **Research First**: nunca propone sin antes haber investigado el estado del arte.
+El **scientist** es el agente de investigación del sistema. Investiga papers académicos, diseña experimentos, evalúa arquitecturas de software y sistemas swarmind, y aplica técnicas de frontera en AI/ML. Es la fuente única de verdad para decisiones basadas en evidencia científica. Opera con paradigma **Research First**: nunca propone sin antes haber investigado el estado del arte.
 
 ## Frontmatter (refleja `.opencode/agents/scientist.md`)
 
@@ -38,14 +38,14 @@ El **scientist** es el agente de investigación del sistema. Investiga papers ac
 - **UX Benchmarking**: 300 pares A/B reales con razonamiento visual UX (ACL 2026 WiserUI-Bench)
 - **Personalización**: Bayesian active preference learning, kappa=0.25 (arXiv:2604.09876)
 
-## Técnicas de frontera para sistemas agenticos
+## Técnicas de frontera para sistemas swarmind
 
 | Técnica | Descripción | Impacto |
 |---------|-------------|---------|
 | **MetaClaw** | Continual meta-learning: skill-driven fast adaptation + RL con process reward model. Skill library + base LLM policy evolucionan juntos. | +32% accuracy, 8.25x task completion |
 | **MARS** | Metacognitive Agent Reflective Self-improvement. Reflexión basada en principios (qué evitar) + reflexión procedural (cómo tener éxito). Un solo ciclo de recurrencia. | Supera multi-turn recursivo con mucho menor costo |
 | **Hyperagents (DGM-H)** | Agentes auto-referenciales: task agent + meta agent en un programa editable. Mejora el mecanismo de mejora mismo (metacognitive self-modification). | Meta-level improvements transfieren entre dominios |
-| **ShapleyFlow** | Cooperative game-theoretic attribution para workflows agenticos. Shapley values para identificar qué componentes actualizar primero. | 9 LLMs, 1500+ tareas, 7 dominios. Guía dónde invertir capacidad de modelo |
+| **ShapleyFlow** | Cooperative game-theoretic attribution para workflows swarmind. Shapley values para identificar qué componentes actualizar primero. | 9 LLMs, 1500+ tareas, 7 dominios. Guía dónde invertir capacidad de modelo |
 | **ERL** | Experiential Reflective Learning: reflexiona sobre trayectorias, extrae heuristics, retrieve en test time. Single-attempt trajectories. | +7.8% en Gaia2. Heuristics > raw trajectories para transferencia |
 | **Memento-Skills** | Skill-as-memory: sistema de aprendizaje continuo sin actualizar parámetros del LLM. Skills como archivos markdown + router entrenado con RL. | 26.2% mejora relativa en GAIA, 116.2% en HLE |
 | **POLARIS** | Policy repair via experience abstraction para modelos pequeños. Análisis de fallos → estrategia → abstracción → minimal code patch. | 7B model mejora consistentemente en MGSM, DROP, GPQA |

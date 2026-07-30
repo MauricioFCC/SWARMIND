@@ -27,7 +27,7 @@ Actualizar los 4 agentes, 2 skills (evolve, base_principles) y crear 1 skill nue
 | **BOAD** | Bandit Optimization for Agent Design | 53.12% SWE-bench Verified. Multi-armed bandit descubre automáticamente jerarquías multi-agente óptimas con presupuesto limitado. |
 | **SWE-World** | Docker-free surrogate environments | 55.0% SWE-bench, 68.2% TTS@8. SWT (Transition Model) simula feedback paso a paso, SWR (Reward Model) simula test results. |
 | **ParaManager** | Lightweight orchestrator | Small model con SFT+RL para descomposición paralela de subtareas. State-aware execution. |
-| **ShapleyFlow** | ACL 2026 | Cooperative game-theoretic attribution para workflows agenticos. Shapley values guían dónde invertir capacidad de modelo. |
+| **ShapleyFlow** | ACL 2026 | Cooperative game-theoretic attribution para workflows swarmind. Shapley values guían dónde invertir capacidad de modelo. |
 
 ### 2. Scientist — Auto-mejora e investigación continua
 

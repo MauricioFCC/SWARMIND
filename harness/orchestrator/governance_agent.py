@@ -7,7 +7,7 @@ Implementa el marco de gobernanza para agentes autonomos:
 - Trazabilidad completa de acciones de agentes
 - Auditoria de decisiones post-hoc
 
-Basado en principios de orquestacion agentica empresarial.
+Basado en principios de orquestacion swarmind empresarial.
 """
 
 from __future__ import annotations

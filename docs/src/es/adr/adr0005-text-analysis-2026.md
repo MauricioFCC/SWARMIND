@@ -69,7 +69,7 @@ Comparacion estructurada de multiples fuentes:
 ## Codificacion en Agent Prompts
 
 El scientist.md incorpora:
-- 13 paradigmas de investigacion en sistemas agenticos (PaCoRe, LTS, Helium, Agentix, SwarmX, Harness Effect, CDBench, Token Maxing, AOSE Hybrid Roles)
+- 13 paradigmas de investigacion en sistemas swarmind (PaCoRe, LTS, Helium, Agentix, SwarmX, Harness Effect, CDBench, Token Maxing, AOSE Hybrid Roles)
 - 38-metric catalogue para evaluacion de frameworks multi-agente (4 categorias: Outcome, Process, Product, Framework)
 - Token Economics completo con tabla de impacto cuantitativo
 - Tabla de comprension de textos con tecnicas clasicas ampliadas

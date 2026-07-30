@@ -22,7 +22,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0016 | [Frontier Optimization 2026](adr0016-frontier-optimization-2026.md) | ACEPTADO | 2ef685f |
 | 0017 | [Creative AI Frameworks 2026](adr0017-creative-ai-frameworks-2026.md) | ACEPTADO | 061e114 |
 | 0018 | [Comparative Analysis ASDT + Traycer](adr0018-comparative-analysis-asdt-traycer-2026.md) | ACEPTADO | 7e9e8b8 |
-| 0019 | [Swarmind Governance & Business Context](adr0019-agentic-governance-cx-2026.md) | ACEPTADO | 754b6cb |
+| 0019 | [Swarmind Governance & Business Context](adr0019-swarmind-governance-cx-2026.md) | ACEPTADO | 754b6cb |
 | 0020 | [Frontier Gaps 2026 — 15 Papers Implementados](adr0020-frontier-gaps-2026-v2.md) | ACEPTADO | 20933a3 |
 | 0021 | [DOFA Analysis & Strategic Positioning 2026](adr0021-dofa-analysis-2026.md) | ACEPTADO | — |
 | 0022 | [Multi-Harness Adapter Layer](adr0022-multi-harness-2026.md) | ACEPTADO | — |
@@ -31,7 +31,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0025 | [Federated Vector Search + SQLite-vec](adr0025-federated-vector-sqlite-2026.md) | ACEPTADO | — |
 | 0026 | [Performance Optimization Post-Expansion](adr0026-performance-optimization-2026.md) | ACEPTADO | — |
 | 0027 | [Maximum Parallelism Architecture](adr0027-maximum-parallelism-2026.md) | ACEPTADO | — |
-| 0028 | [Swarmind QA Pipeline 5-Capas](adr0028-agentic-qa-pipeline-2026.md) | ACEPTADO | — |
+| 0028 | [Swarmind QA Pipeline 5-Capas](adr0028-swarmind-qa-pipeline-2026.md) | ACEPTADO | — |
 | 0029 | [AI Factory Stack — Integracion 7-Capas](adr0029-ai-factory-stack-2026.md) | ACEPTADO | — |
 | 0030 | [Comprehensive Audit & Refactoring](adr0030-comprehensive-audit-2026.md) | ACEPTADO | — |
 | 0031 | [Frontier Improvements 2026 — Multi-API, Prompt Compression, GoT](adr0031-frontier-improvements-2026.md) | ACEPTADO | — |

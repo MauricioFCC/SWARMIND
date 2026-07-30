@@ -9,7 +9,7 @@ secciones combinando relevancia semantica, densidad de informacion y
 posicion estratrgica dentro del prompt.
 
 Basado en: ShapleyFlow (ADR-0010, B26) — Cooperative game-theoretic
-attribution para workflows agenticos. ACL 2026.
+attribution para workflows swarmind. ACL 2026.
 
 Uso:
     flow = ShapleyFlow()

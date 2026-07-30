@@ -15,7 +15,7 @@ En cada ejecucion existe el riesgo de reimplementar funcionalidad que ya existe,
 Se requiere un principio formal que prevenga trabajo redundante sin impedir mejoras genuinas.
 
 ## Decision
-Establecer **Idempotencia (IDP)** como principio universal trans-agentico: **si ya esta implementado, NO reimplementar; solo mejorar si hay delta demostrable.**
+Establecer **Idempotencia (IDP)** como principio universal trans-swarmind: **si ya esta implementado, NO reimplementar; solo mejorar si hay delta demostrable.**
 
 ### Definicion Formal
 

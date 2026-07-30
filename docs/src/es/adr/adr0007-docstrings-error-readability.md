@@ -19,7 +19,7 @@ Los errores generados por codigo agente son frecuentemente:
 Ambos problemas reducen la calidad del codigo generado y aumentan el tiempo de debugging.
 
 ## Decision
-Establecer dos directivas obligatorias trans-agenticas con el maximo nivel de enforcement:
+Establecer dos directivas obligatorias trans-swarmind con el maximo nivel de enforcement:
 
 ### 1. DOCSTRINGS ES-UTF8 OBLIGATORIOS (DOC_ES_OBLIG)
 
@@ -117,7 +117,7 @@ Cada agente incluye lineas separadas:
 ## Consecuencias
 - **Positivas**: Codigo generado consistentemente documentado en ES-UTF8; errores siempre registrados con contexto accionable; `except: pass` eliminado del sistema; debugging mas rapido.
 - **Negativas**: ~15 tokens extra por inyeccion de contexto (DOC_ES_OBLIG + ERR_ACTION); agentes requieren ~2-3 segundos adicionales por funcion para generar docstring.
-- **Research First**: Antes de implementar, se investigaron tecnicas de error handling en sistemas agenticos (Resilience4j, Erlang/OTP supervision trees, structured logging patterns).
+- **Research First**: Antes de implementar, se investigaron tecnicas de error handling en sistemas swarmind (Resilience4j, Erlang/OTP supervision trees, structured logging patterns).
 
 ## Referencias
 - **ast.get_docstring()**: Python AST standard library

@@ -12,7 +12,7 @@ maximo no explotadas.
 ## Investigacion Frontier 2026
 
 ### Scepsy — Aggregate LLM Pipelines (arXiv:2604.15186)
-- Servicio de workflows agenticos con pipelines LLM agregados
+- Servicio de workflows swarmind con pipelines LLM agregados
 - Profiling de LLMs bajo diferentes grados de paralelismo
 - Predictor ligero de latencia/throughput para asignacion de GPUs
 - **2.4x throughput, 27x latencia menor** vs sistemas baseline

@@ -144,7 +144,7 @@
 - [ADR-0016: Frontier Optimization](adr/adr0016-frontier-optimization-2026.md)
 - [ADR-0017: Creative AI Frameworks](adr/adr0017-creative-ai-frameworks-2026.md)
 - [ADR-0018: Comparative Analysis](adr/adr0018-comparative-analysis-asdt-traycer-2026.md)
-- [ADR-0019: Swarmind Governance](adr/adr0019-agentic-governance-cx-2026.md)
+- [ADR-0019: Swarmind Governance](adr/adr0019-swarmind-governance-cx-2026.md)
 - [ADR-0020: Frontier Gaps 2026](adr/adr0020-frontier-gaps-2026-v2.md)
 - [ADR-0021: DOFA Analysis](adr/adr0021-dofa-analysis-2026.md)
 
@@ -155,7 +155,7 @@
 - [ADR-0025: Federated Vector Search](adr/adr0025-federated-vector-sqlite-2026.md)
 - [ADR-0026: Performance Optimization](adr/adr0026-performance-optimization-2026.md)
 - [ADR-0027: Maximum Parallelism](adr/adr0027-maximum-parallelism-2026.md)
-- [ADR-0028: Swarmind QA Pipeline 5-Capas](adr/adr0028-agentic-qa-pipeline-2026.md)
+- [ADR-0028: Swarmind QA Pipeline 5-Capas](adr/adr0028-swarmind-qa-pipeline-2026.md)
 - [ADR-0029: AI Factory Stack](adr/adr0029-ai-factory-stack-2026.md)
 - [ADR-0030: Comprehensive Audit](adr/adr0030-comprehensive-audit-2026.md)
 

@@ -16,7 +16,7 @@ El sistema Swarmind opera con **20 perfiles de agente** organizados en 4 categor
 |--------|-----|-------------|
 | **coordinator** | Orquestador | Default (priority=1). Swiss Watch orchestrator — recibe mensajes, analiza complejidad, delega a builder/scientist/guardian, consolida resultados. |
 | **builder** | Ejecutor | Calidad automatica institucional — implementa codigo con Clean Code, DRY, KISS, SSOT, <900LC, patrones, DocStrings ES-UTF8, tests >80%. |
-| **scientist** | Investigador | Cientifico e investigador — papers, patrones arquitectonicos, AI/ML, experimentos, sistemas agenticos, token economics. |
+| **scientist** | Investigador | Cientifico e investigador — papers, patrones arquitectonicos, AI/ML, experimentos, sistemas swarmind, token economics. |
 | **guardian** | Validador | Guardian universal — calidad, seguridad, riesgo, documentacion, testing adversarial (PROBE/AdverTest), mutation testing, property-based testing. |
 | **evolve** | Meta-agente | Meta-agente de auto-mejora del sistema — orquesta el ciclo ASI-Evolve con Token Economics, RL Scaling, FDE y Autobuilder. |
 

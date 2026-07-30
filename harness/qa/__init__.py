@@ -1,4 +1,4 @@
-"""QA Pipeline 5-Capas — Sistema de Calidad Agentico para Swarmind.
+"""QA Pipeline 5-Capas — Sistema de Calidad Evolutivo para Swarmind.
 
 Implementa el stack completo de madurez QA segun auditoria de 50 equipos (Julio 2026):
 

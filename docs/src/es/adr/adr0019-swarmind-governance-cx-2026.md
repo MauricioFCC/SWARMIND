@@ -4,7 +4,7 @@
 **ACEPTADO** — Implementado.
 
 ## Contexto
-Analisis del documento "Hablamos de Orquestacion Agentica CX" + referencias del sector (Google BigQuery conversational, Databricks governance, Snowflake semantic layer):
+Analisis del documento "Hablamos de Orquestacion Swarmind CX" + referencias del sector (Google BigQuery conversational, Databricks governance, Snowflake semantic layer):
 
 ### Problemas identificados
 1. **Shadow AI**: Agentes no auditados con acceso directo a internet (riesgo de prompt injection)

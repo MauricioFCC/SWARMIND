@@ -1,7 +1,7 @@
 ﻿"""L5 â€” QAOrchestrator: Orquestacion de calidad extremo a extremo.
 
 Capa superior del pipeline QA 5-capas que coordina la ejecucion
-completa del ciclo de calidad agentico:
+completa del ciclo de calidad swarmind:
 
 1. Recepcion de contexto (target, config, metadatos)
 2. Invocacion de L1 (FailurePredictor) para priorizar riesgos
