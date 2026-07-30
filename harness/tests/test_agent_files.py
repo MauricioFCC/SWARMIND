@@ -7,9 +7,8 @@ Verifica que todos los agentes en .opencode/agents/ tengan:
 """
 from __future__ import annotations
 
-import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pytest
 import yaml
@@ -64,7 +63,7 @@ EXISTING_AGENTS = [
 # ============================================================================
 
 
-def _get_agent_files() -> List[Path]:
+def _get_agent_files() -> list[Path]:
     """Retorna lista de archivos .md de agentes (excluye .min.md).
 
     Returns:
@@ -79,7 +78,7 @@ def _get_agent_files() -> List[Path]:
     return sorted(files)
 
 
-def _parse_frontmatter(filepath: Path) -> Optional[Dict[str, Any]]:
+def _parse_frontmatter(filepath: Path) -> dict[str, Any] | None:
     """Extrae y parsea el frontmatter YAML de un archivo de agente.
 
     Args:
@@ -104,7 +103,7 @@ def _parse_frontmatter(filepath: Path) -> Optional[Dict[str, Any]]:
     return yaml.safe_load(yaml_content)
 
 
-def _validate_agent_file(filepath: Path) -> Dict[str, Any]:
+def _validate_agent_file(filepath: Path) -> dict[str, Any]:
     """Valida un archivo de agente individual.
 
     Args:

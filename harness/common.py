@@ -16,7 +16,7 @@ Includes:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, ClassVar
 
 import numpy as np
 
@@ -168,10 +168,10 @@ def avg_compression_pct(total_before: int, total_saved: int) -> float:
 
 def keyword_match_score(
     text: str,
-    keyword_map: Dict[str, Any],
+    keyword_map: dict[str, Any],
     default: Any = None,
     score_key: str = "score",
-) -> Tuple[Any, int]:
+) -> tuple[Any, int]:
     """
     Matches text against a keyword map returning best match + score.
 
@@ -227,9 +227,9 @@ class StatsMixin:
         optimization_pipeline.py, agent_dispatcher.py, etc.
     """
 
-    _stats: Dict[str, Any] = {}
+    _stats: ClassVar[dict[str, Any]] = {}
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Return stats with avg_compression_pct computed."""
         stats = dict(self._stats)
         tokens_before = stats.get("tokens_before", 0) or stats.get("total_chars_before", 0)
@@ -244,13 +244,13 @@ class StatsMixin:
 
 
 def truncate_by_budget(
-    items: List[Any],
+    items: list[Any],
     get_tokens: callable,
     budget: int,
     safety_margin: float = 0.9,
-    sort_key: Optional[callable] = None,
+    sort_key: callable | None = None,
     reverse: bool = True,
-) -> List[Any]:
+) -> list[Any]:
     """
     Truncate a list of items to fit within a token budget.
 
@@ -271,7 +271,7 @@ def truncate_by_budget(
     """
     effective_max = int(budget * safety_margin)
     used = 0
-    kept: List[Any] = []
+    kept: list[Any] = []
 
     sorted_items = sorted(items, key=sort_key, reverse=reverse) if sort_key else items
     for item in sorted_items:

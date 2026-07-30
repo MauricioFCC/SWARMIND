@@ -1,5 +1,5 @@
-"""
-Message Gateway — Abstract multi-channel messaging layer.
+﻿"""
+Message Gateway â€” Abstract multi-channel messaging layer.
 
 Supports CLI (stdin/stdout), Slack (optional), and Telegram (optional)
 gateways. If a gateway is missing its token, it gracefully deactivates
@@ -15,7 +15,7 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -47,7 +47,7 @@ class Message:
         if not self.timestamp:
             self.timestamp = datetime.now(timezone.utc).isoformat()
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> dict[str, str]:
         """To dict."""
         return {
             "role": self.role,
@@ -71,7 +71,7 @@ class MessageGateway(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def receive(self) -> List[Message]:
+    def receive(self) -> list[Message]:
         """Receive pending messages from this gateway."""
         ...
 
@@ -88,14 +88,14 @@ class MessageGateway(abc.ABC):
 
 class CliGateway(MessageGateway):
     """
-    CLI message gateway — reads from stdin, writes to stdout.
+    CLI message gateway â€” reads from stdin, writes to stdout.
 
     This gateway is always active (no token required).
     """
 
     def __init__(self) -> None:
         """Inicializa la instancia de la clase."""
-        self._buffer: List[Message] = []
+        self._buffer: list[Message] = []
 
     def send(self, message: Message) -> bool:
         """Write a message to stdout."""
@@ -107,11 +107,11 @@ class CliGateway(MessageGateway):
             logger.error("CLI send failed: %s", exc)
             return False
 
-    def receive(self) -> List[Message]:
+    def receive(self) -> list[Message]:
         """Read a single line from stdin (if available) and return as message."""
         try:
             if sys.stdin.isatty():
-                return []  # interactive — no auto-read
+                return []  # interactive â€” no auto-read
             line = sys.stdin.readline()
             if line:
                 msg = Message(
@@ -121,7 +121,7 @@ class CliGateway(MessageGateway):
                 )
                 self._buffer.append(msg)
                 return [msg]
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.debug("CLI receive error (non-fatal): %s", exc)
         return []
 
@@ -174,7 +174,7 @@ class SlackGateway(MessageGateway):
                 "slack_sdk not installed. Install with: pip install slack_sdk"
             )
             self._active = False
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Slack connection failed: %s", exc)
             self._active = False
 
@@ -189,20 +189,20 @@ class SlackGateway(MessageGateway):
                 text=f"[{message.role}] {message.content}",
             )
             return True
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error("Slack send failed: %s", exc)
             return False
 
-    def receive(self) -> List[Message]:
+    def receive(self) -> list[Message]:
         """Receive."""
         if not self._active or self._client is None:
             return []
         try:
             result = self._client.conversations_history(channel=self._channel, limit=5)
-            messages: List[Message] = []
+            messages: list[Message] = []
             for msg in result.get("messages", []):
                 text = msg.get("text", "")
-                user = msg.get("user", "unknown")
+                msg.get("user", "unknown")
                 if text:
                     messages.append(
                         Message(
@@ -212,7 +212,7 @@ class SlackGateway(MessageGateway):
                         )
                     )
             return messages
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.debug("Slack receive error: %s", exc)
             return []
 
@@ -272,11 +272,11 @@ class TelegramGateway(MessageGateway):
         except ImportError:
             logger.warning("requests library not installed. Install with: pip install requests")
             return False
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error("Telegram send error: %s", exc)
             return False
 
-    def receive(self) -> List[Message]:
+    def receive(self) -> list[Message]:
         """Receive."""
         if not self._active:
             return []
@@ -288,7 +288,7 @@ class TelegramGateway(MessageGateway):
             if response.status_code != 200:
                 return []
             data = response.json()
-            messages: List[Message] = []
+            messages: list[Message] = []
             for update in data.get("result", []):
                 msg_data = update.get("message", {})
                 text = msg_data.get("text", "")
@@ -301,7 +301,7 @@ class TelegramGateway(MessageGateway):
                         )
                     )
             return messages
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.debug("Telegram receive error: %s", exc)
             return []
 
@@ -315,7 +315,7 @@ class TelegramGateway(MessageGateway):
 # ---------------------------------------------------------------------------
 
 
-def create_gateway(gateway_type: str, config: Optional[Dict[str, Any]] = None) -> MessageGateway:
+def create_gateway(gateway_type: str, config: dict[str, Any] | None = None) -> MessageGateway:
     """
     Factory function to create the appropriate gateway.
 
@@ -375,7 +375,7 @@ def _resolve_gateway_env_vars(config: Any) -> Any:
     return config
 
 
-def load_gateway_config() -> Dict[str, Any]:
+def load_gateway_config() -> dict[str, Any]:
     """Load gateway configuration from gateway_config.yaml."""
     if not GATEWAY_CONFIG_PATH.exists():
         logger.warning("Gateway config not found: %s. Using defaults.", GATEWAY_CONFIG_PATH)
@@ -389,7 +389,7 @@ def load_gateway_config() -> Dict[str, Any]:
             config = yaml.safe_load(f) or {}
         # Resolve env vars in strings like ${SLACK_BOT_TOKEN}
         return _resolve_gateway_env_vars(config)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.warning("Failed to load gateway config: %s. Using defaults.", exc)
         return {
             "active_gateways": ["cli"],
@@ -408,10 +408,10 @@ class GatewayManager:
     Manages multiple gateways and provides a unified send/receive interface.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         """Inicializa la instancia de la clase."""
         self._config = config or load_gateway_config()
-        self._gateways: Dict[str, MessageGateway] = {}
+        self._gateways: dict[str, MessageGateway] = {}
         self._init_gateways()
 
     def _init_gateways(self) -> None:
@@ -430,17 +430,17 @@ class GatewayManager:
             except ValueError as exc:
                 logger.warning("Failed to create gateway '%s': %s", gw_type, exc)
 
-    def send_all(self, message: Message) -> Dict[str, bool]:
+    def send_all(self, message: Message) -> dict[str, bool]:
         """Send a message through all active gateways."""
-        results: Dict[str, bool] = {}
+        results: dict[str, bool] = {}
         for name, gw in self._gateways.items():
             if gw.is_active():
                 results[name] = gw.send(message)
         return results
 
-    def receive_all(self) -> Dict[str, List[Message]]:
+    def receive_all(self) -> dict[str, list[Message]]:
         """Receive messages from all active gateways."""
-        results: Dict[str, List[Message]] = {}
+        results: dict[str, list[Message]] = {}
         for name, gw in self._gateways.items():
             if gw.is_active():
                 messages = gw.receive()
@@ -448,14 +448,14 @@ class GatewayManager:
                     results[name] = messages
         return results
 
-    def get_gateway(self, name: str) -> Optional[MessageGateway]:
+    def get_gateway(self, name: str) -> MessageGateway | None:
         """Get a specific gateway by name."""
         return self._gateways.get(name)
 
-    def list_active_gateways(self) -> List[str]:
+    def list_active_gateways(self) -> list[str]:
         """Return names of active gateways."""
         return [name for name, gw in self._gateways.items() if gw.is_active()]
 
-    def list_all_gateways(self) -> List[str]:
+    def list_all_gateways(self) -> list[str]:
         """Return names of all configured gateways."""
         return list(self._gateways.keys())

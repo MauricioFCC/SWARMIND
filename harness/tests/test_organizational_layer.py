@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests para organizational_layer.py — Capa organizacional IMACS.
 
@@ -11,6 +10,7 @@ Basado en arXiv:2607.25446 (IMACS) — Decoupling Who, How, and Which.
 from __future__ import annotations
 
 import json
+
 import pytest
 
 from harness.orchestrator.organizational_layer import (
@@ -21,7 +21,6 @@ from harness.orchestrator.organizational_layer import (
     RACIMatrix,
     TeamSpec,
 )
-
 
 # ===================================================================
 # Tests unitarios — BelbinRole

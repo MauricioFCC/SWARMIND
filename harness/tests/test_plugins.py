@@ -9,13 +9,14 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 from unittest import mock
 
 import pytest
 
-from harness.plugins.registry import PluginBase, ToolRegistry, registry as global_registry
-from harness.plugins.tools.example_tool import GreeterTool, EchoTool
+from harness.plugins.registry import PluginBase, ToolRegistry
+from harness.plugins.registry import registry as global_registry
+from harness.plugins.tools.example_tool import EchoTool, GreeterTool
 
 # ===========================================================================
 # Helpers para manipular estado global
@@ -438,7 +439,7 @@ class TestGlobalRegistry:
         """El registry global contiene GreeterTool y EchoTool."""
         # Los example tools se registran al importar el módulo
         # pero el registry es el mismo módulo, verificar que están
-        assert "greeter" in global_registry._tools or True  # podrían o no estar según orden de import
+        assert True  # podrían o no estar según orden de import
         # Verificamos al menos que el global registry funciona
         assert global_registry._discovered is False
 

@@ -15,7 +15,7 @@ O automaticamente al ejecutar: python harness/scripts/init.py
 """
 from __future__ import annotations
 
-from harness.db.migrate_cli import main  # noqa: F401
+from harness.db.migrate_cli import main
 from harness.db.migrate_engine import DBMigrator  # noqa: F401
 
 if __name__ == "__main__":

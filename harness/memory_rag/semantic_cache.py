@@ -1,5 +1,5 @@
-"""
-Semantic Cache — Cachea respuestas de LLM por similitud semantica.
+﻿"""
+Semantic Cache â€” Cachea respuestas de LLM por similitud semantica.
 
 Usa LanceDB como backend (ya integrado). Cuando un agente formula una query,
 se calcula su embedding y se busca en la coleccion "semantic_cache".
@@ -14,10 +14,10 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from collections import OrderedDict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -54,7 +54,7 @@ class CacheEntry:
     created_at: str = ""
     last_accessed: str = ""
     ttl_seconds: int = DEFAULT_TTL_SECONDS
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_expired(self) -> bool:
         """Check if this entry has exceeded its TTL."""
@@ -67,7 +67,7 @@ class CacheEntry:
         except (ValueError, TypeError):
             return True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize for LanceDB storage."""
         return {
             "prompt_hash": self.prompt_hash,
@@ -107,10 +107,10 @@ class SemanticCache:
 
     def __init__(
         self,
-        vector_store: Optional[LanceVectorStore] = None,
+        vector_store: LanceVectorStore | None = None,
         threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
         default_ttl: int = DEFAULT_TTL_SECONDS,
-        embedding_fn: Optional[Callable[[str], np.ndarray]] = None,
+        embedding_fn: Callable[[str], np.ndarray] | None = None,
         auto_create_collection: bool = True,
     ) -> None:
         """
@@ -126,7 +126,7 @@ class SemanticCache:
         self._threshold = threshold
         self._default_ttl = default_ttl
         self._embedding_fn = embedding_fn or self._default_embedding
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "hits": 0,
             "misses": 0,
             "sets": 0,
@@ -150,8 +150,8 @@ class SemanticCache:
         self,
         prompt: str,
         agent_role: str = "*",
-        threshold: Optional[float] = None,
-    ) -> Optional[str]:
+        threshold: float | None = None,
+    ) -> str | None:
         """
         Buscar respuesta cacheada para un prompt.
 
@@ -192,7 +192,7 @@ class SemanticCache:
                 query_vec,
                 top_k=10,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("SemanticCache search failed: %s", exc)
             self._stats["misses"] += 1
             return None
@@ -254,8 +254,8 @@ class SemanticCache:
         prompt: str,
         response: str,
         agent_role: str = "*",
-        ttl_seconds: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        ttl_seconds: int | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         """
         Almacenar respuesta en cache.
@@ -316,11 +316,11 @@ class SemanticCache:
                 prompt_hash[:8], agent_role, len(response),
             )
             return True
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("SemanticCache set failed: %s", exc)
             return False
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Return cache statistics."""
         stats = dict(self._stats)
         total = stats.get("total_requests", 1)
@@ -348,7 +348,7 @@ class SemanticCache:
                 self._ensure_collection()
                 logger.info("SemanticCache cleared")
                 return 1
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("SemanticCache clear failed: %s", exc)
         return 0
 
@@ -392,7 +392,7 @@ class SemanticCache:
                     for key in to_delete:
                         del col.items[key]
                         removed += 1
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("SemanticCache clear_expired failed: %s", exc)
 
         if removed > 0:
@@ -407,15 +407,15 @@ class SemanticCache:
         """Normalize raw score to a 0-1 similarity value (1 = identical).
 
         LanceDB usa L2 distance por defecto (0 = identical, higher = less similar),
-        asi que convertimos: sim = 1/(1+L2).  L2=0 → 1.0, L2=0.1 → 0.91, ...
+        asi que convertimos: sim = 1/(1+L2).  L2=0 â†’ 1.0, L2=0.1 â†’ 0.91, ...
 
         El fallback in-memory usa cosine similarity (1 = identical, -1 = opposite),
         que se usa directamente (clamped a 0-1).
         """
         if getattr(self._store, '_lancedb_available', False):
-            # LanceDB: raw_score is L2 distance → convertir a similitud
+            # LanceDB: raw_score is L2 distance â†’ convertir a similitud
             return 1.0 / (1.0 + raw_score)
-        # In-memory: raw_score is cosine similarity → clamp a [0, 1]
+        # In-memory: raw_score is cosine similarity â†’ clamp a [0, 1]
         return max(0.0, min(1.0, raw_score))
 
     @staticmethod
@@ -425,7 +425,7 @@ class SemanticCache:
 
     def _search_exact(
         self, prompt_hash: str, agent_role: str
-    ) -> Optional[Tuple[str, CacheEntry]]:
+    ) -> tuple[str, CacheEntry] | None:
         """
         Buscar por hash exacto.
 
@@ -464,7 +464,7 @@ class SemanticCache:
                             "created_at": item.created_at,
                         })
                         break
-        except Exception:
+        except Exception:  # noqa: BLE001
             return None
 
         for result in results:
@@ -510,7 +510,7 @@ class SemanticCache:
                     "last_accessed": datetime.now(timezone.utc).isoformat(),
                 },
             )
-        except Exception as _exc:
+        except Exception as _exc:  # noqa: BLE001
             logger.warning("semantic_cache: %s", _exc)
 
     def _delete_entry(self, prompt_hash: str) -> None:
@@ -535,7 +535,7 @@ class SemanticCache:
                     for key in to_del:
                         del col.items[key]
             logger.debug("Cache entry deleted (hash=%s)", prompt_hash[:8])
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning(
                 "Failed to delete cache entry (hash=%s): %s",
                 prompt_hash[:8], exc,
@@ -632,7 +632,7 @@ class SemanticCache:
                         "Collection '%s' already exists (in-memory), reusing",
                         COLLECTION_SEMANTIC_CACHE,
                     )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             # Ultimo recurso: intentar crear con overwrite
             try:
                 logger.warning(
@@ -640,7 +640,7 @@ class SemanticCache:
                     COLLECTION_SEMANTIC_CACHE, exc,
                 )
                 self._recreate_collection_with_schema()
-            except Exception as inner:
+            except Exception as inner:  # noqa: BLE001
                 logger.warning(
                     "Could not ensure collection '%s': %s",
                     COLLECTION_SEMANTIC_CACHE, inner,
@@ -755,11 +755,10 @@ class SemanticCache:
                 col = self._store._mem_collections.get(COLLECTION_SEMANTIC_CACHE)
                 if col:
                     for key, item in list(col.items.items()):
-                        if item.metadata.get("prompt_hash") == prompt_hash:
-                            if "[PENDING]" in item.metadata.get("response", ""):
+                        if item.metadata.get("prompt_hash") == prompt_hash and "[PENDING]" in item.metadata.get("response", ""):
                                 del col.items[key]
                                 return True
-        except Exception as _exc:
+        except Exception as _exc:  # noqa: BLE001
             logger.warning("semantic_cache: %s", _exc)
         return False
 

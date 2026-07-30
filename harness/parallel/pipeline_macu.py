@@ -1,4 +1,4 @@
-"""PipelineMACU — DAG vivo con replanning continuo.
+﻿"""PipelineMACU â€” DAG vivo con replanning continuo.
 
 Implementa el patron del paper MACU (arXiv:2606.01533):
 - Manager descompone tarea en DAG
@@ -10,7 +10,7 @@ Diferencias con TaskOrchestrator actual:
 - Ready frontier dispatch: nodos individuales ejecutan tan pronto esten listos
 - Information passing: resultados parciales se propagan a downstream
 
-Referencia: arXiv:2606.01533 — Multi-Agent Computer Use (MACU)
+Referencia: arXiv:2606.01533 â€” Multi-Agent Computer Use (MACU)
 """
 
 from __future__ import annotations
@@ -19,9 +19,10 @@ import asyncio
 import logging
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -59,15 +60,15 @@ class PipelineTask:
     name: str
     agent: str
     description: str
-    depends_on: Set[str] = field(default_factory=set)
+    depends_on: set[str] = field(default_factory=set)
     status: TaskStatus = TaskStatus.PENDING
-    result: Optional[Any] = None
-    error: Optional[str] = None
+    result: Any | None = None
+    error: str | None = None
     created_at: float = field(default_factory=time.time)
-    started_at: Optional[float] = None
-    completed_at: Optional[float] = None
+    started_at: float | None = None
+    completed_at: float | None = None
     priority: int = 5
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -89,7 +90,7 @@ class PipelineResult:
     failed: int
     cancelled: int
     total_time: float
-    outputs: Dict[str, Any] = field(default_factory=dict)
+    outputs: dict[str, Any] = field(default_factory=dict)
 
 
 class PipelineMACU:
@@ -109,7 +110,7 @@ class PipelineMACU:
     def __init__(
         self,
         max_parallel: int = 4,
-        replan_fn: Optional[Callable[[str, Any], List[PipelineTask]]] = None,
+        replan_fn: Callable[[str, Any], list[PipelineTask]] | None = None,
     ) -> None:
         """Inicializa el pipeline MACU.
 
@@ -118,10 +119,10 @@ class PipelineMACU:
             replan_fn: Funcion de replanificacion (task_id, result) -> [PipelineTask].
         """
         self._max_parallel: int = max(max_parallel, 1)
-        self._replan_fn: Optional[Callable[[str, Any], List[PipelineTask]]] = replan_fn
-        self._tasks: Dict[str, PipelineTask] = {}
-        self._dependencies: Dict[str, Set[str]] = {}  # task_id -> dependencias
-        self._dependents: Dict[str, Set[str]] = {}  # task_id -> tareas que dependen de ella
+        self._replan_fn: Callable[[str, Any], list[PipelineTask]] | None = replan_fn
+        self._tasks: dict[str, PipelineTask] = {}
+        self._dependencies: dict[str, set[str]] = {}  # task_id -> dependencias
+        self._dependents: dict[str, set[str]] = {}  # task_id -> tareas que dependen de ella
         self._lock: asyncio.Lock = asyncio.Lock()
 
     async def add_task(self, task: PipelineTask) -> str:
@@ -163,14 +164,14 @@ class PipelineMACU:
 
         return task.task_id
 
-    async def get_ready_tasks(self) -> List[PipelineTask]:
+    async def get_ready_tasks(self) -> list[PipelineTask]:
         """Retorna las tareas listas para ejecutar (ready frontier).
 
         Returns:
             Lista de tareas con status READY.
         """
         async with self._lock:
-            ready: List[PipelineTask] = [
+            ready: list[PipelineTask] = [
                 task for task in self._tasks.values()
                 if task.status == TaskStatus.READY
             ]
@@ -195,7 +196,7 @@ class PipelineMACU:
             task.started_at = time.time()
             return True
 
-    async def mark_completed(self, task_id: str, result: Any = None) -> List[PipelineTask]:
+    async def mark_completed(self, task_id: str, result: Any = None) -> list[PipelineTask]:
         """Marca una tarea como COMPLETED y actualiza dependencias.
 
         Si hay replan_fn, la invoca con el resultado para generar nuevas tareas.
@@ -208,7 +209,7 @@ class PipelineMACU:
         Returns:
             Lista de nuevas tareas generadas por replanning (si aplica).
         """
-        new_tasks: List[PipelineTask] = []
+        new_tasks: list[PipelineTask] = []
 
         async with self._lock:
             task = self._tasks.get(task_id)
@@ -237,11 +238,11 @@ class PipelineMACU:
                             # Si no tiene dependencias, ready
                             if not new_task.depends_on:
                                 new_task.status = TaskStatus.READY
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     logger.error("[MACU] Error en replanning para %s: %s", task_id, exc)
 
             # Actualizar dependencias de tareas downstream
-            downstream: Set[str] = self._dependents.get(task_id, set())
+            downstream: set[str] = self._dependents.get(task_id, set())
             for dep_id in downstream:
                 dep_task = self._tasks.get(dep_id)
                 if dep_task and dep_task.status == TaskStatus.PENDING:
@@ -273,7 +274,7 @@ class PipelineMACU:
             logger.error("[MACU] Tarea FAILED: %s: %s", task.name, error)
 
             # Cancelar dependientes
-            downstream: Set[str] = self._dependents.get(task_id, set())
+            downstream: set[str] = self._dependents.get(task_id, set())
             for dep_id in downstream:
                 dep_task = self._tasks.get(dep_id)
                 if dep_task and dep_task.status in (TaskStatus.PENDING, TaskStatus.READY):
@@ -302,7 +303,7 @@ class PipelineMACU:
 
         while True:
             # Obtener ready frontier
-            ready: List[PipelineTask] = await self.get_ready_tasks()
+            ready: list[PipelineTask] = await self.get_ready_tasks()
             if not ready:
                 # Verificar si todas las tareas estan terminales
                 async with self._lock:
@@ -321,13 +322,13 @@ class PipelineMACU:
                 await self.mark_running(task.task_id)
                 try:
                     result: Any = await dispatch_fn(task) if asyncio.iscoroutinefunction(dispatch_fn) else dispatch_fn(task)
-                    new_tasks: List[PipelineTask] = await self.mark_completed(task.task_id, result)
+                    new_tasks: list[PipelineTask] = await self.mark_completed(task.task_id, result)
                     return task.task_id, result, new_tasks
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     await self.mark_failed(task.task_id, str(exc))
                     return task.task_id, None, []
 
-            results: List[tuple] = await asyncio.gather(*[_execute_one(t) for t in ready])
+            await asyncio.gather(*[_execute_one(t) for t in ready])
 
         # Construir resultado
         total_time: float = time.time() - start_time
@@ -335,7 +336,7 @@ class PipelineMACU:
             completed: int = sum(1 for t in self._tasks.values() if t.status == TaskStatus.COMPLETED)
             failed: int = sum(1 for t in self._tasks.values() if t.status == TaskStatus.FAILED)
             cancelled: int = sum(1 for t in self._tasks.values() if t.status == TaskStatus.CANCELLED)
-            outputs: Dict[str, Any] = {
+            outputs: dict[str, Any] = {
                 tid: t.result for tid, t in self._tasks.items()
                 if t.status == TaskStatus.COMPLETED and t.result is not None
             }
@@ -351,13 +352,13 @@ class PipelineMACU:
         )
 
         logger.info(
-            "[MACU] Pipeline completado: %s — %d/%d ok, %d failed, %d cancelled (%.1fs)",
+            "[MACU] Pipeline completado: %s â€” %d/%d ok, %d failed, %d cancelled (%.1fs)",
             pipeline_id, completed, len(self._tasks), failed, cancelled, total_time,
         )
 
         return result
 
-    def get_task(self, task_id: str) -> Optional[PipelineTask]:
+    def get_task(self, task_id: str) -> PipelineTask | None:
         """Retorna una tarea por su ID.
 
         Args:
@@ -368,13 +369,13 @@ class PipelineMACU:
         """
         return self._tasks.get(task_id)
 
-    def get_status_summary(self) -> Dict[str, int]:
+    def get_status_summary(self) -> dict[str, int]:
         """Retorna resumen de estados del pipeline.
 
         Returns:
             Dict con conteo por status.
         """
-        summary: Dict[str, int] = {}
+        summary: dict[str, int] = {}
         for task in self._tasks.values():
             summary[task.status.name] = summary.get(task.status.name, 0) + 1
         return summary

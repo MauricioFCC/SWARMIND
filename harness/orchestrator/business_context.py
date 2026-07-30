@@ -7,7 +7,7 @@ especifico por industria/proyecto a los prompts de los agentes.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import ClassVar
 
 
 @dataclass
@@ -24,7 +24,7 @@ class BusinessTerm:
     term: str
     definition: str
     industry: str = "general"
-    aliases: List[str] = field(default_factory=list)
+    aliases: list[str] = field(default_factory=list)
 
 
 class BusinessContext:
@@ -38,7 +38,7 @@ class BusinessContext:
         ValueError: Si se intenta registrar un termino vacio o sin definicion.
     """
 
-    _DEFAULT_TERMS: list = [
+    _DEFAULT_TERMS: ClassVar[list] = [
         (
             "cliente activo",
             "Cliente que ha realizado una transaccion en los ultimos 30 dias",
@@ -68,7 +68,7 @@ class BusinessContext:
 
     def __init__(self) -> None:
         """Inicializa el contexto de negocio con terminos por defecto."""
-        self._terms: Dict[str, BusinessTerm] = {}
+        self._terms: dict[str, BusinessTerm] = {}
         self._industry: str = "general"
         self._load_defaults()
 
@@ -107,7 +107,7 @@ class BusinessContext:
         term: str,
         definition: str,
         industry: str = "general",
-        aliases: Optional[List[str]] = None,
+        aliases: list[str] | None = None,
     ) -> None:
         """Agrega un nuevo termino al glosario.
 
@@ -131,7 +131,7 @@ class BusinessContext:
             aliases=aliases or [],
         )
 
-    def get_definition(self, term: str) -> Optional[str]:
+    def get_definition(self, term: str) -> str | None:
         """Obtiene la definicion de un termino.
 
         Args:
@@ -143,7 +143,7 @@ class BusinessContext:
         t = self._terms.get(term.lower().strip())
         return t.definition if t else None
 
-    def get_term(self, term: str) -> Optional[BusinessTerm]:
+    def get_term(self, term: str) -> BusinessTerm | None:
         """Obtiene el objeto BusinessTerm completo.
 
         Args:
@@ -169,14 +169,13 @@ class BusinessContext:
         """
         enriched = prompt
         for term, bt in self._terms.items():
-            if term in prompt.lower():
-                if bt.industry in (self._industry, "general"):
+            if term in prompt.lower() and bt.industry in (self._industry, "general"):
                     enriched += (
                         f"\n[Contexto: {bt.term} = {bt.definition}]"
                     )
         return enriched
 
-    def list_terms(self, industry: str | None = None) -> List[BusinessTerm]:
+    def list_terms(self, industry: str | None = None) -> list[BusinessTerm]:
         """Lista los terminos registrados, opcionalmente filtrados por industria.
 
         Args:

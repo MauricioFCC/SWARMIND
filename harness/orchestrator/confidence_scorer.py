@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any
 
 from harness.common import estimate_tokens
 
@@ -34,7 +34,7 @@ CONFIDENCE_LOW = 0.40
 # ---------------------------------------------------------------------------
 
 # Hedging language: expressions that indicate uncertainty or low confidence
-_HEDGING_PATTERNS: List[str] = [
+_HEDGING_PATTERNS: list[str] = [
     r"\bi think\b",
     r"\bi believe\b",
     r"\bi'm not sure\b",
@@ -102,7 +102,7 @@ _HEDGING_PATTERNS: List[str] = [
 ]
 
 # Self-correction patterns: indicate the agent is revising its own output
-_SELF_CORRECTION_PATTERNS: List[str] = [
+_SELF_CORRECTION_PATTERNS: list[str] = [
     r"\bactually\b",
     r"\bon second thought\b",
     r"\blet me reconsider\b",
@@ -141,7 +141,7 @@ class ConfidenceScore:
 
     score: float  # 0.0 to 1.0
     reasoning: str = ""
-    signals: Dict[str, float] = field(default_factory=dict)
+    signals: dict[str, float] = field(default_factory=dict)
 
     @property
     def level(self) -> str:
@@ -157,7 +157,7 @@ class ConfidenceScore:
         """If confidence is high enough, execution can stop early."""
         return self.score >= CONFIDENCE_HIGH
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "score": round(self.score, 4),
             "level": self.level,
@@ -227,7 +227,7 @@ class ConfidenceScorer:
                 signals={"length": 0.0, "hedging": 0.0, "self_correction": 0.0},
             )
 
-        signals: Dict[str, float] = {}
+        signals: dict[str, float] = {}
 
         # Signal 1: Length
         length_score = self._signal_length(task, result)
@@ -266,7 +266,7 @@ class ConfidenceScorer:
 
     def score_debate_agreement(
         self,
-        outputs: Dict[str, str],
+        outputs: dict[str, str],
     ) -> ConfidenceScore:
         """
         Score agreement across multiple agent outputs on the same topic.
@@ -461,7 +461,7 @@ class ConfidenceScorer:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _get_weights(agent: str, has_speed: bool) -> Dict[str, float]:
+    def _get_weights(agent: str, has_speed: bool) -> dict[str, float]:
         """
         Get signal weights for the weighted average.
 

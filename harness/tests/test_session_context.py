@@ -31,7 +31,7 @@ class TestSessionContext:
     def test_get_active_after_create(self):
         """After creating, get_active returns it."""
         plan = self.planner.decompose("test")
-        session = self.ctx.get_or_create("test", plan)
+        self.ctx.get_or_create("test", plan)
         active = self.ctx.get_active()
         assert active is not None
         assert active.session_id == plan.session_id
@@ -156,13 +156,12 @@ class TestSessionContextNoPlan:
         """Plan=None con sesión activa en memoria → la reanuda.  (líneas 129-140)"""
         # Creamos una sesión primero
         plan = TaskPlan(session_id="activa-001", original_message="original")
-        session = self.ctx.get_or_create("original", plan)
+        self.ctx.get_or_create("original", plan)
         # Ahora llamamos con plan=None → debería encontrar la activa via _load_most_recent
         # Pero _load_most_recent en memory-only retorna None (no store)
         # En su lugar, cae a las líneas 142-153 (crea nueva)
 
         # Para probar las líneas 129-140, necesitamos un store mock
-        pass
 
     def test_get_or_create_no_plan_reanuda_desde_store(self) -> None:
         """Plan=None reanuda sesión desde store vía _load_most_recent.  (líneas 129-140)"""

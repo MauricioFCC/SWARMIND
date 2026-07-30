@@ -19,15 +19,15 @@ from __future__ import annotations
 import logging
 import re
 from difflib import SequenceMatcher
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from harness.orchestrator.nlt_types import (
-    NLTResult,
-    NLTool,
     _CHAIN_CONNECTORS,
     _PARAM_PATTERNS,
     _STOPWORDS,
     DEFAULT_CONFIDENCE_THRESHOLD,
+    NLTool,
+    NLTResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ class NaturalLanguageToolkit:
             confidence_threshold: Umbral minimo de confianza (0-1) para
                 considerar un match como valido. Por defecto 0.35.
         """
-        self._tools: Dict[str, NLTool] = {}
+        self._tools: dict[str, NLTool] = {}
         self._threshold = confidence_threshold
         self._register_defaults()
         logger.info(
@@ -204,7 +204,7 @@ class NaturalLanguageToolkit:
         logger.warning("Intento de eliminar tool inexistente: '%s'", name)
         return False
 
-    def get_tool(self, name: str) -> Optional[NLTool]:
+    def get_tool(self, name: str) -> NLTool | None:
         """Obtiene una herramienta por su nombre.
 
         Args:
@@ -215,7 +215,7 @@ class NaturalLanguageToolkit:
         """
         return self._tools.get(name)
 
-    def list_tools(self) -> List[str]:
+    def list_tools(self) -> list[str]:
         """Lista los nombres de todas las herramientas registradas.
 
         Returns:
@@ -251,7 +251,7 @@ class NaturalLanguageToolkit:
     # API publica — Parseo de lenguaje natural
     # ------------------------------------------------------------------
 
-    def parse(self, text: str) -> Optional[NLTResult]:
+    def parse(self, text: str) -> NLTResult | None:
         """Parsea texto en lenguaje natural a una llamada de herramienta.
 
         Ejecuta el pipeline completo: tokenizacion, semantic overlap
@@ -280,7 +280,7 @@ class NaturalLanguageToolkit:
                 return chain_result
 
         # 2. Semantic overlap scoring contra todas las tools
-        scores: List[Tuple[str, float, Dict[str, Any]]] = []
+        scores: list[tuple[str, float, dict[str, Any]]] = []
         for name, tool in self._tools.items():
             score, params = self._score_tool(text_stripped, tool)
             scores.append((name, score, params))
@@ -329,8 +329,8 @@ class NaturalLanguageToolkit:
 
     def parse_batch(
         self,
-        texts: List[str],
-    ) -> List[Optional[NLTResult]]:
+        texts: list[str],
+    ) -> list[NLTResult | None]:
         """Parsea multiples textos en lote.
 
         Args:
@@ -393,7 +393,7 @@ class NaturalLanguageToolkit:
         self,
         text: str,
         tool: NLTool,
-    ) -> Tuple[float, Dict[str, Any]]:
+    ) -> tuple[float, dict[str, Any]]:
         """Calcula la confianza del matching entre texto y herramienta.
 
         Combina multiples senales con pesos adaptativos:
@@ -453,8 +453,7 @@ class NaturalLanguageToolkit:
             for example in tool.examples:
                 ex_tokens = self._tokenize(example.lower())
                 overlap = self._token_overlap(tokens_input, ex_tokens)
-                if overlap > best_example_overlap:
-                    best_example_overlap = overlap
+                best_example_overlap = max(best_example_overlap, overlap)
             example_score = best_example_overlap
         score += 0.20 * example_score
 
@@ -470,8 +469,8 @@ class NaturalLanguageToolkit:
 
     def _token_overlap(
         self,
-        tokens_a: Set[str],
-        tokens_b: Set[str],
+        tokens_a: set[str],
+        tokens_b: set[str],
     ) -> float:
         """Calcula el Jaccard overlap entre dos conjuntos de tokens.
 
@@ -489,7 +488,7 @@ class NaturalLanguageToolkit:
         return len(intersection) / len(union)
 
     @staticmethod
-    def _tokenize(text: str) -> Set[str]:
+    def _tokenize(text: str) -> set[str]:
         """Tokeniza y normaliza un texto, removiendo stopwords.
 
         Args:
@@ -512,7 +511,7 @@ class NaturalLanguageToolkit:
         self,
         text: str,
         tool: NLTool,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Extrae parametros estructurados desde el texto en lenguaje natural.
 
         Args:
@@ -522,7 +521,7 @@ class NaturalLanguageToolkit:
         Returns:
             Diccionario con parametros extraidos.
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
 
         for param_name in tool.parameters:
             patterns = _PARAM_PATTERNS.get(param_name, [])
@@ -575,7 +574,7 @@ class NaturalLanguageToolkit:
                     return True
         return False
 
-    def _parse_chain(self, text: str) -> Optional[NLTResult]:
+    def _parse_chain(self, text: str) -> NLTResult | None:
         """Parsea un texto con multiples intenciones encadenadas.
 
         Args:
@@ -590,8 +589,8 @@ class NaturalLanguageToolkit:
         if not segments:
             return None
 
-        chain_results: List[NLTResult] = []
-        first_result: Optional[NLTResult] = None
+        chain_results: list[NLTResult] = []
+        first_result: NLTResult | None = None
 
         for segment in segments:
             segment = segment.strip()
@@ -618,7 +617,7 @@ class NaturalLanguageToolkit:
 
         return first_result
 
-    def _parse_single(self, text: str) -> Optional[NLTResult]:
+    def _parse_single(self, text: str) -> NLTResult | None:
         """Parsea un segmento individual de texto (sin encadenamiento).
 
         Args:
@@ -627,7 +626,7 @@ class NaturalLanguageToolkit:
         Returns:
             NLTResult o None si no hay match suficiente.
         """
-        scores: List[Tuple[str, float, Dict[str, Any]]] = []
+        scores: list[tuple[str, float, dict[str, Any]]] = []
 
         for name, tool in self._tools.items():
             score, params = self._score_tool(text, tool)
@@ -659,7 +658,7 @@ class NaturalLanguageToolkit:
         )
 
     @staticmethod
-    def _split_by_connectors(text: str) -> List[str]:
+    def _split_by_connectors(text: str) -> list[str]:
         """Divide un texto por conectores de encadenamiento.
 
         Args:
@@ -685,7 +684,7 @@ class NaturalLanguageToolkit:
 
         split_points.sort(key=lambda x: x[0])
 
-        segments: List[str] = []
+        segments: list[str] = []
         last_end = 0
         for pos, length, _ in split_points:
             if pos > last_end:
@@ -708,7 +707,7 @@ class NaturalLanguageToolkit:
         self,
         text: str,
         top_n: int = 3,
-    ) -> List[Tuple[str, float]]:
+    ) -> list[tuple[str, float]]:
         """Sugiere las mejores herramientas para un texto sin filtrar por umbral.
 
         Args:
@@ -723,7 +722,7 @@ class NaturalLanguageToolkit:
             return []
 
         text_stripped = text.strip()
-        scores: List[Tuple[str, float]] = []
+        scores: list[tuple[str, float]] = []
 
         for name, tool in self._tools.items():
             score, _ = self._score_tool(text_stripped, tool)
@@ -735,7 +734,7 @@ class NaturalLanguageToolkit:
     def find_tools_by_description(
         self,
         keyword: str,
-    ) -> List[str]:
+    ) -> list[str]:
         """Busca herramientas cuya descripcion contenga una palabra clave.
 
         Args:
@@ -745,11 +744,9 @@ class NaturalLanguageToolkit:
             Lista de nombres de herramientas que coinciden.
         """
         keyword_lower = keyword.lower()
-        results: List[str] = []
+        results: list[str] = []
         for name, tool in self._tools.items():
-            if keyword_lower in name.lower():
-                results.append(name)
-            elif keyword_lower in tool.description.lower():
+            if keyword_lower in name.lower() or keyword_lower in tool.description.lower():
                 results.append(name)
             else:
                 for ex in tool.examples:
@@ -758,7 +755,7 @@ class NaturalLanguageToolkit:
                         break
         return results
 
-    def match_exact(self, text: str) -> Optional[str]:
+    def match_exact(self, text: str) -> str | None:
         """Verifica si el texto coincide exactamente con el nombre de una tool.
 
         Args:

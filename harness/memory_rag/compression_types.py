@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
 
 # ---------------------------------------------------------------------------
 # Constantes
@@ -42,7 +41,7 @@ STOP_WORDS = {
 
 # Patrones de frases de relleno y sus reemplazos (usado por CompressionStrategies)
 # Palabras clave preservadas (no se eliminan aunque sean stop words)
-PRESERVED_KEYWORDS: List[str] = [
+PRESERVED_KEYWORDS: list[str] = [
     "TODO", "FIXME", "HACK", "XXX", "NOTE", "OPTIMIZE",
     "deprecated", "warning", "error", "critical",
     "must", "shall", "should", "required", "mandatory",
@@ -55,7 +54,7 @@ PRESERVED_KEYWORDS: List[str] = [
     "1.", "2.", "3.", "4.", "5.", "- [ ]", "- [x]",
 ]
 
-FILLER_PATTERNS: List[tuple] = [
+FILLER_PATTERNS: list[tuple] = [
     (r"I'd like to", "I will"),
     (r"I want to", "I will"),
     (r"I need to", "I must"),
@@ -112,7 +111,7 @@ class CompressionResult:
     ratio: float
     text: str
     method: str = "auto"
-    preserved_sections: List[str] = field(default_factory=list)
+    preserved_sections: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -128,4 +127,4 @@ class TokenBudget:
     total: int
     used: int
     remaining: int
-    sections: Dict[str, int] = field(default_factory=dict)
+    sections: dict[str, int] = field(default_factory=dict)

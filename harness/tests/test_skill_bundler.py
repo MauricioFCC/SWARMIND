@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from harness.orchestrator.skill_bundler import AgentConfig, SkillBundler
+from harness.orchestrator.skill_bundler import SkillBundler
 
 
 @pytest.fixture

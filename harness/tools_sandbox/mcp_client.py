@@ -1,5 +1,5 @@
-"""
-MCP Client — Universal JSON-RPC client for MCP (Model Context Protocol) servers.
+﻿"""
+MCP Client â€” Universal JSON-RPC client for MCP (Model Context Protocol) servers.
 
 Implements the MCP protocol over HTTP/SSE (Server-Sent Events) as specified
 by the Model Context Protocol standard.
@@ -17,7 +17,7 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class MCPTool:
 
     name: str
     description: str = ""
-    input_schema: Dict[str, Any] = field(default_factory=dict)
+    input_schema: dict[str, Any] = field(default_factory=dict)
     server_name: str = ""
 
 
@@ -54,7 +54,7 @@ class MCPResult:
     tool_name: str
     server_name: str
     duration_ms: float
-    error: Optional[str] = None
+    error: str | None = None
     request_id: str = ""
 
 
@@ -97,10 +97,10 @@ class MCPClient:
 
     def __init__(self, default_timeout: int = DEFAULT_TIMEOUT):
         """Inicializa la instancia de la clase."""
-        self._server_url: Optional[str] = None
+        self._server_url: str | None = None
         self._connected: bool = False
         self._default_timeout = default_timeout
-        self._tools_cache: List[MCPTool] = []
+        self._tools_cache: list[MCPTool] = []
         self._cache_ts: float = 0.0
         self._cache_ttl: float = 60.0  # seconds
 
@@ -108,7 +108,7 @@ class MCPClient:
     # Connection management
     # ------------------------------------------------------------------
 
-    def connect(self, server_url: str, timeout: Optional[int] = None) -> bool:
+    def connect(self, server_url: str, timeout: int | None = None) -> bool:
         """
         Connect to an MCP server.
 
@@ -147,7 +147,7 @@ class MCPClient:
             resp.raise_for_status()
             result = resp.json()
 
-            if "error" in result and result["error"]:
+            if result.get("error"):
                 logger.error("MCP initialize failed: %s", result["error"])
                 return False
 
@@ -166,7 +166,7 @@ class MCPClient:
         except ImportError:
             logger.error("requests library required for MCP client. pip install requests")
             return False
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error("MCP connection failed to %s: %s", url, exc)
             self._connected = False
             return False
@@ -183,7 +183,7 @@ class MCPClient:
                     json=payload,
                     timeout=5,
                 )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.debug("MCP best-effort operation failed: %s", exc)
 
         self._connected = False
@@ -199,7 +199,7 @@ class MCPClient:
     # Tool discovery
     # ------------------------------------------------------------------
 
-    def list_tools(self, force_refresh: bool = False) -> List[MCPTool]:
+    def list_tools(self, force_refresh: bool = False) -> list[MCPTool]:
         """
         List available tools from the MCP server.
 
@@ -225,7 +225,7 @@ class MCPClient:
 
         return self._refresh_tools()
 
-    def _refresh_tools(self) -> List[MCPTool]:
+    def _refresh_tools(self) -> list[MCPTool]:
         """Fetch available tools from the server and update cache."""
         if not self._server_url:
             return []
@@ -242,7 +242,7 @@ class MCPClient:
             resp.raise_for_status()
             data = resp.json()
 
-            if "error" in data and data["error"]:
+            if data.get("error"):
                 logger.error("Failed to list tools: %s", data["error"])
                 return []
 
@@ -261,7 +261,7 @@ class MCPClient:
             logger.debug("Refreshed tool cache: %d tools", len(tools))
             return tools
 
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error("Failed to refresh tools: %s", exc)
             return []
 
@@ -272,8 +272,8 @@ class MCPClient:
     def execute_tool(
         self,
         tool_name: str,
-        params: Dict[str, Any],
-        timeout: Optional[int] = None,
+        params: dict[str, Any],
+        timeout: int | None = None,
     ) -> MCPResult:
         """
         Execute a tool on the MCP server.
@@ -325,7 +325,7 @@ class MCPClient:
 
             elapsed = (time.perf_counter() - start) * 1000
 
-            if "error" in data and data["error"]:
+            if data.get("error"):
                 return MCPResult(
                     success=False,
                     output=None,
@@ -359,7 +359,7 @@ class MCPClient:
                 request_id=request_id,
             )
 
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             elapsed = (time.perf_counter() - start) * 1000
             return MCPResult(
                 success=False,
@@ -378,9 +378,9 @@ class MCPClient:
     def _make_request(
         self,
         method: str,
-        params: Dict[str, Any],
-        request_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        params: dict[str, Any],
+        request_id: str | None = None,
+    ) -> dict[str, Any]:
         """Build a JSON-RPC 2.0 request payload."""
         return {
             "jsonrpc": "2.0",

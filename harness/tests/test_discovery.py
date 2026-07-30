@@ -15,5 +15,5 @@ class TestDiscovery:
             assert "triggers" in info, f"{name} debe tener campo triggers"
 
     def test_agents_have_capabilities(self, agent_discovery):
-        for name, info in agent_discovery.items():
+        for info in agent_discovery.values():
             assert "capabilities" in info

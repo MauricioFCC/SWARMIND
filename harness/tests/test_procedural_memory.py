@@ -135,7 +135,7 @@ class TestProceduralMemoryRegister:
             # Verificar que se escribio el archivo
             filepath = Path(tmp) / "deploy_app.md"
             assert filepath.exists()
-            content = open(filepath, encoding="utf-8").read()
+            content = filepath.read_text(encoding="utf-8")
             assert "deploy_app" in content
 
     def test_register_skill_increments_version(self):

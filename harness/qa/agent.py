@@ -1,4 +1,4 @@
-"""L4 — AutonomousTestAgent: Ejecucion autonoma de tests con MCP.
+﻿"""L4 â€” AutonomousTestAgent: Ejecucion autonoma de tests con MCP.
 
 Agente autonomo que ejecuta y supervisa tests usando el protocolo MCP
 (Model Context Protocol). Capaz de:
@@ -30,14 +30,14 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum, auto
-from typing import Any, Optional
+from typing import Any
 from uuid import uuid4
 
 from harness.qa import QALayer, QAMetadata
 
 logger = logging.getLogger(__name__)
 
-# ── Constantes de operacion ───────────────────────────────────────────────────
+# â”€â”€ Constantes de operacion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _REINTENTOS_MAX = 3
 _BACKOFF_BASE_S = 1.0
@@ -105,11 +105,11 @@ class SingleExecution:
     """
 
     test_file: str
-    function: Optional[str]
+    function: str | None
     estado: TestResultStatus
     duracion_ms: float
     salida: str = ""
-    error: Optional[str] = None
+    error: str | None = None
     reintentos: int = 0
     ejecucion_id: str = field(default_factory=lambda: uuid4().hex[:12])
 
@@ -166,7 +166,7 @@ class AutonomousTestAgent:
 
     def __init__(
         self,
-        metadata: Optional[QAMetadata] = None,
+        metadata: QAMetadata | None = None,
         timeout_s: float = _TIMEOUT_DEFAULT_S,
         max_workers: int = _MAX_WORKERS_DEFAULT,
     ) -> None:
@@ -190,7 +190,7 @@ class AutonomousTestAgent:
             f"WHERE: AutonomousTestAgent.__init__."
         )
 
-    def _simular_ejecucion(self, test_file: str, funcion: Optional[str]) -> SingleExecution:
+    def _simular_ejecucion(self, test_file: str, funcion: str | None) -> SingleExecution:
         """Simula la ejecucion de un test individual.
 
         NOTA: En produccion, esta funcion ejecuta el test real via
@@ -215,7 +215,7 @@ class AutonomousTestAgent:
             duracion = (time.perf_counter() - inicio) * 1000.0
             if "fail" in test_file.lower():
                 estado = TestResultStatus.FAILED
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             duracion = (time.perf_counter() - inicio) * 1000.0
             estado = TestResultStatus.ERROR
             logger.error(
@@ -240,7 +240,7 @@ class AutonomousTestAgent:
         )
 
     def _ejecutar_con_reintentos(
-        self, test_file: str, funcion: Optional[str]
+        self, test_file: str, funcion: str | None
     ) -> SingleExecution:
         """Ejecuta un test con reintentos y backoff exponencial.
 
@@ -251,7 +251,7 @@ class AutonomousTestAgent:
         Returns:
             SingleExecution con el resultado final tras reintentos.
         """
-        ultimo_resultado: Optional[SingleExecution] = None
+        ultimo_resultado: SingleExecution | None = None
 
         for intento in range(1, _REINTENTOS_MAX + 1):
             resultado = self._simular_ejecucion(test_file, funcion)
@@ -324,7 +324,7 @@ class AutonomousTestAgent:
         self,
         test_files: list[str],
         parallel: bool = False,
-        max_workers: Optional[int] = None,
+        max_workers: int | None = None,
     ) -> AgentResult:
         """Ejecuta una lista de archivos de test de forma autonoma.
 
@@ -355,7 +355,6 @@ class AutonomousTestAgent:
             )
 
         self._status = AgentStatus.PLANNING
-        workers = max_workers or self._max_workers
         ejecuciones: list[SingleExecution] = []
 
         # Enviar comando MCP de inicio de planificacion

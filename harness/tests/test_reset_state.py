@@ -3,7 +3,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from harness.reset_state import _allow_temp_dirs, empty_dir_keep_gitkeep, rm_dir, rm_file
+from harness.reset_state import (
+    _allow_temp_dirs,
+    empty_dir_keep_gitkeep,
+    rm_dir,
+    rm_file,
+)
 
 # Permitir directorios temporales en tests (seguridad: path traversal check)
 _allow_temp_dirs()

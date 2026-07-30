@@ -11,7 +11,6 @@ import pytest
 
 from harness.orchestrator.instincts import Instinct, InstinctSystem
 
-
 # ============================================================================
 # Fixtures
 # ============================================================================

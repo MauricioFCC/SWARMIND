@@ -1,5 +1,5 @@
-"""
-Agent Message Bus — "Slack para Agentes"
+﻿"""
+Agent Message Bus â€” "Slack para Agentes"
 
 Implementa un bus de mensajes asincrono entre agentes usando LanceVectorStore
 como backend. Cada mensaje se almacena en la coleccion ``agent_workspace_logs``
@@ -23,7 +23,7 @@ import json
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -94,7 +94,7 @@ class AgentBus:
 
     def __init__(
         self,
-        vector_store: Optional[LanceVectorStore] = None,
+        vector_store: LanceVectorStore | None = None,
     ) -> None:
         """
         Args:
@@ -114,12 +114,12 @@ class AgentBus:
         to_agent: str,
         message: str,
         message_type: str = "notification",
-        task_id: Optional[str] = None,
+        task_id: str | None = None,
         iteration: int = 0,
-        attachments: Optional[List[str]] = None,
-        thread_id: Optional[str] = None,
-        msg_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        attachments: list[str] | None = None,
+        thread_id: str | None = None,
+        msg_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Construye el payload de metadata para un mensaje.
 
@@ -145,7 +145,7 @@ class AgentBus:
     # API publica: Envio de mensajes
     # ------------------------------------------------------------------
 
-    def post_message_batch(self, messages: List[Dict[str, Any]]) -> List[str]:
+    def post_message_batch(self, messages: list[dict[str, Any]]) -> list[str]:
         """
         Publica MULTIPLES mensajes en UNA SOLA llamada batch a LanceDB.
 
@@ -163,9 +163,9 @@ class AgentBus:
         if not messages:
             return []
 
-        vectors_list: List[np.ndarray] = []
-        metadata_list: List[Dict[str, Any]] = []
-        msg_ids: List[str] = []
+        vectors_list: list[np.ndarray] = []
+        metadata_list: list[dict[str, Any]] = []
+        msg_ids: list[str] = []
 
         for msg_data in messages:
             channel = msg_data.get("channel", "")
@@ -220,10 +220,10 @@ class AgentBus:
         to_agent: str,
         message: str,
         message_type: str = "notification",
-        task_id: Optional[str] = None,
+        task_id: str | None = None,
         iteration: int = 0,
-        attachments: Optional[List[str]] = None,
-        thread_id: Optional[str] = None,
+        attachments: list[str] | None = None,
+        thread_id: str | None = None,
     ) -> str:
         """Publica un mensaje en un canal del bus de agentes.
 
@@ -298,9 +298,9 @@ class AgentBus:
 
     def _search_messages(
         self,
-        filters: Optional[Dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
         top_k: int = 50,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Busca mensajes en el store con filtros.
 
@@ -313,7 +313,7 @@ class AgentBus:
             results = self.store.search(
                 _COLLECTION, EMPTY_VECTOR, top_k=top_k, filters=filters or {},
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Error en busqueda de mensajes: %s", exc)
             return []
         return [self._deserialize_message(r) for r in results]
@@ -326,9 +326,9 @@ class AgentBus:
         self,
         channel: str,
         agent_name: str,
-        since_timestamp: Optional[str] = None,
+        since_timestamp: str | None = None,
         limit: int = 50,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Busca mensajes no leidos para un agente en un canal.
 
         Args:
@@ -364,7 +364,7 @@ class AgentBus:
         results.sort(key=lambda m: m.get("created_at", ""))
         return results
 
-    def get_thread(self, thread_id: str, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_thread(self, thread_id: str, limit: int = 100) -> list[dict[str, Any]]:
         """Recupera todo el hilo de conversacion de un thread_id."""
         results = self._search_messages(
             filters={"thread_id": thread_id},
@@ -377,7 +377,7 @@ class AgentBus:
         self,
         channel: str,
         limit: int = 50,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Obtiene el historial completo de un canal."""
         results = self._search_messages(
             filters={"channel": channel},
@@ -386,7 +386,7 @@ class AgentBus:
         results.sort(key=lambda m: m.get("created_at", ""), reverse=True)
         return results
 
-    def get_message_by_id(self, message_id: str) -> Optional[Dict[str, Any]]:
+    def get_message_by_id(self, message_id: str) -> dict[str, Any] | None:
         """Recupera un mensaje individual por su ID."""
         results = self._search_messages(
             filters={"id": message_id},
@@ -426,7 +426,7 @@ class AgentBus:
                 return True
             logger.warning("Mensaje %s no encontrado para %s", message_id[:8], status)
             return False
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Error al actualizar estado %s para %s: %s", status, message_id[:8], exc)
             return False
 
@@ -484,7 +484,7 @@ class AgentBus:
             ID del mensaje de escalacion creado.
         """
         escalation_msg = (
-            f"🚨 ESCALACION - Task: {task_id}\n"
+            f"ðŸš¨ ESCALACION - Task: {task_id}\n"
             f"El circuit breaker se ha disparado tras multiples intentos fallidos.\n"
             f"{message}\n"
             f"Se requiere intervencion humana."
@@ -502,7 +502,7 @@ class AgentBus:
     # Metodos de utilidad
     # ------------------------------------------------------------------
 
-    def get_channel_list(self) -> List[str]:
+    def get_channel_list(self) -> list[str]:
         """Retorna la lista de canales con actividad."""
         results = self._search_messages(top_k=5000)
         canales: set = set()
@@ -512,7 +512,7 @@ class AgentBus:
                 canales.add(ch)
         return sorted(canales)
 
-    def get_tasks_with_errors(self) -> List[str]:
+    def get_tasks_with_errors(self) -> list[str]:
         """Retorna los task_id que tienen mensajes de error."""
         results = self._search_messages(
             filters={"message_type": "error"},
@@ -563,7 +563,7 @@ class AgentBus:
         return agent
 
     @staticmethod
-    def _deserialize_message(record: Dict[str, Any]) -> Dict[str, Any]:
+    def _deserialize_message(record: dict[str, Any]) -> dict[str, Any]:
         """Convierte un registro del store en un dict de mensaje legible.
 
         Los registros de LanceVectorStore devuelven ``metadata`` como un dict
@@ -579,7 +579,7 @@ class AgentBus:
 
         # Combinar: metadata tiene los campos originales,
         # top-level puede tener campos actualizados (ej. status)
-        result: Dict[str, Any] = dict(meta)
+        result: dict[str, Any] = dict(meta)
 
         # Los campos top-level sobreescriben metadata
         for key in ("id", "channel", "thread_id", "from_agent", "to_agent",
@@ -614,7 +614,7 @@ class AgentBus:
     async def post_message_async(
         self, channel: str, from_agent: str, to_agent: str,
         message: str, message_type: str = "notification",
-        task_id: Optional[str] = None,
+        task_id: str | None = None,
     ) -> str:
         """Version async de post_message."""
         import asyncio
@@ -626,7 +626,7 @@ class AgentBus:
 
     async def poll_channel_async(
         self, channel: str, agent_name: str, limit: int = 50
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Version async de poll_channel."""
         import asyncio
         return await asyncio.to_thread(
@@ -635,7 +635,7 @@ class AgentBus:
 
 
 # ---------------------------------------------------------------------------
-# AsyncAgentBus — version asincrona para PaCoRe (ADR-0017)
+# AsyncAgentBus â€” version asincrona para PaCoRe (ADR-0017)
 # ---------------------------------------------------------------------------
 
 
@@ -647,7 +647,7 @@ class AsyncAgentBus:
     Cada canal tiene su propia cola asincrona.
 
     Reference:
-        PaCoRe (Parallel Coordination + RL message-passing) — ADR-0017
+        PaCoRe (Parallel Coordination + RL message-passing) â€” ADR-0017
         MPAC95: 95% overhead reduction, 4.8x speedup
     """
 

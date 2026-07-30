@@ -5,14 +5,9 @@ Adaptado a las firmas reales de los modulos generados.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Dict
-from uuid import uuid4
-
 import pytest
 
-from harness.qa import QALayer, QAMetadata, QAContext
-from harness.qa.predictor import FailurePredictor, HistorialEjecucion, RiskScore
+from harness.qa.agent import AgentResult, AutonomousTestAgent
 from harness.qa.detector import (
     AnomalyFinding,
     AnomalyReport,
@@ -20,14 +15,12 @@ from harness.qa.detector import (
     VisualAnomalyDetector,
 )
 from harness.qa.generator import TestCaseGenerator, TestSuite
-from harness.qa.agent import AutonomousTestAgent, AgentResult
 from harness.qa.orchestrator import (
-    LayerResult,
     OrchestrationReport,
     PipelineStatus,
     QAOrchestrator,
 )
-
+from harness.qa.predictor import FailurePredictor, HistorialEjecucion, RiskScore
 
 # ============================================================================
 # Tests: L1 — FailurePredictor

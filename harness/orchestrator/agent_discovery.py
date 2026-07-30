@@ -1,38 +1,38 @@
-"""
-Agent Discovery — Recursive agent profile parser.
+﻿"""
+Agent Discovery â€” Recursive agent profile parser.
 
-Reemplaza los ~200+ líneas de mappings hardcodeados en delegation_engine.py,
+Reemplaza los ~200+ lÃ­neas de mappings hardcodeados en delegation_engine.py,
 delegate.py, run.py y AGENTS.md con un descubrimiento recursivo desde
 .opencode/agents/*.md.
 
-Patrón RECURSIVO: usa Path.rglob() para descubrir agentes recursivamente,
-eliminando la necesidad de mantener registros manuales en múltiples sitios.
+PatrÃ³n RECURSIVO: usa Path.rglob() para descubrir agentes recursivamente,
+eliminando la necesidad de mantener registros manuales en mÃºltiples sitios.
 
 El YAML frontmatter de cada .md define:
   - name: nombre del agente (default: filename)
   - domain: dominio principal (default: "universal")
   - triggers: palabras clave para routing por intent
-  - capabilities: capacidades técnicas
+  - capabilities: capacidades tÃ©cnicas
   - aliases: alias cortos (@pm, @swe, etc.)
-  - description: descripción del rol
+  - description: descripciÃ³n del rol
 
 Si un .md no tiene frontmatter, se infieren los campos desde el filename y
-el contenido del archivo mediante búsqueda de keywords.
+el contenido del archivo mediante bÃºsqueda de keywords.
 """
 from __future__ import annotations
 
 import functools
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Path resolution
 # ---------------------------------------------------------------------------
 
 def _get_agents_dir() -> Path:
-    """Resuelve la ruta a .opencode/agents/ desde la ubicación de este archivo."""
-    # Este archivo está en harness/orchestrator/
+    """Resuelve la ruta a .opencode/agents/ desde la ubicaciÃ³n de este archivo."""
+    # Este archivo estÃ¡ en harness/orchestrator/
     base = Path(__file__).resolve().parent.parent.parent
     agents_dir = base / ".opencode" / "agents"
     if agents_dir.exists():
@@ -58,13 +58,13 @@ def _try_import_yaml():
 
 
 @functools.lru_cache(maxsize=128)
-def _parse_frontmatter(content: str, filename: str) -> Optional[Dict[str, Any]]:
+def _parse_frontmatter(content: str, filename: str) -> dict[str, Any] | None:
     """
     Parsea frontmatter YAML entre marcadores ---.
     
     Si no hay frontmatter o falla el parseo, retorna None.
     
-    Cacheado por (content, filename) — cada archivo se parsea una sola vez.
+    Cacheado por (content, filename) â€” cada archivo se parsea una sola vez.
     """
     content_stripped = content.lstrip()
     if not content_stripped.startswith("---"):
@@ -82,7 +82,7 @@ def _parse_frontmatter(content: str, filename: str) -> Optional[Dict[str, Any]]:
 
     try:
         fm = yaml_module.safe_load(yaml_str)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None
 
     if not isinstance(fm, dict):
@@ -104,7 +104,7 @@ def _parse_frontmatter(content: str, filename: str) -> Optional[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 
 # Mapa de dominios por keywords en el contenido del .md
-_DOMAIN_KEYWORDS: List[Tuple[List[str], str]] = [
+_DOMAIN_KEYWORDS: list[tuple[list[str], str]] = [
     (["quantitative", "trading", "strategy", "broker", "order", "signal", "backtest"], "quantitative-analysis"),
     (["risk", "position sizing", "drawdown", "exposure", "kelly"], "risk-management"),
     (["trading", "monitoring", "alert", "live", "market", "operation"], "trading"),
@@ -126,7 +126,7 @@ _DOMAIN_KEYWORDS: List[Tuple[List[str], str]] = [
 ]
 
 # Mapa de capacidades por keywords en el contenido
-_CAPABILITY_KEYWORDS: List[Tuple[str, str]] = [
+_CAPABILITY_KEYWORDS: list[tuple[str, str]] = [
     # software-engineer
     (r"\bapi\b", "api_development"),
     (r"\bendpoint\b", "api_development"),
@@ -177,12 +177,12 @@ _CAPABILITY_KEYWORDS: List[Tuple[str, str]] = [
 ]
 
 
-def _infer_from_content(filename_stem: str, content: str) -> Dict[str, Any]:
+def _infer_from_content(filename_stem: str, content: str) -> dict[str, Any]:
     """
     Infiere nombre, dominio, triggers y capacidades desde el filename y contenido.
     
     Args:
-        filename_stem: Nombre del archivo sin extensión (e.g., "software-engineer")
+        filename_stem: Nombre del archivo sin extensiÃ³n (e.g., "software-engineer")
         content: Contenido completo del archivo .md
     
     Returns:
@@ -200,8 +200,8 @@ def _infer_from_content(filename_stem: str, content: str) -> Dict[str, Any]:
             max_matches = matches
             domain = dom
 
-    # Inferir triggers: primeras líneas de contenido relevantes
-    triggers: List[str] = []
+    # Inferir triggers: primeras lÃ­neas de contenido relevantes
+    triggers: list[str] = []
     trigger_patterns = [
         r"@(\w[\w-]*)",           # @rol mentions
         r"!(\w[\w-]*)",           # !comandos
@@ -212,7 +212,7 @@ def _infer_from_content(filename_stem: str, content: str) -> Dict[str, Any]:
             triggers.append(match.group(1).strip())
 
     # Inferir capacidades desde keywords
-    capabilities: List[str] = []
+    capabilities: list[str] = []
     seen_caps: set = set()
     for pattern, cap in _CAPABILITY_KEYWORDS:
         if re.search(pattern, content_lower) and cap not in seen_caps:
@@ -245,7 +245,7 @@ def _infer_from_content(filename_stem: str, content: str) -> Dict[str, Any]:
     }
     aliases = [alias_map.get(name, name.split("-")[0])]
 
-    # Inferir descripción: primera línea después del título
+    # Inferir descripciÃ³n: primera lÃ­nea despuÃ©s del tÃ­tulo
     description = ""
     for line in content.split("\n"):
         line = line.strip()
@@ -267,7 +267,7 @@ def _infer_from_content(filename_stem: str, content: str) -> Dict[str, Any]:
 # Agent profile parsing
 # ---------------------------------------------------------------------------
 
-def parse_agent_profile(md_file: Path) -> Optional[Dict[str, Any]]:
+def parse_agent_profile(md_file: Path) -> dict[str, Any] | None:
     """
     Parsea un archivo .md de agente y extrae su perfil.
     
@@ -280,7 +280,7 @@ def parse_agent_profile(md_file: Path) -> Optional[Dict[str, Any]]:
     
     Returns:
         Dict con name, domain, triggers, capabilities, aliases, description
-        o None si el archivo no es un perfil válido.
+        o None si el archivo no es un perfil vÃ¡lido.
     """
     if not md_file.exists() or md_file.suffix.lower() != ".md":
         return None
@@ -324,7 +324,7 @@ def parse_agent_profile(md_file: Path) -> Optional[Dict[str, Any]]:
 # ---------------------------------------------------------------------------
 
 @functools.lru_cache(maxsize=1)
-def discover_agents_recursive(agents_dir: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
+def discover_agents_recursive(agents_dir: str | None = None) -> dict[str, dict[str, Any]]:
     """
     Descubre agentes recursivamente desde .opencode/agents/.
     
@@ -336,10 +336,10 @@ def discover_agents_recursive(agents_dir: Optional[str] = None) -> Dict[str, Dic
         agents_dir: Directorio donde buscar (default: .opencode/agents/)
     
     Returns:
-        Dict[str, Dict] con nombre del agente → perfil
+        Dict[str, Dict] con nombre del agente â†’ perfil
         Cada perfil contiene: name, domain, triggers, capabilities, aliases, description
     """
-    agents: Dict[str, Dict[str, Any]] = {}
+    agents: dict[str, dict[str, Any]] = {}
 
     if agents_dir:
         search_path = Path(agents_dir)
@@ -365,27 +365,27 @@ def discover_agents_recursive(agents_dir: Optional[str] = None) -> Dict[str, Dic
 # Alias resolution
 # ---------------------------------------------------------------------------
 
-def build_alias_map(agents: Dict[str, Dict[str, Any]]) -> Dict[str, str]:
+def build_alias_map(agents: dict[str, dict[str, Any]]) -> dict[str, str]:
     """
-    Construye un mapa de alias → nombre canónico desde los agentes descubiertos.
+    Construye un mapa de alias â†’ nombre canÃ³nico desde los agentes descubiertos.
     
-    Incluye alias explícitos del frontmatter y alias inferidos por convención.
+    Incluye alias explÃ­citos del frontmatter y alias inferidos por convenciÃ³n.
     
     Args:
         agents: Dict de agentes descubiertos
     
     Returns:
-        Dict[str, str] con alias → nombre canónico del agente
+        Dict[str, str] con alias â†’ nombre canÃ³nico del agente
     """
-    alias_map: Dict[str, str] = {}
+    alias_map: dict[str, str] = {}
 
     for name, info in agents.items():
-        # Alias explícitos del frontmatter
+        # Alias explÃ­citos del frontmatter
         for alias in info.get("aliases", []):
             alias_map[alias.lower()] = name
 
-        # Alias por convención: parte antes del primer guión
-        # (e.g., "software-engineer" → "software")
+        # Alias por convenciÃ³n: parte antes del primer guiÃ³n
+        # (e.g., "software-engineer" â†’ "software")
         # pero solo si no hay conflicto
         primary = name.split("-")[0]
         if primary != name and primary not in alias_map:
@@ -443,29 +443,28 @@ def build_alias_map(agents: Dict[str, Dict[str, Any]]) -> Dict[str, str]:
         "evolve-analyzer": "evolve",
     }
     for alias, name in hardcoded_aliases.items():
-        if alias not in alias_map:
-            alias_map[alias] = name
+        alias_map[alias] = name  # Hardcoded aliases override inferred ones
 
     return alias_map
 
 
-def resolve_agent_name(alias_or_name: str, agents: Optional[Dict[str, Any]] = None) -> str:
+def resolve_agent_name(alias_or_name: str, agents: dict[str, Any] | None = None) -> str:
     """
-    Resuelve un alias o nombre a su nombre canónico de agente.
+    Resuelve un alias o nombre a su nombre canÃ³nico de agente.
     
     Args:
         alias_or_name: Alias (@pm, @swe) o nombre ("project-manager")
         agents: Dict de agentes descubiertos (opcional, auto-descubre si es None)
     
     Returns:
-        Nombre canónico del agente, o string vacío si no se encuentra.
+        Nombre canÃ³nico del agente, o string vacÃ­o si no se encuentra.
     """
     if agents is None:
         agents = discover_agents_recursive()
 
     key = alias_or_name.lower().replace("-", "_")
 
-    # Búsqueda directa
+    # BÃºsqueda directa
     if alias_or_name in agents:
         return alias_or_name
 
@@ -479,9 +478,9 @@ def resolve_agent_name(alias_or_name: str, agents: Optional[Dict[str, Any]] = No
 # Capability & Domain helpers
 # ---------------------------------------------------------------------------
 
-def get_all_capabilities(agents: Optional[Dict[str, Any]] = None) -> Dict[str, List[str]]:
+def get_all_capabilities(agents: dict[str, Any] | None = None) -> dict[str, list[str]]:
     """
-    Retorna un dict con nombre de agente → lista de capacidades.
+    Retorna un dict con nombre de agente â†’ lista de capacidades.
     
     Args:
         agents: Dict de agentes (auto-descubre si es None)
@@ -498,7 +497,7 @@ def get_all_capabilities(agents: Optional[Dict[str, Any]] = None) -> Dict[str, L
     }
 
 
-def get_agent_for_domain(domain: str, agents: Optional[Dict[str, Any]] = None) -> str:
+def get_agent_for_domain(domain: str, agents: dict[str, Any] | None = None) -> str:
     """
     Retorna el agente primario para un dominio dado.
     
@@ -519,7 +518,7 @@ def get_agent_for_domain(domain: str, agents: Optional[Dict[str, Any]] = None) -
     return "project-manager"
 
 
-def list_agents(agents: Optional[Dict[str, Any]] = None) -> List[str]:
+def list_agents(agents: dict[str, Any] | None = None) -> list[str]:
     """
     Retorna lista ordenada de nombres de agentes.
     
@@ -534,9 +533,9 @@ def list_agents(agents: Optional[Dict[str, Any]] = None) -> List[str]:
     return sorted(agents.keys())
 
 
-def build_intent_map(agents: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+def build_intent_map(agents: dict[str, Any] | None = None) -> dict[str, str]:
     """
-    Construye un mapa de keyword → agente desde los triggers de cada agente.
+    Construye un mapa de keyword â†’ agente desde los triggers de cada agente.
     
     Cada trigger en el frontmatter del agente se convierte en una entrada
     en el mapa de intents.
@@ -545,12 +544,12 @@ def build_intent_map(agents: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         agents: Dict de agentes (auto-descubre si es None)
     
     Returns:
-        Dict[str, str] con keyword → nombre de agente
+        Dict[str, str] con keyword â†’ nombre de agente
     """
     if agents is None:
         agents = discover_agents_recursive()
 
-    intent_map: Dict[str, str] = {}
+    intent_map: dict[str, str] = {}
     for name, info in agents.items():
         for trigger in info.get("triggers", []):
             trigger_lower = trigger.lower().strip()

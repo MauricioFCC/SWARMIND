@@ -31,7 +31,6 @@ import os
 from dataclasses import asdict, dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Optional, Set
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +87,7 @@ class MemoryConfig:
     enable_hermes_bridge: bool = False
 
     # Colecciones KPI activas (por defecto todas activas)
-    kpi_collections: Set[str] = field(default_factory=lambda: {
+    kpi_collections: set[str] = field(default_factory=lambda: {
         "agent_performance",
         "skill_effectiveness",
         "telemetry_events",
@@ -133,7 +132,7 @@ class MemoryConfig:
             return False
         return Path(self.hermes_path).exists()
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         d = asdict(self)
         d["kpi_collections"] = list(d["kpi_collections"])
         d["backend"] = self.backend.value
@@ -142,7 +141,7 @@ class MemoryConfig:
         return d
 
     @classmethod
-    def from_dict(cls, d: Dict) -> "MemoryConfig":
+    def from_dict(cls, d: dict) -> MemoryConfig:
         if "backend" in d:
             d["backend"] = MemoryBackend(d["backend"])
         if "telemetry_level" in d:
@@ -152,7 +151,7 @@ class MemoryConfig:
         return cls(**d)
 
     @classmethod
-    def from_env(cls) -> "MemoryConfig":
+    def from_env(cls) -> MemoryConfig:
         """Carga configuración desde variables de entorno."""
         return cls(
             backend=MemoryBackend(os.environ.get("MEMORY_BACKEND", "lancedb")),
@@ -171,7 +170,7 @@ class MemoryConfig:
 # Memory config registry
 # ---------------------------------------------------------------------------
 
-_GLOBAL_CONFIG: Optional[MemoryConfig] = None
+_GLOBAL_CONFIG: MemoryConfig | None = None
 
 
 def get_memory_config() -> MemoryConfig:

@@ -38,9 +38,8 @@ import math
 import random
 import threading
 import time
-from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +97,7 @@ class AgentProfile:
     """
 
     agent_id: str
-    skill_vector: Dict[str, float] = field(default_factory=dict)
+    skill_vector: dict[str, float] = field(default_factory=dict)
     total_tasks: int = 0
     successes: int = 0
     failures: int = 0
@@ -130,13 +129,13 @@ class TaskSpec:
     task_id: str
     task_type: str = "generic"
     value: float = 1.0
-    skills_needed: Dict[str, float] = field(default_factory=dict)
+    skills_needed: dict[str, float] = field(default_factory=dict)
     estimated_duration: float = 60.0
     max_cost: float = 1000.0
     priority: int = 0
-    deadline: Optional[float] = None
+    deadline: float | None = None
     description: str = ""
-    context: Dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -286,23 +285,23 @@ class MARSScheduler:
         self._lock = threading.Lock()
 
         # Agentes registrados
-        self._agents: Dict[str, AgentProfile] = {}
+        self._agents: dict[str, AgentProfile] = {}
 
         # Cola de tareas: heap de (-priority_efectiva, timestamp, TaskSpec)
-        self._task_queue: List[Tuple[float, float, TaskSpec]] = []
+        self._task_queue: list[tuple[float, float, TaskSpec]] = []
 
         # Tareas en ejecucion: {task_id: (agent_id, timestamp)}
-        self._running_tasks: Dict[str, Tuple[str, float]] = {}
+        self._running_tasks: dict[str, tuple[str, float]] = {}
 
         # Tareas completadas (historial)
-        self._completed_tasks: List[Dict[str, Any]] = []
+        self._completed_tasks: list[dict[str, Any]] = []
 
         # Modelo Q: {(feature_hash): q_value}
         # Aproximamos Q(s, a) con features discretizados
-        self._q_table: Dict[Tuple[str, str], float] = {}
+        self._q_table: dict[tuple[str, str], float] = {}
 
         # Cache de features RBF para pares tarea-agente
-        self._rbf_centers: Dict[str, List[float]] = {}
+        self._rbf_centers: dict[str, list[float]] = {}
 
         # Estadisticas
         self._total_scheduled: int = 0
@@ -325,7 +324,7 @@ class MARSScheduler:
     def register_agent(
         self,
         agent_id: str,
-        skills: Optional[Dict[str, float]] = None,
+        skills: dict[str, float] | None = None,
         max_load: int = 3,
     ) -> None:
         """Registra un agente en el planificador.
@@ -396,7 +395,7 @@ class MARSScheduler:
     def schedule_task(
         self,
         task: TaskSpec,
-    ) -> Optional[Assignment]:
+    ) -> Assignment | None:
         """Planifica una tarea asignandola al mejor agente disponible.
 
         WHAT: Evalua todos los agentes habilitados, calcula el match
@@ -434,10 +433,10 @@ class MARSScheduler:
         with self._lock:
             if not self._agents:
                 raise RuntimeError(
-                    f"WHAT: No hay agentes registrados en MARSScheduler. "
-                    f"WHY: No se pueden planificar tareas sin agentes. "
-                    f"WHERE: MARSScheduler.schedule_task. "
-                    f"SUGGEST: Registrar al menos un agente con register_agent()."
+                    "WHAT: No hay agentes registrados en MARSScheduler. "
+                    "WHY: No se pueden planificar tareas sin agentes. "
+                    "WHERE: MARSScheduler.schedule_task. "
+                    "SUGGEST: Registrar al menos un agente con register_agent()."
                 )
 
             # Verificar si la tarea ya esta en ejecucion o completada
@@ -449,7 +448,7 @@ class MARSScheduler:
                 return None
 
             # --- Evaluar agentes ---
-            best_assignment: Optional[Assignment] = None
+            best_assignment: Assignment | None = None
             best_score = float("-inf")
 
             for agent_id, profile in self._agents.items():
@@ -592,7 +591,7 @@ class MARSScheduler:
                     f"RUNNING: {list(self._running_tasks.keys())}"
                 )
 
-            expected_agent, start_time = running_entry
+            expected_agent, _start_time = running_entry
             if agent_id != expected_agent:
                 raise ValueError(
                     f"WHAT: agent_id='{agent_id}' no coincide con el "
@@ -687,10 +686,10 @@ class MARSScheduler:
         dispatched = 0
         with self._lock:
             # Reconstruir heap de tareas encolables
-            remaining_queue: List[Tuple[float, float, TaskSpec]] = []
+            remaining_queue: list[tuple[float, float, TaskSpec]] = []
 
             while self._task_queue:
-                neg_priority, timestamp, task = heapq.heappop(self._task_queue)
+                _neg_priority, _timestamp, task = heapq.heappop(self._task_queue)
 
                 # Verificar deadline
                 if task.deadline and time.time() > task.deadline:
@@ -762,7 +761,7 @@ class MARSScheduler:
 
         return dispatched
 
-    def get_agent_stats(self, agent_id: str) -> Optional[Dict[str, Any]]:
+    def get_agent_stats(self, agent_id: str) -> dict[str, Any] | None:
         """Obtiene estadisticas de un agente.
 
         Args:
@@ -799,7 +798,7 @@ class MARSScheduler:
                 "enabled": profile.enabled,
             }
 
-    def get_queue_status(self) -> Dict[str, Any]:
+    def get_queue_status(self) -> dict[str, Any]:
         """Obtiene el estado actual de la cola de tareas.
 
         Returns:
@@ -832,7 +831,7 @@ class MARSScheduler:
                 "congested": self._is_congested(),
             }
 
-    def get_system_stats(self) -> Dict[str, Any]:
+    def get_system_stats(self) -> dict[str, Any]:
         """Retorna estadisticas globales del planificador.
 
         Returns:
@@ -980,7 +979,7 @@ class MARSScheduler:
         profile: AgentProfile,
         task: TaskSpec,
         match_score: float,
-    ) -> Tuple[float, float, float]:
+    ) -> tuple[float, float, float]:
         """Estima probabilidad de exito, costo y latencia esperados.
 
         Args:
@@ -1129,7 +1128,7 @@ class MARSScheduler:
     def get_completed_history(
         self,
         limit: int = 100,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Obtiene el historial de tareas completadas.
 
         Args:

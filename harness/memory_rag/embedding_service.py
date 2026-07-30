@@ -1,5 +1,5 @@
-"""
-embedding_service.py — Servicio de embeddings con batching inteligente.
+﻿"""
+embedding_service.py â€” Servicio de embeddings con batching inteligente.
 
 Cuando N agentes hacen RAG queries simultaneamente, en lugar de
 N llamadas secuenciales (N x 200ms), se batch-ean en UNA sola
@@ -14,7 +14,7 @@ import asyncio
 import logging
 import time
 import uuid
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -68,7 +68,7 @@ class BatchedEmbeddingService:
 
         # Estado async
         self._queue: asyncio.Queue = asyncio.Queue()
-        self._pending: Dict[str, asyncio.Future] = {}
+        self._pending: dict[str, asyncio.Future] = {}
         self._running = False
 
         # Modelo (lazy init)
@@ -77,7 +77,7 @@ class BatchedEmbeddingService:
         self._sync_lock = False
 
         # Stats
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "total_requests": 0,
             "batches": 0,
             "avg_batch_size": 0.0,
@@ -130,13 +130,13 @@ class BatchedEmbeddingService:
             try:
                 emb = self._model.encode(text, normalize_embeddings=True)
                 return np.array(emb, dtype=np.float32)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning("Model embedding failed: %s", exc)
                 self._stats["errors"] += 1
 
         return self._fallback_embedding(text)
 
-    def embed_batch_sync(self, texts: List[str]) -> np.ndarray:
+    def embed_batch_sync(self, texts: list[str]) -> np.ndarray:
         """
         Embed una lista de textos en batch (modo sync).
 
@@ -151,14 +151,14 @@ class BatchedEmbeddingService:
             try:
                 embs = self._model.encode(texts, normalize_embeddings=True)
                 return np.array(embs, dtype=np.float32)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning("Batch embedding failed: %s", exc)
                 self._stats["errors"] += 1
 
         # Fallback: uno por uno
         return np.array([self._fallback_embedding(t) for t in texts], dtype=np.float32)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Return service statistics."""
         stats = dict(self._stats)
         if stats["batches"] > 0:
@@ -176,7 +176,7 @@ class BatchedEmbeddingService:
     async def _batch_loop(self) -> None:
         """Background loop: acumula requests, batch-ea, resuelve futures."""
         while self._running:
-            batch: List[Tuple[str, str]] = []
+            batch: list[tuple[str, str]] = []
 
             # Esperar primer item
             try:
@@ -187,7 +187,7 @@ class BatchedEmbeddingService:
             except asyncio.TimeoutError:
                 # No hay requests pendientes, seguir esperando
                 continue
-            except Exception as _exc:
+            except Exception as _exc:  # noqa: BLE001
                 logger.warning("embedding_service: %s", _exc)
                 continue
 
@@ -204,7 +204,7 @@ class BatchedEmbeddingService:
                     batch.append((key, text))
                 except (asyncio.TimeoutError, asyncio.CancelledError):
                     break
-                except Exception as _exc:
+                except Exception as _exc:  # noqa: BLE001
                     logger.warning("embedding_service: %s", _exc)
                     continue
 
@@ -232,7 +232,7 @@ class BatchedEmbeddingService:
                     self._stats["batches"], len(batch), elapsed,
                 )
 
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.error("Batch processing failed: %s", exc)
                 self._stats["errors"] += len(batch)
                 # Resolver con error
@@ -268,7 +268,7 @@ class BatchedEmbeddingService:
                 "sentence-transformers not installed. Using fallback embedding. "
                 "Install: pip install sentence-transformers"
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning(
                 "Failed to load model %s: %s. Using fallback.",
                 self._model_name, exc,

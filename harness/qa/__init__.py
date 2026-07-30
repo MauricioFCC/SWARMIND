@@ -26,7 +26,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Optional
+from typing import Any
 
 # ── Configuracion global de logging estructurado ──────────────────────────────
 
@@ -91,43 +91,59 @@ class QAContext:
 
     target: str
     config: dict[str, Any] = field(default_factory=dict)
-    metadata: Optional[QAMetadata] = None
+    metadata: QAMetadata | None = None
     tags: set[str] = field(default_factory=set)
 
 
 # ── Exportaciones publicas de todas las capas ─────────────────────────────────
 
-from harness.qa.predictor import FailurePredictor, RiskScore, HistorialEjecucion  # noqa: E402, F401
-from harness.qa.detector import VisualAnomalyDetector, AnomalyReport, AnomalyType  # noqa: E402, F401
-from harness.qa.generator import TestCaseGenerator, TestSuite, GuardrailResult  # noqa: E402, F401
-from harness.qa.agent import AutonomousTestAgent, AgentResult  # noqa: E402, F401
-from harness.qa.orchestrator import QAOrchestrator, OrchestrationReport, PipelineStatus  # noqa: E402, F401
+from harness.qa.agent import AgentResult, AutonomousTestAgent
+from harness.qa.detector import (
+    AnomalyReport,
+    AnomalyType,
+    VisualAnomalyDetector,
+)
+from harness.qa.generator import (
+    GuardrailResult,
+    TestCaseGenerator,
+    TestSuite,
+)
+from harness.qa.orchestrator import (
+    OrchestrationReport,
+    PipelineStatus,
+    QAOrchestrator,
+)
+from harness.qa.predictor import (
+    FailurePredictor,
+    HistorialEjecucion,
+    RiskScore,
+)
 
 __all__ = [
-    # Enums
-    "QASeverity",
+    "AgentResult",
+    "AnomalyReport",
+    "AnomalyType",
+    # L4 — AutonomousTestAgent
+    "AutonomousTestAgent",
+    # L1 — FailurePredictor
+    "FailurePredictor",
+    "GuardrailResult",
+    "HistorialEjecucion",
+    "MCPCommand",
+    "OrchestrationReport",
+    "PipelineStatus",
+    "QAContext",
     "QALayer",
     # Dataclasses base
     "QAMetadata",
-    "QAContext",
-    # L1 — FailurePredictor
-    "FailurePredictor",
+    # L5 — QAOrchestrator
+    "QAOrchestrator",
+    # Enums
+    "QASeverity",
     "RiskScore",
-    "HistorialEjecucion",
-    # L2 — VisualAnomalyDetector
-    "VisualAnomalyDetector",
-    "AnomalyReport",
-    "AnomalyType",
     # L3 — TestCaseGenerator
     "TestCaseGenerator",
     "TestSuite",
-    "GuardrailResult",
-    # L4 — AutonomousTestAgent
-    "AutonomousTestAgent",
-    "AgentResult",
-    "MCPCommand",
-    # L5 — QAOrchestrator
-    "QAOrchestrator",
-    "OrchestrationReport",
-    "PipelineStatus",
+    # L2 — VisualAnomalyDetector
+    "VisualAnomalyDetector",
 ]

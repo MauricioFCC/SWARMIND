@@ -15,11 +15,12 @@ Execution Hooks for Swarmind Systems.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, Generator, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ class Role(str, Enum):
 
 
 # Mapa de permisos base por rol
-ROLE_PERMISSIONS: Dict[Role, List[str]] = {
+ROLE_PERMISSIONS: dict[Role, list[str]] = {
     Role.ADMIN: [
         "create_agent", "delete_agent", "modify_agent",
         "execute_agent", "view_logs", "manage_users",
@@ -59,7 +60,7 @@ ROLE_PERMISSIONS: Dict[Role, List[str]] = {
 
 # Herencia de roles: cada rol hereda permisos del rol del que depende
 # (ADMIN -> EDITOR -> VIEWER, AUDITOR es independiente)
-_ROLE_HIERARCHY: Dict[Role, Optional[Role]] = {
+_ROLE_HIERARCHY: dict[Role, Role | None] = {
     Role.ADMIN: Role.EDITOR,
     Role.EDITOR: Role.VIEWER,
     Role.VIEWER: None,
@@ -67,7 +68,7 @@ _ROLE_HIERARCHY: Dict[Role, Optional[Role]] = {
 }
 
 
-def _resolve_role_permissions(role: Role) -> List[str]:
+def _resolve_role_permissions(role: Role) -> list[str]:
     """Resolver permisos completos de un rol incluyendo herencia.
 
     Args:
@@ -76,8 +77,8 @@ def _resolve_role_permissions(role: Role) -> List[str]:
     Returns:
         List[str]: Lista completa de permisos incluyendo los heredados.
     """
-    permissions: List[str] = []
-    current: Optional[Role] = role
+    permissions: list[str] = []
+    current: Role | None = role
     visited: set = set()
     while current is not None and current not in visited:
         visited.add(current)
@@ -85,7 +86,7 @@ def _resolve_role_permissions(role: Role) -> List[str]:
         current = _ROLE_HIERARCHY.get(current)
     # Eliminar duplicados preservando orden
     seen: set = set()
-    unique: List[str] = []
+    unique: list[str] = []
     for p in permissions:
         if p not in seen:
             seen.add(p)
@@ -97,14 +98,14 @@ def _resolve_role_permissions(role: Role) -> List[str]:
 # Tipos para execution hooks
 # ---------------------------------------------------------------------------
 
-PreExecHook = Callable[[str, str, Dict[str, Any]], Optional[bool]]
+PreExecHook = Callable[[str, str, dict[str, Any]], bool | None]
 """Hook antes de ejecutar una accion: (username, permission, context) -> Optional[bool].
 Retorna False para denegar, True/None para permitir."""
 
-PostExecHook = Callable[[str, str, Dict[str, Any], bool], None]
+PostExecHook = Callable[[str, str, dict[str, Any], bool], None]
 """Hook despues de ejecutar una accion: (username, permission, context, granted) -> None."""
 
-OnDenyHook = Callable[[str, str, Dict[str, Any], Optional[str]], None]
+OnDenyHook = Callable[[str, str, dict[str, Any], str | None], None]
 """Hook cuando se deniega una accion: (username, permission, context, reason) -> None."""
 
 
@@ -119,9 +120,9 @@ class ExecutionHooks:
         on_deny: Hook invocado especificamente cuando se deniega un permiso.
     """
 
-    pre_exec: Optional[PreExecHook] = None
-    post_exec: Optional[PostExecHook] = None
-    on_deny: Optional[OnDenyHook] = None
+    pre_exec: PreExecHook | None = None
+    post_exec: PostExecHook | None = None
+    on_deny: OnDenyHook | None = None
 
 
 @dataclass
@@ -153,9 +154,9 @@ class User:
     """
     username: str
     role: Role
-    permissions: List[str] = field(default_factory=list)
+    permissions: list[str] = field(default_factory=list)
     enabled: bool = True
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class MultiUserGovernance:
@@ -176,15 +177,15 @@ class MultiUserGovernance:
         False
     """
 
-    def __init__(self, hooks: Optional[ExecutionHooks] = None) -> None:
+    def __init__(self, hooks: ExecutionHooks | None = None) -> None:
         """Inicializar el sistema de gobernanza multi-usuario.
 
         Args:
             hooks: Configuracion opcional de execution hooks. Si no se
                    proporciona, se usan los hooks por defecto (solo logging).
         """
-        self._users: Dict[str, User] = {}
-        self._audit_log: List[AuditEntry] = []
+        self._users: dict[str, User] = {}
+        self._audit_log: list[AuditEntry] = []
         self._hooks: ExecutionHooks = hooks or ExecutionHooks()
         logger.info("MultiUserGovernance iniciado con %s", self._hooks)
 
@@ -193,7 +194,7 @@ class MultiUserGovernance:
     # ------------------------------------------------------------------
 
     def add_user(self, username: str, role: Role, enabled: bool = True,
-                 metadata: Optional[Dict[str, Any]] = None) -> User:
+                 metadata: dict[str, Any] | None = None) -> User:
         """Agregar un nuevo usuario al sistema de gobernanza.
 
         Los permisos se asignan automaticamente segun el rol y su
@@ -248,7 +249,7 @@ class MultiUserGovernance:
         self._audit("REMOVE_USER", f"Usuario '{username}' eliminado")
         logger.info("MultiUserGovernance: usuario '%s' eliminado", username)
 
-    def get_user(self, username: str) -> Optional[User]:
+    def get_user(self, username: str) -> User | None:
         """Obtener un usuario por su nombre.
 
         Args:
@@ -259,7 +260,7 @@ class MultiUserGovernance:
         """
         return self._users.get(username)
 
-    def get_users(self) -> Dict[str, User]:
+    def get_users(self) -> dict[str, User]:
         """Obtener copia del diccionario completo de usuarios.
 
         Returns:
@@ -323,7 +324,7 @@ class MultiUserGovernance:
     # ------------------------------------------------------------------
 
     def check_permission(self, username: str, permission: str,
-                         context: Optional[Dict[str, Any]] = None) -> bool:
+                         context: dict[str, Any] | None = None) -> bool:
         """Verificar si un usuario tiene un permiso especifico.
 
         Evalua la cadena completa: usuario existe -> habilitado -> hook
@@ -379,11 +380,10 @@ class MultiUserGovernance:
                                            granted=False)
                     return False
             except Exception as exc:
-                logger.error(
+                logger.exception(
                     "MultiUserGovernance: pre_exec hook fallo para "
-                    "usuario='%s' permiso='%s': %s",
-                    username, permission, exc,
-                    exc_info=True,
+                    "usuario='%s' permiso='%s'",
+                    username, permission,
                 )
                 self._audit(
                     "HOOK_ERROR",
@@ -443,7 +443,7 @@ class MultiUserGovernance:
 
     @contextmanager
     def with_permission(self, username: str, permission: str,
-                        context: Optional[Dict[str, Any]] = None
+                        context: dict[str, Any] | None = None
                         ) -> Generator[bool, None, None]:
         """Context manager que verifica un permiso y lo concede temporalmente.
 
@@ -505,7 +505,7 @@ class MultiUserGovernance:
         )
         self._audit_log.append(entry)
 
-    def get_audit_log(self) -> List[AuditEntry]:
+    def get_audit_log(self) -> list[AuditEntry]:
         """Obtener una copia del registro completo de auditoria.
 
         Returns:
@@ -513,7 +513,7 @@ class MultiUserGovernance:
         """
         return list(self._audit_log)
 
-    def get_audit_log_since(self, since: datetime) -> List[AuditEntry]:
+    def get_audit_log_since(self, since: datetime) -> list[AuditEntry]:
         """Obtener entradas de auditoria desde una fecha especifica.
 
         Args:
@@ -537,13 +537,13 @@ class MultiUserGovernance:
         """
         return len(self._audit_log)
 
-    def get_audit_summary(self) -> Dict[str, int]:
+    def get_audit_summary(self) -> dict[str, int]:
         """Obtener resumen de eventos de auditoria agrupados por accion.
 
         Returns:
             Dict[str, int]: Mapa de accion -> cantidad de ocurrencias.
         """
-        summary: Dict[str, int] = {}
+        summary: dict[str, int] = {}
         for entry in self._audit_log:
             summary[entry.action] = summary.get(entry.action, 0) + 1
         return summary
@@ -553,8 +553,8 @@ class MultiUserGovernance:
     # ------------------------------------------------------------------
 
     def _invoke_on_deny(self, username: str, permission: str,
-                        context: Dict[str, Any],
-                        reason: Optional[str] = None) -> None:
+                        context: dict[str, Any],
+                        reason: str | None = None) -> None:
         """Invocar el hook on_deny si esta configurado.
 
         Args:
@@ -566,16 +566,15 @@ class MultiUserGovernance:
         if self._hooks.on_deny is not None:
             try:
                 self._hooks.on_deny(username, permission, context, reason)
-            except Exception as exc:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "MultiUserGovernance: on_deny hook fallo para "
-                    "usuario='%s' permiso='%s': %s",
-                    username, permission, exc,
-                    exc_info=True,
+                    "usuario='%s' permiso='%s'",
+                    username, permission,
                 )
 
     def _invoke_post_exec(self, username: str, permission: str,
-                          context: Dict[str, Any], granted: bool) -> None:
+                          context: dict[str, Any], granted: bool) -> None:
         """Invocar el hook post_exec si esta configurado.
 
         Args:
@@ -587,19 +586,18 @@ class MultiUserGovernance:
         if self._hooks.post_exec is not None:
             try:
                 self._hooks.post_exec(username, permission, context, granted)
-            except Exception as exc:
-                logger.error(
+            except Exception:
+                logger.exception(
                     "MultiUserGovernance: post_exec hook fallo para "
-                    "usuario='%s' permiso='%s': %s",
-                    username, permission, exc,
-                    exc_info=True,
+                    "usuario='%s' permiso='%s'",
+                    username, permission,
                 )
 
     # ------------------------------------------------------------------
     # Utilidades
     # ------------------------------------------------------------------
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Obtener resumen del estado actual de la gobernanza.
 
         Returns:
@@ -607,7 +605,7 @@ class MultiUserGovernance:
             audit_entries, hooks_configurados.
         """
         total_users = len(self._users)
-        users_by_role: Dict[str, int] = {}
+        users_by_role: dict[str, int] = {}
         total_permissions = 0
         for user in self._users.values():
             role_name = user.role.value
@@ -637,7 +635,7 @@ class MultiUserGovernance:
         """
         return username in self._users
 
-    def get_user_permissions(self, username: str) -> List[str]:
+    def get_user_permissions(self, username: str) -> list[str]:
         """Obtener la lista de permisos de un usuario.
 
         Args:
@@ -651,7 +649,7 @@ class MultiUserGovernance:
             return []
         return list(user.permissions)
 
-    def get_users_by_role(self, role: Role) -> List[User]:
+    def get_users_by_role(self, role: Role) -> list[User]:
         """Obtener todos los usuarios que tienen un rol especifico.
 
         Args:

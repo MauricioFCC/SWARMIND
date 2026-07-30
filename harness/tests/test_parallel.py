@@ -10,12 +10,11 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 
 from harness.parallel import AdaptivePool, BatchAccumulator, PipelineMACU, PipelineTask
-
 
 # ============================================================================
 # Tests: BatchAccumulator
@@ -27,9 +26,9 @@ class TestBatchAccumulator:
     @pytest.mark.asyncio
     async def test_add_triggers_flush_at_batch_size(self) -> None:
         """Agregar max_batch_size items debe ejecutar flush_fn."""
-        flushed: List[int] = []
+        flushed: list[int] = []
 
-        async def mock_flush(batch: List[int]) -> None:
+        async def mock_flush(batch: list[int]) -> None:
             flushed.extend(batch)
 
         acc = BatchAccumulator(flush_fn=mock_flush, max_batch_size=3, max_latency_ms=5000, name="test")
@@ -48,9 +47,9 @@ class TestBatchAccumulator:
     @pytest.mark.asyncio
     async def test_manual_flush(self) -> None:
         """flush() manual debe descargar el buffer."""
-        flushed: List[int] = []
+        flushed: list[int] = []
 
-        async def mock_flush(batch: List[int]) -> None:
+        async def mock_flush(batch: list[int]) -> None:
             flushed.extend(batch)
 
         acc = BatchAccumulator(flush_fn=mock_flush, max_batch_size=10, max_latency_ms=10000, name="manual")
@@ -66,9 +65,9 @@ class TestBatchAccumulator:
     @pytest.mark.asyncio
     async def test_close_flushes(self) -> None:
         """close() debe hacer flush final."""
-        flushed: List[int] = []
+        flushed: list[int] = []
 
-        async def mock_flush(batch: List[int]) -> None:
+        async def mock_flush(batch: list[int]) -> None:
             flushed.extend(batch)
 
         acc = BatchAccumulator(flush_fn=mock_flush, max_batch_size=10, max_latency_ms=10000, name="close")
@@ -81,7 +80,7 @@ class TestBatchAccumulator:
     @pytest.mark.asyncio
     async def test_add_after_close(self) -> None:
         """Agregar items despues de close debe retornar False."""
-        async def mock_flush(batch: List[int]) -> None:
+        async def mock_flush(batch: list[int]) -> None:
             pass
 
         acc = BatchAccumulator(flush_fn=mock_flush, max_batch_size=10, max_latency_ms=10000, name="closed")
@@ -92,7 +91,7 @@ class TestBatchAccumulator:
     @pytest.mark.asyncio
     async def test_stats_reflect_operations(self) -> None:
         """Stats debe reflejar operaciones correctamente."""
-        async def mock_flush(batch: List[int]) -> None:
+        async def mock_flush(batch: list[int]) -> None:
             pass  # Flush instantaneo
 
         acc = BatchAccumulator(flush_fn=mock_flush, max_batch_size=2, max_latency_ms=100, name="stats")
@@ -107,9 +106,9 @@ class TestBatchAccumulator:
     @pytest.mark.asyncio
     async def test_sync_flush_fn(self) -> None:
         """Soporte para flush_fn sincrona."""
-        flushed: List[int] = []
+        flushed: list[int] = []
 
-        def sync_flush(batch: List[int]) -> None:
+        def sync_flush(batch: list[int]) -> None:
             flushed.extend(batch)
 
         acc = BatchAccumulator(flush_fn=sync_flush, max_batch_size=2, max_latency_ms=100, name="sync")
@@ -122,7 +121,7 @@ class TestBatchAccumulator:
         """Error en flush_fn no debe romper el acumulador."""
         call_count: int = 0
 
-        async def failing_flush(batch: List[int]) -> None:
+        async def failing_flush(batch: list[int]) -> None:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
@@ -158,7 +157,7 @@ class TestAdaptivePool:
     def test_multiple_tasks(self) -> None:
         """Multiples tareas deben ejecutarse concurrentemente."""
         pool = AdaptivePool(min_workers=2, max_workers=4, scale_interval=10)
-        results: List[int] = []
+        results: list[int] = []
 
         def work(n: int) -> int:
             return n * n
@@ -205,7 +204,7 @@ class TestPipelineMACU:
     async def test_simple_dag_serial(self) -> None:
         """DAG serial de 3 tareas debe ejecutarse en orden."""
         pipeline = PipelineMACU(max_parallel=2)
-        execution_order: List[str] = []
+        execution_order: list[str] = []
 
         task_a = PipelineTask(task_id="A", name="Task A", agent="builder", description="First")
         task_b = PipelineTask(task_id="B", name="Task B", agent="builder", description="Second", depends_on={"A"})
@@ -230,7 +229,7 @@ class TestPipelineMACU:
     async def test_parallel_dag(self) -> None:
         """Tareas independientes deben ejecutarse en paralelo."""
         pipeline = PipelineMACU(max_parallel=4)
-        timestamps: Dict[str, float] = {}
+        timestamps: dict[str, float] = {}
 
         tasks = [
             PipelineTask(task_id=f"P{i}", name=f"Parallel {i}", agent="builder", description=f"Task {i}")
@@ -255,9 +254,9 @@ class TestPipelineMACU:
     @pytest.mark.asyncio
     async def test_replanning_generates_new_tasks(self) -> None:
         """Replanning debe generar nuevas tareas basado en resultados."""
-        new_tasks: List[str] = []
+        new_tasks: list[str] = []
 
-        def replan(task_id: str, result: Any) -> List[PipelineTask]:
+        def replan(task_id: str, result: Any) -> list[PipelineTask]:
             if task_id == "A":
                 t = PipelineTask(task_id="D", name="Replanned D", agent="scientist",
                                  description=f"from {task_id}", depends_on={"A"})

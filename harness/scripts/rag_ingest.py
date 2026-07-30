@@ -20,7 +20,7 @@ import sys
 import time
 from pathlib import Path
 
-# Asegurar que el proyecto raíz está en sys.path
+# Asegurar que el proyecto raÃ­z estÃ¡ en sys.path
 _HERE = Path(__file__).resolve().parent
 _PROJECT_ROOT = _HERE.parent.parent
 sys.path.insert(1, str(_PROJECT_ROOT))
@@ -43,7 +43,7 @@ def _show_stats() -> None:
                 logger.info("  Coleccion 'rag_chunks':")
                 logger.info("    Items: %d", stats.get("item_count", 0))
                 logger.info("    Ultima actualizacion: %s", stats.get("last_updated", "N/A"))
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.info("  Coleccion 'rag_chunks' existe (stats no disponibles: %s)", exc)
         else:
             logger.info("  Coleccion 'rag_chunks' no existe. Ejecuta '!rag ingest' para crearla.")
@@ -51,7 +51,7 @@ def _show_stats() -> None:
     except ImportError as exc:
         logger.error("  LanceDB no disponible: %s", exc)
         sys.exit(1)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.error("  Error al obtener stats: %s", exc)
         sys.exit(1)
 
@@ -122,7 +122,7 @@ def _ingest(
         if errors:
             logger.warning("  \u26a0\ufe0f  Hubo %d errores. Revisa los logs para mas detalles.", errors)
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error("  \u274c Error en RAG ingest: %s", e)
         sys.exit(1)
 

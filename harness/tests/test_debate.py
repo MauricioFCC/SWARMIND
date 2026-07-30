@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 from enum import Enum
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -45,7 +45,7 @@ def orchestrator():
 @pytest.fixture
 def mock_dispatch() -> DispatchFn:
     """Factory that returns a deterministic dispatch function."""
-    def _dispatch(agent: str, task: str, context: Dict[str, Any]) -> str:
+    def _dispatch(agent: str, task: str, context: dict[str, Any]) -> str:
         responses = {
             "builder": (
                 "Propongo implementar usando Rust con Axum. "
@@ -101,7 +101,7 @@ class TestDebateStrategy:
 
     def test_strategy_is_enum(self):
         assert issubclass(DebateStrategy, str)
-        assert issubclass(DebateStrategy, Enum)  # noqa: F821
+        assert issubclass(DebateStrategy, Enum)
 
 
 # ---------------------------------------------------------------------------
@@ -580,34 +580,39 @@ class TestDebateTemplateInPlanner:
 class TestDebateOrchestratorIntegration:
     """Verify integration between TaskOrchestrator and DebateOrchestrator."""
 
-    def test_orchestrator_detects_debate(self, task_orch):
+    @pytest.mark.asyncio
+    async def test_orchestrator_detects_debate(self, task_orch):
         """TaskOrchestrator should detect debate plan and set is_debate=True."""
-        result = task_orch.process_message("debate sobre arquitectura del sistema")
+        result = await task_orch.process_message("debate sobre arquitectura del sistema")
         assert result.is_debate is True
         # Should have debate_agents populated
         assert len(result.debate_agents) >= 2
 
-    def test_orchestrator_debate_agents(self, task_orch):
+    @pytest.mark.asyncio
+    async def test_orchestrator_debate_agents(self, task_orch):
         """Debate plan should extract non-coordinator agents."""
-        result = task_orch.process_message("debate sobre elección de stack tecnológico")
+        result = await task_orch.process_message("debate sobre elección de stack tecnológico")
         assert len(result.debate_agents) >= 2
         assert "coordinator" not in result.debate_agents
 
-    def test_orchestrator_no_debate_for_normal(self, task_orch):
+    @pytest.mark.asyncio
+    async def test_orchestrator_no_debate_for_normal(self, task_orch):
         """Normal (non-debate) tasks should have is_debate=False."""
-        result = task_orch.process_message("implementa una API REST")
+        result = await task_orch.process_message("implementa una API REST")
         assert result.is_debate is False
 
-    def test_orchestrator_debate_strategy_default(self, task_orch):
+    @pytest.mark.asyncio
+    async def test_orchestrator_debate_strategy_default(self, task_orch):
         """Debate plan should default to 'consensus' strategy."""
-        result = task_orch.process_message("debate sobre diseño de base de datos")
+        result = await task_orch.process_message("debate sobre diseño de base de datos")
         assert result.debate_strategy == "consensus"
 
+    @pytest.mark.asyncio
     @pytest.mark.slow
-    def test_orchestrator_run_debate(self, task_orch):
+    async def test_orchestrator_run_debate(self, task_orch):
         """run_debate() should produce a valid DebateResult."""
-        result = task_orch.process_message("debate sobre arquitectura de microservicios")
-        debate_result = task_orch.run_debate(
+        result = await task_orch.process_message("debate sobre arquitectura de microservicios")
+        debate_result = await task_orch.run_debate(
             session_id=result.session_id,
             task=result.original_message,
             agents=["builder", "scientist", "guardian"],
@@ -617,10 +622,11 @@ class TestDebateOrchestratorIntegration:
         assert debate_result.final_answer != ""
         assert debate_result.confidence >= 0.0
 
-    def test_orchestrator_run_debate_with_mock(self, task_orch, mock_dispatch):
+    @pytest.mark.asyncio
+    async def test_orchestrator_run_debate_with_mock(self, task_orch, mock_dispatch):
         """run_debate() with custom dispatch function."""
-        result = task_orch.process_message("debate sobre estrategia de testing")
-        debate_result = task_orch.run_debate(
+        result = await task_orch.process_message("debate sobre estrategia de testing")
+        debate_result = await task_orch.run_debate(
             session_id=result.session_id,
             task=result.original_message,
             agents=["builder", "guardian"],
@@ -630,10 +636,11 @@ class TestDebateOrchestratorIntegration:
         assert debate_result.strategy == DebateStrategy.CONSENSUS
         assert debate_result.final_answer != ""
 
-    def test_orchestrator_run_debate_critique(self, task_orch, mock_dispatch):
+    @pytest.mark.asyncio
+    async def test_orchestrator_run_debate_critique(self, task_orch, mock_dispatch):
         """run_debate() with critique strategy."""
-        result = task_orch.process_message("debate sobre seguridad")
-        debate_result = task_orch.run_debate(
+        result = await task_orch.process_message("debate sobre seguridad")
+        debate_result = await task_orch.run_debate(
             session_id=result.session_id,
             task=result.original_message,
             agents=["builder", "guardian"],
@@ -642,10 +649,11 @@ class TestDebateOrchestratorIntegration:
         )
         assert debate_result.strategy == DebateStrategy.CRITIQUE
 
-    def test_orchestrator_run_debate_deliberation(self, task_orch, mock_dispatch):
+    @pytest.mark.asyncio
+    async def test_orchestrator_run_debate_deliberation(self, task_orch, mock_dispatch):
         """run_debate() with deliberation strategy."""
-        result = task_orch.process_message("debate sobre diseño de API")
-        debate_result = task_orch.run_debate(
+        result = await task_orch.process_message("debate sobre diseño de API")
+        debate_result = await task_orch.run_debate(
             session_id=result.session_id,
             task=result.original_message,
             agents=["builder", "scientist", "guardian"],
@@ -654,11 +662,12 @@ class TestDebateOrchestratorIntegration:
         )
         assert debate_result.strategy == DebateStrategy.DELIBERATION
 
+    @pytest.mark.asyncio
     @pytest.mark.slow
-    def test_orchestrator_debate_result_has_rounds(self, task_orch, mock_dispatch):
+    async def test_orchestrator_debate_result_has_rounds(self, task_orch, mock_dispatch):
         """Debate result from orchestrator should contain rounds."""
-        result = task_orch.process_message("debate sobre optimización de queries")
-        debate_result = task_orch.run_debate(
+        result = await task_orch.process_message("debate sobre optimización de queries")
+        debate_result = await task_orch.run_debate(
             session_id=result.session_id,
             task=result.original_message,
             agents=["builder", "scientist"],
@@ -674,9 +683,10 @@ class TestDebateOrchestratorIntegration:
                 f"Round {round_data.round_num} has no outputs or feedback"
             )
 
-    def test_orchestrator_target_agent_for_debate(self, task_orch):
+    @pytest.mark.asyncio
+    async def test_orchestrator_target_agent_for_debate(self, task_orch):
         """Debate plan should target coordinator (since level 0 is coordinator)."""
-        result = task_orch.process_message("debate sobre estrategia")
+        result = await task_orch.process_message("debate sobre estrategia")
         assert result.target_agent == "coordinator"
 
 
@@ -824,7 +834,7 @@ class TestDebateInternalMethods:
             "design API",
             {"phase": "critique", "answer_to_review": "proposal"},
         )
-        assert "Crítica" in result
+        assert "Critica" in result
 
     def test_default_dispatch_refinement_phase(self):
         """_default_dispatch con phase='refinement' incluye refinamiento."""

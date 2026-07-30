@@ -1,14 +1,14 @@
-"""
-Hermes Bridge — puente de integración con shared_memory.
+﻿"""
+Hermes Bridge â€” puente de integraciÃ³n con shared_memory.
 
 Permite que Swarmind use Hermes como backend de memoria alternativo,
 sincronizando conocimiento entre ambos sistemas.
 
 Arquitectura:
-  Swarmind Harness ←→ MemoryConfig ←→ shared_memory
-       ↕                           ↕
+  Swarmind Harness â†â†’ MemoryConfig â†â†’ shared_memory
+       â†•                           â†•
   LanceVectorStore          Hermes MemoryService
-       ↕
+       â†•
   AgentKpiTracker
 """
 
@@ -19,7 +19,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +30,11 @@ logger = logging.getLogger(__name__)
 
 class HermesBridge:
     """
-    Puente de integración con shared_memory.
+    Puente de integraciÃ³n con shared_memory.
 
     Proporciona:
-      - Detección automática de shared_memory
-      - Sincronización de conocimiento (bidireccional)
+      - DetecciÃ³n automÃ¡tica de shared_memory
+      - SincronizaciÃ³n de conocimiento (bidireccional)
       - Acceso a servicios de Hermes (MemoryService, QualityService)
       - Compatibilidad de schemas entre ambos sistemas
 
@@ -47,18 +47,18 @@ class HermesBridge:
 
     def __init__(
         self,
-        hermes_path: Optional[str] = None,
+        hermes_path: str | None = None,
         auto_import: bool = True,
     ) -> None:
         """
         Args:
             hermes_path: Ruta a shared_memory.
                          Si es None, busca en ubicaciones por defecto.
-            auto_import: Si True, intenta importar módulos de Hermes al iniciar.
+            auto_import: Si True, intenta importar mÃ³dulos de Hermes al iniciar.
         """
         self._hermes_path = self._resolve_hermes_path(hermes_path)
         self._available = False
-        self._hermes_modules: Dict[str, Any] = {}
+        self._hermes_modules: dict[str, Any] = {}
 
         if self._hermes_path and Path(self._hermes_path).exists():
             self._available = True
@@ -75,7 +75,7 @@ class HermesBridge:
             )
 
     @staticmethod
-    def _resolve_hermes_path(custom_path: Optional[str] = None) -> Optional[str]:
+    def _resolve_hermes_path(custom_path: str | None = None) -> str | None:
         """Resuelve la ruta a shared_memory."""
         if custom_path:
             return custom_path
@@ -95,7 +95,7 @@ class HermesBridge:
         return None
 
     def _try_import_hermes_modules(self) -> None:
-        """Intenta importar módulos de Hermes."""
+        """Intenta importar mÃ³dulos de Hermes."""
         if not self._hermes_path:
             return
 
@@ -123,15 +123,15 @@ class HermesBridge:
 
     @property
     def available(self) -> bool:
-        """Indica si shared_memory está disponible."""
+        """Indica si shared_memory estÃ¡ disponible."""
         return self._available
 
     @property
-    def path(self) -> Optional[str]:
+    def path(self) -> str | None:
         return self._hermes_path
 
     @property
-    def brain_path(self) -> Optional[str]:
+    def brain_path(self) -> str | None:
         """Ruta al cerebro de Hermes (LanceDB)."""
         if self._hermes_path:
             p = Path(self._hermes_path) / "99_Hermes_Brain"
@@ -141,14 +141,14 @@ class HermesBridge:
 
     @property
     def has_memory_service(self) -> bool:
-        """Indica si MemoryService de Hermes está disponible."""
+        """Indica si MemoryService de Hermes estÃ¡ disponible."""
         return "MemoryService" in self._hermes_modules
 
     # ------------------------------------------------------------------
     # Sync Operations
     # ------------------------------------------------------------------
 
-    def sync_to_hermes(self, records: List[Dict]) -> int:
+    def sync_to_hermes(self, records: list[dict]) -> int:
         """
         Sincroniza registros desde Swarmind hacia Hermes.
 
@@ -178,13 +178,13 @@ class HermesBridge:
                 with open(filepath, "w", encoding="utf-8") as f:
                     json.dump(record, f, indent=2, ensure_ascii=False)
                 count += 1
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning("Error syncing to Hermes: %s", e)
 
         logger.info("Synced %d records to Hermes (%s)", count, knowledge_dir)
         return count
 
-    def sync_from_hermes(self, pattern: str = "*.json") -> List[Dict]:
+    def sync_from_hermes(self, pattern: str = "*.json") -> list[dict]:
         """
         Sincroniza registros desde Hermes hacia Swarmind.
 
@@ -194,7 +194,7 @@ class HermesBridge:
             pattern: Glob pattern para filtrar archivos.
 
         Returns:
-            Lista de registros leídos.
+            Lista de registros leÃ­dos.
         """
         if not self._available or not self._hermes_path:
             return []
@@ -260,7 +260,7 @@ class HermesBridge:
         Obtiene una instancia de MemoryService de Hermes.
 
         Returns:
-            MemoryService instance o None si no está disponible.
+            MemoryService instance o None si no estÃ¡ disponible.
         """
         if not self.has_memory_service:
             logger.warning("Hermes MemoryService not available")
@@ -269,7 +269,7 @@ class HermesBridge:
         MemoryService = self._hermes_modules["MemoryService"]
         try:
             return MemoryService(base_path=self._hermes_path)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning("Error creating Hermes MemoryService: %s", e)
             return None
 
@@ -287,7 +287,7 @@ class HermesBridge:
         QualityService = self._hermes_modules["QualityService"]
         try:
             return QualityService(base_path=self._hermes_path)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning("Error creating Hermes QualityService: %s", e)
             return None
 
@@ -295,7 +295,7 @@ class HermesBridge:
     # Status
     # ------------------------------------------------------------------
 
-    def get_status(self) -> Dict:
+    def get_status(self) -> dict:
         """Obtiene estado del bridge."""
         return {
             "available": self._available,

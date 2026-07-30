@@ -1,13 +1,13 @@
-"""
-Phase 5: Commit Preparation — classify changes, suggest message, interactive commit.
+﻿"""
+Phase 5: Commit Preparation â€” classify changes, suggest message, interactive commit.
 """
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List
 
 from .config import (
     HARNESS_ROOT,
@@ -28,9 +28,9 @@ from .config import (
 )
 
 
-def _classify_changes() -> Dict[str, List[str]]:
+def _classify_changes() -> dict[str, list[str]]:
     """Classify git changes into conventional commit categories."""
-    categories: Dict[str, List[str]] = {
+    categories: dict[str, list[str]] = {
         "feat": [], "fix": [], "docs": [], "refactor": [],
         "security": [], "chore": [], "test": [], "style": [],
     }
@@ -45,7 +45,7 @@ def _classify_changes() -> Dict[str, List[str]]:
             categories["security"].append(rel)
         elif "refactor" in rel or "_v2" in rel:
             categories["refactor"].append(rel)
-        elif rel.startswith("harness/scripts/") or rel.startswith("harness/run"):
+        elif rel.startswith(("harness/scripts/", "harness/run")):
             categories["feat"].append(rel)
         elif rel.startswith("harness/orchestrator/"):
             categories["refactor"].append(rel)
@@ -57,14 +57,14 @@ def _classify_changes() -> Dict[str, List[str]]:
 
 
 def prepare_commit(
-    bugs: List[BugFinding],
-    security: List[SecurityFinding],
+    bugs: list[BugFinding],
+    security: list[SecurityFinding],
     token_report: TokenReport,
-    docs_staleness: List[DocsStaleness],
+    docs_staleness: list[DocsStaleness],
 ) -> str:
     """Phase 5: Prepare a suggested commit message."""
     categories = _classify_changes()
-    lines: List[str] = []
+    lines: list[str] = []
     sep = "\u2500" if _supports_unicode() else "-"
     lines.append("")
     lines.append(f"# {sep * 67}")
@@ -157,7 +157,7 @@ def _check_env_not_staged() -> bool:
     try:
         result = subprocess.run(
             ["git", "diff", "--cached", "--name-only"],
-            capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT),
+            capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT), check=False,
         )
         if result.returncode == 0:
             staged = [f.strip() for f in result.stdout.split("\n") if f.strip()]
@@ -166,7 +166,7 @@ def _check_env_not_staged() -> bool:
                 _safe_print(f"    {_err('[BLOCKED]')} .env en staging! Quita con: git reset HEAD .env")
                 return False
         return True
-    except Exception:
+    except Exception:  # noqa: BLE001
         return True
 
 
@@ -175,7 +175,7 @@ def _check_secrets_in_diff() -> bool:
     try:
         result = subprocess.run(
             ["git", "diff", "--cached"],
-            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT),
+            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT), check=False,
         )
         if result.returncode != 0:
             return True
@@ -198,7 +198,7 @@ def _check_secrets_in_diff() -> bool:
             _safe_print(f"    {_warn('[SUGGEST]')} Remueve los secretos antes de commitear.")
             return False
         return True
-    except Exception:
+    except Exception:  # noqa: BLE001
         return True
 
 
@@ -211,7 +211,7 @@ def _do_git_commit(commit_msg: str) -> bool:
 
         result = subprocess.run(
             ["git", "commit", "-F", str(msg_path)],
-            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT),
+            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT), check=False,
         )
         if msg_path.exists():
             msg_path.unlink()
@@ -222,7 +222,7 @@ def _do_git_commit(commit_msg: str) -> bool:
 
         push_result = subprocess.run(
             ["git", "push"],
-            capture_output=True, text=True, timeout=60, cwd=str(PROJECT_ROOT),
+            capture_output=True, text=True, timeout=60, cwd=str(PROJECT_ROOT), check=False,
         )
         if push_result.returncode != 0:
             _safe_print(f"    {_warn('[WARN]')} Push fallo: {push_result.stderr.strip()}")
@@ -230,13 +230,13 @@ def _do_git_commit(commit_msg: str) -> bool:
             return True
         _safe_print(f"    {_ok('[OK]')} Push exitoso")
         return True
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         _safe_print(f"    {_err('[ERROR]')} Error en commit/push: {exc}")
         return False
 
 
 def interactive_commit(commit_msg: str) -> None:
-    """Phase 5: Commit Seguro — interactive commit flow."""
+    """Phase 5: Commit Seguro â€” interactive commit flow."""
     _print_banner("FASE 5: Commit Seguro", "\U0001F4DD")
 
     if not _check_env_not_staged():
@@ -251,7 +251,7 @@ def interactive_commit(commit_msg: str) -> None:
 
     while True:
         try:
-            response = input(f"  {_bold('?')} {_cyan('¿Commit?')} [Y/n/--edit] ").strip().lower()
+            response = input(f"  {_bold('?')} {_cyan('Â¿Commit?')} [Y/n/--edit] ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             _safe_print(f"\n  {_warn('[SKIP]')} Commit cancelado.")
             return
@@ -272,14 +272,14 @@ def interactive_commit(commit_msg: str) -> None:
                 editor = os.environ.get("EDITOR", "")
                 if not editor:
                     editor = "notepad" if sys.platform == "win32" else "vim"
-                subprocess.run([editor, str(msg_path)], cwd=str(PROJECT_ROOT))
+                subprocess.run([editor, str(msg_path)], cwd=str(PROJECT_ROOT), check=False)
                 with open(msg_path, "r", encoding="utf-8") as f:
                     edited_msg = f.read()
                 if edited_msg.strip():
                     _do_git_commit(edited_msg)
                 else:
                     _safe_print(f"  {_warn('[SKIP]')} Mensaje vacio, commit cancelado.")
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 _safe_print(f"  {_err('[ERROR]')} Error al editar: {exc}")
             finally:
                 if msg_path.exists():

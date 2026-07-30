@@ -7,7 +7,6 @@ ahorro de tokens, quality floor, dispatch personalizado y multiples llamadas.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
 from unittest.mock import MagicMock
 
 import pytest
@@ -18,7 +17,6 @@ from harness.orchestrator.agent_capsules import (
     CapsuleResult,
     FusionStrategy,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -32,7 +30,7 @@ def capsule() -> AgentCapsule:
 
 
 @pytest.fixture
-def sample_calls() -> List[AgentCall]:
+def sample_calls() -> list[AgentCall]:
     """Lista de 3 llamadas de ejemplo para pruebas."""
     return [
         AgentCall(
@@ -95,7 +93,7 @@ class TestAgentCapsule:
     # -- test 2: compound strategy -----------------------------------------
 
     def test_compound_strategy(
-        self, capsule: AgentCapsule, sample_calls: List[AgentCall]
+        self, capsule: AgentCapsule, sample_calls: list[AgentCall]
     ) -> None:
         """
         Fusion COMPOUND ejecuta un solo dispatch y distribuye resultado.
@@ -125,7 +123,7 @@ class TestAgentCapsule:
     # -- test 3: two_phase strategy ----------------------------------------
 
     def test_two_phase_strategy(
-        self, capsule: AgentCapsule, sample_calls: List[AgentCall]
+        self, capsule: AgentCapsule, sample_calls: list[AgentCall]
     ) -> None:
         """
         Fusion TWO_PHASE ejecuta exploracion + detalle individual.
@@ -152,7 +150,7 @@ class TestAgentCapsule:
     # -- test 4: sequential strategy ---------------------------------------
 
     def test_sequential_strategy(
-        self, capsule: AgentCapsule, sample_calls: List[AgentCall]
+        self, capsule: AgentCapsule, sample_calls: list[AgentCall]
     ) -> None:
         """
         Fusion SEQUENTIAL ejecuta cada llamada individualmente.
@@ -178,7 +176,7 @@ class TestAgentCapsule:
     # -- test 5: tokens saved compound -------------------------------------
 
     def test_tokens_saved_compound(
-        self, capsule: AgentCapsule, sample_calls: List[AgentCall]
+        self, capsule: AgentCapsule, sample_calls: list[AgentCall]
     ) -> None:
         """
         Compound ahorra mas tokens que las otras estrategias.
@@ -271,7 +269,7 @@ class TestAgentCapsule:
             AgentCall(agent="a2", prompt="Tarea 2", priority=5, expected_tokens=100),
         ]
 
-        result = custom_capsule.execute(calls, strategy=FusionStrategy.COMPOUND)
+        custom_capsule.execute(calls, strategy=FusionStrategy.COMPOUND)
 
         # Solo una llamada al dispatch (compound fusion)
         assert mock_dispatch.call_count == 1
@@ -292,7 +290,7 @@ class TestAgentCapsule:
         - Se ahorran tokens.
         """
         n_calls = 10
-        calls: List[AgentCall] = [
+        calls: list[AgentCall] = [
             AgentCall(
                 agent=f"agent-{i}",
                 prompt=f"Tarea prioritaria numero {i} con detalle de ejemplo",
@@ -320,7 +318,7 @@ class TestAgentCapsule:
 
         Verifica que cada agente recibe resultado individual con contexto.
         """
-        calls: List[AgentCall] = [
+        calls: list[AgentCall] = [
             AgentCall(
                 agent=f"worker-{i}",
                 prompt=f"Procesa el lote {i}",
@@ -373,9 +371,9 @@ class TestAgentCapsule:
 
     def test_invalid_strategy(self, capsule: AgentCapsule) -> None:
         """
-        Strategy invalido lanza ValueError.
+        Strategy invalido lanza TypeError.
         """
-        with pytest.raises(ValueError, match="strategy debe ser miembro de FusionStrategy"):
+        with pytest.raises(TypeError, match="strategy debe ser miembro de FusionStrategy"):
             capsule.execute(
                 [AgentCall(agent="a", prompt="test")],
                 strategy="invalid_strategy",  # type: ignore[arg-type]
@@ -383,9 +381,9 @@ class TestAgentCapsule:
 
     def test_invalid_call_type(self, capsule: AgentCapsule) -> None:
         """
-        Elemento en calls que no es AgentCall lanza ValueError.
+        Elemento en calls que no es AgentCall lanza TypeError.
         """
-        with pytest.raises(ValueError, match="no es AgentCall"):
+        with pytest.raises(TypeError, match="no es AgentCall"):
             capsule.execute(
                 [{"agent": "a", "prompt": "test"}],  # type: ignore[list-item]
                 strategy=FusionStrategy.SEQUENTIAL,

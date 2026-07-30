@@ -19,8 +19,6 @@ Uso:
 
 from __future__ import annotations
 
-from typing import Dict, List
-
 # ---------------------------------------------------------------------------
 # Codificacion ultra-compacta de estandares (<100 chars cada uno)
 # ---------------------------------------------------------------------------
@@ -29,7 +27,7 @@ from typing import Dict, List
 
 # !DOC_ES_OBLIG! y !ERR_ACTION! van PRIMERO en cada entry.
 # Principios inyectados por rol (ver ADR-0001 para documentacion completa)
-STANDARDS_ENCODED: Dict[str, str] = {
+STANDARDS_ENCODED: dict[str, str] = {
     "builder": "!DOC_ES_OBLIG!+!ERR_ACTION!+!WFP!+!PBT!+!CEN!+!AGR!+!TH!+!HEX!+CleanCode+DRY+KISS+SSOT+<900LC+fn<60ln+YAGNI+Patrones+CompRoot+Copyright+Resiliencia+Hardening+ToastGlobal+Helpers+PathLib+DoD+tests>80+Seg+Rust+CP_Opt+AlgoEficiente+MemoriaO1+Complejidad+BigO+TDAD+TDFlow+PaCoRe+PROBE+AdverTest+FuzzAgent+PropBase+TokenEcon+CacheShape+FailSpend+StructCompact+obsMask+scopedCtx+parMax+HarnessEffect+ResearchFirst+Idempotencia",
     "scientist": "!DOC_ES_OBLIG!+!ERR_ACTION!+!WFP!+!PBT!+!CEN!+!BTR!+!TH!+!HEX!+MetodoCientifico+Fuentes+Analisis+Conclusiones+DocumentarES+DoD+PathLib+LecturaCritica+SQ3R+ComprensionProfunda+MapaMental+Resumir+Sintetizar+PaCoRe+LTS+Helium+Agentix+SwarmX+fn<60ln+obsMask+scopedCtx+parMax+HarnessEffect+TokenMaxing+38Metrics+AOSE+CDBench+ReproReas+ABCBench+ResearchFirst+Idempotencia",
     "guardian": "!DOC_ES_OBLIG!+!ERR_ACTION!+!WFP!+!PBT!+!AGR!+!BTR!+!TH!+!HEX!+Tests>80+OWASP+Hardening+CommitsConvencionales+SinVulns+DoD+Resiliencia+PathLib+PROBE+SpecOps+AdverTest+SMART+FuzzAgent+MuTON+TDADMut+CDBench+PBT+AdvLoop+MutScore85+fn<60ln+parMax+ResearchFirst+Idempotencia",
@@ -138,8 +136,8 @@ class ContextInjector:
         return len(reminder) // 4  # ~1 token cada 4 chars
 
     def batch_inject(
-        self, descriptions: List[str], agent_role: str = "builder"
-    ) -> List[str]:
+        self, descriptions: list[str], agent_role: str = "builder"
+    ) -> list[str]:
         """Inyecta estandares en multiples descripciones."""
         return [self.inject(d, agent_role) for d in descriptions]
 
@@ -149,7 +147,7 @@ class ContextInjector:
         return UNIVERSAL_FIRMA
 
     @staticmethod
-    def validate_docstrings(code: str, file_path: str = "<string>") -> List[str]:
+    def validate_docstrings(code: str, file_path: str = "<string>") -> list[str]:
         """Valida que todo codigo tenga docstring ES-UTF8 completo.
 
         Escanea el codigo con AST y reporta funciones/clases sin docstring
@@ -165,7 +163,7 @@ class ContextInjector:
             Vacia si todo cumple.
         """
         import ast
-        missing: List[str] = []
+        missing: list[str] = []
         try:
             tree = ast.parse(code)
             for node in ast.walk(tree):

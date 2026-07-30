@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 eval_agent — Evaluaciones de la capa Agent (completion, tool_usage).
 
@@ -10,7 +9,6 @@ from __future__ import annotations
 import logging
 import random
 from datetime import datetime, timezone
-from typing import Any, Dict, List
 
 from harness.evals.eval_factory import EvalResult
 
@@ -21,12 +19,12 @@ _SEED = 42
 _random = random.Random(_SEED)
 
 # Umbrales por defecto
-_DEFAULT_THRESHOLDS: Dict[str, Dict[str, float]] = {
+_DEFAULT_THRESHOLDS: dict[str, dict[str, float]] = {
     "agent": {"completion": 0.80, "tool_usage": 0.85},
 }
 
 
-def eval_agent_completion() -> List[EvalResult]:
+def eval_agent_completion() -> list[EvalResult]:
     """Mide la tasa de finalizacion exitosa de tareas del agente.
 
     Simula un conjunto de tareas de diversa complejidad (facil, media,
@@ -49,7 +47,7 @@ def eval_agent_completion() -> List[EvalResult]:
         "dificil": {"count": 10, "success_rate": 0.55},
     }
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
     global_completed = 0
     global_total = 0
 
@@ -85,11 +83,11 @@ def eval_agent_completion() -> List[EvalResult]:
                 complexity, rate * 100, completed, config["count"],
             )
 
-        except Exception as exc:
+        except Exception:
             logger.exception(
-                "[eval_agent] Error simulando completion para complejidad %s: %s. "
+                "[eval_agent] Error simulando completion para complejidad %s. "
                 "WHERE: eval_agent_completion() | WHAT: fallo en simulacion | WHY: excepcion.",
-                complexity, exc,
+                complexity,
             )
 
     # Resultado global
@@ -111,7 +109,7 @@ def eval_agent_completion() -> List[EvalResult]:
     return results
 
 
-def eval_agent_tool_usage() -> List[EvalResult]:
+def eval_agent_tool_usage() -> list[EvalResult]:
     """Mide la correccion en el uso de herramientas por parte del agente.
 
     Simula invocaciones a distintas herramientas (busqueda, calculo,
@@ -137,7 +135,7 @@ def eval_agent_tool_usage() -> List[EvalResult]:
     ]
     _N_INVOCATIONS_PER_TOOL = 25
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
     total_correct = 0
     total_invocations = 0
 
@@ -180,11 +178,11 @@ def eval_agent_tool_usage() -> List[EvalResult]:
                 correct_params, _N_INVOCATIONS_PER_TOOL,
             )
 
-        except Exception as exc:
+        except Exception:
             logger.exception(
-                "[eval_agent] Error simulando tool_usage para herramienta %s: %s. "
+                "[eval_agent] Error simulando tool_usage para herramienta %s. "
                 "WHERE: eval_agent_tool_usage() | WHAT: fallo en simulacion | WHY: excepcion.",
-                tool.get("name", "?"), exc,
+                tool.get("name", "?"),
             )
 
     # Resultado global

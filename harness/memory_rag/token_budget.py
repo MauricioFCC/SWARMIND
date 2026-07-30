@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 import threading
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ POOL_CONVERSATION = "conversation"  # Chat history
 ALL_POOLS = [POOL_SYSTEM, POOL_USER, POOL_RAG, POOL_SKILL, POOL_TOOL_OUTPUT, POOL_CONVERSATION]
 
 # Default budget allocation per pool (as fraction of total budget)
-DEFAULT_POOL_ALLOCATION: Dict[str, float] = {
+DEFAULT_POOL_ALLOCATION: dict[str, float] = {
     POOL_SYSTEM: 0.15,
     POOL_USER: 0.05,
     POOL_RAG: 0.30,
@@ -109,7 +109,7 @@ class TokenPool:
         self.used = 0
         self.reserved = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
             "allocated": self.allocated,
@@ -135,13 +135,13 @@ class TokenBudget:
     agent_id: str
     total_budget: int = DEFAULT_AGENT_BUDGET
     priority: int = PRIORITY_NORMAL
-    pool_allocation: Dict[str, float] = field(default_factory=lambda: dict(DEFAULT_POOL_ALLOCATION))
+    pool_allocation: dict[str, float] = field(default_factory=lambda: dict(DEFAULT_POOL_ALLOCATION))
     confidence: float = 0.0
     min_reserve: int = MIN_RESERVE_TOKENS
-    pools: Dict[str, TokenPool] = field(default_factory=dict)
-    parent_session: Optional[str] = None
+    pools: dict[str, TokenPool] = field(default_factory=dict)
+    parent_session: str | None = None
     _lock: threading.Lock = field(default_factory=threading.Lock)
-    _agent_failures: Dict[str, int] = field(default_factory=dict)
+    _agent_failures: dict[str, int] = field(default_factory=dict)
     max_failures: int = 3
     disabled: bool = False
 
@@ -197,9 +197,7 @@ class TokenBudget:
             return False
         if self.confidence >= CONFIDENCE_HIGH:
             return False
-        if self.total_remaining <= self.min_reserve:
-            return False
-        return True
+        return not self.total_remaining <= self.min_reserve
 
     def set_confidence(self, confidence: float) -> None:
         """Set agent confidence level. Affects spending eligibility."""
@@ -284,7 +282,7 @@ class TokenBudget:
             if pool:
                 pool.release(tokens)
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         """Return budget snapshot for monitoring/reporting."""
         with self._lock:
             return {
@@ -364,7 +362,7 @@ class BudgetManager:
         self._session_budget = session_budget
         self._default_agent_budget = default_agent_budget
         self._min_reserve = min_reserve
-        self._agent_budgets: Dict[str, TokenBudget] = {}
+        self._agent_budgets: dict[str, TokenBudget] = {}
         self._lock = threading.Lock()
 
         logger.info(
@@ -375,9 +373,9 @@ class BudgetManager:
     def register_agent(
         self,
         agent_id: str,
-        budget: Optional[int] = None,
+        budget: int | None = None,
         priority: int = PRIORITY_NORMAL,
-        session_id: Optional[str] = None,
+        session_id: str | None = None,
     ) -> TokenBudget:
         """Register an agent with its token budget."""
         with self._lock:
@@ -399,14 +397,14 @@ class BudgetManager:
             )
             return agent_budget
 
-    def get_budget(self, agent_id: str) -> Optional[TokenBudget]:
+    def get_budget(self, agent_id: str) -> TokenBudget | None:
         """Get an agent's budget."""
         return self._agent_budgets.get(agent_id)
 
     def get_or_create(
         self,
         agent_id: str,
-        budget: Optional[int] = None,
+        budget: int | None = None,
         priority: int = PRIORITY_NORMAL,
     ) -> TokenBudget:
         """Get existing budget or create one."""
@@ -415,7 +413,7 @@ class BudgetManager:
             return existing
         return self.register_agent(agent_id, budget, priority)
 
-    def redistribute_idle(self) -> Dict[str, int]:
+    def redistribute_idle(self) -> dict[str, int]:
         """
         Redistribute unused budget from idle/completed agents to active ones.
         Idle = confidence >= HIGH or can_spend == False.
@@ -423,8 +421,8 @@ class BudgetManager:
         """
         with self._lock:
             # Find donors (idle agents with remaining budget)
-            donors: List[Tuple[str, int, int]] = []  # (agent_id, remaining, priority)
-            recipients: List[Tuple[str, TokenBudget, int]] = []  # (agent_id, budget, priority)
+            donors: list[tuple[str, int, int]] = []  # (agent_id, remaining, priority)
+            recipients: list[tuple[str, TokenBudget, int]] = []  # (agent_id, budget, priority)
 
             for agent_id, budget in self._agent_budgets.items():
                 if not budget.can_spend and budget.total_remaining > self._min_reserve:
@@ -440,7 +438,7 @@ class BudgetManager:
             # Sort recipients by priority descending (give to most important)
             recipients.sort(key=lambda x: x[2], reverse=True)
 
-            total_redistributed: Dict[str, int] = {}
+            total_redistributed: dict[str, int] = {}
             for donor_id, donor_remaining, _ in donors:
                 if donor_remaining <= 0:
                     continue
@@ -464,7 +462,7 @@ class BudgetManager:
 
             return total_redistributed
 
-    def session_snapshot(self, session_id: str) -> Dict[str, Any]:
+    def session_snapshot(self, session_id: str) -> dict[str, Any]:
         """Get budget snapshot for all agents in a session."""
         agents = {}
         for agent_id, budget in self._agent_budgets.items():
@@ -494,7 +492,7 @@ class BudgetManager:
                 del self._agent_budgets[aid]
             return len(to_remove)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get global budget manager statistics."""
         return {
             "session_budget": self._session_budget,

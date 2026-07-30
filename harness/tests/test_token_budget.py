@@ -10,10 +10,6 @@ Cubre:
 
 from __future__ import annotations
 
-from typing import Any, Dict
-
-import pytest
-
 from harness.memory_rag.token_budget import (
     CONFIDENCE_HIGH,
     CONFIDENCE_MEDIUM,
@@ -32,7 +28,6 @@ from harness.memory_rag.token_budget import (
     TokenBudget,
     TokenPool,
 )
-
 
 # ===========================================================================
 # Tests: TokenPool
@@ -342,7 +337,7 @@ class TestTokenBudgetSpending:
     def test_release_devuelve_tokens(self):
         """release devuelve tokens reservados al pool."""
         budget = TokenBudget(agent_id="test", total_budget=10000)
-        granted = budget.request(POOL_RAG, 500)
+        budget.request(POOL_RAG, 500)
         before_reserved = budget.pools[POOL_RAG].reserved
         budget.release(POOL_RAG, 200)
         assert budget.pools[POOL_RAG].reserved < before_reserved

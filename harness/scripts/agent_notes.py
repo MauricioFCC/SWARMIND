@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Agent Notes — Structured note-taking tool (Anthropic-style Swarmind memory).
+Agent Notes â€” Structured note-taking tool (Anthropic-style Swarmind memory).
 
 Los agentes pueden escribir notas estructuradas que persisten entre sesiones.
 Implementa el patron NOTES.md de Anthropic: el agente escribe notas regularmente
@@ -23,12 +23,12 @@ import sys
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 import numpy as np
 
 sys.path.insert(1, str(Path(__file__).resolve().parent.parent.parent))
-from harness.common import fallback_embedding\nfrom harness.memory_rag.lance_vector_store import LanceVectorStore
+from harness.common import fallback_embedding
+from harness.memory_rag.lance_vector_store import LanceVectorStore
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ def cmd_write(args: argparse.Namespace) -> None:
         "updated_at": now,
     }
     
-    vec = fallback_embedding("%s %s %s" % (args.title, args.category, args.content))
+    vec = fallback_embedding(f"{args.title} {args.category} {args.content}")
     store.insert(NOTES_COLLECTION, vec.reshape(1, -1), [metadata])
     logger.info("Note saved: [%s] %s", args.category, args.title)
 
@@ -77,7 +77,7 @@ def cmd_list(args: argparse.Namespace) -> None:
     try:
         dummy = np.zeros(EMBEDDING_DIM, dtype=np.float32)
         results = store.search(NOTES_COLLECTION, dummy, top_k=100)
-    except Exception:
+    except Exception:  # noqa: BLE001
         logger.info("No notes found.")
         return
     
@@ -87,24 +87,24 @@ def cmd_list(args: argparse.Namespace) -> None:
     
     # Group by category
     from collections import defaultdict
-    groups: Dict[str, list] = defaultdict(list)
+    groups: dict[str, list] = defaultdict(list)
     
     for r in results:
         meta = r.get("metadata", {})
         if isinstance(meta, str):
             try:
                 meta = json.loads(meta)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 meta = {}
         cat = meta.get("category", "general")
         groups[cat].append(meta)
     
     for cat, notes in sorted(groups.items()):
-        print("\n[%s]" % cat)
+        print(f"\n[{cat}]")
         for n in notes:
             title = n.get("title", "?")
             created = n.get("created_at", "?")[:10]
-            print("  %s (%s)" % (title, created))
+            print(f"  {title} ({created})")
 
 
 def cmd_search(args: argparse.Namespace) -> None:
@@ -114,7 +114,7 @@ def cmd_search(args: argparse.Namespace) -> None:
     query_vec = fallback_embedding(args.query)
     try:
         results = store.search(NOTES_COLLECTION, query_vec, top_k=args.limit)
-    except Exception:
+    except Exception:  # noqa: BLE001
         logger.info("No results.")
         return
     
@@ -122,19 +122,19 @@ def cmd_search(args: argparse.Namespace) -> None:
         logger.info("No results for '%s'.", args.query)
         return
     
-    print("Results for '%s':" % args.query)
+    print(f"Results for '{args.query}':")
     for r in results:
         meta = r.get("metadata", {})
         if isinstance(meta, str):
             try:
                 meta = json.loads(meta)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 meta = {}
         score = r.get("score", 0)
         title = meta.get("title", "?")
         content = (meta.get("content", "") or "")[:120]
-        print("\n  [%.2f] %s" % (score, title))
-        print("  %s" % content)
+        print(f"\n  [{score:.2f}] {title}")
+        print(f"  {content}")
 
 
 def cmd_recent(args: argparse.Namespace) -> None:
@@ -144,7 +144,7 @@ def cmd_recent(args: argparse.Namespace) -> None:
     try:
         dummy = np.zeros(EMBEDDING_DIM, dtype=np.float32)
         results = store.search(NOTES_COLLECTION, dummy, top_k=args.limit)
-    except Exception:
+    except Exception:  # noqa: BLE001
         logger.info("No notes.")
         return
     
@@ -153,12 +153,12 @@ def cmd_recent(args: argparse.Namespace) -> None:
         if isinstance(meta, str):
             try:
                 meta = json.loads(meta)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 meta = {}
         title = meta.get("title", "?")
         cat = meta.get("category", "?")
         created = meta.get("created_at", "?")[:16]
-        print("  [%s] %s - %s" % (created, cat, title))
+        print(f"  [{created}] {cat} - {title}")
 
 
 def cmd_export(args: argparse.Namespace) -> None:
@@ -168,42 +168,42 @@ def cmd_export(args: argparse.Namespace) -> None:
     try:
         dummy = np.zeros(EMBEDDING_DIM, dtype=np.float32)
         results = store.search(NOTES_COLLECTION, dummy, top_k=500)
-    except Exception:
+    except Exception:  # noqa: BLE001
         print("# Agent Notes\n\nNo notes found.")
         return
     
     print("# Agent Notes\n")
-    print("*Exported %s*\n" % datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+    print("*Exported {}*\n".format(datetime.now(timezone.utc).strftime("%Y-%m-%d")))
     
     from collections import defaultdict
-    groups: Dict[str, list] = defaultdict(list)
+    groups: dict[str, list] = defaultdict(list)
     for r in results:
         meta = r.get("metadata", {})
         if isinstance(meta, str):
             try:
                 meta = json.loads(meta)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 meta = {}
         groups[meta.get("category", "general")].append(meta)
     
     for cat, notes in sorted(groups.items()):
-        print("## %s\n" % cat)
+        print(f"## {cat}\n")
         for n in notes:
             title = n.get("title", "?")
             content = n.get("content", "")
             tags = n.get("tags", [])
             created = n.get("created_at", "?")[:10]
-            print("### %s" % title)
-            print("*%s*" % created)
+            print(f"### {title}")
+            print(f"*{created}*")
             if tags:
-                print("*Tags: %s*" % ", ".join(tags))
+                print("*Tags: {}*".format(", ".join(tags)))
             print()
             print(content)
             print()
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Agent Notes — structured note-taking")
+    parser = argparse.ArgumentParser(description="Agent Notes â€” structured note-taking")
     sub = parser.add_subparsers(dest="command", help="Command")
     
     p_write = sub.add_parser("write", help="Write a note")

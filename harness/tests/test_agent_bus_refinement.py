@@ -12,10 +12,9 @@ from __future__ import annotations
 import pytest
 
 from harness.orchestrator.agent_bus import (
+    _VALID_MESSAGE_TYPES,
     AgentBus,
     AsyncAgentBus,
-    InvalidMessageError,
-    _VALID_MESSAGE_TYPES,
 )
 
 
@@ -173,5 +172,5 @@ class TestAsyncAgentBusRefinement:
     async def test_consume_timeout_valid(self) -> None:
         """AsyncAgentBus.consume con timeout valido debe funcionar (timeout si no hay mensajes)."""
         bus = AsyncAgentBus()
-        with pytest.raises(Exception):  # TimeoutError o similares
+        with pytest.raises(Exception):  # noqa: B017  # TimeoutError o similares
             await bus.consume(channel="#ch", timeout=0.01)

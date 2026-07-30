@@ -11,8 +11,9 @@ Incluye:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Constantes
@@ -22,15 +23,15 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 DEFAULT_CONFIDENCE_THRESHOLD = 0.35
 
 # Palabras vacias (stopwords) ignoradas durante el scoring
-_STOPWORDS: Set[str] = {
+_STOPWORDS: set[str] = {
     "el", "la", "los", "las", "un", "una", "unos", "unas", "de", "del",
     "en", "por", "para", "con", "sin", "y", "e", "o", "u", "a", "ante",
     "bajo", "cabe", "contra", "desde", "durante", "entre", "hacia",
-    "hasta", "mediante", "para", "según", "so", "sobre", "tras",
+    "hasta", "mediante", "según", "so", "sobre", "tras",
     "que", "es", "se", "su", "lo", "le", "ya", "este", "esta",
     "como", "más", "pero", "sus", "ha", "han", "puede", "todo",
     "también", "fue", "era", "son", "ser", "haber", "tener",
-    "the", "a", "an", "and", "or", "in", "on", "at", "to", "for",
+    "the", "an", "and", "or", "in", "on", "at", "to", "for",
     "of", "with", "by", "from", "is", "it", "as", "be", "are",
     "was", "were", "been", "being", "have", "has", "had", "do",
     "does", "did", "will", "would", "could", "should", "may",
@@ -38,13 +39,13 @@ _STOPWORDS: Set[str] = {
 }
 
 # Conectores para detectar encadenamiento de herramientas
-_CHAIN_CONNECTORS: List[str] = [
+_CHAIN_CONNECTORS: list[str] = [
     " y ", " e ", " luego ", " después ", " además ", " también ",
     " and ", " then ", " plus ", " also ",
 ]
 
 # Patrones de extraccion de parametros comunes
-_PARAM_PATTERNS: Dict[str, List[str]] = {
+_PARAM_PATTERNS: dict[str, list[str]] = {
     "query": [
         r"(?:sobre|acerca\s+de|acerca\s+del|de[l]?\s+)(.+?)(?:$|\.|\,|\sy\s)",
         r"(?:buscar|encuentra|localiza)\s+(.+?)(?:$|\.|\,|\smax|\sen\s)",
@@ -102,9 +103,9 @@ class NLTool:
 
     name: str
     description: str
-    parameters: Dict[str, str] = field(default_factory=dict)
-    examples: List[str] = field(default_factory=list)
-    handler: Optional[Callable[..., Any]] = None
+    parameters: dict[str, str] = field(default_factory=dict)
+    examples: list[str] = field(default_factory=list)
+    handler: Callable[..., Any] | None = None
 
 
 @dataclass
@@ -122,7 +123,7 @@ class NLTResult:
 
     tool: str
     natural_input: str
-    structured_output: Dict[str, Any]
+    structured_output: dict[str, Any]
     confidence: float = 1.0
-    alternatives: List[Tuple[str, float]] = field(default_factory=list)
-    chain: List[NLTResult] = field(default_factory=list)
+    alternatives: list[tuple[str, float]] = field(default_factory=list)
+    chain: list[NLTResult] = field(default_factory=list)

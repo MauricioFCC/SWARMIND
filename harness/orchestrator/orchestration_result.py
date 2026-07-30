@@ -20,7 +20,7 @@ Uso:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any
 
 from harness.orchestrator.task_planner import TaskPlan
 
@@ -40,18 +40,18 @@ class OrchestratorResult:
     session_id: str
     target_agent: str           # Primary agent for this dispatch
     plan: TaskPlan
-    current_level: List[Dict]    # Subtasks ready for execution
-    previous_results: List[Dict] # Completed subtask results
+    current_level: list[dict]    # Subtasks ready for execution
+    previous_results: list[dict] # Completed subtask results
     session_status: str          # Human-readable status
-    communication_log: List[Dict] # Recent agent communications
+    communication_log: list[dict] # Recent agent communications
     original_message: str
     is_new_plan: bool            # Whether a new plan was created
     is_complete: bool            # Whether the entire plan is done
     is_debate: bool = False      # Whether this task uses debate strategy
-    debate_agents: List[str] = field(default_factory=list)  # Agents in the debate
+    debate_agents: list[str] = field(default_factory=list)  # Agents in the debate
     debate_strategy: str = ""    # The debate strategy to use
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "session_id": self.session_id,
             "target_agent": self.target_agent,

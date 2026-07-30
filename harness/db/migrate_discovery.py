@@ -1,9 +1,9 @@
-"""
-DB Migration Discovery — Descubrimiento recursivo de colecciones y schemas.
+﻿"""
+DB Migration Discovery â€” Descubrimiento recursivo de colecciones y schemas.
 
-Extraído de migrate_db.py para separar concerns.
+ExtraÃ­do de migrate_db.py para separar concerns.
 
-Patrón RECURSIVO:
+PatrÃ³n RECURSIVO:
   - discover_collections_recursive(): descubre colecciones LanceDB recursivamente
   - detect_format(): compara schemas entre versiones
   - probe_db(): inspecciona una base de datos
@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def discover_collections_recursive(db_path: str) -> List[str]:
+def discover_collections_recursive(db_path: str) -> list[str]:
     """
     Descubre colecciones LanceDB recursivamente.
 
@@ -39,7 +39,7 @@ def discover_collections_recursive(db_path: str) -> List[str]:
     try:
         db = lancedb.connect(db_path)
         return list(db.list_tables().tables)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return []
 
 
@@ -59,8 +59,8 @@ def _try_import_lancedb():
 
 def detect_format(
     db_path: str,
-    current_collections: Dict[str, Any],
-) -> Dict[str, Any]:
+    current_collections: dict[str, Any],
+) -> dict[str, Any]:
     """
     Inspecciona una base LanceDB y la compara con las colecciones actuales.
 
@@ -71,7 +71,7 @@ def detect_format(
     Returns:
         Dict con status, collections, differences
     """
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "status": "compatible",
         "collections": [],
         "differences": [],
@@ -87,7 +87,7 @@ def detect_format(
 
     try:
         db = lancedb.connect(db_path)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         return {
             "status": "unknown",
             "collections": [],
@@ -113,7 +113,7 @@ def detect_format(
         try:
             tbl = db.open_table(name)
             _ = tbl.head(1).to_pylist()
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             result["differences"].append(
                 f"'{name}': error al leer datos: {exc}"
             )
@@ -134,7 +134,7 @@ def detect_format(
 # ---------------------------------------------------------------------------
 
 
-def probe_db(path: str) -> Optional[Dict[str, Any]]:
+def probe_db(path: str) -> dict[str, Any] | None:
     """
     Intenta abrir path como base LanceDB.
     Si tiene tablas, devuelve metadatos; si no, None.
@@ -157,7 +157,7 @@ def probe_db(path: str) -> Optional[Dict[str, Any]]:
             "estimated_size": size,
             "estimated_size_human": _human_size(size),
         }
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None
 
 

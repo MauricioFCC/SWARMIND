@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests para AdaptivePlanner — meta-agente que ajusta topología del plan
 basado en feedback de ejecuciones anteriores e integración PSMAS.
@@ -10,9 +9,8 @@ persistencia y edge cases.
 from __future__ import annotations
 
 import json
-import logging
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
+from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -20,13 +18,11 @@ from harness.orchestrator.adaptive_planner import (
     ALWAYS_ACTIVE_AGENTS,
     REPLAN_FAILURE_RATE,
     AdaptivePlanner,
-    AdaptationTrigger,
+    PhasePlan,
     PlanFeedback,
     PlanStrategy,
-    PhasePlan,
     StrategyStats,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -224,7 +220,7 @@ class TestChooseStrategy:
 
     def test_choose_with_agents_phase_scheduling(self, planner):
         """Con 3+ agentes debe activar phase scheduling."""
-        result = planner.choose_strategy(
+        planner.choose_strategy(
             "investigar", agents=["builder", "scientist", "guardian"],
         )
         assert planner._phase_plan.agent_phases != {}
@@ -455,7 +451,7 @@ class TestReplan:
             success_count=1, failure_count=4,
             total_duration_ms=100.0, success_rate=0.2,
         )
-        must, reason = planner.should_replan(fb_actual)
+        must, _reason = planner.should_replan(fb_actual)
         assert must
 
     def test_should_replan_min_subtasks_check(self, planner):

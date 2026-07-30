@@ -1,4 +1,4 @@
-"""GuardrailEngine — Sistema de Guardrails Multi-Capa para Swarmind.
+﻿"""GuardrailEngine â€” Sistema de Guardrails Multi-Capa para Swarmind.
 
 Implementa 5 capas de proteccion inspiradas en el AI Factory Stack:
 
@@ -9,9 +9,9 @@ Implementa 5 capas de proteccion inspiradas en el AI Factory Stack:
 5. **Policy Guardrails**: Enforce politicas de negocio (reusa GovernanceGuard).
 
 Tipos y utilidades extraidos a:
-    guardrail_types.py   — Enums, GuardrailResult, GuardrailRule
-    guardrail_tool.py    — check_tool, check_policy, _check_governance
-    guardrail_content.py — check_content
+    guardrail_types.py   â€” Enums, GuardrailResult, GuardrailRule
+    guardrail_tool.py    â€” check_tool, check_policy, _check_governance
+    guardrail_content.py â€” check_content
 """
 
 from __future__ import annotations
@@ -19,16 +19,24 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from harness.guardrails.builtin_rules import (
     anti_code_injection,
     anti_pii_leak,
     anti_prompt_injection,
-    max_length as _max_length_fn,
-    tool_allowlist as _tool_allowlist_fn,
     toxicity,
 )
+from harness.guardrails.builtin_rules import (
+    max_length as _max_length_fn,
+)
+from harness.guardrails.builtin_rules import (
+    tool_allowlist as _tool_allowlist_fn,
+)
+from harness.guardrails.guardrail_content import check_content
+
+# Importar funciones extraidas de tool/content
+from harness.guardrails.guardrail_tool import check_policy, check_tool
 from harness.guardrails.guardrail_types import (
     GuardrailLayer,
     GuardrailResult,
@@ -36,11 +44,6 @@ from harness.guardrails.guardrail_types import (
     GuardrailSeverity,
     GuardrailVerdict,
 )
-
-# Importar funciones extraidas de tool/content
-from harness.guardrails.guardrail_tool import check_policy, check_tool
-from harness.guardrails.guardrail_content import check_content
-
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +71,9 @@ class GuardrailEngine:
 
     def __init__(
         self,
-        tool_guardian: Optional[Any] = None,
-        governance_guard: Optional[Any] = None,
-        allowed_tools: Optional[Set[str]] = None,
+        tool_guardian: Any | None = None,
+        governance_guard: Any | None = None,
+        allowed_tools: set[str] | None = None,
         max_output_tokens: int = 4096,
     ) -> None:
         """Inicializa el motor de guardrails con reglas por defecto.
@@ -90,22 +93,22 @@ class GuardrailEngine:
         self._lock: threading.Lock = threading.Lock()
 
         # Guardianes externos con lazy loading
-        from harness.orchestrator.tool_guardian import ToolGuardian as _TG
         from harness.orchestrator.governance_guard import GovernanceGuard as _GG
+        from harness.orchestrator.tool_guardian import ToolGuardian as _TG
         self._tool_guardian: _TG = tool_guardian or _TG()
         self._governance_guard: _GG = governance_guard or _GG()
 
         # Configuracion
-        self._allowed_tools: Set[str] = allowed_tools or set()
+        self._allowed_tools: set[str] = allowed_tools or set()
         self._max_output_tokens: int = max_output_tokens
 
         # Reglas activas
-        self._rules: Dict[GuardrailLayer, List[GuardrailRule]] = {
+        self._rules: dict[GuardrailLayer, list[GuardrailRule]] = {
             layer: [] for layer in GuardrailLayer
         }
 
         # Estadisticas
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "total_checks": 0,
             "blocked": 0,
             "flagged": 0,
@@ -245,7 +248,7 @@ class GuardrailEngine:
         self._rules[rule.layer].append(rule)
 
     # ------------------------------------------------------------------
-    # API publica — Gestion de reglas
+    # API publica â€” Gestion de reglas
     # ------------------------------------------------------------------
 
     def add_rule(self, rule: GuardrailRule) -> None:
@@ -297,7 +300,7 @@ class GuardrailEngine:
                 )
             return removed
 
-    def get_rules(self, layer: Optional[GuardrailLayer] = None) -> List[GuardrailRule]:
+    def get_rules(self, layer: GuardrailLayer | None = None) -> list[GuardrailRule]:
         """Obtiene las reglas de una capa especifica o todas.
 
         Args:
@@ -308,13 +311,13 @@ class GuardrailEngine:
         """
         if layer is not None:
             return list(self._rules.get(layer, []))
-        all_rules: List[GuardrailRule] = []
+        all_rules: list[GuardrailRule] = []
         for rules in self._rules.values():
             all_rules.extend(rules)
         return all_rules
 
     # ------------------------------------------------------------------
-    # API publica — Checks principales
+    # API publica â€” Checks principales
     # ------------------------------------------------------------------
 
     def check_input(self, text: str) -> GuardrailResult:
@@ -383,7 +386,7 @@ class GuardrailEngine:
     def check_tool(
         self,
         tool_name: str,
-        args: Optional[Dict[str, Any]] = None,
+        args: dict[str, Any] | None = None,
     ) -> GuardrailResult:
         """Valida una llamada a herramienta contra Tool Guardrails (Capa 4).
 
@@ -436,14 +439,14 @@ class GuardrailEngine:
         Returns:
             GuardrailResult acumulado de todas las reglas de la capa.
         """
-        violations: List[str] = []
+        violations: list[str] = []
         max_severity: int = 0
         has_block: bool = False
         has_rewrite: bool = False
         has_flag: bool = False
-        rule_hits: List[str] = []
+        rule_hits: list[str] = []
 
-        rules: List[GuardrailRule] = self._rules.get(layer, [])
+        rules: list[GuardrailRule] = self._rules.get(layer, [])
         for rule in rules:
             if not rule.enabled:
                 continue
@@ -452,7 +455,7 @@ class GuardrailEngine:
                 violated: bool
                 reason: str
                 violated, reason = rule.check_fn(text)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.error(
                     "[GuardrailEngine] Error en regla '%s' (capa %s): "
                     "WHAT=excepcion en check_fn, "
@@ -478,12 +481,11 @@ class GuardrailEngine:
                 elif rule.action == GuardrailVerdict.FLAG:
                     has_flag = True
 
-                sev_map: Dict[str, int] = {
+                sev_map: dict[str, int] = {
                     "critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0,
                 }
                 sev_val: int = sev_map.get(rule.severity.value, 0)
-                if sev_val > max_severity:
-                    max_severity = sev_val
+                max_severity = max(max_severity, sev_val)
 
         # Determinar veredicto final
         verdict: GuardrailVerdict
@@ -515,7 +517,7 @@ class GuardrailEngine:
             },
         )
 
-    def _check_governance(self, text: str) -> Tuple[bool, str]:
+    def _check_governance(self, text: str) -> tuple[bool, str]:
         """Wrapper que evalua GovernanceGuard contra el texto.
 
         Delega en ``guardrail_tool._check_governance``.
@@ -552,7 +554,7 @@ class GuardrailEngine:
             self._stats["total_checks"] += 1
             self._stats["last_checked"] = time.time()
 
-            layer_stats: Dict[str, Any] = self._stats["by_layer"][layer.value]
+            layer_stats: dict[str, Any] = self._stats["by_layer"][layer.value]
             layer_stats["checks"] += 1
 
             if result.verdict == GuardrailVerdict.BLOCK:
@@ -571,7 +573,7 @@ class GuardrailEngine:
                 (elapsed_ms - prev_avg) / min(total, 100)
             )
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Obtiene estadisticas de uso del motor de guardrails.
 
         Retorna un diccionario con:
@@ -639,8 +641,8 @@ class GuardrailEngine:
         Returns:
             String multilinea con el resumen.
         """
-        stats: Dict[str, Any] = self.get_stats()
-        lines: List[str] = [
+        stats: dict[str, Any] = self.get_stats()
+        lines: list[str] = [
             "+----------------------------------------------------+",
             "|      GuardrailEngine - Resumen                      |",
             "+----------------------------------------------------+",
@@ -653,7 +655,7 @@ class GuardrailEngine:
             "  -- Reglas por capa --",
         ]
         for layer in GuardrailLayer:
-            rules: List[GuardrailRule] = self._rules[layer]
+            rules: list[GuardrailRule] = self._rules[layer]
             enabled: int = sum(1 for r in rules if r.enabled)
             lines.append(
                 f"    {layer.value:10s}: {len(rules)} reglas "

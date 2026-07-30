@@ -1,7 +1,4 @@
-"""
-
-EMBEDDING_DIM = 384
-Unified scheduler — BaseScheduler ABC + JobStore mixin + concrete implementations.
+﻿"""Unified scheduler â€” BaseScheduler ABC + JobStore mixin + concrete implementations.
 
 Provides:
   - :class:`BaseScheduler`: Abstract base with add_job, remove_job, list_jobs, get_job, stop
@@ -24,7 +21,9 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar
+
+EMBEDDING_DIM = 384
 
 logger = logging.getLogger(__name__)
 
@@ -90,14 +89,14 @@ class ScheduledJob:
         if not self.created_at:
             self.created_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary, omitting empty fields for cleaner output."""
         d = asdict(self)
         # Keep name + enabled even if empty-ish; drop empty strings otherwise
         return {k: v for k, v in d.items() if k in ("name", "enabled") or v not in ("", [], {}, 0, None)}  # type: ignore[comparison-overlap]
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ScheduledJob":
+    def from_dict(cls, data: dict[str, Any]) -> ScheduledJob:
         """Create from dictionary, filling defaults for missing keys."""
         return cls(
             name=data.get("name", ""),
@@ -116,7 +115,7 @@ class ScheduledJob:
 
 
 # ---------------------------------------------------------------------------
-# BaseScheduler — abstract interface
+# BaseScheduler â€” abstract interface
 # ---------------------------------------------------------------------------
 
 
@@ -137,11 +136,11 @@ class BaseScheduler(ABC):
         """Remove a job by name.  Returns ``True`` if the job was removed."""
 
     @abstractmethod
-    def list_jobs(self) -> List[ScheduledJob]:
+    def list_jobs(self) -> list[ScheduledJob]:
         """Return all registered jobs."""
 
     @abstractmethod
-    def get_job(self, name: str) -> Optional[ScheduledJob]:
+    def get_job(self, name: str) -> ScheduledJob | None:
         """Return a specific job by name, or ``None``."""
 
     @abstractmethod
@@ -150,7 +149,7 @@ class BaseScheduler(ABC):
 
 
 # ---------------------------------------------------------------------------
-# JobStore mixin — persistence helpers
+# JobStore mixin â€” persistence helpers
 # ---------------------------------------------------------------------------
 
 
@@ -167,8 +166,8 @@ class JobStore:
       - ``_serialize_jobs()``, ``_deserialize_jobs()`` (overridable)
     """
 
-    _jobs_path: str = ""
-    _jobs: Dict[str, ScheduledJob] = {}
+    _jobs_path: ClassVar[str] = ""
+    _jobs: ClassVar[dict[str, ScheduledJob]] = {}
 
     # ------------------------------------------------------------------
     # Public persistence API
@@ -185,7 +184,7 @@ class JobStore:
                 data = self._default_empty_data()
             self._deserialize_jobs(data)
             logger.debug("Loaded %d jobs from %s", len(self._jobs), self._jobs_path)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to load jobs from %s: %s", self._jobs_path, exc)
 
     def _save_jobs(self) -> None:
@@ -194,7 +193,7 @@ class JobStore:
             self._ensure_jobs_file()
             data = self._serialize_jobs()
             self._write_file(data)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to save jobs to %s: %s", self._jobs_path, exc)
 
     def _ensure_jobs_file(self) -> None:
@@ -241,7 +240,7 @@ class JobStore:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
     # ------------------------------------------------------------------
-    # Serialization hooks — override in concrete implementations
+    # Serialization hooks â€” override in concrete implementations
     # ------------------------------------------------------------------
 
     def _serialize_jobs(self) -> Any:
@@ -271,7 +270,7 @@ class JobStore:
 
 
 # ---------------------------------------------------------------------------
-# SimpleScheduler  —  cron-based, JSON persistence
+# SimpleScheduler  â€”  cron-based, JSON persistence
 # ---------------------------------------------------------------------------
 
 
@@ -286,7 +285,7 @@ class SimpleScheduler(BaseScheduler, JobStore):
 
     def __init__(self, jobs_path: str = "") -> None:
         self._jobs_path: str = jobs_path or _DEFAULT_SIMPLE_JOBS_PATH
-        self._jobs: Dict[str, ScheduledJob] = {}
+        self._jobs: dict[str, ScheduledJob] = {}
         self._running: bool = False
         self._poll_interval: int = 60
         self._load_jobs()
@@ -341,11 +340,11 @@ class SimpleScheduler(BaseScheduler, JobStore):
         logger.info("Removed scheduled job '%s'", name)
         return True
 
-    def list_jobs(self) -> List[ScheduledJob]:
+    def list_jobs(self) -> list[ScheduledJob]:
         """Return all registered scheduled jobs."""
         return list(self._jobs.values())
 
-    def get_job(self, name: str) -> Optional[ScheduledJob]:
+    def get_job(self, name: str) -> ScheduledJob | None:
         """Return a specific job by name, or ``None``."""
         return self._jobs.get(name)
 
@@ -373,13 +372,13 @@ class SimpleScheduler(BaseScheduler, JobStore):
                 logger.warning("Invalid cron expression '%s': %s", cron_expr, exc)
         return ""
 
-    def run_due(self) -> List[str]:
+    def run_due(self) -> list[str]:
         """Execute all jobs whose scheduled time has passed.
 
         Returns a list of job names that were executed.
         """
         now = datetime.datetime.now(datetime.timezone.utc)
-        executed: List[str] = []
+        executed: list[str] = []
 
         for job in list(self._jobs.values()):
             if not job.enabled:
@@ -412,7 +411,7 @@ class SimpleScheduler(BaseScheduler, JobStore):
             job.task_description,
         )
 
-    def run_loop(self, poll_interval: Optional[int] = None) -> None:
+    def run_loop(self, poll_interval: int | None = None) -> None:
         """Start the scheduler loop, checking for due jobs periodically.
 
         This method **blocks indefinitely**.  Set *poll_interval* to override
@@ -437,13 +436,13 @@ class SimpleScheduler(BaseScheduler, JobStore):
         except KeyboardInterrupt:
             logger.info("Scheduler loop interrupted by user")
             self._running = False
-        except Exception as exc:
-            logger.error("Scheduler loop error: %s", exc, exc_info=True)
+        except Exception:
+            logger.exception("Scheduler loop error")
             self._running = False
 
 
 # ---------------------------------------------------------------------------
-# LanceScheduler  —  schedule-library-based, YAML persistence, LanceDB logging
+# LanceScheduler  â€”  schedule-library-based, YAML persistence, LanceDB logging
 # ---------------------------------------------------------------------------
 
 
@@ -472,9 +471,9 @@ class LanceScheduler(BaseScheduler, JobStore):
         """
         self._vector_store = vector_store
         self._jobs_path: str = jobs_path or _DEFAULT_LANCE_JOBS_PATH
-        self._jobs: Dict[str, ScheduledJob] = {}
+        self._jobs: dict[str, ScheduledJob] = {}
         self._running = False
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
         self._lock = threading.Lock()
         self._schedule: Any = None  # lazy import
         self._load_jobs()
@@ -542,12 +541,12 @@ class LanceScheduler(BaseScheduler, JobStore):
         logger.warning("Job not found: %s", name)
         return False
 
-    def list_jobs(self) -> List[ScheduledJob]:
+    def list_jobs(self) -> list[ScheduledJob]:
         """Return all registered jobs."""
         with self._lock:
             return list(self._jobs.values())
 
-    def get_job(self, name: str) -> Optional[ScheduledJob]:
+    def get_job(self, name: str) -> ScheduledJob | None:
         """Get a single job by name."""
         with self._lock:
             return self._jobs.get(name)
@@ -558,18 +557,18 @@ class LanceScheduler(BaseScheduler, JobStore):
         logger.info("Scheduler stopping...")
 
     # ------------------------------------------------------------------
-    # Serialization overrides — YAML uses {"jobs": [...]} format
+    # Serialization overrides â€” YAML uses {"jobs": [...]} format
     # ------------------------------------------------------------------
 
-    def _serialize_jobs(self) -> Dict[str, Any]:
+    def _serialize_jobs(self) -> dict[str, Any]:
         return {"jobs": [j.to_dict() for j in self._jobs.values()]}
 
-    def _deserialize_jobs(self, data: Dict[str, Any]) -> None:
+    def _deserialize_jobs(self, data: dict[str, Any]) -> None:
         for jd in data.get("jobs", []):
             job = ScheduledJob.from_dict(jd)
             self._jobs[job.name] = job
 
-    def _default_empty_data(self) -> Dict[str, Any]:
+    def _default_empty_data(self) -> dict[str, Any]:
         return {"jobs": []}
 
     # ------------------------------------------------------------------
@@ -579,7 +578,7 @@ class LanceScheduler(BaseScheduler, JobStore):
     def run_scheduler(self) -> None:
         """Start the scheduler loop in a background daemon thread.
 
-        This is a **non-blocking** call — the thread runs until
+        This is a **non-blocking** call â€” the thread runs until
         :meth:`stop` is called.
         """
         if self._running:
@@ -596,7 +595,7 @@ class LanceScheduler(BaseScheduler, JobStore):
         logger.info("Scheduler started in background thread.")
 
     def _scheduler_loop(self) -> None:
-        """Main scheduler loop — evaluates triggers and runs jobs."""
+        """Main scheduler loop â€” evaluates triggers and runs jobs."""
         # Lazy-import schedule so it's optional at class-import time
         try:
             import schedule as _schedule_lib  # type: ignore[import-untyped]
@@ -616,8 +615,8 @@ class LanceScheduler(BaseScheduler, JobStore):
             try:
                 self._schedule.run_pending()
                 time.sleep(1)
-            except Exception as exc:
-                logger.exception("Scheduler loop error: %s", exc)
+            except Exception:
+                logger.exception("Scheduler loop error")
                 time.sleep(5)
 
     def _register_with_schedule(self, job: ScheduledJob) -> None:
@@ -659,7 +658,7 @@ class LanceScheduler(BaseScheduler, JobStore):
                 self._register_cron(_sched, job)
 
             logger.debug("Registered job '%s' with schedule lib", job.name)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error("Failed to register job '%s': %s", job.name, exc)
 
     def _register_cron(self, sched: Any, job: ScheduledJob) -> None:
@@ -675,17 +674,13 @@ class LanceScheduler(BaseScheduler, JobStore):
 
         if minute == "*" and hour == "*" and day_of_week == "*":
             sched.every(1).minutes.do(self._execute_job, job_name=job.name)
-        elif minute == "0" and hour != "*" and day_of_week == "*":
-            sched.every().day.at(f"{hour}:00").do(
-                self._execute_job, job_name=job.name,
-            )
-        elif minute == "0" and hour != "*" and day_of_week != "*":
+        elif minute == "0" and hour != "*" and day_of_week == "*" or minute == "0" and hour != "*" and day_of_week != "*":
             sched.every().day.at(f"{hour}:00").do(
                 self._execute_job, job_name=job.name,
             )
         else:
             logger.warning(
-                "Complex cron '%s' — falling back to 5-min interval",
+                "Complex cron '%s' â€” falling back to 5-min interval",
                 job.trigger_value,
             )
             sched.every(5).minutes.do(self._execute_job, job_name=job.name)
@@ -712,12 +707,12 @@ class LanceScheduler(BaseScheduler, JobStore):
 
             cmd_list = _shlex.split(job.command)
             result = _subprocess.run(
-                cmd_list, capture_output=True, text=True, timeout=300,
+                cmd_list, capture_output=True, text=True, timeout=300, check=False,
             )
             if result.returncode != 0:
                 status = "failed"
                 error_msg = result.stderr[-500:] if result.stderr else "exit code != 0"
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             status = "failed"
             error_msg = str(exc)
 
@@ -773,7 +768,7 @@ class LanceScheduler(BaseScheduler, JobStore):
             )
             return
 
-        metadata: Dict[str, Any] = {
+        metadata: dict[str, Any] = {
             "job_name": job_name,
             "trigger": job.trigger,
             "status": status,
@@ -797,7 +792,7 @@ class LanceScheduler(BaseScheduler, JobStore):
                 vec.reshape(1, -1),
                 [metadata],
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning(
                 "Failed to log scheduler execution: %s", exc,
             )
@@ -807,10 +802,10 @@ class LanceScheduler(BaseScheduler, JobStore):
 # Backward-compatible aliases
 # ---------------------------------------------------------------------------
 
-#: Alias for :class:`SimpleScheduler` — the name used in the original
+#: Alias for :class:`SimpleScheduler` â€” the name used in the original
 #: ``harness/scheduler.py`` module.
 TaskScheduler = SimpleScheduler
 
-#: Alias for :class:`LanceScheduler` — the name used in the original
+#: Alias for :class:`LanceScheduler` â€” the name used in the original
 #: ``harness/orchestrator/scheduler.py`` module.
 Scheduler = LanceScheduler

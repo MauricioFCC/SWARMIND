@@ -13,17 +13,18 @@ import json
 import logging
 import time
 import uuid
+from collections.abc import Callable
 from contextvars import ContextVar
 from functools import wraps
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 
 # Context variables for tracing
-correlation_id_var: ContextVar[Optional[str]] = ContextVar("correlation_id", default=None)
-trace_id_var: ContextVar[Optional[str]] = ContextVar("trace_id", default=None)
-span_id_var: ContextVar[Optional[str]] = ContextVar("span_id", default=None)
+correlation_id_var: ContextVar[str | None] = ContextVar("correlation_id", default=None)
+trace_id_var: ContextVar[str | None] = ContextVar("trace_id", default=None)
+span_id_var: ContextVar[str | None] = ContextVar("span_id", default=None)
 
 # Metrics storage (in production, this would go to a metrics backend like Prometheus)
-_metrics: Dict[str, Any] = {
+_metrics: dict[str, Any] = {
     "request_count": 0,
     "error_count": 0,
     "total_duration": 0.0,
@@ -41,7 +42,7 @@ def setup_structured_logging(level: int = logging.INFO) -> None:
         """Custom formatter that outputs JSON structured logs."""
 
         def format(self, record: logging.LogRecord) -> str:
-            log_entry: Dict[str, Any] = {
+            log_entry: dict[str, Any] = {
                 "timestamp": self.formatTime(record, self.datefmt),
                 "level": record.levelname,
                 "logger": record.name,
@@ -89,9 +90,9 @@ def setup_structured_logging(level: int = logging.INFO) -> None:
 
 
 def set_trace_context(
-    correlation_id: Optional[str] = None,
-    trace_id: Optional[str] = None,
-    span_id: Optional[str] = None,
+    correlation_id: str | None = None,
+    trace_id: str | None = None,
+    span_id: str | None = None,
 ) -> None:
     """
     Set trace context variables for the current execution context.
@@ -124,7 +125,7 @@ def generate_span_id() -> str:
     return str(uuid.uuid4())
 
 
-def with_observability(operation_name: Optional[str] = None):
+def with_observability(operation_name: str | None = None):
     """
     Decorator that adds observability (logging, metrics, tracing) to a function.
 
@@ -214,7 +215,7 @@ def with_observability(operation_name: Optional[str] = None):
     return decorator
 
 
-def log_metrics() -> Dict[str, Any]:
+def log_metrics() -> dict[str, Any]:
     """
     Get current metrics values.
 
@@ -237,7 +238,7 @@ def log_metrics() -> Dict[str, Any]:
 
 def reset_metrics() -> None:
     """Reset all metrics to zero."""
-    global _metrics  # noqa: PLW0603
+    global _metrics
     _metrics = {
         "request_count": 0,
         "error_count": 0,

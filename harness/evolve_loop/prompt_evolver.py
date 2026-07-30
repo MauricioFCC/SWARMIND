@@ -1,7 +1,4 @@
-"""
-
-EMBEDDING_DIM = 384
-Prompt Evolver — GEPA-inspired prompt mutation and evaluation.
+﻿"""Prompt Evolver â€” GEPA-inspired prompt mutation and evaluation.
 
 Creates mutated variants of agent profile prompts, evaluates them against
 a test task, and promotes the winner to replace the original profile.
@@ -16,7 +13,7 @@ import shutil
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -24,6 +21,8 @@ from harness.memory_rag.lance_vector_store import (
     COLLECTION_PROMPT_EVOLUTION_LOG,
     LanceVectorStore,
 )
+
+EMBEDDING_DIM = 384
 
 logger = logging.getLogger(__name__)
 
@@ -50,12 +49,12 @@ class PromptEvolver:
     Mutates, evaluates, and promotes agent profile prompts.
 
     Workflow:
-      1. ``mutate_prompt(agent_profile_path)`` — Read original, create 3 variants.
-      2. ``evaluate_mutants(original, mutants, test_task)`` — Score each.
-      3. ``promote_winner(winner_path)`` — Replace original, log in LanceDB.
+      1. ``mutate_prompt(agent_profile_path)`` â€” Read original, create 3 variants.
+      2. ``evaluate_mutants(original, mutants, test_task)`` â€” Score each.
+      3. ``promote_winner(winner_path)`` â€” Replace original, log in LanceDB.
     """
 
-    def __init__(self, vector_store: Optional[LanceVectorStore] = None) -> None:
+    def __init__(self, vector_store: LanceVectorStore | None = None) -> None:
         """Inicializa la instancia de la clase."""
         self._vector_store = vector_store
         os.makedirs(str(PROMPT_ARCHIVE_DIR), exist_ok=True)
@@ -64,7 +63,7 @@ class PromptEvolver:
     # Step 1: Mutate
     # ------------------------------------------------------------------
 
-    def mutate_prompt(self, agent_profile_path: str) -> List[str]:
+    def mutate_prompt(self, agent_profile_path: str) -> list[str]:
         """
         Read the agent .md profile and create 3 mutated variants.
 
@@ -86,7 +85,7 @@ class PromptEvolver:
         original_lines = profile_path.read_text(encoding="utf-8").splitlines(keepends=True)
         agent_name = profile_path.stem  # e.g. "software-engineer"
 
-        mutants: List[Tuple[str, str]] = []
+        mutants: list[tuple[str, str]] = []
 
         # --- Mutant A: Shorten (70% of content, remove redundant examples) ---
         lines_a = self._mutate_shorten(original_lines)
@@ -112,9 +111,9 @@ class PromptEvolver:
         return paths
 
     @staticmethod
-    def _mutate_shorten(lines: List[str]) -> List[str]:
+    def _mutate_shorten(lines: list[str]) -> list[str]:
         """Keep ~70% of lines, prefer removing lines with examples/notes."""
-        result: List[str] = []
+        result: list[str] = []
         skip_patterns = ["por ejemplo", "ejemplo:", "e.g.", "i.e.", "note:", "nota:"]
         kept = 0
         total = len([l for l in lines if l.strip() and not l.startswith("#") and not l.startswith("---")])
@@ -132,11 +131,11 @@ class PromptEvolver:
         return result
 
     @staticmethod
-    def _mutate_reorder(lines: List[str]) -> List[str]:
+    def _mutate_reorder(lines: list[str]) -> list[str]:
         """Move the section containing 'output' or 'formato de salida' to the top."""
-        output_section: List[str] = []
-        before_section: List[str] = []
-        after_section: List[str] = []
+        output_section: list[str] = []
+        before_section: list[str] = []
+        after_section: list[str] = []
         in_output = False
         output_found = False
 
@@ -162,7 +161,7 @@ class PromptEvolver:
         return list(lines)
 
     @staticmethod
-    def _mutate_specialize(lines: List[str], agent_name: str) -> List[str]:
+    def _mutate_specialize(lines: list[str], agent_name: str) -> list[str]:
         """Append a concrete domain-specific case at the end."""
         case = _DOMAIN_CASES.get(agent_name, _DOMAIN_CASES.get("default", ""))
         result = list(lines)
@@ -173,7 +172,7 @@ class PromptEvolver:
         result.append("\n")
         return result
 
-    def _write_mutant(self, agent_name: str, variant: str, lines: List[str]) -> str:
+    def _write_mutant(self, agent_name: str, variant: str, lines: list[str]) -> str:
         """Persist a mutant to the prompt_archive directory."""
         filename = f"{agent_name}_mutant_{variant}.md"
         path = str(PROMPT_ARCHIVE_DIR / filename)
@@ -189,9 +188,9 @@ class PromptEvolver:
     def evaluate_mutants(
         self,
         original: str,
-        mutants: List[str],
+        mutants: list[str],
         test_task: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Evaluate each mutant against a test task.
 
@@ -209,7 +208,7 @@ class PromptEvolver:
             Dict mapping variant label -> {tokens, success, time, score}.
         """
         original_content = Path(original).read_text(encoding="utf-8")
-        scores: Dict[str, Any] = {}
+        scores: dict[str, Any] = {}
 
         # Evaluate original
         orig_result = self._evaluate_single("original", original_content, test_task)
@@ -239,7 +238,7 @@ class PromptEvolver:
         label: str,
         content: str,
         test_task: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Run a single evaluation of a prompt variant.
 
@@ -340,7 +339,7 @@ class PromptEvolver:
 
         mutation_type = winner_path.stem.split("_mutant_")[-1] if "_mutant_" in winner_path.stem else "unknown"
 
-        metadata: Dict[str, Any] = {
+        metadata: dict[str, Any] = {
             "agent": agent,
             "mutation_type": mutation_type,
             "test_task": "auto-evolution",
@@ -367,7 +366,7 @@ class PromptEvolver:
                 [metadata],
             )
             logger.info("Promotion logged in LanceDB: %s %s", agent, mutation_type)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to log promotion in LanceDB: %s", exc)
 
 
@@ -375,7 +374,7 @@ class PromptEvolver:
 # Domain cases for specialization mutation
 # ---------------------------------------------------------------------------
 
-_DOMAIN_CASES: Dict[str, str] = {
+_DOMAIN_CASES: dict[str, str] = {
     "default": (
         "El agente recibe una solicitud de implementacion. "
         "Debe analizar el contexto, proponer una solucion KISS/SOLID, "

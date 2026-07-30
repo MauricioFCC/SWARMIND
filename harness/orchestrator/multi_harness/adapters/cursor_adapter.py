@@ -14,7 +14,6 @@ from __future__ import annotations
 import logging
 import shutil
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from harness.orchestrator.multi_harness.converter_base import (
     ExportResult,
@@ -48,8 +47,8 @@ class CursorAdapter(HarnessConverter):
         Returns:
             ExportResult con el resultado.
         """
-        agents: List[Path] = self._get_opencode_agents()
-        errors: List[str] = []
+        agents: list[Path] = self._get_opencode_agents()
+        errors: list[str] = []
 
         if not agents:
             return ExportResult(success=True, files_exported=0)
@@ -85,8 +84,8 @@ class CursorAdapter(HarnessConverter):
         Returns:
             ExportResult con el resultado.
         """
-        skills: List[Path] = self._get_opencode_skills()
-        errors: List[str] = []
+        skills: list[Path] = self._get_opencode_skills()
+        errors: list[str] = []
 
         if not skills:
             return ExportResult(success=True, files_exported=0)
@@ -125,7 +124,7 @@ class CursorAdapter(HarnessConverter):
         Returns:
             ExportResult con el resultado.
         """
-        rules_lines: List[str] = [
+        rules_lines: list[str] = [
             "# .cursorrules — Generado por Swarmind Multi-Harness Adapter",
             "# Fuente: .opencode/",
             "",
@@ -154,7 +153,7 @@ class CursorAdapter(HarnessConverter):
             "# Skills cargados",
         ]
 
-        skills: List[Path] = self._get_opencode_skills()
+        skills: list[Path] = self._get_opencode_skills()
         for skill in skills:
             skill_name: str = skill.stem.replace("-", " ").title()
             rules_lines.append(f"- {skill_name} ({skill.name})")

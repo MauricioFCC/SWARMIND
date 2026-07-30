@@ -5,20 +5,15 @@ con registro dinamico, health checks, cost tracking y failover.
 """
 
 import logging
-import os
-import time
-import threading
-from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 # Constantes globales
 
 # Tokens de salida por rol de agente (cuestan 3-5x más que input)
-MAX_TOKENS_BY_AGENT: Dict[str, int] = {
+MAX_TOKENS_BY_AGENT: dict[str, int] = {
     # 5 roles universales
     "coordinator": 512,
     "builder": 1024,
@@ -120,7 +115,7 @@ class ExecutionResult:
     source: str
     model: str
     duration_ms: float
-    error: Optional[str] = None
+    error: str | None = None
     tokens_used: int = 0
     provider: str = ""
 
@@ -148,13 +143,13 @@ class ProviderConfig:
     name: str
     api_key_env: str
     base_url: str
-    models: List[str]
+    models: list[str]
     tier: str = ProviderTier.STANDARD.value
     cost_per_1k_input: float = 0.0
     cost_per_1k_output: float = 0.0
     max_retries: int = 3
     timeout_ms: int = 30000
-    headers_extra: Dict[str, str] = field(default_factory=dict)
+    headers_extra: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Valida campos obligatorios después de la inicialización.

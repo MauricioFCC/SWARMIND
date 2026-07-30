@@ -1,4 +1,4 @@
-"""Async I/O Fusion — BatchAccumulator para operaciones I/O batch.
+﻿"""Async I/O Fusion â€” BatchAccumulator para operaciones I/O batch.
 
 Fusiona operaciones I/O individuales en batches para reducir round-trips
 a backends (LanceDB, Chroma, Qdrant, disco).
@@ -11,7 +11,7 @@ Arquitectura:
 - Backpressure si el buffer excede 2x max_batch_size.
 - Thread-safe via asyncio.Queue o threading.Lock.
 
-Referencia: arXiv:2606.01533 (MACU) — async I/O fusion.
+Referencia: arXiv:2606.01533 (MACU) â€” async I/O fusion.
 """
 
 from __future__ import annotations
@@ -20,8 +20,9 @@ import asyncio
 import logging
 import threading
 import time
-from dataclasses import dataclass, field
-from typing import Any, Callable, Generic, List, Optional, TypeVar
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any, Generic, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ class BatchAccumulator(Generic[T]):
 
     def __init__(
         self,
-        flush_fn: Callable[[List[T]], Any],
+        flush_fn: Callable[[list[T]], Any],
         max_batch_size: int = 10,
         max_latency_ms: int = 50,
         name: str = "unnamed",
@@ -87,20 +88,20 @@ class BatchAccumulator(Generic[T]):
             max_latency_ms: Milisegundos antes de flush (default: 50).
             name: Identificador para logging.
         """
-        self._flush_fn: Callable[[List[T]], Any] = flush_fn
+        self._flush_fn: Callable[[list[T]], Any] = flush_fn
         self._max_batch_size: int = max(max_batch_size, 1)
         self._max_latency_ms: int = max(max_latency_ms, 1)
         self._name: str = name
 
-        self._buffer: List[T] = []
+        self._buffer: list[T] = []
         self._lock: threading.RLock = threading.RLock()
         self._last_flush: float = time.perf_counter()
         self._closed: bool = False
         self._stats: BatchStats = BatchStats()
 
         # Timer para flush por tiempo
-        self._timer: Optional[threading.Timer] = None
-        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._timer: threading.Timer | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
 
         logger.debug(
             "[BatchAccumulator/%s] Iniciado: batch=%d, latency=%dms",
@@ -147,7 +148,7 @@ class BatchAccumulator(Generic[T]):
         Returns:
             Numero de items descargados.
         """
-        batch: List[T] = []
+        batch: list[T] = []
         with self._lock:
             if not self._buffer:
                 return 0
@@ -161,9 +162,9 @@ class BatchAccumulator(Generic[T]):
         start: float = time.perf_counter()
         try:
             if asyncio.iscoroutinefunction(self._flush_fn):
-                result: Any = await self._flush_fn(batch)
+                await self._flush_fn(batch)
             else:
-                result: Any = self._flush_fn(batch)
+                self._flush_fn(batch)
             elapsed_ms: float = (time.perf_counter() - start) * 1000
 
             with self._lock:
@@ -181,7 +182,7 @@ class BatchAccumulator(Generic[T]):
             )
             return len(batch)
 
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             elapsed_ms = (time.perf_counter() - start) * 1000
             logger.error(
                 "[BatchAccumulator/%s] Error en flush (%d items, %.1fms): %s",

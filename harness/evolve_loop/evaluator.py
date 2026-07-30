@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Constants — keyword markers for each C.A.S.E. dimension
 # ---------------------------------------------------------------------------
 
-_CLARIFY_MARKERS: List[str] = [
+_CLARIFY_MARKERS: list[str] = [
     # Questions and exploration
     "what do you mean",
     "could you clarify",
@@ -47,7 +46,7 @@ _CLARIFY_MARKERS: List[str] = [
     "why is",
 ]
 
-_ARCHITECT_MARKERS: List[str] = [
+_ARCHITECT_MARKERS: list[str] = [
     # Structure and design
     "architecture",
     "design",
@@ -81,7 +80,7 @@ _ARCHITECT_MARKERS: List[str] = [
     "ports and adapters",
 ]
 
-_SOLVE_MARKERS: List[str] = [
+_SOLVE_MARKERS: list[str] = [
     # Implementation and action
     "implement",
     "code",
@@ -117,7 +116,7 @@ _SOLVE_MARKERS: List[str] = [
     "validate",
 ]
 
-_EVALUATE_MARKERS: List[str] = [
+_EVALUATE_MARKERS: list[str] = [
     # Reflection and critique
     "trade-off",
     "tradeoff",
@@ -168,7 +167,7 @@ class CASEValuation:
     dimension: str
     score: float  # 0.0 – 1.0
     feedback: str
-    matched_terms: List[str] = field(default_factory=list)
+    matched_terms: list[str] = field(default_factory=list)
     term_count: int = 0
     total_markers: int = 0
 
@@ -183,7 +182,7 @@ class FullEvaluation:
     evaluate: CASEValuation
     overall: float  # average of the four scores
 
-    def to_dict(self) -> Dict[str, any]:
+    def to_dict(self) -> dict[str, any]:
         """To dict."""
         return {
             "clarify": {
@@ -321,7 +320,7 @@ class CASEEvaluator:
         self,
         response: str,
         dimension: str,
-        markers: List[str],
+        markers: list[str],
     ) -> CASEValuation:
         text_lower = response.lower()
         matched = [

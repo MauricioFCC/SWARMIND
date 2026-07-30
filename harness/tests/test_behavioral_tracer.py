@@ -1,4 +1,4 @@
-"""Tests para Behavioral Tracer — trazabilidad de decisiones."""
+﻿"""Tests para Behavioral Tracer â€” trazabilidad de decisiones."""
 from __future__ import annotations
 
 import pytest
@@ -95,7 +95,7 @@ class TestEdgeCases:
     def test_trace_exception_handling(self):
         """Excepcion dentro del context manager se registra y propaga."""
         tracer = BehavioralTracer()
-        with pytest.raises(ValueError, match="error forzado"):
+        with pytest.raises(ValueError, match="error forzado"):  # noqa: SIM117
             with tracer.trace("builder", task_id="task-error") as ctx:
                 ctx.record_decision(action="a", chosen="x", rationale="r")
                 raise ValueError("error forzado")

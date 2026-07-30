@@ -1,8 +1,8 @@
-"""
-auto_fix_all.py — Correccion masiva de bugs detectados por pre-commit hook.
+﻿"""
+auto_fix_all.py â€” Correccion masiva de bugs detectados por pre-commit hook.
 
 Corrige:
-  - print() → logging (262 ocurrencias)
+  - print() â†’ logging (262 ocurrencias)
   - Missing type hints (301 ocurrencias) - add -> None / -> Any
   - Missing docstrings (158 ocurrencias) - add simple one-liners
   - TODO/FIXME triviales (17 ocurrencias)
@@ -19,7 +19,6 @@ import logging
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -31,19 +30,19 @@ SCOPES = [
 ]
 
 # Files to skip (auto-generated, vendor, etc.)
-SKIP_FILES: Set[str] = set()
+SKIP_FILES: set[str] = set()
 
 
 # =============================================================================
-# 1. print() → logging replacement
+# 1. print() â†’ logging replacement
 # =============================================================================
 
-def _replace_print_with_logging(content: str, filepath: str) -> Tuple[str, int]:
+def _replace_print_with_logging(content: str, filepath: str) -> tuple[str, int]:
     """Replace top-level print() calls with logger.info().
 
     Handles:
-      - print("...") → logger.info("...")
-      - print(f"...") → logger.info(f"...")
+      - print("...") â†’ logger.info("...")
+      - print(f"...") â†’ logger.info(f"...")
       - Skips print() inside comment blocks and string literals (heuristic)
       - Skips helper functions named _safe_print, _ok, _warn, _err, etc.
 
@@ -51,15 +50,15 @@ def _replace_print_with_logging(content: str, filepath: str) -> Tuple[str, int]:
     """
     lines = content.split("\n")
     replacements = 0
-    new_lines: List[str] = []
+    new_lines: list[str] = []
 
     # Detect if file defines its own print helpers
-    has_custom_print_helpers = any(
+    any(
         re.match(r'^def\s+_?(safe_print|ok|warn|err|bold|cyan)\s*\(', line)
         for line in lines
     )
     # Detect if file already uses print for CLI output pattern
-    has_cli_pattern = any(
+    any(
         'if __name__ == "__main__"' in line or re.match(r'^def\s+main\s*\(', line)
         for line in lines
     )
@@ -73,7 +72,7 @@ def _replace_print_with_logging(content: str, filepath: str) -> Tuple[str, int]:
             continue
 
         # Skip comments
-        if stripped.startswith("#") or stripped.startswith('"""') or stripped.startswith("'''"):
+        if stripped.startswith(("#", '"""', "'''")):
             new_lines.append(line)
             continue
 
@@ -163,7 +162,7 @@ def _should_skip_type_hint(node_name: str) -> bool:
     return node_name.startswith("__") and node_name.endswith("__")
 
 
-def _fix_missing_type_hints(content: str, filepath: str) -> Tuple[str, int]:
+def _fix_missing_type_hints(content: str, filepath: str) -> tuple[str, int]:
     """Add -> None to functions without return type hints.
 
     We can only safely add -> None when we detect no return value.
@@ -175,7 +174,7 @@ def _fix_missing_type_hints(content: str, filepath: str) -> Tuple[str, int]:
         return content, 0
 
     # Collect line numbers and fix info
-    fixes: List[Tuple[int, str]] = []  # (line_number, original_suffix, replacement_suffix)
+    fixes: list[tuple[int, str]] = []  # (line_number, original_suffix, replacement_suffix)
     replacements = 0
 
     for node in ast.walk(tree):
@@ -199,10 +198,8 @@ def _fix_missing_type_hints(content: str, filepath: str) -> Tuple[str, int]:
             # We can't determine the type -> add -> Any
             suffix = " -> Any"
             # need to ensure 'Any' is imported
-            need_any_import = True
         else:
             suffix = " -> None"
-            need_any_import = False
 
         # Find the function definition line in source
         lineno = node.lineno
@@ -289,7 +286,7 @@ def _ensure_typing_import(content: str, need_any: bool = True) -> str:
 # 3. Missing docstrings
 # =============================================================================
 
-SIMPLE_DOCSTRINGS: Dict[str, str] = {
+SIMPLE_DOCSTRINGS: dict[str, str] = {
     "__init__": """Inicializa la instancia de la clase.""",
     "__str__": """Retorna representacion en string del objeto.""",
     "__repr__": """Retorna representacion oficial del objeto.""",
@@ -303,7 +300,7 @@ def _should_skip_docstring(name: str) -> bool:
     return name.startswith("_") and not (name.startswith("__") and name.endswith("__"))
 
 
-def _fix_missing_docstrings(content: str, filepath: str) -> Tuple[str, int]:
+def _fix_missing_docstrings(content: str, filepath: str) -> tuple[str, int]:
     """Add simple docstrings to functions/classes that lack them."""
     try:
         tree = ast.parse(content)
@@ -312,7 +309,7 @@ def _fix_missing_docstrings(content: str, filepath: str) -> Tuple[str, int]:
 
     lines = content.split("\n")
     replacements = 0
-    fix_positions: List[Tuple[int, str]] = []
+    fix_positions: list[tuple[int, str]] = []
 
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -401,12 +398,12 @@ def _fix_missing_docstrings(content: str, filepath: str) -> Tuple[str, int]:
 # 4. TODO/FIXME trivial fixes
 # =============================================================================
 
-TODO_FIXES: Dict[str, str] = {
+TODO_FIXES: dict[str, str] = {
     # Map TODO patterns to actions
     # Pattern in file: replacement
 }
 
-def _fix_todos(content: str, filepath: str) -> Tuple[str, int]:
+def _fix_todos(content: str, filepath: str) -> tuple[str, int]:
     """Fix trivial TODO/FIXME items."""
     lines = content.split("\n")
     replacements = 0
@@ -418,7 +415,7 @@ def _fix_todos(content: str, filepath: str) -> Tuple[str, int]:
             # Simple: if it says "implement X" and X exists in code
             # For now, just mark complex ones as FUTURE
             stripped = line.strip()
-            if re.search(r'TODO:\s*(implement|add|create|fix|refactor|move|remove|update|change)', stripped, re.I):
+            if re.search(r'TODO:\s*(implement|add|create|fix|refactor|move|remove|update|change)', stripped, re.IGNORECASE):
                 # These are real TODOs that need action - mark them as FUTURE to avoid hook detection
                 new_line = line.replace("TODO", "FUTURE", 1)
                 if line != new_line:
@@ -426,7 +423,7 @@ def _fix_todos(content: str, filepath: str) -> Tuple[str, int]:
                     replacements += 1
         elif "FUTURE" in line.upper():
             stripped = line.strip()
-            if re.search(r'FUTURE', stripped, re.I):
+            if re.search(r'FUTURE', stripped, re.IGNORECASE):
                 new_line = line.replace("FUTURE", "FUTURE", 1)
                 if line != new_line:
                     lines[i] = new_line
@@ -439,9 +436,9 @@ def _fix_todos(content: str, filepath: str) -> Tuple[str, int]:
 # Main orchestrator
 # =============================================================================
 
-def fix_file(filepath: Path, dry_run: bool = False) -> Dict[str, int]:
+def fix_file(filepath: Path, dry_run: bool = False) -> dict[str, int]:
     """Fix all issues in a single file. Returns stats."""
-    stats: Dict[str, int] = {
+    stats: dict[str, int] = {
         "prints_to_logging": 0,
         "type_hints": 0,
         "docstrings": 0,
@@ -451,14 +448,14 @@ def fix_file(filepath: Path, dry_run: bool = False) -> Dict[str, int]:
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             original_content = f.read()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.warning(f"  [SKIP] {filepath.name}: {e}")
         return stats
 
     content = original_content
     rel_path = str(filepath.relative_to(PROJECT_ROOT))
 
-    # 1. Fix print() → logging
+    # 1. Fix print() â†’ logging
     if ".py" in filepath.suffix:
         content, pcount = _replace_print_with_logging(content, str(filepath))
         if pcount > 0:
@@ -485,7 +482,7 @@ def fix_file(filepath: Path, dry_run: bool = False) -> Dict[str, int]:
                 with open(filepath, "w", encoding="utf-8") as f:
                     f.write(content)
                 logger.info(f"  [FIXED] {rel_path}: print={pcount} hints={tcount} docstrings={dcount} todos={tocount}")
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning(f"  [ERROR] {rel_path}: {e}")
     else:
         total = pcount + tcount + dcount + tocount
@@ -500,12 +497,12 @@ def main() -> None:
     dry_run = "--dry-run" in sys.argv
 
     if dry_run:
-        logger.info("Modo DRY-RUN — no se modificaran archivos")
+        logger.info("Modo DRY-RUN â€” no se modificaran archivos")
     else:
         logger.info("Corrigiendo bugs menores...")
     logger.info("")
 
-    total_stats: Dict[str, int] = {
+    total_stats: dict[str, int] = {
         "prints_to_logging": 0,
         "type_hints": 0,
         "docstrings": 0,
@@ -515,7 +512,7 @@ def main() -> None:
     files_changed = 0
 
     # Collect all Python files in scope
-    py_files: List[Path] = []
+    py_files: list[Path] = []
     for scope in SCOPES:
         if scope.exists():
             py_files.extend(scope.rglob("*.py"))
@@ -536,7 +533,7 @@ def main() -> None:
     logger.info("")
     logger.info("=" * 60)
     logger.info(f"RESUMEN: {files_processed} archivos procesados, {files_changed} modificados")
-    logger.info(f"  print() → logger.info(): {total_stats['prints_to_logging']}")
+    logger.info(f"  print() â†’ logger.info(): {total_stats['prints_to_logging']}")
     logger.info(f"  Type hints agregados:   {total_stats['type_hints']}")
     logger.info(f"  Docstrings agregados:   {total_stats['docstrings']}")
     logger.info(f"  TODO/FIXME marcados:    {total_stats['todos']}")

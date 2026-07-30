@@ -1,5 +1,5 @@
-"""
-GPU Acceleration Module — Swarmind Harness
+﻿"""
+GPU Acceleration Module â€” Swarmind Harness
 
 Provee aceleracion GPU para operaciones del sistema multi-agente.
 Detecta automaticamente GPU disponible y fallback a CPU si no hay.
@@ -20,7 +20,7 @@ Usage:
 from __future__ import annotations
 
 import logging
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 
@@ -39,6 +39,9 @@ GPU_MEMORY_GB: float = 0.0
 # Asegurar que torch/lib con DLLs CUDA este en PATH (Windows)
 import os as _os
 from pathlib import Path as _Path
+
+from typing_extensions import Self
+
 _torch_lib = str(
     _Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages" / "torch" / "lib"
 )
@@ -61,7 +64,7 @@ try:
         logger.info("CUDA available but no GPU detected, using CPU")
 except ImportError:
     logger.info("PyTorch not installed, using CPU")
-except Exception as exc:
+except Exception as exc:  # noqa: BLE001
     logger.warning("GPU detection error: %s", exc)
 
 
@@ -76,7 +79,7 @@ def force_cpu() -> None:
 def force_gpu() -> None:
     """Forzar uso de GPU si esta disponible."""
     global HAVE_CUDA, DEVICE
-    global _HARDWARE_CUDA
+    global _HARDWARE_CUDA  # noqa: PLW0602
     if _HARDWARE_CUDA:
         HAVE_CUDA = True
         DEVICE = "cuda:0"
@@ -110,7 +113,7 @@ def to_gpu(data: Any) -> Any:
     return data
 
 
-def to_cpu(data: Any) -> Union[np.ndarray, Any]:
+def to_cpu(data: Any) -> np.ndarray | Any:
     """
     Transferir datos de GPU a CPU como numpy array.
 
@@ -237,10 +240,10 @@ class GPUContext:
         self.device = DEVICE
         self.device_name = DEVICE_NAME
 
-    def __enter__(self) -> "GPUContext":
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, *args: Any) -> None:
+    def __exit__(self, *args: object) -> None:
         if HAVE_CUDA:
             import torch
             torch.cuda.empty_cache()

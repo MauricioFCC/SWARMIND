@@ -1,19 +1,20 @@
-from harness.model_router.multi_provider_types import *
-import logging
+﻿import logging
 import os
-import time
 import threading
+import time
 from collections import defaultdict, deque
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
+
+from harness.model_router.multi_provider_types import *
 
 logger = logging.getLogger(__name__)
 
 class MultiAPIProvider:
-    """Abstracción multi-provider con failover automático y balanceo de carga.
+    """AbstracciÃ³n multi-provider con failover automÃ¡tico y balanceo de carga.
 
-    Gestiona múltiples proveedores LLM (OpenAI, Anthropic, Google, Mistral,
-    DeepSeek) con registro dinámico, health checks periódicos, round-robin
-    por tier, tracking de costos y métricas de latencia P50/P95/P99.
+    Gestiona mÃºltiples proveedores LLM (OpenAI, Anthropic, Google, Mistral,
+    DeepSeek) con registro dinÃ¡mico, health checks periÃ³dicos, round-robin
+    por tier, tracking de costos y mÃ©tricas de latencia P50/P95/P99.
 
     Ejemplo:
         mcp = MultiAPIProvider()
@@ -30,42 +31,42 @@ class MultiAPIProvider:
     def __init__(self) -> None:
         """Inicializa el gestor multi-provider.
 
-        WHY: Se requiere un estado compartido para proveedores, métricas y
+        WHY: Se requiere un estado compartido para proveedores, mÃ©tricas y
         controles de costo a nivel de instancia.
         WHERE: Constructor de MultiAPIProvider.
         """
         # name -> {config, client}
-        self._providers: Dict[str, Dict[str, Any]] = {}
+        self._providers: dict[str, dict[str, Any]] = {}
 
         # tier -> list of provider names (for round-robin)
-        self._tier_providers: Dict[str, List[str]] = defaultdict(list)
+        self._tier_providers: dict[str, list[str]] = defaultdict(list)
 
         # tier -> current round-robin index
-        self._rr_indices: Dict[str, int] = defaultdict(int)
+        self._rr_indices: dict[str, int] = defaultdict(int)
 
         # provider health cache
-        self._health: Dict[str, ProviderHealth] = {}
+        self._health: dict[str, ProviderHealth] = {}
 
         # latency history per provider (rolling window)
-        self._latency_history: Dict[str, deque] = defaultdict(
+        self._latency_history: dict[str, deque] = defaultdict(
             lambda: deque(maxlen=LATENCY_WINDOW_SIZE)
         )
 
         # cost tracking per provider (USD total)
-        self._costs: Dict[str, float] = defaultdict(float)
+        self._costs: dict[str, float] = defaultdict(float)
 
         # cost tracking per model (USD total)
-        self._model_costs: Dict[str, float] = defaultdict(float)
+        self._model_costs: dict[str, float] = defaultdict(float)
 
         # request counts
-        self._request_counts: Dict[str, int] = defaultdict(int)
-        self._error_counts: Dict[str, int] = defaultdict(int)
+        self._request_counts: dict[str, int] = defaultdict(int)
+        self._error_counts: dict[str, int] = defaultdict(int)
 
         # budget limits per project
-        self._budgets: Dict[str, BudgetLimit] = {}
+        self._budgets: dict[str, BudgetLimit] = {}
 
         # health check thread control
-        self._health_thread: Optional[threading.Thread] = None
+        self._health_thread: threading.Thread | None = None
         self._health_stop = threading.Event()
 
         # lock for thread safety
@@ -75,38 +76,38 @@ class MultiAPIProvider:
         self._start_health_checks()
 
     # ------------------------------------------------------------------
-    # Registro y configuración de proveedores
+    # Registro y configuraciÃ³n de proveedores
     # ------------------------------------------------------------------
 
     def register_provider(self, config: ProviderConfig) -> None:
         """Registra un nuevo proveedor de modelos LLM.
 
         Args:
-            config: Configuración completa del proveedor.
+            config: ConfiguraciÃ³n completa del proveedor.
 
         Raises:
-            ValueError: Si el nombre del proveedor ya está registrado
-                o la configuración es inválida.
+            ValueError: Si el nombre del proveedor ya estÃ¡ registrado
+                o la configuraciÃ³n es invÃ¡lida.
 
-        WHY: Cada proveedor necesita configuración individual (API key,
+        WHY: Cada proveedor necesita configuraciÃ³n individual (API key,
         modelos, costos) para ser invocado correctamente.
         WHERE: register_provider en MultiAPIProvider.
         """
         if not config.name:
             raise ValueError(
                 "Provider name cannot be empty. "
-                "WHY: Se necesita un nombre único para identificar el proveedor. "
+                "WHY: Se necesita un nombre Ãºnico para identificar el proveedor. "
                 "WHERE: register_provider"
             )
         if not config.models:
             raise ValueError(
                 f"Provider '{config.name}' must have at least one model. "
-                "WHY: Sin modelos no hay ejecución posible. "
+                "WHY: Sin modelos no hay ejecuciÃ³n posible. "
                 "WHERE: register_provider"
             )
         if config.tier not in (t.value for t in ProviderTier):
             logger.warning(
-                "Provider '%s' tier '%s' no es estándar, usando 'standard'. "
+                "Provider '%s' tier '%s' no es estÃ¡ndar, usando 'standard'. "
                 "WHY: Se esperaba uno de %s. "
                 "WHERE: register_provider",
                 config.name, config.tier, [t.value for t in ProviderTier],
@@ -166,7 +167,7 @@ class MultiAPIProvider:
                 "Provider '%s' eliminado. WHERE: unregister_provider", name,
             )
 
-    def get_providers(self) -> List[str]:
+    def get_providers(self) -> list[str]:
         """Retorna la lista de nombres de proveedores registrados.
 
         Returns:
@@ -176,7 +177,7 @@ class MultiAPIProvider:
             return list(self._providers.keys())
 
     # ------------------------------------------------------------------
-    # Ejecución con failover
+    # EjecuciÃ³n con failover
     # ------------------------------------------------------------------
 
     def execute(
@@ -185,7 +186,7 @@ class MultiAPIProvider:
         prompt: str,
         fallback: bool = True,
         agent_role: str = "*",
-        max_tokens: Optional[int] = None,
+        max_tokens: int | None = None,
     ) -> ExecutionResult:
         """Ejecuta un prompt en el modelo solicitado con failover opcional.
 
@@ -197,15 +198,15 @@ class MultiAPIProvider:
             model: Nombre del modelo a ejecutar.
             prompt: Texto de entrada para el modelo.
             fallback: Si es True, intenta failover a otros proveedores.
-            agent_role: Rol del agente (para límite de tokens).
-            max_tokens: Máximo de tokens de salida (opcional, sobreescribe
+            agent_role: Rol del agente (para lÃ­mite de tokens).
+            max_tokens: MÃ¡ximo de tokens de salida (opcional, sobreescribe
                 el valor por rol).
 
         Returns:
-            ExecutionResult con el resultado de la ejecución.
+            ExecutionResult con el resultado de la ejecuciÃ³n.
 
         WHY: Abstrae la complejidad de elegir proveedor, manejar fallos
-        y reintentar automáticamente.
+        y reintentar automÃ¡ticamente.
         WHERE: execute en MultiAPIProvider.
         """
         if max_tokens is None:
@@ -221,8 +222,8 @@ class MultiAPIProvider:
                 model=model,
                 duration_ms=0,
                 error=(
-                    f"Model '{model}' no encontrado en ningún proveedor registrado. "
-                    "WHY: El modelo debe estar listado en algún ProviderConfig.models. "
+                    f"Model '{model}' no encontrado en ningÃºn proveedor registrado. "
+                    "WHY: El modelo debe estar listado en algÃºn ProviderConfig.models. "
                     "WHERE: execute"
                 ),
             )
@@ -242,22 +243,22 @@ class MultiAPIProvider:
         model: str,
         prompt: str,
         agent_role: str = "*",
-        max_tokens: Optional[int] = None,
+        max_tokens: int | None = None,
     ) -> ExecutionResult:
-        """Ejecuta un modelo intentando múltiples proveedores en orden.
+        """Ejecuta un modelo intentando mÃºltiples proveedores en orden.
 
-        A diferencia de execute(), este método ITERA sobre todos los
+        A diferencia de execute(), este mÃ©todo ITERA sobre todos los
         proveedores registrados que tengan el modelo, en orden de tier
         (premium > standard > budget), hasta que uno responda exitosamente.
 
         Args:
             model: Nombre del modelo a ejecutar.
             prompt: Texto de entrada.
-            agent_role: Rol del agente para límite de tokens.
-            max_tokens: Máximo de tokens de salida.
+            agent_role: Rol del agente para lÃ­mite de tokens.
+            max_tokens: MÃ¡ximo de tokens de salida.
 
         Returns:
-            ExecutionResult con el primer resultado exitoso, o el último
+            ExecutionResult con el primer resultado exitoso, o el Ãºltimo
             error si todos fallan.
         """
         return self.execute(
@@ -285,10 +286,10 @@ class MultiAPIProvider:
             primary_provider: Proveedor primario.
             fallback: Habilitar failover.
             agent_role: Rol del agente.
-            max_tokens: Límite de tokens de salida.
+            max_tokens: LÃ­mite de tokens de salida.
 
         Returns:
-            ExecutionResult del primer éxito o último error.
+            ExecutionResult del primer Ã©xito o Ãºltimo error.
         """
         # Construir la secuencia de proveedores a intentar
         candidates = [primary_provider]
@@ -298,7 +299,7 @@ class MultiAPIProvider:
             rest = self._get_other_providers_for_model(model, primary_provider)
             candidates.extend(rest)
 
-        last_error: Optional[str] = None
+        last_error: str | None = None
         start = time.perf_counter()
 
         for provider_name in candidates:
@@ -338,7 +339,7 @@ class MultiAPIProvider:
             last_error = result.error
             self._record_error(provider_name, result.error or "Unknown error")
             logger.warning(
-                "Provider '%s' falló para modelo '%s': %s. "
+                "Provider '%s' fallÃ³ para modelo '%s': %s. "
                 "WHY: Failover al siguiente proveedor. "
                 "WHERE: _execute_with_chain",
                 provider_name, model, result.error,
@@ -353,8 +354,8 @@ class MultiAPIProvider:
             duration_ms=round(elapsed, 2),
             error=(
                 f"Todos los proveedores fallaron para modelo '{model}'. "
-                f"Último error: {last_error}. "
-                "WHY: La cadena de failover se agotó. "
+                f"Ãšltimo error: {last_error}. "
+                "WHY: La cadena de failover se agotÃ³. "
                 "WHERE: _execute_with_chain"
             ),
         )
@@ -367,14 +368,14 @@ class MultiAPIProvider:
         prompt: str,
         max_tokens: int,
     ) -> ExecutionResult:
-        """Ejecuta el prompt en un proveedor específico usando su API.
+        """Ejecuta el prompt en un proveedor especÃ­fico usando su API.
 
         Args:
             provider_name: Nombre del proveedor.
-            config: Configuración del proveedor.
+            config: ConfiguraciÃ³n del proveedor.
             model: Modelo a usar.
             prompt: Prompt de entrada.
-            max_tokens: Máximo de tokens de salida.
+            max_tokens: MÃ¡ximo de tokens de salida.
 
         Returns:
             ExecutionResult del proveedor.
@@ -396,7 +397,7 @@ class MultiAPIProvider:
                 provider=provider_name,
             )
 
-        # Normalizar nombre a minúsculas para identificar tipo de API
+        # Normalizar nombre a minÃºsculas para identificar tipo de API
         pname = provider_name.lower()
 
         try:
@@ -407,14 +408,14 @@ class MultiAPIProvider:
             elif pname in ("openai", "mistral", "deepseek", "zenfree"):
                 result = self._execute_openai_compat(config, api_key, model, prompt, max_tokens)
             else:
-                # Intento genérico OpenAI-compatible
+                # Intento genÃ©rico OpenAI-compatible
                 logger.debug(
-                    "Provider '%s' no tiene handler específico, usando OpenAI-compat. "
+                    "Provider '%s' no tiene handler especÃ­fico, usando OpenAI-compat. "
                     "WHERE: _execute_on_provider",
                     provider_name,
                 )
                 result = self._execute_openai_compat(config, api_key, model, prompt, max_tokens)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error(
                 "Error no manejado en provider '%s' modelo '%s': %s. "
                 "WHERE: _execute_on_provider",
@@ -442,7 +443,7 @@ class MultiAPIProvider:
         return result
 
     # ------------------------------------------------------------------
-    # Handlers específicos por proveedor (delegados a provider_executors)
+    # Handlers especÃ­ficos por proveedor (delegados a provider_executors)
     # ------------------------------------------------------------------
 
     def _execute_openai_compat(self, config, api_key, prompt, max_tokens, temperature):
@@ -459,7 +460,7 @@ class MultiAPIProvider:
 
     def _start_health_checks(self) -> None:
         """Inicia health checks en background (delegado)."""
-        from harness.model_router.provider_executors import _start_health_checks as _hc
+        from harness.model_router.provider_health import _start_health_checks as _hc
         _hc(self)
 
     def stop_health_checks(self) -> None:
@@ -477,14 +478,26 @@ class MultiAPIProvider:
         from harness.model_router.provider_executors import _calculate_cost as _cc
         return _cc(self, provider, tokens)
 
+    def _find_provider_for_model(self, model: str) -> str | None:
+        """Busca proveedor optimo para un modelo (delegado)."""
+        from harness.model_router.provider_executors import (
+            _find_provider_for_model as _fp,
+        )
+        return _fp(self, model)
+
+    def get_stats(self) -> dict[str, Any]:
+        """Retorna estadisticas completas (delegado)."""
+        from harness.model_router.provider_health import get_stats as _gs
+        return _gs(self)
+
     def __del__(self) -> None:
         """Cleanup: detiene health checks al destruir la instancia."""
         try:
             self.stop_health_checks()
-        except Exception:
+        except Exception:  # noqa: S110, BLE001
             pass
 
 
 # ===================================================================
-# ModelRouter (MEJORADO) — mantiene compatibilidad total hacia atrás
+# ModelRouter (MEJORADO) â€” mantiene compatibilidad total hacia atrÃ¡s
 # ===================================================================

@@ -8,7 +8,7 @@ Define las estructuras de datos centrales para Graph-of-Thought:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -29,12 +29,12 @@ class Thought:
     """
     id: str
     content: str
-    parent_id: Optional[str]
+    parent_id: str | None
     score: float = 0.0
     depth: int = 0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serializa el pensamiento a diccionario.
 
         Returns:
@@ -64,10 +64,10 @@ class ThoughtGraph:
         metrics: Metricas de exploracion.
     """
 
-    thoughts: Dict[str, Thought] = field(default_factory=dict)
-    edges: Dict[str, List[str]] = field(default_factory=dict)
+    thoughts: dict[str, Thought] = field(default_factory=dict)
+    edges: dict[str, list[str]] = field(default_factory=dict)
     root_id: str = ""
-    metrics: Dict[str, Any] = field(default_factory=dict)
+    metrics: dict[str, Any] = field(default_factory=dict)
 
     def add_thought(self, thought: Thought) -> None:
         """Agrega un nodo al grafo.
@@ -87,7 +87,7 @@ class ThoughtGraph:
         if thought.parent_id:
             self.edges.setdefault(thought.parent_id, []).append(thought.id)
 
-    def get_children(self, thought_id: str) -> List[Thought]:
+    def get_children(self, thought_id: str) -> list[Thought]:
         """Retorna los hijos directos de un nodo.
 
         Args:
@@ -96,14 +96,14 @@ class ThoughtGraph:
         Returns:
             Lista de Thoughts hijos ordenada por score descendente.
         """
-        child_ids: List[str] = self.edges.get(thought_id, [])
-        children: List[Thought] = [
+        child_ids: list[str] = self.edges.get(thought_id, [])
+        children: list[Thought] = [
             self.thoughts[cid] for cid in child_ids if cid in self.thoughts
         ]
         children.sort(key=lambda t: t.score, reverse=True)
         return children
 
-    def get_parent(self, thought_id: str) -> Optional[Thought]:
+    def get_parent(self, thought_id: str) -> Thought | None:
         """Retorna el padre de un nodo.
 
         Args:
@@ -112,12 +112,12 @@ class ThoughtGraph:
         Returns:
             Thought padre o None si es raiz o no existe.
         """
-        thought: Optional[Thought] = self.thoughts.get(thought_id)
+        thought: Thought | None = self.thoughts.get(thought_id)
         if thought is None or thought.parent_id is None:
             return None
         return self.thoughts.get(thought.parent_id)
 
-    def get_path_to_root(self, thought_id: str) -> List[Thought]:
+    def get_path_to_root(self, thought_id: str) -> list[Thought]:
         """Obtiene el camino desde la raiz hasta el nodo dado.
 
         Args:
@@ -126,15 +126,15 @@ class ThoughtGraph:
         Returns:
             Lista ordenada [raiz, ..., nodo_destino].
         """
-        path: List[Thought] = []
-        current: Optional[str] = thought_id
+        path: list[Thought] = []
+        current: str | None = thought_id
         while current is not None and current in self.thoughts:
             path.append(self.thoughts[current])
             current = self.thoughts[current].parent_id
         path.reverse()
         return path
 
-    def get_leaves(self) -> List[Thought]:
+    def get_leaves(self) -> list[Thought]:
         """Retorna todos los nodos hoja (sin hijos).
 
         Returns:
@@ -143,7 +143,7 @@ class ThoughtGraph:
         all_ids: set = set(self.thoughts.keys())
         parent_ids: set = set(self.edges.keys())
         leaf_ids = all_ids - parent_ids
-        leaves: List[Thought] = [
+        leaves: list[Thought] = [
             self.thoughts[tid] for tid in leaf_ids if tid in self.thoughts
         ]
         leaves.sort(key=lambda t: t.score, reverse=True)
@@ -167,7 +167,7 @@ class ThoughtGraph:
         """
         return len(self.thoughts)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serializa el grafo completo a diccionario.
 
         Returns:

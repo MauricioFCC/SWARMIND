@@ -10,12 +10,10 @@ from __future__ import annotations
 import pytest
 
 from harness.orchestrator.natural_language_tools import (
-    DEFAULT_CONFIDENCE_THRESHOLD,
+    NaturalLanguageToolkit,
     NLTool,
     NLTResult,
-    NaturalLanguageToolkit,
 )
-
 
 # ===========================================================================
 # Fixtures

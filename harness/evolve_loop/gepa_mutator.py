@@ -1,5 +1,5 @@
-"""
-GEPA (Genetic Evolutionary Prompt Algorithm) — Hermes-inspired prompt mutator.
+﻿"""
+GEPA (Genetic Evolutionary Prompt Algorithm) â€” Hermes-inspired prompt mutator.
 
 Creates N mutated variants of an agent/system prompt, tests them in a sandbox,
 and promotes the winner. Implements the "Evolucion Genetica de Prompts" pattern.
@@ -12,7 +12,7 @@ import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +24,9 @@ class MutantPrompt:
     source_agent: str
     original_prompt: str
     mutated_prompt: str
-    mutations_applied: List[str]
+    mutations_applied: list[str]
     score: float = 0.0
-    test_results: Dict[str, Any] = field(default_factory=dict)
+    test_results: dict[str, Any] = field(default_factory=dict)
     created_at: str = ""
 
     def __post_init__(self):
@@ -63,18 +63,18 @@ class GEPAMutator:
     Each variant applies a random subset of mutation strategies.
     """
 
-    def __init__(self, seed: Optional[int] = None) -> None:
+    def __init__(self, seed: int | None = None) -> None:
         """Inicializa la instancia de la clase."""
         self.rng = random.Random(seed)
-        self._mutation_log: List[Dict[str, Any]] = []
+        self._mutation_log: list[dict[str, Any]] = []
 
     def create_mutants(
         self,
         source_agent: str,
         original_prompt: str,
         num_mutants: int = 3,
-        strategies: Optional[List[str]] = None,
-    ) -> List[MutantPrompt]:
+        strategies: list[str] | None = None,
+    ) -> list[MutantPrompt]:
         """
         Generate N mutated variants of a prompt.
 
@@ -90,7 +90,7 @@ class GEPAMutator:
         if strategies is None:
             strategies = list(_MUTATION_STRATEGIES)
 
-        mutants: List[MutantPrompt] = []
+        mutants: list[MutantPrompt] = []
         for _ in range(num_mutants):
             # Pick 2-4 random strategies
             num_strats = min(self.rng.randint(2, 4), len(strategies))
@@ -110,9 +110,9 @@ class GEPAMutator:
 
     def score_and_promote(
         self,
-        mutants: List[MutantPrompt],
-        test_scores: Dict[str, float],
-    ) -> Tuple[MutantPrompt, float]:
+        mutants: list[MutantPrompt],
+        test_scores: dict[str, float],
+    ) -> tuple[MutantPrompt, float]:
         """
         Score mutants and return the winner.
 
@@ -123,7 +123,7 @@ class GEPAMutator:
         Returns:
             (winning mutant, winning score) tuple.
         """
-        best_mutant: Optional[MutantPrompt] = None
+        best_mutant: MutantPrompt | None = None
         best_score = -1.0
 
         for mutant in mutants:
@@ -140,11 +140,11 @@ class GEPAMutator:
         return best_mutant, best_score
 
     def _apply_strategies(
-        self, prompt: str, strategies: List[str]
-    ) -> Tuple[str, List[str]]:
+        self, prompt: str, strategies: list[str]
+    ) -> tuple[str, list[str]]:
         """Apply selected mutation strategies to the prompt."""
         text = prompt
-        applied: List[str] = []
+        applied: list[str] = []
 
         strategy_map = {
             "reorder_paragraphs": self._reorder_paragraphs,
@@ -163,7 +163,7 @@ class GEPAMutator:
                 try:
                     text = fn(text)
                     applied.append(s)
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     logger.warning("Strategy '%s' failed: %s", s, exc)
 
         return text, applied
@@ -285,7 +285,7 @@ class GEPAMutator:
         lines = text.split("\n")
         if lines:
             first_line = lines[0]
-            if first_line.startswith("You are") or first_line.startswith("Eres"):
+            if first_line.startswith(("You are", "Eres")):
                 emphasis = random.choice([
                     f"[ROLE]: {first_line}",
                     f"{first_line} [AUTHORITY: You have final say on this domain]",
@@ -299,7 +299,7 @@ class GEPAMutator:
 
     def _log_mutation_round(
         self,
-        mutants: List[MutantPrompt],
+        mutants: list[MutantPrompt],
         winner: MutantPrompt,
         winner_score: float,
     ) -> None:
@@ -316,6 +316,6 @@ class GEPAMutator:
             len(mutants), winner.id, winner_score,
         )
 
-    def get_mutation_log(self) -> List[Dict[str, Any]]:
+    def get_mutation_log(self) -> list[dict[str, Any]]:
         """Get mutation log."""
         return list(self._mutation_log)

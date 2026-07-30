@@ -15,7 +15,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -55,14 +55,14 @@ class PersistentMemory:
         session = pm.get_session("session-123")
     """
 
-    def __init__(self, path: Optional[Path] = None) -> None:
+    def __init__(self, path: Path | None = None) -> None:
         """
         Args:
             path: Ruta al archivo JSON de persistencia.
                   Si es None, usa 'data/persistent_memory.json'.
         """
         self._path = path or Path("data/persistent_memory.json")
-        self._data: Dict[str, MemoryEntry] = {}
+        self._data: dict[str, MemoryEntry] = {}
         self._load()
 
     def store(self, key: str, value: Any, agent: str = "system",
@@ -83,7 +83,7 @@ class PersistentMemory:
         )
         self._save()
 
-    def recall(self, key: str) -> Optional[Any]:
+    def recall(self, key: str) -> Any | None:
         """
         Recuperar un valor por clave.
 
@@ -102,7 +102,7 @@ class PersistentMemory:
             return None
         return entry.value
 
-    def get_session(self, session_id: str) -> Dict[str, Any]:
+    def get_session(self, session_id: str) -> dict[str, Any]:
         """
         Recuperar todo el contexto de una sesion.
 
@@ -117,7 +117,7 @@ class PersistentMemory:
             if v.session_id == session_id
         }
 
-    def get_agent_memory(self, agent: str) -> Dict[str, Any]:
+    def get_agent_memory(self, agent: str) -> dict[str, Any]:
         """
         Recuperar toda la memoria de un agente.
 
@@ -132,7 +132,7 @@ class PersistentMemory:
             if v.agent == agent
         }
 
-    def get_all_entries(self) -> Dict[str, MemoryEntry]:
+    def get_all_entries(self) -> dict[str, MemoryEntry]:
         """
         Obtener todas las entradas (para inspeccion).
 
@@ -141,7 +141,7 @@ class PersistentMemory:
         """
         return dict(self._data)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Estadisticas de memoria.
 
@@ -150,8 +150,8 @@ class PersistentMemory:
         """
         return {
             "total_entries": len(self._data),
-            "sessions": len(set(e.session_id for e in self._data.values())),
-            "agents": len(set(e.agent for e in self._data.values())),
+            "sessions": len({e.session_id for e in self._data.values()}),
+            "agents": len({e.agent for e in self._data.values()}),
         }
 
     def clear(self) -> None:
@@ -166,7 +166,7 @@ class PersistentMemory:
                 data = json.loads(self._path.read_text(encoding="utf-8"))
                 for k, v in data.items():
                     self._data[k] = MemoryEntry(**v)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning(f"Failed to load memory from {self._path}: {e}")
 
     def _save(self) -> None:

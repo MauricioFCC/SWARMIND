@@ -11,13 +11,12 @@ Verifica:
 
 from __future__ import annotations
 
-from typing import Any, Dict
-from unittest.mock import MagicMock, patch
+from typing import Any
+from unittest.mock import patch
 
 import pytest
 
 from harness.orchestrator.worktable import Compendium, EpicMode, Worktable
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -74,7 +73,7 @@ class TestRun:
 
     def test_run_generates_artifacts(self, epic_one_iter: EpicMode) -> None:
         """Con 1 iteracion se genera 1 artefacto."""
-        result = epic_one_iter.run("Tarea simple")
+        epic_one_iter.run("Tarea simple")
         assert len(epic_one_iter._artifacts) == 1
         artifact = epic_one_iter._artifacts[0]
         assert "iteration" in artifact
@@ -183,14 +182,14 @@ class TestArtifactStructure:
 
     def test_artifact_keys(self, epic_one_iter: EpicMode) -> None:
         """Cada artefacto tiene las claves esperadas."""
-        result = epic_one_iter.run("Diseñar API")
+        epic_one_iter.run("Diseñar API")
         artifact = epic_one_iter._artifacts[0]
         expected_keys = {"iteration", "plan", "execution", "review"}
         assert set(artifact.keys()) == expected_keys
 
     def test_artifact_values_are_strings(self, epic_one_iter: EpicMode) -> None:
         """plan, execution, review son strings (summaries)."""
-        result = epic_one_iter.run("Refactorizar modulo")
+        epic_one_iter.run("Refactorizar modulo")
         artifact = epic_one_iter._artifacts[0]
         assert isinstance(artifact["plan"], str)
         assert isinstance(artifact["execution"], str)

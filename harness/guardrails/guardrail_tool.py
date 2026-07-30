@@ -11,15 +11,19 @@ GuardrailEngine) para acceder a sus atributos internos.
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-from harness.guardrails.guardrail_types import GuardrailLayer, GuardrailResult, GuardrailVerdict
+from harness.guardrails.guardrail_types import (
+    GuardrailLayer,
+    GuardrailResult,
+    GuardrailVerdict,
+)
 
 
 def check_tool(
     self: Any,
     tool_name: str,
-    args: Optional[Dict[str, Any]] = None,
+    args: dict[str, Any] | None = None,
 ) -> GuardrailResult:
     """Valida una llamada a herramienta contra Tool Guardrails (Capa 4).
 
@@ -37,7 +41,7 @@ def check_tool(
             - PASS si la tool es segura y permitida.
     """
     start: float = time.perf_counter()
-    violations: List[str] = []
+    violations: list[str] = []
 
     # 1. Validar contra ToolGuardian
     is_allowed: bool = self._tool_guardian.validate_tool_call(
@@ -99,10 +103,10 @@ def check_policy(
             - PASS si cumple todas las politicas.
     """
     start: float = time.perf_counter()
-    violations: List[str] = []
+    violations: list[str] = []
 
     # 1. GovernanceGuard check
-    governance_violations: List[str] = self._governance_guard.check(code)
+    governance_violations: list[str] = self._governance_guard.check(code)
     violations.extend(governance_violations)
 
     # 2. Reglas de capa POLICY
@@ -130,7 +134,7 @@ def check_policy(
     return result
 
 
-def _check_governance(self: Any, text: str) -> Tuple[bool, str]:
+def _check_governance(self: Any, text: str) -> tuple[bool, str]:
     """Wrapper que evalua GovernanceGuard contra el texto.
 
     Convierte la salida de GovernanceGuard.check() en el formato
@@ -143,7 +147,7 @@ def _check_governance(self: Any, text: str) -> Tuple[bool, str]:
     Returns:
         tuple[bool, str]: (True si hay violaciones, detalle).
     """
-    violations: List[str] = self._governance_guard.check(text)
+    violations: list[str] = self._governance_guard.check(text)
     if violations:
         detail: str = "; ".join(violations[:5])
         if len(violations) > 5:

@@ -1,5 +1,5 @@
-"""
-Command handlers for harness/run.py — extracted for file size compliance.
+﻿"""
+Command handlers for harness/run.py â€” extracted for file size compliance.
 """
 from __future__ import annotations
 
@@ -7,12 +7,12 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-# ── RAG Commands ─────────────────────────────────────────────────────
+# â”€â”€ RAG Commands â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _handle_rag_ingest(store, cmd: str) -> None:
     """Handle ``!rag ingest [--dir <path>]``."""
@@ -47,12 +47,12 @@ def _handle_rag_ingest(store, cmd: str) -> None:
         )
         if stats.get("errors", 0):
             logger.warning("[RAG] \u26a0\ufe0f %d errores", stats["errors"])
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error("[RAG] \u274c Error: %s", e)
 
 
 def _handle_rag_stats(store) -> None:
-    """Handle ``!rag stats`` — muestra estadisticas de la BD RAG."""
+    """Handle ``!rag stats`` â€” muestra estadisticas de la BD RAG."""
     colls = store.list_collections()
     logger.info("")
     logger.info("[RAG] Colecciones disponibles: %s", colls)
@@ -62,7 +62,7 @@ def _handle_rag_stats(store) -> None:
             logger.info("[RAG] Coleccion 'rag_chunks':")
             logger.info("  Items: %d", stats.get("item_count", 0))
             logger.info("  Ultima actualizacion: %s", stats.get("last_updated", "N/A"))
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.info("[RAG] Coleccion 'rag_chunks' existe (error al obtener stats: %s)", exc)
             logger.info("  (Esto es normal si la BD esta vacia o es una version reciente de LanceDB)")
     else:
@@ -70,7 +70,7 @@ def _handle_rag_stats(store) -> None:
     logger.info("")
 
 
-# ── DB Commands ──────────────────────────────────────────────────────
+# â”€â”€ DB Commands â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _handle_db_migrate(store, cmd: str) -> None:
     """Handle ``!db migrate [--path <ruta>]``."""
@@ -98,9 +98,9 @@ def _handle_db_migrate(store, cmd: str) -> None:
     if result.get("created"):
         logger.info("[DB] Creadas: {}".format(", ".join(result["created"])))
     for s in result.get("skipped", []):
-        logger.info("[DB] SKIP: {}".format(s))
+        logger.info(f"[DB] SKIP: {s}")
     for e in result.get("errors", []):
-        logger.info("[DB] ERROR: {}".format(e))
+        logger.info(f"[DB] ERROR: {e}")
     if result.get("backup_path"):
         logger.info("[DB] Backup: {}".format(result["backup_path"]))
 
@@ -111,7 +111,7 @@ def _handle_db_list_imports() -> None:
     migrator = DBMigrator()
     imports = migrator.scan_imports()
     if imports:
-        logger.info("\n[DB] Bases detectadas ({}):".format(len(imports)))
+        logger.info(f"\n[DB] Bases detectadas ({len(imports)}):")
         for imp in imports:
             colls = ", ".join(imp["collections"])
             logger.info("  * {}: {} ({})".format(imp["name"], colls, imp["estimated_size_human"]))
@@ -152,12 +152,12 @@ def _handle_db_rollback(cmd: str) -> None:
     migrator = DBMigrator()
     success = migrator.rollback(backup_path)
     if success:
-        logger.info("[DB] Base restaurada desde: {}".format(backup_path))
+        logger.info(f"[DB] Base restaurada desde: {backup_path}")
     else:
-        logger.info("[DB] Error al restaurar desde: {}".format(backup_path))
+        logger.info(f"[DB] Error al restaurar desde: {backup_path}")
 
 
-# ── Iteration End ───────────────────────────────────────────────────
+# â”€â”€ Iteration End â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _parse_iteration_flags(cmd: str) -> dict:
     """Parse flags from a !iteration end command."""
@@ -195,7 +195,7 @@ def _handle_iteration_end(cmd: str, harness_root) -> None:
 
     logger.info("[Harness] Iniciando pipeline de fin de iteracion...")
     if flags["dry_run"]:
-        logger.info("[Harness] Modo DRY-RUN — no se modificaran archivos")
+        logger.info("[Harness] Modo DRY-RUN â€” no se modificaran archivos")
     if any([flags["skip_bugs"], flags["skip_sec"], flags["skip_docs"]]):
         skips = []
         if flags["skip_bugs"]:
@@ -216,7 +216,7 @@ def _handle_iteration_end(cmd: str, harness_root) -> None:
 def _handle_iteration_quick(cmd: str = "", harness_root=None) -> None:
     """Handle ``!iteration quick`` or ``!iteration end --quick``.
 
-    Modo rápido: solo bugs + tokens, salta security y docs.
+    Modo rÃ¡pido: solo bugs + tokens, salta security y docs.
     """
     sys.path.insert(1, str(Path(__file__).resolve().parent.parent.parent))
     from harness.scripts.end_of_iteration import run_quick_pipeline
@@ -226,7 +226,7 @@ def _handle_iteration_quick(cmd: str = "", harness_root=None) -> None:
 def _handle_iteration_auto(cmd: str = "", harness_root=None) -> None:
     """Handle ``!iteration auto`` or ``!iteration end --auto``.
 
-    Modo automático: pipeline completo + commit si no hay criticals.
+    Modo automÃ¡tico: pipeline completo + commit si no hay criticals.
     """
     sys.path.insert(1, str(Path(__file__).resolve().parent.parent.parent))
     from harness.scripts.end_of_iteration import run_auto_pipeline
@@ -234,34 +234,34 @@ def _handle_iteration_auto(cmd: str = "", harness_root=None) -> None:
 
 
 def _handle_iteration_report() -> None:
-    """Handle ``!iteration report`` — shows the last saved iteration report."""
+    """Handle ``!iteration report`` â€” shows the last saved iteration report."""
     from harness.scripts.end_of_iteration import print_last_report
     print_last_report()
 
 
 def _handle_iteration_history(cmd: str) -> None:
-    """Handle ``!iteration history [--all]`` — muestra timeline de iteraciones."""
+    """Handle ``!iteration history [--all]`` â€” muestra timeline de iteraciones."""
     from harness.scripts.end_of_iteration import show_iteration_history
     parts = cmd.split()
     if "--all" in parts:
-        show_iteration_history(limit=0)  # 0 = sin límite
+        show_iteration_history(limit=0)  # 0 = sin lÃ­mite
     else:
         show_iteration_history(limit=10)
 
 
 def _handle_iteration_diff(cmd: str) -> None:
-    """Handle ``!iteration diff [--last] [--n <num>]`` — muestra detalle de iteración.
+    """Handle ``!iteration diff [--last] [--n <num>]`` â€” muestra detalle de iteraciÃ³n.
 
     Ejemplos:
-        !iteration diff            → última iteración
-        !iteration diff --last     → última iteración
-        !iteration diff --n 2      → penúltima iteración
-        !iteration diff --n 3      → antepenúltima iteración
+        !iteration diff            â†’ Ãºltima iteraciÃ³n
+        !iteration diff --last     â†’ Ãºltima iteraciÃ³n
+        !iteration diff --n 2      â†’ penÃºltima iteraciÃ³n
+        !iteration diff --n 3      â†’ antepenÃºltima iteraciÃ³n
     """
     from harness.scripts.end_of_iteration import show_iteration_diff
     parts = cmd.split()
 
-    n = 1  # default: última
+    n = 1  # default: Ãºltima
     if "--n" in parts:
         idx = parts.index("--n")
         if idx + 1 < len(parts):
@@ -269,33 +269,33 @@ def _handle_iteration_diff(cmd: str) -> None:
                 n = max(1, int(parts[idx + 1]))
             except (ValueError, IndexError):
                 n = 1
-    # --last también es 1 (default)
+    # --last tambiÃ©n es 1 (default)
     show_iteration_diff(n=n)
 
 
-# ── Hooks ────────────────────────────────────────────────────────────
+# â”€â”€ Hooks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _handle_hooks_install() -> None:
-    """Handle ``!hooks install`` — installs the pre-commit hook."""
+    """Handle ``!hooks install`` â€” installs the pre-commit hook."""
     from harness.scripts.install_hooks import install_hook
     logger.info("[Harness] Instalando hook pre-commit...")
     install_hook()
 
 
 def _handle_hooks_uninstall() -> None:
-    """Handle ``!hooks uninstall`` — uninstalls the pre-commit hook."""
+    """Handle ``!hooks uninstall`` â€” uninstalls the pre-commit hook."""
     from harness.scripts.install_hooks import uninstall_hook
     logger.info("[Harness] Desinstalando hook pre-commit...")
     uninstall_hook()
 
 
 def _handle_hooks_status() -> None:
-    """Handle ``!hooks status`` — shows hook installation status."""
+    """Handle ``!hooks status`` â€” shows hook installation status."""
     from harness.scripts.install_hooks import show_status
     show_status()
 
 
-# ── Evolve ──────────────────────────────────────────────────────────
+# â”€â”€ Evolve â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _handle_evolve_mutate(store, cmd: str) -> None:
     """Handle ``!evolve mutate @<agent> \"<task>\"``."""
@@ -399,7 +399,7 @@ def _handle_schedule_list(store) -> None:
         logger.info(f"  - {job.name}: {job.trigger} = {job.trigger_value} [{status}] ultimo: {job.last_run or 'nunca'}")
 
 
-# ── Model Routing ────────────────────────────────────────────────────
+# â”€â”€ Model Routing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _apply_model_routing(task: str, target_agent: str, force_cloud: bool = False) -> str:
     """Apply ModelRouter to determine local vs cloud execution.
@@ -409,23 +409,22 @@ def _apply_model_routing(task: str, target_agent: str, force_cloud: bool = False
     from harness.model_router.router import ModelRouter
     router = ModelRouter()
     if force_cloud:
-        logger.info(f"[ROUTER] @{target_agent} → cloud (--force-cloud override)")
+        logger.info(f"[ROUTER] @{target_agent} â†’ cloud (--force-cloud override)")
         return "cloud"
     decision = router.route(task, target_agent)
     source = decision.source
-    logger.info(f"[ROUTER] @{target_agent} → {source} ({decision.provider}/{decision.model}) [{decision.reason}]")
-    if source == "local":
-        if not router._is_ollama_available():
-            logger.info(f"[ROUTER] ⚠️  Ollama no detectado. Modelo local '{decision.model}' no disponible.")
-            if router.config.get("local", {}).get("fallback_to_cloud", True):
-                logger.info("[ROUTER] ⚠️  Fallback a cloud automatico activado.")
-            else:
-                logger.info("[ROUTER] 💡 Instala Ollama: https://ollama.com")
-                logger.info("[ROUTER] 💡 O usa --force-cloud para modo cloud")
+    logger.info(f"[ROUTER] @{target_agent} â†’ {source} ({decision.provider}/{decision.model}) [{decision.reason}]")
+    if source == "local" and not router._is_ollama_available():
+        logger.info(f"[ROUTER] âš ï¸  Ollama no detectado. Modelo local '{decision.model}' no disponible.")
+        if router.config.get("local", {}).get("fallback_to_cloud", True):
+            logger.info("[ROUTER] âš ï¸  Fallback a cloud automatico activado.")
+        else:
+            logger.info("[ROUTER] ðŸ’¡ Instala Ollama: https://ollama.com")
+            logger.info("[ROUTER] ðŸ’¡ O usa --force-cloud para modo cloud")
     return source
 
 
-# ── HITL Guard ─────────────────────────────────────────────────────
+# â”€â”€ HITL Guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _check_hitl(action: str, agent_role: str, guard) -> bool:
     """Check if an action needs human approval and handle it.
@@ -442,7 +441,7 @@ def _check_hitl(action: str, agent_role: str, guard) -> bool:
     return guard.request_approval(action, agent_role)
 
 
-# ── Watch mode helpers ──────────────────────────────────────────────
+# â”€â”€ Watch mode helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _get_files_to_watch(harness_root: Path) -> dict:
     """Get file modification times for harness/ and .opencode/."""
@@ -469,13 +468,14 @@ def _get_files_to_watch(harness_root: Path) -> dict:
     return snapshots
 
 
-# ── Watch-mode handler ──────────────────────────────────────────────
+# â”€â”€ Watch-mode handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def _handle_watch_mode(harness_root: Path) -> None:
     """Handle --watch flag - monitors harness/ and .opencode/ for changes."""
     import time as _time
     from datetime import datetime as _datetime
+    from datetime import timezone as _timezone
 
     from harness.cli_common import get_project_root
 
@@ -491,7 +491,7 @@ def _handle_watch_mode(harness_root: Path) -> None:
         return
 
     last_snapshot = _get_files_to_watch(harness_root)
-    idle_since: Optional[float] = None
+    idle_since: float | None = None
     debounce_seconds = 3.0
 
     _safe_print(f"  {_cyan('[WATCH]')} Waiting for changes...")
@@ -526,7 +526,7 @@ def _handle_watch_mode(harness_root: Path) -> None:
             if now - idle_since < debounce_seconds:
                 continue
 
-            timestamp = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            timestamp = _datetime.now(_timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
             for f in changed_files[:5]:
                 rel = str(Path(f).relative_to(get_project_root()))
                 _safe_print(f"  [{timestamp}] change detected: {rel}")
@@ -539,7 +539,7 @@ def _handle_watch_mode(harness_root: Path) -> None:
                 result = _subprocess.run(
                     [sys.executable, str(eoi_script), "--watch"],
                     capture_output=True, text=True, timeout=30,
-                    cwd=str(harness_root.parent),
+                    cwd=str(harness_root.parent), check=False,
                 )
                 for line in result.stdout.splitlines():
                     _safe_print(f"  {line}")
@@ -548,7 +548,7 @@ def _handle_watch_mode(harness_root: Path) -> None:
                         _safe_print(f"  {_warn('[STDERR]')} {line}")
             except _subprocess.TimeoutExpired:
                 _safe_print(f"  {_warn('[WARN]')} Pipeline timeout (>30s)")
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 _safe_print(f"  {_err('[ERROR]')} Pipeline failed: {exc}")
 
             last_snapshot = new_snapshot.copy()
@@ -560,12 +560,12 @@ def _handle_watch_mode(harness_root: Path) -> None:
         _safe_print(f"\n  {_cyan('[WATCH]')} Watch mode detenido.")
 
 
-# ── Hermes commands ────────────────────────────────────────────────
+# â”€â”€ Hermes commands â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def _handle_hermes(cmd: str) -> None:
     """Handle !hermes sync and !hermes stats."""
-    from harness.hermes_bridge import HermesBridge
+    from harness.memory_rag.hermes_bridge import HermesBridge
 
     sub = cmd[len("!hermes"):].strip()
     if sub == "sync":
@@ -584,7 +584,7 @@ def _handle_hermes(cmd: str) -> None:
         logger.info("[Hermes] Unknown subcommand: '%s'. Try '!hermes sync' or '!hermes stats'.", sub)
 
 
-# ── Guardrails helper ──────────────────────────────────────────────
+# â”€â”€ Guardrails helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def _run_guardrails(task: str, target_agent: str, ctx: Any,
@@ -593,7 +593,7 @@ def _run_guardrails(task: str, target_agent: str, ctx: Any,
     """
     Ejecuta guardrails de seguridad.
     
-    Si run_full_pipeline no está disponible, emite WARNING pero continúa
+    Si run_full_pipeline no estÃ¡ disponible, emite WARNING pero continÃºa
     (comportamiento degradado pero no bloqueante para desarrollo local).
     """
     if run_full_pipeline is None:
@@ -619,7 +619,7 @@ def _run_guardrails(task: str, target_agent: str, ctx: Any,
                  result['summary']['passed'], result['summary']['total_checks'])
 
 
-# ── ANSI helpers ────────────────────────────────────────────────────
+# â”€â”€ ANSI helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _RED = "\033[91m"; _GREEN = "\033[92m"; _YELLOW = "\033[93m"
 _CYAN = "\033[96m"; _BOLD = "\033[1m"; _RESET = "\033[0m"

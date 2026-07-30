@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import ClassVar
 
 from harness.memory_rag.compaction import structured_compact
 
@@ -39,14 +39,14 @@ class SubTask:
     id: str
     agent: str          # builder | scientist | guardian | evolve | coordinator
     description: str
-    dependencies: List[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
     expected_output: str = ""
     context_hint: str = ""
     completed: bool = False
     result: str = ""
     confidence_impact: str = "neutral"  # "critical" | "neutral" | "validation"
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "id": self.id,
             "agent": self.agent,
@@ -65,10 +65,10 @@ class TaskPlan:
     """A complete execution plan with DAG structure."""
     session_id: str
     original_message: str
-    subtasks: List[SubTask] = field(default_factory=list)
+    subtasks: list[SubTask] = field(default_factory=list)
     template_name: str = ""  # Which template was used to create this plan
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "session_id": self.session_id,
             "original_message": self.original_message,
@@ -76,7 +76,7 @@ class TaskPlan:
             "template_name": self.template_name,
         }
 
-    def get_levels(self) -> List[List[SubTask]]:
+    def get_levels(self) -> list[list[SubTask]]:
         """
         Group subtasks into execution levels (topological sort).
 
@@ -87,7 +87,7 @@ class TaskPlan:
         """
         remaining = {s.id: s for s in self.subtasks}
         completed_ids: set = set()
-        levels: List[List[SubTask]] = []
+        levels: list[list[SubTask]] = []
 
         while remaining:
             level = [
@@ -109,7 +109,7 @@ class TaskPlan:
 
         return levels
 
-    def get_pending(self) -> List[SubTask]:
+    def get_pending(self) -> list[SubTask]:
         """Get subtasks that are not yet completed and whose deps are met."""
         completed_ids = {s.id for s in self.subtasks if s.completed}
         return [
@@ -118,13 +118,13 @@ class TaskPlan:
             and all(dep in completed_ids for dep in s.dependencies)
         ]
 
-    def get_next_level(self) -> List[SubTask]:
+    def get_next_level(self) -> list[SubTask]:
         """Get the next level of subtasks ready for execution."""
         pending = self.get_pending()
         if not pending:
             return []
         # Group by dependency depth
-        completed_ids = {s.id for s in self.subtasks if s.completed}
+        {s.id for s in self.subtasks if s.completed}
         # The ones with the shallowest dependency depth
         min_deps = min(len(s.dependencies) for s in pending)
         return [s for s in pending if len(s.dependencies) == min_deps]
@@ -190,7 +190,7 @@ class TaskPlan:
 # - deps: indices of subtasks this depends on (0-based within template)
 # - expected_output: what the agent must produce
 
-SUBTASK_TEMPLATES: Dict[str, Dict] = {
+SUBTASK_TEMPLATES: dict[str, dict] = {
     # ==========================================================================
     # SWISS WATCH: MAXIMA VELOCIDAD, CERO COLISIONES.
     # Nivel 0: builder+guardian+scientist en PARALELO.
@@ -345,7 +345,7 @@ class TaskPlanner:
     """
 
     # Mapa de confidence_impact por tipo de template
-    _TEMPLATE_CONFIDENCE_IMPACT = {
+    _TEMPLATE_CONFIDENCE_IMPACT: ClassVar[dict[str, str]] = {
         "security_audit": "critical",
         "deploy": "critical",
         "implement_api": "high",
@@ -417,8 +417,8 @@ class TaskPlanner:
             template = {"description": f"dynamic_{scope.level}", "subtasks": subtask_dicts}
 
         # --- 4. Build subtasks from template ---
-        subtasks: List[SubTask] = []
-        idx_to_id: Dict[int, str] = {}
+        subtasks: list[SubTask] = []
+        idx_to_id: dict[int, str] = {}
         for idx, tpl in enumerate(template["subtasks"]):
             self._counter += 1
             subtask_id = f"st-{self._counter}"
@@ -517,7 +517,7 @@ class TaskPlanner:
 
         return best_name, best_template
 
-    def _extract_specifics(self, message: str) -> Dict:
+    def _extract_specifics(self, message: str) -> dict:
         """
         Extract specifics from the message to customize subtasks.
 
@@ -531,7 +531,7 @@ class TaskPlanner:
             Dict with 'stack', 'framework', 'domain', 'context'.
         """
         msg_lower = message.lower()
-        specifics: Dict = {
+        specifics: dict = {
             "stack": "",
             "framework": "",
             "domain": "",
@@ -602,7 +602,7 @@ class TaskPlanner:
 
         return specifics
 
-    def _customize_description(self, description: str, specifics: Dict) -> str:
+    def _customize_description(self, description: str, specifics: dict) -> str:
         """Inject specifics into a subtask description."""
         if specifics["stack"] and "stack" in description.lower():
             return description

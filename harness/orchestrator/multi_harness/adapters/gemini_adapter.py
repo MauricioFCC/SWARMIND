@@ -14,7 +14,6 @@ from __future__ import annotations
 import logging
 import shutil
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from harness.orchestrator.multi_harness.converter_base import (
     ExportResult,
@@ -48,8 +47,8 @@ class GeminiAdapter(HarnessConverter):
         Returns:
             ExportResult con el resultado.
         """
-        agents: List[Path] = self._get_opencode_agents()
-        errors: List[str] = []
+        agents: list[Path] = self._get_opencode_agents()
+        errors: list[str] = []
 
         if not agents:
             return ExportResult(success=True, files_exported=0)
@@ -85,8 +84,8 @@ class GeminiAdapter(HarnessConverter):
         Returns:
             ExportResult con el resultado.
         """
-        skills: List[Path] = self._get_opencode_skills()
-        errors: List[str] = []
+        skills: list[Path] = self._get_opencode_skills()
+        errors: list[str] = []
 
         if not skills:
             return ExportResult(success=True, files_exported=0)
@@ -125,7 +124,7 @@ class GeminiAdapter(HarnessConverter):
         Returns:
             ExportResult con el resultado.
         """
-        instructions: List[str] = [
+        instructions: list[str] = [
             "# Swarmind — Instrucciones de Sistema para Gemini CLI",
             "",
             "> Generado automaticamente por Multi-Harness Adapter Layer.",
@@ -136,7 +135,7 @@ class GeminiAdapter(HarnessConverter):
             "## Agentes disponibles",
         ]
 
-        agents: List[Path] = self._get_opencode_agents()
+        agents: list[Path] = self._get_opencode_agents()
         for agent in agents:
             agent_name: str = agent.stem.replace("-", " ").title()
             instructions.append(f"- {agent_name} (`{agent.name}`)")
@@ -146,7 +145,7 @@ class GeminiAdapter(HarnessConverter):
             "## Skills disponibles",
         ])
 
-        skills: List[Path] = self._get_opencode_skills()
+        skills: list[Path] = self._get_opencode_skills()
         for skill in skills:
             skill_name: str = skill.stem.replace("-", " ").title()
             instructions.append(f"- {skill_name} (`{skill.name}`)")

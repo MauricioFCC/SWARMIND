@@ -1,4 +1,4 @@
-"""MultiHarnessCLI — Interfaz de linea de comandos para Multi-Harness.
+﻿"""MultiHarnessCLI â€” Interfaz de linea de comandos para Multi-Harness.
 
 Provee los comandos !harness para exportar, detectar, validar y monitorear
 la compatibilidad multi-runtime de Swarmind.
@@ -13,9 +13,8 @@ Comandos disponibles:
 from __future__ import annotations
 
 import logging
-import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from harness.orchestrator.multi_harness.runtime_detector import (
     RuntimeInfo,
@@ -27,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 # Mapa de nombre de runtime -> clase adaptadora
-ADAPTER_MAP: Dict[str, str] = {
+ADAPTER_MAP: dict[str, str] = {
     "opencode": "harness.orchestrator.multi_harness.adapters.opencode_adapter.OpenCodeAdapter",
     "claude": "harness.orchestrator.multi_harness.adapters.claude_adapter.ClaudeAdapter",
     "codex": "harness.orchestrator.multi_harness.adapters.codex_adapter.CodexAdapter",
@@ -52,7 +51,7 @@ def _import_adapter(adapter_path: str) -> Any:
     return getattr(module, class_name)
 
 
-def cmd_export(target: str, dry_run: bool = False, project_root: Optional[Path] = None) -> bool:
+def cmd_export(target: str, dry_run: bool = False, project_root: Path | None = None) -> bool:
     """Exporta la configuracion de Swarmind al runtime destino.
 
     Args:
@@ -76,7 +75,7 @@ def cmd_export(target: str, dry_run: bool = False, project_root: Optional[Path] 
                 success = False
         return success
 
-    adapter_path: Optional[str] = ADAPTER_MAP.get(target)
+    adapter_path: str | None = ADAPTER_MAP.get(target)
     if not adapter_path:
         logger.error("[CLI] Runtime destino no soportado: %s. Opciones: %s", target, list(ADAPTER_MAP.keys()))
         return False
@@ -86,7 +85,7 @@ def cmd_export(target: str, dry_run: bool = False, project_root: Optional[Path] 
         adapter = adapter_class(project_root=root)
 
         # Validar antes de exportar
-        errors: List[str] = adapter.validate()
+        errors: list[str] = adapter.validate()
         if errors:
             for err in errors:
                 logger.error("[CLI] Error de validacion: %s", err)
@@ -113,12 +112,12 @@ def cmd_export(target: str, dry_run: bool = False, project_root: Optional[Path] 
     except ImportError as exc:
         logger.error("[CLI] Error importando adaptador %s: %s", target, exc)
         return False
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.error("[CLI] Error en exportacion a %s: %s", target, exc)
         return False
 
 
-def cmd_status(project_root: Optional[Path] = None) -> Dict[str, Any]:
+def cmd_status(project_root: Path | None = None) -> dict[str, Any]:
     """Muestra el estado de todos los runtimes en el proyecto.
 
     Args:
@@ -129,9 +128,9 @@ def cmd_status(project_root: Optional[Path] = None) -> Dict[str, Any]:
     """
     root: Path = project_root or Path.cwd()
     active: RuntimeInfo = detect_runtime(root)
-    detected: List[RuntimeInfo] = get_detected_runtimes(root)
+    detected: list[RuntimeInfo] = get_detected_runtimes(root)
 
-    status: Dict[str, Any] = {
+    status: dict[str, Any] = {
         "active_runtime": {
             "name": active.name,
             "display_name": active.display_name,
@@ -151,26 +150,26 @@ def cmd_status(project_root: Optional[Path] = None) -> Dict[str, Any]:
 
     # Mostrar resumen en consola
     print(f"\n{'='*60}")
-    print(f"  Multi-Harness Status — Swarmind")
+    print("  Multi-Harness Status â€” Swarmind")
     print(f"{'='*60}")
-    print(f"  Runtime activo: {active.display_name} {'✅' if active.detected else '⬜'}")
+    print(f"  Runtime activo: {active.display_name} {'âœ…' if active.detected else 'â¬œ'}")
     if active.config_path:
         print(f"  Config: {active.config_path}")
     print(f"\n  Runtimes detectados ({len(detected)}):")
     for rt in detected:
-        print(f"    ✅ {rt.display_name} ({rt.config_dir}/)")
+        print(f"    âœ… {rt.display_name} ({rt.config_dir}/)")
     print(f"\n  Todos los runtimes ({len(ADAPTER_MAP)-1}):")
     for name in ADAPTER_MAP:
         if name == "all":
             continue
-        detected_flag = "✅" if any(rt.name == name for rt in detected) else "⬜"
+        detected_flag = "âœ…" if any(rt.name == name for rt in detected) else "â¬œ"
         print(f"    {detected_flag} {name}")
     print(f"{'='*60}\n")
 
     return status
 
 
-def cmd_detect(project_root: Optional[Path] = None) -> RuntimeInfo:
+def cmd_detect(project_root: Path | None = None) -> RuntimeInfo:
     """Detecta y muestra el runtime activo.
 
     Args:
@@ -185,7 +184,7 @@ def cmd_detect(project_root: Optional[Path] = None) -> RuntimeInfo:
     print(f"Runtime detectado: {runtime.display_name}")
     print(f"  Nombre interno: {runtime.name}")
     print(f"  Directorio config: {runtime.config_dir}")
-    print(f"  Detectado: {'✅ Si' if runtime.detected else '⬜ No'}")
+    print(f"  Detectado: {'âœ… Si' if runtime.detected else 'â¬œ No'}")
     if runtime.config_path:
         print(f"  Archivo config: {runtime.config_path}")
     if runtime.version:
@@ -194,7 +193,7 @@ def cmd_detect(project_root: Optional[Path] = None) -> RuntimeInfo:
     return runtime
 
 
-def cmd_validate(project_root: Optional[Path] = None) -> bool:
+def cmd_validate(project_root: Path | None = None) -> bool:
     """Valida la estructura del proyecto para todos los runtimes.
 
     Args:
@@ -207,32 +206,32 @@ def cmd_validate(project_root: Optional[Path] = None) -> bool:
     all_valid: bool = True
 
     print(f"\n{'='*60}")
-    print(f"  Validacion Multi-Harness")
+    print("  Validacion Multi-Harness")
     print(f"{'='*60}")
 
     for name in ADAPTER_MAP:
         if name == "all":
             continue
-        adapter_path: Optional[str] = ADAPTER_MAP.get(name)
+        adapter_path: str | None = ADAPTER_MAP.get(name)
         if not adapter_path:
             continue
         try:
             adapter_class = _import_adapter(adapter_path)
             adapter = adapter_class(project_root=root)
-            errors: List[str] = adapter.validate()
+            errors: list[str] = adapter.validate()
             if errors:
                 all_valid = False
-                print(f"  ❌ {name}: {len(errors)} error(es)")
+                print(f"  âŒ {name}: {len(errors)} error(es)")
                 for err in errors:
                     print(f"     - {err}")
             else:
-                print(f"  ✅ {name}: estructura valida")
-        except Exception as exc:
+                print(f"  âœ… {name}: estructura valida")
+        except Exception as exc:  # noqa: BLE001
             all_valid = False
-            print(f"  ❌ {name}: error cargando adaptador: {exc}")
+            print(f"  âŒ {name}: error cargando adaptador: {exc}")
 
     print(f"{'='*60}")
-    print(f"  Resultado: {'✅ TODO VALIDO' if all_valid else '❌ HAY ERRORES'}")
+    print(f"  Resultado: {'âœ… TODO VALIDO' if all_valid else 'âŒ HAY ERRORES'}")
     print(f"{'='*60}\n")
 
     return all_valid

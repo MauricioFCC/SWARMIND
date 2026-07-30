@@ -19,7 +19,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -81,8 +81,8 @@ class LegalDocument:
     """
     title: str
     type: str
-    entities: List[LegalEntity] = field(default_factory=list)
-    arguments: List[Argument] = field(default_factory=list)
+    entities: list[LegalEntity] = field(default_factory=list)
+    arguments: list[Argument] = field(default_factory=list)
     summary: str = ""
     jurisdiction: str = "Colombia"
     date: str = ""
@@ -155,7 +155,7 @@ class LegalAnalyzer:
         except ImportError:
             logger.warning("SaulLM not available, using rule-based fallback")
 
-    def extract_entities(self, text: str) -> List[LegalEntity]:
+    def extract_entities(self, text: str) -> list[LegalEntity]:
         """
         Extraer entidades juridicas de un texto.
         
@@ -183,7 +183,7 @@ class LegalAnalyzer:
         
         return entities
 
-    def extract_arguments(self, text: str) -> List[Argument]:
+    def extract_arguments(self, text: str) -> list[Argument]:
         """
         Extraer argumentos juridicos (ratio decidendi, obiter dicta).
         
@@ -269,7 +269,7 @@ class LegalAnalyzer:
         else:
             return "documento_general"
 
-    def compare_documents(self, doc1: str, doc2: str) -> Dict[str, Any]:
+    def compare_documents(self, doc1: str, doc2: str) -> dict[str, Any]:
         """
         Comparar dos documentos legales.
         
@@ -283,9 +283,9 @@ class LegalAnalyzer:
         entities1 = self.extract_entities(doc1)
         entities2 = self.extract_entities(doc2)
         
-        shared = set(e.text for e in entities1) & set(e.text for e in entities2)
-        unique1 = set(e.text for e in entities1) - set(e.text for e in entities2)
-        unique2 = set(e.text for e in entities2) - set(e.text for e in entities1)
+        shared = {e.text for e in entities1} & {e.text for e in entities2}
+        unique1 = {e.text for e in entities1} - {e.text for e in entities2}
+        unique2 = {e.text for e in entities2} - {e.text for e in entities1}
         
         return {
             "shared_entities": list(shared),

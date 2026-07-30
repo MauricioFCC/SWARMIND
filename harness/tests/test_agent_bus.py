@@ -12,7 +12,7 @@ class TestAgentBus:
         assert len(msg_id) > 0
 
     def test_invalid_channel(self, agent_bus):
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             agent_bus.post_message("bad", "@a", "@b", "x", "notification")
 
     def test_poll_channel(self, agent_bus):

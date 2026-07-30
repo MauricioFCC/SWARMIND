@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 from harness.memory_rag.trajectory_compressor import TrajectoryCompressor
 
 
-def _gen_conv(n: int) -> List[Dict]:
+def _gen_conv(n: int) -> list[dict]:
     conv = []
     for i in range(n):
         txt = f"Turn {i}: " + "lorem ipsum dolor sit amet " * 10
@@ -15,7 +15,7 @@ def _gen_conv(n: int) -> List[Dict]:
     return conv
 
 
-def bench_compression() -> Dict[str, Any]:
+def bench_compression() -> dict[str, Any]:
     comp = TrajectoryCompressor(min_tokens=100)
     conv = _gen_conv(30)
     orig_tok = sum(max(1, len(m["content"]) // 4) for m in conv)

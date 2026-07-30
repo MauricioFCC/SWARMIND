@@ -562,7 +562,7 @@ class TestTaskManagerLanceDB:
         try:
             parent = Path(tmpdir) / "sub_no_existe"
             db_path = str(parent / "lancedb")
-            tm = tm_module.TaskManager(db_path=db_path)
+            tm_module.TaskManager(db_path=db_path)
             # El padre debe haber sido creado por _initialize
             assert parent.is_dir()
         finally:
@@ -606,7 +606,7 @@ class TestTaskManagerLanceDB:
             "created_at": "now", "updated_at": "now",
             "transition_history": "[]",
         }])
-        tm._table.search.return_value.where.return_value.limit.return_value.to_pandas.return_value = df  # noqa: E501
+        tm._table.search.return_value.where.return_value.limit.return_value.to_pandas.return_value = df
 
         task = tm.read_task("abc123")
         assert task is not None
@@ -615,7 +615,7 @@ class TestTaskManagerLanceDB:
     def test_read_task_with_lancedb_not_found(self):
         """read_task retorna None si LanceDB no encuentra."""
         tm = tm_module.TaskManager(db_path="/tmp/lancedb_test")
-        tm._table.search.return_value.where.return_value.limit.return_value.to_pandas.return_value = _MockDataFrame()  # noqa: E501
+        tm._table.search.return_value.where.return_value.limit.return_value.to_pandas.return_value = _MockDataFrame()
 
         assert tm.read_task("no_existe") is None
 
@@ -629,7 +629,7 @@ class TestTaskManagerLanceDB:
             "created_at": "now", "updated_at": "now",
             "transition_history": "[]",
         }])
-        tm._table.search.return_value.where.return_value.limit.return_value.to_pandas.return_value = df  # noqa: E501
+        tm._table.search.return_value.where.return_value.limit.return_value.to_pandas.return_value = df
 
         updated = tm.update_task("t1", title="Modificado")
         assert updated is not None
@@ -677,7 +677,7 @@ class TestTaskManagerLanceDB:
             "created_at": "now", "updated_at": "now",
             "transition_history": "[]",
         }])
-        tm._table.search.return_value.where.return_value.limit.return_value.to_pandas.return_value = df  # noqa: E501
+        tm._table.search.return_value.where.return_value.limit.return_value.to_pandas.return_value = df
 
         tasks = tm.list_tasks(status="done", agent="builder")
         assert len(tasks) == 1
@@ -692,7 +692,7 @@ class TestTaskManagerLanceDB:
             "created_at": "now", "updated_at": "now",
             "transition_history": "[]",
         }])
-        tm._table.search.return_value.where.return_value.limit.return_value.to_pandas.return_value = df  # noqa: E501
+        tm._table.search.return_value.where.return_value.limit.return_value.to_pandas.return_value = df
 
         updated = tm.update_status("s1", "done", "completado")
         assert updated is not None

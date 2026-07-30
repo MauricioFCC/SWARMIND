@@ -17,9 +17,9 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class AgentCall:
     prompt: str
     priority: int = 5
     expected_tokens: int = 500
-    result: Optional[str] = None
+    result: str | None = None
     quality_score: float = 0.0
 
 
@@ -67,11 +67,11 @@ class CapsuleResult:
         compound_prompt: Prompt compuesto generado (si aplica).
     """
 
-    results: Dict[str, str]
+    results: dict[str, str]
     tokens_saved: int
     fusion_strategy: FusionStrategy
     quality_score: float
-    compound_prompt: Optional[str] = None
+    compound_prompt: str | None = None
 
 
 class AgentCapsule:
@@ -89,7 +89,7 @@ class AgentCapsule:
     def __init__(
         self,
         quality_floor: float = 0.85,
-        dispatch_fn: Optional[Callable[[str, str], str]] = None,
+        dispatch_fn: Callable[[str, str], str] | None = None,
     ) -> None:
         """Inicializar capsule con control de calidad y dispatch."""
         if not 0.0 <= quality_floor <= 1.0:
@@ -98,12 +98,12 @@ class AgentCapsule:
             )
         self._quality_floor = quality_floor
         self._dispatch = dispatch_fn or self._mock_dispatch
-        self._prompt_cache: Dict[str, str] = {}
+        self._prompt_cache: dict[str, str] = {}
 
     def execute(
         self,
-        calls: List[AgentCall],
-        strategy: Optional[FusionStrategy] = None,
+        calls: list[AgentCall],
+        strategy: FusionStrategy | None = None,
     ) -> CapsuleResult:
         """
         Ejecutar llamadas de agentes con fusion optima.
@@ -122,14 +122,14 @@ class AgentCapsule:
             strategy = self._select_strategy(calls)
 
         if not isinstance(strategy, FusionStrategy):
-            raise ValueError(
+            raise TypeError(
                 f"strategy debe ser miembro de FusionStrategy, recibido {strategy}"
             )
 
         # Validar calls
         for i, call in enumerate(calls):
             if not isinstance(call, AgentCall):
-                raise ValueError(
+                raise TypeError(
                     f"Elemento {i} en calls no es AgentCall: {type(call).__name__}"
                 )
             if not call.agent or not call.prompt:
@@ -171,7 +171,7 @@ class AgentCapsule:
 
         return result
 
-    def _select_strategy(self, calls: List[AgentCall]) -> FusionStrategy:
+    def _select_strategy(self, calls: list[AgentCall]) -> FusionStrategy:
         """Seleccion automatica de estrategia segun N calls y prioridades."""
         n = len(calls)
         if n <= 1:
@@ -185,7 +185,7 @@ class AgentCapsule:
         return FusionStrategy.TWO_PHASE
 
     def _execute_compound(
-        self, calls: List[AgentCall], base_tokens: int
+        self, calls: list[AgentCall], base_tokens: int
     ) -> CapsuleResult:
         """Fusionar todas las llamadas en un solo prompt compuesto."""
         # Construir prompt compuesto
@@ -220,7 +220,7 @@ class AgentCapsule:
         )
 
     def _execute_two_phase(
-        self, calls: List[AgentCall], base_tokens: int
+        self, calls: list[AgentCall], base_tokens: int
     ) -> CapsuleResult:
         """Fase 1: exploratoria (compuesta), Fase 2: detallada (individual)."""
         # Fase 1: exploracion compuesta
@@ -237,7 +237,7 @@ class AgentCapsule:
 
         # Fase 2: detalle individual con contexto de fase 1
         detail_tokens = 0
-        results: Dict[str, str] = {}
+        results: dict[str, str] = {}
         for call in calls:
             detail_prompt = (
                 f"Contexto exploratorio:\n{explore_result[:200]}\n\n"
@@ -265,10 +265,10 @@ class AgentCapsule:
         )
 
     def _execute_sequential(
-        self, calls: List[AgentCall], base_tokens: int
+        self, calls: list[AgentCall], base_tokens: int
     ) -> CapsuleResult:
         """Ejecucion secuencial con cache de prompts (ahorro minimo)."""
-        results: Dict[str, str] = {}
+        results: dict[str, str] = {}
         total_tokens = 0
 
         for call in calls:

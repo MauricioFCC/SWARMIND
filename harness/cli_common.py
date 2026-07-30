@@ -1,16 +1,16 @@
-"""
-CLI Common — Funcionalidad compartida entre run.py y delegate.py.
+﻿"""
+CLI Common â€” Funcionalidad compartida entre run.py y delegate.py.
 
-Extrae lógica duplicada de ambos entrypoints en un solo lugar,
-aplicando el patrón DRY. Incluye:
+Extrae lÃ³gica duplicada de ambos entrypoints en un solo lugar,
+aplicando el patrÃ³n DRY. Incluye:
   - setup_logging()
-  - parse_message() — parsing de @rol y !comandos
+  - parse_message() â€” parsing de @rol y !comandos
   - load_vector_store()
   - print_banner()
   - ANSI helpers
   - First-run detection
 
-REFACTOR: Elimina ~150 líneas de código duplicado entre run.py y delegate.py.
+REFACTOR: Elimina ~150 lÃ­neas de cÃ³digo duplicado entre run.py y delegate.py.
 """
 from __future__ import annotations
 
@@ -18,7 +18,9 @@ import logging
 import re
 import sys
 from pathlib import Path
-from typing import Any, Optional, Tuple
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -28,12 +30,12 @@ def setup_logging(level: int = logging.INFO) -> logging.Logger:
     """
     Configura logging estructurado (JSON) para todos los entrypoints.
     
-    Usa el módulo observability/logging.py que proporciona:
+    Usa el mÃ³dulo observability/logging.py que proporciona:
     - Formato JSON estructurado
     - Correlation IDs para trazabilidad
     - RED metrics (Rate, Errors, Duration)
     
-    Si el módulo no está disponible, fallback a basicConfig tradicional.
+    Si el mÃ³dulo no estÃ¡ disponible, fallback a basicConfig tradicional.
     """
     try:
         from harness.observability.logging import setup_structured_logging
@@ -53,7 +55,7 @@ def get_harness_root() -> Path:
 
 
 def get_project_root() -> Path:
-    """Retorna la ruta absoluta a la raíz del proyecto."""
+    """Retorna la ruta absoluta a la raÃ­z del proyecto."""
     return get_harness_root().parent
 
 
@@ -110,14 +112,14 @@ def _safe_print(*args, **kwargs) -> None:
 # Message parsing
 # ---------------------------------------------------------------------------
 
-def parse_message(task: str) -> Tuple[Optional[str], str]:
+def parse_message(task: str) -> tuple[str | None, str]:
     """
     Parsea un mensaje extrayendo @rol: y !comandos.
     
-    AHORA CON AUTO-DETECCIÓN: si no hay @ explícito, detecta el rol
-    automáticamente por el contenido del mensaje usando los roles universales:
-      - @builder: implementación (Rust, Go, Python, Web, Mobile, Trading, Infra)
-      - @scientist: investigación, papers, AI/ML, patrones
+    AHORA CON AUTO-DETECCIÃ“N: si no hay @ explÃ­cito, detecta el rol
+    automÃ¡ticamente por el contenido del mensaje usando los roles universales:
+      - @builder: implementaciÃ³n (Rust, Go, Python, Web, Mobile, Trading, Infra)
+      - @scientist: investigaciÃ³n, papers, AI/ML, patrones
       - @guardian: calidad, seguridad, riesgo, docs, operaciones
       - @evolve: auto-mejora del sistema
       - @coordinator: default (analiza y delega)
@@ -132,7 +134,7 @@ def parse_message(task: str) -> Tuple[Optional[str], str]:
     if task.startswith("!"):
         return None, task
 
-    # @rol: texto — ruteo explícito (backward compatible)
+    # @rol: texto â€” ruteo explÃ­cito (backward compatible)
     match = re.match(r"@(\w[\w-]*)\s*:\s*(.*)", task.strip())
     if match:
         return match.group(1), match.group(2).strip()
@@ -142,14 +144,14 @@ def parse_message(task: str) -> Tuple[Optional[str], str]:
     if match:
         return match.group(1), match.group(2).strip()
 
-    # Auto-detección: sin @, detectar rol por contenido
+    # Auto-detecciÃ³n: sin @, detectar rol por contenido
     # Delegamos a DelegationEngine.auto_route()
     try:
         from harness.orchestrator.delegation_engine import DelegationEngine
         engine = DelegationEngine()
         detected = engine.auto_route(task)
         return detected, task.strip()
-    except Exception as _exc:
+    except Exception as _exc:  # noqa: BLE001
         logger.warning("cli_common: %s", _exc)
 
     # Fallback: coordinator como default
@@ -165,7 +167,7 @@ def format_task_with_role(role: str, task: str) -> str:
 # Vector Store loading
 # ---------------------------------------------------------------------------
 
-def load_vector_store(db_path: Optional[str] = None) -> Any:
+def load_vector_store(db_path: str | None = None) -> Any:
     """
     Carga el vector store LanceDB, con manejo de errores claro.
 
@@ -176,7 +178,7 @@ def load_vector_store(db_path: Optional[str] = None) -> Any:
         Instancia de LanceVectorStore
 
     Raises:
-        ImportError: Si LanceDB no está instalado
+        ImportError: Si LanceDB no estÃ¡ instalado
         RuntimeError: Si no se puede conectar
     """
     from harness.memory_rag.lance_vector_store import LanceVectorStore
@@ -194,14 +196,12 @@ def load_vector_store(db_path: Optional[str] = None) -> Any:
 # ---------------------------------------------------------------------------
 
 def check_first_run(harness_root: Path) -> bool:
-    """Detecta si es primera ejecución y guía al usuario en la configuración."""
-    from datetime import datetime
+    """Detecta si es primera ejecuciÃ³n y guÃ­a al usuario en la configuraciÃ³n."""
+    from datetime import datetime, timezone
 
     marker_file = harness_root / ".harness_initialized"
     if marker_file.exists():
         return False
-
-    logger = logging.getLogger(__name__)
 
     logger.info("=" * 60)
     logger.info("  Swarmind Harness -- Primera ejecucion detectada")
@@ -257,14 +257,14 @@ def check_first_run(harness_root: Path) -> bool:
         try:
             from harness.scripts.init import _load_domain_skills
             _load_domain_skills()
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.info("  (No se pudo cargar skill de dominio: %s)", exc)
 
     # Paso 5: Ejecutar init.py
     logger.info("")
     logger.info("  Ejecutando init.py para completar la configuracion...")
     import subprocess as _subprocess
-    _subprocess.run([sys.executable, str(harness_root / "scripts" / "init.py")], cwd=get_project_root())
+    _subprocess.run([sys.executable, str(harness_root / "scripts" / "init.py")], cwd=get_project_root(), check=False)
 
     # Paso 6: RAG Ingest
     logger.info("")
@@ -287,11 +287,11 @@ def check_first_run(harness_root: Path) -> bool:
                 _stats.get("chunks_inserted", 0),
                 _elapsed,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.info("  (RAG ingest difiere: %s)", exc)
 
     # Paso 7: Crear marker
-    marker_file.write_text(f"initialized: {datetime.now().isoformat()}\nproject: {project_name}\n")
+    marker_file.write_text(f"initialized: {datetime.now(timezone.utc).isoformat()}\nproject: {project_name}\n")
     logger.info("")
     logger.info("  Harness configurado. Listo para usar!")
     logger.info("")
@@ -302,7 +302,7 @@ def check_first_run(harness_root: Path) -> bool:
 # Banner
 # ---------------------------------------------------------------------------
 
-def print_banner(title: str, harness_root: Optional[Path] = None) -> None:
+def print_banner(title: str, harness_root: Path | None = None) -> None:
     """Muestra banner del harness."""
     _safe_print(f"  {_bold(title)}")
     _safe_print(f"  {'=' * 60}")

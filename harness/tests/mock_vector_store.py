@@ -24,14 +24,14 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Union
 
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
 # Tipo aceptado para vectores: lista de floats o numpy array
-VectorLike = Union[List[float], "np.ndarray"]
+VectorLike = Union[list[float], "np.ndarray"]
 
 
 @dataclass
@@ -45,8 +45,8 @@ class _MockStoredItem:
     """
 
     id: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    vector: Optional[np.ndarray] = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    vector: np.ndarray | None = None
     created_at: str = ""
 
 
@@ -55,15 +55,15 @@ class _MemCollection:
     """Coleccion en memoria imitando una tabla LanceDB."""
 
     name: str
-    items: Dict[str, _MockStoredItem] = field(default_factory=dict)
+    items: dict[str, _MockStoredItem] = field(default_factory=dict)
 
     # ------------------------------------------------------------------
     # Metodos internos
     # ------------------------------------------------------------------
 
     def search(
-        self, vector: List[float], top_k: int = 5
-    ) -> List[Dict[str, Any]]:
+        self, vector: list[float], top_k: int = 5
+    ) -> list[dict[str, Any]]:
         """Busqueda simulada (retorna items por orden de insercion).
 
         Args:
@@ -73,7 +73,7 @@ class _MemCollection:
         Returns:
             Lista de dicts con key, id, score, metadata, created_at.
         """
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for _key, item in list(self.items.items())[:top_k]:
             results.append(
                 {
@@ -87,7 +87,7 @@ class _MemCollection:
             )
         return results
 
-    def add(self, items: List[Dict[str, Any]]) -> List[str]:
+    def add(self, items: list[dict[str, Any]]) -> list[str]:
         """Agregar items a la coleccion.
 
         Args:
@@ -96,7 +96,7 @@ class _MemCollection:
         Returns:
             Lista de IDs insertados.
         """
-        ids: List[str] = []
+        ids: list[str] = []
         now = datetime.now(timezone.utc).isoformat()
         for item_dict in items:
             item_id = item_dict.get("id", str(uuid.uuid4()))
@@ -104,7 +104,7 @@ class _MemCollection:
 
             # Extraer metadata del dict (todo excepto campos internos)
             raw_vector = item_dict.get("vector", None)
-            vec: Optional[np.ndarray] = None
+            vec: np.ndarray | None = None
             if raw_vector is not None:
                 if isinstance(raw_vector, np.ndarray):
                     vec = raw_vector
@@ -168,9 +168,9 @@ class MockVectorStore:
             db_path: Ruta simulada (solo para compatibilidad con LanceVectorStore).
             allow_fallback: Ignorado, siempre disponible.
         """
-        self._collections: Dict[str, _MemCollection] = {}
+        self._collections: dict[str, _MemCollection] = {}
         # Alias para compatibilidad con SemanticCache que accede a _mem_collections
-        self._mem_collections: Dict[str, _MemCollection] = self._collections
+        self._mem_collections: dict[str, _MemCollection] = self._collections
         self._lancedb_available = False
         self._db = None
         self.db_path = db_path or "/tmp/mock_vector_store"
@@ -192,7 +192,7 @@ class MockVectorStore:
             logger.debug("MockVectorStore: created collection '%s'", name)
 
     def add(
-        self, collection: str, items: List[Dict[str, Any]]
+        self, collection: str, items: list[dict[str, Any]]
     ) -> None:
         """Agregar items a una coleccion.
 
@@ -209,8 +209,8 @@ class MockVectorStore:
         collection: str,
         vector: VectorLike,
         top_k: int = 5,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """Buscar en coleccion con filtros opcionales.
 
         Args:
@@ -227,7 +227,7 @@ class MockVectorStore:
             return []
 
         # Convertir numpy array a lista si es necesario
-        vec_list: List[float] = (
+        vec_list: list[float] = (
             vector.tolist() if isinstance(vector, np.ndarray) else list(vector)
         )
 
@@ -260,7 +260,7 @@ class MockVectorStore:
         if col:
             col.delete(key)
 
-    def list_tables(self) -> List[str]:
+    def list_tables(self) -> list[str]:
         """Listar colecciones disponibles.
 
         Returns:
@@ -280,8 +280,8 @@ class MockVectorStore:
         self,
         collection: str,
         vectors: np.ndarray,
-        metadata: List[Dict[str, Any]],
-    ) -> List[str]:
+        metadata: list[dict[str, Any]],
+    ) -> list[str]:
         """Insertar vectores con metadatos (compatible con LanceVectorStore).
 
         Args:
@@ -296,14 +296,14 @@ class MockVectorStore:
         if n == 0:
             return []
 
-        ids: List[str] = []
-        items: List[Dict[str, Any]] = []
+        ids: list[str] = []
+        items: list[dict[str, Any]] = []
         now = datetime.now(timezone.utc).isoformat()
         for i in range(n):
             rid = str(uuid.uuid4())
             ids.append(rid)
-            meta: Dict[str, Any] = metadata[i] if i < len(metadata) else {}
-            item: Dict[str, Any] = {
+            meta: dict[str, Any] = metadata[i] if i < len(metadata) else {}
+            item: dict[str, Any] = {
                 "id": rid,
                 "vector": vectors[i].tolist(),
                 "metadata": meta,
@@ -320,7 +320,7 @@ class MockVectorStore:
 
         return ids
 
-    def list_collections(self) -> List[str]:
+    def list_collections(self) -> list[str]:
         """Listar colecciones disponibles (alias de list_tables).
 
         Returns:
@@ -330,7 +330,7 @@ class MockVectorStore:
 
     def get_collection_stats(
         self, name: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Retorna estadisticas de una coleccion.
 
         Args:
@@ -360,7 +360,7 @@ class MockVectorStore:
         query_vector: np.ndarray,
         keyword_filter: str,
         top_k: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Busqueda hibrida combinando similitud vectorial con keyword.
 
         Args:
@@ -377,7 +377,7 @@ class MockVectorStore:
 
         kw_lower = keyword_filter.lower()
 
-        def _keyword_score(item: Dict[str, Any]) -> float:
+        def _keyword_score(item: dict[str, Any]) -> float:
             meta = item.get("metadata", {})
             if not isinstance(meta, dict):
                 meta = {}
@@ -411,8 +411,8 @@ class MockVectorStore:
     def update_records(
         self,
         collection: str,
-        filters: Dict[str, Any],
-        updates: Dict[str, Any],
+        filters: dict[str, Any],
+        updates: dict[str, Any],
     ) -> int:
         """Actualizar registros que coinciden con filtros.
 

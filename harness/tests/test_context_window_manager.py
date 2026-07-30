@@ -451,10 +451,9 @@ class TestContextWindowManagerOptimize:
         small_mgr = ContextWindowManager(total_budget=100)
         sw = small_mgr.create_window()
         sw.add_section("a", "x" * 400, max_tokens=1000)  # ~100 tokens
-        before = sw.total_tokens
-        result = small_mgr.optimize(sw)
+        small_mgr.optimize(sw)
         # Debería truncarse ya que 400 chars ≈ 100 tokens, budget=100
-        assert result is sw or True
+        assert True
 
     def test_optimize_truncates_over_budget(self, small_manager: ContextWindowManager) -> None:
         """optimize: trunca secciones sobre presupuesto (estrategia 1)."""
@@ -730,7 +729,6 @@ class TestInternalStrategies:
         mgr = ContextWindowManager(total_budget=1000)
         w = mgr.create_window()
         w.add_section("a", "small", max_tokens=1000)
-        before_tokens = w.total_tokens
         result = mgr._hard_truncate(w)
         # No debería cambiar nada porque current_tokens <= max_tokens_limit
         # pero el método siempre itera sobre secciones
@@ -962,9 +960,9 @@ class TestEdgeCases:
         w = mgr.create_window()
         w.add_section("a", "x" * 100)
         w.add_section("b", "y" * 100)
-        before = mgr._window_total_tokens(w)
+        mgr._window_total_tokens(w)
         result = mgr.optimize(w)
-        after = mgr._window_total_tokens(result)
+        mgr._window_total_tokens(result)
         # Las secciones no se eliminan del todo (heuristic mantiene ~50 tokens)
         # Pero se marca la compresión en stats
         stats = mgr.get_stats()

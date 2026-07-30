@@ -11,7 +11,6 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
 
 from harness.evolve_loop.cognition_sync import CognitionLesson, CognitionSync
 from harness.evolve_loop.evaluator import CASEEvaluator, FullEvaluation
@@ -34,7 +33,7 @@ class ImprovementRound:
     output_response: str
     evaluation: FullEvaluation
     score_delta: float  # improvement over previous round
-    lesson: Optional[CognitionLesson] = None
+    lesson: CognitionLesson | None = None
     timestamp: str = ""
 
     def __post_init__(self) -> None:
@@ -52,7 +51,7 @@ class SkillImprovementStatus:
     best_score: float
     current_score: float
     last_round_timestamp: str
-    snapshot_history: List[str] = field(default_factory=list)
+    snapshot_history: list[str] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -74,8 +73,8 @@ class SelfImprover:
 
     def __init__(
         self,
-        evaluator: Optional[CASEEvaluator] = None,
-        cognition: Optional[CognitionSync] = None,
+        evaluator: CASEEvaluator | None = None,
+        cognition: CognitionSync | None = None,
     ) -> None:
         """
         Args:
@@ -86,10 +85,10 @@ class SelfImprover:
         self.cognition = cognition or CognitionSync()
 
         # Internal state
-        self._rounds: Dict[str, List[ImprovementRound]] = {}
-        self._current_snapshots: Dict[str, str] = {}  # skill -> snapshot_id
-        self._best_scores: Dict[str, float] = {}
-        self._promoted: Dict[str, bool] = {}
+        self._rounds: dict[str, list[ImprovementRound]] = {}
+        self._current_snapshots: dict[str, str] = {}  # skill -> snapshot_id
+        self._best_scores: dict[str, float] = {}
+        self._promoted: dict[str, bool] = {}
 
     # ------------------------------------------------------------------
     # Public API
@@ -99,8 +98,8 @@ class SelfImprover:
         self,
         skill_name: str,
         rounds: int = 1,
-        input_text: Optional[str] = None,
-    ) -> List[ImprovementRound]:
+        input_text: str | None = None,
+    ) -> list[ImprovementRound]:
         """
         Run N rounds of improvement for a given skill.
 
@@ -123,7 +122,7 @@ class SelfImprover:
             self._rounds[skill_name] = []
             self._best_scores[skill_name] = 0.0
 
-        completed: List[ImprovementRound] = []
+        completed: list[ImprovementRound] = []
 
         for r in range(1, rounds + 1):
             round_num = len(self._rounds[skill_name]) + 1
@@ -182,7 +181,7 @@ class SelfImprover:
 
         return completed
 
-    def promote_best_snapshot(self, skill_name: str) -> Optional[str]:
+    def promote_best_snapshot(self, skill_name: str) -> str | None:
         """
         Promote the best-performing snapshot for a skill.
 
@@ -232,14 +231,14 @@ class SelfImprover:
 
         return snapshot_id
 
-    def get_status(self) -> List[SkillImprovementStatus]:
+    def get_status(self) -> list[SkillImprovementStatus]:
         """
         Return current improvement status for all tracked skills.
 
         Returns:
             List of ``SkillImprovementStatus`` dataclass instances.
         """
-        statuses: List[SkillImprovementStatus] = []
+        statuses: list[SkillImprovementStatus] = []
 
         for skill_name, rounds in self._rounds.items():
             if not rounds:
@@ -261,7 +260,7 @@ class SelfImprover:
 
     def get_round_history(
         self, skill_name: str
-    ) -> List[ImprovementRound]:
+    ) -> list[ImprovementRound]:
         """
         Get the full round history for a skill.
 
@@ -302,7 +301,7 @@ class SelfImprover:
         In production this would call an LLM or apply a transformation rule.
         Here we simply append a reflection paragraph.
         """
-        improvements: List[str] = []
+        improvements: list[str] = []
         if evaluation.clarify.score < 0.3:
             improvements.append(
                 "I will clarify the requirements and constraints more thoroughly."

@@ -1,39 +1,20 @@
-"""Provider executors - OpenAI, Anthropic, Google implementations.
+﻿"""Provider executors - OpenAI, Anthropic, Google implementations.
 
 Health checks, cost tracking, budget control y metricas extraidos a provider_health.py.
 """
 from __future__ import annotations
 
-import json
 import logging
-import os
-import threading
-import time
-from collections import defaultdict, deque
-from typing import Any, Dict, List, Optional, Tuple
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
 from harness.model_router.multi_provider_types import (
     ExecutionResult,
     ProviderConfig,
-    ProviderHealth,
-    ProviderStatus,
     ProviderTier,
 )
 from harness.model_router.provider_health import (
-    _allocate_cost_to_project,
-    _calculate_cost,
-    _record_error,
-    _record_success,
-    _start_health_checks,
-    _track_cost,
-    check_budget,
-    get_provider_stats,
-    get_stats,
-    get_total_cost,
-    health_check,
-    set_budget,
     stop_health_checks,
 )
 
@@ -121,7 +102,7 @@ def execute_openai_compat(
         if exc.response is not None:
             try:
                 error_detail = exc.response.json().get("error", {}).get("message", "")
-            except Exception:
+            except Exception:  # noqa: BLE001
                 error_detail = exc.response.text[:200]
 
         return ExecutionResult(
@@ -136,7 +117,7 @@ def execute_openai_compat(
                 "WHERE: _execute_openai_compat"
             ),
         )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         return ExecutionResult(
             success=False,
             output="",
@@ -225,7 +206,7 @@ def execute_anthropic(
             try:
                 err = exc.response.json()
                 detail = err.get("error", {}).get("message", str(err))
-            except Exception:
+            except Exception:  # noqa: BLE001
                 detail = exc.response.text[:200]
         return ExecutionResult(
             success=False,
@@ -239,7 +220,7 @@ def execute_anthropic(
                 "WHERE: _execute_anthropic"
             ),
         )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         return ExecutionResult(
             success=False,
             output="",
@@ -327,7 +308,7 @@ def execute_google(
             try:
                 err = exc.response.json()
                 detail = err.get("error", {}).get("message", str(err))
-            except Exception:
+            except Exception:  # noqa: BLE001
                 detail = exc.response.text[:200]
         return ExecutionResult(
             success=False,
@@ -341,7 +322,7 @@ def execute_google(
                 "WHERE: _execute_google"
             ),
         )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         return ExecutionResult(
             success=False,
             output="",
@@ -361,7 +342,7 @@ def execute_google(
 # ------------------------------------------------------------------
 
 
-def _find_provider_for_model(self, model: str) -> Optional[str]:
+def _find_provider_for_model(self, model: str) -> str | None:
     """Busca el proveedor optimo para un modelo.
 
     Prioriza por tier (premium > standard > budget) y hace round-robin
@@ -374,7 +355,7 @@ def _find_provider_for_model(self, model: str) -> Optional[str]:
         Nombre del proveedor seleccionado, o None si no se encuentra.
     """
     with self._lock:
-        candidates_by_tier: Dict[str, List[str]] = defaultdict(list)
+        candidates_by_tier: dict[str, list[str]] = defaultdict(list)
         for pname, entry in self._providers.items():
             cfg = entry["config"]
             health = self._health.get(pname)
@@ -403,7 +384,7 @@ def _find_provider_for_model(self, model: str) -> Optional[str]:
 
 def _get_other_providers_for_model(
     self, model: str, exclude: str,
-) -> List[str]:
+) -> list[str]:
     """Retorna otros proveedores que ofrecen el modelo, ordenados por tier.
 
     Args:
@@ -413,7 +394,7 @@ def _get_other_providers_for_model(
     Returns:
         Lista ordenada de proveedores alternativos.
     """
-    candidates: List[Tuple[str, int]] = []
+    candidates: list[tuple[str, int]] = []
     tier_rank = {
         ProviderTier.PREMIUM.value: 0,
         ProviderTier.STANDARD.value: 1,

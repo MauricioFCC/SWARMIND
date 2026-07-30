@@ -1,4 +1,4 @@
-"""
+﻿"""
 Context assembly for agents.
 
 The ``ContextAssembler`` takes a user message and agent role, searches the
@@ -19,7 +19,7 @@ import asyncio
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -56,12 +56,12 @@ class ContextAssembly:
     """The final assembled context delivered to an agent."""
 
     instructions: str = ""
-    relevant_docs: List[Dict[str, Any]] = field(default_factory=list)
-    task_context: List[Dict[str, Any]] = field(default_factory=list)
-    conversation_history: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    relevant_docs: list[dict[str, Any]] = field(default_factory=list)
+    task_context: list[dict[str, Any]] = field(default_factory=list)
+    conversation_history: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialise to a plain dict (JSON-friendly)."""
         return {
             "instructions": self.instructions,
@@ -95,8 +95,8 @@ class ContextAssembler:
 
     def __init__(
         self,
-        vector_store: Optional[LanceVectorStore] = None,
-        embedding_fn: Optional[callable] = None,
+        vector_store: LanceVectorStore | None = None,
+        embedding_fn: callable | None = None,
     ) -> None:
         """
         Args:
@@ -118,8 +118,8 @@ class ContextAssembler:
         message: str,
         agent_role: str,
         max_tokens: int = 2000,
-        domain_filter: Optional[str] = None,
-        tipo_doc_filter: Optional[str] = None,
+        domain_filter: str | None = None,
+        tipo_doc_filter: str | None = None,
     ) -> ContextAssembly:
         """
         Build a structured context from a user message and agent role.
@@ -152,8 +152,8 @@ class ContextAssembler:
         message: str,
         agent_role: str,
         max_tokens: int = 2000,
-        domain_filter: Optional[str] = None,
-        tipo_doc_filter: Optional[str] = None,
+        domain_filter: str | None = None,
+        tipo_doc_filter: str | None = None,
     ) -> ContextAssembly:
         """
         Version async de assemble(). Ejecuta RAG + task context en PARALELO.
@@ -219,7 +219,7 @@ class ContextAssembler:
 
         return assembly
 
-    def extract_keywords(self, message: str) -> List[str]:
+    def extract_keywords(self, message: str) -> list[str]:
         """
         Extract meaningful keywords from a message.
 
@@ -249,10 +249,10 @@ class ContextAssembler:
 
     def prioritize_chunks(
         self,
-        chunks: List[Dict[str, Any]],
+        chunks: list[dict[str, Any]],
         agent_role: str,
-        filters: Optional[Dict[str, str]] = None,
-    ) -> List[Dict[str, Any]]:
+        filters: dict[str, str] | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Re-rank chunks by relevance to a specific agent role.
 
@@ -277,7 +277,7 @@ class ContextAssembler:
 
         filter_values = set((filters or {}).values())
 
-        def _role_score(chunk: Dict[str, Any]) -> float:
+        def _role_score(chunk: dict[str, Any]) -> float:
             meta = chunk.get("metadata", {})
             domain = str(meta.get("domain", "")).lower()
             tipo = str(meta.get("tipo_doc", "")).lower()
@@ -308,7 +308,7 @@ class ContextAssembler:
         return fallback_embedding(text)
 
     def _make_query_vector(
-        self, message: str, keywords: List[str]
+        self, message: str, keywords: list[str]
     ) -> np.ndarray:
         """Build a single query embedding from message + keywords."""
         text = f"{message} {' '.join(keywords)}"
@@ -317,10 +317,10 @@ class ContextAssembler:
     def _search_rag_chunks(
         self,
         query_vec: np.ndarray,
-        keywords: List[str],
+        keywords: list[str],
         top_k: int = 20,
-        filters: Optional[Dict[str, str]] = None,
-    ) -> List[Dict[str, Any]]:
+        filters: dict[str, str] | None = None,
+    ) -> list[dict[str, Any]]:
         """Search ``rag_chunks`` collection with adaptive-k retrieval.
 
         En lugar de usar siempre el mismo top_k, adapta dinamicamente
@@ -367,8 +367,8 @@ class ContextAssembler:
             return []
 
     def _adaptive_k_rerank(
-        self, results: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self, results: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """Aplicar adaptive-k: reducir chunks basado en distribucion de scores.
 
         Estrategia:
@@ -434,7 +434,7 @@ class ContextAssembler:
         self,
         agent_role: str,
         top_k: int = 10,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Fetch recent task assignments for the given agent role."""
         try:
             filters = {"agent": agent_role} if agent_role else None
@@ -445,7 +445,7 @@ class ContextAssembler:
                 filters=filters,
             )
             return results
-        except Exception:
+        except Exception:  # noqa: BLE001
             logger.debug("Task context fetch returned no results.")
             return []
 
@@ -581,9 +581,9 @@ class ContextAssembler:
 
     def compact_context(
         self,
-        conversation_history: List[str],
+        conversation_history: list[str],
         max_messages: int = 8,
-    ) -> List[str]:
+    ) -> list[str]:
         """Compacta el historial de conversacion para ahorrar tokens.
 
         Estrategia (inspirada en Anthropic Context Engineering Sep 2025):

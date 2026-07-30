@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +111,7 @@ class PromptCacheBuilder:
         self._min_cache_prefix = min_cache_prefix
         self._use_cache_markers = use_cache_markers
         self._provider = provider.lower()
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "builds": 0,
             "cacheable_prefix_tokens": 0,
             "variable_suffix_tokens": 0,
@@ -167,7 +167,6 @@ class PromptCacheBuilder:
         Returns:
             Cache-optimized prompt string.
         """
-        sections: List[CacheSection] = []
         char_count = 0
 
         # --- STABLE PREFIX (cached) ---
@@ -192,7 +191,7 @@ class PromptCacheBuilder:
                 stable_contents.append((name, content, True))
 
         # Build stable prefix
-        stable_parts: List[str] = []
+        stable_parts: list[str] = []
         for name, content, _ in stable_contents:
             stable_parts.append(content)
             char_count += len(content)
@@ -223,7 +222,7 @@ class PromptCacheBuilder:
             cache_breakpoint = f"\n[{CACHE_MARKER_BREAKPOINT}]\n"
 
         # --- VARIABLE SUFFIX (not cached) ---
-        variable_parts: List[str] = []
+        variable_parts: list[str] = []
         var_contents = []
 
         if session_context:
@@ -271,9 +270,9 @@ class PromptCacheBuilder:
     def build_chat_messages(
         self,
         system_content: str,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         cache_system: bool = True,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Build cache-optimized chat messages for chat-style APIs.
 
@@ -290,7 +289,7 @@ class PromptCacheBuilder:
         """
         if self._provider == "anthropic" and cache_system:
             # Anthropic supports per-message cache control
-            result: List[Dict[str, Any]] = []
+            result: list[dict[str, Any]] = []
 
             # System message with cache breakpoint
             result.append({
@@ -330,7 +329,7 @@ class PromptCacheBuilder:
         self,
         prompt: str,
         num_calls: int = 100,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Estimate token savings from prompt caching.
 
@@ -394,10 +393,9 @@ class PromptCacheBuilder:
 
         for i, line in enumerate(lines):
             for marker in variable_markers:
-                if marker.lower() in line.lower():
-                    if i > len(lines) * 0.3:  # Only split after first 30%
-                        split_idx = i
-                        break
+                if marker.lower() in line.lower() and i > len(lines) * 0.3:  # Only split after first 30%
+                    split_idx = i
+                    break
             if split_idx < len(lines):
                 break
 
@@ -410,7 +408,7 @@ class PromptCacheBuilder:
     # Stats
     # ------------------------------------------------------------------
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Return builder statistics."""
         stats = dict(self._stats)
         if stats.get("builds", 0) > 0:

@@ -1,5 +1,5 @@
-"""
-Debate Orchestrator — Multi-agent debate with consolidation strategies.
+﻿"""
+Debate Orchestrator â€” Multi-agent debate with consolidation strategies.
 
 Based on ADR-0001 P2 recommendations (Princeton NLP 2026): multi-agent
 debate adds ~2.1 points of accuracy over single-agent baselines.
@@ -23,9 +23,10 @@ from __future__ import annotations
 
 import logging
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -58,12 +59,12 @@ class DebateRound:
     """A single round of debate with agent outputs and feedback."""
 
     round_num: int
-    agent_outputs: Dict[str, str] = field(default_factory=dict)
-    critique_feedback: Dict[str, str] = field(default_factory=dict)
+    agent_outputs: dict[str, str] = field(default_factory=dict)
+    critique_feedback: dict[str, str] = field(default_factory=dict)
     synthesis: str = ""
     confidence: float = 0.0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "round_num": self.round_num,
             "agent_outputs": dict(self.agent_outputs),
@@ -80,13 +81,13 @@ class DebateResult:
     session_id: str
     task: str
     strategy: DebateStrategy
-    rounds: List[DebateRound] = field(default_factory=list)
+    rounds: list[DebateRound] = field(default_factory=list)
     final_answer: str = ""
     confidence: float = 0.0
     agent_agreement: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "session_id": self.session_id,
             "task": self.task,
@@ -103,7 +104,7 @@ class DebateResult:
 # Dispatch function type
 # ---------------------------------------------------------------------------
 
-DispatchFn = Callable[[str, str, Dict[str, Any]], str]
+DispatchFn = Callable[[str, str, dict[str, Any]], str]
 """Signature: (agent_name, task, context) -> agent_response_text.
 
 The context dict contains at least:
@@ -134,7 +135,7 @@ class DebateOrchestrator:
         _bus:     AgentBus for inter-agent communication logging.
     """
 
-    def __init__(self, vector_store: Optional[Any] = None) -> None:
+    def __init__(self, vector_store: Any | None = None) -> None:
         """
         Args:
             vector_store: Optional LanceVectorStore for persistence.
@@ -151,10 +152,10 @@ class DebateOrchestrator:
     def debate(
         self,
         task: str,
-        agents: List[str],
+        agents: list[str],
         strategy: DebateStrategy = DebateStrategy.CONSENSUS,
         max_rounds: int = 2,
-        dispatch_fn: Optional[DispatchFn] = None,
+        dispatch_fn: DispatchFn | None = None,
     ) -> DebateResult:
         """
         Execute a multi-agent debate and return the consolidated result.
@@ -228,15 +229,14 @@ class DebateOrchestrator:
     def _execute_consensus(
         self,
         task: str,
-        agents: List[str],
+        agents: list[str],
         max_rounds: int,
         dispatch_fn: DispatchFn,
         session_id: str,
     ) -> DebateResult:
         """All agents produce answers independently, then vote (conference)."""
-        rounds: List[DebateRound] = []
-        all_outputs: Dict[str, str] = {}
-        all_feedback: Dict[str, str] = {}
+        rounds: list[DebateRound] = []
+        all_outputs: dict[str, str] = {}
 
         # --- Round 1: Independent answers ---
         round1 = DebateRound(round_num=1)
@@ -290,7 +290,7 @@ class DebateOrchestrator:
             rounds.append(round2)
 
         else:
-            # Single round — pick best by agreement directly
+            # Single round â€” pick best by agreement directly
             winner_output, winner_agreement = self._majority_winner(all_outputs)
 
         # Determine final answer
@@ -324,7 +324,7 @@ class DebateOrchestrator:
         )
 
     # ------------------------------------------------------------------
-    # Async consensus (PaCoRe — ADR-0017)
+    # Async consensus (PaCoRe â€” ADR-0017)
     # ------------------------------------------------------------------
 
     async def _execute_consensus_async(
@@ -334,7 +334,7 @@ class DebateOrchestrator:
         max_rounds: int,
         dispatch_fn: callable,
         session_id: str,
-    ) -> "DebateResult":
+    ) -> DebateResult:
         """
         Version asincrona de consenso: agentes responden en paralelo.
 
@@ -423,13 +423,13 @@ class DebateOrchestrator:
     def _execute_critique(
         self,
         task: str,
-        agents: List[str],
+        agents: list[str],
         max_rounds: int,
         dispatch_fn: DispatchFn,
         session_id: str,
     ) -> DebateResult:
         """Primary agent produces an answer, secondary agent critiques, then refinement."""
-        rounds: List[DebateRound] = []
+        rounds: list[DebateRound] = []
         primary = agents[0]
         critic = agents[1] if len(agents) > 1 else agents[0]
         refiners = agents[2:] if len(agents) > 2 else []
@@ -447,8 +447,8 @@ class DebateOrchestrator:
         round1.agent_outputs[primary] = primary_output
         self._log_agent_message(session_id, primary, task, primary_output, round_num=1, phase="primary")
 
-        outputs_so_far: Dict[str, str] = {primary: primary_output}
-        feedback_so_far: Dict[str, str] = {}
+        outputs_so_far: dict[str, str] = {primary: primary_output}
+        feedback_so_far: dict[str, str] = {}
 
         # Round 1 confidence: baseline
         round1.confidence = 0.5
@@ -469,7 +469,7 @@ class DebateOrchestrator:
             round2.critique_feedback[critic] = critique
             feedback_so_far[critic] = critique
             self._log_agent_message(session_id, critic, task, critique, round_num=2, phase="critique")
-            round2.confidence = 0.4  # critique phase — lower confidence
+            round2.confidence = 0.4  # critique phase â€” lower confidence
             rounds.append(round2)
 
         # --- Round 3 (optional): Refinement by primary ---
@@ -500,7 +500,7 @@ class DebateOrchestrator:
         # Final answer: best available
         if has_refinement:
             final_answer = rounds[-1].agent_outputs.get(
-                list(rounds[-1].agent_outputs.keys())[0],
+                next(iter(rounds[-1].agent_outputs.keys())),
                 rounds[-1].synthesis or primary_output,
             )
         else:
@@ -535,14 +535,14 @@ class DebateOrchestrator:
     def _execute_deliberation(
         self,
         task: str,
-        agents: List[str],
+        agents: list[str],
         max_rounds: int,
         dispatch_fn: DispatchFn,
         session_id: str,
     ) -> DebateResult:
         """Sequential debate where each agent builds on the previous output."""
-        rounds: List[DebateRound] = []
-        outputs_so_far: Dict[str, str] = {}
+        rounds: list[DebateRound] = []
+        outputs_so_far: dict[str, str] = {}
         num_agents = len(agents)
 
         for i, agent in enumerate(agents):
@@ -575,7 +575,7 @@ class DebateOrchestrator:
         # Final round's output is the synthesized answer
         final_round = rounds[-1] if rounds else DebateRound(round_num=0)
         final_answer = final_round.synthesis or (
-            list(final_round.agent_outputs.values())[0]
+            next(iter(final_round.agent_outputs.values()))
             if final_round.agent_outputs else ""
         )
 
@@ -618,7 +618,7 @@ class DebateOrchestrator:
 
     @staticmethod
     def _text_similarity(a: str, b: str) -> float:
-        """Compute word-overlap similarity between two strings (0.0–1.0)."""
+        """Compute word-overlap similarity between two strings (0.0â€“1.0)."""
         if not a or not b:
             return 0.0
         words_a = set(a.lower().split())
@@ -629,7 +629,7 @@ class DebateOrchestrator:
         union = words_a | words_b
         return len(intersection) / len(union)
 
-    def _compute_agreement(self, outputs: Dict[str, str]) -> float:
+    def _compute_agreement(self, outputs: dict[str, str]) -> float:
         """
         Compute pairwise agreement among agent outputs.
 
@@ -647,7 +647,7 @@ class DebateOrchestrator:
 
     def _majority_winner(
         self,
-        outputs: Dict[str, str],
+        outputs: dict[str, str],
     ) -> tuple:
         """
         Find the answer with the highest support via clustering.
@@ -684,7 +684,7 @@ class DebateOrchestrator:
         return (texts[best_idx], agreement)
 
     @staticmethod
-    def _synthesize_answers(outputs: Dict[str, str]) -> str:
+    def _synthesize_answers(outputs: dict[str, str]) -> str:
         """
         Produce a simple synthesis of all agent outputs.
 
@@ -695,7 +695,7 @@ class DebateOrchestrator:
         # Pick the longest output as the most detailed
         best = max(outputs.items(), key=lambda x: len(x[1]))
         return (
-            f"[Síntesis de {len(outputs)} agente(s)]\n"
+            f"[SÃ­ntesis de {len(outputs)} agente(s)]\n"
             f"Respuesta principal ({best[0]}):\n{best[1]}"
         )
 
@@ -727,7 +727,7 @@ class DebateOrchestrator:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _default_dispatch(agent: str, task: str, context: Dict[str, Any]) -> str:
+    def _default_dispatch(agent: str, task: str, context: dict[str, Any]) -> str:
         """
         Default dispatch function that returns a generic response.
 
@@ -737,24 +737,24 @@ class DebateOrchestrator:
         phase = context.get("phase", "unknown")
         templates = {
             "builder": (
-                f"[Builder] Análisis de implementación para: {task[:80]}.\n"
-                f"Propongo una solución modular con alta cohesión y bajo "
+                f"[Builder] Analisis de implementacion para: {task[:80]}.\n"
+                f"Propongo una solucion modular con alta cohesion y bajo "
                 f"acoplamiento, priorizando rendimiento y mantenibilidad."
             ),
             "scientist": (
-                f"[Scientist] Análisis de investigación para: {task[:80]}.\n"
-                f"Revisión de literatura y mejores prácticas. "
-                f"Recomiendo evaluar múltiples alternativas antes de decidir."
+                f"[Scientist] Analisis de investigacion para: {task[:80]}.\n"
+                f"Revision de literatura y mejores practicas. "
+                f"Recomiendo evaluar multiples alternativas antes de decidir."
             ),
             "guardian": (
-                f"[Guardian] Revisión de calidad para: {task[:80]}.\n"
+                f"[Guardian] Revision de calidad para: {task[:80]}.\n"
                 f"Verificando cobertura de tests, seguridad OWASP, "
-                f"y documentación completa."
+                f"y documentacion completa."
             ),
             "coordinator": (
-                f"[Coordinator] Facilitación del debate para: {task[:80]}.\n"
+                f"[Coordinator] Facilitacion del debate para: {task[:80]}.\n"
                 f"Coordinando perspectivas de todos los agentes para "
-                f"consolidar una decisión final."
+                f"consolidar una decision final."
             ),
         }
 
@@ -766,19 +766,19 @@ class DebateOrchestrator:
             )
             base += f"\nVoto tras revisar otros: {other_summary}"
         elif phase == "critique":
-            answer = context.get("answer_to_review", "")
+            context.get("answer_to_review", "")
             base += (
-                "\nCrítica a la respuesta propuesta:\n"
+                "\nCritica a la respuesta propuesta:\n"
                 "- Puntos fuertes: enfoque estructurado.\n"
-                "- Áreas de mejora: considerar más casos borde, "
-                "agregar métricas de validación."
+                "- Areas de mejora: considerar mas casos borde, "
+                "agregar metricas de validacion."
             )
         elif phase == "refinement":
             critique_text = context.get("critique", "")
             base += (
-                f"\nRefinamiento incorporando crítica:\n"
+                f"\nRefinamiento incorporando critica:\n"
                 f"{critique_text[:100]}... "
-                f"Mejoras aplicadas al diseño original."
+                f"Mejoras aplicadas al diseno original."
             )
 
         return base
@@ -792,7 +792,7 @@ class DebateOrchestrator:
         session_id: str,
         task: str,
         strategy: DebateStrategy,
-        agents: List[str],
+        agents: list[str],
     ) -> None:
         """Log the start of a debate session to AgentBus."""
         try:
@@ -801,14 +801,14 @@ class DebateOrchestrator:
                 from_agent="@coordinator",
                 to_agent="@all",
                 message=(
-                    f"🎯 **DEBATE INICIADO**\n"
+                    f"ðŸŽ¯ **DEBATE INICIADO**\n"
                     f"Tarea: {task}\n"
                     f"Estrategia: {strategy.value}\n"
                     f"Agentes: {', '.join(agents)}"
                 ),
                 message_type="notification",
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.debug("Debate start log non-fatal: %s", exc)
 
     def _log_agent_message(
@@ -832,7 +832,7 @@ class DebateOrchestrator:
                 ),
                 message_type="response",
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.debug("Agent message log non-fatal: %s", exc)
 
     def _log_debate_result(self, result: DebateResult) -> None:
@@ -843,7 +843,7 @@ class DebateOrchestrator:
                 from_agent="@coordinator",
                 to_agent="@all",
                 message=(
-                    f"✅ **DEBATE COMPLETADO**\n"
+                    f"âœ… **DEBATE COMPLETADO**\n"
                     f"Estrategia: {result.strategy.value}\n"
                     f"Rondas: {len(result.rounds)}\n"
                     f"Confianza: {result.confidence:.2f}\n"
@@ -852,5 +852,5 @@ class DebateOrchestrator:
                 ),
                 message_type="notification",
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.debug("Debate result log non-fatal: %s", exc)

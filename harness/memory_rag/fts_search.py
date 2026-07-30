@@ -1,5 +1,5 @@
-"""
-FTS Search — Full-text search sobre memoria (inspirado en FTS5 de Hermes Agent).
+﻿"""
+FTS Search â€” Full-text search sobre memoria (inspirado en FTS5 de Hermes Agent).
 
 Hermes Agent usa SQLite FTS5 para busqueda full-text sobre todas las sesiones.
 Nosotros implementamos una capa similar sobre LanceDB, con soporte para:
@@ -27,7 +27,7 @@ import os
 import re
 import sqlite3
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ STOPWORDS = frozenset({
     "or", "if", "while", "about", "up", "it", "its", "this", "that",
     "these", "those", "i", "me", "my", "we", "you", "he", "she", "they",
     "him", "her", "his", "their", "them", "el", "la", "los", "las",
-    "un", "una", "unas", "unos", "y", "e", "o", "u", "a", "ante",
+    "un", "una", "unas", "unos", "y", "e", "o", "u", "ante",
     "bajo", "con", "contra", "de", "desde", "en", "entre", "hacia",
     "hasta", "para", "por", "segun", "sin", "sobre", "tras",
 })
@@ -73,11 +73,11 @@ class FTSSearch:
         results = fts.search("contenido", top_k=5)
     """
 
-    def __init__(self, db_path: Optional[Path] = None):
+    def __init__(self, db_path: Path | None = None):
         self.db_path = db_path or FTS_DB_PATH
-        self._conn: Optional[sqlite3.Connection] = None
+        self._conn: sqlite3.Connection | None = None
         self._fts_available = False
-        self._mem_index: Dict[str, Tuple[str, Dict[str, Any]]] = {}  # doc_id -> (text, meta)
+        self._mem_index: dict[str, tuple[str, dict[str, Any]]] = {}  # doc_id -> (text, meta)
 
         self._init_storage()
 
@@ -122,12 +122,12 @@ class FTSSearch:
                     logger.warning("FTS5 not available in this SQLite build")
                     return False
                 raise
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("FTS5 init failed: %s", exc)
             if self._conn:
                 try:
                     self._conn.close()
-                except Exception as _exc:
+                except Exception as _exc:  # noqa: BLE001
                     logger.warning("fts_search: %s", _exc)
                 self._conn = None
             return False
@@ -140,7 +140,7 @@ class FTSSearch:
         self,
         doc_id: str,
         content: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
         domain: str = "general",
     ) -> bool:
         """
@@ -162,7 +162,7 @@ class FTSSearch:
 
     def index_batch(
         self,
-        documents: List[Tuple[str, str, Optional[Dict[str, Any]], str]],
+        documents: list[tuple[str, str, dict[str, Any] | None, str]],
     ) -> int:
         """
         Indexa multiples documentos en batch.
@@ -180,7 +180,7 @@ class FTSSearch:
         return count
 
     def _index_fts(
-        self, doc_id: str, content: str, domain: str, metadata: Dict[str, Any]
+        self, doc_id: str, content: str, domain: str, metadata: dict[str, Any]
     ) -> bool:
         """Index using SQLite FTS5."""
         try:
@@ -208,11 +208,11 @@ class FTSSearch:
             )
             self._conn.commit()
             return True
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("FTS index failed for %s: %s", doc_id, exc)
             return False
 
-    def _index_memory(self, doc_id: str, content: str, metadata: Dict[str, Any]) -> bool:
+    def _index_memory(self, doc_id: str, content: str, metadata: dict[str, Any]) -> bool:
         """Index in memory (fallback)."""
         self._mem_index[doc_id] = (content, metadata)
         return True
@@ -225,8 +225,8 @@ class FTSSearch:
         self,
         query: str,
         top_k: int = 10,
-        domain_filter: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        domain_filter: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Busca documentos por contenido full-text.
 
@@ -243,8 +243,8 @@ class FTSSearch:
         return self._search_memory(query, top_k, domain_filter)
 
     def _search_fts(
-        self, query: str, top_k: int, domain_filter: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        self, query: str, top_k: int, domain_filter: str | None = None,
+    ) -> list[dict[str, Any]]:
         """Search using SQLite FTS5."""
         try:
             # Sanitize FTS5 query
@@ -261,7 +261,7 @@ class FTSSearch:
                 LEFT JOIN doc_metadata m ON d.id = m.id
                 WHERE documents_fts MATCH ?
             """
-            params: List[Any] = [safe_query]
+            params: list[Any] = [safe_query]
 
             if domain_filter:
                 sql += " AND d.domain = ?"
@@ -294,22 +294,22 @@ class FTSSearch:
 
             return results
 
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("FTS search failed: %s", exc)
             return []
 
     def _search_memory(
-        self, query: str, top_k: int, domain_filter: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        self, query: str, top_k: int, domain_filter: str | None = None,
+    ) -> list[dict[str, Any]]:
         """Search in memory (fallback using TF scoring)."""
-        query_terms = set(
+        query_terms = {
             w.lower() for w in query.split()
             if len(w) > 2 and w.lower() not in STOPWORDS
-        )
+        }
         if not query_terms:
             return []
 
-        scored: List[Tuple[str, float, str, Dict[str, Any]]] = []
+        scored: list[tuple[str, float, str, dict[str, Any]]] = []
 
         for doc_id, (content, metadata) in self._mem_index.items():
             if domain_filter and metadata.get("domain") != domain_filter:
@@ -346,7 +346,7 @@ class FTSSearch:
                 self._conn.execute("DELETE FROM doc_metadata WHERE id = ?", (doc_id,))
                 self._conn.commit()
                 return True
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning("FTS delete failed for %s: %s", doc_id, exc)
                 return False
         else:
@@ -359,12 +359,12 @@ class FTSSearch:
                 self._conn.execute("DELETE FROM documents_fts")
                 self._conn.execute("DELETE FROM doc_metadata")
                 self._conn.commit()
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning("FTS clear failed: %s", exc)
         else:
             self._mem_index.clear()
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get search index statistics."""
         if self._fts_available and self._conn is not None:
             try:
@@ -376,7 +376,7 @@ class FTSSearch:
                     "document_count": count,
                     "db_path": str(self.db_path),
                 }
-            except Exception as _exc:
+            except Exception as _exc:  # noqa: BLE001
                 logger.warning("fts_search: %s", _exc)
 
         return {
@@ -389,7 +389,7 @@ class FTSSearch:
         if self._conn is not None:
             try:
                 self._conn.close()
-            except Exception as _exc:
+            except Exception as _exc:  # noqa: BLE001
                 logger.warning("fts_search: %s", _exc)
             self._conn = None
 
@@ -407,21 +407,19 @@ class FTSSearch:
         if not text or not query:
             return text[:200] if text else ""
 
-        query_terms = set(
+        query_terms = {
             w.lower() for w in query.split()
             if len(w) > 2 and w.lower() not in STOPWORDS
-        )
+        }
 
         text_lower = text.lower()
 
         # Find the first occurrence of any term
         best_pos = -1
-        best_term = ""
         for term in query_terms:
             pos = text_lower.find(term)
             if pos != -1 and (best_pos == -1 or pos < best_pos):
                 best_pos = pos
-                best_term = term
 
         if best_pos == -1:
             return text[:200] + ("..." if len(text) > 200 else "")

@@ -23,7 +23,6 @@ Uso:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 
 @dataclass
@@ -40,8 +39,8 @@ class PBTTemplate:
     name: str
     description: str
     template_code: str
-    invariants: List[str] = field(default_factory=list)
-    tags: List[str] = field(default_factory=list)
+    invariants: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
 
     def fill(self, **kwargs) -> str:
         """Rellena los holes del template con kwargs.
@@ -57,7 +56,7 @@ class PBTTemplate:
             result = result.replace(f"{{{k}}}", str(v))
         return result
 
-    def required_holes(self) -> List[str]:
+    def required_holes(self) -> list[str]:
         """Extrae los nombres de holes requeridos del template."""
         import re
         return re.findall(r"\{(\w+)\}", self.template_code)
@@ -67,7 +66,7 @@ class PBTTemplate:
 # Catalogo de templates predefinidos
 # ---------------------------------------------------------------------------
 
-TEMPLATES: Dict[str, PBTTemplate] = {}
+TEMPLATES: dict[str, PBTTemplate] = {}
 
 # --- sorting ---
 TEMPLATES["sorting_stable"] = PBTTemplate(
@@ -227,12 +226,12 @@ def test_{funcion}_asociativa(a, b, c):
 )
 
 
-def get_template(name: str) -> Optional[PBTTemplate]:
+def get_template(name: str) -> PBTTemplate | None:
     """Obtiene un template por nombre."""
     return TEMPLATES.get(name)
 
 
-def suggest_templates(description: str) -> List[PBTTemplate]:
+def suggest_templates(description: str) -> list[PBTTemplate]:
     """Sugiere templates relevantes basado en palabras clave de la descripcion.
 
     Args:
@@ -245,7 +244,7 @@ def suggest_templates(description: str) -> List[PBTTemplate]:
     suggestions = []
 
     # Keywords simples para matching
-    keyword_map: Dict[str, List[str]] = {
+    keyword_map: dict[str, list[str]] = {
         "sorting_stable": ["sort", "order", "ordenam", "ordena"],
         "idempotent": ["idempot", "repetir", "duplic"],
         "pure_function": ["pure", "sin side", "sin efecto", "inmutable"],
@@ -264,6 +263,6 @@ def suggest_templates(description: str) -> List[PBTTemplate]:
     return suggestions
 
 
-def templates_by_tag(tag: str) -> List[PBTTemplate]:
+def templates_by_tag(tag: str) -> list[PBTTemplate]:
     """Filtra templates por tag."""
     return [t for t in TEMPLATES.values() if tag in t.tags]

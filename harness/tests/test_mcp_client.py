@@ -11,11 +11,9 @@ Cubre:
 """
 from __future__ import annotations
 
-import importlib
 import sys
 import time
-from typing import Any, Dict
-from unittest.mock import ANY, MagicMock, PropertyMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -24,11 +22,10 @@ from harness.tools_sandbox.mcp_client import (
     MCPClient,
     MCPConnectionError,
     MCPResult,
+    MCPTimeoutError,
     MCPTool,
     MCPToolError,
-    MCPTimeoutError,
 )
-
 
 # ===========================================================================
 # Fixtures
@@ -103,7 +100,7 @@ class TestInit:
 class TestConnect:
     """Tests del método connect()."""
 
-    def _make_mock_response(self, json_data: Dict) -> MagicMock:
+    def _make_mock_response(self, json_data: dict) -> MagicMock:
         """Crea un mock de respuesta HTTP."""
         m = MagicMock()
         m.json.return_value = json_data
@@ -193,7 +190,6 @@ class TestConnect:
         # Forzar ImportError al importar requests dentro de connect()
         # Primero removemos requests de sys.modules para que __import__ se ejecute
         import builtins
-        import sys
 
         original_import = builtins.__import__
         had_requests = "requests" in sys.modules

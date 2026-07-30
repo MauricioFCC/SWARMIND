@@ -1,4 +1,4 @@
-"""provider_health — Health checks, cost tracking, budget control y metricas.
+﻿"""provider_health â€” Health checks, cost tracking, budget control y metricas.
 
 Extraido de provider_executors.py para mantener modulos < 900 lines.
 
@@ -12,13 +12,11 @@ import logging
 import os
 import threading
 import time
-from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from harness.model_router.multi_provider_types import (
     ProviderHealth,
     ProviderStatus,
-    ProviderTier,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,7 +30,7 @@ HEALTH_CHECK_INTERVAL_S = 30
 # ------------------------------------------------------------------
 
 
-def health_check(self, provider: Optional[str] = None) -> bool:
+def health_check(self, provider: str | None = None) -> bool:
     """Ejecuta health check sobre uno o todos los proveedores.
 
     Args:
@@ -115,7 +113,7 @@ def _check_single_provider(self, name: str) -> bool:
             )
             available = resp.status_code == 200
 
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.debug(
             "Health check fail for '%s': %s. WHERE: _check_single_provider",
             name, exc,
@@ -187,7 +185,7 @@ def _start_health_checks(self) -> None:
         while not self._health_stop.is_set():
             try:
                 health_check(self)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.error(
                     "Health check background error: %s. "
                     "WHY: El hilo de health check no debe interrumpirse. "
@@ -275,7 +273,7 @@ def _calculate_cost(self, provider: str, total_tokens: int) -> float:
     return cost_input + cost_output
 
 
-def get_total_cost(self, provider: Optional[str] = None) -> float:
+def get_total_cost(self, provider: str | None = None) -> float:
     """Retorna el costo total acumulado en USD.
 
     Args:
@@ -346,7 +344,7 @@ def set_budget(self, project: str, limit: float, alert_threshold: float = 0.8) -
             )
 
 
-def check_budget(self, project: str) -> Tuple[float, float, bool]:
+def check_budget(self, project: str) -> tuple[float, float, bool]:
     """Verifica el estado del presupuesto de un proyecto.
 
     Args:
@@ -399,14 +397,14 @@ def _allocate_cost_to_project(self, project: str, cost: float) -> None:
 # ------------------------------------------------------------------
 
 
-def get_stats(self) -> Dict[str, Any]:
+def get_stats(self) -> dict[str, Any]:
     """Retorna estadisticas completas de todos los proveedores.
 
     Returns:
         Diccionario con metricas por proveedor, incluyendo estado,
         latencias, costos, tasas de error y conteo de requests.
     """
-    stats: Dict[str, Any] = {
+    stats: dict[str, Any] = {
         "providers": {},
         "total_cost_usd": 0.0,
         "total_requests": 0,
@@ -419,7 +417,7 @@ def get_stats(self) -> Dict[str, Any]:
             health = self._health.get(pname)
             history = self._latency_history.get(pname)
 
-            pstats: Dict[str, Any] = {
+            pstats: dict[str, Any] = {
                 "tier": config.tier,
                 "models": config.models,
                 "health": {
@@ -467,7 +465,7 @@ def get_stats(self) -> Dict[str, Any]:
     return stats
 
 
-def get_provider_stats(self, name: str) -> Optional[Dict[str, Any]]:
+def get_provider_stats(self, name: str) -> dict[str, Any] | None:
     """Retorna estadisticas detalladas de un proveedor especifico.
 
     Args:

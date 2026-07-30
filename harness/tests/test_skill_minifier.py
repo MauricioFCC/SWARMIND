@@ -15,10 +15,7 @@ Cubre:
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -519,7 +516,7 @@ class TestCompressBody:
         assert minifier._compress_body("") == ""
 
     def test_body_remueve_todas_lineas_vacias(self, minifier: SkillMinifier):
-        """_compress_body elimina todas las lineas vacias porque
+        r"""_compress_body elimina todas las lineas vacias porque
         la regex ^\s*$ en DECORATIVE_LINES las elimina por completo."""
         body = "Linea 1\n\n\n\nLinea 2"
         result = minifier._compress_body(body)

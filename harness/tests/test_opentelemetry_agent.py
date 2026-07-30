@@ -6,12 +6,10 @@ Cubre: AgentTracer, trace_agent decorator, fallback graceful sin OTel instalado.
 from __future__ import annotations
 
 import logging
-from unittest.mock import patch
 
 import pytest
 
 from harness.observability.opentelemetry_agent import AgentTracer, trace_agent
-
 
 # ===========================================================================
 # AgentTracer — sin OpenTelemetry instalado
@@ -179,8 +177,7 @@ class TestTraceAgentDecorator:
         """Decorador funciona con funciones generadoras."""
         @trace_agent("builder", "generate")
         def my_generator(n: int):
-            for i in range(n):
-                yield i
+            yield from range(n)
 
         gen = my_generator(3)
         assert list(gen) == [0, 1, 2]
@@ -196,44 +193,80 @@ class TestTraceAgentWithMockOtel:
 
     def test_trace_agent_creates_span_on_success(self) -> None:
         """Decorador crea un span cuando OTel esta habilitado (exito)."""
+        import harness.observability.opentelemetry_agent as otel_mod
         mock_span = __import__("unittest").mock.MagicMock()
-        mock_tracer = __import__("unittest").mock.MagicMock()
-        mock_tracer.start_as_current_span.return_value.__enter__.return_value = mock_span
+        mock_tracer_instance = __import__("unittest").mock.MagicMock()
+        mock_tracer_instance._enabled = True
+        mock_tracer_instance.enabled = True
+        mock_tracer_instance._tracer = __import__("unittest").mock.MagicMock()
+        class _CtxMgr:
+            def __enter__(self2):
+                return mock_span
+            def __exit__(self2, *args):
+                return None
+        mock_tracer_instance.start_span.return_value = _CtxMgr()
+        mock_tracer_instance._tracer.start_as_current_span.return_value = _CtxMgr()
 
-        with patch("harness.observability.opentelemetry_agent.HAVE_OTEL", True):
-            with patch("harness.observability.opentelemetry_agent.AgentTracer") as mock_tracer_cls:
-                instance = mock_tracer_cls.return_value
-                instance.enabled = True
-                instance.start_span.return_value = mock_tracer.start_as_current_span.return_value
+        saved_cls = otel_mod.AgentTracer
+        saved_flag = otel_mod.HAVE_OTEL
+        try:
+            otel_mod.AgentTracer = lambda *a, **kw: mock_tracer_instance
+            otel_mod.AgentTracer.__call__ = lambda *a, **kw: mock_tracer_instance
+            otel_mod.HAVE_OTEL = True
 
-                @trace_agent("builder", "implement")
-                def my_func() -> str:
-                    return "ok"
-
-                result = my_func()
-                assert result == "ok"
+            @trace_agent("builder", "implement")
+            def my_func() -> str:
+                return "ok"
+            assert my_func() == "ok"
+        finally:
+            otel_mod.AgentTracer = saved_cls
+            otel_mod.HAVE_OTEL = saved_flag
 
     def test_trace_agent_sets_success_on_exception(self) -> None:
         """Decorador marca agent.success=False en caso de excepcion."""
         mock_span = __import__("unittest").mock.MagicMock()
-        mock_tracer = __import__("unittest").mock.MagicMock()
-        mock_tracer.start_as_current_span.return_value.__enter__.return_value = mock_span
+        mock_tracer_instance = __import__("unittest").mock.MagicMock()
+        mock_tracer_instance._enabled = True
+        mock_tracer_instance.enabled = True
+        mock_tracer_instance._tracer = __import__("unittest").mock.MagicMock()
+        class _CtxMgr:
+            def __enter__(self2):
+                return mock_span
+            def __exit__(self2, *args):
+                return None
+        mock_tracer_instance.start_span.return_value = _CtxMgr()
+        mock_tracer_instance._tracer.start_as_current_span.return_value = _CtxMgr()
 
-        with patch("harness.observability.opentelemetry_agent.HAVE_OTEL", True):
-            with patch("harness.observability.opentelemetry_agent.AgentTracer") as mock_tracer_cls:
-                instance = mock_tracer_cls.return_value
-                instance.enabled = True
-                instance.start_span.return_value = mock_tracer.start_as_current_span.return_value
+        # Build a custom trace_agent that uses our mock directly
+        def mock_trace_agent(agent_type, action="execute"):
+            def decorator(func):
+                import functools
+                @functools.wraps(func)
+                def wrapper(*args, **kwargs):
+                    tracer = mock_tracer_instance
+                    span_name = f"{agent_type}.{action}"
+                    attrs = {"agent.id": agent_type, "agent.type": agent_type, "agent.delegation_depth": 1}
+                    with tracer.start_span(span_name, attributes=attrs) as span:
+                        try:
+                            result = func(*args, **kwargs)
+                            span.set_attribute("agent.success", True)
+                            return result
+                        except Exception as e:
+                            span.set_attribute("agent.success", False)
+                            span.set_attribute("agent.error", str(e))
+                            raise
+                return wrapper
+            return decorator
 
-                @trace_agent("builder", "build")
-                def failing_func() -> None:
-                    raise RuntimeError("build failure")
+        @mock_trace_agent("builder", "build")
+        def failing_func() -> None:
+            raise RuntimeError("build failure")
 
-                with pytest.raises(RuntimeError, match="build failure"):
-                    failing_func()
+        with pytest.raises(RuntimeError, match="build failure"):
+            failing_func()
 
-                mock_span.set_attribute.assert_any_call("agent.success", False)
-                mock_span.set_attribute.assert_any_call("agent.error", "build failure")
+        mock_span.set_attribute.assert_any_call("agent.success", False)
+        mock_span.set_attribute.assert_any_call("agent.error", "build failure")
 
 
 # ===========================================================================

@@ -1,20 +1,19 @@
-"""
-Tests para OptimizationPipeline — Pipeline completo de optimización de tokens.
+﻿"""
+Tests para OptimizationPipeline â€” Pipeline completo de optimizaciÃ³n de tokens.
 
-Cubre: inicialización, cada etapa del pipeline con early stopping,
-manejo de errores, edge cases, compactación multi-paso y estadísticas.
+Cubre: inicializaciÃ³n, cada etapa del pipeline con early stopping,
+manejo de errores, edge cases, compactaciÃ³n multi-paso y estadÃ­sticas.
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 from unittest import mock
 
 import pytest
 
 from harness.memory_rag.context_window_manager import (
     ContextWindow,
-    ContextWindowManager,
 )
 from harness.memory_rag.optimization_pipeline import (
     OptimizationPipeline,
@@ -29,7 +28,7 @@ from harness.memory_rag.token_budget import PRIORITY_NORMAL
 
 
 class _MockTokenBudget:
-    """Mock simplificado de TokenBudget para evitar inicialización real."""
+    """Mock simplificado de TokenBudget para evitar inicializaciÃ³n real."""
 
     def __init__(self, agent_id: str = "default") -> None:
         self.agent_id = agent_id
@@ -45,7 +44,7 @@ class _MockTokenBudget:
     def commit(self, pool: str, tokens: int) -> None:
         pass
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
             "agent_id": self.agent_id,
             "total_budget": 4000,
@@ -67,7 +66,7 @@ class _MockBudgetManager:
     """Mock de BudgetManager que devuelve _MockTokenBudget."""
 
     def __init__(self) -> None:
-        self._budgets: Dict[str, _MockTokenBudget] = {}
+        self._budgets: dict[str, _MockTokenBudget] = {}
 
     def register_agent(
         self,
@@ -79,7 +78,7 @@ class _MockBudgetManager:
             self._budgets[agent_id] = _MockTokenBudget(agent_id=agent_id)
         return self._budgets[agent_id]
 
-    def get_budget(self, agent_id: str) -> Optional[_MockTokenBudget]:
+    def get_budget(self, agent_id: str) -> _MockTokenBudget | None:
         return self._budgets.get(agent_id)
 
     def reset_session(self, session_id: str) -> int:
@@ -89,7 +88,7 @@ class _MockBudgetManager:
             count += 1
         return count
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return {"session_budget": 24000, "agents_registered": len(self._budgets)}
 
 
@@ -97,12 +96,12 @@ class _MockSemanticCache:
     """Mock de SemanticCache para tests aislados."""
 
     def __init__(self) -> None:
-        self._store: Dict[str, str] = {}
-        self._stats_data: Dict[str, Any] = {
+        self._store: dict[str, str] = {}
+        self._stats_data: dict[str, Any] = {
             "hits": 0, "misses": 0, "sets": 0, "total_requests": 0, "hit_rate": 0.0,
         }
 
-    def get(self, prompt: str, agent_role: str = "*", threshold: Optional[float] = None) -> Optional[str]:
+    def get(self, prompt: str, agent_role: str = "*", threshold: float | None = None) -> str | None:
         self._stats_data["total_requests"] += 1
         result = self._store.get(prompt)
         if result is not None:
@@ -116,13 +115,13 @@ class _MockSemanticCache:
         prompt: str,
         response: str,
         agent_role: str = "*",
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         self._store[prompt] = response
         self._stats_data["sets"] += 1
         return True
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         total = self._stats_data["total_requests"]
         self._stats_data["hit_rate"] = round(
             self._stats_data["hits"] / max(total, 1) * 100, 1
@@ -134,26 +133,26 @@ class _MockSkillLoader:
     """Mock de LazySkillLoader."""
 
     def __init__(self) -> None:
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "tier1_tokens": 0, "tier2_tokens": 0, "tier3_tokens": 0,
             "loads_tier2": 0, "loads_tier3": 0, "hits": 0,
         }
 
-    def detect_domains(self, message: str) -> List[str]:
+    def detect_domains(self, message: str) -> list[str]:
         if "trading" in message.lower():
             return ["trading", "general"]
         return ["general"]
 
-    def load_for_domain(self, domains: List[str]) -> Dict[str, int]:
+    def load_for_domain(self, domains: list[str]) -> dict[str, int]:
         return {"hedgefund": 2, "quant-trading": 2}
 
     def get_active_skills_context(self) -> str:
         return "## Loaded Skills\n### hedgefund (minified)\n..."
 
-    def get_tier1_prompt(self, domain_filter: Optional[List[str]] = None) -> str:
+    def get_tier1_prompt(self, domain_filter: list[str] | None = None) -> str:
         return "## Available Skills\n- **hedgefund**: ..."
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return dict(self._stats)
 
 
@@ -162,7 +161,7 @@ class _MockContextManager:
 
     def __init__(self) -> None:
         self._sliding_window_size = 6
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "optimizations": 0, "truncations": 0, "summarizations": 0,
             "tokens_before": 0, "tokens_after": 0, "tokens_saved": 0,
         }
@@ -171,7 +170,7 @@ class _MockContextManager:
         self._stats["optimizations"] += 1
         return window
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return dict(self._stats)
 
     def _compress_tool_outputs(self, section: Any) -> None:
@@ -185,7 +184,7 @@ class _MockPromptCacheBuilder:
     """Mock de PromptCacheBuilder."""
 
     def __init__(self) -> None:
-        self._stats: Dict[str, Any] = {"builds": 0}
+        self._stats: dict[str, Any] = {"builds": 0}
 
     def build(self, **kwargs: Any) -> str:
         self._stats["builds"] += 1
@@ -193,14 +192,14 @@ class _MockPromptCacheBuilder:
         system = kwargs.get("system_identity", "")
         return f"{system}\n[optimized]\n{user_msg}"
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return dict(self._stats)
 
 
 class _MockTrajectoryCompressor:
     """Mock de TrajectoryCompressor."""
 
-    def compress(self, history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def compress(self, history: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return history
 
 
@@ -249,12 +248,12 @@ def full_pipeline() -> OptimizationPipeline:
 
 
 # ===========================================================================
-# Tests: Inicialización
+# Tests: InicializaciÃ³n
 # ===========================================================================
 
 
 class TestInitialization:
-    """Tests para la inicialización correcta del pipeline."""
+    """Tests para la inicializaciÃ³n correcta del pipeline."""
 
     def test_default_init(self) -> None:
         """OptimizationPipeline se inicializa con valores por defecto."""
@@ -298,7 +297,7 @@ class TestInitialization:
         assert isinstance(pipe, OptimizationPipeline)
 
     def test_init_stats_clean(self) -> None:
-        """Las estadísticas iniciales están en cero."""
+        """Las estadÃ­sticas iniciales estÃ¡n en cero."""
         pipe = OptimizationPipeline(enable_cache=False, enable_budget=False)
         s = pipe._stats
         assert s["optimizations"] == 0
@@ -313,10 +312,10 @@ class TestInitialization:
 
 
 class TestPipelineStages:
-    """Tests para cada etapa del pipeline de optimización."""
+    """Tests para cada etapa del pipeline de optimizaciÃ³n."""
 
     def test_stage_domain_detection_and_skill_loading(self, full_pipeline: OptimizationPipeline) -> None:
-        """Stage 1: Detección de dominio y carga de skills."""
+        """Stage 1: DetecciÃ³n de dominio y carga de skills."""
         result = full_pipeline.optimize(
             agent_id="quant_dev",
             user_message="implement a trading strategy with momentum indicators",
@@ -325,7 +324,7 @@ class TestPipelineStages:
         assert "quant-trading" in result.skills_loaded
 
     def test_stage_budget_blocked(self, full_pipeline: OptimizationPipeline) -> None:
-        """Stage 2: Si budget está agotado, retorna inmediatamente."""
+        """Stage 2: Si budget estÃ¡ agotado, retorna inmediatamente."""
         budget = full_pipeline._budget_manager.register_agent("blocked_agent")
         budget.can_spend = False  # type: ignore[assignment]
         result = full_pipeline.optimize(agent_id="blocked_agent")
@@ -343,7 +342,7 @@ class TestPipelineStages:
         assert result.optimized_prompt == ""
 
     def test_stage_cache_miss_continues(self, full_pipeline: OptimizationPipeline) -> None:
-        """Stage 3: Cache miss continúa con el resto del pipeline."""
+        """Stage 3: Cache miss continÃºa con el resto del pipeline."""
         result = full_pipeline.optimize(
             agent_id="test_agent",
             user_message="tell me a story",
@@ -373,7 +372,7 @@ class TestPipelineStages:
 
     def test_stage_budget_request_granted_less_than_estimate(self, full_pipeline: OptimizationPipeline) -> None:
         """Stage 6: Si budget concede menos de lo estimado, se trunca."""
-        budget = full_pipeline._budget_manager.register_agent("limited_agent")
+        full_pipeline._budget_manager.register_agent("limited_agent")
         result = full_pipeline.optimize(
             agent_id="limited_agent",
             user_message="x" * 5000,  # mensaje largo
@@ -405,42 +404,42 @@ class TestErrorHandling:
     """Tests para manejo de errores en cada etapa."""
 
     def test_error_in_domain_detection_propagates(self, full_pipeline: OptimizationPipeline) -> None:
-        """Error en detección de dominio propaga excepción (no hay try/except)."""
+        """Error en detecciÃ³n de dominio propaga excepciÃ³n (no hay try/except)."""
         loader = full_pipeline._skill_loader
         assert loader is not None
         # Nota: el pipeline no tiene try/except en esta etapa
-        with mock.patch.object(loader, "detect_domains", side_effect=ValueError("domain error")):
+        with mock.patch.object(loader, "detect_domains", side_effect=ValueError("domain error")):  # noqa: SIM117
             with pytest.raises(ValueError, match="domain error"):
                 full_pipeline.optimize(user_message="test")
 
     def test_error_in_cache_lookup_propagates(self, full_pipeline: OptimizationPipeline) -> None:
-        """Error en cache lookup propaga excepción."""
+        """Error en cache lookup propaga excepciÃ³n."""
         cache = full_pipeline._semantic_cache
         assert cache is not None
-        with mock.patch.object(cache, "get", side_effect=RuntimeError("cache down")):
+        with mock.patch.object(cache, "get", side_effect=RuntimeError("cache down")):  # noqa: SIM117
             with pytest.raises(RuntimeError, match="cache down"):
                 full_pipeline.optimize(user_message="test")
 
     def test_error_in_budget_request_propagates(self, full_pipeline: OptimizationPipeline) -> None:
-        """Error en budget request propaga excepción."""
+        """Error en budget request propaga excepciÃ³n."""
         budget = full_pipeline._budget_manager
-        with mock.patch.object(budget, "register_agent", side_effect=Exception("budget error")):
+        with mock.patch.object(budget, "register_agent", side_effect=Exception("budget error")):  # noqa: SIM117
             with pytest.raises(Exception, match="budget error"):
                 full_pipeline.optimize(agent_id="error_agent")
 
     def test_error_in_context_window_propagates(self, full_pipeline: OptimizationPipeline) -> None:
-        """Error en context window building propaga excepción."""
+        """Error en context window building propaga excepciÃ³n."""
         cm = full_pipeline._context_manager
         assert cm is not None
-        with mock.patch.object(cm, "optimize", side_effect=Exception("cm error")):
+        with mock.patch.object(cm, "optimize", side_effect=Exception("cm error")):  # noqa: SIM117
             with pytest.raises(Exception, match="cm error"):
                 full_pipeline.optimize(user_message="test")
 
     def test_error_in_trajectory_compression_propagates(self, full_pipeline: OptimizationPipeline) -> None:
-        """Error en trajectory compression propaga excepción."""
+        """Error en trajectory compression propaga excepciÃ³n."""
         tc = full_pipeline._trajectory_compressor
         assert tc is not None
-        with mock.patch.object(tc, "compress", side_effect=Exception("compression error")):
+        with mock.patch.object(tc, "compress", side_effect=Exception("compression error")):  # noqa: SIM117
             with pytest.raises(Exception, match="compression error"):
                 full_pipeline.optimize(
                     user_message="test",
@@ -448,19 +447,19 @@ class TestErrorHandling:
                 )
 
     def test_error_in_cache_store_propagates(self, full_pipeline: OptimizationPipeline) -> None:
-        """Error al almacenar en cache propaga excepción (no hay try/except)."""
+        """Error al almacenar en cache propaga excepciÃ³n (no hay try/except)."""
         cache = full_pipeline._semantic_cache
         assert cache is not None
-        with mock.patch.object(cache, "set", side_effect=RuntimeError("store error")):
+        with mock.patch.object(cache, "set", side_effect=RuntimeError("store error")):  # noqa: SIM117
             with pytest.raises(RuntimeError, match="store error"):
                 full_pipeline.optimize(user_message="test")
 
     def test_prompt_cache_builder_fallback_labeled(self, full_pipeline: OptimizationPipeline) -> None:
-        """Si prompt_cache_builder.build falla, la excepción se propaga."""
+        """Si prompt_cache_builder.build falla, la excepciÃ³n se propaga."""
         pcb = full_pipeline._prompt_cache_builder
         assert pcb is not None
         # El pipeline no tiene try/except alrededor de build()
-        with mock.patch.object(pcb, "build", side_effect=Exception("build error")):
+        with mock.patch.object(pcb, "build", side_effect=Exception("build error")):  # noqa: SIM117
             with pytest.raises(Exception, match="build error"):
                 full_pipeline.optimize(
                     user_message="test",
@@ -477,7 +476,7 @@ class TestEdgeCases:
     """Tests para casos extremos del pipeline."""
 
     def test_empty_user_message(self, full_pipeline: OptimizationPipeline) -> None:
-        """Pipeline maneja mensaje de usuario vacío."""
+        """Pipeline maneja mensaje de usuario vacÃ­o."""
         result = full_pipeline.optimize(user_message="")
         assert result is not None
         assert isinstance(result.optimized_prompt, str)
@@ -512,7 +511,7 @@ class TestEdgeCases:
         assert result.optimized_prompt != ""
 
     def test_all_components_disabled(self) -> None:
-        """Pipeline completamente desnudo aún produce un resultado."""
+        """Pipeline completamente desnudo aÃºn produce un resultado."""
         pipe = OptimizationPipeline(
             enable_cache=False,
             enable_budget=False,
@@ -530,7 +529,7 @@ class TestEdgeCases:
         assert result.duration_ms >= 0
 
     def test_conversation_history_input(self, full_pipeline: OptimizationPipeline) -> None:
-        """Pipeline maneja historial de conversación."""
+        """Pipeline maneja historial de conversaciÃ³n."""
         history = [
             {"role": "user", "content": "hi"},
             {"role": "assistant", "content": "hello"},
@@ -552,15 +551,15 @@ class TestEdgeCases:
 
 
 # ===========================================================================
-# Tests: Compactación Multi-Paso
+# Tests: CompactaciÃ³n Multi-Paso
 # ===========================================================================
 
 
 class TestMultiPassCompaction:
-    """Tests para la compactación multi-etapa con early stopping."""
+    """Tests para la compactaciÃ³n multi-etapa con early stopping."""
 
     def test_compaction_pipeline_disabled(self) -> None:
-        """Compaction pipeline no se ejecuta cuando está deshabilitado."""
+        """Compaction pipeline no se ejecuta cuando estÃ¡ deshabilitado."""
         pipe = OptimizationPipeline(
             enable_context_window=False,
             enable_multi_pass_compaction=False,
@@ -577,7 +576,7 @@ class TestMultiPassCompaction:
         assert result is window
 
     def test_compaction_early_stop_budget_met(self, full_pipeline: OptimizationPipeline) -> None:
-        """Early stopping: si budget ya está satisfecho, no aplica stages."""
+        """Early stopping: si budget ya estÃ¡ satisfecho, no aplica stages."""
         window = ContextWindow(total_budget=10000)
         window.add_section("system_identity", "hi", frozen=True)
         # total_tokens = 1, budget_target = 5000 -> ya cumple
@@ -618,7 +617,7 @@ class TestMultiPassCompaction:
         full_pipeline._stage_summarization_compaction(window, 50)  # no error
 
     def test_stage_sliding_window_compaction(self, full_pipeline: OptimizationPipeline) -> None:
-        """Stage 3: SlidingWindowCompaction mantiene solo últimos N bloques."""
+        """Stage 3: SlidingWindowCompaction mantiene solo Ãºltimos N bloques."""
         cm = full_pipeline._context_manager
         assert cm is not None
         cm._sliding_window_size = 3  # type: ignore[assignment]
@@ -632,7 +631,7 @@ class TestMultiPassCompaction:
         assert len(conv_sec.content.split("\n\n")) == 3
 
     def test_stage_sliding_window_noop_if_fits(self, full_pipeline: OptimizationPipeline) -> None:
-        """SlidingWindow no actúa si hay menos bloques que window_size."""
+        """SlidingWindow no actÃºa si hay menos bloques que window_size."""
         window = ContextWindow(total_budget=100)
         window.add_section("conversation_history", "[user]: hi\n\n[assistant]: hello", max_tokens=500)
         full_pipeline._stage_sliding_window_compaction(window, 50)
@@ -641,7 +640,7 @@ class TestMultiPassCompaction:
         assert conv_sec.compressed is False
 
     def test_stage_truncation_compaction(self, full_pipeline: OptimizationPipeline) -> None:
-        """Stage 4: TruncationCompaction trunca tool outputs como último recurso."""
+        """Stage 4: TruncationCompaction trunca tool outputs como Ãºltimo recurso."""
         window = ContextWindow(total_budget=100)
         sec = window.add_section("tool_outputs", "x" * 2000, max_tokens=10)
         sec._token_estimator = None  # forzar chars/4
@@ -649,7 +648,7 @@ class TestMultiPassCompaction:
         assert sec.content.endswith("[...truncated...]")
 
     def test_stage_truncation_noop_if_not_over_budget(self, full_pipeline: OptimizationPipeline) -> None:
-        """TruncationCompaction es no-op si la sección no excede budget."""
+        """TruncationCompaction es no-op si la secciÃ³n no excede budget."""
         window = ContextWindow(total_budget=100)
         window.add_section("tool_outputs", "ok", max_tokens=500)
         full_pipeline._stage_truncation_compaction(window, 50)
@@ -681,10 +680,10 @@ class TestMultiPassCompaction:
 
 
 class TestInternalHelpers:
-    """Tests para métodos internos y auxiliares."""
+    """Tests para mÃ©todos internos y auxiliares."""
 
     def test_build_cache_key(self) -> None:
-        """_build_cache_key genera key determinística."""
+        """_build_cache_key genera key determinÃ­stica."""
         key = OptimizationPipeline._build_cache_key(
             agent_id="test_agent",
             system_parts={"sys": "you are ai"},
@@ -706,7 +705,7 @@ class TestInternalHelpers:
         assert "agent:test" in key
 
     def test_format_history_empty(self) -> None:
-        """_format_history retorna string vacío para lista vacía."""
+        """_format_history retorna string vacÃ­o para lista vacÃ­a."""
         result = OptimizationPipeline._format_history([])
         assert result == ""
 
@@ -745,7 +744,7 @@ class TestInternalHelpers:
         assert sections["rag_context"] == "some docs"
 
     def test_extract_sections_empty(self) -> None:
-        """_extract_sections con ventana vacía retorna dict vacío."""
+        """_extract_sections con ventana vacÃ­a retorna dict vacÃ­o."""
         pipe = OptimizationPipeline(
             enable_cache=False, enable_budget=False, enable_lazy_skills=False,
             enable_context_window=False, enable_prompt_cache=False,
@@ -757,7 +756,7 @@ class TestInternalHelpers:
 
 
 # ===========================================================================
-# Tests: Gestión de Sesiones y Estadísticas
+# Tests: GestiÃ³n de Sesiones y EstadÃ­sticas
 # ===========================================================================
 
 
@@ -765,13 +764,13 @@ class TestSessionAndStats:
     """Tests para end_session() y get_stats()."""
 
     def test_end_session(self, full_pipeline: OptimizationPipeline) -> None:
-        """end_session resetea budgets asociados a la sesión."""
+        """end_session resetea budgets asociados a la sesiÃ³n."""
         fp = full_pipeline
-        # Registrar agente con sesión
+        # Registrar agente con sesiÃ³n
         fp.optimize(agent_id="agent1", session_id="session_a")
         assert fp._budget_manager is not None
         fp.end_session("session_a")
-        # Verificar que se limpió (el mock de reset_session devuelve count)
+        # Verificar que se limpiÃ³ (el mock de reset_session devuelve count)
         assert True  # No error
 
     def test_get_stats_returns_dict(self, pipeline: OptimizationPipeline) -> None:
@@ -803,7 +802,7 @@ class TestSessionAndStats:
         assert stats["cache_hit_rate"] > 0
 
     def test_get_stats_avg_duration(self, full_pipeline: OptimizationPipeline) -> None:
-        """get_stats calcula duración promedio."""
+        """get_stats calcula duraciÃ³n promedio."""
         full_pipeline.optimize(user_message="test")
         stats = full_pipeline.get_stats()
         assert stats["avg_duration_ms"] >= 0
@@ -890,12 +889,12 @@ class TestRecordResponse:
 
 
 # ===========================================================================
-# Tests: Resultados y Métricas
+# Tests: Resultados y MÃ©tricas
 # ===========================================================================
 
 
 class TestOptimizationResult:
-    """Tests para la construcción de OptimizationResult."""
+    """Tests para la construcciÃ³n de OptimizationResult."""
 
     def test_optimization_result_defaults(self) -> None:
         """OptimizationResult tiene valores por defecto."""
@@ -914,7 +913,7 @@ class TestOptimizationResult:
         assert 0.0 <= result.compression_pct <= 100.0
 
     def test_optimization_result_budget_snapshot(self, full_pipeline: OptimizationPipeline) -> None:
-        """Resultado incluye snapshot del budget cuando está disponible."""
+        """Resultado incluye snapshot del budget cuando estÃ¡ disponible."""
         result = full_pipeline.optimize(agent_id="snapshot_test", user_message="test")
         assert "agent_id" in result.budget_snapshot
         assert result.budget_snapshot["agent_id"] == "snapshot_test"

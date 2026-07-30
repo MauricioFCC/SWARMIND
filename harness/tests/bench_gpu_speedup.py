@@ -14,16 +14,15 @@ Usage:
 from __future__ import annotations
 
 import time
-from typing import List
 
 import numpy as np
 
 from harness.common import fallback_embedding
-from harness.gpu_accel import HAVE_CUDA, DEVICE_NAME, GPU_MEMORY_GB
+from harness.gpu_accel import DEVICE_NAME, GPU_MEMORY_GB, HAVE_CUDA
 from harness.gpu_optimize import (
+    batch_embed_messages,
     gpu_embedding,
     gpu_similarity_search,
-    batch_embed_messages,
 )
 
 
@@ -37,8 +36,8 @@ def bench(name: str, cpu_fn, gpu_fn, n_iter: int = 50):
     for _ in range(3):
         try:
             cpu_fn()
-        except Exception:
-        pass  # expected: CPU fallback for GPU functions
+        except Exception:  # noqa: S110, BLE001
+            pass  # expected: CPU fallback for GPU functions
 
     t0 = time.perf_counter()
     for _ in range(n_iter):
@@ -52,8 +51,8 @@ def bench(name: str, cpu_fn, gpu_fn, n_iter: int = 50):
         for _ in range(3):
             try:
                 gpu_fn()
-            except Exception:
-        pass  # expected: CPU fallback for GPU functions
+            except Exception:  # noqa: S110, BLE001
+                pass  # expected: CPU fallback for GPU functions
         t0 = time.perf_counter()
         for _ in range(n_iter):
             gpu_fn()
@@ -63,17 +62,16 @@ def bench(name: str, cpu_fn, gpu_fn, n_iter: int = 50):
         t_gpu = 0
         speedup = 0
 
-    status = "" if speedup >= 1.5 else "" if speedup >= 1.0 else ""
+    status = ""
     print(f"  {status} {name:40s} CPU:{t_cpu:8.2f}ms  GPU:{t_gpu:8.2f}ms  x{speedup:.1f}")
     return speedup
 
 
 def main():
     DIM = 384
-    N = 1000
 
     print(f"\n{'='*65}")
-    print(f"  Swarmind GPU BENCHMARK")
+    print("  Swarmind GPU BENCHMARK")
     print(f"  Device: {DEVICE_NAME} | VRAM: {GPU_MEMORY_GB:.1f}GB | CUDA: {HAVE_CUDA}")
     print(f"{'='*65}\n")
 
@@ -171,7 +169,7 @@ def main():
     )
 
     print(f"\n{'='*65}")
-    print(f"  BENCHMARK COMPLETE")
+    print("  BENCHMARK COMPLETE")
     print(f"{'='*65}")
 
 

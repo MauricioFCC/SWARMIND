@@ -15,7 +15,6 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +31,7 @@ class StructuredLogRecord:
         self,
         event: str,
         level: str = "INFO",
-        session_id: Optional[str] = None,
+        session_id: str | None = None,
         message: str = "",
         **extra,
     ) -> None:
@@ -59,19 +58,23 @@ class StructuredLogRecord:
         )
 
     @staticmethod
-    def info(event: str, message: str = "", session_id: Optional[str] = None, **extra):
+    def info(event: str, message: str = "", session_id: str | None = None, **extra):
+        extra.pop("level", None)
         StructuredLogRecord(event, "INFO", session_id, message, **extra).log(logger)
 
     @staticmethod
-    def warning(event: str, message: str = "", session_id: Optional[str] = None, **extra):
+    def warning(event: str, message: str = "", session_id: str | None = None, **extra):
+        extra.pop("level", None)
         StructuredLogRecord(event, "WARNING", session_id, message, **extra).log(logger)
 
     @staticmethod
-    def error(event: str, message: str = "", session_id: Optional[str] = None, **extra):
+    def error(event: str, message: str = "", session_id: str | None = None, **extra):
+        extra.pop("level", None)
         StructuredLogRecord(event, "ERROR", session_id, message, **extra).log(logger)
 
     @staticmethod
-    def debug(event: str, message: str = "", session_id: Optional[str] = None, **extra):
+    def debug(event: str, message: str = "", session_id: str | None = None, **extra):
+        extra.pop("level", None)
         StructuredLogRecord(event, "DEBUG", session_id, message, **extra).log(logger)
 
 

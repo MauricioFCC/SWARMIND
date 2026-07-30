@@ -1,7 +1,4 @@
-"""
-
-EMBEDDING_DIM = 384
-Nudge System — Auto-persistencia de contexto (inspirado en Hermes Agent nudges).
+﻿"""Nudge System â€” Auto-persistencia de contexto (inspirado en Hermes Agent nudges).
 
 Hermes Agent tiene un sistema de "nudges" periodicos donde el agente persiste
 automaticamente contexto importante a la memoria de largo plazo.
@@ -28,7 +25,7 @@ from __future__ import annotations
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -41,6 +38,7 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
+EMBEDDING_DIM = 384
 COGNITION_COLLECTION = "asi_cognition_store"
 NUDGE_INTERVAL_SECONDS = 3600  # 1 hora entre nudges
 NUDGE_MAX_AGE_DAYS = 30  # eliminar nudges viejos
@@ -66,22 +64,22 @@ class AutoNudge:
 
     def __init__(
         self,
-        vector_store: Optional[LanceVectorStore] = None,
-        cognition: Optional[CognitionSync] = None,
+        vector_store: LanceVectorStore | None = None,
+        cognition: CognitionSync | None = None,
         interval_seconds: int = NUDGE_INTERVAL_SECONDS,
     ):
         self._store = vector_store or LanceVectorStore()
         self._cognition = cognition or CognitionSync(vector_store=self._store)
         self._interval = interval_seconds
         self._last_nudge: float = 0.0
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "nudges_created": 0,
             "nudges_cleaned": 0,
             "ticks": 0,
             "errors": 0,
         }
 
-    def tick(self, force: bool = False) -> Optional[Dict[str, Any]]:
+    def tick(self, force: bool = False) -> dict[str, Any] | None:
         """
         Evalua si es momento de generar un nudge.
 
@@ -127,14 +125,14 @@ class AutoNudge:
 
         return nudge
 
-    def _collect_context(self) -> List[Dict[str, Any]]:
+    def _collect_context(self) -> list[dict[str, Any]]:
         """
         Recolecta contexto actual del sistema.
 
         Busca en la cognition store las entradas recientes
         y en agent_workspace_logs las interacciones recientes.
         """
-        context_items: List[Dict[str, Any]] = []
+        context_items: list[dict[str, Any]] = []
 
         try:
             # Recent cognition lessons
@@ -151,14 +149,14 @@ class AutoNudge:
                     except (json.JSONDecodeError, TypeError):
                         meta = {}
                 context_items.append(meta)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.debug("Nudge: error collecting context: %s", exc)
             self._stats["errors"] += 1
 
         return context_items
 
     @staticmethod
-    def _evaluate_context(context: List[Dict[str, Any]]) -> float:
+    def _evaluate_context(context: list[dict[str, Any]]) -> float:
         """
         Evalua si el contexto recolectado es valioso para persistir.
 
@@ -169,7 +167,7 @@ class AutoNudge:
             return 0.0
 
         # Factores que aumentan el score:
-        scores: List[float] = []
+        scores: list[float] = []
 
         for item in context:
             # Lecciones con score alto
@@ -195,8 +193,8 @@ class AutoNudge:
         return sum(scores) / len(scores)
 
     def _persist_nudge(
-        self, context: List[Dict[str, Any]], score: float
-    ) -> Dict[str, Any]:
+        self, context: list[dict[str, Any]], score: float
+    ) -> dict[str, Any]:
         """
         Persiste un nudge en la cognition store.
         """
@@ -205,7 +203,7 @@ class AutoNudge:
         # Construir contenido del nudge
         domains = set()
         tags: set = set()
-        content_parts: List[str] = []
+        content_parts: list[str] = []
 
         for item in context:
             domain = item.get("domain", "")
@@ -247,7 +245,7 @@ class AutoNudge:
                 "created_at": now,
                 "context_items": len(context),
             }
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Nudge persist failed: %s", exc)
             self._stats["errors"] += 1
             return {"error": str(exc)}
@@ -261,10 +259,10 @@ class AutoNudge:
         # naturalmente cuando se supera el limite de la cognition store
         return 0
 
-    def force_nudge(self) -> Optional[Dict[str, Any]]:
+    def force_nudge(self) -> dict[str, Any] | None:
         """Force a nudge regardless of interval."""
         return self.tick(force=True)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Return nudge statistics."""
         return dict(self._stats)

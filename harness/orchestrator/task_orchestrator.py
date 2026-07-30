@@ -1,5 +1,5 @@
-"""
-Task Orchestrator — Plan-and-Execute with DAG parallelism (Async).
+﻿"""
+Task Orchestrator â€” Plan-and-Execute with DAG parallelism (Async).
 
 Version asincrona completa (ADR-0017: 4.8x speedup via asyncio).
 
@@ -33,20 +33,19 @@ import functools
 import hashlib
 import logging
 import time
-from typing import Any, Callable, Dict, List, Optional, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from harness.orchestrator.agent_bus import AgentBus
 from harness.orchestrator.confidence_scorer import ConfidenceScore, ConfidenceScorer
 from harness.orchestrator.debate_orchestrator import (
-    DebateOrchestrator,
     DebateResult,
-    DebateStrategy,
 )
-from harness.orchestrator.session_context import SessionContext, SessionState
-from harness.orchestrator.task_planner import TaskPlan, TaskPlanner
 from harness.orchestrator.orchestration_result import OrchestratorResult
 from harness.orchestrator.self_healing import CircuitBreaker, SelfHealingContext
+from harness.orchestrator.session_context import SessionContext, SessionState
 from harness.orchestrator.structured_log import StructuredLogRecord
+from harness.orchestrator.task_planner import TaskPlan, TaskPlanner
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +65,7 @@ def async_retry(
     def decorator(func: F) -> F:
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
-            last_exc: Optional[Exception] = None
+            last_exc: Exception | None = None
             for attempt in range(1 + max_retries):
                 try:
                     return await func(*args, **kwargs)
@@ -109,7 +108,7 @@ class TaskOrchestrator:
 
     def __init__(
         self,
-        vector_store: Optional[Any] = None,
+        vector_store: Any | None = None,
         max_retries: int = 3,
         level_timeout_sec: float = 300.0,
         stall_timeout_sec: float = 120.0,
@@ -124,12 +123,12 @@ class TaskOrchestrator:
         self._stall_timeout_sec = stall_timeout_sec
         self._verbose = verbose
         self._confidence_scorer = ConfidenceScorer()
-        self._healing_contexts: Dict[str, SelfHealingContext] = {}
+        self._healing_contexts: dict[str, SelfHealingContext] = {}
         self._global_cb = CircuitBreaker(failure_threshold=5, recovery_timeout=60.0)
         self._shaped_cache = None
-        self._recent_messages: Dict[str, float] = {}
+        self._recent_messages: dict[str, float] = {}
         self._dedup_window: float = 30.0
-        self._wal: Optional[Any] = None
+        self._wal: Any | None = None
 
         StructuredLogRecord.info(
             "orchestrator_init_async",
@@ -142,7 +141,7 @@ class TaskOrchestrator:
     # Sync-compatibility wrapper
     # ------------------------------------------------------------------
 
-    def __call__(self, message: str, force_agent: Optional[str] = None) -> OrchestratorResult:
+    def __call__(self, message: str, force_agent: str | None = None) -> OrchestratorResult:
         """Wrapper sincrono: ejecuta process_message en loop activo o nuevo."""
         try:
             loop = asyncio.get_running_loop()
@@ -162,7 +161,7 @@ class TaskOrchestrator:
     async def process_message(
         self,
         message: str,
-        force_agent: Optional[str] = None,
+        force_agent: str | None = None,
     ) -> OrchestratorResult:
         """Procesa un mensaje a traves del pipeline completo de orquestacion.
 
@@ -178,7 +177,7 @@ class TaskOrchestrator:
                 "global_circuit_open", message="Circuito global abierto",
                 failures=self._global_cb.failure_count,
             )
-            return self._error("Sistema en recuperación. Intenta de nuevo en unos segundos.")
+            return self._error("Sistema en recuperaci\u00f3n. Intenta de nuevo en unos segundos.")
 
         await self._ensure_wal()
         if self._wal is not None:
@@ -228,7 +227,7 @@ class TaskOrchestrator:
     async def process_completion(
         self, session_id: str, subtask_id: str, result: str,
     ) -> OrchestratorResult:
-        """Procesa la finalización de una subtask con self-healing (async).
+        """Procesa la finalizaciÃ³n de una subtask con self-healing (async).
 
         Args:
             session_id: The session ID.
@@ -245,10 +244,10 @@ class TaskOrchestrator:
         session = self._session_ctx.get_session(session_id)
         if not session:
             StructuredLogRecord.warning(
-                "session_not_found", message=f"Sesión {session_id} no encontrada",
+                "session_not_found", message=f"SesiÃ³n {session_id} no encontrada",
                 session_id=session_id,
             )
-            return self._error("Sesión no encontrada")
+            return self._error("SesiÃ³n no encontrada")
 
         healing = self._get_healing(session_id)
         healing.record_progress()
@@ -286,7 +285,7 @@ class TaskOrchestrator:
 
         return self._build_result(session, session.original_message, None, is_new_plan=False)
 
-    async def get_summary(self, session_id: Optional[str] = None) -> str:
+    async def get_summary(self, session_id: str | None = None) -> str:
         """Resumen legible del progreso de la sesion (async)."""
         session = self._session_ctx.get_session(session_id) if session_id else self._session_ctx.get_active()
         if not session:
@@ -306,16 +305,16 @@ class TaskOrchestrator:
                 status += f" | CB: {cb_status}"
         return status
 
-    async def get_healing_status(self, session_id: str) -> Optional[Dict]:
+    async def get_healing_status(self, session_id: str) -> dict | None:
         """Estado de self-healing de una sesion (async)."""
         healing = self._healing_contexts.get(session_id)
         return healing.to_dict() if healing else None
 
     async def run_debate(
         self, session_id: str, task: str,
-        agents: Optional[List[str]] = None, strategy: str = "consensus",
-        dispatch_fn: Optional[Callable[..., Any]] = None,
-    ) -> "DebateResult":
+        agents: list[str] | None = None, strategy: str = "consensus",
+        dispatch_fn: Callable[..., Any] | None = None,
+    ) -> DebateResult:
         """Ejecuta debate multi-agente delegando en DebateRunner (async)."""
         from harness.orchestrator.debate_runner import DebateRunner
         runner = DebateRunner(self._store, self._session_ctx, self._bus)
@@ -332,7 +331,7 @@ class TaskOrchestrator:
             from harness.orchestrator.write_ahead_log import WriteAheadLog
             self._wal = WriteAheadLog()
 
-    async def _check_cache(self, message: str) -> Optional[OrchestratorResult]:
+    async def _check_cache(self, message: str) -> OrchestratorResult | None:
         """Verifica ShapedCache de forma asincrona."""
         if self._shaped_cache is None:
             return None
@@ -356,7 +355,7 @@ class TaskOrchestrator:
             pass
         return None
 
-    def _dedup(self, message: str) -> Optional[OrchestratorResult]:
+    def _dedup(self, message: str) -> OrchestratorResult | None:
         """Idempotencia: evita duplicados del mismo mensaje."""
         msg_hash = hashlib.sha256((message or "").encode()).hexdigest()[:16]
         now = time.time()
@@ -371,7 +370,7 @@ class TaskOrchestrator:
         self._recent_messages[msg_hash] = now
         return None
 
-    def _is_continuation(self, message: str, session: Optional[SessionState]) -> bool:
+    def _is_continuation(self, message: str, session: SessionState | None) -> bool:
         """Determina si el mensaje es continuacion de trabajo previo."""
         if not session or session.completed:
             return False
@@ -380,9 +379,7 @@ class TaskOrchestrator:
                      "avanzar","adelante","terminar","finish","completar","complete","paso","step","sigue con"]
         if any(kw in msg_lower for kw in keywords):
             return True
-        if len(message.strip()) < 10:
-            return True
-        return False
+        return len(message.strip()) < 10
 
     def _get_healing(self, session_id: str) -> SelfHealingContext:
         if session_id not in self._healing_contexts:
@@ -392,11 +389,11 @@ class TaskOrchestrator:
             )
         return self._healing_contexts[session_id]
 
-    def _handle_continuation(self, message: str, session: SessionState, force_agent: Optional[str]) -> OrchestratorResult:
+    def _handle_continuation(self, message: str, session: SessionState, force_agent: str | None) -> OrchestratorResult:
         self._session_ctx.add_message(session, "user", message)
         return self._build_result(session, message, force_agent, is_new_plan=False)
 
-    def _build_result(self, session: SessionState, message: str, force_agent: Optional[str], is_new_plan: bool) -> OrchestratorResult:
+    def _build_result(self, session: SessionState, message: str, force_agent: str | None, is_new_plan: bool) -> OrchestratorResult:
         plan = session.plan
         next_level = plan.get_next_level()
         target_agent = force_agent or self._resolve_target_agent(next_level)
@@ -420,13 +417,13 @@ class TaskOrchestrator:
             is_debate=is_debate, debate_agents=debate_agents, debate_strategy="consensus" if is_debate else "",
         )
 
-    def _resolve_target_agent(self, next_level: List) -> str:
+    def _resolve_target_agent(self, next_level: list) -> str:
         if not next_level:
             return "coordinator"
         agents = {st.agent for st in next_level}
         return agents.pop() if len(agents) == 1 else "coordinator"
 
-    def _evaluate_confidence_and_check_early_stop(self, session: SessionState, subtask_id: str, result: str) -> Optional[ConfidenceScore]:
+    def _evaluate_confidence_and_check_early_stop(self, session: SessionState, subtask_id: str, result: str) -> ConfidenceScore | None:
         """Evalua confianza y decide early stopping del nivel de validacion."""
         subtask = next((s for s in session.plan.subtasks if s.id == subtask_id), None)
         if not subtask:
@@ -472,7 +469,7 @@ class TaskOrchestrator:
         try:
             next_level = session.plan.get_next_level()
             agents: set = set()
-            agent_subtasks: Dict[str, List[Dict]] = {}
+            agent_subtasks: dict[str, list[dict]] = {}
             for st in session.plan.subtasks:
                 ak = f"@{st.agent}"
                 agents.add(ak)
@@ -487,7 +484,7 @@ class TaskOrchestrator:
                 asyncio.to_thread(
                     self._bus.post_message, f"#session-{session.session_id}",
                     "@coordinator", "@all",
-                    f"📋 **NUEVO PLAN**\n\nTarea: {session.original_message[:120]}\n"
+                    f"ðŸ“‹ **NUEVO PLAN**\n\nTarea: {session.original_message[:120]}\n"
                     f"Agentes: {', '.join(sorted(agents))}\n\n{summary}",
                     "notification",
                 ),
@@ -500,7 +497,7 @@ class TaskOrchestrator:
                     tasks.append(asyncio.to_thread(
                         self._bus.post_message, f"#session-{session.session_id}",
                         "@coordinator", agent,
-                        f"🎯 TU TAREA: {ready[0]['description']}\nOutput: {ready[0]['expected_output']}\n"
+                        f"ðŸŽ¯ TU TAREA: {ready[0]['description']}\nOutput: {ready[0]['expected_output']}\n"
                         f"SubtaskID: {ready[0]['id']}\nPlan: {session.session_id}",
                         "request",
                     ))
@@ -508,7 +505,7 @@ class TaskOrchestrator:
                     tasks.append(asyncio.to_thread(
                         self._bus.post_message, f"#session-{session.session_id}",
                         "@coordinator", agent,
-                        f"⏳ Asignado al plan `{session.session_id}`. Esperaras turno."
+                        f"â³ Asignado al plan `{session.session_id}`. Esperaras turno."
                         + (f"\nPendientes: {len(pending)}" if pending else ""),
                         "notification",
                     ))
@@ -517,7 +514,7 @@ class TaskOrchestrator:
                 "broadcast_plan", message=f"Plan broadcast a {len(agents)} agentes (async)",
                 session_id=session.session_id, agents=list(agents), next_level_count=len(next_level),
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             StructuredLogRecord.error("broadcast_plan_error", message=str(exc), session_id=session.session_id)
 
     async def _broadcast_completion_async(self, session: SessionState, subtask_id: str, result: str) -> None:
@@ -530,7 +527,7 @@ class TaskOrchestrator:
                 asyncio.to_thread(
                     self._bus.post_message, f"#session-{session.session_id}",
                     f"@{subtask.agent}", "@all",
-                    f"✅ **Subtask {subtask_id} COMPLETADA**\nAgente: @{subtask.agent}\n"
+                    f"âœ… **Subtask {subtask_id} COMPLETADA**\nAgente: @{subtask.agent}\n"
                     f"Que: {subtask.description}\nResultado: {result[:200]}",
                     "response",
                 ),
@@ -544,24 +541,24 @@ class TaskOrchestrator:
                     "notification",
                 ))
             await asyncio.gather(*tasks, return_exceptions=True)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             StructuredLogRecord.warning("broadcast_completion_error", message=str(exc), session_id=session.session_id)
 
     async def _broadcast_complete_async(self, session: SessionState) -> None:
         """Broadcast de plan completo."""
         try:
             summary = "\n".join(
-                f"{'✅' if st.completed else '❌'} [{st.agent}] {st.description}"
+                f"{'âœ…' if st.completed else 'âŒ'} [{st.agent}] {st.description}"
                 for st in session.plan.subtasks
             )
             await asyncio.to_thread(
                 self._bus.post_message, f"#session-{session.session_id}",
                 "@coordinator", "@all",
-                f"🎉 **PLAN COMPLETO**\n\nSesión: {session.session_id}\n"
+                f"ðŸŽ‰ **PLAN COMPLETO**\n\nSesiÃ³n: {session.session_id}\n"
                 f"Tarea: {session.original_message[:120]}\n\n{summary}",
                 "notification",
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             StructuredLogRecord.warning("broadcast_complete_error", message=str(exc), session_id=session.session_id)
 
     def _error(self, message: str) -> OrchestratorResult:
@@ -593,6 +590,6 @@ def enable_cache(orchestrator: TaskOrchestrator, max_tokens: int = 50000) -> Non
 # ---------------------------------------------------------------------------
 
 
-def run_process_message(orchestrator: TaskOrchestrator, message: str, force_agent: Optional[str] = None) -> OrchestratorResult:
+def run_process_message(orchestrator: TaskOrchestrator, message: str, force_agent: str | None = None) -> OrchestratorResult:
     """Ejecutar process_message sincrono (wrapper asyncio.run)."""
     return asyncio.run(orchestrator.process_message(message, force_agent=force_agent))

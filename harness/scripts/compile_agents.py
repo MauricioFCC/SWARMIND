@@ -30,7 +30,6 @@ import argparse
 import logging
 import re
 from pathlib import Path
-from typing import List, Optional, Set
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
@@ -40,12 +39,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # Swarmind/
 AGENTS_DIR = PROJECT_ROOT / ".opencode" / "agents"
 
 # Keys del frontmatter a preservar en version minificada
-KEEP_FRONTMATTER_KEYS: Set[str] = {
+KEEP_FRONTMATTER_KEYS: set[str] = {
     "name", "domain", "role", "description", "mode",
 }
 
 # Secciones que siempre preservar
-KEEP_SECTIONS: Set[str] = {
+KEEP_SECTIONS: set[str] = {
     "mision", "mission",
     "flujo", "flow",
     "reglas", "rules",
@@ -58,7 +57,7 @@ KEEP_SECTIONS: Set[str] = {
 }
 
 
-def find_agent_files(base: Path = AGENTS_DIR) -> List[Path]:
+def find_agent_files(base: Path = AGENTS_DIR) -> list[Path]:
     """Encontrar todos los archivos .md de agentes (excluyendo .agent.min.md)."""
     if not base.exists():
         logger.warning("Agents directory not found: %s", base)
@@ -87,7 +86,7 @@ def minify_agent(md_content: str) -> str:
     - Frontmatter keys no esenciales
     """
     lines = md_content.split("\n")
-    minified: List[str] = []
+    minified: list[str] = []
     in_frontmatter = False
     frontmatter_ended = False
     in_mermaid = False
@@ -144,7 +143,7 @@ def minify_agent(md_content: str) -> str:
         if in_frontmatter:
             # Preservar solo keys importantes
             for key in KEEP_FRONTMATTER_KEYS:
-                if stripped.startswith(key + ":") or stripped.startswith(key + ":"):
+                if stripped.startswith((key + ":", key + ":")):
                     minified.append(line)
                     break
             continue
@@ -164,13 +163,13 @@ def minify_agent(md_content: str) -> str:
         # - Comandos (!comando)
         # - Items de lista (- o *)
         is_heading = stripped.startswith("##")
-        is_checklist = stripped.startswith("- [") or stripped.startswith("* [")
+        is_checklist = stripped.startswith(("- [", "* ["))
         is_table = stripped.startswith("|")
         is_guardrail = any(stripped.startswith(g) for g in ("✅", "⚠️", "❌", "🔴", "🟢", "📌"))
         is_mention = "@" in stripped and not stripped.startswith("```")
         is_command = stripped.startswith("!")
-        is_list_item = stripped.startswith("- ") or stripped.startswith("* ")
-        is_section_ref = stripped.startswith("####") or stripped.startswith("###")
+        is_list_item = stripped.startswith(("- ", "* "))
+        is_section_ref = stripped.startswith(("####", "###"))
 
         if any([is_heading, is_checklist, is_table, is_guardrail,
                 is_mention, is_command, is_list_item, is_section_ref]):
@@ -203,7 +202,7 @@ def minify_agent(md_content: str) -> str:
             continue
 
     # Post-procesamiento: eliminar lineas en blanco duplicadas
-    result: List[str] = []
+    result: list[str] = []
     prev_blank = False
     for line in minified:
         is_blank = line.strip() == ""
@@ -215,7 +214,7 @@ def minify_agent(md_content: str) -> str:
     return "\n".join(result)
 
 
-def compile_agent(agent_file: Path, dry_run: bool = False) -> Optional[Path]:
+def compile_agent(agent_file: Path, dry_run: bool = False) -> Path | None:
     """Compilar un agent profile individual. Retorna ruta del .agent.min.md generado."""
     dst = agent_file.with_suffix('.agent.min.md')
 

@@ -18,4 +18,4 @@ from harness.plugins.registry import PluginBase, registry
 
 ToolRegistry = registry  # es una instancia, no una clase
 
-__all__ = ["ToolRegistry", "registry", "PluginBase"]
+__all__ = ["PluginBase", "ToolRegistry", "registry"]

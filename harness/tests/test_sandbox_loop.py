@@ -1,5 +1,5 @@
-"""
-Tests para SandboxLoop — bucle autonomo de calidad para codigo generado.
+﻿"""
+Tests para SandboxLoop â€” bucle autonomo de calidad para codigo generado.
 
 Cubre: execute_cycle (exito/fallo/circuit breaker/exception),
 run_autonomous (codigo vacio, exito, iteraciones, escalacion),
@@ -91,10 +91,10 @@ class TestInit:
 
     def test_default_construction(self):
         """Debe crear instancias por defecto si no se pasan."""
-        with patch("harness.orchestrator.sandbox_loop.LanceVectorStore") as mock_store:
-            with patch("harness.orchestrator.sandbox_loop.AgentBus") as mock_bus:
-                with patch("harness.orchestrator.sandbox_loop.MCPExecutor") as mock_exec:
-                    with patch("harness.orchestrator.sandbox_loop.CognitionSync") as mock_cog:
+        with patch("harness.orchestrator.sandbox_loop.LanceVectorStore"):  # noqa: SIM117
+            with patch("harness.orchestrator.sandbox_loop.AgentBus"):
+                with patch("harness.orchestrator.sandbox_loop.MCPExecutor"):
+                    with patch("harness.orchestrator.sandbox_loop.CognitionSync"):
                         loop = SandboxLoop()
         assert loop.store is not None
         assert loop.bus is not None
@@ -125,7 +125,7 @@ class TestExecuteCycle:
     """Tests para execute_cycle."""
 
     def test_success_notifies_quality_gate(self, sandbox_loop, mock_agent_bus):
-        """Tests pasan → debe notificar a @quality-gate."""
+        """Tests pasan â†’ debe notificar a @quality-gate."""
         exito, resultado = sandbox_loop.execute_cycle(
             task_description="test task",
             code="def test_foo(): pass",
@@ -139,7 +139,7 @@ class TestExecuteCycle:
 
     def test_failure_notifies_engineer(self, sandbox_loop, mock_executor,
                                        mock_agent_bus, fail_result):
-        """Tests fallan → debe notificar a @software-engineer."""
+        """Tests fallan â†’ debe notificar a @software-engineer."""
         mock_executor.run_test.return_value = fail_result
         exito, resultado = sandbox_loop.execute_cycle(
             task_description="test task",
@@ -170,7 +170,7 @@ class TestExecuteCycle:
     def test_circuit_breaker_triggers_escalation(self, sandbox_loop, mock_executor,
                                                   mock_agent_bus, mock_cognition,
                                                   fail_result):
-        """Circuit breaker disparado → debe escalar a humano."""
+        """Circuit breaker disparado â†’ debe escalar a humano."""
         mock_executor.run_test.return_value = fail_result
         mock_agent_bus.check_circuit_breaker.return_value = True
         sandbox_loop.execute_cycle(
@@ -225,7 +225,7 @@ class TestExecuteCycle:
 
     def test_success_without_task_id(self, sandbox_loop):
         """Sin task_id, exito debe funcionar igual."""
-        exito, resultado = sandbox_loop.execute_cycle(
+        exito, _resultado = sandbox_loop.execute_cycle(
             task_description="test",
             code="code",
         )
@@ -289,7 +289,7 @@ class TestRunAutonomous:
         # Luego run_autonomous vuelve a llamar -> True (break)
         mock_agent_bus.check_circuit_breaker.side_effect = [False, True]
 
-        exito, resultado = sandbox_loop.run_autonomous(
+        exito, _resultado = sandbox_loop.run_autonomous(
             task_id="task-1",
             code="bad code",
             max_iterations=5,
@@ -305,7 +305,7 @@ class TestRunAutonomous:
         )
         mock_executor.run_test.side_effect = [fail_result, success_result]
 
-        exito, resultado = sandbox_loop.run_autonomous(
+        exito, _resultado = sandbox_loop.run_autonomous(
             task_id="task-1",
             code="code",
             max_iterations=3,

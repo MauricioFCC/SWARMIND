@@ -19,7 +19,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from harness.memory_rag.context_window_manager import (
     ContextWindow,
@@ -53,10 +53,10 @@ class OptimizationResult:
     compression_pct: float = 0.0
     cache_hit: bool = False
     cached_response: str = ""
-    skills_loaded: List[str] = field(default_factory=list)
-    budget_snapshot: Dict[str, Any] = field(default_factory=dict)
-    context_window: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    skills_loaded: list[str] = field(default_factory=list)
+    budget_snapshot: dict[str, Any] = field(default_factory=dict)
+    context_window: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     duration_ms: float = 0.0
 
 
@@ -95,7 +95,7 @@ class OptimizationPipeline:
     def __init__(
         self,
         skills_dir: str = ".opencode/skills",
-        vector_store: Optional[Any] = None,
+        vector_store: Any | None = None,
         enable_cache: bool = True,
         enable_budget: bool = True,
         enable_lazy_skills: bool = True,
@@ -106,7 +106,7 @@ class OptimizationPipeline:
         total_budget: int = 12000,
     ) -> None:
         # Cache
-        self._semantic_cache: Optional[SemanticCache] = None
+        self._semantic_cache: SemanticCache | None = None
         if enable_cache and vector_store:
             self._semantic_cache = SemanticCache(vector_store=vector_store)
 
@@ -137,7 +137,7 @@ class OptimizationPipeline:
         # Multi-pass compaction
         self._enable_multi_pass_compaction = enable_multi_pass_compaction
 
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "optimizations": 0,
             "cache_hits": 0,
             "cache_misses": 0,
@@ -165,10 +165,10 @@ class OptimizationPipeline:
         *,
         agent_id: str = "default",
         session_id: str = "",
-        system_parts: Optional[Dict[str, str]] = None,
+        system_parts: dict[str, str] | None = None,
         user_message: str = "",
         rag_context: str = "",
-        conversation_history: Optional[List[Dict[str, Any]]] = None,
+        conversation_history: list[dict[str, Any]] | None = None,
         tool_outputs: str = "",
         agent_priority: int = PRIORITY_NORMAL,
         force_no_cache: bool = False,
@@ -204,7 +204,7 @@ class OptimizationPipeline:
             logger.debug("Domains: %s, skills loaded: %s", domains, list(loaded.keys()))
 
         # --- 2. Token Budget Check ---
-        budget: Optional[TokenBudget] = None
+        budget: TokenBudget | None = None
         if self._budget_manager:
             budget = self._budget_manager.register_agent(
                 agent_id=agent_id,
@@ -386,7 +386,7 @@ class OptimizationPipeline:
     # Stats
     # ------------------------------------------------------------------
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Return pipeline statistics."""
         stats = dict(self._stats)
 
@@ -540,12 +540,12 @@ class OptimizationPipeline:
     def _build_context_window(
         self,
         agent_id: str,
-        system_parts: Dict[str, str],
+        system_parts: dict[str, str],
         user_message: str,
         rag_context: str,
-        conversation_history: Optional[List[Dict[str, Any]]],
+        conversation_history: list[dict[str, Any]] | None,
         tool_outputs: str,
-        domains: List[str],
+        domains: list[str],
     ) -> ContextWindow:
         """Build initial context window from all parts."""
         window = ContextWindow()
@@ -610,7 +610,7 @@ class OptimizationPipeline:
 
         return window
 
-    def _extract_sections(self, window: ContextWindow) -> Dict[str, str]:
+    def _extract_sections(self, window: ContextWindow) -> dict[str, str]:
         """Extract sections from context window for prompt cache builder."""
         sections = {}
         for name, section in window.sections.items():
@@ -618,7 +618,7 @@ class OptimizationPipeline:
         return sections
 
     @staticmethod
-    def _format_history(history: List[Dict[str, Any]]) -> str:
+    def _format_history(history: list[dict[str, Any]]) -> str:
         """Format conversation history as text."""
         parts = []
         for msg in history:
@@ -631,9 +631,9 @@ class OptimizationPipeline:
     @staticmethod
     def _build_cache_key(
         agent_id: str,
-        system_parts: Optional[Dict[str, str]],
+        system_parts: dict[str, str] | None,
         user_message: str,
-        domains: List[str],
+        domains: list[str],
     ) -> str:
         """Build a deterministic cache key from non-user parts."""
         parts = [f"agent:{agent_id}", f"domains:{','.join(domains)}"]

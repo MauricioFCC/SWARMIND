@@ -1,12 +1,11 @@
-"""
-Phase 1: Bug Hunting — scan code for common bugs.
+﻿"""
+Phase 1: Bug Hunting â€” scan code for common bugs.
 """
 from __future__ import annotations
 
 import ast
 import re
 from pathlib import Path
-from typing import List, Optional
 
 from .config import (
     PROJECT_ROOT,
@@ -19,9 +18,9 @@ from .config import (
 )
 
 
-def _scan_silent_except(lines: List[str], filepath: str) -> List[BugFinding]:
+def _scan_silent_except(lines: list[str], filepath: str) -> list[BugFinding]:
     """Find bare 'except: pass' patterns."""
-    findings: List[BugFinding] = []
+    findings: list[BugFinding] = []
     for i, line in enumerate(lines, 1):
         stripped = line.strip()
         if re.search(r"except\s*:\s*pass\s*(#.*)?$", stripped):
@@ -34,9 +33,9 @@ def _scan_silent_except(lines: List[str], filepath: str) -> List[BugFinding]:
     return findings
 
 
-def _scan_print_statements(lines: List[str], filepath: str) -> List[BugFinding]:
+def _scan_print_statements(lines: list[str], filepath: str) -> list[BugFinding]:
     """Find 'print(' calls that should be logging."""
-    findings: List[BugFinding] = []
+    findings: list[BugFinding] = []
     for i, line in enumerate(lines, 1):
         stripped = line.strip()
         if re.match(r"^print\s*\(", stripped):
@@ -49,9 +48,9 @@ def _scan_print_statements(lines: List[str], filepath: str) -> List[BugFinding]:
     return findings
 
 
-def _scan_hardcoded_creds(lines: List[str], filepath: str) -> List[BugFinding]:
+def _scan_hardcoded_creds(lines: list[str], filepath: str) -> list[BugFinding]:
     """Find hardcoded credentials."""
-    findings: List[BugFinding] = []
+    findings: list[BugFinding] = []
     patterns = [
         (r'(api_key|apikey)\s*=\s*["\'][a-zA-Z0-9_\-]{16,}', "api_key"),
         (r'(password|passwd)\s*=\s*["\'][a-zA-Z0-9_\-]{8,}', "password"),
@@ -62,7 +61,7 @@ def _scan_hardcoded_creds(lines: List[str], filepath: str) -> List[BugFinding]:
         for pattern, category in patterns:
             if re.search(pattern, line):
                 stripped = line.strip()
-                if stripped.startswith("#") or stripped.startswith('"""'):
+                if stripped.startswith(("#", '"""')):
                     continue
                 findings.append(BugFinding(
                     file=filepath, line=i, severity="critical",
@@ -73,9 +72,9 @@ def _scan_hardcoded_creds(lines: List[str], filepath: str) -> List[BugFinding]:
     return findings
 
 
-def _scan_todo_fixme(lines: List[str], filepath: str) -> List[BugFinding]:
+def _scan_todo_fixme(lines: list[str], filepath: str) -> list[BugFinding]:
     """Find unresolved TODO/FIXME/HACK/XXX markers."""
-    findings: List[BugFinding] = []
+    findings: list[BugFinding] = []
     markers = ["TODO", "FIXME", "HACK", "XXX"]
     for i, line in enumerate(lines, 1):
         stripped = line.strip()
@@ -98,11 +97,11 @@ def _scan_todo_fixme(lines: List[str], filepath: str) -> List[BugFinding]:
     return findings
 
 
-def _scan_long_files(all_files: List[str]) -> List[BugFinding]:
+def _scan_long_files(all_files: list[str]) -> list[BugFinding]:
     """Flag files over max_file_lines."""
     config = _load_config()
     max_lines = config.get("bug_hunting", {}).get("max_file_lines", 500)
-    findings: List[BugFinding] = []
+    findings: list[BugFinding] = []
     for filepath in all_files:
         _lines, total = _read_file_lines(filepath)
         if total > max_lines:
@@ -116,9 +115,9 @@ def _scan_long_files(all_files: List[str]) -> List[BugFinding]:
     return findings
 
 
-def _scan_wildcard_import(lines: List[str], filepath: str) -> List[BugFinding]:
+def _scan_wildcard_import(lines: list[str], filepath: str) -> list[BugFinding]:
     """Find 'from X import *' patterns."""
-    findings: List[BugFinding] = []
+    findings: list[BugFinding] = []
     for i, line in enumerate(lines, 1):
         stripped = line.strip()
         if re.match(r"from\s+\w+\s+import\s+\*", stripped):
@@ -131,14 +130,14 @@ def _scan_wildcard_import(lines: List[str], filepath: str) -> List[BugFinding]:
     return findings
 
 
-def _scan_missing_docstrings(lines: List[str], filepath: str) -> List[BugFinding]:
+def _scan_missing_docstrings(lines: list[str], filepath: str) -> list[BugFinding]:
     """Find functions/classes without docstrings using AST."""
-    findings: List[BugFinding] = []
+    findings: list[BugFinding] = []
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             source = f.read()
         tree = ast.parse(source)
-    except (SyntaxError, Exception):
+    except (SyntaxError, Exception):  # noqa: BLE001
         return findings
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -149,25 +148,24 @@ def _scan_missing_docstrings(lines: List[str], filepath: str) -> List[BugFinding
                     category="missing_docstring",
                     message=f"Funcion '{node.name}' sin docstring", auto_fixable=False,
                 ))
-        elif isinstance(node, ast.ClassDef):
-            if not ast.get_docstring(node):
-                findings.append(BugFinding(
-                    file=str(Path(filepath).relative_to(PROJECT_ROOT)),
-                    line=node.lineno or 0, severity="minor",
-                    category="missing_docstring",
-                    message=f"Clase '{node.name}' sin docstring", auto_fixable=False,
-                ))
+        elif isinstance(node, ast.ClassDef) and not ast.get_docstring(node):
+            findings.append(BugFinding(
+                file=str(Path(filepath).relative_to(PROJECT_ROOT)),
+                line=node.lineno or 0, severity="minor",
+                category="missing_docstring",
+                message=f"Clase '{node.name}' sin docstring", auto_fixable=False,
+            ))
     return findings
 
 
-def _scan_missing_type_hints(lines: List[str], filepath: str) -> List[BugFinding]:
+def _scan_missing_type_hints(lines: list[str], filepath: str) -> list[BugFinding]:
     """Find function definitions without type hints using AST."""
-    findings: List[BugFinding] = []
+    findings: list[BugFinding] = []
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             source = f.read()
         tree = ast.parse(source)
-    except (SyntaxError, Exception):
+    except (SyntaxError, Exception):  # noqa: BLE001
         return findings
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -194,14 +192,14 @@ def _scan_missing_type_hints(lines: List[str], filepath: str) -> List[BugFinding
     return findings
 
 
-def _scan_inconsistent_returns(lines: List[str], filepath: str) -> List[BugFinding]:
+def _scan_inconsistent_returns(lines: list[str], filepath: str) -> list[BugFinding]:
     """Find functions that sometimes return None and sometimes return value."""
-    findings: List[BugFinding] = []
+    findings: list[BugFinding] = []
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             source = f.read()
         tree = ast.parse(source)
-    except (SyntaxError, Exception):
+    except (SyntaxError, Exception):  # noqa: BLE001
         return findings
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -227,8 +225,8 @@ def _scan_inconsistent_returns(lines: List[str], filepath: str) -> List[BugFindi
 def scan_for_bugs(
     directory: str = ".",
     dry_run: bool = False,
-    changed_files: Optional[List[str]] = None,
-) -> List[BugFinding]:
+    changed_files: list[str] | None = None,
+) -> list[BugFinding]:
     """Phase 1: Scan code for common bugs.
 
     If ``changed_files`` is provided, only scans those files (git-diff scope).
@@ -244,13 +242,12 @@ def scan_for_bugs(
         all_files = []
         for rel_f in changed_files:
             abs_f = Path(PROJECT_ROOT) / rel_f
-            if abs_f.is_file() and _is_python_file(str(abs_f)):
-                if not _should_exclude(str(abs_f), exclude):
-                    all_files.append(str(abs_f))
+            if abs_f.is_file() and _is_python_file(str(abs_f)) and not _should_exclude(str(abs_f), exclude):
+                all_files.append(str(abs_f))
     else:
         all_files = _walk_py_files(abs_dir, exclude)
 
-    findings: List[BugFinding] = []
+    findings: list[BugFinding] = []
     for filepath in all_files:
         lines, _total = _read_file_lines(filepath)
         if not lines:
@@ -271,7 +268,7 @@ def scan_for_bugs(
     return findings
 
 
-def auto_fix_bugs(bugs: List[BugFinding], dry_run: bool = False) -> List[BugFinding]:
+def auto_fix_bugs(bugs: list[BugFinding], dry_run: bool = False) -> list[BugFinding]:
     """Auto-fix bugs where possible (currently only 'except: pass')."""
     for bug in bugs:
         if not bug.auto_fixable:
@@ -295,7 +292,7 @@ def auto_fix_bugs(bugs: List[BugFinding], dry_run: bool = False) -> List[BugFind
                 with open(abs_path, "w", encoding="utf-8") as f:
                     f.writelines(lines)
                 bug.status = "fixed"
-            except Exception:
+            except Exception:  # noqa: BLE001
                 bug.status = "needs_review"
         else:
             bug.status = "fixed (dry-run)"

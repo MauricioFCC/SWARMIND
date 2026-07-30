@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 eval_rag — Evaluaciones de la capa RAG (recall, faithfulness).
 
@@ -10,7 +9,6 @@ from __future__ import annotations
 import logging
 import random
 from datetime import datetime, timezone
-from typing import Any, Dict, List
 
 from harness.evals.eval_factory import EvalResult
 
@@ -21,12 +19,12 @@ _SEED = 42
 _random = random.Random(_SEED)
 
 # Umbrales por defecto
-_DEFAULT_THRESHOLDS: Dict[str, Dict[str, float]] = {
+_DEFAULT_THRESHOLDS: dict[str, dict[str, float]] = {
     "rag": {"recall": 0.80, "faithfulness": 0.85},
 }
 
 
-def eval_rag_recall() -> List[EvalResult]:
+def eval_rag_recall() -> list[EvalResult]:
     """Mide la capacidad de recuperacion (recall) del sistema RAG.
 
     Simula un conjunto de consultas con documentos relevantes conocidos
@@ -47,7 +45,7 @@ def eval_rag_recall() -> List[EvalResult]:
     _TOTAL_DOCS = 100
     _RELEVANT_PER_QUERY = 5
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
 
     for k in _TOP_K_VALUES:
         try:
@@ -89,17 +87,17 @@ def eval_rag_recall() -> List[EvalResult]:
                 k, recall * 100, _DEFAULT_THRESHOLDS["rag"]["recall"] * 100,
             )
 
-        except Exception as exc:
+        except Exception:
             logger.exception(
-                "[eval_rag] Error simulando recall para k=%d: %s. "
+                "[eval_rag] Error simulando recall para k=%d. "
                 "WHERE: eval_rag_recall() | WHAT: fallo en simulacion | WHY: excepcion.",
-                k, exc,
+                k,
             )
 
     return results
 
 
-def eval_rag_faithfulness() -> List[EvalResult]:
+def eval_rag_faithfulness() -> list[EvalResult]:
     """Mide la fidelidad de las respuestas del LLM al contexto recuperado.
 
     Simula escenarios donde el LLM debe responder basado en documentos
@@ -122,7 +120,7 @@ def eval_rag_faithfulness() -> List[EvalResult]:
         "low": {"prob": 0.10, "faithfulness": 0.30},
     }
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
     weighted_sum = 0.0
     total_count = 0
 
@@ -150,11 +148,11 @@ def eval_rag_faithfulness() -> List[EvalResult]:
             )
             results.append(result)
 
-        except Exception as exc:
+        except Exception:
             logger.exception(
-                "[eval_rag] Error simulando faithfulness para nivel %s: %s. "
+                "[eval_rag] Error simulando faithfulness para nivel %s. "
                 "WHERE: eval_rag_faithfulness() | WHAT: fallo en nivel | WHY: excepcion.",
-                level_name, exc,
+                level_name,
             )
 
     # Resultado global ponderado

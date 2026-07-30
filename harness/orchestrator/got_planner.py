@@ -16,17 +16,13 @@ Basado en:
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
-import math
 import random
 import time
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from collections.abc import AsyncGenerator
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, List, Optional, Set, Tuple
 
-from harness.orchestrator.thought_graph import ThoughtGraph, Thought
+from harness.orchestrator.thought_graph import Thought, ThoughtGraph
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +69,7 @@ class GoTPlanner:
             max_graph_nodes: Limite de nodos para evitar OoM.
         """
         self._max_nodes: int = max_graph_nodes
-        self._stats: Dict[str, int] = {
+        self._stats: dict[str, int] = {
             "total_plans": 0,
             "total_nodes_created": 0,
             "total_pruned": 0,
@@ -106,24 +102,22 @@ class GoTPlanner:
             depth=0,
         )
         graph: ThoughtGraph = ThoughtGraph(thoughts={root.id: root}, root_id=root.id)
-        frontier: List[str] = [root.id]
+        frontier: list[str] = [root.id]
 
         for depth in range(1, max_depth + 1):
             if len(graph.thoughts) >= self._max_nodes:
                 break
 
-            next_frontier: List[str] = []
-            expand_count: int = 0
+            next_frontier: list[str] = []
 
             for node_id in self._select_frontier(graph, frontier, strategy, branches):
                 if len(graph.thoughts) >= self._max_nodes:
                     break
-                children: List[Thought] = self._expand_node(graph, node_id, branches, depth)
+                children: list[Thought] = self._expand_node(graph, node_id, branches, depth)
                 for child in children:
                     graph.thoughts[child.id] = child
                     graph.edges.setdefault(node_id, []).append(child.id)
                 next_frontier.extend(c.id for c in children)
-                expand_count += 1
 
             if not next_frontier:
                 break
@@ -136,10 +130,10 @@ class GoTPlanner:
     def _select_frontier(
         self,
         graph: ThoughtGraph,
-        frontier: List[str],
+        frontier: list[str],
         strategy: ExpandStrategy,
         branches: int,
-    ) -> List[str]:
+    ) -> list[str]:
         """Selecciona nodos del frontier para expandir segun la estrategia.
 
         Args:
@@ -156,13 +150,13 @@ class GoTPlanner:
         elif strategy == ExpandStrategy.DFS:
             return frontier[-1:] if frontier else []
         elif strategy == ExpandStrategy.BEAM:
-            scored: List[Tuple[float, str]] = sorted(
+            scored: list[tuple[float, str]] = sorted(
                 [(graph.thoughts[nid].score, nid) for nid in frontier],
                 key=lambda x: -x[0],
             )
             return [nid for _, nid in scored[:branches]]
         elif strategy == ExpandStrategy.BEST_FIRST:
-            best: Optional[str] = max(frontier, key=lambda n: graph.thoughts[n].score) if frontier else None
+            best: str | None = max(frontier, key=lambda n: graph.thoughts[n].score) if frontier else None
             return [best] if best else []
         else:
             return random.sample(frontier, min(branches, len(frontier))) if frontier else []
@@ -173,7 +167,7 @@ class GoTPlanner:
         node_id: str,
         branches: int,
         depth: int,
-    ) -> List[Thought]:
+    ) -> list[Thought]:
         """Expande un nodo generando hijos.
 
         Args:
@@ -185,12 +179,12 @@ class GoTPlanner:
         Returns:
             Lista de nuevos Thoughts hijos.
         """
-        parent: Optional[Thought] = graph.thoughts.get(node_id)
+        parent: Thought | None = graph.thoughts.get(node_id)
         if parent is None:
             return []
 
-        children: List[Thought] = []
-        perspectives: List[str] = [
+        children: list[Thought] = []
+        perspectives: list[str] = [
             "analisis detallado",
             "enfoque alternativo",
             "consideracion de bordes",
@@ -227,7 +221,7 @@ class GoTPlanner:
         self,
         thought: Thought,
         task: str = "",
-        graph: Optional[ThoughtGraph] = None,
+        graph: ThoughtGraph | None = None,
     ) -> float:
         """Evalua la calidad de un pensamiento.
 
@@ -262,7 +256,7 @@ class GoTPlanner:
         Returns:
             Nuevo grafo sin nodos debiles.
         """
-        keep_ids: Set[str] = set()
+        keep_ids: set[str] = set()
         for nid, thought in graph.thoughts.items():
             if thought.score >= threshold or nid == graph.root_id:
                 keep_ids.add(nid)
@@ -280,7 +274,7 @@ class GoTPlanner:
         self._stats["total_pruned"] += pruned_count
         return pruned
 
-    def backtrack(self, graph: ThoughtGraph, thought_id: str) -> Optional[Thought]:
+    def backtrack(self, graph: ThoughtGraph, thought_id: str) -> Thought | None:
         """Navega al ancestro valido mas cercano.
 
         Args:
@@ -290,7 +284,7 @@ class GoTPlanner:
         Returns:
             Thought ancestro o None si no hay.
         """
-        current: Optional[Thought] = graph.thoughts.get(thought_id)
+        current: Thought | None = graph.thoughts.get(thought_id)
         if current is None:
             return None
         if current.parent_id and current.parent_id in graph.thoughts:
@@ -311,14 +305,14 @@ class GoTPlanner:
         Returns:
             Texto de la solucion consolidada.
         """
-        best_path: List[Thought] = self.get_best_path(graph)
+        best_path: list[Thought] = self.get_best_path(graph)
         if not best_path:
             return "No se encontro una solucion."
 
         if method == ConsolidateMethod.BEST_PATH:
             return " -> ".join(t.content[:80] for t in best_path)
 
-        paths: List[List[Thought]] = self._get_top_k_paths(graph, CONSOLIDATE_TOP_K)
+        paths: list[list[Thought]] = self._get_top_k_paths(graph, CONSOLIDATE_TOP_K)
         if method == ConsolidateMethod.WEIGHTED_FUSION:
             return self._weighted_fusion(paths)
         elif method == ConsolidateMethod.MAJORITY_ENSEMBLE:
@@ -327,7 +321,7 @@ class GoTPlanner:
             return self._merge_and_refine(paths)
         return " -> ".join(t.content[:80] for t in best_path)
 
-    def get_best_path(self, graph: ThoughtGraph) -> List[Thought]:
+    def get_best_path(self, graph: ThoughtGraph) -> list[Thought]:
         """Retorna el camino de mayor puntuacion desde raiz a hoja.
 
         Args:
@@ -336,10 +330,10 @@ class GoTPlanner:
         Returns:
             Lista de Thoughts formando el mejor camino.
         """
-        paths: List[List[Thought]] = self._get_top_k_paths(graph, 1)
+        paths: list[list[Thought]] = self._get_top_k_paths(graph, 1)
         return paths[0] if paths else []
 
-    def _get_top_k_paths(self, graph: ThoughtGraph, k: int) -> List[List[Thought]]:
+    def _get_top_k_paths(self, graph: ThoughtGraph, k: int) -> list[list[Thought]]:
         """Obtiene los top-K caminos del grafo.
 
         Args:
@@ -349,14 +343,14 @@ class GoTPlanner:
         Returns:
             Lista de caminos ordenados por puntuacion.
         """
-        leaves: List[str] = self._find_leaves(graph)
-        paths: List[Tuple[float, List[Thought]]] = []
+        leaves: list[str] = self._find_leaves(graph)
+        paths: list[tuple[float, list[Thought]]] = []
 
         for leaf_id in leaves:
-            path: List[Thought] = []
-            current: Optional[str] = leaf_id
+            path: list[Thought] = []
+            current: str | None = leaf_id
             while current:
-                thought: Optional[Thought] = graph.thoughts.get(current)
+                thought: Thought | None = graph.thoughts.get(current)
                 if thought:
                     path.append(thought)
                 current = graph.thoughts[current].parent_id if current in graph.thoughts else None
@@ -367,7 +361,7 @@ class GoTPlanner:
         paths.sort(key=lambda x: -x[0])
         return [p for _, p in paths[:k]]
 
-    def _find_leaves(self, graph: ThoughtGraph) -> List[str]:
+    def _find_leaves(self, graph: ThoughtGraph) -> list[str]:
         """Encuentra nodos hoja (sin hijos).
 
         Args:
@@ -376,12 +370,12 @@ class GoTPlanner:
         Returns:
             Lista de IDs de hojas.
         """
-        all_children: Set[str] = set()
+        all_children: set[str] = set()
         for children in graph.edges.values():
             all_children.update(children)
         return [nid for nid in graph.thoughts if nid not in all_children]
 
-    def _weighted_fusion(self, paths: List[List[Thought]]) -> str:
+    def _weighted_fusion(self, paths: list[list[Thought]]) -> str:
         """Fusion ponderada de multiples caminos.
 
         Args:
@@ -392,10 +386,10 @@ class GoTPlanner:
         """
         if not paths:
             return ""
-        best: List[Thought] = paths[0]
+        best: list[Thought] = paths[0]
         return " | ".join(t.content[:60] for t in best[:3])
 
-    def _majority_ensemble(self, paths: List[List[Thought]]) -> str:
+    def _majority_ensemble(self, paths: list[list[Thought]]) -> str:
         """Votacion mayoritaria entre caminos.
 
         Args:
@@ -409,7 +403,7 @@ class GoTPlanner:
         best = paths[0]
         return " [ENSEMBLE] ".join(t.content[:60] for t in best[:3])
 
-    def _merge_and_refine(self, paths: List[List[Thought]]) -> str:
+    def _merge_and_refine(self, paths: list[list[Thought]]) -> str:
         """Merge y refinamiento de caminos.
 
         Args:
@@ -432,7 +426,7 @@ class GoTPlanner:
         raw: str = f"{time.time_ns()}{random.random()}"
         return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         """Retorna estadisticas del planificador.
 
         Returns:
@@ -448,7 +442,7 @@ class GoTExecutor:
         planner: Instancia de GoTPlanner (crea una por defecto).
     """
 
-    def __init__(self, planner: Optional[GoTPlanner] = None) -> None:
+    def __init__(self, planner: GoTPlanner | None = None) -> None:
         """Inicializa el ejecutor.
 
         Args:

@@ -1,5 +1,5 @@
-"""
-MCP Manager — manages a pool of MCP client connections to multiple servers.
+﻿"""
+MCP Manager â€” manages a pool of MCP client connections to multiple servers.
 
 Provides a unified interface to discover and execute tools across
 all registered MCP servers. Tools are resolved by name and routed
@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .mcp_client import MCPClient, MCPResult, MCPTool
 
@@ -36,7 +36,7 @@ class MCPServerConfig:
     name: str
     url: str
     description: str = ""
-    tools: List[str] = field(default_factory=list)
+    tools: list[str] = field(default_factory=list)
     enabled: bool = False
     install_hint: str = ""
 
@@ -69,9 +69,9 @@ class MCPManager:
 
     def __init__(self):
         """Inicializa la instancia de la clase."""
-        self._servers: Dict[str, MCPServerConfig] = {}
-        self._clients: Dict[str, MCPClient] = {}
-        self._tool_index: Dict[str, MCPTool] = {}  # tool_name -> MCPTool
+        self._servers: dict[str, MCPServerConfig] = {}
+        self._clients: dict[str, MCPClient] = {}
+        self._tool_index: dict[str, MCPTool] = {}  # tool_name -> MCPTool
         self._index_ts: float = 0.0
         self._cache_ttl: float = _DEFAULT_CACHE_TTL
 
@@ -83,7 +83,7 @@ class MCPManager:
         self,
         name: str,
         url: str,
-        tools: Optional[List[str]] = None,
+        tools: list[str] | None = None,
         enabled: bool = False,
         description: str = "",
         install_hint: str = "",
@@ -166,7 +166,7 @@ class MCPManager:
             self.connect_all()
             return count
 
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error("Failed to load MCP servers: %s", exc)
             return 0
 
@@ -203,13 +203,13 @@ class MCPManager:
 
     def disconnect_all(self) -> None:
         """Disconnect from all servers."""
-        for name, client in self._clients.items():
+        for client in self._clients.values():
             client.disconnect()
         self._clients.clear()
         self._invalidate_index()
         logger.info("Disconnected from all MCP servers.")
 
-    def get_connected_servers(self) -> List[str]:
+    def get_connected_servers(self) -> list[str]:
         """Return names of currently connected servers."""
         return [
             name
@@ -221,7 +221,7 @@ class MCPManager:
     # Tool discovery
     # ------------------------------------------------------------------
 
-    def list_all_tools(self) -> List[MCPTool]:
+    def list_all_tools(self) -> list[MCPTool]:
         """
         List all tools available across all connected servers.
 
@@ -233,7 +233,7 @@ class MCPManager:
         self._rebuild_index()
         return list(self._tool_index.values())
 
-    def get_tool(self, name: str) -> Optional[MCPTool]:
+    def get_tool(self, name: str) -> MCPTool | None:
         """
         Find a tool by name across all connected servers.
 
@@ -246,7 +246,7 @@ class MCPManager:
         self._ensure_index()
         return self._tool_index.get(name)
 
-    def find_server_for_tool(self, tool_name: str) -> Optional[str]:
+    def find_server_for_tool(self, tool_name: str) -> str | None:
         """Find which server provides a given tool."""
         for name, config in self._servers.items():
             if config.enabled and tool_name in config.tools:
@@ -260,8 +260,8 @@ class MCPManager:
     def execute(
         self,
         tool_name: str,
-        params: Dict[str, Any],
-        timeout: Optional[int] = None,
+        params: dict[str, Any],
+        timeout: int | None = None,
     ) -> MCPResult:
         """
         Execute a tool on the appropriate MCP server.
@@ -323,7 +323,7 @@ class MCPManager:
                 for tool in tools:
                     tool.server_name = server_name
                     self._tool_index[tool.name] = tool
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning(
                     "Failed to list tools from '%s': %s", server_name, exc
                 )

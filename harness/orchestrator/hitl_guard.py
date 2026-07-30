@@ -1,5 +1,5 @@
-"""
-HITL Guard — Human-in-the-Loop approval for destructive actions.
+﻿"""
+HITL Guard â€” Human-in-the-Loop approval for destructive actions.
 
 Intercepts dangerous operations (DROP TABLE, rm -rf, terraform destroy, etc.)
 and requires human approval before execution.
@@ -22,7 +22,7 @@ import re
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +57,8 @@ class HITLGuard:
 
     def __init__(
         self,
-        config_path: Optional[str] = None,
-        vector_store: Optional[Any] = None,
+        config_path: str | None = None,
+        vector_store: Any | None = None,
         mode: str = "hitl",
     ):
         """
@@ -76,7 +76,7 @@ class HITLGuard:
     # Public API
     # ------------------------------------------------------------------
 
-    def check_action(self, action: str, agent_role: str = "unknown") -> Dict[str, Any]:
+    def check_action(self, action: str, agent_role: str = "unknown") -> dict[str, Any]:
         """
         Check if an action requires human approval.
 
@@ -91,7 +91,7 @@ class HITLGuard:
             - ``action``: The original action
             - ``agent_role``: The agent role
         """
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "approved": True,
             "reason": "",
             "action": action,
@@ -131,7 +131,7 @@ class HITLGuard:
         self,
         action: str,
         agent_role: str = "unknown",
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
     ) -> bool:
         """
         Request human approval for a destructive action.
@@ -150,7 +150,7 @@ class HITLGuard:
 
         logger.info()
         logger.info("=" * 65)
-        logger.info("  ⚠️  HUMAN-IN-THE-LOOP — Accion Destructiva Detectada")
+        logger.info("  âš ï¸  HUMAN-IN-THE-LOOP â€” Accion Destructiva Detectada")
         logger.info("=" * 65)
         logger.info()
         logger.info(f"  Agente: @{agent_role}")
@@ -161,9 +161,9 @@ class HITLGuard:
         logger.info()
         logger.info("-" * 65)
         logger.info("  Opciones:")
-        logger.info("    [Y] Aprobar — Permitir la ejecucion")
-        logger.info("    [N] Rechazar — Bloquear + feedback opcional al agente")
-        logger.info("    [S] Saltar — No preguntar mas en esta sesion")
+        logger.info("    [Y] Aprobar â€” Permitir la ejecucion")
+        logger.info("    [N] Rechazar â€” Bloquear + feedback opcional al agente")
+        logger.info("    [S] Saltar â€” No preguntar mas en esta sesion")
         logger.info()
         logger.info(f"  Timeout: {effective_timeout}s (denegado automaticamente)")
         logger.info("=" * 65)
@@ -181,7 +181,7 @@ class HITLGuard:
             except (KeyboardInterrupt, EOFError):
                 answer = "n"
                 break
-            except Exception:
+            except Exception:  # noqa: BLE001
                 # Fallback for non-select platforms
                 try:
                     answer = input("  > ").strip().lower()
@@ -196,22 +196,22 @@ class HITLGuard:
 
         if answer == "y":
             approved = True
-            logger.info("  ✅ Accion APROBADA.")
+            logger.info("  âœ… Accion APROBADA.")
         elif answer == "s":
             self._skip_all = True
             approved = True
-            logger.info("  ⏭️  Modo 'Saltar sesion' activado. No se preguntara mas.")
+            logger.info("  â­ï¸  Modo 'Saltar sesion' activado. No se preguntara mas.")
         elif answer == "n":
             approved = False
-            logger.info("  ❌ Accion RECHAZADA.")
+            logger.info("  âŒ Accion RECHAZADA.")
             try:
                 user_feedback = input("  Feedback opcional para el agente: ").strip()
             except (EOFError, KeyboardInterrupt):
                 pass
         else:
-            # Timeout or invalid input → deny (fail-safe)
+            # Timeout or invalid input â†’ deny (fail-safe)
             approved = False
-            logger.info("  ⏰ Timeout o entrada invalida. Accion DENEGADA (fail-safe).")
+            logger.info("  â° Timeout o entrada invalida. Accion DENEGADA (fail-safe).")
 
         # Log to vector store
         self._log_approval(action, agent_role, approved, user_feedback)
@@ -243,7 +243,7 @@ class HITLGuard:
     # Pattern management
     # ------------------------------------------------------------------
 
-    def _get_patterns(self) -> List[Dict[str, Any]]:
+    def _get_patterns(self) -> list[dict[str, Any]]:
         """Get compiled regex patterns from config."""
         patterns = self.config.get("destructive_patterns", self._default_patterns())
         compiled = []
@@ -259,7 +259,7 @@ class HITLGuard:
         return compiled
 
     @staticmethod
-    def _default_patterns() -> List[Dict[str, str]]:
+    def _default_patterns() -> list[dict[str, str]]:
         """Default destructive patterns."""
         return [
             # Database destructive operations
@@ -340,7 +340,7 @@ class HITLGuard:
                 "HITL decision logged: agent=%s approved=%s",
                 agent_role, approved,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to log HITL decision: %s", exc)
 
     # ------------------------------------------------------------------
@@ -348,7 +348,7 @@ class HITLGuard:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _load_config(config_path: str) -> Dict[str, Any]:
+    def _load_config(config_path: str) -> dict[str, Any]:
         """Load HITL configuration from YAML."""
         try:
             import yaml
@@ -360,7 +360,7 @@ class HITLGuard:
             with open(config_path, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f) or {}
                 return config
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to load HITL config: %s. Using defaults.", exc)
             return {"timeout": DEFAULT_TIMEOUT}
 

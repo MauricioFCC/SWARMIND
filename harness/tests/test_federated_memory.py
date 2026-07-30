@@ -20,8 +20,7 @@ import threading
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -32,7 +31,6 @@ from harness.orchestrator.federated_memory import (
     discover_federated_projects,
     sync_all_projects,
 )
-
 
 # ===========================================================================
 # Tests: KnowledgeType
@@ -447,7 +445,6 @@ class TestQueryKnowledge:
 
     def test_query_exclude_expired(self, store: FederatedMemoryStore) -> None:
         """query_knowledge debe excluir expirados por defecto."""
-        import datetime as dt
         past = (datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat()
         record = KnowledgeRecord(
             id="expired:id", type=KnowledgeType.PATTERN,
@@ -888,7 +885,6 @@ class TestEdgeCases:
 
     def test_concurrent_modification_safety(self, store: FederatedMemoryStore) -> None:
         """FederatedMemoryStore debe ser thread-safe con Lock."""
-        import threading
 
         errors = []
 
@@ -896,7 +892,7 @@ class TestEdgeCases:
             try:
                 for i in range(50):
                     store.store_knowledge(key=f"thread:key:{i}", value=i)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 errors.append(e)
 
         threads = [threading.Thread(target=writer) for _ in range(4)]

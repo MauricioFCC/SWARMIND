@@ -17,10 +17,9 @@ Referencia:
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
-
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # WHO — Roles organizacionales (Belbin)
@@ -45,7 +44,7 @@ class BelbinRole(str, Enum):
     SPECIALIST = "specialist"        # Aporta conocimiento profundo de dominio
 
     @classmethod
-    def from_str(cls, value: str) -> "BelbinRole":
+    def from_str(cls, value: str) -> BelbinRole:
         """Convierte string a BelbinRole, case-insensitive.
 
         Args:
@@ -125,8 +124,8 @@ class RACIMatrix:
     """
     responsible: str = ""
     accountable: str = ""
-    consulted: List[str] = field(default_factory=list)
-    informed: List[str] = field(default_factory=list)
+    consulted: list[str] = field(default_factory=list)
+    informed: list[str] = field(default_factory=list)
 
     def validate(self) -> None:
         """Valida las restricciones de la matriz RACI.
@@ -169,7 +168,7 @@ class RACIMatrix:
                 f"en consulted."
             )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convierte la matriz a diccionario serializable.
 
         Returns:
@@ -183,7 +182,7 @@ class RACIMatrix:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "RACIMatrix":
+    def from_dict(cls, data: dict[str, Any]) -> RACIMatrix:
         """Construye RACIMatrix desde diccionario.
 
         Args:
@@ -220,18 +219,18 @@ class TeamSpec:
         raci_assignments: Mapeo de tarea → RACIMatrix.
     """
     name: str = "default"
-    roles: Dict[str, BelbinRole] = field(default_factory=dict)
+    roles: dict[str, BelbinRole] = field(default_factory=dict)
     coordination: MintzbergCoordination = MintzbergCoordination.MUTUAL_ADJUSTMENT
-    model_binding: Dict[str, str] = field(default_factory=dict)
-    raci_assignments: Dict[str, RACIMatrix] = field(default_factory=dict)
+    model_binding: dict[str, str] = field(default_factory=dict)
+    raci_assignments: dict[str, RACIMatrix] = field(default_factory=dict)
 
-    def validate(self) -> List[str]:
+    def validate(self) -> list[str]:
         """Valida la especificación completa del equipo.
 
         Returns:
             Lista de mensajes de error (vacía si es válida).
         """
-        errors: List[str] = []
+        errors: list[str] = []
         # Validar que todo agente con rol tenga modelo (solo si hay bindings
         # definidos; bindings vacío = asignación pendiente = válido)
         if self.model_binding and self.roles:
@@ -283,12 +282,12 @@ class OrganizationalLayer:
 
     def __init__(self) -> None:
         """Inicializa la capa organizacional vacía."""
-        self._roles: Dict[str, BelbinRole] = {}
-        self._raci: Dict[str, RACIMatrix] = {}
+        self._roles: dict[str, BelbinRole] = {}
+        self._raci: dict[str, RACIMatrix] = {}
         self._coordination: MintzbergCoordination = (
             MintzbergCoordination.MUTUAL_ADJUSTMENT
         )
-        self._model_binding: Dict[str, str] = {}
+        self._model_binding: dict[str, str] = {}
         self._team_name: str = "default"
 
     # ── WHO: Roles Belbin ──────────────────────────────────────────────
@@ -309,7 +308,7 @@ class OrganizationalLayer:
             )
         self._roles[agent] = role
 
-    def get_role(self, agent: str) -> Optional[BelbinRole]:
+    def get_role(self, agent: str) -> BelbinRole | None:
         """Obtiene el rol Belbin de un agente.
 
         Args:
@@ -331,7 +330,7 @@ class OrganizationalLayer:
         """
         return self._roles.pop(agent, None) is not None
 
-    def list_roles(self) -> Dict[str, BelbinRole]:
+    def list_roles(self) -> dict[str, BelbinRole]:
         """Lista todas las asignaciones de roles actuales.
 
         Returns:
@@ -392,8 +391,8 @@ class OrganizationalLayer:
         task: str,
         responsible: str,
         accountable: str,
-        consulted: Optional[List[str]] = None,
-        informed: Optional[List[str]] = None,
+        consulted: list[str] | None = None,
+        informed: list[str] | None = None,
     ) -> RACIMatrix:
         """Crea y registra una matriz RACI para una tarea.
 
@@ -420,7 +419,7 @@ class OrganizationalLayer:
         self._raci[task] = raci
         return raci
 
-    def get_raci(self, task: str) -> Optional[RACIMatrix]:
+    def get_raci(self, task: str) -> RACIMatrix | None:
         """Obtiene la matriz RACI de una tarea.
 
         Args:
@@ -442,7 +441,7 @@ class OrganizationalLayer:
         """
         return self._raci.pop(task, None) is not None
 
-    def list_raci(self) -> Dict[str, RACIMatrix]:
+    def list_raci(self) -> dict[str, RACIMatrix]:
         """Lista todas las matrices RACI registradas.
 
         Returns:
@@ -461,7 +460,7 @@ class OrganizationalLayer:
         """
         self._model_binding[agent] = model
 
-    def get_model(self, agent: str) -> Optional[str]:
+    def get_model(self, agent: str) -> str | None:
         """Obtiene el modelo asignado a un agente.
 
         Args:
@@ -488,7 +487,7 @@ class OrganizationalLayer:
         errors = spec.validate()
         if errors:
             raise ValueError(
-                f"TeamSpec inválido:\n  " + "\n  ".join(errors)
+                "TeamSpec inválido:\n  " + "\n  ".join(errors)
             )
         self._team_name = spec.name
         self._roles = dict(spec.roles)
@@ -526,7 +525,7 @@ class OrganizationalLayer:
             },
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serializa toda la capa organizacional a diccionario.
 
         Returns:
@@ -558,7 +557,7 @@ class OrganizationalLayer:
     # ── Presets ───────────────────────────────────────────────────────
 
     @classmethod
-    def from_preset_belbin(cls) -> "OrganizationalLayer":
+    def from_preset_belbin(cls) -> OrganizationalLayer:
         """Crea capa con preset organizacional Belbin (default).
 
         Asigna los cinco roles Belbin a agentes con coordinación por
@@ -578,7 +577,7 @@ class OrganizationalLayer:
         return layer
 
     @classmethod
-    def from_preset_adhocracy(cls) -> "OrganizationalLayer":
+    def from_preset_adhocracy(cls) -> OrganizationalLayer:
         """Crea capa con preset Adhocracy.
 
         Equipo flexible con supervisión directa, ideal para generación
@@ -596,7 +595,7 @@ class OrganizationalLayer:
         return layer
 
     @classmethod
-    def from_preset_three_departments(cls) -> "OrganizationalLayer":
+    def from_preset_three_departments(cls) -> OrganizationalLayer:
         """Crea capa con preset Three Departments (Tang dynasty).
 
         Inspirado en el sistema ministerial Tang con roles jerárquicos
@@ -616,7 +615,7 @@ class OrganizationalLayer:
 
     # ── Query ─────────────────────────────────────────────────────────
 
-    def find_agents_by_role(self, role: BelbinRole) -> List[str]:
+    def find_agents_by_role(self, role: BelbinRole) -> list[str]:
         """Encuentra todos los agentes con un rol específico.
 
         Args:
@@ -627,7 +626,7 @@ class OrganizationalLayer:
         """
         return [agent for agent, r in self._roles.items() if r == role]
 
-    def get_accountable_for_task(self, task: str) -> Optional[str]:
+    def get_accountable_for_task(self, task: str) -> str | None:
         """Obtiene el agente accountable para una tarea.
 
         Args:
@@ -639,7 +638,7 @@ class OrganizationalLayer:
         raci = self._raci.get(task)
         return raci.accountable if raci else None
 
-    def get_responsible_for_task(self, task: str) -> Optional[str]:
+    def get_responsible_for_task(self, task: str) -> str | None:
         """Obtiene el agente responsable para una tarea.
 
         Args:

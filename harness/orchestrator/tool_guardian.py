@@ -21,7 +21,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 # Patrones de codigo peligroso para analisis estatico (Stage 4)
-DANGEROUS_PATTERNS: List[str] = [
+DANGEROUS_PATTERNS: list[str] = [
     r"exec\s*\(", r"eval\s*\(", r"__import__\s*\(", r"subprocess\s*\.",
     r"os\.system", r"os\.popen", r"shutil\.rmtree", r"pathlib.*\.unlink",
     r"ctypes\.", r"pickle\.loads", r"socket\.", r"requests?\.",
@@ -38,14 +38,14 @@ DANGEROUS_PATTERNS: List[str] = [
 ]
 
 # Llamadas al sistema de alto riesgo (Stage 2)
-HIGH_RISK_SYSCALLS: Set[str] = {
+HIGH_RISK_SYSCALLS: set[str] = {
     "execve", "execvp", "fork+exec", "ptrace", "process_vm_writev",
     "iopl", "ioperm", "kexec_load", "reboot", "swapon", "swapoff",
     "delete_module", "init_module", "setuid", "setgid", "chroot",
 }
 
 # Patrones de ofuscacion (Stage 4)
-OBFUSCATION_PATTERNS: List[str] = [
+OBFUSCATION_PATTERNS: list[str] = [
     r"base64\.(b64decode|decode)", r"bytes\.fromhex", r"decode\s*\(['\"]hex['\"]",
     r"\\x[0-9a-fA-F]{2}",  # cadenas con escapes hex
     r"__builtins__", r"getattr.*__", r"setattr.*__",
@@ -95,13 +95,13 @@ class ToolPolicy:
     """
 
     name: str
-    allowed_actions: List[str] = field(default_factory=list)
-    blocked_actions: List[str] = field(default_factory=list)
-    required_capabilities: List[str] = field(default_factory=list)
+    allowed_actions: list[str] = field(default_factory=list)
+    blocked_actions: list[str] = field(default_factory=list)
+    required_capabilities: list[str] = field(default_factory=list)
     max_execution_time: int = 30
     requires_human_approval: bool = False
-    allowed_domains: List[str] = field(default_factory=list)
-    allowed_paths: List[str] = field(default_factory=list)
+    allowed_domains: list[str] = field(default_factory=list)
+    allowed_paths: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -119,8 +119,8 @@ class CharacterizationResult:
     stage: CharacterizationStage
     passed: bool = True
     score: float = 0.0
-    evidence: List[str] = field(default_factory=list)
-    details: Dict[str, Any] = field(default_factory=dict)
+    evidence: list[str] = field(default_factory=list)
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -152,7 +152,7 @@ class ToolGuardian:
                 bloqueadas.
         """
         self._strict = strict_mode
-        self._policies: Dict[str, ToolPolicy] = {}
+        self._policies: dict[str, ToolPolicy] = {}
         self._load_default_policies()
 
     # ------------------------------------------------------------------
@@ -245,7 +245,7 @@ class ToolGuardian:
         self._policies[policy.name] = policy
         logger.info("ToolGuardian: politica registrada '%s'", policy.name)
 
-    def get_policy(self, tool_name: str) -> Optional[ToolPolicy]:
+    def get_policy(self, tool_name: str) -> ToolPolicy | None:
         """Obtener la politica para una tool.
 
         Args:
@@ -271,7 +271,7 @@ class ToolGuardian:
             return True
         return False
 
-    def list_policies(self) -> List[str]:
+    def list_policies(self) -> list[str]:
         """Listar los nombres de todas las politicas registradas.
 
         Returns:
@@ -287,7 +287,7 @@ class ToolGuardian:
         self,
         tool_name: str,
         action: str,
-        args: Optional[Dict[str, Any]] = None,
+        args: dict[str, Any] | None = None,
     ) -> bool:
         """Validar si una llamada a tool esta permitida segun la politica.
 
@@ -323,9 +323,7 @@ class ToolGuardian:
         # Verificar acciones permitidas
         if action_lower in [a.lower() for a in policy.allowed_actions]:
             # Validaciones contextuales adicionales
-            if args and not self._validate_contextual(policy, action_lower, args):
-                return False
-            return True
+            return not (args and not self._validate_contextual(policy, action_lower, args))
 
         # Modo estricto: solo acciones explicitamente permitidas
         if self._strict:
@@ -346,7 +344,7 @@ class ToolGuardian:
         self,
         policy: ToolPolicy,
         action: str,
-        args: Dict[str, Any],
+        args: dict[str, Any],
     ) -> bool:
         """Validaciones contextuales adicionales (rutas, dominios, etc.).
 
@@ -403,7 +401,7 @@ class ToolGuardian:
             return ToolRiskLevel.SAFE
 
         risk_score = 0
-        matched_patterns: List[str] = []
+        matched_patterns: list[str] = []
 
         # Analizar patrones peligrosos
         for pattern in DANGEROUS_PATTERNS:
@@ -450,8 +448,8 @@ class ToolGuardian:
         self,
         tool_name: str,
         tool_code: str,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> List[CharacterizationResult]:
+        metadata: dict[str, Any] | None = None,
+    ) -> list[CharacterizationResult]:
         """Ejecutar el pipeline completo de caracterizacion progresiva.
 
         Las 4 etapas del pipeline (arXiv:2607.21835):
@@ -468,7 +466,7 @@ class ToolGuardian:
         Returns:
             Lista de resultados por etapa del pipeline.
         """
-        results: List[CharacterizationResult] = []
+        results: list[CharacterizationResult] = []
 
         # Stage 1 — Description
         desc_result = self._stage_description(tool_name, metadata)
@@ -498,7 +496,7 @@ class ToolGuardian:
     def _stage_description(
         self,
         tool_name: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> CharacterizationResult:
         """Stage 1: Verificar metadata de la tool.
 
@@ -512,7 +510,7 @@ class ToolGuardian:
         Returns:
             CharacterizationResult de la etapa.
         """
-        evidence: List[str] = []
+        evidence: list[str] = []
         score = 0.0
 
         if not metadata:
@@ -560,7 +558,7 @@ class ToolGuardian:
         Returns:
             CharacterizationResult de la etapa.
         """
-        evidence: List[str] = []
+        evidence: list[str] = []
         score = 0.0
 
         if not tool_code:
@@ -596,7 +594,7 @@ class ToolGuardian:
         Returns:
             CharacterizationResult de la etapa.
         """
-        evidence: List[str] = []
+        evidence: list[str] = []
         score = 0.0
 
         if not tool_code:
@@ -646,7 +644,7 @@ class ToolGuardian:
         Returns:
             CharacterizationResult de la etapa.
         """
-        evidence: List[str] = []
+        evidence: list[str] = []
         score = 0.0
 
         if not tool_code:
@@ -686,8 +684,8 @@ class ToolGuardian:
         self,
         tool_name: str,
         tool_code: str,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Ejecutar pipeline completo y obtener veredicto final.
 
         Args:

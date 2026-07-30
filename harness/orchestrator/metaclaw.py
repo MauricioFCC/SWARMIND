@@ -35,7 +35,7 @@ import threading
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ class ToolRecord:
     total_latency: float = 0.0
     total_cost: float = 0.0
     last_used: float = 0.0
-    task_types: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
+    task_types: dict[str, int] = field(default_factory=lambda: defaultdict(int))
 
 
 @dataclass
@@ -113,7 +113,7 @@ class SelectionRecord:
     """
 
     task_type: str
-    context: Dict[str, Any]
+    context: dict[str, Any]
     selected_tool: str
     success: bool
     latency: float
@@ -237,26 +237,26 @@ class MetaClaw:
         self._lock = threading.Lock()
 
         # {tool_name: ToolRecord}
-        self._tool_records: Dict[str, ToolRecord] = {}
+        self._tool_records: dict[str, ToolRecord] = {}
 
         # {task_type: {tool_name: (alpha, beta)}} — posteriors por tarea
-        self._posteriors: Dict[str, Dict[str, Tuple[float, float]]] = (
-            defaultdict(lambda: {})
+        self._posteriors: dict[str, dict[str, tuple[float, float]]] = (
+            defaultdict(dict)
         )
 
         # {task_type: {tool_name: [reward_1, ...]}} — historial ventana
-        self._reward_history: Dict[str, Dict[str, List[float]]] = (
+        self._reward_history: dict[str, dict[str, list[float]]] = (
             defaultdict(lambda: defaultdict(list))
         )
 
         # Vocabulario aprendido de tipos de tarea
-        self._known_task_types: Dict[str, int] = defaultdict(int)
+        self._known_task_types: dict[str, int] = defaultdict(int)
 
         # Historial de selecciones
-        self._selection_history: List[SelectionRecord] = []
+        self._selection_history: list[SelectionRecord] = []
 
         # Embeddings de tarea aprendidos (task_type -> vector)
-        self._task_embeddings: Dict[str, List[float]] = {}
+        self._task_embeddings: dict[str, list[float]] = {}
 
         logger.info(
             "MetaClaw initialized (alpha=%.2f, beta=%.2f, "
@@ -302,7 +302,7 @@ class MetaClaw:
     def select_tool(
         self,
         task_type: str,
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> str:
         """Selecciona la mejor herramienta para una tarea usando meta-aprendizaje.
 
@@ -335,10 +335,10 @@ class MetaClaw:
         with self._lock:
             if not self._tool_records:
                 raise RuntimeError(
-                    f"WHAT: No hay herramientas registradas en MetaClaw. "
-                    f"WHY: No se puede seleccionar sin opciones disponibles. "
-                    f"WHERE: MetaClaw.select_tool. "
-                    f"SUGGEST: Registrar al menos una herramienta con register_tool()."
+                    "WHAT: No hay herramientas registradas en MetaClaw. "
+                    "WHY: No se puede seleccionar sin opciones disponibles. "
+                    "WHERE: MetaClaw.select_tool. "
+                    "SUGGEST: Registrar al menos una herramienta con register_tool()."
                 )
 
             tool_names = list(self._tool_records.keys())
@@ -385,7 +385,7 @@ class MetaClaw:
     def record_outcome(
         self,
         task_type: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
         tool_name: str,
         success: bool,
         latency: float,
@@ -497,7 +497,7 @@ class MetaClaw:
 
         return selection
 
-    def get_best_tool(self, task_type: str) -> Optional[str]:
+    def get_best_tool(self, task_type: str) -> str | None:
         """Obtiene la mejor herramienta para un tipo de tarea.
 
         Args:
@@ -508,7 +508,7 @@ class MetaClaw:
             si no hay datos para ese tipo de tarea.
         """
         with self._lock:
-            best: Optional[str] = None
+            best: str | None = None
             best_score = float("-inf")
 
             for tool_name in self._tool_records:
@@ -521,7 +521,7 @@ class MetaClaw:
 
             return best
 
-    def get_tool_stats(self, tool_name: str) -> Optional[Dict[str, Any]]:
+    def get_tool_stats(self, tool_name: str) -> dict[str, Any] | None:
         """Obtiene estadisticas detalladas de una herramienta.
 
         Args:
@@ -558,7 +558,7 @@ class MetaClaw:
     def get_task_performance(
         self,
         task_type: str,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Obtiene el rendimiento agregado para un tipo de tarea.
 
         Args:
@@ -571,7 +571,6 @@ class MetaClaw:
         with self._lock:
             tools_data = {}
             total_calls = 0
-            total_successes = 0
             total_rewards = 0.0
             reward_count = 0
 
@@ -608,7 +607,7 @@ class MetaClaw:
                 "known_frequency": self._known_task_types.get(task_type, 0),
             }
 
-    def get_all_stats(self) -> Dict[str, Any]:
+    def get_all_stats(self) -> dict[str, Any]:
         """Retorna estadisticas completas del MetaClaw.
 
         Returns:
@@ -684,7 +683,7 @@ class MetaClaw:
         self,
         task_type: str,
         tool_name: str,
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """Obtiene los parametros Beta del posterior para tarea+herramienta.
 
         Si no existe, retorna el prior uniforme.
@@ -726,7 +725,7 @@ class MetaClaw:
     def _update_task_embedding(
         self,
         task_type: str,
-        context: Dict[str, Any],
+        context: dict[str, Any],
     ) -> None:
         """Actualiza incrementalmente el embedding de un tipo de tarea.
 
@@ -809,7 +808,7 @@ class MetaClaw:
     def get_selection_history(
         self,
         limit: int = 50,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Obtiene el historial de selecciones recientes.
 
         Args:

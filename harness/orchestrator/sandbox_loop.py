@@ -1,6 +1,6 @@
-"""
+﻿"""
 
-Sandbox Loop Autonomo — Quality Gate - Sandbox Loop
+Sandbox Loop Autonomo â€” Quality Gate - Sandbox Loop
 
 Orquesta el bucle autonomo de calidad para codigo generado por agentes:
 
@@ -30,7 +30,7 @@ from __future__ import annotations
 EMBEDDING_DIM = 384
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from harness.evolve_loop.cognition_sync import CognitionSync
 from harness.memory_rag.lance_vector_store import LanceVectorStore
@@ -64,10 +64,10 @@ class SandboxLoop:
 
     def __init__(
         self,
-        vector_store: Optional[LanceVectorStore] = None,
-        agent_bus: Optional[AgentBus] = None,
-        executor: Optional[MCPExecutor] = None,
-        cognition: Optional[CognitionSync] = None,
+        vector_store: LanceVectorStore | None = None,
+        agent_bus: AgentBus | None = None,
+        executor: MCPExecutor | None = None,
+        cognition: CognitionSync | None = None,
     ) -> None:
         """
         Args:
@@ -90,9 +90,9 @@ class SandboxLoop:
         task_description: str,
         code: str,
         test_command: str = _DEFAULT_TEST_COMMAND,
-        task_id: Optional[str] = None,
+        task_id: str | None = None,
         channel: str = _DEFAULT_CHANNEL,
-    ) -> Tuple[bool, SandboxResult]:
+    ) -> tuple[bool, SandboxResult]:
         """Ejecuta un ciclo completo del sandbox.
 
         1. Ejecuta el comando de test via MCPExecutor.
@@ -195,7 +195,7 @@ class SandboxLoop:
         test_command: str = _DEFAULT_TEST_COMMAND,
         max_iterations: int = _DEFAULT_MAX_ITERATIONS,
         channel: str = _DEFAULT_CHANNEL,
-    ) -> Tuple[bool, Optional[SandboxResult]]:
+    ) -> tuple[bool, SandboxResult | None]:
         """Bucle autonomo completo: ejecuta ciclos hasta exito o escalacion.
 
         Itera hasta ``max_iterations`` veces ejecutando tests, notificando
@@ -238,7 +238,7 @@ class SandboxLoop:
             )
             return False, None
 
-        last_result: Optional[SandboxResult] = None
+        last_result: SandboxResult | None = None
 
         for iteration in range(1, max_iterations + 1):
             logger.info(
@@ -295,14 +295,14 @@ class SandboxLoop:
         self,
         channel: str,
         task_description: str,
-        task_id: Optional[str],
+        task_id: str | None,
         code: str,
         output: str,
         execution_time: float,
     ) -> str:
         """Notifica a @quality-gate que los tests pasaron."""
         msg = (
-            f"✅ Tests SUPERADOS para: {task_description}\n\n"
+            f"âœ… Tests SUPERADOS para: {task_description}\n\n"
             f"```\n{output[:1500]}\n```\n\n"
             f"Tiempo de ejecucion: {execution_time:.2f}s\n"
             f"Se requiere revision final de @quality-gate."
@@ -322,7 +322,7 @@ class SandboxLoop:
         self,
         channel: str,
         task_description: str,
-        task_id: Optional[str],
+        task_id: str | None,
         code: str,
         iteration: int,
         error: str,
@@ -330,7 +330,7 @@ class SandboxLoop:
     ) -> str:
         """Notifica a @software-engineer que los tests fallaron."""
         msg = (
-            f"❌ Tests FALLIDOS (intento {iteration}) para: {task_description}\n\n"
+            f"âŒ Tests FALLIDOS (intento {iteration}) para: {task_description}\n\n"
             f"```\n{error[:1500]}\n```\n\n"
             f"Tiempo de ejecucion: {execution_time:.2f}s\n"
             f"@software-engineer debe corregir el codigo."
@@ -363,7 +363,7 @@ class SandboxLoop:
         """
         # 1. Escalar a humano
         escalation_msg = (
-            f"🚨 CIRCUIT BREAKER DISPARADO para tarea: {task_id}\n\n"
+            f"ðŸš¨ CIRCUIT BREAKER DISPARADO para tarea: {task_id}\n\n"
             f"Descripcion: {task_description}\n"
             f"Intentos fallidos: {iteration}\n"
             f"Ultimo error: {last_error[:500]}\n\n"
@@ -402,7 +402,7 @@ class SandboxLoop:
                 "Leccion de escalacion registrada en cognition para task=%s",
                 task_id,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning(
                 "No se pudo registrar leccion de escalacion: %s", exc,
             )
@@ -411,7 +411,7 @@ class SandboxLoop:
     # Metodos de utilidad
     # ------------------------------------------------------------------
 
-    def get_status(self, task_id: str) -> Dict[str, Any]:
+    def get_status(self, task_id: str) -> dict[str, Any]:
         """Retorna el estado actual del sandbox para una tarea.
 
         Args:
@@ -426,7 +426,7 @@ class SandboxLoop:
         # Obtener ultimo mensaje relacionado
         ultimo = None
         try:
-            import numpy as np  # noqa: F811 — safe direct import
+            import numpy as np
             dummy = np.zeros(EMBEDDING_DIM, dtype=np.float32)
             results = self.bus.store.search(
                 "agent_workspace_logs", dummy, top_k=1,
@@ -435,7 +435,7 @@ class SandboxLoop:
             if results:
                 ultimo = self.bus._deserialize_message(results[0])
                 ultimo.pop("vector", None)
-        except Exception as _exc:
+        except Exception as _exc:  # noqa: BLE001
             logger.warning("sandbox_loop: %s", _exc)
 
         return {

@@ -23,7 +23,6 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
@@ -36,7 +35,7 @@ SKILLS_DIR = PROJECT_ROOT / ".opencode" / "skills"
 KEEP_FRONTMATTER_KEYS = {"name", "description", "model", "provider"}
 
 
-def find_skill_dirs(base: Path = SKILLS_DIR) -> List[Path]:
+def find_skill_dirs(base: Path = SKILLS_DIR) -> list[Path]:
     """Encontrar todos los directorios de skills que contienen SKILL.md."""
     if not base.exists():
         logger.warning("Skills directory not found: %s", base)
@@ -63,13 +62,12 @@ def minify_skill(md_content: str) -> str:
     - Frontmatter verboso (tags, version, etc.)
     """
     lines = md_content.split("\n")
-    minified: List[str] = []
+    minified: list[str] = []
     in_frontmatter = False
     frontmatter_ended = False
     in_mermaid = False
     in_code_block = False
     code_block_lines = 0
-    in_example = False
 
     for line in lines:
         stripped = line.strip()
@@ -150,7 +148,7 @@ def minify_skill(md_content: str) -> str:
             minified.append(line)
 
     # Post-procesamiento: eliminar lineas en blanco duplicadas
-    result: List[str] = []
+    result: list[str] = []
     prev_blank = False
     for line in minified:
         is_blank = line.strip() == ""
@@ -162,7 +160,7 @@ def minify_skill(md_content: str) -> str:
     return "\n".join(result)
 
 
-def compile_skill(skill_dir: Path, dry_run: bool = False) -> Optional[Path]:
+def compile_skill(skill_dir: Path, dry_run: bool = False) -> Path | None:
     """Compilar un skill individual. Retorna ruta del .min.md generado."""
     src = skill_dir / "SKILL.md"
     dst = skill_dir / "SKILL.min.md"

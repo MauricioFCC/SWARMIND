@@ -1,4 +1,4 @@
-"""AdaptivePool — Worker pool con auto-escalado por carga del sistema.
+﻿"""AdaptivePool â€” Worker pool con auto-escalado por carga del sistema.
 
 Ajusta dinamicamente max_workers segun CPU disponible, memoria libre
 y longitud de la cola de tareas pendientes.
@@ -11,7 +11,7 @@ Estrategia:
 - Aplica histeresis para evitar bouncing (cambia solo si diff > 20%).
 - Escala hacia arriba inmediatamente, hacia abajo gradualmente.
 
-Referencia: arXiv:2604.15186 (Scepsy) — GPU allocation via aggregate profiles.
+Referencia: arXiv:2604.15186 (Scepsy) â€” GPU allocation via aggregate profiles.
 """
 
 from __future__ import annotations
@@ -20,9 +20,10 @@ import logging
 import os
 import threading
 import time
+from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Set
+from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,7 @@ class AdaptivePool:
     def __init__(
         self,
         min_workers: int = 2,
-        max_workers: Optional[int] = None,
+        max_workers: int | None = None,
         scale_interval: int = 5,
         memory_per_worker_mb: int = 256,
     ) -> None:
@@ -101,7 +102,7 @@ class AdaptivePool:
             current_workers=self._min_workers,
             max_workers=self._max_workers,
         )
-        self._pending: Set[Future] = set()
+        self._pending: set[Future] = set()
 
         # Thread de monitoreo
         self._monitor_thread: threading.Thread = threading.Thread(
@@ -118,7 +119,7 @@ class AdaptivePool:
         )
 
     def submit(self, fn: Callable, *args: Any, **kwargs: Any) -> Future:
-        """Envía una tarea al pool.
+        """EnvÃ­a una tarea al pool.
 
         Args:
             fn: Funcion a ejecutar.
@@ -161,7 +162,7 @@ class AdaptivePool:
         while self._running:
             try:
                 self._evaluate_scaling()
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.error("[AdaptivePool] Error en monitor: %s", exc)
             time.sleep(self._scale_interval)
 

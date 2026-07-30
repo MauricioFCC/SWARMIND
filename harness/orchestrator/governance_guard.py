@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # Patrones de violacion por constraint
 # ---------------------------------------------------------------------------
 
-VIOLATION_PATTERS: Dict[str, List[str]] = {
+VIOLATION_PATTERS: dict[str, list[str]] = {
     "no_except_pass": [
         r"except\s*:\s*\n\s*pass",
         r"except\s+\w+\s*:\s*\n\s*pass",
@@ -68,7 +68,7 @@ class PinnedConstraint:
 # Constantes de constraints por defecto
 # ---------------------------------------------------------------------------
 
-DEFAULT_CONSTRAINTS: List[Dict[str, str]] = [
+DEFAULT_CONSTRAINTS: list[dict[str, str]] = [
     {"name": "no_except_pass", "rule": "No usar except:pass en produccion", "severity": "high"},
     {"name": "docstrings_es", "rule": "Docstrings en ES-UTF8 obligatorios en toda funcion/clase publica", "severity": "high"},
     {"name": "error_what_why_where", "rule": "Errores con WHAT+WHY+WHERE en todos los except", "severity": "high"},
@@ -88,7 +88,7 @@ class GovernanceGuard:
     Basado en: arXiv:2606.22528 — Constraint Pinning for Governance Decay.
     """
 
-    def __init__(self, constraints: Optional[List[Dict[str, str]]] = None) -> None:
+    def __init__(self, constraints: list[dict[str, str]] | None = None) -> None:
         """
         Inicializar GovernanceGuard con constraints opcionales.
 
@@ -102,7 +102,7 @@ class GovernanceGuard:
             5
         """
         source = constraints if constraints is not None else DEFAULT_CONSTRAINTS
-        self._constraints: List[PinnedConstraint] = [
+        self._constraints: list[PinnedConstraint] = [
             PinnedConstraint(
                 name=c["name"],
                 rule=c["rule"],
@@ -111,13 +111,13 @@ class GovernanceGuard:
             )
             for c in source
         ]
-        self._audit_log: List[str] = []
+        self._audit_log: list[str] = []
 
     # ------------------------------------------------------------------
     # Metodos de acceso a constraints
     # ------------------------------------------------------------------
 
-    def get_pinned(self) -> List[PinnedConstraint]:
+    def get_pinned(self) -> list[PinnedConstraint]:
         """
         Retornar copia de la lista de constraints anclados.
 
@@ -126,7 +126,7 @@ class GovernanceGuard:
         """
         return self._constraints.copy()
 
-    def get_enabled(self) -> List[PinnedConstraint]:
+    def get_enabled(self) -> list[PinnedConstraint]:
         """
         Retornar solo los constraints habilitados.
 
@@ -135,7 +135,7 @@ class GovernanceGuard:
         """
         return [c for c in self._constraints if c.enabled]
 
-    def get_constraint(self, name: str) -> Optional[PinnedConstraint]:
+    def get_constraint(self, name: str) -> PinnedConstraint | None:
         """
         Buscar un constraint por nombre.
 
@@ -182,7 +182,7 @@ class GovernanceGuard:
         idx = next((i for i, c in enumerate(self._constraints) if c.name == name), -1)
         if idx == -1:
             raise ValueError(f"Constraint '{name}' no encontrado")
-        removed = self._constraints.pop(idx)
+        self._constraints.pop(idx)
         self._audit_log.append(f"REMOVE {name}")
         logger.info("GovernanceGuard: constraint eliminado '%s'", name)
 
@@ -224,7 +224,7 @@ class GovernanceGuard:
     # Metodo principal de verificacion
     # ------------------------------------------------------------------
 
-    def check(self, code: str) -> List[str]:
+    def check(self, code: str) -> list[str]:
         """
         Verificar codigo contra todos los constraints habilitados.
 
@@ -238,13 +238,13 @@ class GovernanceGuard:
             List[str]: Lista de mensajes de violacion con formato '[severity] rule'.
                        Retorna lista vacia si no hay violaciones.
         """
-        violations: List[str] = []
+        violations: list[str] = []
         for constraint in self.get_enabled():
             found = self._check_single(code, constraint)
             violations.extend(found)
         return violations
 
-    def _check_single(self, code: str, constraint: PinnedConstraint) -> List[str]:
+    def _check_single(self, code: str, constraint: PinnedConstraint) -> list[str]:
         """
         Verificar un constraint individual contra el codigo.
 
@@ -256,7 +256,7 @@ class GovernanceGuard:
             List[str]: Violaciones encontradas para este constraint.
         """
         patterns = VIOLATION_PATTERS.get(constraint.name, [])
-        found: List[str] = []
+        found: list[str] = []
 
         if constraint.name == "no_except_pass":
             # Verificacion especifica para except:pass
@@ -307,7 +307,7 @@ class GovernanceGuard:
         return bool(re.search(r'except\s*\w*\s*:\s*\n\s*pass\s*$', cleaned, flags=re.MULTILINE))
 
     @staticmethod
-    def _check_docstrings_es(code: str) -> Optional[str]:
+    def _check_docstrings_es(code: str) -> str | None:
         """
         Verificar presencia de docstrings en funciones/clases.
 
@@ -339,7 +339,7 @@ class GovernanceGuard:
     # Auditoria y estado
     # ------------------------------------------------------------------
 
-    def get_audit_log(self) -> List[str]:
+    def get_audit_log(self) -> list[str]:
         """
         Obtener el log de auditoria de operaciones y verificaciones.
 
@@ -352,7 +352,7 @@ class GovernanceGuard:
         """Limpiar el log de auditoria."""
         self._audit_log.clear()
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """
         Obtener resumen del estado actual del guardia.
 
@@ -363,7 +363,7 @@ class GovernanceGuard:
         total = len(self._constraints)
         enabled = len(self.get_enabled())
         disabled = total - enabled
-        severities: Dict[str, int] = {}
+        severities: dict[str, int] = {}
         for c in self._constraints:
             severities[c.severity] = severities.get(c.severity, 0) + 1
         return {

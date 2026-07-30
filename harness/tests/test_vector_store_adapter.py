@@ -13,8 +13,9 @@ from __future__ import annotations
 
 import sys
 import types
-from typing import Any, Dict, Generator, List
-from unittest.mock import MagicMock, PropertyMock, patch
+from collections.abc import Generator
+from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -65,9 +66,9 @@ def _inject_real_module(name: str) -> types.ModuleType:
 @pytest.fixture(autouse=True)
 def _clean_sys_modules() -> Generator[None, None, None]:
     """Limpia modulos mock del sys.modules despues de cada test."""
-    injected: List[str] = []
+    injected: list[str] = []
     yield
-    for m in list(injected):
+    for m in injected:
         sys.modules.pop(m, None)
 
 

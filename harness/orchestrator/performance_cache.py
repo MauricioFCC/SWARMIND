@@ -5,9 +5,10 @@ para optimizar respuestas repetitivas de agentes en el orquestrador.
 """
 
 from __future__ import annotations
-from collections import OrderedDict
-from typing import Any, Optional
+
 import time
+from collections import OrderedDict
+from typing import Any
 
 
 class PerformanceCache:
@@ -42,7 +43,7 @@ class PerformanceCache:
         self._hits: int = 0
         self._misses: int = 0
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Recupera un valor del caché si existe y no ha expirado.
 
         Args:

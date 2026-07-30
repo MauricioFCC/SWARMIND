@@ -15,14 +15,14 @@ from __future__ import annotations
 
 import importlib
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Mapeo nombre -> modulo para lazy loading
 # ---------------------------------------------------------------------------
-_SYMBOL_MAP: Dict[str, str] = {
+_SYMBOL_MAP: dict[str, str] = {
     "TaskManager": "harness.orchestrator.task_manager",
     "DelegationEngine": "harness.orchestrator.delegation_engine",
     "AgentBus": "harness.orchestrator.agent_bus",

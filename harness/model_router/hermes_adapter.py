@@ -1,5 +1,5 @@
-"""
-Model Router Adapter — Uses Hermes providers when available, falls back to local Ollama.
+﻿"""
+Model Router Adapter â€” Uses Hermes providers when available, falls back to local Ollama.
 
 This adapter allows Swarmind to leverage Hermes Agent's provider ecosystem
  while maintaining backward compatibility with the standalone router.
@@ -7,8 +7,11 @@ This adapter allows Swarmind to leverage Hermes Agent's provider ecosystem
 
 from __future__ import annotations
 
+import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 try:
     # Try Hermes config system
@@ -29,7 +32,7 @@ class HermesModelAdapter:
         self._hermes_config = self._load_hermes_config()
         self._original_router = original_router
 
-    def _load_hermes_config(self) -> Optional[Dict[str, Any]]:
+    def _load_hermes_config(self) -> dict[str, Any] | None:
         """Load Hermes model configuration if available."""
         if not HERMES_AVAILABLE:
             return None
@@ -41,12 +44,12 @@ class HermesModelAdapter:
             if config_path.exists():
                 import yaml
                 return yaml.safe_load(config_path.read_text())
-        except Exception as _exc:
+        except Exception as _exc:  # noqa: BLE001
             logger.warning("hermes_adapter: %s", _exc)
 
         return None
 
-    def route(self, task: str, agent_role: str = "*") -> Dict[str, Any]:
+    def route(self, task: str, agent_role: str = "*") -> dict[str, Any]:
         """Route a task using Hermes config or fallback."""
         if self._hermes_config:
             # Use Hermes model configuration
@@ -83,13 +86,14 @@ class HermesModelAdapter:
 
 
 # Hook function for run.py
-def apply_hermes_routing(task: str, target_agent: str, routing_source: str) -> Dict[str, Any]:
+def apply_hermes_routing(task: str, target_agent: str, routing_source: str) -> dict[str, Any]:
     """Apply Hermes-aware routing when available."""
     if not HERMES_AVAILABLE:
         return {"source": routing_source, "model": "unknown", "provider": "unknown"}
 
     try:
-        from hermes_tools import terminal
+        import importlib
+        importlib.util.find_spec("hermes_tools")
         # In Hermes context, routing is automatic
         return {
             "source": "hermes",

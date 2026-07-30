@@ -1,4 +1,4 @@
-"""Task management module using LanceDB with SQLite fallback.
+﻿"""Task management module using LanceDB with SQLite fallback.
 
 Manages the 'tasks_board' collection with full CRUD, status transitions,
 and agent-based querying. Uses Pydantic models when available.
@@ -7,12 +7,15 @@ and agent-based querying. Uses Pydantic models when available.
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 import uuid
-from pathlib import Path
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from pathlib import Path
+from typing import Any, Literal
+
+logger = logging.getLogger(__name__)
 
 try:
     from pydantic import BaseModel, Field
@@ -38,12 +41,12 @@ class TransitionEntry:
     timestamp: str
     reason: str
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """To dict."""
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TransitionEntry":
+    def from_dict(cls, data: dict[str, Any]) -> TransitionEntry:
         """From dict."""
         return cls(**data)
 
@@ -59,14 +62,14 @@ class Task:
     priority: int = 0
     created_at: str = ""
     updated_at: str = ""
-    transition_history: List[Dict[str, Any]] = field(default_factory=list)
+    transition_history: list[dict[str, Any]] = field(default_factory=list)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """To dict."""
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Task":
+    def from_dict(cls, data: dict[str, Any]) -> Task:
         """From dict."""
         return cls(**data)
 
@@ -87,14 +90,14 @@ if HAS_PYDANTIC:
         updated_at: str = Field(
             default_factory=lambda: datetime.now(timezone.utc).isoformat()
         )
-        transition_history: List[Dict[str, Any]] = Field(default_factory=list)
+        transition_history: list[dict[str, Any]] = Field(default_factory=list)
 
-        def to_dict(self) -> Dict[str, Any]:
+        def to_dict(self) -> dict[str, Any]:
             """To dict."""
             return self.model_dump()
 
         @classmethod
-        def from_dict(cls, data: Dict[str, Any]) -> "PydanticTask":
+        def from_dict(cls, data: dict[str, Any]) -> PydanticTask:
             """From dict."""
             return cls(**data)
 
@@ -103,9 +106,9 @@ else:
     _TaskModel = Task
 
     class PydanticTask:
-        """Placeholder when pydantic is not installed — never instantiated."""
+        """Placeholder when pydantic is not installed â€” never instantiated."""
         @classmethod
-        def from_dict(cls, data: Dict[str, Any]) -> Task:
+        def from_dict(cls, data: dict[str, Any]) -> Task:
             """From dict."""
             return Task.from_dict(data)
 
@@ -142,7 +145,7 @@ class TaskManager:
         self._table_name: str = "tasks_board"
         self._conn_lancedb: Any = None
         self._table: Any = None
-        self._sqlite_conn: Optional[sqlite3.Connection] = None
+        self._sqlite_conn: sqlite3.Connection | None = None
         self._use_sqlite: bool = False
         self._initialize()
 
@@ -166,7 +169,7 @@ class TaskManager:
                     self._conn_lancedb.open_table(self._table_name).delete("id = 'init'")
                 self._table = self._conn_lancedb.open_table(self._table_name)
                 return
-            except Exception as _exc:
+            except Exception as _exc:  # noqa: BLE001
                 logger.warning("task_manager: %s", _exc)
 
         self._use_sqlite = True
@@ -196,13 +199,13 @@ class TaskManager:
         """Db path."""
         return self._db_path
 
-    def _serialize_task(self, task: _TaskModel) -> Dict[str, Any]:
+    def _serialize_task(self, task: _TaskModel) -> dict[str, Any]:
         data = task.to_dict() if isinstance(task, (Task, PydanticTask)) else task
         if isinstance(data.get("transition_history"), list):
             data = {**data, "transition_history": json.dumps(data["transition_history"])}
         return data
 
-    def _deserialize_task(self, row: Dict[str, Any]) -> _TaskModel:
+    def _deserialize_task(self, row: dict[str, Any]) -> _TaskModel:
         if isinstance(row.get("transition_history"), str):
             row = {
                 **row,
@@ -211,17 +214,17 @@ class TaskManager:
         model_cls = PydanticTask if HAS_PYDANTIC else Task
         return model_cls.from_dict(row)
 
-    def _sqlite_to_dict(self, row: sqlite3.Row) -> Dict[str, Any]:
+    def _sqlite_to_dict(self, row: sqlite3.Row) -> dict[str, Any]:
         return dict(row)
 
-    def _run_sqlite_query(self, sql: str, params: Tuple = ()) -> List[Dict[str, Any]]:
+    def _run_sqlite_query(self, sql: str, params: tuple = ()) -> list[dict[str, Any]]:
         if not self._sqlite_conn:
             return []
         cursor = self._sqlite_conn.execute(sql, params)
         rows = cursor.fetchall()
         return [self._sqlite_to_dict(r) for r in rows]
 
-    def _run_sqlite_execute(self, sql: str, params: Tuple = ()) -> None:
+    def _run_sqlite_execute(self, sql: str, params: tuple = ()) -> None:
         if not self._sqlite_conn:
             return
         self._sqlite_conn.execute(sql, params)
@@ -280,7 +283,7 @@ class TaskManager:
             transition_history=[],
         )
 
-    def read_task(self, task_id: str) -> Optional[_TaskModel]:
+    def read_task(self, task_id: str) -> _TaskModel | None:
         """Retrieve a single task by its ID."""
         if not self._use_sqlite and self._table is not None:
             # task_id es internamente generado (uuid hex), seguro contra injection
@@ -297,7 +300,7 @@ class TaskManager:
                 return None
             return self._deserialize_task(rows[0])
 
-    def update_task(self, task_id: str, **updates: Any) -> Optional[_TaskModel]:
+    def update_task(self, task_id: str, **updates: Any) -> _TaskModel | None:
         """Update fields on an existing task.
 
         Accepts keyword arguments matching Task fields.
@@ -342,7 +345,7 @@ class TaskManager:
             self._sqlite_conn.commit()
             return cursor.rowcount > 0
 
-    def query_by_agent(self, agent: str) -> List[_TaskModel]:
+    def query_by_agent(self, agent: str) -> list[_TaskModel]:
         """Return all tasks assigned to a specific agent.
 
         El parametro ``agent`` se valida contra agentes conocidos para
@@ -371,14 +374,14 @@ class TaskManager:
 
     def list_tasks(
         self,
-        status: Optional[str] = None,
-        agent: Optional[str] = None,
+        status: str | None = None,
+        agent: str | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[_TaskModel]:
+    ) -> list[_TaskModel]:
         """List tasks with optional filtering by status and/or agent."""
         conditions = []
-        params: List[Any] = []
+        params: list[Any] = []
 
         if status is not None:
             conditions.append("status = ?")
@@ -405,7 +408,7 @@ class TaskManager:
 
     def update_status(
         self, task_id: str, new_status: str, reason: str = ""
-    ) -> Optional[_TaskModel]:
+    ) -> _TaskModel | None:
         """Update a task's status and log the transition automatically."""
         new_status = _validate_status(new_status)
         task = self.read_task(task_id)
@@ -418,14 +421,14 @@ class TaskManager:
         if old_status == new_status:
             return task
 
-        transition: Dict[str, Any] = {
+        transition: dict[str, Any] = {
             "from_status": old_status,
             "to_status": new_status,
             "timestamp": _now_iso(),
             "reason": reason,
         }
 
-        history: List[Dict[str, Any]] = existing.get("transition_history", [])
+        history: list[dict[str, Any]] = existing.get("transition_history", [])
         history.append(transition)
 
         existing["status"] = new_status
@@ -446,7 +449,7 @@ class TaskManager:
 
         return self._deserialize_task(serialized)
 
-    def count_tasks(self, status: Optional[str] = None) -> int:
+    def count_tasks(self, status: str | None = None) -> int:
         """Return the number of tasks, optionally filtered by status."""
         if not self._use_sqlite and self._table is not None:
             df = self._table.search().to_pandas()

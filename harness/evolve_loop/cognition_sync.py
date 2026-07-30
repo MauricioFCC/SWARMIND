@@ -1,7 +1,7 @@
-"""
+﻿"""
 Cognition store synchronisation.
 
-Manages the ``asi_cognition_store`` collection — a persistent knowledge base
+Manages the ``asi_cognition_store`` collection â€” a persistent knowledge base
 of lessons, insights, and cognition artefacts produced by the evolve loop.
 """
 from __future__ import annotations
@@ -10,7 +10,7 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -39,13 +39,13 @@ class CognitionLesson:
     title: str
     content: str
     domain: str
-    tags: List[str] = field(default_factory=list)
-    metrics: Dict[str, Any] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    metrics: dict[str, Any] = field(default_factory=dict)
     created_at: str = ""
     access_count: int = 0
     last_accessed: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """To dict."""
         return {
             "id": self.id,
@@ -60,7 +60,7 @@ class CognitionLesson:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> CognitionLesson:
+    def from_dict(cls, data: dict[str, Any]) -> CognitionLesson:
         """From dict."""
         return cls(
             id=data.get("id", ""),
@@ -90,8 +90,8 @@ class CognitionSync:
 
     def __init__(
         self,
-        vector_store: Optional[LanceVectorStore] = None,
-        embedding_fn: Optional[callable] = None,
+        vector_store: LanceVectorStore | None = None,
+        embedding_fn: callable | None = None,
     ) -> None:
         """
         Args:
@@ -110,8 +110,8 @@ class CognitionSync:
         title: str,
         content: str,
         domain: str,
-        tags: Optional[List[str]] = None,
-        metrics: Optional[Dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metrics: dict[str, Any] | None = None,
     ) -> CognitionLesson:
         """
         Create a new cognition lesson and persist it to the store.
@@ -160,7 +160,7 @@ class CognitionSync:
                 _COGNITION_COLLECTION, vector, [metadata]
             )
             logger.info(
-                "Lesson added — id=%s domain=%s title=%s",
+                "Lesson added â€” id=%s domain=%s title=%s",
                 lesson.id, domain, title,
             )
         except Exception:
@@ -172,7 +172,7 @@ class CognitionSync:
         self,
         query: str,
         top_k: int = 5,
-    ) -> List[CognitionLesson]:
+    ) -> list[CognitionLesson]:
         """
         Search cognition lessons by semantic similarity.
 
@@ -193,7 +193,7 @@ class CognitionSync:
             logger.exception("Cognition lesson search failed.")
             return []
 
-        lessons: List[CognitionLesson] = []
+        lessons: list[CognitionLesson] = []
         for r in results:
             meta = r.get("metadata", {})
             lesson = CognitionLesson.from_dict(meta)
@@ -205,7 +205,7 @@ class CognitionSync:
 
         return lessons
 
-    def get_lesson_by_id(self, lesson_id: str) -> Optional[CognitionLesson]:
+    def get_lesson_by_id(self, lesson_id: str) -> CognitionLesson | None:
         """
         Retrieve a single cognition lesson by its ID.
 
@@ -238,7 +238,7 @@ class CognitionSync:
 
     def get_lessons_by_domain(
         self, domain: str, top_k: int = 20
-    ) -> List[CognitionLesson]:
+    ) -> list[CognitionLesson]:
         """
         Retrieve all lessons belonging to a given domain.
 
@@ -263,7 +263,7 @@ class CognitionSync:
             )
             return []
 
-        lessons: List[CognitionLesson] = []
+        lessons: list[CognitionLesson] = []
         for r in results:
             meta = r.get("metadata", {})
             lesson = CognitionLesson.from_dict(meta)
@@ -271,7 +271,7 @@ class CognitionSync:
 
         return lessons
 
-    def get_all_tags(self) -> List[str]:
+    def get_all_tags(self) -> list[str]:
         """
         Return a flat list of all unique tags across stored lessons.
         """
@@ -281,7 +281,7 @@ class CognitionSync:
             results = self.store.search(
                 _COGNITION_COLLECTION, dummy, top_k=100
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
             return []
 
         seen: set = set()

@@ -2,15 +2,15 @@
 """
 
 logger = logging.getLogger(__name__)
-Delegate — Entry point simplificado para el harness multi-agente.
+Delegate â€” Entry point simplificado para el harness multi-agente.
 
 Uso:
-    python harness/delegate.py "haz X"                          → detecta rol automaticamente
-    python harness/delegate.py "@software-engineer: crea API"   → delegacion explicita
-    python harness/delegate.py --list                           → lista roles disponibles
-    python harness/delegate.py --interactive                    → modo chat
+    python harness/delegate.py "haz X"                          â†’ detecta rol automaticamente
+    python harness/delegate.py "@software-engineer: crea API"   â†’ delegacion explicita
+    python harness/delegate.py --list                           â†’ lista roles disponibles
+    python harness/delegate.py --interactive                    â†’ modo chat
 
-REFACTOR: Elimina ~150 líneas de registros duplicados e intent mapping.
+REFACTOR: Elimina ~150 lÃ­neas de registros duplicados e intent mapping.
 Ahora usa agent_discovery (descubrimiento recursivo desde .opencode/agents/*.md)
 y cli_common (funcionalidad compartida con run.py).
 """
@@ -20,7 +20,6 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
-from typing import List, Optional, Tuple
 
 # Importar funcionalidad compartida
 from harness.cli_common import (
@@ -42,7 +41,7 @@ from harness.orchestrator.agent_discovery import (
 logger = setup_logging()
 HARNESS_ROOT = get_harness_root()
 
-# Asegurar que la raíz del proyecto está en sys.path
+# Asegurar que la raÃ­z del proyecto estÃ¡ en sys.path
 if str(get_project_root()) not in sys.path:
     sys.path.insert(1, str(get_project_root()))
 
@@ -58,13 +57,13 @@ def _get_agents() -> list[dict]:
     return _AGENTS_CACHE
 
 
-def _get_agent_list() -> List[Tuple[str, str, str]]:
+def _get_agent_list() -> list[tuple[str, str, str]]:
     """
     Construye lista de (nombre, descripcion, alias) desde agentes descubiertos.
-    Reemplaza la lista AGETS hardcodeada de ~30 líneas.
+    Reemplaza la lista AGETS hardcodeada de ~30 lÃ­neas.
     """
     agents = _get_agents()
-    result: List[Tuple[str, str, str]] = []
+    result: list[tuple[str, str, str]] = []
     for name, info in sorted(agents.items()):
         aliases = info.get("aliases", [])
         alias_str = f"@{aliases[0]}" if aliases else ""
@@ -72,26 +71,26 @@ def _get_agent_list() -> List[Tuple[str, str, str]]:
     return result
 
 
-def _detect_role(task: str) -> Optional[str]:
+def _detect_role(task: str) -> str | None:
     """Detecta el mejor rol para una tarea usando intent matching.
 
-    Reemplaza _INTENT_AGENTS hardcodeado (~40 líneas) con el mapa
-    construido dinámicamente desde los triggers de cada agente.
+    Reemplaza _INTENT_AGENTS hardcodeado (~40 lÃ­neas) con el mapa
+    construido dinÃ¡micamente desde los triggers de cada agente.
 
     Args:
-        task: Descripción de la tarea
+        task: DescripciÃ³n de la tarea
 
     Returns:
         Nombre del agente o None si no se puede detectar.
     """
-    # Intentar usar DelegationEngine primero (más completo, incluye Router v2)
+    # Intentar usar DelegationEngine primero (mÃ¡s completo, incluye Router v2)
     try:
         from harness.orchestrator.delegation_engine import DelegationEngine
         engine = DelegationEngine()
         detected = engine.route_message(task)
         if detected and detected != "project-manager":
             return detected
-    except Exception as _exc:
+    except Exception as _exc:  # noqa: BLE001
         logger.warning("delegate route_message failed: %s", _exc)
 
     # Fallback: intent matching desde agent discovery
@@ -99,7 +98,7 @@ def _detect_role(task: str) -> Optional[str]:
     intent_map = build_intent_map(agents)
     task_lower = task.lower()
 
-    best_match: Tuple[int, str] = (0, "")
+    best_match: tuple[int, str] = (0, "")
     for keyword, agent in intent_map.items():
         if keyword in task_lower:
             score = len(keyword)
@@ -109,7 +108,7 @@ def _detect_role(task: str) -> Optional[str]:
     if best_match[1]:
         return best_match[1]
 
-    # Último recurso: ModelRouter
+    # Ãšltimo recurso: ModelRouter
     try:
         from harness.model_router.router import ModelRouter
         router = ModelRouter()
@@ -118,27 +117,27 @@ def _detect_role(task: str) -> Optional[str]:
             return "software-engineer"
     except ImportError:
         logger.warning("delegate ImportError: ModelRouter not available")
-    except Exception as _exc:
+    except Exception as _exc:  # noqa: BLE001
         logger.warning("delegate route failed: %s", _exc)
 
     return None
 
 
-def resolve_role(role_alias: str) -> Optional[str]:
-    """Resuelve un alias a su nombre canónico de agente.
+def resolve_role(role_alias: str) -> str | None:
+    """Resuelve un alias a su nombre canÃ³nico de agente.
 
     Args:
         role_alias: Alias (@pm, @swe) o nombre parcial
 
     Returns:
-        Nombre canónico o None si no se encuentra.
+        Nombre canÃ³nico o None si no se encuentra.
     """
     agents = _get_agents()
     canonical = discovery_resolve_agent(role_alias, agents)
     return canonical if canonical else None
 
 
-def _parse_mention(task: str) -> Tuple[Optional[str], str]:
+def _parse_mention(task: str) -> tuple[str | None, str]:
     """Extrae @rol: prefix del texto de la tarea.
 
     Returns:
@@ -150,10 +149,10 @@ def _parse_mention(task: str) -> Tuple[Optional[str], str]:
     return None, task.strip()
 
 
-# ── Core function ─────────────────────────────────────────────────────
+# â”€â”€ Core function â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
-def delegate_task(task_text: str, extra_args: Optional[List[str]] = None) -> int:
+def delegate_task(task_text: str, extra_args: list[str] | None = None) -> int:
     """Parsea la tarea, detecta rol si es necesario, y delega a run.py.
 
     Args:
@@ -161,13 +160,13 @@ def delegate_task(task_text: str, extra_args: Optional[List[str]] = None) -> int
         extra_args: Flags adicionales para run.py.
 
     Returns:
-        Código de salida del subprocess.
+        CÃ³digo de salida del subprocess.
     """
     extra_args = extra_args or []
     role, clean_task = _parse_mention(task_text)
 
     if role:
-        # @rol explícito — resolver alias
+        # @rol explÃ­cito â€” resolver alias
         resolved = resolve_role(role)
         if not resolved:
             logger.info("[Delegate] Rol desconocido: @%s", role)
@@ -176,13 +175,13 @@ def delegate_task(task_text: str, extra_args: Optional[List[str]] = None) -> int
             return 1
         role = resolved
     else:
-        # Auto-detección de rol
+        # Auto-detecciÃ³n de rol
         detected = _detect_role(task_text)
         if detected:
             role = detected
             logger.info("[Delegate] Rol detectado: @%s", role)
         else:
-            # No se pudo detectar — preguntar al usuario
+            # No se pudo detectar â€” preguntar al usuario
             logger.info("[Delegate] No se pudo detectar el rol automaticamente.")
             logger.info("[Delegate] Selecciona un rol para esta tarea:")
             agents_sorted = sorted(_get_agent_list(), key=lambda x: x[0])
@@ -211,11 +210,11 @@ def delegate_task(task_text: str, extra_args: Optional[List[str]] = None) -> int
     cmd = [sys.executable, str(run_py), full_task] + extra_args
 
     logger.info("[Delegate] Ejecutando: python harness/run.py \"%s\"", full_task)
-    result = subprocess.run(cmd, cwd=str(get_project_root()))
+    result = subprocess.run(cmd, cwd=str(get_project_root()), check=False)
     return result.returncode
 
 
-# ── CLI modes ─────────────────────────────────────────────────────────
+# â”€â”€ CLI modes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def _list_agents() -> None:
@@ -243,7 +242,7 @@ def _interactive_mode() -> None:
         pass
 
     logger.info("=" * 72)
-    logger.info("  Modo interactivo — Escribe tu tarea o 'exit' para salir.")
+    logger.info("  Modo interactivo â€” Escribe tu tarea o 'exit' para salir.")
     logger.info("")
     logger.info("  Ejemplos:")
     logger.info("    @software-engineer: crea un endpoint REST")
@@ -281,7 +280,7 @@ def _interactive_mode() -> None:
         logger.info("")
 
 
-# ── Main ──────────────────────────────────────────────────────────────
+# â”€â”€ Main â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def main() -> int:
@@ -303,7 +302,7 @@ def main() -> int:
         _interactive_mode()
         return 0
 
-    # Todo lo demás es la tarea (posiblemente con flags extra)
+    # Todo lo demÃ¡s es la tarea (posiblemente con flags extra)
     task_parts: list[str] = []
     extra_flags: list[str] = []
     found_task = False

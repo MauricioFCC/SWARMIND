@@ -16,12 +16,12 @@ from harness.observability.logging import (
 )
 
 __all__ = [
-    "setup_structured_logging",
-    "set_trace_context",
     "generate_correlation_id",
-    "generate_trace_id",
     "generate_span_id",
-    "with_observability",
+    "generate_trace_id",
     "log_metrics",
     "reset_metrics",
+    "set_trace_context",
+    "setup_structured_logging",
+    "with_observability",
 ]

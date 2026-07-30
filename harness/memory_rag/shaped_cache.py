@@ -20,9 +20,12 @@ import hashlib
 import logging
 from collections import OrderedDict
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any
 
-from harness.memory_rag.semantic_cache import DEFAULT_SIMILARITY_THRESHOLD, SemanticCache
+from harness.memory_rag.semantic_cache import (
+    DEFAULT_SIMILARITY_THRESHOLD,
+    SemanticCache,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +45,7 @@ class ShapedCache:
 
     def __init__(
         self,
-        semantic_cache: "SemanticCache",
+        semantic_cache: SemanticCache,
         max_tokens: int = 10000,
         ttl_sec: float = 3600.0,
         min_relevance: float = 0.1,
@@ -77,8 +80,8 @@ class ShapedCache:
         self,
         prompt: str,
         threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
-        context_window: Optional[int] = None,
-    ) -> Optional[Dict[str, Any]]:
+        context_window: int | None = None,
+    ) -> dict[str, Any] | None:
         """Obtener respuesta del cache con forma activa.
 
         1. Buscar en cache semantico subyacente.
@@ -127,7 +130,7 @@ class ShapedCache:
         self,
         prompt: str,
         response: str,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
         token_cost: int = 0,
     ) -> str:
         """Almacenar respuesta en cache con forma activa.
@@ -180,7 +183,7 @@ class ShapedCache:
             self._cache.delete(key)
         return len(expired)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Metricas de uso del cache con forma.
 
         Returns:

@@ -6,9 +6,10 @@ Extraido de guardrail_engine.py para mantener modulos < 900 lines.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 
 class GuardrailVerdict(Enum):
@@ -70,8 +71,8 @@ class GuardrailResult:
     """
     verdict: GuardrailVerdict
     score: float = 0.0
-    violations: Tuple[str, ...] = field(default_factory=tuple)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    violations: tuple[str, ...] = field(default_factory=tuple)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_blocked(self) -> bool:
         """Indica si el resultado implica bloqueo de la operacion.
@@ -102,7 +103,7 @@ class GuardrailResult:
         Returns:
             Nuevo GuardrailResult combinado.
         """
-        severity_order: Dict[GuardrailVerdict, int] = {
+        severity_order: dict[GuardrailVerdict, int] = {
             GuardrailVerdict.PASS: 0,
             GuardrailVerdict.FLAG: 1,
             GuardrailVerdict.REWRITE: 2,
@@ -115,7 +116,7 @@ class GuardrailResult:
             else other.verdict
         )
 
-        merged_metadata: Dict[str, Any] = {**self.metadata, **other.metadata}
+        merged_metadata: dict[str, Any] = {**self.metadata, **other.metadata}
 
         return GuardrailResult(
             verdict=merged_verdict,
@@ -125,7 +126,7 @@ class GuardrailResult:
         )
 
     @staticmethod
-    def pass_result(metadata: Optional[Dict[str, Any]] = None) -> GuardrailResult:
+    def pass_result(metadata: dict[str, Any] | None = None) -> GuardrailResult:
         """Crea un resultado PASS limpio.
 
         Args:
@@ -145,7 +146,7 @@ class GuardrailResult:
     def block_result(
         reason: str,
         score: float = 1.0,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> GuardrailResult:
         """Crea un resultado BLOCK.
 
@@ -179,7 +180,7 @@ class GuardrailRule:
     """
     name: str
     layer: GuardrailLayer
-    check_fn: Callable[[str], Tuple[bool, str]] = field(compare=False)
+    check_fn: Callable[[str], tuple[bool, str]] = field(compare=False)
     severity: GuardrailSeverity = GuardrailSeverity.HIGH
     enabled: bool = True
     action: GuardrailVerdict = GuardrailVerdict.BLOCK

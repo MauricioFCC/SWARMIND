@@ -8,14 +8,12 @@ lista de IDEs soportados.
 from __future__ import annotations
 
 import sys
-import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-import pytest
 
-from harness.orchestrator.ide_adapter import IDEAdapter, IDESupport, SUPPORTED_IDES
+from harness.orchestrator.ide_adapter import SUPPORTED_IDES, IDEAdapter, IDESupport
 
 
 class TestIDEAdapter:
@@ -58,7 +56,7 @@ class TestIDEAdapter:
         """
         (tmp_path / ".claude").mkdir()
         (tmp_path / ".claude" / "settings.json").write_text("{}")
-        (tmp_path / ".cursorrules").write_text("")
+        (tmp_path / ".cursor").mkdir()
         adapter = IDEAdapter(project_root=tmp_path)
         detected = adapter.detect_ides()
         assert "Claude Code" in detected
@@ -108,6 +106,10 @@ class TestIDEAdapter:
         agents_dir.mkdir(parents=True)
         (agents_dir / "builder.md").write_text("# Builder Agent")
         (agents_dir / "scientist.md").write_text("# Scientist Agent")
+        skills_dir = tmp_path / ".opencode" / "skills"
+        skills_dir.mkdir()
+        (skills_dir / "dummy.md").write_text("# skill")
+        (tmp_path / ".opencode" / "opencode.json").write_text("{}")
 
         adapter = IDEAdapter(project_root=tmp_path)
         result = adapter.export_agents("OpenCode", dry_run=True)

@@ -14,7 +14,6 @@ from __future__ import annotations
 import logging
 import shutil
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from harness.orchestrator.multi_harness.converter_base import (
     ExportResult,
@@ -51,8 +50,8 @@ class CodexAdapter(HarnessConverter):
         Returns:
             ExportResult con el resultado.
         """
-        agents: List[Path] = self._get_opencode_agents()
-        errors: List[str] = []
+        agents: list[Path] = self._get_opencode_agents()
+        errors: list[str] = []
 
         if not agents:
             return ExportResult(success=True, files_exported=0)
@@ -88,8 +87,8 @@ class CodexAdapter(HarnessConverter):
         Returns:
             ExportResult con el resultado.
         """
-        skills: List[Path] = self._get_opencode_skills()
-        errors: List[str] = []
+        skills: list[Path] = self._get_opencode_skills()
+        errors: list[str] = []
 
         if not skills:
             return ExportResult(success=True, files_exported=0)
@@ -124,7 +123,7 @@ class CodexAdapter(HarnessConverter):
         Returns:
             ExportResult con el resultado.
         """
-        config_lines: List[str] = [
+        config_lines: list[str] = [
             "[project]",
             'name = "Swarmind"',
             'version = "3.0.0"',

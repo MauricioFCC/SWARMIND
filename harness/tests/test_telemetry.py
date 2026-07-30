@@ -485,7 +485,7 @@ class TestTelemetryTracker:
     def test_export_dir_created(self, tmp_path: Path) -> None:
         """__init__: crea el directorio de export si no existe."""
         new_dir = tmp_path / "nested" / "telemetry"
-        tracker = TelemetryTracker(export_dir=str(new_dir))
+        TelemetryTracker(export_dir=str(new_dir))
         assert new_dir.exists()
 
 

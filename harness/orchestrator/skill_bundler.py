@@ -1,5 +1,5 @@
-"""
-SkillBundler — Dynamic Agent Composition from Skill Registry.
+﻿"""
+SkillBundler â€” Dynamic Agent Composition from Skill Registry.
 
 Implementacion del patron SIGMA (Skill-Incidence Graphs, arXiv:2606.19758):
 Agentes como bundles de skills reusables, compuestos dinamicamente segun la tarea.
@@ -8,14 +8,14 @@ Agentes como bundles de skills reusables, compuestos dinamicamente segun la tare
 Usage:
     bundler = SkillBundler()
     agents = bundler.compose("Desarrollar API REST en Rust con autenticacion JWT")
-    # → [AgentConfig(name="builder", skills=["rust-lang", "architecture", "security-audit"]), ...]
+    # â†’ [AgentConfig(name="builder", skills=["rust-lang", "architecture", "security-audit"]), ...]
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 import yaml
 
@@ -30,8 +30,8 @@ _SKILL_REGISTRY_PATH = Path(__file__).resolve().parent.parent.parent / ".opencod
 # Skill to Agent Mapping (SIGMA incidence matrix)
 # ---------------------------------------------------------------------------
 
-# Mapa de skills → agente primario que deberia ejecutarlos
-SKILL_TO_AGENT: Dict[str, str] = {
+# Mapa de skills â†’ agente primario que deberia ejecutarlos
+SKILL_TO_AGENT: dict[str, str] = {
     "alpha-research": "scientist",
     "evolve": "evolve",
     "healthtech": "builder",
@@ -50,8 +50,8 @@ SKILL_TO_AGENT: Dict[str, str] = {
     "security-audit": "guardian",
 }
 
-# Mapa de dominios → skills relevantes
-DOMAIN_SKILLS: Dict[str, List[str]] = {
+# Mapa de dominios â†’ skills relevantes
+DOMAIN_SKILLS: dict[str, list[str]] = {
     "web": ["frontend-uiux", "responsive-ui", "security-audit", "rust-lang"],
     "api": ["architecture", "rust-lang", "security-audit", "data-science"],
     "data": ["data-science", "alpha-research", "architecture"],
@@ -70,7 +70,7 @@ DOMAIN_SKILLS: Dict[str, List[str]] = {
 }
 
 # Palabras clave para deteccion de dominio
-DOMAIN_KEYWORDS: Dict[str, List[str]] = {
+DOMAIN_KEYWORDS: dict[str, list[str]] = {
     "web": ["pagina web", "sitio web", "website", "http server"],
     "api": ["api", "endpoint", "graphql", "grpc", "microservice"],
     "data": ["data", "datos", "analisis", "pandas", "sklearn", "numpy", "analytics", "machine learning", "deep learning"],
@@ -101,7 +101,7 @@ class AgentConfig:
     """
     name: str
     lead_skill: str
-    bundled_skills: List[str]
+    bundled_skills: list[str]
     domain: str
 
 
@@ -113,13 +113,13 @@ class SkillBundler:
     y los agrupa en configuraciones de agentes optimas.
     """
 
-    def __init__(self, registry_path: Optional[Path] = None):
+    def __init__(self, registry_path: Path | None = None):
         """
         Args:
             registry_path: Ruta al skills_registry.yaml. Por defecto busca en .opencode/skills/.
         """
         self._registry_path = registry_path or _SKILL_REGISTRY_PATH
-        self._skills: List[Dict[str, Any]] = []
+        self._skills: list[dict[str, Any]] = []
         self._load_registry()
 
     def _load_registry(self) -> None:
@@ -130,7 +130,7 @@ class SkillBundler:
             with open(self._registry_path, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
             self._skills = data.get("skills", [])
-        except Exception:
+        except Exception:  # noqa: BLE001
             self._skills = []
 
     def detect_domain(self, task: str) -> str:
@@ -144,7 +144,7 @@ class SkillBundler:
             Dominio detectado (web, api, data, frontend, backend, etc.)
         """
         task_lower = task.lower()
-        scores: Dict[str, float] = {}
+        scores: dict[str, float] = {}
         
         for domain, keywords in DOMAIN_KEYWORDS.items():
             score = 0.0
@@ -160,7 +160,7 @@ class SkillBundler:
         
         return max(scores, key=scores.get)
 
-    def select_skills(self, domain: str, task: Optional[str] = None) -> List[str]:
+    def select_skills(self, domain: str, task: str | None = None) -> list[str]:
         """
         Seleccionar skills relevantes para un dominio.
 
@@ -177,9 +177,8 @@ class SkillBundler:
         if task:
             task_lower = task.lower()
             # Skills adicionales si la tarea menciona temas especificos
-            if "test" in task_lower or "testing" in task_lower:
-                if "security-audit" not in skills:
-                    skills.append("security-audit")
+            if ("test" in task_lower or "testing" in task_lower) and "security-audit" not in skills:
+                skills.append("security-audit")
             if "doc" in task_lower or "documentacion" in task_lower:
                 for s in ["science-doc", "legal-doc"]:
                     if s not in skills:
@@ -190,8 +189,8 @@ class SkillBundler:
     def compose(
         self,
         task: str,
-        available_agents: Optional[List[str]] = None,
-    ) -> List[AgentConfig]:
+        available_agents: list[str] | None = None,
+    ) -> list[AgentConfig]:
         """
         Componer configuraciones de agentes desde una descripcion de tarea.
 
@@ -211,8 +210,8 @@ class SkillBundler:
         domain = self.detect_domain(task)
         selected_skills = self.select_skills(domain, task)
 
-        # Construir matriz de incidencia skills → agentes
-        agent_bundles: Dict[str, List[str]] = {a: [] for a in available_agents}
+        # Construir matriz de incidencia skills â†’ agentes
+        agent_bundles: dict[str, list[str]] = {a: [] for a in available_agents}
         for skill in selected_skills:
             primary_agent = SKILL_TO_AGENT.get(skill)
             if primary_agent and primary_agent in agent_bundles:
@@ -248,10 +247,10 @@ class SkillBundler:
                 return s.get("description", "")
         return ""
 
-    def list_skills(self) -> List[str]:
+    def list_skills(self) -> list[str]:
         """Listar todos los skills disponibles."""
         return [s.get("name", "") for s in self._skills]
 
-    def list_domains(self) -> List[str]:
+    def list_domains(self) -> list[str]:
         """Listar todos los dominios soportados."""
         return list(DOMAIN_SKILLS.keys())

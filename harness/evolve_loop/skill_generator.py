@@ -1,5 +1,5 @@
-"""
-Skill Generator — Hermes-inspired auto-skill creation.
+﻿"""
+Skill Generator â€” Hermes-inspired auto-skill creation.
 
 When a multi-step task succeeds with >= 5 tool calls, the SkillGenerator
 auto-generates a SKILL.md file in .opencode/skills/auto/ and registers it
@@ -14,7 +14,7 @@ import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -53,7 +53,7 @@ class SkillGenerator:
         3. Index it in LanceDB collection ``procedural_skills``
     """
 
-    def __init__(self, vector_store: Optional[LanceVectorStore] = None) -> None:
+    def __init__(self, vector_store: LanceVectorStore | None = None) -> None:
         """Inicializa la instancia de la clase."""
         self._vector_store = vector_store
         os.makedirs(str(AUTO_SKILLS_DIR), exist_ok=True)
@@ -68,8 +68,8 @@ class SkillGenerator:
         task_description: str,
         tool_call_count: int,
         success: bool,
-        steps: List[str],
-    ) -> Optional[Dict[str, Any]]:
+        steps: list[str],
+    ) -> dict[str, Any] | None:
         """
         Generate a skill if the heuristic is met.
 
@@ -131,7 +131,7 @@ class SkillGenerator:
     @staticmethod
     def _infer_domain(agent: str) -> str:
         """Map agent role to a domain string."""
-        domain_map: Dict[str, str] = {
+        domain_map: dict[str, str] = {
             "software-engineer": "full-stack-development",
             "data-architect": "data-modeling",
             "devops-sre": "infrastructure-operations",
@@ -168,7 +168,7 @@ class SkillGenerator:
 
     @staticmethod
     def _build_md_content(
-        slug: str, domain: str, agent: str, task_description: str, steps: List[str]
+        slug: str, domain: str, agent: str, task_description: str, steps: list[str]
     ) -> str:
         """Build the Markdown content for the skill file."""
         lines = [
@@ -188,9 +188,9 @@ class SkillGenerator:
 
     def _register_in_yaml(
         self, slug: str, md_path: str, domain: str, agent: str, trigger: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Register the skill in skills_registry.yaml."""
-        entry: Dict[str, Any] = {
+        entry: dict[str, Any] = {
             "name": slug,
             "path": str(md_path),
             "domain": domain,
@@ -199,13 +199,13 @@ class SkillGenerator:
             "trigger": trigger[:200],  # cap length
         }
 
-        registry: Dict[str, List[Dict[str, Any]]] = {"skills": []}
+        registry: dict[str, list[dict[str, Any]]] = {"skills": []}
         if REGISTRY_PATH.exists():
             try:
                 with open(str(REGISTRY_PATH), "r", encoding="utf-8") as f:
                     loaded = yaml.safe_load(f) or {}
                 registry = loaded if isinstance(loaded, dict) else {"skills": []}
-            except Exception:
+            except Exception:  # noqa: BLE001
                 registry = {"skills": []}
 
         if "skills" not in registry:
@@ -227,7 +227,7 @@ class SkillGenerator:
         domain: str,
         agent: str,
         trigger: str,
-        steps: List[str],
+        steps: list[str],
     ) -> None:
         """Index the skill metadata in LanceDB procedural_skills collection."""
         if self._vector_store is None:
@@ -239,7 +239,7 @@ class SkillGenerator:
         steps_text = "\n".join(f"{i+1}. {s}" for i, s in enumerate(steps))
         now = datetime.now(timezone.utc).isoformat()
 
-        metadata: Dict[str, Any] = {
+        metadata: dict[str, Any] = {
             "name": slug,
             "domain": domain,
             "agent": agent,
@@ -266,7 +266,7 @@ class SkillGenerator:
                 [metadata],
             )
             logger.info("Skill indexed in LanceDB collection '%s': %s", COLLECTION_PROCEDURAL_SKILLS, slug)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to index skill in LanceDB: %s", exc)
 
     # ------------------------------------------------------------------
@@ -274,7 +274,7 @@ class SkillGenerator:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def find_in_registry(query: str) -> Optional[Dict[str, Any]]:
+    def find_in_registry(query: str) -> dict[str, Any] | None:
         """Search the YAML registry for a skill matching *query*."""
         if not REGISTRY_PATH.exists():
             return None
@@ -282,13 +282,13 @@ class SkillGenerator:
         try:
             with open(str(REGISTRY_PATH), "r", encoding="utf-8") as f:
                 registry = yaml.safe_load(f) or {}
-        except Exception:
+        except Exception:  # noqa: BLE001
             return None
 
-        skills: List[Dict[str, Any]] = registry.get("skills", [])
+        skills: list[dict[str, Any]] = registry.get("skills", [])
         query_lower = query.lower()
 
-        best: Optional[Dict[str, Any]] = None
+        best: dict[str, Any] | None = None
         best_score = 0.0
 
         for skill in skills:

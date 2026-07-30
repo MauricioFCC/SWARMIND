@@ -17,11 +17,10 @@ Uso:
 from __future__ import annotations
 
 import logging
-from typing import Any, List, Optional, Tuple
 
 import numpy as np
 
-from harness.gpu_accel import HAVE_CUDA, DEVICE, to_gpu, to_cpu
+from harness.gpu_accel import DEVICE, HAVE_CUDA
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 def gpu_embedding(
     text: str,
-    texts: Optional[List[str]] = None,
+    texts: list[str] | None = None,
     dim: int = 384,
 ) -> np.ndarray:
     """
@@ -87,7 +86,7 @@ def _gpu_single_embedding(text: str, dim: int = 384) -> np.ndarray:
     return vec.cpu().numpy()
 
 
-def _gpu_batch_embedding(texts: List[str], dim: int = 384) -> np.ndarray:
+def _gpu_batch_embedding(texts: list[str], dim: int = 384) -> np.ndarray:
     """
     Batch embedding en GPU: procesa N textos simultáneamente.
 
@@ -129,7 +128,7 @@ def gpu_similarity_search(
     top_k: int = 5,
     threshold: float = 0.0,
     min_gpu_size: int = 10000,
-) -> List[Tuple[int, float]]:
+) -> list[tuple[int, float]]:
     """
     Búsqueda por similitud coseno con enrutamiento inteligente CPU/GPU.
 
@@ -183,7 +182,7 @@ def gpu_similarity_search(
 # ---------------------------------------------------------------------------
 
 def batch_embed_messages(
-    messages: List[str],
+    messages: list[str],
     dim: int = 384,
 ) -> np.ndarray:
     """

@@ -1,10 +1,10 @@
-"""
+﻿"""
 Unified vector store interface for RAG and metadata search using LanceDB.
 LanceDB es OBLIGATORIO. Si no esta disponible, se lanza un error claro.
 El fallback in-memory solo se activa con allow_fallback=True (emergencias/test).
 
 REFACTOR: Usa _infer_schema_recursive() desde lance_migration.py para
-inferir schemas recursivamente, eliminando ~100 líneas de if/elif anidados
+inferir schemas recursivamente, eliminando ~100 lÃ­neas de if/elif anidados
 en _sample_row_for_collection().
 """
 from __future__ import annotations
@@ -12,10 +12,10 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -29,9 +29,9 @@ LANCEDB_ROOT = str(
     Path(__file__).resolve().parent.parent / "db" / "lancedb"
 )
 
-from .lance_migration import generate_sample_row, serialize_for_schema  # noqa: E402
-from .lance_schemas import DEFAULT_COLLECTIONS  # noqa: E402
-from .memory_config import MemoryConfig, get_memory_config  # noqa: E402
+from .lance_migration import generate_sample_row, serialize_for_schema
+from .lance_schemas import DEFAULT_COLLECTIONS
+from .memory_config import MemoryConfig, get_memory_config
 
 # Collection name constants for external consumption
 COLLECTION_PROCEDURAL_SKILLS = "procedural_skills"
@@ -61,8 +61,8 @@ class VectorStoreError(Exception):
 class _StoredItem:
     """A single item held in the in-memory fallback store."""
     id: str
-    vector: Optional[np.ndarray]
-    metadata: Dict[str, Any]
+    vector: np.ndarray | None
+    metadata: dict[str, Any]
     created_at: str
 
 
@@ -70,8 +70,8 @@ class _StoredItem:
 class _Collection:
     """An in-memory collection mirroring a LanceDB table."""
     name: str
-    schema_def: Dict[str, str]
-    items: Dict[str, _StoredItem] = field(default_factory=dict)
+    schema_def: dict[str, str]
+    items: dict[str, _StoredItem] = field(default_factory=dict)
     last_updated: str = ""
 
 
@@ -93,9 +93,9 @@ class LanceVectorStore:
 
     def __init__(
         self,
-        db_path: Optional[str] = None,
+        db_path: str | None = None,
         allow_fallback: bool = False,
-        config: Optional[MemoryConfig] = None,
+        config: MemoryConfig | None = None,
     ) -> None:
         """Inicializa el vector store con conexion a LanceDB.
 
@@ -104,7 +104,7 @@ class LanceVectorStore:
                      la ruta por defecto o la del MemoryConfig.
             allow_fallback: Permitir fallback a memoria en RAM si LanceDB falla.
             config: MemoryConfig opcional. Si se provee, db_path y allow_fallback
-                    se toman del config si no se especifican explícitamente.
+                    se toman del config si no se especifican explÃ­citamente.
         """
         if config:
             self.db_path = db_path or config.lancedb_path
@@ -114,7 +114,7 @@ class LanceVectorStore:
             self.db_path = db_path or LANCEDB_ROOT
         self._lancedb_available = False
         self._db: Any = None  # LanceDB connection or None
-        self._mem_collections: Dict[str, _Collection] = {}
+        self._mem_collections: dict[str, _Collection] = {}
         self._embedding_dim: int = 384  # default; adjusted on first insert
         self._allow_fallback = allow_fallback
 
@@ -210,7 +210,7 @@ class LanceVectorStore:
                 tbl = self._db.open_table(name)
                 tbl.delete("id = 'init'")
                 logger.info("Created LanceDB table '%s' with full schema", name)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning("Could not create table '%s': %s", name, exc)
 
     # ------------------------------------------------------------------
@@ -218,7 +218,7 @@ class LanceVectorStore:
     # ------------------------------------------------------------------
 
     def create_collection(
-        self, name: str, schema: Optional[Dict[str, str]] = None
+        self, name: str, schema: dict[str, str] | None = None
     ) -> None:
         """
         Create a new collection.
@@ -244,7 +244,7 @@ class LanceVectorStore:
                 last_updated=datetime.now(timezone.utc).isoformat(),
             )
 
-    def list_collections(self) -> List[str]:
+    def list_collections(self) -> list[str]:
         """Return list of available collection names."""
         if self._lancedb_available and self._db is not None:
             return list(self._db.list_tables().tables)
@@ -258,8 +258,8 @@ class LanceVectorStore:
         self,
         collection: str,
         vectors: np.ndarray,
-        metadata: List[Dict[str, Any]],
-    ) -> List[str]:
+        metadata: list[dict[str, Any]],
+    ) -> list[str]:
         """
         Insert vectors with associated metadata into a collection.
 
@@ -275,7 +275,7 @@ class LanceVectorStore:
         if n == 0:
             return []
 
-        ids: List[str] = []
+        ids: list[str] = []
         now = datetime.now(timezone.utc).isoformat()
 
         if self._lancedb_available and self._db is not None:
@@ -289,17 +289,17 @@ class LanceVectorStore:
         self,
         collection: str,
         vectors: np.ndarray,
-        metadata: List[Dict[str, Any]],
+        metadata: list[dict[str, Any]],
         now: str,
-    ) -> List[str]:
+    ) -> list[str]:
         tbl = self._db.open_table(collection)  # type: ignore[union-attr]
-        rows: List[Dict[str, Any]] = []
-        ids: List[str] = []
+        rows: list[dict[str, Any]] = []
+        ids: list[str] = []
         for i in range(vectors.shape[0]):
             rid = str(uuid.uuid4())
             ids.append(rid)
             # Build row with serialized metadata fields for schema compatibility
-            row: Dict[str, Any] = {
+            row: dict[str, Any] = {
                 "id": rid,
                 "vector": vectors[i].tolist(),
                 "metadata": json.dumps(metadata[i]),
@@ -317,11 +317,11 @@ class LanceVectorStore:
         self,
         collection: str,
         vectors: np.ndarray,
-        metadata: List[Dict[str, Any]],
+        metadata: list[dict[str, Any]],
         now: str,
-    ) -> List[str]:
+    ) -> list[str]:
         col = self._get_or_create_mem_collection(collection)
-        ids: List[str] = []
+        ids: list[str] = []
         for i in range(vectors.shape[0]):
             rid = str(uuid.uuid4())
             ids.append(rid)
@@ -333,8 +333,7 @@ class LanceVectorStore:
             )
         col.last_updated = now
 
-        if vectors.shape[1] > self._embedding_dim:
-            self._embedding_dim = vectors.shape[1]
+        self._embedding_dim = max(self._embedding_dim, vectors.shape[1])
 
         return ids
 
@@ -355,8 +354,8 @@ class LanceVectorStore:
     def update_records(
         self,
         collection: str,
-        filters: Dict[str, Any],
-        updates: Dict[str, Any],
+        filters: dict[str, Any],
+        updates: dict[str, Any],
     ) -> int:
         """
         Actualiza registros que coinciden con los filtros en una coleccion.
@@ -376,8 +375,8 @@ class LanceVectorStore:
     def _update_records_lancedb(
         self,
         collection: str,
-        filters: Dict[str, Any],
-        updates: Dict[str, Any],
+        filters: dict[str, Any],
+        updates: dict[str, Any],
     ) -> int:
         try:
             tbl = self._db.open_table(collection)
@@ -398,7 +397,7 @@ class LanceVectorStore:
         # Leer registros existentes para actualizar metadata JSON
         try:
             existing = tbl.search().where(where_clause).to_list()
-        except Exception:
+        except Exception:  # noqa: BLE001
             existing = []
 
         for record in existing:
@@ -431,7 +430,7 @@ class LanceVectorStore:
 
             try:
                 tbl.update(where=f"id = '{record_id}'", values=update_values)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning(
                     "Failed to update record %s in '%s': %s",
                     record_id, collection, exc,
@@ -442,8 +441,8 @@ class LanceVectorStore:
     def _update_records_memory(
         self,
         collection: str,
-        filters: Dict[str, Any],
-        updates: Dict[str, Any],
+        filters: dict[str, Any],
+        updates: dict[str, Any],
     ) -> int:
         if collection not in self._mem_collections:
             raise CollectionNotFoundError(
@@ -477,8 +476,8 @@ class LanceVectorStore:
         collection: str,
         query_vector: np.ndarray,
         top_k: int = 5,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[Dict[str, Any]]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Vector similarity search with optional metadata filtering.
 
@@ -501,8 +500,8 @@ class LanceVectorStore:
         collection: str,
         query_vector: np.ndarray,
         top_k: int,
-        filters: Optional[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        filters: dict[str, Any] | None,
+    ) -> list[dict[str, Any]]:
         try:
             tbl = self._db.open_table(collection)
         except Exception as exc:
@@ -533,7 +532,7 @@ class LanceVectorStore:
                 )
             ][:top_k]
 
-        out: List[Dict[str, Any]] = []
+        out: list[dict[str, Any]] = []
         for r in results:
             meta = r.get("metadata", {})
             out.append(
@@ -551,8 +550,8 @@ class LanceVectorStore:
         collection: str,
         query_vector: np.ndarray,
         top_k: int,
-        filters: Optional[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
+        filters: dict[str, Any] | None,
+    ) -> list[dict[str, Any]]:
         if collection not in self._mem_collections:
             raise CollectionNotFoundError(
                 f"Collection '{collection}' not found in memory store."
@@ -565,7 +564,7 @@ class LanceVectorStore:
         # Pre-filter items
         candidates = list(col.items.values())
         if filters:
-            filtered: List[_StoredItem] = []
+            filtered: list[_StoredItem] = []
             for item in candidates:
                 match = all(
                     item.metadata.get(k) == v for k, v in filters.items()
@@ -598,7 +597,7 @@ class LanceVectorStore:
             sims = vectors @ q_norm
             top_indices = np.argsort(sims)[-top_k:][::-1]
 
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for idx in top_indices:
             item = candidates[idx]
             results.append(
@@ -621,7 +620,7 @@ class LanceVectorStore:
         query_vector: np.ndarray,
         keyword_filter: str,
         top_k: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Hybrid search combining vector similarity with keyword filtering.
 
@@ -642,7 +641,7 @@ class LanceVectorStore:
 
         kw_lower = keyword_filter.lower()
 
-        def _keyword_score(item: Dict[str, Any]) -> float:
+        def _keyword_score(item: dict[str, Any]) -> float:
             meta = item.get("metadata", {})
             fields_to_check = [
                 str(meta.get("domain", "")),
@@ -678,7 +677,7 @@ class LanceVectorStore:
     # Stats
     # ------------------------------------------------------------------
 
-    def get_collection_stats(self, name: str) -> Dict[str, Any]:
+    def get_collection_stats(self, name: str) -> dict[str, Any]:
         """
         Return collection metadata: item_count, schema, last_updated.
 
@@ -693,7 +692,7 @@ class LanceVectorStore:
 
         return self._stats_memory(name)
 
-    def _stats_lancedb(self, name: str) -> Dict[str, Any]:
+    def _stats_lancedb(self, name: str) -> dict[str, Any]:
         try:
             tbl = self._db.open_table(name)
         except Exception as exc:
@@ -706,13 +705,13 @@ class LanceVectorStore:
         last_up = ""
         if item_count > 0:
             try:
-                # Obtener solo la última fila para timestamp
+                # Obtener solo la Ãºltima fila para timestamp
                 arrow_table = tbl.to_arrow()
                 if arrow_table.num_rows > 0:
                     last_row = arrow_table.slice(arrow_table.num_rows - 1, 1)
                     if "created_at" in arrow_table.column_names:
                         last_up = str(last_row.column("created_at")[0].as_py())
-            except Exception:
+            except Exception:  # noqa: BLE001
                 last_up = ""
         return {
             "name": name,
@@ -721,7 +720,7 @@ class LanceVectorStore:
             "last_updated": last_up,
         }
 
-    def _stats_memory(self, name: str) -> Dict[str, Any]:
+    def _stats_memory(self, name: str) -> dict[str, Any]:
         if name not in self._mem_collections:
             raise CollectionNotFoundError(
                 f"Collection '{name}' not found in memory store."
@@ -757,7 +756,7 @@ class LanceVectorStore:
             for name in self._db.list_tables().tables:
                 try:
                     self._db.drop_table(name)
-                except Exception as _exc:
+                except Exception as _exc:  # noqa: BLE001
                     logger.warning("lance_vector_store: %s", _exc)
         self._mem_collections.clear()
         for name, info in DEFAULT_COLLECTIONS.items():
@@ -768,7 +767,7 @@ class LanceVectorStore:
             )
 
     @classmethod
-    def from_config(cls, config: Optional[MemoryConfig] = None) -> "LanceVectorStore":
+    def from_config(cls, config: MemoryConfig | None = None) -> LanceVectorStore:
         """Crea un LanceVectorStore desde un MemoryConfig.
 
         Args:

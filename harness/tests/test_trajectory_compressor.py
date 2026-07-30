@@ -14,7 +14,7 @@ Cubre:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 
@@ -25,15 +25,14 @@ from harness.memory_rag.trajectory_compressor import (
     compress_conversation,
 )
 
-
 # ===========================================================================
 # Helpers
 # ===========================================================================
 
 
-def _make_turn(role: str, content: str = "", tool_calls: str = "") -> Dict[str, Any]:
+def _make_turn(role: str, content: str = "", tool_calls: str = "") -> dict[str, Any]:
     """Crea un turno de conversacion para tests."""
-    turn: Dict[str, Any] = {"role": role, "content": content}
+    turn: dict[str, Any] = {"role": role, "content": content}
     if tool_calls:
         turn["tool_calls"] = tool_calls
     return turn
@@ -43,7 +42,7 @@ def _make_conversation(
     n_turns: int,
     role: str = "user",
     content_len: int = 100,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Crea una conversacion de n_turns turnos."""
     return [
         _make_turn(role, "x" * content_len) for _ in range(n_turns)

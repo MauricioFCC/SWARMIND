@@ -13,17 +13,14 @@ Regla: Cada test explora el espacio de entrada con Hypothesis para encontrar
 """
 from __future__ import annotations
 
-import math
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-import numpy as np
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 
 from harness.memory_rag.semantic_cache import (
-    DEFAULT_EMBEDDING_DIM,
-    DEFAULT_SIMILARITY_THRESHOLD,
     DEFAULT_TTL_SECONDS,
     CacheEntry,
     SemanticCache,
@@ -31,7 +28,6 @@ from harness.memory_rag.semantic_cache import (
 )
 from harness.orchestrator.token_optimizer import (
     OutputFormat,
-    PipelineSchedule,
     PipelineTask,
     TokenBudgetManager,
     build_dag,
@@ -316,7 +312,7 @@ class TestDAGProperties:
     """Propiedades del DAG pipeline scheduler."""
 
     @given(task_ids=_task_id_list)
-    def test_dag_no_cycles_and_all_tasks_present(self, task_ids: List[int]) -> None:
+    def test_dag_no_cycles_and_all_tasks_present(self, task_ids: list[int]) -> None:
         """build_dag nunca debe crear ciclos e incluir todas las tareas.
         
         Propiedad: el schedule resultante debe contener exactamente
@@ -333,7 +329,7 @@ class TestDAGProperties:
         )
 
     @given(task_ids=_task_id_list)
-    def test_dag_total_tokens_is_sum(self, task_ids: List[int]) -> None:
+    def test_dag_total_tokens_is_sum(self, task_ids: list[int]) -> None:
         """PipelineSchedule.total_tokens debe ser la suma de estimated_tokens.
         
         Propiedad: la metrica de tokens totales es aditiva.
@@ -349,7 +345,7 @@ class TestDAGProperties:
         )
 
     @given(task_ids=_task_id_list)
-    def test_estimate_speedup_at_least_one(self, task_ids: List[int]) -> None:
+    def test_estimate_speedup_at_least_one(self, task_ids: list[int]) -> None:
         """estimate_speedup debe ser >= 1.0 para cualquier schedule no-vacio.
         
         Propiedad: el speedup del pipeline paralelo nunca es peor que
@@ -364,7 +360,7 @@ class TestDAGProperties:
         assert speedup >= 1.0
 
     @given(task_ids=_task_id_list)
-    def test_dag_topological_ordering(self, task_ids: List[int]) -> None:
+    def test_dag_topological_ordering(self, task_ids: list[int]) -> None:
         """Las dependencias en el DAG deben aparecer antes que sus dependientes.
         
         Propiedad (invariante topologico): si A depende de B, B debe estar
@@ -382,7 +378,7 @@ class TestDAGProperties:
         ]
         schedule = build_dag(tasks)
         # Verificar que el id de la tarea aparece en el nivel correcto
-        level_of: Dict[str, int] = {}
+        level_of: dict[str, int] = {}
         for level_idx, level in enumerate(schedule.levels):
             for t in level:
                 level_of[t.id] = level_idx
@@ -435,7 +431,7 @@ class TestStructuredPromptProperties:
         schema_value: str,
     ) -> None:
         """Con formato JSON_SCHEMA, el schema debe incluirse en el prompt."""
-        schema: Dict[str, Any] = {
+        schema: dict[str, Any] = {
             "type": "object",
             "properties": {schema_key: {"type": schema_value}},
         }
@@ -501,7 +497,7 @@ class TokenBudgetMachine(RuleBasedStateMachine):
     def __init__(self) -> None:
         super().__init__()
         self.mgr = TokenBudgetManager(total_budget=10_000)
-        self._agents: List[str] = []
+        self._agents: list[str] = []
 
     @rule(agent_name=st.text(min_size=1, max_size=20), priority=st.integers(min_value=1, max_value=10))
     def register_agent(self, agent_name: str, priority: int) -> None:

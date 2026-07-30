@@ -86,7 +86,7 @@ class TestFullPipeline:
 
     def test_plan_notify_execute_consolidate(self, orchestrator):
         """1a. Ciclo completo: plan → notificar → ejecutar → consolidar."""
-        result = orchestrator.process_message("desplegar API REST en producción")
+        result = orchestrator("desplegar API REST en producción")
         assert result is not None
         assert hasattr(result, 'to_dict')
         rd = result.to_dict()
@@ -96,7 +96,7 @@ class TestFullPipeline:
     def test_multi_level_flow(self, orchestrator):
         """1b. Flujo multi-nivel (nivel 1 → 3)."""
         # Force a multi-level task
-        result = orchestrator.process_message(
+        result = orchestrator(
             "implementar microservicio completo con auth, DB, y API REST"
         )
         assert result is not None
@@ -131,9 +131,9 @@ class TestFullPipeline:
 class TestErrorHandling:
     """Tests de manejo de errores y resiliencia."""
 
-    def test_retry_on_failure(self, orchestrator):
+    async def test_retry_on_failure(self, orchestrator):
         """2a. Retry cuando una subtask falla."""
-        result = orchestrator.process_message("tarea con error forzado")
+        result = await orchestrator.process_message("tarea con error forzado")
         # Should not crash, should handle gracefully
         assert result is not None
 
@@ -382,24 +382,24 @@ class TestEdgeCases:
 class TestOrchestratorEdgeCases:
     """Tests de edge cases en el orquestador."""
 
-    def test_none_task(self, orchestrator):
+    async def test_none_task(self, orchestrator):
         """6a. Task vacía (string vacío)."""
-        result = orchestrator.process_message("")
+        result = await orchestrator.process_message("")
         assert result is not None
 
     @pytest.mark.slow
-    def test_rapid_consecutive_tasks(self, orchestrator):
+    async def test_rapid_consecutive_tasks(self, orchestrator):
         """6b. Tasks rápidas consecutivas."""
         for i in range(3):
-            result = orchestrator.process_message(f"tarea simple {i}")
+            result = await orchestrator.process_message(f"tarea simple {i}")
             assert result is not None
 
-    def test_orchestrator_with_custom_planner(self):
+    async def test_orchestrator_with_custom_planner(self):
         """6c. Orchestrator con TaskPlanner personalizado."""
         orch = TaskOrchestrator(
             max_retries=1,
         )
-        result = orch.process_message("test custom")
+        result = await orch.process_message("test custom")
         assert result is not None
 
 

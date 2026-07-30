@@ -12,8 +12,6 @@ Basado en estrategias Struct47 / LAS51:
 
 from __future__ import annotations
 
-from typing import List
-
 
 def structured_compact(
     text: str,
@@ -87,7 +85,7 @@ def structured_compact(
     return result if len(result) >= min_chars else text[:target_len]
 
 
-def _flush_buffer(buf: List[str], target: List[str]) -> None:
+def _flush_buffer(buf: list[str], target: list[str]) -> None:
     """Vacia un buffer de lineas comprimiendolo a resumen si es largo.
 
     Si el buffer tiene mas de 3 lineas y suma mas de 500 chars,

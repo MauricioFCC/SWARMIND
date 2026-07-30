@@ -12,7 +12,7 @@ Uso:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from harness.orchestrator.debate_orchestrator import (
     DebateOrchestrator,
@@ -52,9 +52,9 @@ class DebateRunner:
         self,
         session_id: str,
         task: str,
-        agents: Optional[List[str]] = None,
+        agents: list[str] | None = None,
         strategy: str = "consensus",
-        dispatch_fn: Optional[callable] = None,
+        dispatch_fn: callable | None = None,
     ) -> DebateResult:
         """
         Ejecuta un debate multi-agente para una sesion con plantilla debate.
@@ -92,7 +92,7 @@ class DebateRunner:
             })
 
         # Mapear estrategia
-        strategy_map: Dict[str, DebateStrategy] = {
+        strategy_map: dict[str, DebateStrategy] = {
             "consensus": DebateStrategy.CONSENSUS,
             "critique": DebateStrategy.CRITIQUE,
             "deliberation": DebateStrategy.DELIBERATION,

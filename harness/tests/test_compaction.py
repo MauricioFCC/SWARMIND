@@ -12,12 +12,7 @@ Evalua:
 
 from __future__ import annotations
 
-from typing import List
-
-import pytest
-
 from harness.memory_rag.compaction import _flush_buffer, structured_compact
-
 
 # ===========================================================================
 # Tests: structured_compact — edge cases
@@ -155,7 +150,7 @@ class TestStructuredCompactToolOutputs:
 
     def test_tool_output_largo_se_comprime(self):
         """Tool outputs > 200 chars se acumulan y comprimen (>3 lines, >500 chars)."""
-        text = "\n".join([f"Output: " + "x" * 200 for _ in range(4)]) + "\nlinea normal"
+        text = "\n".join(["Output: " + "x" * 200 for _ in range(4)]) + "\nlinea normal"
         result = structured_compact(text, budget_ratio=0.3, min_chars=10)
         assert "[... " in result
         assert "chars compressed" in result
@@ -238,7 +233,7 @@ class TestStructuredCompactBudget:
     def test_budget_ratio_con_compresion_reduce_longitud(self):
         """La compresion de tool outputs reduce la longitud total."""
         text = "# Header\n" + "\n".join(
-            [f"Output: " + "x" * 300 for _ in range(5)]
+            ["Output: " + "x" * 300 for _ in range(5)]
         ) + "\n# Footer"
         original_len = len(text)
         result = structured_compact(text, budget_ratio=0.5, min_chars=20)
@@ -257,27 +252,27 @@ class TestFlushBuffer:
 
     def test_buffer_vacio_no_anade_nada(self):
         """Buffer vacio no anade nada al target."""
-        target: List[str] = ["linea existente"]
+        target: list[str] = ["linea existente"]
         _flush_buffer([], target)
         assert target == ["linea existente"]
 
     def test_buffer_corto_se_anade_completo(self):
         """Buffer con <= 3 lineas se anade completo."""
-        target: List[str] = []
+        target: list[str] = []
         buf = ["a", "b", "c"]
         _flush_buffer(buf, target)
         assert target == ["a", "b", "c"]
 
     def test_buffer_3_lineas_pocos_chars_se_anade(self):
         """Buffer de 3 lineas con total <= 500 chars se anade completo."""
-        target: List[str] = []
+        target: list[str] = []
         buf = ["abc", "def", "ghi"]  # 9 chars total
         _flush_buffer(buf, target)
         assert target == ["abc", "def", "ghi"]
 
     def test_buffer_4_lineas_muchos_chars_se_comprime(self):
         """Buffer > 3 lineas con total > 500 chars se comprime a marcador."""
-        target: List[str] = []
+        target: list[str] = []
         buf = ["x" * 200, "y" * 200, "z" * 200, "w" * 200]  # 800 chars
         _flush_buffer(buf, target)
         assert len(target) == 1
@@ -287,7 +282,7 @@ class TestFlushBuffer:
 
     def test_buffer_4_lineas_pocos_chars_no_se_comprime(self):
         """Buffer > 3 lineas pero con total <= 500 chars no se comprime."""
-        target: List[str] = []
+        target: list[str] = []
         buf = ["a", "b", "c", "d"]  # 4 chars total
         _flush_buffer(buf, target)
         assert target == ["a", "b", "c", "d"]
@@ -295,13 +290,13 @@ class TestFlushBuffer:
     def test_buffer_limpia_despues_de_vaciar(self):
         """El buffer se limpia (clear) despues de procesar."""
         buf = ["a", "b", "c"]
-        target: List[str] = []
+        target: list[str] = []
         _flush_buffer(buf, target)
         assert len(buf) == 0
 
     def test_buffer_grande_se_comprime_con_conteo_correcto(self):
         """Marcador contiene el numero exacto de lines y chars."""
-        target: List[str] = []
+        target: list[str] = []
         buf = ["x" * 200] * 5  # 5 lines, 1000 chars total
         _flush_buffer(buf, target)
         marker = target[0]

@@ -7,17 +7,12 @@ minificación, manejo de errores y edge cases.
 
 from __future__ import annotations
 
-import os
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-from unittest import mock
 
 import pytest
 
 from harness.memory_rag.skill_loader import (
-    ALWAYS_LOAD_SKILLS,
-    DOMAIN_TRIGGERED_SKILLS,
     DOMAIN_KEYWORDS,
     SKILL_DOMAIN_MAP,
     LazySkillLoader,
@@ -417,9 +412,9 @@ class TestLoadForDomain:
     def test_load_for_domain_idempotent(self, skills_dir: Path) -> None:
         """load_for_domain es idempotente (segunda llamada no duplica)."""
         loader = LazySkillLoader(skills_dir=str(skills_dir), auto_discover=True)
-        r1 = loader.load_for_domain(["trading"])
+        loader.load_for_domain(["trading"])
         loads_before = loader._stats["loads_tier2"]
-        r2 = loader.load_for_domain(["trading"])
+        loader.load_for_domain(["trading"])
         assert loader._stats["loads_tier2"] == loads_before
 
 

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 class TestHermesBridge:
     def test_initialization(self, hermes_bridge):
-        stats = hermes_bridge.get_stats()
-        assert "exported" in stats
+        status = hermes_bridge.get_status()
+        assert "available" in status
 
     def test_sync_to_hermes_no_root(self, hermes_bridge):
-        result = hermes_bridge.sync_to_hermes()
-        assert isinstance(result, dict)
+        result = hermes_bridge.sync_to_hermes([])
+        assert isinstance(result, int)
 
 
 class TestCognition:

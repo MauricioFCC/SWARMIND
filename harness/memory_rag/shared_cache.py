@@ -20,8 +20,7 @@ import hashlib
 import logging
 import threading
 import time
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -129,8 +128,8 @@ class SharedSemanticCache:
         self._ttl: float = float(ttl)
         self._threshold: float = threshold
         self._lock: threading.RLock = threading.RLock()
-        self._entries: Dict[str, CacheEntry] = {}
-        self._lru_order: List[str] = []
+        self._entries: dict[str, CacheEntry] = {}
+        self._lru_order: list[str] = []
         self._hits: int = 0
         self._misses: int = 0
 
@@ -181,7 +180,7 @@ class SharedSemanticCache:
             return 0.0
         return dot / (norm_a * norm_b)
 
-    def get(self, text: str, agent_id: str = "") -> Optional[str]:
+    def get(self, text: str, agent_id: str = "") -> str | None:
         """Busca un resultado en cache por similitud semantica.
 
         Args:
@@ -194,13 +193,13 @@ class SharedSemanticCache:
         self._evict_expired()
 
         query_emb: np.ndarray = self._compute_embedding(text)
-        best_match: Optional[Tuple[str, str, float]] = None
+        best_match: tuple[str, str, float] | None = None
 
         with self._lock:
             for key, entry in self._entries.items():
                 sim: float = self._similarity(query_emb, entry.embedding)
                 if sim >= self._threshold:
-                    candidate: Tuple[str, str, float] = (key, entry.result, sim)
+                    candidate: tuple[str, str, float] = (key, entry.result, sim)
                     if best_match is None or sim > best_match[2]:
                         best_match = candidate
 
@@ -284,7 +283,7 @@ class SharedSemanticCache:
             Numero de entradas eliminadas.
         """
         now: float = time.time()
-        expired: List[str] = []
+        expired: list[str] = []
 
         with self._lock:
             for key, entry in self._entries.items():

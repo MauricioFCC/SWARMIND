@@ -1,5 +1,5 @@
-"""
-Knowledge Graph — Grafo de conocimiento local-first para Swarmind.
+﻿"""
+Knowledge Graph â€” Grafo de conocimiento local-first para Swarmind.
 
 Implementa un grafo de conocimiento local-first (similar a LanceDB) que conecta:
 - Skills con agentes (que agente usa cada skill)
@@ -25,7 +25,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class KnowledgeGraph:
         kg.load("knowledge_graph.json")
     """
 
-    def __init__(self, path: Optional[Path] = None):
+    def __init__(self, path: Path | None = None):
         """
         Args:
             path: Ruta al archivo JSON para persistencia.
@@ -94,7 +94,7 @@ class KnowledgeGraph:
         self,
         node_id: str,
         node_type: str = "concept",
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         Agregar un nodo al grafo.
@@ -118,7 +118,7 @@ class KnowledgeGraph:
         target: str,
         relation: str,
         weight: float = 1.0,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         Conectar dos nodos con una relacion.
@@ -149,11 +149,11 @@ class KnowledgeGraph:
     def query(
         self,
         node: str,
-        relation: Optional[str] = None,
-        node_type: Optional[str] = None,
+        relation: str | None = None,
+        node_type: str | None = None,
         max_depth: int = 1,
         reverse: bool = False,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Consultar el grafo desde un nodo.
         
@@ -171,11 +171,11 @@ class KnowledgeGraph:
             return []
 
         results = []
-        seen: Set[str] = {node}
-        current: Set[str] = {node}
+        seen: set[str] = {node}
+        current: set[str] = {node}
 
         for _ in range(max_depth):
-            next_level: Set[str] = set()
+            next_level: set[str] = set()
             for n in current:
                 # Obtener vecinos (salientes o entrantes)
                 neighbors = (
@@ -223,7 +223,7 @@ class KnowledgeGraph:
         source: str,
         target: str,
         max_length: int = 5,
-    ) -> List[List[Dict[str, Any]]]:
+    ) -> list[list[dict[str, Any]]]:
         """
         Encontrar caminos entre dos nodos.
         
@@ -261,17 +261,17 @@ class KnowledgeGraph:
         except (nx.NetworkXNoPath, nx.NodeNotFound):
             return []
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Obtener estadisticas del grafo."""
         if not self._graph:
             return {"nodes": 0, "edges": 0, "types": {}}
         
-        type_counts: Dict[str, int] = {}
+        type_counts: dict[str, int] = {}
         for _, data in self._graph.nodes(data=True):
             t = data.get("type", "unknown")
             type_counts[t] = type_counts.get(t, 0) + 1
 
-        relation_counts: Dict[str, int] = {}
+        relation_counts: dict[str, int] = {}
         for _, _, data in self._graph.edges(data=True):
             r = data.get("relation", "unknown")
             relation_counts[r] = relation_counts.get(r, 0) + 1
@@ -287,8 +287,8 @@ class KnowledgeGraph:
         self,
         key: str,
         value: Any,
-        node_type: Optional[str] = None,
-    ) -> List[str]:
+        node_type: str | None = None,
+    ) -> list[str]:
         """
         Buscar nodos por metadatos.
         
@@ -312,7 +312,7 @@ class KnowledgeGraph:
     # Persistencia
     # ------------------------------------------------------------------
 
-    def save(self, path: Optional[Path] = None) -> None:
+    def save(self, path: Path | None = None) -> None:
         """
         Guardar el grafo a JSON.
         
@@ -324,7 +324,6 @@ class KnowledgeGraph:
             logger.warning("No save path specified")
             return
 
-        import networkx as nx
         from networkx.readwrite import json_graph
 
         data = json_graph.node_link_data(self._graph)
@@ -335,7 +334,7 @@ class KnowledgeGraph:
         )
         logger.info(f"Knowledge graph saved: {save_path} ({self._graph.number_of_nodes()} nodes)")
 
-    def load(self, path: Optional[Path] = None) -> bool:
+    def load(self, path: Path | None = None) -> bool:
         """
         Cargar el grafo desde JSON.
         
@@ -349,7 +348,6 @@ class KnowledgeGraph:
         if not load_path or not load_path.exists():
             return False
 
-        import networkx as nx
         from networkx.readwrite import json_graph
 
         try:
@@ -357,7 +355,7 @@ class KnowledgeGraph:
             self._graph = json_graph.node_link_graph(data, multigraph=True)
             logger.info(f"Knowledge graph loaded: {load_path} ({self._graph.number_of_nodes()} nodes)")
             return True
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"Failed to load knowledge graph: {e}")
             self._load_networkx()
             return False
@@ -448,7 +446,7 @@ class KnowledgeGraph:
 
         return count
 
-    def _extract_skills(self, text: str) -> List[str]:
+    def _extract_skills(self, text: str) -> list[str]:
         """Extraer nombres de skills mencionados en un texto."""
         known_skills = [
             "alpha-research", "architecture", "data-science", "evolve",

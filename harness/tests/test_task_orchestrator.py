@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import time
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -87,20 +88,20 @@ class TestTaskOrchestratorInit:
         assert orch._store is vector_store
 
     def test_get_or_create_healing_new(self) -> None:
-        """_get_or_create_healing crea nuevo contexto si no existe."""
+        """_get_healing crea nuevo contexto si no existe."""
         orch = _make_orch()
-        healing = orch._get_or_create_healing("new-session")
+        healing = orch._get_healing("new-session")
         assert healing is not None
         assert healing.session_id == "new-session"
         assert "new-session" in orch._healing_contexts
 
     def test_get_or_create_healing_existing(self) -> None:
-        """_get_or_create_healing retorna el existente."""
+        """_get_healing retorna el existente."""
         orch = _make_orch()
         from harness.orchestrator.self_healing import SelfHealingContext
         existing = SelfHealingContext(session_id="existing-session")
         orch._healing_contexts["existing-session"] = existing
-        assert orch._get_or_create_healing("existing-session") is existing
+        assert orch._get_healing("existing-session") is existing
 
 
 # ===================================================================
@@ -110,7 +111,7 @@ class TestTaskOrchestratorInit:
 class TestCircuitBreakerAndDedup:
     """Circuit breaker abierto y deduplicación de mensajes."""
 
-    def test_circuit_breaker_open_returns_error(self) -> None:
+    async def test_circuit_breaker_open_returns_error(self) -> None:
         """Circuito global abierto → process_message retorna error.  (líneas 152-157)"""
         orch = _make_orch()
         mock_cb = MagicMock()
@@ -118,12 +119,12 @@ class TestCircuitBreakerAndDedup:
         mock_cb.failure_count = 5
         orch._global_cb = mock_cb
 
-        result = orch.process_message("test message")
+        result = await orch.process_message("test message")
 
         assert result.session_id == "error"
         assert "Sistema en recuperación" in result.session_status
 
-    def test_stale_cleanup_removes_old_entries(self) -> None:
+    async def test_stale_cleanup_removes_old_entries(self) -> None:
         """Entradas viejas en recent_messages se limpian.  (línea 168)"""
         orch = _make_orch()
         mock_cb = MagicMock()
@@ -136,13 +137,13 @@ class TestCircuitBreakerAndDedup:
         orch._session_ctx = SessionContext()
         orch._bus = MagicMock()
 
-        result = orch.process_message("completely new unique message")
+        await orch.process_message("completely new unique message")
 
         assert "stale_1" not in orch._recent_messages
         assert "stale_2" not in orch._recent_messages
         assert len(orch._recent_messages) == 1
 
-    def test_duplicate_message_blocked(self) -> None:
+    async def test_duplicate_message_blocked(self) -> None:
         """Mensaje duplicado dentro de la ventana es bloqueado."""
         orch = _make_orch()
         mock_cb = MagicMock()
@@ -154,7 +155,7 @@ class TestCircuitBreakerAndDedup:
         msg_hash = hashlib.sha256(msg.encode()).hexdigest()[:16]
         orch._recent_messages = {msg_hash: time.time()}
 
-        result = orch.process_message(msg)
+        result = await orch.process_message(msg)
         assert "duplicado" in result.session_status
 
 
@@ -165,7 +166,7 @@ class TestCircuitBreakerAndDedup:
 class TestContinuationFlow:
     """Detección y manejo de mensajes de continuación."""
 
-    def test_continuation_path(self) -> None:
+    async def test_continuation_path(self) -> None:
         """Mensaje de continuación ejecuta _handle_continuation.  (líneas 193-206)"""
         orch = _make_orch()
         mock_cb = MagicMock()
@@ -177,7 +178,7 @@ class TestContinuationFlow:
         orch._bus = MagicMock()
 
         with patch.object(orch, '_is_continuation', return_value=True):
-            result = orch.process_message("continue please")
+            result = await orch.process_message("continue please")
 
         assert result.session_id == session.session_id
         assert len(session.messages) == 1
@@ -247,18 +248,18 @@ class TestContinuationFlow:
 class TestProcessCompletion:
     """Flujo de process_completion."""
 
-    def test_session_not_found(self) -> None:
+    async def test_session_not_found(self) -> None:
         """Sesión no encontrada → resultado vacío.  (líneas 257-262)"""
         orch = _make_orch()
         orch._session_ctx = MagicMock()
         orch._session_ctx.get_session.return_value = None
 
-        result = orch.process_completion("nonexistent", "st-1", "result")
+        result = await orch.process_completion("nonexistent", "st-1", "result")
 
         assert result.session_id == "error"
         assert "no encontrada" in result.session_status
 
-    def test_subtask_already_completed(self) -> None:
+    async def test_subtask_already_completed(self) -> None:
         """Subtask ya completada no se marca de nuevo.  (línea 274)"""
         orch = _make_orch()
         plan = _make_plan(n_subtasks=2)
@@ -273,11 +274,11 @@ class TestProcessCompletion:
         mock_healing.check_stalled.return_value = None
         orch._healing_contexts[session.session_id] = mock_healing
 
-        result = orch.process_completion(session.session_id, "st-0", "new result")
+        await orch.process_completion(session.session_id, "st-0", "new result")
 
         orch._session_ctx.mark_subtask_done.assert_not_called()
 
-    def test_completion_with_confidence_scoring(self) -> None:
+    async def test_completion_with_confidence_scoring(self) -> None:
         """Completar subtask dispara confidence scoring."""
         orch = _make_orch()
         plan = _make_plan(n_subtasks=2)
@@ -299,14 +300,14 @@ class TestProcessCompletion:
         orch._confidence_scorer = MagicMock()
         orch._confidence_scorer.score_completion.return_value = mock_score
 
-        result = orch.process_completion(session.session_id, "st-0", "great result")
+        await orch.process_completion(session.session_id, "st-0", "great result")
 
         orch._session_ctx.mark_subtask_done.assert_called_once_with(
             session, "st-0", "great result"
         )
         orch._confidence_scorer.score_completion.assert_called_once()
 
-    def test_completion_timeout_and_stall_warnings(self, caplog: Any) -> None:
+    async def test_completion_timeout_and_stall_warnings(self, caplog: Any) -> None:
         """Timeout y stall generan StructuredLogRecord.warning.  (líneas 322, 331)"""
         import logging
         caplog.set_level(logging.WARNING)
@@ -338,12 +339,12 @@ class TestProcessCompletion:
         orch._confidence_scorer = MagicMock()
         orch._confidence_scorer.score_completion.return_value = mock_score
 
-        orch.process_completion(session.session_id, "st-0", "result")
+        await orch.process_completion(session.session_id, "st-0", "result")
         # Debe haber al menos 2 warnings: timeout y stall
         warn_records = [r for r in caplog.records if r.levelno == logging.WARNING]
         assert len(warn_records) >= 2
 
-    def test_plan_complete_celebrates(self) -> None:
+    async def test_plan_complete_celebrates(self) -> None:
         """Plan completo → broadcast_complete + global_cb.success."""
         orch = _make_orch()
         plan = _make_plan(n_subtasks=1)
@@ -364,7 +365,7 @@ class TestProcessCompletion:
         orch._confidence_scorer = MagicMock()
         orch._confidence_scorer.score_completion.return_value = mock_score
 
-        result = orch.process_completion(session.session_id, "st-0", "done")
+        result = await orch.process_completion(session.session_id, "st-0", "done")
         assert result.is_complete is True
         orch._global_cb.record_success.assert_called_once()
 
@@ -376,24 +377,24 @@ class TestProcessCompletion:
 class TestGetSummaryAndHealing:
     """Tests para get_summary y get_healing_status."""
 
-    def test_get_summary_no_session(self) -> None:
+    async def test_get_summary_no_session(self) -> None:
         """Sin sesión activa → mensaje de error.  (línea 349)"""
         orch = _make_orch()
         orch._session_ctx = MagicMock()
         orch._session_ctx.get_active.return_value = None
-        assert "No hay sesiones activas" in orch.get_summary()
+        assert "No hay sesiones activas" in await orch.get_summary()
 
-    def test_get_summary_with_session(self) -> None:
+    async def test_get_summary_with_session(self) -> None:
         """Sesión existente retorna status."""
         orch = _make_orch()
         session = _make_session()
         orch._session_ctx = MagicMock()
         orch._session_ctx.get_session.return_value = session
         orch._session_ctx.get_status.return_value = "Sesión activa"
-        summary = orch.get_summary("test-session")
+        summary = await orch.get_summary("test-session")
         assert "Sesión activa" in summary
 
-    def test_get_summary_with_healing_context(self) -> None:
+    async def test_get_summary_with_healing_context(self) -> None:
         """get_summary incluye info de self-healing y circuit breakers.  (línea 369)"""
         orch = _make_orch()
         session = _make_session()
@@ -404,16 +405,16 @@ class TestGetSummaryAndHealing:
         healing = SelfHealingContext(session_id=session.session_id)
         healing.circuit_breakers["builder"] = CircuitBreaker(failure_threshold=3)
         orch._healing_contexts[session.session_id] = healing
-        summary = orch.get_summary(session.session_id)
+        summary = await orch.get_summary(session.session_id)
         assert "Self-Healing" in summary
-        assert "Circuit Breakers" in summary
+        assert "CB:" in summary
 
-    def test_get_healing_status_none(self) -> None:
+    async def test_get_healing_status_none(self) -> None:
         """Sesión sin healing → None.  (líneas 375-376)"""
         orch = _make_orch()
-        assert orch.get_healing_status("nonexistent") is None
+        assert await orch.get_healing_status("nonexistent") is None
 
-    def test_get_healing_status_exists(self) -> None:
+    async def test_get_healing_status_exists(self) -> None:
         """Sesión con healing → dict."""
         orch = _make_orch()
         session = _make_session()
@@ -421,7 +422,7 @@ class TestGetSummaryAndHealing:
         orch._healing_contexts[session.session_id] = SelfHealingContext(
             session_id=session.session_id
         )
-        status = orch.get_healing_status(session.session_id)
+        status = await orch.get_healing_status(session.session_id)
         assert status is not None
         assert "session_id" in status
 
@@ -453,7 +454,7 @@ class TestShapedCacheIntegration:
         assert orch._shaped_cache is mock_shaped_instance
         assert orch._shaped_cache._max_tokens == 10000
 
-    def test_cache_hit_in_process_message(self) -> None:
+    async def test_cache_hit_in_process_message(self) -> None:
         """Cache hit en process_message retorna resultado directo."""
         orch = _make_orch()
         mock_cb = MagicMock()
@@ -467,16 +468,16 @@ class TestShapedCacheIntegration:
         }
         orch._shaped_cache = mock_cache
 
-        result = orch.process_message("mi consulta de prueba")
+        result = await orch.process_message("mi consulta de prueba")
 
         # Debe retornar resultado completo sin pasar por planner
         assert result.is_complete is True
         assert result.session_status == "completed"
         mock_cache.get_shaped.assert_called_once_with(
-            "mi consulta de prueba", threshold=0.88,
+            "mi consulta de prueba", 0.88,
         )
 
-    def test_cache_miss_proceeds_normal(self) -> None:
+    async def test_cache_miss_proceeds_normal(self) -> None:
         """Cache miss no interfiere con el flujo normal."""
         from harness.orchestrator.session_context import SessionContext
         orch = _make_orch()
@@ -491,7 +492,7 @@ class TestShapedCacheIntegration:
         orch._session_ctx = SessionContext()
         orch._bus = MagicMock()
 
-        result = orch.process_message("consulta sin cache")
+        result = await orch.process_message("consulta sin cache")
 
         # No debe ser cache hit
         assert result.is_complete is not True or result.session_status != "completed"
@@ -506,13 +507,13 @@ class TestShapedCacheIntegration:
 class TestRunDebate:
     """Tests para run_debate."""
 
-    def test_session_not_found_raises(self) -> None:
+    async def test_session_not_found_raises(self) -> None:
         """Sesión no encontrada → ValueError.  (línea 401)"""
         orch = _make_orch()
         orch._session_ctx = MagicMock()
         orch._session_ctx.get_session.return_value = None
         with pytest.raises(ValueError, match="not found"):
-            orch.run_debate("nonexistent", "task")
+            await orch.run_debate("nonexistent", "task")
 
     def test_agents_extracted_from_plan(self) -> None:
         """Agents=None extrae agentes del plan.  (línea 405)"""
@@ -753,8 +754,8 @@ class TestConfidenceEarlyStopping:
 class TestBroadcastMethods:
     """Métodos _broadcast_plan, _broadcast_completion, _broadcast_complete."""
 
-    def test_broadcast_plan_exception_handled(self) -> None:
-        """Excepción en _broadcast_plan se captura.  (líneas 826-827)"""
+    async def test_broadcast_plan_exception_handled(self) -> None:
+        """Excepción en _broadcast_plan_async se captura.  (líneas 826-827)"""
         orch = _make_orch()
         plan = _make_plan(n_subtasks=2)
         session = _make_session(plan=plan)
@@ -763,30 +764,30 @@ class TestBroadcastMethods:
         orch._bus.post_message.side_effect = Exception("Network error")
 
         # No debe propagar excepción
-        orch._broadcast_plan(session)
+        await orch._broadcast_plan_async(session)
 
-    def test_broadcast_completion_subtask_not_found(self) -> None:
+    async def test_broadcast_completion_subtask_not_found(self) -> None:
         """Subtask no encontrada → retorna sin post.  (línea 847)"""
         orch = _make_orch()
         plan = _make_plan(n_subtasks=2)
         session = _make_session(plan=plan)
         orch._bus = MagicMock()
-        orch._broadcast_completion(session, "nonexistent", "result")
+        await orch._broadcast_completion_async(session, "nonexistent", "result")
         orch._bus.post_message.assert_not_called()
 
-    def test_broadcast_completion_found_posts(self) -> None:
+    async def test_broadcast_completion_found_posts(self) -> None:
         """Subtask encontrada → postea completado y notifica dependientes."""
         orch = _make_orch()
         plan = _make_plan(n_subtasks=2)
         plan.subtasks[1].dependencies = ["st-0"]
         session = _make_session(plan=plan)
         orch._bus = MagicMock()
-        orch._broadcast_completion(session, "st-0", "done")
+        await orch._broadcast_completion_async(session, "st-0", "done")
         # Debería postear al menos el mensaje de completado
         assert orch._bus.post_message.call_count >= 2  # completion + notify waiting
 
-    def test_broadcast_completion_exception_handled(self) -> None:
-        """Excepción en _broadcast_completion se captura.  (líneas 880-881)"""
+    async def test_broadcast_completion_exception_handled(self) -> None:
+        """Excepción en _broadcast_completion_async se captura.  (líneas 880-881)"""
         orch = _make_orch()
         plan = _make_plan(n_subtasks=2)
         plan.subtasks[1].dependencies = ["st-0"]
@@ -794,10 +795,10 @@ class TestBroadcastMethods:
         orch._bus = MagicMock()
         orch._bus.post_message.side_effect = Exception("Network error")
         # No debe propagar
-        orch._broadcast_completion(session, "st-0", "result")
+        await orch._broadcast_completion_async(session, "st-0", "result")
 
-    def test_broadcast_complete_exception_handled(self) -> None:
-        """Excepción en _broadcast_complete se captura.  (líneas 911-912)"""
+    async def test_broadcast_complete_exception_handled(self) -> None:
+        """Excepción en _broadcast_complete_async se captura.  (líneas 911-912)"""
         orch = _make_orch()
         plan = _make_plan(n_subtasks=1)
         plan.subtasks[0].completed = True
@@ -805,7 +806,7 @@ class TestBroadcastMethods:
         orch._bus = MagicMock()
         orch._bus.post_message.side_effect = Exception("Network error")
         # No debe propagar
-        orch._broadcast_complete(session)
+        await orch._broadcast_complete_async(session)
 
 
 # ===================================================================
@@ -816,9 +817,9 @@ class TestBuildResultAndHelpers:
     """_build_result, _empty_result, _resolve_target_agent."""
 
     def test_empty_result(self) -> None:
-        """_empty_result retorna resultado de error.  (líneas 920-922)"""
+        """_error retorna resultado de error.  (líneas 920-922)"""
         orch = _make_orch()
-        result = orch._empty_result()
+        result = orch._error("test error")
         assert result.session_id == "error"
         assert result.target_agent == "coordinator"
         assert result.is_complete is False

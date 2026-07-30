@@ -1,9 +1,8 @@
-"""
-Tests para agent_builder — AgentBuilder, AgentPruner, run_agent_evolution.
+﻿"""
+Tests para agent_builder â€” AgentBuilder, AgentPruner, run_agent_evolution.
 """
 from __future__ import annotations
 
-import json
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -14,7 +13,6 @@ import pytest
 from harness.evolve_loop.agent_builder import (
     MIN_AVG_SCORE,
     MIN_SUCCESSFUL_TASKS,
-    SCORE_WINDOW_DAYS,
     AgentBuilder,
     AgentPruner,
     run_agent_evolution,
@@ -171,7 +169,7 @@ class TestAgentBuilderCreateProfile:
 
     def test_create_agent_profile_writes_file(self, builder):
         """Test crea archivo .md con contenido YAML."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp:  # noqa: SIM117
             with patch("harness.evolve_loop.agent_builder.AUTO_AGENTS_DIR", Path(tmp)):
                 lessons = [_make_lesson("trading", score=0.85)]
                 name = builder._create_agent_profile("trading", lessons, 0.85)
@@ -185,7 +183,7 @@ class TestAgentBuilderCreateProfile:
 
     def test_create_agent_profile_error(self, builder):
         """Test maneja error de escritura y retorna None."""
-        with patch("pathlib.Path.write_text", side_effect=PermissionError("denied")):
+        with patch("pathlib.Path.write_text", side_effect=PermissionError("denied")):  # noqa: SIM117
             with patch("harness.evolve_loop.agent_builder.AUTO_AGENTS_DIR", Path("/tmp/fake")):
                 name = builder._create_agent_profile("fail", [], 0.0)
                 assert name is None
@@ -193,7 +191,7 @@ class TestAgentBuilderCreateProfile:
 
     def test_create_agent_profile_slug_generation(self, builder):
         """Test genera slug valido desde dominio complejo."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp:  # noqa: SIM117
             with patch("harness.evolve_loop.agent_builder.AUTO_AGENTS_DIR", Path(tmp)):
                 lessons = [_make_lesson("Mi Dominio Muy Largo!!!", score=0.9)]
                 name = builder._create_agent_profile("Mi Dominio Muy Largo!!!", lessons, 0.9)
@@ -202,7 +200,7 @@ class TestAgentBuilderCreateProfile:
 
     def test_create_agent_profile_empty_slug(self, builder):
         """Test genera slug por defecto si el dominio produce nombre vacio."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp:  # noqa: SIM117
             with patch("harness.evolve_loop.agent_builder.AUTO_AGENTS_DIR", Path(tmp)):
                 lessons = [_make_lesson("!!!", score=0.7)]
                 name = builder._create_agent_profile("!!!", lessons, 0.7)
@@ -226,17 +224,17 @@ class TestAgentBuilderBuildAgents:
                 "asi_cognition_store", dummy.reshape(1, -1),
                 [_make_lesson("trading", score=0.85)],
             )
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp:  # noqa: SIM117
             with patch("harness.evolve_loop.agent_builder.AUTO_AGENTS_DIR", Path(tmp)):
                 result = builder.build_agents_from_cognition()
                 assert result == []
 
     def test_build_with_sufficient_lessons_via_mock(self, builder):
         """Test build_agents_from_cognition funciona con dominio que tiene menos de MIN_SUCCESSFUL_TASKS."""
-        # Solo 1 lesson por dominio → salta avg_score (evita typo bug) y retorna []
+        # Solo 1 lesson por dominio â†’ salta avg_score (evita typo bug) y retorna []
         lessons = [_make_lesson("trading", score=0.85)]
         groups = {"trading": lessons}
-        with patch.object(builder, "_fetch_lessons", return_value=lessons):
+        with patch.object(builder, "_fetch_lessons", return_value=lessons):  # noqa: SIM117
             with patch.object(builder, "_group_by_domain", return_value=groups):
                 with tempfile.TemporaryDirectory() as tmp:
                     with patch("harness.evolve_loop.agent_builder.AUTO_AGENTS_DIR", Path(tmp)):
@@ -252,23 +250,23 @@ class TestAgentBuilderBuildAgents:
                 "asi_cognition_store", dummy.reshape(1, -1),
                 [_make_lesson("trading", score=MIN_AVG_SCORE - 0.1)],
             )
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp:  # noqa: SIM117
             with patch("harness.evolve_loop.agent_builder.AUTO_AGENTS_DIR", Path(tmp)):
                 result = builder.build_agents_from_cognition()
                 assert result == []
 
     def test_build_domain_lessones_typo_bug(self, builder, mock_store):
-        """Test documenta bug: NameError por typo 'domain_lessones' (linea 99)."""
+        """Test verifica que el typo 'domain_lessones' fue corregido."""
         dummy = np.zeros(384, dtype=np.float32)
         for _ in range(MIN_SUCCESSFUL_TASKS):
             mock_store.insert(
                 "asi_cognition_store", dummy.reshape(1, -1),
                 [_make_lesson("trading", score=0.85)],
             )
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp:  # noqa: SIM117
             with patch("harness.evolve_loop.agent_builder.AUTO_AGENTS_DIR", Path(tmp)):
-                with pytest.raises(NameError, match="domain_lessones"):
-                    builder.build_agents_from_cognition()
+                result = builder.build_agents_from_cognition()
+                assert isinstance(result, list)  # No lanza NameError
 
     def test_build_get_stats(self, builder):
         """Test get_stats retorna snapshot inmutable."""
@@ -312,7 +310,7 @@ class TestAgentPrunerPrune:
 
     def test_prune_no_agents(self, pruner):
         """Test retorna [] cuando el directorio auto esta vacio."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp:  # noqa: SIM117
             with patch("harness.evolve_loop.agent_builder.AUTO_AGENTS_DIR", Path(tmp)):
                 result = pruner.prune_underperforming()
                 assert result == []
@@ -401,7 +399,7 @@ class TestRunAgentEvolution:
         store = MockVectorStore()
         store.create_collection("asi_cognition_store")
         store.create_collection("agent_workspace_logs")
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp:  # noqa: SIM117
             with patch("harness.evolve_loop.agent_builder.AUTO_AGENTS_DIR", Path(tmp)):
                 with patch("harness.evolve_loop.agent_builder.LanceVectorStore", return_value=store):
                     result = run_agent_evolution(dry_run=True)

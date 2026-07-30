@@ -19,12 +19,11 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Dict
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
-TEMPLATES: Dict[str, Dict] = {
+TEMPLATES: dict[str, dict] = {
     "rust-cli": {
         "desc": "Rust CLI tool with clap",
         "ext": "rs",
@@ -230,7 +229,7 @@ def cmd_list() -> None:
     """List available templates."""
     print("Available templates:")
     for name, tmpl in sorted(TEMPLATES.items()):
-        print("  %-20s %s" % (name, tmpl["desc"]))
+        print(f"  {name:<20s} {tmpl['desc']}")
 
 
 def cmd_generate(args: argparse.Namespace) -> None:

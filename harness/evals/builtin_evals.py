@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 builtin_evals — Evaluaciones incorporadas para las 7 capas del stack Swarmind.
 
@@ -19,23 +18,22 @@ from __future__ import annotations
 import logging
 import random
 from datetime import datetime, timezone
-from typing import Any, Dict, List
 
+from harness.evals.eval_agent import (
+    eval_agent_completion,
+    eval_agent_tool_usage,
+)
 from harness.evals.eval_factory import EvalResult, register_layer_evals
 
 # Re-exportar funciones de modulos especializados
 from harness.evals.eval_llm import (
     eval_llm_accuracy,
-    eval_llm_latency,
     eval_llm_cost,
+    eval_llm_latency,
 )
 from harness.evals.eval_rag import (
-    eval_rag_recall,
     eval_rag_faithfulness,
-)
-from harness.evals.eval_agent import (
-    eval_agent_completion,
-    eval_agent_tool_usage,
+    eval_rag_recall,
 )
 
 logger = logging.getLogger(__name__)
@@ -49,7 +47,7 @@ _random = random.Random(_SEED)
 # ---------------------------------------------------------------------------
 # Umbrales por defecto por capa y metrica
 # ---------------------------------------------------------------------------
-_DEFAULT_THRESHOLDS: Dict[str, Dict[str, float]] = {
+_DEFAULT_THRESHOLDS: dict[str, dict[str, float]] = {
     "vectordb": {"recall@k": 0.75, "latency": 0.5, "index_quality": 0.80},
     "mcp": {"availability": 0.95, "latency": 1.0, "error_rate": 0.05},
     "guardrails": {"detection_rate": 0.90, "false_positive": 0.10},
@@ -61,7 +59,7 @@ _DEFAULT_THRESHOLDS: Dict[str, Dict[str, float]] = {
 # ---------------------------------------------------------------------------
 
 
-def eval_vectordb_recall() -> List[EvalResult]:
+def eval_vectordb_recall() -> list[EvalResult]:
     """Evalua recall@k del indice vectorial.
 
     Simula busquedas de vectores cercanos en un espacio de 384 dimensiones
@@ -74,7 +72,7 @@ def eval_vectordb_recall() -> List[EvalResult]:
     _K_VALUES = [5, 10]
     _VECTOR_DIM = 384
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
 
     for k in _K_VALUES:
         try:
@@ -106,17 +104,17 @@ def eval_vectordb_recall() -> List[EvalResult]:
             )
             results.append(result)
 
-        except Exception as exc:
+        except Exception:
             logger.exception(
-                "[builtin_evals] Error simulando recall@k para k=%d: %s. "
+                "[builtin_evals] Error simulando recall@k para k=%d. "
                 "WHERE: eval_vectordb_recall() | WHAT: fallo en simulacion | WHY: excepcion.",
-                k, exc,
+                k,
             )
 
     return results
 
 
-def eval_vectordb_latency() -> List[EvalResult]:
+def eval_vectordb_latency() -> list[EvalResult]:
     """Mide latencia de busqueda en la base de datos vectorial.
 
     Simula tiempos de busqueda ANN (Approximate Nearest Neighbors)
@@ -128,7 +126,7 @@ def eval_vectordb_latency() -> List[EvalResult]:
     _INDEX_SIZES = [1000, 10000, 100000]
     _LATENCY_BASE = {"1000": 0.005, "10000": 0.015, "100000": 0.050}
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
 
     for size in _INDEX_SIZES:
         try:
@@ -149,11 +147,11 @@ def eval_vectordb_latency() -> List[EvalResult]:
             )
             results.append(result)
 
-        except Exception as exc:
+        except Exception:
             logger.exception(
-                "[builtin_evals] Error simulando latencia vectordb para tamano %d: %s. "
+                "[builtin_evals] Error simulando latencia vectordb para tamano %d. "
                 "WHERE: eval_vectordb_latency() | WHAT: fallo | WHY: excepcion.",
-                size, exc,
+                size,
             )
 
     return results
@@ -164,7 +162,7 @@ def eval_vectordb_latency() -> List[EvalResult]:
 # ---------------------------------------------------------------------------
 
 
-def eval_mcp_availability() -> List[EvalResult]:
+def eval_mcp_availability() -> list[EvalResult]:
     """Mide la disponibilidad de herramientas MCP.
 
     Simula el estado de conexion con servidores MCP y verifica
@@ -179,7 +177,7 @@ def eval_mcp_availability() -> List[EvalResult]:
         {"name": "code_executor", "uptime": 0.95},
     ]
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
     total_available = 0.0
 
     for server in _MCP_SERVERS:
@@ -204,11 +202,11 @@ def eval_mcp_availability() -> List[EvalResult]:
             )
             results.append(result)
 
-        except Exception as exc:
+        except Exception:
             logger.exception(
-                "[builtin_evals] Error simulando disponibilidad MCP para '%s': %s. "
+                "[builtin_evals] Error simulando disponibilidad MCP para '%s'. "
                 "WHERE: eval_mcp_availability() | WHAT: fallo | WHY: excepcion.",
-                server.get("name", "?"), exc,
+                server.get("name", "?"),
             )
 
     # Promedio global
@@ -233,7 +231,7 @@ def eval_mcp_availability() -> List[EvalResult]:
 # ---------------------------------------------------------------------------
 
 
-def eval_guardrails_detection() -> List[EvalResult]:
+def eval_guardrails_detection() -> list[EvalResult]:
     """Mide la tasa de deteccion y falsos positivos de los guardrails.
 
     Simula entradas maliciosas y benignas para verificar que los
@@ -246,7 +244,7 @@ def eval_guardrails_detection() -> List[EvalResult]:
     _N_MALICIOUS = 30
     _N_BENIGN = 50
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
 
     try:
         detected = sum(1 for _ in range(_N_MALICIOUS) if _random.random() < 0.88)
@@ -285,11 +283,10 @@ def eval_guardrails_detection() -> List[EvalResult]:
             detection_rate * 100, false_positive_rate * 100,
         )
 
-    except Exception as exc:
+    except Exception:
         logger.exception(
-            "[builtin_evals] Error simulando guardrails: %s. "
+            "[builtin_evals] Error simulando guardrails. "
             "WHERE: eval_guardrails_detection() | WHAT: fallo en simulacion | WHY: excepcion.",
-            exc,
         )
 
     return results
@@ -300,7 +297,7 @@ def eval_guardrails_detection() -> List[EvalResult]:
 # ---------------------------------------------------------------------------
 
 
-def eval_integration_e2e() -> List[EvalResult]:
+def eval_integration_e2e() -> list[EvalResult]:
     """Mide la latencia y tasa de exito de flujos end-to-end.
 
     Simula pipelines completos que atraviesan multiples capas del stack
@@ -312,7 +309,7 @@ def eval_integration_e2e() -> List[EvalResult]:
     """
     _N_PIPELINES = 10
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
 
     try:
         total_latency = 0.0
@@ -357,11 +354,10 @@ def eval_integration_e2e() -> List[EvalResult]:
             },
         ))
 
-    except Exception as exc:
+    except Exception:
         logger.exception(
-            "[builtin_evals] Error simulando integracion e2e: %s. "
+            "[builtin_evals] Error simulando integracion e2e. "
             "WHERE: eval_integration_e2e() | WHAT: fallo en pipeline | WHY: excepcion.",
-            exc,
         )
 
     return results

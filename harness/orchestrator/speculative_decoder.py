@@ -1,4 +1,4 @@
-"""SpeculativeDecoder — Decodificacion especulativa para acelerar generacion LLM.
+﻿"""SpeculativeDecoder â€” Decodificacion especulativa para acelerar generacion LLM.
 
 Usa un modelo pequeno (drafter) para generar candidatos y un modelo grande
 (verifier) para validarlos en paralelo, logrando 2-5x speedup.
@@ -18,9 +18,10 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -94,9 +95,9 @@ class SpeculativeDecoder:
 
     def __init__(
         self,
-        draft_fn: Callable[[str, int], List[str]],
-        verify_fn: Callable[[str, List[str]], List[bool]],
-        config: Optional[SpeculativeConfig] = None,
+        draft_fn: Callable[[str, int], list[str]],
+        verify_fn: Callable[[str, list[str]], list[bool]],
+        config: SpeculativeConfig | None = None,
     ) -> None:
         """Inicializa el decodificador.
 
@@ -105,12 +106,12 @@ class SpeculativeDecoder:
             verify_fn: Funcion (prompt, candidatos) -> lista de booleanos.
             config: Configuracion con parametros de costo.
         """
-        self._draft_fn: Callable[[str, int], List[str]] = draft_fn
-        self._verify_fn: Callable[[str, List[str]], List[bool]] = verify_fn
+        self._draft_fn: Callable[[str, int], list[str]] = draft_fn
+        self._verify_fn: Callable[[str, list[str]], list[bool]] = verify_fn
         self._config: SpeculativeConfig = config or SpeculativeConfig()
         self._draft_cost_ms: float = 1.0   # ms por token drafteado
         self._verify_cost_ms: float = 3.0  # ms por token verificado
-        self._stats: Dict[str, int] = {
+        self._stats: dict[str, int] = {
             "total_calls": 0,
             "total_tokens_drafted": 0,
             "total_tokens_accepted": 0,
@@ -121,7 +122,7 @@ class SpeculativeDecoder:
             self._config.n_draft, self._config.strategy.name,
         )
 
-    def _draft_tokens(self, prompt: str, n: int) -> List[str]:
+    def _draft_tokens(self, prompt: str, n: int) -> list[str]:
         """Genera tokens candidatos usando el drafter.
 
         Args:
@@ -133,7 +134,7 @@ class SpeculativeDecoder:
         """
         try:
             return self._draft_fn(prompt, n)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error(
                 "[SpecDecoder] Error en drafter: %s. "
                 "WHY: fallo en generacion de candidatos. WHERE: _draft_tokens.",
@@ -141,7 +142,7 @@ class SpeculativeDecoder:
             )
             return []
 
-    def _verify_tokens(self, prompt: str, candidates: List[str]) -> List[bool]:
+    def _verify_tokens(self, prompt: str, candidates: list[str]) -> list[bool]:
         """Verifica tokens candidatos usando el verifier.
 
         Args:
@@ -153,7 +154,7 @@ class SpeculativeDecoder:
         """
         try:
             return self._verify_fn(prompt, candidates)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error(
                 "[SpecDecoder] Error en verifier: %s. "
                 "WHY: fallo en verificacion. WHERE: _verify_tokens.",
@@ -163,8 +164,8 @@ class SpeculativeDecoder:
 
     def _accept_tokens(
         self,
-        candidates: List[str],
-        accepted: List[bool],
+        candidates: list[str],
+        accepted: list[bool],
     ) -> str:
         """Construye el siguiente prompt con tokens aceptados.
 
@@ -186,7 +187,7 @@ class SpeculativeDecoder:
     def generate(
         self,
         prompt: str,
-        config: Optional[SpeculativeConfig] = None,
+        config: SpeculativeConfig | None = None,
     ) -> SpeculativeResult:
         """Genera texto usando decodificacion especulativa.
 
@@ -204,12 +205,12 @@ class SpeculativeDecoder:
         total_accepted: int = 0
 
         for iteration in range(cfg.max_iterations):
-            candidates: List[str] = self._draft_tokens(current_prompt, cfg.n_draft)
+            candidates: list[str] = self._draft_tokens(current_prompt, cfg.n_draft)
             if not candidates:
                 break
 
             total_drafted += len(candidates)
-            accepted: List[bool] = self._verify_tokens(current_prompt, candidates)
+            accepted: list[bool] = self._verify_tokens(current_prompt, candidates)
             n_accept: int = sum(1 for a in accepted if a)
             total_accepted += n_accept
 
@@ -244,7 +245,7 @@ class SpeculativeDecoder:
         )
         return result
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Retora estadisticas del decodificador.
 
         Returns:

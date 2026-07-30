@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-Tests para HermesBridge (memory_rag/hermes_bridge.py) — puente de
-integración con shared_memory.
+﻿"""
+Tests para HermesBridge (memory_rag/hermes_bridge.py) â€” puente de
+integraciÃ³n con shared_memory.
 
-Cubre: inicialización, resolución de paths, propiedades, sincronización
+Cubre: inicializaciÃ³n, resoluciÃ³n de paths, propiedades, sincronizaciÃ³n
 (to/from/skills), acceso a servicios, status y edge cases.
 
 NOTA: Este test cubre el HermesBridge en memory_rag/, NO el de
@@ -14,12 +13,11 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from harness.memory_rag.hermes_bridge import HermesBridge
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -53,7 +51,7 @@ def hermes_bridge_available(tmp_path):
 
 @pytest.fixture
 def hermes_bridge_with_modules(hermes_bridge_available):
-    """HermesBridge con módulos mockeados."""
+    """HermesBridge con mÃ³dulos mockeados."""
     bridge = hermes_bridge_available
     bridge._hermes_modules = {
         "MemoryService": MagicMock(),
@@ -71,7 +69,7 @@ def hermes_bridge_with_modules(hermes_bridge_available):
 
 
 class TestInitialization:
-    """Tests de inicialización del bridge."""
+    """Tests de inicializaciÃ³n del bridge."""
 
     def test_init_not_available(self, hermes_bridge_no_path):
         """Sin path de Hermes, available debe ser False."""
@@ -79,7 +77,7 @@ class TestInitialization:
         assert hermes_bridge_no_path.path is None
 
     def test_init_available(self, hermes_bridge_available):
-        """Con path válido, available debe ser True."""
+        """Con path vÃ¡lido, available debe ser True."""
         assert hermes_bridge_available.available
 
     def test_init_custom_path(self, tmp_path):
@@ -91,19 +89,19 @@ class TestInitialization:
         assert bridge.path == str(custom)
 
     def test_init_auto_import_true(self, tmp_path):
-        """Con auto_import=True, debe intentar importar módulos."""
+        """Con auto_import=True, debe intentar importar mÃ³dulos."""
         hermes_dir = tmp_path / "Hermes"
         hermes_dir.mkdir()
         with patch.object(HermesBridge, "_try_import_hermes_modules") as mock_import:
-            bridge = HermesBridge(hermes_path=str(hermes_dir), auto_import=True)
+            HermesBridge(hermes_path=str(hermes_dir), auto_import=True)
             mock_import.assert_called_once()
 
     def test_init_auto_import_false(self, tmp_path):
-        """Con auto_import=False, no debe importar módulos."""
+        """Con auto_import=False, no debe importar mÃ³dulos."""
         hermes_dir = tmp_path / "Hermes"
         hermes_dir.mkdir()
         with patch.object(HermesBridge, "_try_import_hermes_modules") as mock_import:
-            bridge = HermesBridge(hermes_path=str(hermes_dir), auto_import=False)
+            HermesBridge(hermes_path=str(hermes_dir), auto_import=False)
             mock_import.assert_not_called()
 
 
@@ -113,7 +111,7 @@ class TestInitialization:
 
 
 class TestResolvePath:
-    """Tests para la resolución del path de Hermes."""
+    """Tests para la resoluciÃ³n del path de Hermes."""
 
     def test_resolve_custom_path(self):
         """Con path personalizado, debe retornarlo."""
@@ -124,9 +122,9 @@ class TestResolvePath:
         """Variable de entorno HERMES_PATH debe tener prioridad."""
         monkeypatch.setenv("HERMES_PATH", "/env/hermes")
         # Como /env/hermes no existe, _resolve_hermes_path sigue buscando
-        # en otras ubicaciones. Verificamos que intentó usar la env var.
+        # en otras ubicaciones. Verificamos que intentÃ³ usar la env var.
         result = HermesBridge._resolve_hermes_path()
-        # La función puede encontrar el directorio real del usuario; aceptamos
+        # La funciÃ³n puede encontrar el directorio real del usuario; aceptamos
         # cualquier resultado que no lance error.
         assert result is None or isinstance(result, str)
 
@@ -139,7 +137,7 @@ class TestResolvePath:
         assert result == str(hermes_dir)
 
     def test_resolve_returns_none_when_not_found(self):
-        """Si no encuentra ningún path, debe retornar None."""
+        """Si no encuentra ningÃºn path, debe retornar None."""
         with patch("harness.memory_rag.hermes_bridge.Path.exists") as mock_exists:
             mock_exists.return_value = False
             result = HermesBridge._resolve_hermes_path()
@@ -177,11 +175,11 @@ class TestProperties:
         assert hermes_bridge_no_path.brain_path is None
 
     def test_has_memory_service_true(self, hermes_bridge_with_modules):
-        """has_memory_service debe ser True si MemoryService está cargado."""
+        """has_memory_service debe ser True si MemoryService estÃ¡ cargado."""
         assert hermes_bridge_with_modules.has_memory_service
 
     def test_has_memory_service_false(self, hermes_bridge_no_path):
-        """has_memory_service debe ser False si no hay módulos."""
+        """has_memory_service debe ser False si no hay mÃ³dulos."""
         assert not hermes_bridge_no_path.has_memory_service
 
 
@@ -191,7 +189,7 @@ class TestProperties:
 
 
 class TestSyncToHermes:
-    """Tests para sincronización Swarmind → Hermes."""
+    """Tests para sincronizaciÃ³n Swarmind â†’ Hermes."""
 
     def test_sync_to_hermes_not_available(self, hermes_bridge_no_path, caplog):
         """Sin disponibilidad, sync_to_hermes debe retornar 0."""
@@ -228,7 +226,7 @@ class TestSyncToHermes:
         assert data["data"] == "hello"
 
     def test_sync_to_hermes_empty_records(self, hermes_bridge_available):
-        """Lista vacía de records debe retornar 0."""
+        """Lista vacÃ­a de records debe retornar 0."""
         count = hermes_bridge_available.sync_to_hermes([])
         assert count == 0
 
@@ -255,7 +253,7 @@ class TestSyncToHermes:
 
 
 class TestSyncFromHermes:
-    """Tests para sincronización Hermes → Swarmind."""
+    """Tests para sincronizaciÃ³n Hermes â†’ Swarmind."""
 
     def test_sync_from_hermes_not_available(self, hermes_bridge_no_path):
         """Sin disponibilidad, sync_from_hermes debe retornar []."""
@@ -287,7 +285,7 @@ class TestSyncFromHermes:
         assert result == []
 
     def test_sync_from_hermes_empty_dir(self, hermes_bridge_available):
-        """Directorio vacío debe retornar []."""
+        """Directorio vacÃ­o debe retornar []."""
         result = hermes_bridge_available.sync_from_hermes()
         assert result == []
 
@@ -301,7 +299,7 @@ class TestSyncFromHermes:
         assert any("Error reading" in msg for msg in caplog.messages)
 
     def test_sync_from_hermes_pattern(self, hermes_bridge_available):
-        """Patrón glob debe filtrar archivos."""
+        """PatrÃ³n glob debe filtrar archivos."""
         knowledge_dir = Path(hermes_bridge_available.path) / "knowledge" / "Swarmind_bridge"
         with open(knowledge_dir / "record1.json", "w", encoding="utf-8") as f:
             json.dump({"key": "r1"}, f)
@@ -320,7 +318,7 @@ class TestSyncFromHermes:
 
 
 class TestSyncSkills:
-    """Tests para sincronización de skills."""
+    """Tests para sincronizaciÃ³n de skills."""
 
     def test_sync_skills_not_available(self, hermes_bridge_no_path):
         """Sin disponibilidad, debe retornar 0."""
@@ -417,18 +415,18 @@ class TestGetStatus:
         assert "modules_loaded" in status
 
     def test_get_status_available_true(self, hermes_bridge_available):
-        """Cuando está disponible, el status debe reflejarlo."""
+        """Cuando estÃ¡ disponible, el status debe reflejarlo."""
         status = hermes_bridge_available.get_status()
         assert status["available"] is True
 
     def test_get_status_available_false(self, hermes_bridge_no_path):
-        """Cuando no está disponible, el status debe reflejarlo."""
+        """Cuando no estÃ¡ disponible, el status debe reflejarlo."""
         status = hermes_bridge_no_path.get_status()
         assert status["available"] is False
         assert status["path"] is None
 
     def test_get_status_modules_loaded(self, hermes_bridge_with_modules):
-        """modules_loaded debe listar los módulos cargados."""
+        """modules_loaded debe listar los mÃ³dulos cargados."""
         status = hermes_bridge_with_modules.get_status()
         assert "MemoryService" in status["modules_loaded"]
 
@@ -439,7 +437,7 @@ class TestGetStatus:
 
 
 class TestImportModules:
-    """Tests para la importación de módulos de Hermes."""
+    """Tests para la importaciÃ³n de mÃ³dulos de Hermes."""
 
     def test_import_no_path(self, hermes_bridge_no_path):
         """Sin path, _try_import_hermes_modules no debe hacer nada."""
@@ -447,7 +445,7 @@ class TestImportModules:
         assert hermes_bridge_no_path._hermes_modules == {}
 
     def test_import_modules_populated(self, hermes_bridge_with_modules):
-        """Importación exitosa debe poblar _hermes_modules."""
+        """ImportaciÃ³n exitosa debe poblar _hermes_modules."""
         bridge = hermes_bridge_with_modules
         assert "MemoryService" in bridge._hermes_modules
         assert "QualityService" in bridge._hermes_modules
@@ -459,13 +457,13 @@ class TestImportModules:
         hermes_dir.mkdir()
         bridge = HermesBridge(hermes_path=str(hermes_dir), auto_import=False)
 
-        # Simular que el path existe pero los módulos no
-        with patch.object(bridge, "_hermes_path", tmp_path / "Hermes"):
-            # Limpiar sys.path para que no encuentre los módulos
+        # Simular que el path existe pero los mÃ³dulos no
+        with patch.object(bridge, "_hermes_path", tmp_path / "Hermes"):  # noqa: SIM117
+            # Limpiar sys.path para que no encuentre los mÃ³dulos
             with patch("harness.memory_rag.hermes_bridge.sys.path", []):
                 with caplog.at_level(logging.WARNING):
                     bridge._try_import_hermes_modules()
-                # Debe loguear el error sin lanzar excepción
+                # Debe loguear el error sin lanzar excepciÃ³n
                 assert bridge._hermes_modules == {}
 
 
@@ -503,7 +501,7 @@ class TestEdgeCases:
         assert "/" not in files[0].name
 
     def test_initialization_logging(self, tmp_path, caplog):
-        """Debe loguear información de inicialización."""
+        """Debe loguear informaciÃ³n de inicializaciÃ³n."""
         hermes_dir = tmp_path / "Hermes"
         hermes_dir.mkdir()
         with caplog.at_level(logging.INFO):
@@ -511,7 +509,7 @@ class TestEdgeCases:
         assert any("HermesBridge initialized" in msg for msg in caplog.messages)
 
     def test_not_available_logging(self, tmp_path, caplog):
-        """Sin path, debe loguear que no se encontró."""
+        """Sin path, debe loguear que no se encontrÃ³."""
         with patch("harness.memory_rag.hermes_bridge.Path.exists") as mock_exists:
             mock_exists.return_value = False
             with caplog.at_level(logging.INFO):

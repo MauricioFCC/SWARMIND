@@ -22,14 +22,13 @@ Usage:
 
 from __future__ import annotations
 
-import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
-from harness.orchestrator.skill_bundler import SkillBundler, AgentConfig as BundledAgent
+from harness.orchestrator.skill_bundler import SkillBundler
 
 logger = logging.getLogger(__name__)
 
@@ -99,12 +98,12 @@ class CreativeWorktable:
         result = cw.integration_phase(selected)
     """
 
-    def __init__(self, config: Optional[CreativeConfig] = None):
+    def __init__(self, config: CreativeConfig | None = None):
         self.config = config or CreativeConfig()
-        self._ideas: List[CreativeIdea] = []
+        self._ideas: list[CreativeIdea] = []
         self._round = 0
 
-    def divergent_phase(self, topic: str, agents: Optional[List[str]] = None) -> List[CreativeIdea]:
+    def divergent_phase(self, topic: str, agents: list[str] | None = None) -> list[CreativeIdea]:
         """
         Fase divergente: generar N ideas libremente, sin restricciones.
 
@@ -138,9 +137,9 @@ class CreativeWorktable:
 
     def convergent_phase(
         self,
-        ideas: List[CreativeIdea],
-        constraints: Optional[List[str]] = None,
-    ) -> List[CreativeIdea]:
+        ideas: list[CreativeIdea],
+        constraints: list[str] | None = None,
+    ) -> list[CreativeIdea]:
         """
         Fase convergente: seleccionar ideas bajo restricciones.
 
@@ -167,7 +166,7 @@ class CreativeWorktable:
         selected = [i for i in scored if i.selected]
         return selected
 
-    def integration_phase(self, ideas: List[CreativeIdea]) -> str:
+    def integration_phase(self, ideas: list[CreativeIdea]) -> str:
         """
         Fase de integracion: combinar ideas seleccionadas en una propuesta final.
 
@@ -213,8 +212,8 @@ class AgentPosition:
     """
     agent_name: str
     stance: str = "neutral"
-    arguments: List[str] = field(default_factory=list)
-    concerns: List[str] = field(default_factory=list)
+    arguments: list[str] = field(default_factory=list)
+    concerns: list[str] = field(default_factory=list)
     vote: str = "abstencion"
 
 
@@ -233,11 +232,11 @@ class Compendium:
         rounds: Numero de rondas realizadas.
     """
     summary: str = ""
-    agreements: List[str] = field(default_factory=list)
-    trade_offs: List[Dict[str, str]] = field(default_factory=list)
-    rejected: List[str] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
-    participants: List[str] = field(default_factory=list)
+    agreements: list[str] = field(default_factory=list)
+    trade_offs: list[dict[str, str]] = field(default_factory=list)
+    rejected: list[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
+    participants: list[str] = field(default_factory=list)
     rounds: int = 0
 
 
@@ -245,7 +244,7 @@ class Compendium:
 # Expertos disponibles (cada uno es un skill/principio)
 # ---------------------------------------------------------------------------
 
-AGENT_PROFILES: Dict[str, Dict[str, Any]] = {
+AGENT_PROFILES: dict[str, dict[str, Any]] = {
     "soc": {
         "name": "Separation of Concerns",
         "abbr": "SoC",
@@ -409,22 +408,22 @@ class Worktable:
         print(compendio.summary)
     """
 
-    def __init__(self, dispatch_fn: Optional[Callable] = None) -> None:
+    def __init__(self, dispatch_fn: Callable | None = None) -> None:
         """
         Args:
             dispatch_fn: Funcion para obtener respuestas de agentes.
                 Si es None, usa respuestas simuladas (modo offline).
         """
         self._dispatch = dispatch_fn or self._mock_dispatch
-        self._positions: Dict[str, AgentPosition] = {}
+        self._positions: dict[str, AgentPosition] = {}
         self._round = 0
-        self._log: List[Dict[str, Any]] = []
+        self._log: list[dict[str, Any]] = []
 
     def compose_agents(
         self,
         topic: str,
-        available_agents: Optional[List[str]] = None,
-    ) -> List[Dict[str, Any]]:
+        available_agents: list[str] | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Componer agentes dinamicamente usando SkillBundler (SIGMA pattern).
 
@@ -487,7 +486,7 @@ class Worktable:
     def debate(
         self,
         topic: str,
-        agents: Optional[List[str]] = None,
+        agents: list[str] | None = None,
         rounds: int = 3,
         use_bundler: bool = False,
         creative_mode: bool = False,
@@ -613,7 +612,7 @@ class Worktable:
     def _generate_compendium(
         self,
         topic: str,
-        agents: List[str],
+        agents: list[str],
     ) -> Compendium:
         """Generar compendio final a partir de las posiciones de los agentes."""
         comp = Compendium(
@@ -675,7 +674,7 @@ class Worktable:
         
         return comp
 
-    def _creative_debate(self, topic: str, agents: Optional[List[str]] = None) -> Compendium:
+    def _creative_debate(self, topic: str, agents: list[str] | None = None) -> Compendium:
         """
         Debate en modo creativo usando pipeline divergente→convergente (ReDNA).
 
@@ -703,7 +702,7 @@ class Worktable:
             agreements=[f"{len(selected)} ideas seleccionadas de {len(ideas)} generadas"],
             trade_offs=[{"from": "Creatividad", "concern": "Novedad vs Factibilidad"}],
             recommendations=["Ejecutar segunda iteracion si es necesario"],
-            participants=list(set(i.agent for i in ideas)),
+            participants=list({i.agent for i in ideas}),
             rounds=3,
         )
 
@@ -712,10 +711,10 @@ class Worktable:
         agent: str,
         topic: str,
         round_type: DebateRound,
-        profile: Dict[str, Any],
-        positions: Optional[Dict[str, AgentPosition]] = None,
-        other_agents: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        profile: dict[str, Any],
+        positions: dict[str, AgentPosition] | None = None,
+        other_agents: list[str] | None = None,
+    ) -> dict[str, Any]:
         """Dispatch simulado para modo offline."""
         bias = profile.get("bias", "")
         questions = profile.get("questions", [])
@@ -744,7 +743,7 @@ class Worktable:
                 "vote": "aceptar" if len(agent) % 2 == 0 else "rechazar",
             }
 
-    def get_log(self) -> List[Dict[str, Any]]:
+    def get_log(self) -> list[dict[str, Any]]:
         """
         Obtener el log completo del debate.
         
@@ -753,7 +752,7 @@ class Worktable:
         """
         return list(self._log)
 
-    def get_positions(self) -> Dict[str, AgentPosition]:
+    def get_positions(self) -> dict[str, AgentPosition]:
         """Obtener posiciones actuales de los agentes."""
         return self._positions
 
@@ -781,7 +780,7 @@ class EpicMode:
             max_iterations: Maximo de iteraciones Plan->Execute->Review.
         """
         self._max_iterations = max_iterations
-        self._artifacts: List[Dict[str, Any]] = []
+        self._artifacts: list[dict[str, Any]] = []
 
     def run(self, topic: str) -> Compendium:
         """

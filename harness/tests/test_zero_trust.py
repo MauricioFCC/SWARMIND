@@ -10,20 +10,17 @@ Cubre:
 from __future__ import annotations
 
 import time
-from typing import Dict, Set
 
 import pytest
 
 from harness.security.zero_trust import (
     AgentIdentity,
     AgentRole,
-    AgentToken,
     PolicyEngine,
     TokenManager,
     ZeroTrustConfig,
     verify_agent_identity,
 )
-
 
 # ============================================================================
 # Tests: TokenManager
@@ -156,14 +153,14 @@ class TestPolicyEngine:
 
     def test_role_permissions(self) -> None:
         """Permisos por rol deben funcionar."""
-        perms: Set[str] = {"docs/adr:read", "harness/src:write"}
+        perms: set[str] = {"docs/adr:read", "harness/src:write"}
         self.engine.set_role_permissions(AgentRole.COORDINATOR, perms)
         assert self.engine.check_access("docs/adr", "read", role=AgentRole.COORDINATOR) is True
         assert self.engine.check_access("docs/adr", "write", role=AgentRole.COORDINATOR) is False
 
     def test_get_role_permissions(self) -> None:
         """get_role_permissions debe retornar los permisos."""
-        perms: Set[str] = {"resource:action"}
+        perms: set[str] = {"resource:action"}
         self.engine.set_role_permissions(AgentRole.BUILDER, perms)
         assert self.engine.get_role_permissions(AgentRole.BUILDER) == perms
 

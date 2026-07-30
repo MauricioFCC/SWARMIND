@@ -12,13 +12,17 @@ from __future__ import annotations
 
 import os
 import tempfile
+from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Dict, Generator, List
 
 import pytest
 
-from harness.orchestrator.ide_adapter import IDEAdapter, SUPPORTED_IDES
-from harness.orchestrator.multi_harness import HarnessConverter, RuntimeInfo, detect_runtime
+from harness.orchestrator.ide_adapter import IDEAdapter
+from harness.orchestrator.multi_harness import (
+    HarnessConverter,
+    RuntimeInfo,
+    detect_runtime,
+)
 from harness.orchestrator.multi_harness.adapters import (
     ClaudeAdapter,
     CodexAdapter,
@@ -32,12 +36,10 @@ from harness.orchestrator.multi_harness.cli.multi_harness_cli import (
     cmd_status,
     cmd_validate,
 )
-from harness.orchestrator.multi_harness.converter_base import ExportResult
 from harness.orchestrator.multi_harness.runtime_detector import (
     RUNTIME_REGISTRY,
     get_detected_runtimes,
 )
-
 
 # ============================================================================
 # Fixtures

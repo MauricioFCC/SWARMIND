@@ -1,4 +1,4 @@
-"""FederatedVectorSearch — Busqueda vectorial federada multi-backend.
+﻿"""FederatedVectorSearch â€” Busqueda vectorial federada multi-backend.
 
 Realiza busqueda en paralelo sobre LanceDB, ChromaDB y Qdrant,
 fusiona resultados con re-ranking por puntuacion y diversidad.
@@ -23,11 +23,11 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
+from typing_extensions import Self
 
-from harness.common import EMPTY_VECTOR, fallback_embedding
 from harness.memory_rag.vector_store_adapter import (
     SearchResult,
     VectorStoreAdapter,
@@ -67,9 +67,9 @@ class FederatedResult:
     """
     id: str
     score: float
-    payload: Dict[str, Any] = field(default_factory=dict)
+    payload: dict[str, Any] = field(default_factory=dict)
     backend: str = ""
-    vector: Optional[List[float]] = None
+    vector: list[float] | None = None
 
 
 @dataclass
@@ -123,7 +123,7 @@ class FederatedVectorSearch:
 
     def __init__(
         self,
-        backends: Optional[Dict[str, VectorStoreAdapter]] = None,
+        backends: dict[str, VectorStoreAdapter] | None = None,
         mmr_lambda: float = DEFAULT_MMR_LAMBDA,
         cache_max_size: int = DEFAULT_CACHE_MAX_SIZE,
         cache_ttl: float = DEFAULT_CACHE_TTL_SEC,
@@ -159,7 +159,7 @@ class FederatedVectorSearch:
         self._detect_collapse()
 
         # Inicializar backends
-        self._backends: Dict[str, VectorStoreAdapter] = {}
+        self._backends: dict[str, VectorStoreAdapter] = {}
         self._init_backends(backends)
 
         # Cache de resultados recientes
@@ -175,7 +175,7 @@ class FederatedVectorSearch:
         )
 
         # Estadisticas acumuladas
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "total_requests": 0,
             "cache_hits": 0,
             "cache_misses": 0,
@@ -232,7 +232,7 @@ class FederatedVectorSearch:
         return self._collapse_backends
 
     def _init_backends(
-        self, backends: Optional[Dict[str, VectorStoreAdapter]]
+        self, backends: dict[str, VectorStoreAdapter] | None
     ) -> None:
         """Inicializa los backends, creando los por defecto si es necesario.
 
@@ -285,7 +285,7 @@ class FederatedVectorSearch:
         Si un backend falla al crear, se omite con un warning.
         """
         if self._collapse_backends:
-            configs: List[Tuple[str, str, Dict[str, Any]]] = [
+            configs: list[tuple[str, str, dict[str, Any]]] = [
                 ("lancedb", "lancedb", {"db_path": "data/lancedb"}),
             ]
             logger.info(
@@ -306,7 +306,7 @@ class FederatedVectorSearch:
                     "Backend por defecto creado: %s (%s)",
                     name, backend_type,
                 )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning(
                     "No se pudo crear backend '%s' (%s): %s. "
                     "WHY: dependencia no instalada o fallo de conexion. "
@@ -321,14 +321,14 @@ class FederatedVectorSearch:
 
     def search(
         self,
-        vector: List[float],
+        vector: list[float],
         collection: str,
         top_k: int = 5,
-        top_k_per_backend: Optional[int] = None,
-        filters: Optional[Dict[str, Any]] = None,
+        top_k_per_backend: int | None = None,
+        filters: dict[str, Any] | None = None,
         use_mmr: bool = True,
-        mmr_lambda: Optional[float] = None,
-    ) -> List[FederatedResult]:
+        mmr_lambda: float | None = None,
+    ) -> list[FederatedResult]:
         """Busqueda vectorial federada con fusion y re-ranking.
 
         Dispara consultas en paralelo a todos los backends disponibles,
@@ -382,7 +382,7 @@ class FederatedVectorSearch:
         cache_key = self._make_cache_key(
             vector, collection, top_k, filters, use_mmr, effective_mmr_lambda,
         )
-        cached: Optional[List[FederatedResult]] = self._cache.get(cache_key)
+        cached: list[FederatedResult] | None = self._cache.get(cache_key)
         if cached is not None:
             self._stats["cache_hits"] += 1
             elapsed = (time.perf_counter() - start_time) * 1000
@@ -404,7 +404,7 @@ class FederatedVectorSearch:
             )
             return []
 
-        raw_results: List[FederatedResult] = []
+        raw_results: list[FederatedResult] = []
         futures = {}
 
         for name, adapter in self._backends.items():
@@ -428,7 +428,7 @@ class FederatedVectorSearch:
                     "Backend '%s' retorno %d resultados",
                     backend_name, len(backend_results),
                 )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.error(
                     "Fallo busqueda en backend '%s': %s. "
                     "WHY: error interno del adaptador o conexion. "
@@ -488,11 +488,11 @@ class FederatedVectorSearch:
         self,
         backend_name: str,
         adapter: VectorStoreAdapter,
-        vector: List[float],
+        vector: list[float],
         collection: str,
         top_k: int,
-        filters: Optional[Dict[str, Any]],
-    ) -> List[FederatedResult]:
+        filters: dict[str, Any] | None,
+    ) -> list[FederatedResult]:
         """Ejecuta busqueda en un backend y convierte resultados a FederatedResult.
 
         Args:
@@ -510,7 +510,7 @@ class FederatedVectorSearch:
             RuntimeError: Si falla la operacion en el backend.
         """
         try:
-            results: List[SearchResult] = adapter.search(
+            results: list[SearchResult] = adapter.search(
                 collection=collection,
                 vector=vector,
                 top_k=top_k,
@@ -524,7 +524,7 @@ class FederatedVectorSearch:
                 f"WHERE: FederatedVectorSearch._search_backend"
             ) from exc
 
-        federated: List[FederatedResult] = []
+        federated: list[FederatedResult] = []
         for r in results:
             federated.append(
                 FederatedResult(
@@ -542,7 +542,7 @@ class FederatedVectorSearch:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _normalize_scores(results: List[FederatedResult]) -> List[FederatedResult]:
+    def _normalize_scores(results: list[FederatedResult]) -> list[FederatedResult]:
         """Normaliza puntuaciones con min-max scaling independiente por backend.
 
         Cada backend puede tener escalas de puntuacion diferentes:
@@ -562,12 +562,12 @@ class FederatedVectorSearch:
             return results
 
         # Agrupar scores por backend
-        backend_scores: Dict[str, List[Tuple[int, float]]] = {}
+        backend_scores: dict[str, list[tuple[int, float]]] = {}
         for idx, r in enumerate(results):
             backend_scores.setdefault(r.backend, []).append((idx, r.score))
 
         # Crear copia para no mutar originales
-        normalized: List[FederatedResult] = []
+        normalized: list[FederatedResult] = []
         for r in results:
             normalized.append(
                 FederatedResult(
@@ -580,7 +580,7 @@ class FederatedVectorSearch:
             )
 
         # Aplicar min-max scaling por backend
-        for backend, scores in backend_scores.items():
+        for scores in backend_scores.values():
             values = [s[1] for s in scores]
             if not values:
                 continue
@@ -604,11 +604,11 @@ class FederatedVectorSearch:
 
     @staticmethod
     def _mmr_rerank(
-        results: List[FederatedResult],
-        query_vector: List[float],
+        results: list[FederatedResult],
+        query_vector: list[float],
         lambda_param: float,
         top_k: int,
-    ) -> List[FederatedResult]:
+    ) -> list[FederatedResult]:
         """Re-ranking por Maximum Marginal Relevance (MMR).
 
         Balancea relevancia contra diversidad seleccionando iterativamente
@@ -648,7 +648,7 @@ class FederatedVectorSearch:
         query_norm = query_np / (np.linalg.norm(query_np) + 1e-12)
 
         # Preparar vectores de items (con fallback)
-        item_vectors: List[Optional[np.ndarray]] = []
+        item_vectors: list[np.ndarray | None] = []
         for r in results:
             if r.vector is not None and len(r.vector) > 0:
                 v = np.array(r.vector, dtype=np.float64)
@@ -658,7 +658,7 @@ class FederatedVectorSearch:
                 item_vectors.append(None)
 
         # Pre-calcular similitud al query (relevancia)
-        relevance: List[float] = []
+        relevance: list[float] = []
         for r, vec in zip(results, item_vectors):
             if vec is not None:
                 rel = float(np.dot(vec, query_norm))
@@ -668,7 +668,7 @@ class FederatedVectorSearch:
             relevance.append(rel)
 
         # MMR greedy selection
-        selected_indices: List[int] = []
+        selected_indices: list[int] = []
         candidate_indices = set(range(len(results)))
 
         # Paso 1: seleccionar el item con mayor relevancia
@@ -691,8 +691,7 @@ class FederatedVectorSearch:
                     sim_ij = FederatedVectorSearch._item_similarity(
                         i, j, results, item_vectors,
                     )
-                    if sim_ij > max_sim:
-                        max_sim = sim_ij
+                    max_sim = max(max_sim, sim_ij)
 
                 mmr_score -= (1.0 - lambda_param) * max_sim
 
@@ -712,8 +711,8 @@ class FederatedVectorSearch:
     def _item_similarity(
         i: int,
         j: int,
-        results: List[FederatedResult],
-        item_vectors: List[Optional[np.ndarray]],
+        results: list[FederatedResult],
+        item_vectors: list[np.ndarray | None],
     ) -> float:
         """Calcula similitud entre dos items.
 
@@ -747,10 +746,10 @@ class FederatedVectorSearch:
 
     @staticmethod
     def _make_cache_key(
-        vector: List[float],
+        vector: list[float],
         collection: str,
         top_k: int,
-        filters: Optional[Dict[str, Any]],
+        filters: dict[str, Any] | None,
         use_mmr: bool,
         mmr_lambda: float,
     ) -> str:
@@ -778,7 +777,7 @@ class FederatedVectorSearch:
             + str(top_k).encode("utf-8")
             + filter_bytes
             + str(use_mmr).encode("utf-8")
-            + f"{mmr_lambda:.4f}".encode("utf-8")
+            + f"{mmr_lambda:.4f}".encode()
         )
         return hashlib.sha256(raw).hexdigest()
 
@@ -786,7 +785,7 @@ class FederatedVectorSearch:
     # Utilidades
     # ------------------------------------------------------------------
 
-    def get_available_backends(self) -> List[str]:
+    def get_available_backends(self) -> list[str]:
         """Retorna los nombres de backends actualmente disponibles.
 
         Returns:
@@ -794,7 +793,7 @@ class FederatedVectorSearch:
         """
         return list(self._backends.keys())
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Retorna estadisticas acumuladas del buscador federado.
 
         Returns:
@@ -823,11 +822,11 @@ class FederatedVectorSearch:
             "Estadisticas finales: %s", self.get_stats(),
         )
 
-    def __enter__(self) -> FederatedVectorSearch:
+    def __enter__(self) -> Self:
         """Soporte para context manager (with statement)."""
         return self
 
-    def __exit__(self, *args: Any) -> None:
+    def __exit__(self, *args: object) -> None:
         """Cierra recursos al salir del context manager."""
         self.close()
 
@@ -838,7 +837,7 @@ class FederatedVectorSearch:
 
 
 def create_federated_search(
-    backends: Optional[Dict[str, VectorStoreAdapter]] = None,
+    backends: dict[str, VectorStoreAdapter] | None = None,
     mmr_lambda: float = DEFAULT_MMR_LAMBDA,
     cache_max_size: int = DEFAULT_CACHE_MAX_SIZE,
     cache_ttl: float = DEFAULT_CACHE_TTL_SEC,
@@ -848,7 +847,7 @@ def create_federated_search(
     Args:
         backends: Dict nombre -> adaptador. Si None, usa defaults.
         mmr_lambda: Factor de balance MMR (0-1).
-        cache_max_size: Tamaño maximo del cache.
+        cache_max_size: TamaÃ±o maximo del cache.
         cache_ttl: TTL en segundos del cache.
 
     Returns:

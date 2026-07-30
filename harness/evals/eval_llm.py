@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 eval_llm — Evaluaciones de la capa LLM (accuracy, latency, cost).
 
@@ -10,7 +9,6 @@ from __future__ import annotations
 import logging
 import random
 from datetime import datetime, timezone
-from typing import Any, Dict, List
 
 from harness.evals.eval_factory import EvalResult
 
@@ -21,12 +19,12 @@ _SEED = 42
 _random = random.Random(_SEED)
 
 # Umbrales por defecto
-_DEFAULT_THRESHOLDS: Dict[str, Dict[str, float]] = {
+_DEFAULT_THRESHOLDS: dict[str, dict[str, float]] = {
     "llm": {"accuracy": 0.85, "latency": 2.0, "cost": 0.005},
 }
 
 
-def eval_llm_accuracy() -> List[EvalResult]:
+def eval_llm_accuracy() -> list[EvalResult]:
     """Evalua la exactitud (accuracy) del LLM en respuestas simuladas.
 
     Simula un conjunto de N preguntas con respuestas esperadas y mide
@@ -50,7 +48,7 @@ def eval_llm_accuracy() -> List[EvalResult]:
         {"model": "gpt-4o", "prompt": "few-shot", "base_acc": 0.95},
     ]
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
     total_correct = 0
     total_questions = 0
 
@@ -88,11 +86,11 @@ def eval_llm_accuracy() -> List[EvalResult]:
                 _DEFAULT_THRESHOLDS["llm"]["accuracy"] * 100,
             )
 
-        except Exception as exc:
+        except Exception:
             logger.exception(
-                "[eval_llm] Error simulando accuracy para variante %s: %s. "
+                "[eval_llm] Error simulando accuracy para variante %s. "
                 "WHERE: eval_llm_accuracy() | WHAT: fallo en variante de modelo | WHY: excepcion.",
-                variant.get("model", "?"), exc,
+                variant.get("model", "?"),
             )
 
     # Resultado global agregado
@@ -114,7 +112,7 @@ def eval_llm_accuracy() -> List[EvalResult]:
     return results
 
 
-def eval_llm_latency() -> List[EvalResult]:
+def eval_llm_latency() -> list[EvalResult]:
     """Mide los percentiles de latencia P50, P95 y P99 del LLM.
 
     Simula tiempos de respuesta para distintos modelos con distribuciones
@@ -136,11 +134,11 @@ def eval_llm_latency() -> List[EvalResult]:
         "claude-3-opus": {"mean": 1.8, "std": 0.6},
     }
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
 
     for model_name, params in _MODEL_LATENCY_PARAMS.items():
         try:
-            samples: List[float] = []
+            samples: list[float] = []
             for _ in range(_N_SAMPLES):
                 sample = _random.lognormvariate(params["mean"], params["std"])
                 samples.append(round(sample, 4))
@@ -174,17 +172,17 @@ def eval_llm_latency() -> List[EvalResult]:
                 model_name, p50, p95, p99,
             )
 
-        except Exception as exc:
+        except Exception:
             logger.exception(
-                "[eval_llm] Error simulando latencia para modelo %s: %s. "
+                "[eval_llm] Error simulando latencia para modelo %s. "
                 "WHERE: eval_llm_latency() | WHAT: fallo en generacion de muestras | WHY: excepcion.",
-                model_name, exc,
+                model_name,
             )
 
     return results
 
 
-def eval_llm_cost() -> List[EvalResult]:
+def eval_llm_cost() -> list[EvalResult]:
     """Estima el costo por token de distintos modelos del LLM.
 
     Calcula el costo estimado por consulta basado en tokens de entrada
@@ -205,7 +203,7 @@ def eval_llm_cost() -> List[EvalResult]:
     _AVG_INPUT_TOKENS = 500
     _AVG_OUTPUT_TOKENS = 200
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
     total_cost = 0.0
 
     for model_name, pricing in _PRICING_PER_MODEL.items():
@@ -239,11 +237,11 @@ def eval_llm_cost() -> List[EvalResult]:
                 model_name, total, _AVG_INPUT_TOKENS, _AVG_OUTPUT_TOKENS,
             )
 
-        except Exception as exc:
+        except Exception:
             logger.exception(
-                "[eval_llm] Error calculando costo para modelo %s: %s. "
+                "[eval_llm] Error calculando costo para modelo %s. "
                 "WHERE: eval_llm_cost() | WHAT: fallo en estimacion | WHY: excepcion.",
-                model_name, exc,
+                model_name,
             )
 
     # Costo promedio global

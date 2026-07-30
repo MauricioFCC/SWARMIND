@@ -1,4 +1,4 @@
-"""
+﻿"""
 Document chunker and ingester for RAG pipelines.
 Reads .md/.py files, chunks into 20-30 line blocks, auto-tags metadata,
 vectorizes, and inserts into LanceVectorStore rag_chunks collection.
@@ -10,7 +10,7 @@ import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # Domain / tipo_doc auto-detection patterns
 # ---------------------------------------------------------------------------
 
-DOMAIN_PATTERNS: List[Tuple[str, str]] = [
+DOMAIN_PATTERNS: list[tuple[str, str]] = [
     (r"docs[/\\\\]dominios_negocio[/\\\\](.*?)\..*", lambda m: _slug(m.group(1))),
     (r"docs[/\\\\]arquitectura[/\\\\]", "arquitectura"),
     (r"docs[/\\\\]manual_usuario[/\\\\]", "manual_usuario"),
@@ -36,7 +36,7 @@ DOMAIN_PATTERNS: List[Tuple[str, str]] = [
     (r"\.opencode[/\\\\]config[/\\\\]", "configuracion"),
 ]
 
-TIPO_DOC_PATTERNS: List[Tuple[str, str]] = [
+TIPO_DOC_PATTERNS: list[tuple[str, str]] = [
     (r"(adr|architecture decision record)", "adr"),
     (r"(schema|tabla|columna|base de datos|entidad)", "esquema_bd"),
     (r"(api|endpoint|ruta|route|http)", "api_endpoint"),
@@ -50,7 +50,7 @@ TIPO_DOC_PATTERNS: List[Tuple[str, str]] = [
 DEFAULT_TIPO_DOC = "documentacion"
 DEFAULT_DOMAIN = "general"
 
-_EXTENSION_TIPO: Dict[str, str] = {
+_EXTENSION_TIPO: dict[str, str] = {
     ".py": "codigo_fuente",
     ".md": "documentacion",
     ".yml": "configuracion",
@@ -72,10 +72,10 @@ class Chunk:
     end_line: int
     domain: str = ""
     tipo_doc: str = ""
-    tags: List[str] = field(default_factory=list)
-    vector: Optional[np.ndarray] = None
+    tags: list[str] = field(default_factory=list)
+    vector: np.ndarray | None = None
 
-    def to_metadata(self) -> Dict[str, Any]:
+    def to_metadata(self) -> dict[str, Any]:
         """To metadata."""
         return {
             "source_file": self.source_file,
@@ -103,7 +103,7 @@ class DocumentChunker:
         self.overlap = overlap
         self._embedding_fn = embedding_fn or self._default_embedding
 
-    def chunk_file(self, filepath: str) -> List[Chunk]:
+    def chunk_file(self, filepath: str) -> list[Chunk]:
         """
         Read a file and split it into chunks.
         Returns list of Chunk objects with auto-detected metadata.
@@ -121,14 +121,14 @@ class DocumentChunker:
         try:
             with open(filepath, encoding="utf-8") as f:
                 lines = f.readlines()
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Cannot read %s: %s", filepath, exc)
             return []
 
         if not lines:
             return []
 
-        chunks: List[Chunk] = []
+        chunks: list[Chunk] = []
         num_lines = len(lines)
         i = 0
         while i < num_lines:
@@ -156,7 +156,7 @@ class DocumentChunker:
 
         return chunks
 
-    def chunk_and_vectorize(self, filepath: str) -> List[Chunk]:
+    def chunk_and_vectorize(self, filepath: str) -> list[Chunk]:
         """Chunk a file and compute embeddings for each chunk."""
         chunks = self.chunk_file(filepath)
         for chunk in chunks:
@@ -204,9 +204,9 @@ def _ensure_lancedb() -> None:
 
 def ingest_directory(
     store,
-    root_dirs: List[str],
-    chunker: Optional[DocumentChunker] = None,
-) -> Dict[str, int]:
+    root_dirs: list[str],
+    chunker: DocumentChunker | None = None,
+) -> dict[str, int]:
     """
     Ingest all .md and .py files from directories into rag_chunks.
 
@@ -253,7 +253,7 @@ def ingest_directory(
                 store.insert("rag_chunks", vectors, metadata_list)
                 stats["chunks_inserted"] += len(chunks)
 
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.error("Error processing %s: %s", fpath, exc)
                 stats["errors"] += 1
 
@@ -281,12 +281,12 @@ RAG_EXCLUDE: set = {
 
 def ingest_project_directory(
     directory: str,
-    extensions: Optional[set] = None,
-    exclude_dirs: Optional[set] = None,
+    extensions: set | None = None,
+    exclude_dirs: set | None = None,
     chunk_size: int = 25,
     overlap: int = 3,
     show_progress: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     High-level convenience: scan *directory* recursively, chunk every
     relevant source file, vectorise, and insert into the ``rag_chunks``
@@ -320,7 +320,7 @@ def ingest_project_directory(
     store = LanceVectorStore()
     chunker = DocumentChunker(chunk_size=chunk_size, overlap=overlap)
 
-    stats: Dict[str, Any] = {
+    stats: dict[str, Any] = {
         "files_processed": 0,
         "chunks_inserted": 0,
         "errors": 0,
@@ -369,13 +369,13 @@ def ingest_project_directory(
 
             if show_progress:
                 logger.info(
-                    "  [%d/%d] %s → chunk %d",
+                    "  [%d/%d] %s â†’ chunk %d",
                     idx, total,
                     _relpath(fpath, root),
                     stats["chunks_inserted"],
                 )
 
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error("  Error processing %s: %s", fpath, exc)
             stats["errors"] += 1
 

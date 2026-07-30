@@ -25,7 +25,7 @@ from harness.hooks.hook_registry import HookRegistry
 __all__ = [
     "HookManager",
     "HookPriority",
+    "HookRegistry",
     "HookResult",
     "HookType",
-    "HookRegistry",
 ]

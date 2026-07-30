@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -13,10 +12,7 @@ import pytest
 from harness.memory_rag.lance_schemas import DEFAULT_COLLECTIONS
 from harness.memory_rag.lance_vector_store import (
     LanceVectorStore,
-    _Collection,
-    _StoredItem,
 )
-from harness.memory_rag.memory_config import MemoryConfig
 from harness.tests.mock_vector_store import MockVectorStore
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -105,10 +101,10 @@ def context_assembler(vector_store):
 
 
 @pytest.fixture
-def hermes_bridge(vector_store):
+def hermes_bridge():
     """HermesBridge."""
-    from harness.hermes_bridge import HermesBridge
-    return HermesBridge(vector_store=vector_store)
+    from harness.memory_rag.hermes_bridge import HermesBridge
+    return HermesBridge()
 
 
 @pytest.fixture
@@ -241,7 +237,7 @@ def lancedb_store(mock_lancedb):
             LanceVectorStore, "_try_import_lancedb",
             return_value=mock_lancedb["lancedb_module"],
         ),
-        patch("harness.memory_rag.lance_vector_store.os.makedirs"),
+        patch("harness.memory_rag.lance_vector_store.Path.mkdir"),
     ]
     with patches[0], patches[1]:
         store = LanceVectorStore(db_path="/fake/path", allow_fallback=False)
@@ -287,7 +283,7 @@ def lancedb_store_with_data(mock_lancedb):
             LanceVectorStore, "_try_import_lancedb",
             return_value=mock_lancedb["lancedb_module"],
         ),
-        patch("harness.memory_rag.lance_vector_store.os.makedirs"),
+        patch("harness.memory_rag.lance_vector_store.Path.mkdir"),
     ]
     with patches[0], patches[1]:
         store = LanceVectorStore(db_path="/fake/path", allow_fallback=False)

@@ -1,5 +1,5 @@
-"""
-Context Window Manager — Gestion adaptativa de la ventana de contexto.
+﻿"""
+Context Window Manager â€” Gestion adaptativa de la ventana de contexto.
 
 Basado en estrategias 2026 de context window management:
   - Priority ordering: system prompt > current instruction > recent history > RAG
@@ -17,10 +17,10 @@ Ahorro estimado: 40-60% de tokens en historial de conversacion.
 from __future__ import annotations
 
 import logging
-import re
 from collections import OrderedDict
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, ClassVar
 
 from harness.common import CHARS_PER_TOKEN, StatsMixin, compression_pct
 from harness.memory_rag.context_compression import (
@@ -45,7 +45,7 @@ PRIORITY_NORMAL = 2       # Se trunca normalmente
 PRIORITY_LOW = 3          # Se trunca primero
 PRIORITY_BACKGROUND = 4   # Se elimina primero
 
-SECTION_PRIORITIES: Dict[str, int] = {
+SECTION_PRIORITIES: dict[str, int] = {
     "system_identity": PRIORITY_CRITICAL,
     "system_rules": PRIORITY_CRITICAL,
     "system_guardrails": PRIORITY_CRITICAL,
@@ -57,7 +57,7 @@ SECTION_PRIORITIES: Dict[str, int] = {
     "tool_outputs": PRIORITY_BACKGROUND,
 }
 
-DEFAULT_BUDGETS: Dict[str, int] = {
+DEFAULT_BUDGETS: dict[str, int] = {
     "system_identity": 500,
     "system_rules": 1000,
     "system_guardrails": 500,
@@ -89,7 +89,7 @@ class TokenEstimator:
         truncado = te.truncate_to_token_limit("texto largo", max_tokens=100)
     """
 
-    _ENCODING_MAP: Dict[str, str] = {
+    _ENCODING_MAP: ClassVar[dict[str, str]] = {
         "claude": "cl100k_base",
         "gpt-4": "gpt-4",
         "gemini": "cl100k_base",
@@ -128,7 +128,7 @@ class TokenEstimator:
                 "usando chars/4 como fallback"
             )
             return None
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(
                 "TokenEstimator: error inicializando encoder (%s), "
                 "usando chars/4 como fallback", e
@@ -156,7 +156,7 @@ class TokenEstimator:
         if self._encoder is not None:
             try:
                 count = len(self._encoder.encode(text))
-            except Exception:
+            except Exception:  # noqa: BLE001
                 count = max(1, len(text) // 4)
         else:
             count = max(1, len(text) // 4)
@@ -207,7 +207,7 @@ class ContextSection:
     max_tokens: int = 1000
     frozen: bool = False
     compressed: bool = False
-    _token_estimator: Optional[TokenEstimator] = field(
+    _token_estimator: TokenEstimator | None = field(
         default=None, repr=False, compare=False
     )
 
@@ -262,16 +262,16 @@ class ContextSection:
 @dataclass
 class ContextWindow:
     """The full context window for a single LLM call."""
-    sections: Dict[str, ContextSection] = field(default_factory=dict)
+    sections: dict[str, ContextSection] = field(default_factory=dict)
     total_budget: int = 12000
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def add_section(
         self,
         name: str,
         content: str,
-        priority: Optional[int] = None,
-        max_tokens: Optional[int] = None,
+        priority: int | None = None,
+        max_tokens: int | None = None,
         frozen: bool = False,
     ) -> ContextSection:
         """Add or update a section."""
@@ -285,7 +285,7 @@ class ContextWindow:
         self.sections[name] = section
         return section
 
-    def get_section(self, name: str) -> Optional[ContextSection]:
+    def get_section(self, name: str) -> ContextSection | None:
         """Obtiene una seccion por nombre."""
         return self.sections.get(name)
 
@@ -329,7 +329,7 @@ class ContextWindow:
             )
             return "\n".join(s.content for _, s in sections_in_order if s.content)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serializa la ventana a diccionario (sin contenido completo)."""
         return {
             "total_budget": self.total_budget,
@@ -378,7 +378,7 @@ class ContextWindowManager(StatsMixin):
         self,
         total_budget: int = 12000,
         sliding_window_size: int = SLIDING_WINDOW_SIZE,
-        summary_fn: Optional[Callable[[str], str]] = None,
+        summary_fn: Callable[[str], str] | None = None,
         model_family: str = "claude",
         use_real_tokenizer: bool = True,
         use_observation_masking: bool = True,
@@ -402,7 +402,7 @@ class ContextWindowManager(StatsMixin):
 
         self._token_estimator = TokenEstimator(model_family=model_family)
 
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "optimizations": 0,
             "truncations": 0,
             "summarizations": 0,
@@ -526,9 +526,8 @@ class ContextWindowManager(StatsMixin):
 
         # Strategy 2: Summarize conversation history
         conv_section = window.get_section("conversation_history")
-        if conv_section and self._window_over_budget(window) and not conv_section.frozen:
-            if summarize_conversation(self, conv_section):
-                self._stats["summarizations"] += 1
+        if conv_section and self._window_over_budget(window) and not conv_section.frozen and summarize_conversation(self, conv_section):
+            self._stats["summarizations"] += 1
 
         # Strategy 3: Compress tool outputs
         tool_section = window.get_section("tool_outputs")
@@ -575,9 +574,9 @@ class ContextWindowManager(StatsMixin):
 
     def compact_history(
         self,
-        history: List[Dict[str, Any]],
+        history: list[dict[str, Any]],
         max_messages: int = 8,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Compacta historial de conversacion usando sliding window + summary.
 
         Args:
@@ -595,7 +594,7 @@ class ContextWindowManager(StatsMixin):
 
         summary_text = summarize_messages(compress)
 
-        compacted: List[Dict] = [
+        compacted: list[dict] = [
             {
                 "role": "system",
                 "content": f"[COMPACTED] {summary_text}",
@@ -675,7 +674,9 @@ class ContextWindowManager(StatsMixin):
         Returns:
             Texto con masking aplicado.
         """
-        from harness.memory_rag.context_compression import _apply_observation_masking as _om
+        from harness.memory_rag.context_compression import (
+            _apply_observation_masking as _om,
+        )
         return _om(text, max_tokens)
 
     @staticmethod
@@ -691,7 +692,7 @@ class ContextWindowManager(StatsMixin):
         from harness.memory_rag.context_compression import _default_summary_fn as _ds
         return _ds(text)
 
-    def _summarize_messages(self, messages: List[Dict[str, Any]]) -> str:
+    def _summarize_messages(self, messages: list[dict[str, Any]]) -> str:
         """Summarize messages (delega a context_compression).
 
         Args:

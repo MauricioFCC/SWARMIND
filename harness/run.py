@@ -1,5 +1,5 @@
-"""
-Harness — Multi-Agent Execution Engine (portable base)
+﻿"""
+Harness â€” Multi-Agent Execution Engine (portable base)
 Entry point for the agent orchestration system with LanceDB memory.
 
 Usage:
@@ -18,13 +18,13 @@ Features:
 
 REFACTOR: Usa cli_common para funcionalidad compartida con delegate.py
 (ANSI helpers, parse_message, load_vector_store, etc.).
-Elimina HAS_GUARDRAILS bypass silencioso — ahora es error EXPLICITO.
+Elimina HAS_GUARDRAILS bypass silencioso â€” ahora es error EXPLICITO.
 """
 from __future__ import annotations
 
-from pathlib import Path
 import sys
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any
 
 # Importar funcionalidad compartida (DRY con delegate.py)
 from harness.cli_common import (
@@ -40,14 +40,14 @@ from harness.cli_common import (
 
 logger = setup_logging()
 
-# Asegurar que la raíz del proyecto está en sys.path
+# Asegurar que la raÃ­z del proyecto estÃ¡ en sys.path
 sys.path.insert(1, str(get_project_root()))
 
 HARNESS_ROOT = get_harness_root()
 HAS_LANCEDB: bool = False
 
 # ---------------------------------------------------------------------------
-# Verificar LanceDB — solo warning en import, error en main()
+# Verificar LanceDB â€” solo warning en import, error en main()
 # ---------------------------------------------------------------------------
 try:
     import lancedb  # noqa: F401
@@ -65,11 +65,11 @@ from harness.orchestrator.hitl_guard import HITLGuard
 from harness.orchestrator.task_manager import TaskManager
 
 # ---------------------------------------------------------------------------
-# Guardrails - AHORA ES ERROR EXPLICITO si no está disponible
+# Guardrails - AHORA ES ERROR EXPLICITO si no estÃ¡ disponible
 # Eliminado HAS_GUARDRAILS bypass silencioso (P7)
 # ---------------------------------------------------------------------------
-# Las guardrails de seguridad son OBLIGATORIAS. Si no están disponibles,
-# el sistema falla con mensaje claro en lugar de operar sin protección.
+# Las guardrails de seguridad son OBLIGATORIAS. Si no estÃ¡n disponibles,
+# el sistema falla con mensaje claro en lugar de operar sin protecciÃ³n.
 try:
     from opencode.core.guardrails import run_full_pipeline
 except ImportError:
@@ -164,10 +164,10 @@ def _show_usage() -> None:
     logger.info("")
 
 
-def _parse_args() -> Dict[str, Any]:
+def _parse_args() -> dict[str, Any]:
     """Parse CLI arguments, extracting flags and the task string."""
     args = sys.argv[1:]
-    parsed: Dict[str, Any] = {
+    parsed: dict[str, Any] = {
         "help": False,
         "daemon": False,
         "watch": False,
@@ -222,7 +222,7 @@ def _parse_args() -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def _handle_gateway_mode(parsed: Dict[str, Any]) -> None:
+def _handle_gateway_mode(parsed: dict[str, Any]) -> None:
     """Handle --gateway mode."""
     from harness.gateway.gateway import GatewayManager, Message, load_gateway_config
 
@@ -336,39 +336,39 @@ def _display_plan(orch_result: Any, task: str) -> None:
         return
 
     _safe_print()
-    _safe_print(f"  {_cyan('📋 PLAN DE EJECUCIÓN')}")
-    _safe_print(f"  {'─' * 50}")
-    _safe_print(f"  Sesión: {orch_result.session_id}")
+    _safe_print(f"  {_cyan('ðŸ“‹ PLAN DE EJECUCIÃ“N')}")
+    _safe_print(f"  {'â”€' * 50}")
+    _safe_print(f"  SesiÃ³n: {orch_result.session_id}")
     _safe_print(f"  Tarea: {task[:100]}")
     _safe_print()
 
     for level_idx, level in enumerate(orch_result.plan.get_levels()):
         is_parallel = len(level) > 1
-        mode = "⚡ PARALELO" if is_parallel else "→ SECUENCIAL"
+        mode = "âš¡ PARALELO" if is_parallel else "â†’ SECUENCIAL"
         _safe_print(f"  Nivel {level_idx} ({mode}):")
         for s in level:
             deps = f" [espera: {', '.join(s.dependencies)}]" if s.dependencies else ""
-            _safe_print(f"    ▸ [{s.agent}] {s.description}{deps}")
+            _safe_print(f"    â–¸ [{s.agent}] {s.description}{deps}")
         _safe_print()
-    _safe_print(f"  {'─' * 50}")
+    _safe_print(f"  {'â”€' * 50}")
     _safe_print()
 
     # Current level
     if orch_result.current_level:
         if len(orch_result.current_level) == 1:
             st = orch_result.current_level[0]
-            _safe_print(f"  {_cyan('▶ Ejecutando:')} [{st['agent']}] {st['description']}")
+            _safe_print(f"  {_cyan('â–¶ Ejecutando:')} [{st['agent']}] {st['description']}")
         else:
-            _safe_print(f"  {_cyan(f'▶ Ejecutando {len(orch_result.current_level)} subtareas en PARALELO:')}")
+            _safe_print(f"  {_cyan(f'â–¶ Ejecutando {len(orch_result.current_level)} subtareas en PARALELO:')}")
             for st in orch_result.current_level:
-                _safe_print(f"    ▸ [{st['agent']}] {st['description']}")
+                _safe_print(f"    â–¸ [{st['agent']}] {st['description']}")
         _safe_print()
 
     # Previous results
     if orch_result.previous_results:
-        _safe_print(f"  {_cyan('✅ Subtareas completadas:')}")
+        _safe_print(f"  {_cyan('âœ… Subtareas completadas:')}")
         for prev in orch_result.previous_results:
-            _safe_print(f"    ✓ [{prev['agent']}] {prev['description']}")
+            _safe_print(f"    âœ“ [{prev['agent']}] {prev['description']}")
         _safe_print()
 
 
@@ -400,7 +400,7 @@ def _dispatch_task(store: Any, orch_result: Any, task: str) -> str:
     return target_agent
 
 
-def _resolve_hitl_mode(parsed: Dict[str, Any]) -> str:
+def _resolve_hitl_mode(parsed: dict[str, Any]) -> str:
     """Determine HITL mode from parsed args."""
     if parsed.get("auto_pilot"):
         return "auto_pilot"
@@ -449,7 +449,7 @@ def _create_task_and_lesson(
                 f"Tarea enrutada a @{target_agent}.\n"
                 f"Descripcion: {task}\n"
                 f"Routing: {routing_source}\n"
-                f"Sesión: {orch_result.session_id}\n"
+                f"SesiÃ³n: {orch_result.session_id}\n"
                 f"Subtasks en plan: {len(orch_result.plan.subtasks)}\n"
                 f"Chunks RAG recuperados: {len(ctx.relevant_docs)}\n"
                 f"Tokens de contexto: {ctx.metadata.get('total_tokens_used', 0)}"
@@ -464,7 +464,7 @@ def _create_task_and_lesson(
                 "session_id": orch_result.session_id,
             },
         )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.info("[Harness] Cognition store no disponible: %s", exc)
 
     return new_task
@@ -473,21 +473,21 @@ def _create_task_and_lesson(
 def _display_final_output(orch_result: Any, target_agent: str, routing_source: str) -> None:
     """Display final output and status."""
     if orch_result.is_complete:
-        _safe_print(f"\n  {_ok('🎉 ¡PLAN COMPLETO!')} Todas las subtareas han sido ejecutadas.")
+        _safe_print(f"\n  {_ok('ðŸŽ‰ Â¡PLAN COMPLETO!')} Todas las subtareas han sido ejecutadas.")
         _safe_print(f"  El plan '{orch_result.session_id}' ha finalizado.")
     else:
         pending = len(orch_result.plan.subtasks) - sum(1 for s in orch_result.plan.subtasks if s.completed)
         if pending > 0:
-            _safe_print(f"\n  {_warn(f'⏳ Quedan {pending} subtareas pendientes.')}")
+            _safe_print(f"\n  {_warn(f'â³ Quedan {pending} subtareas pendientes.')}")
             _safe_print("  Para continuar, escribe 'continuar' o el siguiente paso.")
         else:
-            _safe_print(f"\n  {_cyan('ℹ️  Usa este plan como guía para la implementación.')}")
+            _safe_print(f"\n  {_cyan('â„¹ï¸  Usa este plan como guÃ­a para la implementaciÃ³n.')}")
 
     if orch_result.current_level:
         for st in orch_result.current_level:
-            _safe_print(f"  ▶ [{st['agent']}] {st['description']}")
+            _safe_print(f"  â–¶ [{st['agent']}] {st['description']}")
 
-    logger.info("[Harness] Tarea enrutada a @%s (%s) — sesión %s",
+    logger.info("[Harness] Tarea enrutada a @%s (%s) â€” sesiÃ³n %s",
                 target_agent, routing_source, orch_result.session_id)
 
 
@@ -514,9 +514,9 @@ def _start_sandbox_if_needed(
         message=(
             f"Tarea creada: **{task[:80]}**\n"
             f"Task ID: `{task_id}`\n"
-            f"Sesión: `{orch_result.session_id}`\n"
+            f"SesiÃ³n: `{orch_result.session_id}`\n"
             f"Routing: `{routing_source}`\n\n"
-            f"Plan de ejecución con {len(orch_result.plan.subtasks)} subtareas.\n"
+            f"Plan de ejecuciÃ³n con {len(orch_result.plan.subtasks)} subtareas.\n"
             f"Nivel actual: {len(orch_result.current_level)} subtarea(s) lista(s).\n\n"
             f"El SandboxLoop esta listo para ejecutar el bucle autonomo.\n"
         ),
@@ -532,21 +532,22 @@ def _start_sandbox_if_needed(
 
 
 def _check_lancedb_or_exit() -> None:
-    """Verifica LanceDB al inicio de main(). Si no está, sale con mensaje claro."""
-    global HAS_LANCEDB
+    """Verifica LanceDB al inicio de main(). Si no estÃ¡, sale con mensaje claro."""
+    global HAS_LANCEDB  # noqa: PLW0602
     if HAS_LANCEDB:
         return
     import logging as _log
     _log.basicConfig(level=_log.INFO, format="%(message)s")
-    _log.info("=" * 60)
-    _log.info("  LanceDB REQUERIDO - No se encontro instalado.")
-    _log.info("=" * 60)
-    _log.info("")
-    _log.info("    pip install lancedb")
-    _log.info("    python harness/scripts/init.py")
-    _log.info("")
-    _log.info("  El sistema NO puede funcionar sin LanceDB.")
-    _log.info("=" * 60)
+    _logger = _log.getLogger(__name__)
+    _logger.info("=" * 60)
+    _logger.info("  LanceDB REQUERIDO - No se encontro instalado.")
+    _logger.info("=" * 60)
+    _logger.info("")
+    _logger.info("    pip install lancedb")
+    _logger.info("    python harness/scripts/init.py")
+    _logger.info("")
+    _logger.info("  El sistema NO puede funcionar sin LanceDB.")
+    _logger.info("=" * 60)
     sys.exit(1)
 
 

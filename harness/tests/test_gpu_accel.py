@@ -5,13 +5,12 @@ Verifica deteccion de hardware, operaciones aceleradas y fallback a CPU.
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from harness.gpu_accel import (
     HAVE_CUDA,
+    GPUContext,
     cosine_similarity,
     cosine_similarity_batch,
-    GPUContext,
     normalize,
     to_cpu,
     to_gpu,

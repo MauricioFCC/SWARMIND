@@ -193,7 +193,7 @@ class TestCognitionSyncSearch:
 
     def test_search_lessons_respects_top_k(self, sync, mock_store):
         """Test search_lessons respeta limite top_k."""
-        dummy = np.zeros(384, dtype=np.float32)
+        np.zeros(384, dtype=np.float32)
         for i in range(5):
             sync.add_lesson(title=f"Lesson {i}", content=f"Content {i}", domain=f"domain{i}")
         results = sync.search_lessons("test", top_k=3)

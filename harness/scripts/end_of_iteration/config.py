@@ -1,13 +1,16 @@
-"""
+﻿"""
 Configuration, data types and shared utilities for the end-of-iteration pipeline.
 """
 from __future__ import annotations
 
+import logging
 import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -86,14 +89,14 @@ def _safe_print(*args, **kwargs) -> None:
                        .replace("\u00f3", "o")
                        .replace("\u00fa", "u")
                         .replace("\u00f1", "n")
-                        .replace("\u26a1", "!")         # ⚡ -> !
-                        .replace("\U0001f50d", "[SEARCH]")  # 🔍 -> [SEARCH]
-                        .replace("\U0001f4b0", "[MONEY]")   # 💰 -> [MONEY]
-                        .replace("\u2705", "[OK]")           # ✅ -> [OK]
-                        .replace("\u274c", "[X]")            # ❌ -> [X]
-                        .replace("\U0001f4cb", "[LIST]")     # 📋 -> [LIST]
-                        .replace("\U0001f4dd", "[NOTE]")     # 📝 -> [NOTE]
-                        .replace("\U0001f916", "[AI]"))      # 🤖 -> [AI]
+                        .replace("\u26a1", "!")         # âš¡ -> !
+                        .replace("\U0001f50d", "[SEARCH]")  # ðŸ” -> [SEARCH]
+                        .replace("\U0001f4b0", "[MONEY]")   # ðŸ’° -> [MONEY]
+                        .replace("\u2705", "[OK]")           # âœ… -> [OK]
+                        .replace("\u274c", "[X]")            # âŒ -> [X]
+                        .replace("\U0001f4cb", "[LIST]")     # ðŸ“‹ -> [LIST]
+                        .replace("\U0001f4dd", "[NOTE]")     # ðŸ“ -> [NOTE]
+                        .replace("\U0001f916", "[AI]"))      # ðŸ¤– -> [AI]
             safe_args.append(arg)
         print(*safe_args, **kwargs)
 
@@ -155,7 +158,7 @@ class TokenReport:
     tokens_ahorrados_por_skills: int = 0
     tokens_ahorrados_por_hitl: int = 0
     costo_estimado_usd: float = 0.0
-    eficiencia: Dict[str, str] = field(default_factory=dict)
+    eficiencia: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -171,9 +174,9 @@ class IterationReport:
     secrets_found: int = 0
     docs_updated: int = 0
     docs_stale: int = 0
-    token_report: Optional[TokenReport] = None
+    token_report: TokenReport | None = None
     commit_message_suggested: str = ""
-    files_changed: List[str] = field(default_factory=list)
+    files_changed: list[str] = field(default_factory=list)
     elapsed_seconds: float = 0.0
 
 
@@ -182,7 +185,7 @@ class IterationReport:
 # ---------------------------------------------------------------------------
 
 
-def _load_config() -> Dict[str, Any]:
+def _load_config() -> dict[str, Any]:
     """Load iteration_config.yaml, falling back to defaults."""
     try:
         import yaml
@@ -194,7 +197,7 @@ def _load_config() -> Dict[str, Any]:
     return _default_config()
 
 
-def _default_config() -> Dict[str, Any]:
+def _default_config() -> dict[str, Any]:
     """Return hardcoded defaults if config file is missing."""
     return {
         "pipeline": {
@@ -246,7 +249,7 @@ def _default_config() -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-def _should_exclude(filepath: str, exclude_patterns: List[str]) -> bool:
+def _should_exclude(filepath: str, exclude_patterns: list[str]) -> bool:
     """Check if a file path matches any exclude pattern."""
     for pattern in exclude_patterns:
         regex = pattern.replace(".", r"\.").replace("*", ".*")
@@ -260,9 +263,9 @@ def _is_python_file(filepath: str) -> bool:
     return filepath.endswith(".py") and not filepath.endswith(".pyc")
 
 
-def _walk_py_files(directory: str, exclude_patterns: List[str]) -> List[str]:
+def _walk_py_files(directory: str, exclude_patterns: list[str]) -> list[str]:
     """Walk directory yielding Python files that are not excluded."""
-    results: List[str] = []
+    results: list[str] = []
     for fpath in Path(directory).rglob("*"):
         if not fpath.is_file():
             continue
@@ -274,44 +277,44 @@ def _walk_py_files(directory: str, exclude_patterns: List[str]) -> List[str]:
     return results
 
 
-def _read_file_lines(filepath: str) -> Tuple[List[str], int]:
+def _read_file_lines(filepath: str) -> tuple[list[str], int]:
     """Read file returning (lines, total_lines)."""
     try:
         with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()
         return lines, len(lines)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return [], 0
 
 
-def _get_git_changed_files() -> List[str]:
+def _get_git_changed_files() -> list[str]:
     """Get list of changed files from git diff against last commit."""
     import subprocess
     try:
         result = subprocess.run(
             ["git", "diff", "--name-only", "HEAD"],
-            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT),
+            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT), check=False,
         )
         if result.returncode == 0:
             files = [f.strip() for f in result.stdout.split("\n") if f.strip()]
             if files:
                 return files
-    except Exception as _exc:
+    except Exception as _exc:  # noqa: BLE001
         logger.warning("config: %s", _exc)
     return []
 
 
-def _get_git_uncommitted() -> List[str]:
+def _get_git_uncommitted() -> list[str]:
     """Get uncommitted tracked files (working tree + staged)."""
     import subprocess
     try:
         result = subprocess.run(
             ["git", "diff", "--name-only"],
-            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT),
+            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT), check=False,
         )
         staged = subprocess.run(
             ["git", "diff", "--cached", "--name-only"],
-            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT),
+            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT), check=False,
         )
         files = set()
         if result.returncode == 0:
@@ -319,34 +322,34 @@ def _get_git_uncommitted() -> List[str]:
         if staged.returncode == 0:
             files.update(f.strip() for f in staged.stdout.split("\n") if f.strip())
         return list(files)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return []
 
 
-def _get_changed_files_since_last_commit() -> List[str]:
+def _get_changed_files_since_last_commit() -> list[str]:
     """Get files changed since the last commit."""
     import subprocess
     try:
         result = subprocess.run(
             ["git", "rev-list", "--count", "HEAD"],
-            capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT),
+            capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT), check=False,
         )
         commit_count = int(result.stdout.strip() or "0")
         if commit_count >= 2:
             diff_result = subprocess.run(
                 ["git", "diff", "--name-only", "HEAD~1..HEAD"],
-                capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT),
+                capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT), check=False,
             )
             if diff_result.returncode == 0:
                 files = [f.strip() for f in diff_result.stdout.split("\n") if f.strip()]
                 if files:
                     return files
-    except Exception as _exc:
+    except Exception as _exc:  # noqa: BLE001
         logger.warning("config: %s", _exc)
     return _get_git_changed_files()
 
 
-def _has_changed_files_in_dir(changed_files: List[str], prefix: str) -> bool:
+def _has_changed_files_in_dir(changed_files: list[str], prefix: str) -> bool:
     """Check if any changed file lives under a given directory prefix."""
     prefix_norm = Path(prefix).as_posix()
     for f in changed_files:

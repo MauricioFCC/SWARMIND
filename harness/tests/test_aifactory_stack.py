@@ -5,12 +5,9 @@ Verifica que las 3 nuevas capas funcionan correctamente.
 
 from __future__ import annotations
 
-import pytest
-
-from harness.guardrails import GuardrailEngine, GuardrailVerdict
-from harness.evals import EvalResult, EvalSuite, run_all
 from harness.aifactory import AIFactory, FactoryConfig, FactoryResult, FactoryStatus
-
+from harness.evals import EvalResult, EvalSuite, run_all
+from harness.guardrails import GuardrailEngine, GuardrailVerdict
 
 # ============================================================================
 # Guardrails Tests

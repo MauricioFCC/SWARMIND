@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-Tests para harness/delegate.py — entry point de delegación multi-agente.
+﻿"""
+Tests para harness/delegate.py â€” entry point de delegaciÃ³n multi-agente.
 
-Cubre: inicialización, detección de roles, parsing de @menciones,
-delegación a subprocess, listado de agentes, modo interactivo y edge cases.
+Cubre: inicializaciÃ³n, detecciÃ³n de roles, parsing de @menciones,
+delegaciÃ³n a subprocess, listado de agentes, modo interactivo y edge cases.
 """
 from __future__ import annotations
 
@@ -11,7 +10,6 @@ import logging
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -22,7 +20,7 @@ import pytest
 def no_delegation_engine():
     """Deshabilita DelegationEngine para que _detect_role use intent_map.
 
-    Como DelegationEngine está disponible en el proyecto y su
+    Como DelegationEngine estÃ¡ disponible en el proyecto y su
     route_message retorna valores inesperados (builder, coordinator),
     se parchea para que falle y los tests usen el path de intent_map.
     """
@@ -35,7 +33,7 @@ def no_delegation_engine():
 
 @pytest.fixture
 def mock_agents():
-    """Retorna estructura típica de agentes descubiertos."""
+    """Retorna estructura tÃ­pica de agentes descubiertos."""
     return {
         "software-engineer": {
             "description": "Construye software",
@@ -46,7 +44,7 @@ def mock_agents():
             "aliases": ["pm", "manager"],
         },
         "scientist": {
-            "description": "Investigación",
+            "description": "InvestigaciÃ³n",
             "aliases": ["sci", "researcher"],
         },
     }
@@ -55,7 +53,7 @@ def mock_agents():
 @pytest.fixture
 def mock_discovery(mock_agents):
     """Parchea discover_agents_recursive y build_intent_map."""
-    with patch("harness.delegate.discover_agents_recursive") as mock_dar:
+    with patch("harness.delegate.discover_agents_recursive") as mock_dar:  # noqa: SIM117
         with patch("harness.delegate.build_intent_map") as mock_bim:
             mock_dar.return_value = mock_agents
             mock_bim.return_value = {
@@ -86,7 +84,7 @@ def mock_resolve():
 
 
 class TestAgentCache:
-    """Tests para el caché de agentes descubiertos."""
+    """Tests para el cachÃ© de agentes descubiertos."""
 
     def test_get_agents_returns_dict(self, mock_discovery):
         """_get_agents debe retornar un dict con agentes."""
@@ -97,7 +95,7 @@ class TestAgentCache:
 
     def test_get_agents_cache_reuse(self, mock_discovery):
         """_get_agents debe cachear el resultado en _AGENTS_CACHE."""
-        import harness.delegate as delegate
+        from harness import delegate
 
         # Forzar reset del cache
         delegate._AGENTS_CACHE = None
@@ -154,7 +152,7 @@ class TestParseMention:
         assert text == "tarea"
 
     def test_empty_string(self):
-        """Con string vacío debe retornar (None, '')."""
+        """Con string vacÃ­o debe retornar (None, '')."""
         from harness.delegate import _parse_mention
         rol, text = _parse_mention("")
         assert rol is None
@@ -167,7 +165,7 @@ class TestParseMention:
 
 
 class TestDetectRole:
-    """Tests para la detección automática de roles."""
+    """Tests para la detecciÃ³n automÃ¡tica de roles."""
 
     def test_detect_by_keyword(self, mock_discovery):
         """Debe detectar rol por keyword en intent_map."""
@@ -176,7 +174,7 @@ class TestDetectRole:
         assert role == "software-engineer"
 
     def test_detect_research(self, mock_discovery):
-        """Debe detectar rol 'scientist' para tareas de investigación."""
+        """Debe detectar rol 'scientist' para tareas de investigaciÃ³n."""
         from harness.delegate import _detect_role
         role = _detect_role("investigar arquitectura del sistema")
         assert role == "scientist"
@@ -188,7 +186,7 @@ class TestDetectRole:
         assert role is None
 
     def test_detect_empty_task_returns_none(self, mock_discovery):
-        """Con tarea vacía debe retornar None."""
+        """Con tarea vacÃ­a debe retornar None."""
         from harness.delegate import _detect_role
         role = _detect_role("")
         assert role is None
@@ -208,7 +206,7 @@ class TestDetectRole:
 
 
 class TestResolveRole:
-    """Tests para la resolución de alias a nombre canónico."""
+    """Tests para la resoluciÃ³n de alias a nombre canÃ³nico."""
 
     def test_resolve_known_alias(self, mock_discovery, mock_resolve):
         """Debe resolver '@swe' a 'software-engineer'."""
@@ -223,7 +221,7 @@ class TestResolveRole:
         assert result is None
 
     def test_resolve_empty_string(self, mock_discovery, mock_resolve):
-        """Con string vacío debe retornar None."""
+        """Con string vacÃ­o debe retornar None."""
         from harness.delegate import resolve_role
         result = resolve_role("")
         assert result is None
@@ -235,17 +233,17 @@ class TestResolveRole:
 
 
 class TestDelegateTask:
-    """Tests para la función principal delegate_task."""
+    """Tests para la funciÃ³n principal delegate_task."""
 
     @patch("harness.delegate.subprocess.run")
     def test_delegate_with_explicit_role(self, mock_run, mock_discovery, mock_resolve):
-        """Debe delegar con @rol explícito a run.py."""
+        """Debe delegar con @rol explÃ­cito a run.py."""
         from harness.delegate import delegate_task
         mock_run.return_value = MagicMock(returncode=0)
 
         exit_code = delegate_task("@swe: crear API")
         assert exit_code == 0
-        # Verificar que se invocó run.py
+        # Verificar que se invocÃ³ run.py
         mock_run.assert_called_once()
         args, _ = mock_run.call_args
         cmd = args[0]
@@ -267,7 +265,7 @@ class TestDelegateTask:
 
     @patch("harness.delegate.subprocess.run")
     def test_delegate_unknown_role(self, mock_run, mock_discovery, mock_resolve):
-        """Con @rol desconocido debe retornar código 1."""
+        """Con @rol desconocido debe retornar cÃ³digo 1."""
         from harness.delegate import delegate_task
         mock_run.return_value = MagicMock(returncode=0)
 
@@ -290,7 +288,7 @@ class TestDelegateTask:
 
     @patch("harness.delegate.subprocess.run")
     def test_delegate_non_zero_exit(self, mock_run, mock_discovery, mock_resolve):
-        """Debe propagar el código de salida de run.py."""
+        """Debe propagar el cÃ³digo de salida de run.py."""
         from harness.delegate import delegate_task
         mock_run.return_value = MagicMock(returncode=42)
 
@@ -299,7 +297,7 @@ class TestDelegateTask:
 
     @patch("harness.delegate.subprocess.run")
     def test_delegate_empty_task_after_mention(self, mock_run, mock_discovery, mock_resolve):
-        """@rol: sin texto debe delegar con texto vacío."""
+        """@rol: sin texto debe delegar con texto vacÃ­o."""
         from harness.delegate import delegate_task
         mock_run.return_value = MagicMock(returncode=0)
 
@@ -397,7 +395,7 @@ class TestDelegateEdgeCases:
             _interactive_mode()
 
     def test_interactive_empty_line_skips(self, mock_discovery):
-        """Línea vacía en modo interactivo debe continuar el loop."""
+        """LÃ­nea vacÃ­a en modo interactivo debe continuar el loop."""
         from harness.delegate import _interactive_mode
         with patch("builtins.input", side_effect=["", "exit"]):
             _interactive_mode()
@@ -407,13 +405,13 @@ class TestDelegateEdgeCases:
         """Si delegate_task retorna != 0, debe loguear advertencia."""
         from harness.delegate import _interactive_mode
         mock_delegate.return_value = 1
-        with patch("builtins.input", side_effect=["tarea", "exit"]):
+        with patch("builtins.input", side_effect=["tarea", "exit"]):  # noqa: SIM117
             with caplog.at_level(logging.INFO):
                 _interactive_mode()
         assert any("codigo" in msg for msg in caplog.messages)
 
     def test_parse_mention_only_colon(self):
-        """@rol: sin texto debe retornar texto vacío."""
+        """@rol: sin texto debe retornar texto vacÃ­o."""
         from harness.delegate import _parse_mention
         rol, text = _parse_mention("@test: ")
         assert rol == "test"
@@ -422,7 +420,7 @@ class TestDelegateEdgeCases:
     def test_main_extra_flags_before_task(self, mock_discovery):
         """main() debe separar flags antes de la tarea."""
         from harness.delegate import main
-        with patch("harness.delegate.sys.argv", ["delegate.py", "--verbose", "tarea"]):
+        with patch("harness.delegate.sys.argv", ["delegate.py", "--verbose", "tarea"]):  # noqa: SIM117
             with patch("harness.delegate.delegate_task") as mock_dt:
                 mock_dt.return_value = 0
                 main()
@@ -435,11 +433,11 @@ class TestDelegateEdgeCases:
     def test_delegate_no_role_detected_interactive_fallback(
         self, mock_run, mock_discovery, caplog,
     ):
-        """Sin detección de rol y sin input, debe usar project-manager."""
+        """Sin detecciÃ³n de rol y sin input, debe usar project-manager."""
         from harness.delegate import delegate_task
         mock_run.return_value = MagicMock(returncode=0)
         # Crear un scenario donde role no se detecta
-        # y no hay DelegationEngine (ya está mockeado)
+        # y no hay DelegationEngine (ya estÃ¡ mockeado)
         with patch("builtins.input", return_value=""):
             exit_code = delegate_task("tarea_sin_match_xyz")
             assert exit_code == 0
@@ -454,7 +452,7 @@ class TestDelegateEdgeCases:
     def test_main_logs_usage_no_args(self, mock_discovery, caplog):
         """main() sin args debe loguear mensaje de uso."""
         from harness.delegate import main
-        with patch("harness.delegate.sys.argv", ["delegate.py"]):
+        with patch("harness.delegate.sys.argv", ["delegate.py"]):  # noqa: SIM117
             with caplog.at_level(logging.INFO):
                 main()
         assert any("Uso" in msg for msg in caplog.messages)

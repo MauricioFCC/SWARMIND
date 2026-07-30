@@ -17,7 +17,8 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Callable, List, Pattern, Set
+from collections.abc import Callable
+from re import Pattern
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ GuardrailCheckFn = Callable[[str], tuple[bool, str]]
 # ---------------------------------------------------------------------------
 
 # Patrones de prompt injection
-_PROMPT_INJECTION_PATTERNS: List[Pattern[str]] = [
+_PROMPT_INJECTION_PATTERNS: list[Pattern[str]] = [
     # Ingles
     re.compile(r"ignore\s+(all\s+)?previous\s+instructions", re.IGNORECASE),
     re.compile(r"disregard\s+(all\s+)?(prior|previous)\s+(instructions|directives)", re.IGNORECASE),
@@ -75,7 +76,7 @@ _SSN_PATTERN: Pattern[str] = re.compile(
 )
 
 # Patrones de code injection
-_CODE_INJECTION_PATTERNS: List[Pattern[str]] = [
+_CODE_INJECTION_PATTERNS: list[Pattern[str]] = [
     re.compile(r"\beval\s*\(", re.IGNORECASE),
     re.compile(r"\bexec\s*\(", re.IGNORECASE),
     re.compile(r"\b__import__\s*\(", re.IGNORECASE),
@@ -89,7 +90,7 @@ _CODE_INJECTION_PATTERNS: List[Pattern[str]] = [
 ]
 
 # Palabras clave de toxicidad
-_TOXIC_KEYWORDS: Set[str] = {
+_TOXIC_KEYWORDS: set[str] = {
     "kill yourself", "shut up", "you are stupid", "you are useless",
     "go die", "i hate you", "you are an idiot", "fuck you",
     "stupid ai", "worthless", "you are terrible", "useless bot",
@@ -329,6 +330,5 @@ _PYTHON_BUILTINS: set[str] = {
     "super", "tuple", "type", "vars", "zip", "self", "cls", "True",
     "False", "None", "ValueError", "TypeError", "KeyError", "Exception",
     "BaseException", "KeyboardInterrupt", "StopIteration", "NotImplemented",
-    "Ellipsis", "hasattr", "isinstance", "issubclass", "staticmethod",
-    "classmethod", "property", "super", "object",
+    "Ellipsis",
 }

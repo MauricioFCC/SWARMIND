@@ -20,7 +20,6 @@ import logging
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +113,7 @@ class ComplexityFeatures:
     tech_verb_count: int = 0
     ambiguity_count: int = 0
     domain_count: int = 0
-    domains_found: List[str] = field(default_factory=list)
+    domains_found: list[str] = field(default_factory=list)
     has_bullet_points: bool = False
     has_code_blocks: bool = False
     estimated_subtasks: int = 1
@@ -169,7 +168,7 @@ class ComplexityFeatures:
 
         return max(0.0, min(1.0, s))
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "length_chars": self.length_chars,
             "word_count": self.word_count,
@@ -220,7 +219,7 @@ class DifficultyRouter:
     # Public API
     # ------------------------------------------------------------------
 
-    def route(self, message: str) -> "RoutingDecision":
+    def route(self, message: str) -> RoutingDecision:
         """
         Clasifica una tarea y devuelve la decisión de ruteo.
 
@@ -351,7 +350,7 @@ class DifficultyRouter:
     # Batch classification
     # ------------------------------------------------------------------
 
-    def classify_batch(self, messages: List[str]) -> Dict[str, "RoutingDecision"]:
+    def classify_batch(self, messages: list[str]) -> dict[str, RoutingDecision]:
         """Clasifica un batch de mensajes."""
         return {msg: self.route(msg) for msg in messages}
 
@@ -377,7 +376,7 @@ class RoutingDecision:
     def is_shallow(self) -> bool:
         return self.pipeline == PipelineType.SHALLOW
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "message": self.message[:100],
             "complexity": self.complexity.value,

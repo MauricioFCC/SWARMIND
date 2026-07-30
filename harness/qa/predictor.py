@@ -19,7 +19,6 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional
 from uuid import uuid4
 
 from harness.qa import QALayer, QAMetadata
@@ -56,8 +55,8 @@ class HistorialEjecucion:
     total_runs: int
     failures: int
     avg_duration_ms: float
-    last_run: Optional[str] = None
-    metadata: Optional[QAMetadata] = None
+    last_run: str | None = None
+    metadata: QAMetadata | None = None
 
     def __post_init__(self) -> None:
         """Valida integridad del historial."""
@@ -129,7 +128,7 @@ class FailurePredictor:
         metadata: Metadatos opcionales para la capa L1.
     """
 
-    def __init__(self, metadata: Optional[QAMetadata] = None) -> None:
+    def __init__(self, metadata: QAMetadata | None = None) -> None:
         """Inicializa el predictor con metadatos de capa."""
         self._metadata = metadata or QAMetadata(
             layer=QALayer.L1_PREDICTOR,

@@ -1,4 +1,4 @@
-"""HookManager — Orquestador central de hooks.
+﻿"""HookManager â€” Orquestador central de hooks.
 
 Ejecuta los hooks registrados en el orden correcto y gestiona los resultados.
 Los hooks CRITICAL pueden detener la operacion (fail-fast).
@@ -18,7 +18,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from harness.hooks.hook_registry import (
     HookPriority,
@@ -53,7 +53,7 @@ class HookResult:
     status: HookResultStatus
     duration_ms: float = 0.0
     message: str = ""
-    data: Optional[Dict[str, Any]] = None
+    data: dict[str, Any] | None = None
 
 
 @dataclass
@@ -73,10 +73,10 @@ class HookExecutionContext:
     """
     hook_type: HookType
     tool_name: str = ""
-    tool_args: Optional[Dict[str, Any]] = None
-    tool_result: Optional[Any] = None
+    tool_args: dict[str, Any] | None = None
+    tool_result: Any | None = None
     file_path: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class HookManager:
@@ -89,20 +89,20 @@ class HookManager:
         registry: Instancia de HookRegistry. Si es None, usa la default.
     """
 
-    def __init__(self, registry: Optional[HookRegistry] = None) -> None:
+    def __init__(self, registry: HookRegistry | None = None) -> None:
         """Inicializa el gestor de hooks.
 
         Args:
             registry: Registro de hooks a usar. Si es None, usa el singleton.
         """
         self._registry: HookRegistry = registry or HookRegistry.get_instance()
-        self._cached_hooks: Dict[HookType, List[HookRegistration]] = {}
+        self._cached_hooks: dict[HookType, list[HookRegistration]] = {}
 
     def execute_pre_tool(
         self,
         tool_name: str,
-        tool_args: Optional[Dict[str, Any]] = None,
-    ) -> List[HookResult]:
+        tool_args: dict[str, Any] | None = None,
+    ) -> list[HookResult]:
         """Ejecuta todos los hooks PRE_TOOL registrados.
 
         Los hooks CRITICAL pueden detener la ejecucion (fail-fast).
@@ -126,8 +126,8 @@ class HookManager:
         self,
         tool_name: str,
         tool_result: Any = None,
-        tool_args: Optional[Dict[str, Any]] = None,
-    ) -> List[HookResult]:
+        tool_args: dict[str, Any] | None = None,
+    ) -> list[HookResult]:
         """Ejecuta todos los hooks POST_TOOL registrados.
 
         Args:
@@ -149,8 +149,8 @@ class HookManager:
     def execute_on_edit(
         self,
         file_path: str,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> List[HookResult]:
+        metadata: dict[str, Any] | None = None,
+    ) -> list[HookResult]:
         """Ejecuta todos los hooks ON_EDIT registrados.
 
         Args:
@@ -170,8 +170,8 @@ class HookManager:
     def execute_on_notification(
         self,
         notification_type: str,
-        data: Optional[Dict[str, Any]] = None,
-    ) -> List[HookResult]:
+        data: dict[str, Any] | None = None,
+    ) -> list[HookResult]:
         """Ejecuta todos los hooks ON_NOTIFICATION registrados.
 
         Args:
@@ -192,7 +192,7 @@ class HookManager:
         self,
         hook_type: HookType,
         ctx: HookExecutionContext,
-    ) -> List[HookResult]:
+    ) -> list[HookResult]:
         """Ejecuta todos los hooks de un tipo en orden de prioridad.
 
         Optimizaciones de rendimiento:
@@ -210,8 +210,8 @@ class HookManager:
         # Cache: evitar sorted() y get_hooks() repetido en cada llamada
         if hook_type not in self._cached_hooks:
             self._cached_hooks[hook_type] = self._registry.get_hooks(hook_type)
-        hooks: List[HookRegistration] = self._cached_hooks[hook_type]
-        results: List[HookResult] = []
+        hooks: list[HookRegistration] = self._cached_hooks[hook_type]
+        results: list[HookResult] = []
 
         for hook in hooks:
             if not hook.enabled:
@@ -265,7 +265,7 @@ class HookManager:
                     _duration,
                 )
 
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 _duration = (
                     (time.perf_counter() - _start) * 1000 if _measure else 0.0
                 )
@@ -285,7 +285,7 @@ class HookManager:
 
         return results
 
-    def has_blocked(self, results: List[HookResult]) -> bool:
+    def has_blocked(self, results: list[HookResult]) -> bool:
         """Verifica si algun hook bloqueo la operacion.
 
         Args:
@@ -296,7 +296,7 @@ class HookManager:
         """
         return any(r.status == HookResultStatus.BLOCKED for r in results)
 
-    def has_errors(self, results: List[HookResult]) -> bool:
+    def has_errors(self, results: list[HookResult]) -> bool:
         """Verifica si algun hook tuvo errores.
 
         Args:

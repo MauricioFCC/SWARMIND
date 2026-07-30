@@ -1,5 +1,5 @@
-"""
-Write-Ahead Log — Resiliencia ante fallos con retry/cancelacion.
+﻿"""
+Write-Ahead Log â€” Resiliencia ante fallos con retry/cancelacion.
 
 Basado en patron Write-Ahead Log de sistemas de bases de datos.
 Adaptado para sistemas multi-agente segun ADR-0018 Token Economics.
@@ -16,10 +16,11 @@ from __future__ import annotations
 import json
 import logging
 import time
+from collections.abc import Callable
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -54,7 +55,7 @@ class WALEntry:
         self,
         operation_id: str,
         operation_type: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         max_retries: int = 3,
     ) -> None:
         self.operation_id = operation_id
@@ -64,9 +65,9 @@ class WALEntry:
         self.created_at = datetime.now(timezone.utc).isoformat()
         self.retry_count = 0
         self.max_retries = max_retries
-        self.error: Optional[str] = None
+        self.error: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serializar entrada a dict (JSON-compatible)."""
         return {
             "operation_id": self.operation_id,
@@ -97,12 +98,12 @@ class WriteAheadLog:
         recovered = wal.recover_pending()
     """
 
-    def __init__(self, log_dir: Optional[str] = None) -> None:
+    def __init__(self, log_dir: str | None = None) -> None:
         """
         Args:
             log_dir: Directorio para persistir el log. Si es None, solo en memoria.
         """
-        self._entries: Dict[str, WALEntry] = {}
+        self._entries: dict[str, WALEntry] = {}
         self._log_dir = Path(log_dir) if log_dir else None
         if self._log_dir:
             self._log_dir.mkdir(parents=True, exist_ok=True)
@@ -110,7 +111,7 @@ class WriteAheadLog:
     def begin(
         self,
         operation_type: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         max_retries: int = 3,
     ) -> WALEntry:
         """
@@ -161,7 +162,7 @@ class WriteAheadLog:
         Raises:
             RuntimeError: Si se agotan los reintentos.
         """
-        last_error: Optional[Exception] = None
+        last_error: Exception | None = None
         for attempt in range(entry.max_retries + 1):
             try:
                 result = fn(*args, **kwargs)
@@ -172,14 +173,14 @@ class WriteAheadLog:
                     entry.operation_id, attempt + 1, entry.max_retries + 1,
                 )
                 return result
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 last_error = exc
                 entry.retry_count = attempt + 1
                 entry.error = str(exc)
                 entry.status = WALStatus.FAILED
                 self._persist()
                 logger.warning(
-                    "WAL retry %d/%d: %s — %s",
+                    "WAL retry %d/%d: %s â€” %s",
                     attempt + 1, entry.max_retries + 1,
                     entry.operation_id, exc,
                 )
@@ -221,7 +222,7 @@ class WriteAheadLog:
             if e.status == WALStatus.PENDING
         ]
 
-    def get_status(self, operation_id: str) -> Optional[WALStatus]:
+    def get_status(self, operation_id: str) -> WALStatus | None:
         """
         Obtener estado de una operacion.
 
@@ -245,7 +246,7 @@ class WriteAheadLog:
                 for e in self._entries.values()
             }
             path.write_text(json.dumps(data, indent=2, ensure_ascii=False))
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("WAL persist error: %s", exc)
 
     def load_from_disk(self) -> int:
@@ -275,6 +276,6 @@ class WriteAheadLog:
                 self._entries[op_id] = entry
             logger.info("WAL loaded %d entries from disk", len(data))
             return len(data)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("WAL load error: %s", exc)
             return 0

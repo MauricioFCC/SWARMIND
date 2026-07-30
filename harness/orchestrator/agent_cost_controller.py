@@ -7,8 +7,8 @@ y consumo anomalo de tokens.
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass, field
-from typing import Any, Dict
+from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -75,7 +75,7 @@ class AgentCostController:
             )
         self._max_tokens = max_tokens_per_session
         self._max_repeat = max_repeat_calls
-        self._records: Dict[str, AgentCostRecord] = {}
+        self._records: dict[str, AgentCostRecord] = {}
 
     def register_call(
         self,
@@ -116,11 +116,9 @@ class AgentCostController:
         rec.last_call_hash = call_hash
         rec.tokens_used += tokens
         rec.calls_made += 1
-        if rec.tokens_used > self._max_tokens:
-            return False  # Budget exceeded
-        return True
+        return rec.tokens_used <= self._max_tokens  # Budget exceeded
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Retorna estadisticas de uso de todos los agentes registrados.
 
         Returns:

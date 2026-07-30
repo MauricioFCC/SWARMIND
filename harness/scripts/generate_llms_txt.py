@@ -1,4 +1,4 @@
-"""
+﻿"""
 Generate /llms.txt and /llms-full.txt for LLM consumption (Hermes-inspired standard).
 
 Scans ``harness/`` and ``.opencode/`` recursively, building a curated index
@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Set
 
 logger = logging.getLogger(__name__)
 
@@ -21,23 +20,23 @@ LLMS_FULL_TXT = DOCS_DIR / "llms-full.txt"
 MAX_CHARS = 133_333  # ~100K tokens (chars * 0.75)
 
 # Directorios y patrones a excluir completamente
-EXCLUDED_DIRS: Set[str] = {
+EXCLUDED_DIRS: set[str] = {
     "__pycache__",
     ".git",
     "lancedb",      # datos binarios LanceDB
     "import",       # BDs legacy para migrar
     "_archived",    # colecciones archivadas
-    "_backup",      # backups automáticos
+    "_backup",      # backups automÃ¡ticos
     ".lance",       # datos internos LanceDB
 }
 
-EXCLUDED_FILE_SUFFIXES: Set[str] = {
+EXCLUDED_FILE_SUFFIXES: set[str] = {
     ".txn",
     ".manifest",
     ".lance",
 }
 
-EXCLUDED_FILE_NAMES: Set[str] = {
+EXCLUDED_FILE_NAMES: set[str] = {
     "latest_version_hint.json",
 }
 
@@ -56,7 +55,7 @@ def _should_exclude(path: Path) -> bool:
     for part in parts[:-1]:  # todas excepto el nombre del archivo
         if part in EXCLUDED_DIRS:
             return True
-        if part.startswith("_backup") or part.startswith("__pycache__"):
+        if part.startswith(("_backup", "__pycache__")):
             return True
         if part == ".git":
             return True
@@ -66,18 +65,15 @@ def _should_exclude(path: Path) -> bool:
         return True
 
     # Excluir archivos por nombre
-    if path.name in EXCLUDED_FILE_NAMES:
-        return True
-
-    return False
+    return path.name in EXCLUDED_FILE_NAMES
 
 
-def _scan_files(directory: Path, extensions: Optional[List[str]] = None) -> List[Path]:
+def _scan_files(directory: Path, extensions: list[str] | None = None) -> list[Path]:
     """Recursively scan a directory for files (excluding __pycache__, binaries, and DB data)."""
     if extensions is None:
         extensions = [".py", ".md", ".yaml", ".yml", ".json", ".cfg", ".ini", ".txt"]
 
-    results: List[Path] = []
+    results: list[Path] = []
     if not directory.exists():
         return results
 
@@ -133,14 +129,14 @@ def _categorise(path: Path) -> str:
 
 
 # ---------------------------------------------------------------------------
-# llms.txt — curated index
+# llms.txt â€” curated index
 # ---------------------------------------------------------------------------
 
 
 def generate_llms_txt() -> str:
     """Generate the curated llms.txt index."""
     files = _scan_files(ROOT)
-    categorised: Dict[str, List[Path]] = {}
+    categorised: dict[str, list[Path]] = {}
     for f in files:
         cat = _categorise(f)
         categorised.setdefault(cat, []).append(f)
@@ -153,9 +149,9 @@ def generate_llms_txt() -> str:
         "OpenCode Config", "Other",
     ]
 
-    lines: List[str] = [
+    lines: list[str] = [
         "# Swarmind Harness",
-        "> LLMs.txt — contexto curado para LLMs (generado automaticamente)",
+        "> LLMs.txt â€” contexto curado para LLMs (generado automaticamente)",
         "",
         "## Core",
     ]
@@ -201,20 +197,20 @@ def generate_llms_txt() -> str:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     with open(str(LLMS_TXT), "w", encoding="utf-8") as f:
         f.write(content)
-    logger.info(f"[OK] {LLMS_TXT} — {len(content)} caracteres")
+    logger.info(f"[OK] {LLMS_TXT} â€” {len(content)} caracteres")
 
     return content
 
 
 # ---------------------------------------------------------------------------
-# llms-full.txt — full content
+# llms-full.txt â€” full content
 # ---------------------------------------------------------------------------
 
 
 def generate_llms_full_txt() -> str:
     """Generate the full concatenation of all scanned files (capped at MAX_CHARS)."""
     files = _scan_files(ROOT)
-    sections: List[str] = []
+    sections: list[str] = []
     total_chars = 0
 
     for filepath in files:
@@ -223,7 +219,7 @@ def generate_llms_full_txt() -> str:
 
         try:
             content = filepath.read_text(encoding="utf-8")
-        except Exception:
+        except Exception:  # noqa: BLE001
             content = f"[ERROR: could not read {rel}]"
 
         section = f"{header}{content}"
@@ -244,7 +240,7 @@ def generate_llms_full_txt() -> str:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     with open(str(LLMS_FULL_TXT), "w", encoding="utf-8") as f:
         f.write(full)
-    logger.info(f"[OK] {LLMS_FULL_TXT} — {len(full)} caracteres, ~{estimated_tokens} tokens estimados")
+    logger.info(f"[OK] {LLMS_FULL_TXT} â€” {len(full)} caracteres, ~{estimated_tokens} tokens estimados")
 
     return full
 
@@ -261,10 +257,12 @@ def _get_title(filepath: Path) -> str:
         for line in content.splitlines():
             stripped = line.strip()
             # Skip separator lines
-            if stripped in ("---", "___", "===") or stripped.startswith("---") or stripped.startswith("===") or stripped.startswith("___"):
+            if stripped in ("---", "___", "===") or stripped.startswith(("---", "===", "___")):
                 continue
-            if stripped.startswith("# ") or stripped.startswith("#skill:"):
-                return stripped.lstrip("# ").lstrip("skill:").strip()
+            if stripped.startswith(("# ", "#skill:")):
+                for prefix in ("# ", "#skill:"):
+                    if stripped.startswith(prefix):
+                        return stripped.removeprefix(prefix).strip()
             if stripped.startswith("#") and not stripped.startswith("##"):
                 return stripped.lstrip("#").strip()
         # Fallback: first non-empty line
@@ -275,7 +273,7 @@ def _get_title(filepath: Path) -> str:
                     return stripped
                 return stripped[:120] + "..."
         return ""
-    except Exception:
+    except Exception:  # noqa: BLE001
         return ""
 
 

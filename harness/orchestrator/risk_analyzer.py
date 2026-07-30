@@ -5,9 +5,10 @@ Basado en CRO Forum 2026: Major Trends and Emerging Risk Radar.
 Analiza riesgos tecnologicos, geopoliticos, climaticos, de salud y financieros.
 """
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class RiskDomain(str, Enum):
@@ -35,14 +36,14 @@ class Risk:
     level: RiskLevel = RiskLevel.MEDIUM
     impact_score: float = 0.5
     likelihood: float = 0.5
-    mitigations: List[str] = field(default_factory=list)
+    mitigations: list[str] = field(default_factory=list)
 
 
 class RiskAnalyzer:
     """Analizador de riesgos emergentes multi-dominio con registro y consulta."""
 
     def __init__(self):
-        self._risks: List[Risk] = []
+        self._risks: list[Risk] = []
         self._register_defaults()
 
     def _register_defaults(self) -> None:
@@ -83,9 +84,9 @@ class RiskAnalyzer:
 
     def get_risks(
         self,
-        domain: Optional[RiskDomain] = None,
-        min_level: Optional[RiskLevel] = None,
-    ) -> List[Risk]:
+        domain: RiskDomain | None = None,
+        min_level: RiskLevel | None = None,
+    ) -> list[Risk]:
         """Obtiene riesgos filtrados opcionalmente por dominio y nivel minimo.
 
         Args:
@@ -112,7 +113,7 @@ class RiskAnalyzer:
         """
         self._risks.append(risk)
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Retorna un resumen estadistico de los riesgos registrados.
 
         Returns:

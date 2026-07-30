@@ -22,7 +22,6 @@ import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -38,13 +37,13 @@ class SubtaskRecord:
     agent: str
     description: str
     status: str = "pending"       # pending | running | success | failed | retry
-    error: Optional[str] = None
-    warning: Optional[str] = None
+    error: str | None = None
+    warning: str | None = None
     start_time: float = 0.0
     end_time: float = 0.0
     duration_ms: float = 0.0
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         d = asdict(self)
         return d
 
@@ -61,7 +60,7 @@ class SubtaskRecord:
 class LevelRecord:
     """Registro de un nivel de ejecución."""
     level: int
-    subtasks: List[SubtaskRecord] = field(default_factory=list)
+    subtasks: list[SubtaskRecord] = field(default_factory=list)
     start_time: float = 0.0
     end_time: float = 0.0
     status: str = "pending"       # pending | running | success | failed
@@ -81,7 +80,7 @@ class LevelRecord:
         success = sum(1 for s in self.subtasks if s.status == "success")
         return success / len(self.subtasks)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "level": self.level,
             "start_time": self.start_time,
@@ -104,14 +103,14 @@ class SessionTelemetry:
     session_id: str
     task: str
     project: str = ""
-    levels: List[LevelRecord] = field(default_factory=list)
+    levels: list[LevelRecord] = field(default_factory=list)
     start_time: float = field(default_factory=time.time)
     end_time: float = 0.0
     status: str = "running"       # running | completed | failed | aborted
     total_subtasks: int = 0
     total_errors: int = 0
     total_warnings: int = 0
-    agent_stats: Dict[str, Dict] = field(default_factory=dict)
+    agent_stats: dict[str, dict] = field(default_factory=dict)
 
     @property
     def total_duration_ms(self) -> float:
@@ -158,13 +157,13 @@ class SessionTelemetry:
     # Convenience methods for CognitiveState delegation (DRY)
     # ------------------------------------------------------------------
 
-    def get_subtask_history(self) -> List[Dict]:
+    def get_subtask_history(self) -> list[dict]:
         """Flat list of all subtask entries, compatible with CognitiveState format.
 
         Returns:
             List of dicts with keys: subtask_id, agent, description, timestamp.
         """
-        history: List[Dict] = []
+        history: list[dict] = []
         for level in self.levels:
             for st in level.subtasks:
                 history.append({
@@ -203,7 +202,7 @@ class SessionTelemetry:
                 level.end_time = time.time()
                 level.status = status
 
-    def summary(self) -> Dict:
+    def summary(self) -> dict:
         """Resumen ejecutivo de la sesión."""
         return {
             "session_id": self.session_id,
@@ -219,7 +218,7 @@ class SessionTelemetry:
             "agent_stats": self.agent_stats,
         }
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "session_id": self.session_id,
             "task": self.task,
@@ -255,7 +254,7 @@ class TelemetryTracker:
     def __init__(self, export_dir: str = "harness/data/telemetry") -> None:
         self._export_dir = Path(export_dir)
         self._export_dir.mkdir(parents=True, exist_ok=True)
-        self._sessions: Dict[str, SessionTelemetry] = {}
+        self._sessions: dict[str, SessionTelemetry] = {}
 
     # ------------------------------------------------------------------
     # Session management
@@ -277,10 +276,10 @@ class TelemetryTracker:
         )
         return telemetry
 
-    def get_session(self, session_id: str) -> Optional[SessionTelemetry]:
+    def get_session(self, session_id: str) -> SessionTelemetry | None:
         return self._sessions.get(session_id)
 
-    def list_sessions(self) -> List[str]:
+    def list_sessions(self) -> list[str]:
         return list(self._sessions.keys())
 
     def finalize_session(self, session_id: str, status: str = "completed") -> None:
@@ -298,7 +297,7 @@ class TelemetryTracker:
     # Export
     # ------------------------------------------------------------------
 
-    def export(self, session_id: str) -> Optional[str]:
+    def export(self, session_id: str) -> str | None:
         """Exporta la telemetría de una sesión a JSON."""
         telemetry = self._sessions.get(session_id)
         if not telemetry:
@@ -311,7 +310,7 @@ class TelemetryTracker:
         logger.info("Telemetry: exported to %s", filepath)
         return str(filepath)
 
-    def export_all(self) -> List[str]:
+    def export_all(self) -> list[str]:
         """Exporta todas las sesiones."""
         return [self.export(sid) for sid in self._sessions if self.export(sid)]
 
@@ -333,7 +332,7 @@ class TelemetryTracker:
     # Batch operations
     # ------------------------------------------------------------------
 
-    def load_all(self) -> Dict[str, SessionTelemetry]:
+    def load_all(self) -> dict[str, SessionTelemetry]:
         """Carga todas las sesiones desde archivos JSON."""
         loaded = {}
         for fpath in self._export_dir.glob("telemetry_*.json"):
@@ -406,8 +405,7 @@ def track_subtask(telemetry_tracker: TelemetryTracker):
                 return func(session_id, *args, **kwargs)
 
             level_idx = len(session.levels) - 1
-            if level_idx < 0:
-                level_idx = 0
+            level_idx = max(level_idx, 0)
 
             record = SubtaskRecord(
                 subtask_id=func.__name__,

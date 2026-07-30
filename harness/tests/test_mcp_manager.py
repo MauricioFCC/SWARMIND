@@ -15,14 +15,12 @@ Cubre:
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
-from unittest.mock import MagicMock, PropertyMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from harness.tools_sandbox.mcp_client import MCPClient, MCPResult, MCPTool
-from harness.tools_sandbox.mcp_manager import MCPServerConfig, MCPManager
-
+from harness.tools_sandbox.mcp_client import MCPResult, MCPTool
+from harness.tools_sandbox.mcp_manager import MCPManager, MCPServerConfig
 
 # ===========================================================================
 # Fixtures

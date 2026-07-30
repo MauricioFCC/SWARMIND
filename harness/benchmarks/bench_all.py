@@ -16,14 +16,14 @@ import logging
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 sys.path.insert(1, str(Path(__file__).resolve().parent.parent.parent))
 logging.basicConfig(level=logging.WARNING)
 BASELINE_FILE = Path(__file__).parent / "baseline.json"
 
 
-def _print_result(r: Dict[str, Any]):
+def _print_result(r: dict[str, Any]):
     name = r.get("name", "?")
     print(f"\n  [{name}]")
     for k, v in r.items():
@@ -34,7 +34,7 @@ def _print_result(r: Dict[str, Any]):
         print(f"    {k}: {v}")
 
 
-def run_all() -> List[Dict[str, Any]]:
+def run_all() -> list[dict[str, Any]]:
     from harness.benchmarks.bench_cache import bench_cache
     from harness.benchmarks.bench_compression import bench_compression
     from harness.benchmarks.bench_memory import bench_memory
@@ -59,7 +59,7 @@ def run_all() -> List[Dict[str, Any]]:
     return results
 
 
-def compare(results: List[Dict]):
+def compare(results: list[dict]):
     if not BASELINE_FILE.exists():
         BASELINE_FILE.write_text(json.dumps(results, indent=2))
         print("\n  Baseline saved.")
@@ -79,7 +79,7 @@ def compare(results: List[Dict]):
                 print(f"  {name}.{k}: {cv} ({'+' if d>0 else ''}{d:.1f}, {pct:+.1f}%)")
 
 
-def _run_single(name: str, fn) -> List[Dict]:
+def _run_single(name: str, fn) -> list[dict]:
     """Run a single benchmark by name."""
     return [fn()]
 

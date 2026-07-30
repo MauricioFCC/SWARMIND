@@ -7,14 +7,12 @@ personalizado, prioridades, contextos, edge cases y error handling.
 from __future__ import annotations
 
 import time
-from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Callable, Dict, List
-from unittest.mock import MagicMock, patch
+from collections.abc import Callable
+from unittest.mock import MagicMock
 
 import pytest
 
 from harness.orchestrator.swarm_mode import SwarmMode, SwarmResult, SwarmTask
-
 
 # ===========================================================================
 # Fixtures
@@ -34,7 +32,7 @@ def swarm_single() -> SwarmMode:
 
 
 @pytest.fixture
-def sample_tasks() -> List[SwarmTask]:
+def sample_tasks() -> list[SwarmTask]:
     """Lista de tareas de ejemplo con distintas prioridades."""
     return [
         SwarmTask(agent="builder", description="implementar API REST", priority=5),
@@ -231,7 +229,7 @@ class TestParallelism:
 
     def test_single_worker_sequential(self, swarm_single: SwarmMode) -> None:
         """Con max_workers=1 las tareas deben ejecutarse secuencialmente."""
-        execution_order: List[str] = []
+        execution_order: list[str] = []
 
         def tracking_dispatch(agent: str, task: str) -> str:
             execution_order.append(agent)

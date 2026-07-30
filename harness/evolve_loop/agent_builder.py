@@ -1,7 +1,4 @@
-"""
-
-EMBEDDING_DIM = 384
-Hermes Agent Builder — Construye agentes que funcionan, elimina el resto.
+﻿"""Hermes Agent Builder â€” Construye agentes que funcionan, elimina el resto.
 
 Observa la cognition store (asi_cognition_store) buscando patrones de tareas
 exitosas. Cuando un tipo de tarea se repite N veces con alta puntuacion,
@@ -21,7 +18,7 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, ClassVar
 
 import numpy as np
 import yaml
@@ -39,6 +36,7 @@ COGNITION_COLLECTION = "asi_cognition_store"
 AGENT_WORKSPACE_COLLECTION = "agent_workspace_logs"
 
 # Thresholds
+EMBEDDING_DIM = 384
 MIN_SUCCESSFUL_TASKS = 3       # minimas tareas exitosas para crear agente
 MIN_AVG_SCORE = 0.6            # puntuacion minima promedio
 MAX_AGENT_AGE_DAYS = 30        # dias sin uso antes de prunear
@@ -61,15 +59,15 @@ class AgentBuilder:
       4. El agente es auto-descubierto por agent_discovery.py en el proximo ciclo
     """
 
-    def __init__(self, vector_store: Optional[LanceVectorStore] = None):
+    def __init__(self, vector_store: LanceVectorStore | None = None):
         self._store = vector_store or LanceVectorStore()
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "agents_created": 0,
             "candidates_found": 0,
             "errors": 0,
         }
 
-    def build_agents_from_cognition(self) -> List[str]:
+    def build_agents_from_cognition(self) -> list[str]:
         """
         Escanea cognition store y crea agentes para dominios recurrentes.
         
@@ -89,14 +87,14 @@ class AgentBuilder:
         self._stats["candidates_found"] = len(domains)
 
         # 3. Crear agente para cada dominio que cumpla thresholds
-        created: List[str] = []
+        created: list[str] = []
         for domain, domain_lessons in domains.items():
             if len(domain_lessons) < MIN_SUCCESSFUL_TASKS:
                 continue
 
             avg_score = sum(
                 l.get("metrics", {}).get("overall_score", 0)
-                for l in domain_lessones
+                for l in domain_lessons
             ) / len(domain_lessons)
 
             if avg_score < MIN_AVG_SCORE:
@@ -120,7 +118,7 @@ class AgentBuilder:
 
         return created
 
-    def _fetch_lessons(self) -> List[Dict[str, Any]]:
+    def _fetch_lessons(self) -> list[dict[str, Any]]:
         """Obtiene lessons recientes de la cognition store."""
         try:
             dummy = np.zeros(EMBEDDING_DIM, dtype=np.float32)
@@ -145,16 +143,16 @@ class AgentBuilder:
                 meta["metrics"] = metrics
                 lessons.append(meta)
             return lessons
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to fetch cognition lessons: %s", exc)
             return []
 
     @staticmethod
     def _group_by_domain(
-        lessons: List[Dict[str, Any]],
-    ) -> Dict[str, List[Dict[str, Any]]]:
+        lessons: list[dict[str, Any]],
+    ) -> dict[str, list[dict[str, Any]]]:
         """Agrupa lessons por dominio."""
-        groups: Dict[str, List[Dict[str, Any]]] = {}
+        groups: dict[str, list[dict[str, Any]]] = {}
         for lesson in lessons:
             domain = lesson.get("domain", "general")
             # Extraer dominio base (antes del primer .)
@@ -179,9 +177,9 @@ class AgentBuilder:
     def _create_agent_profile(
         self,
         domain: str,
-        lessons: List[Dict[str, Any]],
+        lessons: list[dict[str, Any]],
         avg_score: float,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Crea un perfil de agente .md en .opencode/agents/auto/.
         
@@ -197,8 +195,8 @@ class AgentBuilder:
         agent_name = slug
 
         # Extraer tags como capacidades
-        all_tags: Set[str] = set()
-        all_triggers: Set[str] = set()
+        all_tags: set[str] = set()
+        all_triggers: set[str] = set()
         for lesson in lessons:
             for tag in lesson.get("tags", []):
                 if isinstance(tag, str):
@@ -257,12 +255,12 @@ class AgentBuilder:
                 len(lessons), avg_score,
             )
             return agent_name
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error("Failed to write agent profile %s: %s", filepath, exc)
             self._stats["errors"] += 1
             return None
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Return builder statistics."""
         return dict(self._stats)
 
@@ -285,17 +283,17 @@ class AgentPruner:
     """
 
     # Roles que nunca se prunean
-    PROTECTED_ROLES = {"coordinator", "builder", "scientist", "guardian", "evolve"}
+    PROTECTED_ROLES: ClassVar[set[str]] = {"coordinator", "builder", "scientist", "guardian", "evolve"}
 
-    def __init__(self, vector_store: Optional[LanceVectorStore] = None):
+    def __init__(self, vector_store: LanceVectorStore | None = None):
         self._store = vector_store or LanceVectorStore()
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "pruned": 0,
             "protected": 0,
             "errors": 0,
         }
 
-    def prune_underperforming(self, dry_run: bool = False) -> List[str]:
+    def prune_underperforming(self, dry_run: bool = False) -> list[str]:
         """
         Elimina agentes auto-generados que no cumplen los thresholds.
         
@@ -320,7 +318,7 @@ class AgentPruner:
         usage = self._get_agent_usage(auto_agents)
 
         # 3. Evaluar y eliminar
-        pruned: List[str] = []
+        pruned: list[str] = []
         for agent_file in auto_agents:
             agent_name = agent_file.stem
 
@@ -336,7 +334,7 @@ class AgentPruner:
             task_count = info.get("task_count", 0)
 
             should_prune = False
-            reasons: List[str] = []
+            reasons: list[str] = []
 
             # Sin uso reciente
             if last_used:
@@ -375,7 +373,7 @@ class AgentPruner:
                             min_file.unlink()
                         logger.info("Pruned agent '%s': %s", agent_name, reason_str)
                         self._stats["pruned"] += 1
-                    except Exception as exc:
+                    except Exception as exc:  # noqa: BLE001
                         logger.error("Failed to prune '%s': %s", agent_name, exc)
                         self._stats["errors"] += 1
 
@@ -387,10 +385,10 @@ class AgentPruner:
         return pruned
 
     def _get_agent_usage(
-        self, agent_files: List[Path],
-    ) -> Dict[str, Dict[str, Any]]:
+        self, agent_files: list[Path],
+    ) -> dict[str, dict[str, Any]]:
         """Obtiene metricas de uso para cada agente desde agent_workspace_logs."""
-        usage: Dict[str, Dict[str, Any]] = {}
+        usage: dict[str, dict[str, Any]] = {}
 
         for agent_file in agent_files:
             agent_name = agent_file.stem
@@ -431,12 +429,12 @@ class AgentPruner:
                     if scores:
                         usage[agent_name]["avg_score"] = sum(scores) / len(scores)
 
-            except Exception as _exc:
+            except Exception as _exc:  # noqa: BLE001
                 logger.warning("agent_builder: %s", _exc)
 
         return usage
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Return pruner statistics."""
         return dict(self._stats)
 
@@ -446,7 +444,7 @@ class AgentPruner:
 # ---------------------------------------------------------------------------
 
 
-def run_agent_evolution(dry_run: bool = False) -> Dict[str, Any]:
+def run_agent_evolution(dry_run: bool = False) -> dict[str, Any]:
     """
     Ejecuta el ciclo completo de evolucion de agentes:
     1. Construye nuevos agentes desde cognition store

@@ -8,12 +8,14 @@ Cubre:
 
 from __future__ import annotations
 
-import pytest
-
+from harness.memory_rag.prompt_compressor import CompressionResult, PromptCompressor
 from harness.model_router.router import ModelRouter, MultiAPIProvider, ProviderConfig
-from harness.memory_rag.prompt_compressor import PromptCompressor, CompressionResult
-from harness.orchestrator.got_planner import GoTPlanner, GoTExecutor, Thought, ThoughtGraph
-
+from harness.orchestrator.got_planner import (
+    GoTExecutor,
+    GoTPlanner,
+    Thought,
+    ThoughtGraph,
+)
 
 # ============================================================================
 # Multi-API Router Tests
@@ -24,7 +26,7 @@ class TestMultiAPIProvider:
 
     def test_register_provider(self) -> None:
         """Registrar un provider debe funcionar."""
-        router = ModelRouter()
+        ModelRouter()
         provider = MultiAPIProvider()
         config = ProviderConfig(
             name="test-openai",

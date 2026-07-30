@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 
 
-def bench_memory() -> Dict[str, Any]:
+def bench_memory() -> dict[str, Any]:
     # Usar db_path temporal para forzar modo in-memory (evita schema conflicts con tablas LanceDB existentes)
     import tempfile
     from pathlib import Path

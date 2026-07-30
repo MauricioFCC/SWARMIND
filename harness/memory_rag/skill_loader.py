@@ -18,7 +18,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -28,19 +28,19 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 # Dominios conocidos para routing contextual
-DOMAIN_KEYWORDS: Dict[str, Set[str]] = {
+DOMAIN_KEYWORDS: dict[str, set[str]] = {
     "trading": {"trading", "quant", "market", "exchange", "broker", "order",
                 "signal", "strategy", "portfolio", "risk", "alpha"},
     "healthtech": {"health", "medical", "patient", "hipaa", "fhir", "clinical",
                    "diagnosis", "hospital", "ehr", "healthcare"},
-    "retail": {"retail", "pos", "inventory", "sale", "pos", "cashier",
+    "retail": {"retail", "pos", "inventory", "sale", "cashier",
                "product", "customer", "store", "payment"},
     "general": {"general", "system", "config", "deploy", "devops", "api"},
     "evolve": {"evolve", "improve", "optimize", "learn", "skill", "meta"},
 }
 
 # Mapa de skill -> dominio(s)
-SKILL_DOMAIN_MAP: Dict[str, List[str]] = {
+SKILL_DOMAIN_MAP: dict[str, list[str]] = {
     "evolve": ["evolve", "general"],
     "hedgefund": ["general"],
     "quant-trading": ["trading"],
@@ -55,10 +55,10 @@ SKILL_DOMAIN_MAP: Dict[str, List[str]] = {
 }
 
 # Carga siempre estos skills (nunca lazy)
-ALWAYS_LOAD_SKILLS: Set[str] = {"evolve", "hedgefund"}
+ALWAYS_LOAD_SKILLS: set[str] = {"evolve", "hedgefund"}
 
 # Carga on-demand estos skills cuando el dominio coincide
-DOMAIN_TRIGGERED_SKILLS: Set[str] = {"quant-trading", "alpha-research", "risk-execution",
+DOMAIN_TRIGGERED_SKILLS: set[str] = {"quant-trading", "alpha-research", "risk-execution",
                                       "healthtech", "pos-retail"}
 
 # Tokens por nivel
@@ -78,7 +78,7 @@ class SkillInfo:
     description: str
     tier: int = 1  # 1 = name+desc only, 2 = minified, 3 = full
     tokens: int = 0
-    domain: List[str] = field(default_factory=list)
+    domain: list[str] = field(default_factory=list)
     content_tier2: str = ""  # SKILL.min.md content
     content_tier3: str = ""  # Full SKILL.md content
     loaded: bool = False
@@ -128,10 +128,10 @@ class LazySkillLoader:
         auto_discover: bool = True,
     ) -> None:
         self._skills_dir = Path(skills_dir)
-        self._skills: Dict[str, SkillInfo] = {}
-        self._active_skills: Dict[str, SkillInfo] = {}  # tier 2/3 loaded
-        self._domain_cache: Dict[str, List[str]] = {}
-        self._stats: Dict[str, Any] = {
+        self._skills: dict[str, SkillInfo] = {}
+        self._active_skills: dict[str, SkillInfo] = {}  # tier 2/3 loaded
+        self._domain_cache: dict[str, list[str]] = {}
+        self._stats: dict[str, Any] = {
             "tier1_tokens": 0,
             "tier2_tokens": 0,
             "tier3_tokens": 0,
@@ -208,7 +208,7 @@ class LazySkillLoader:
 
     def get_tier1_prompt(
         self,
-        domain_filter: Optional[List[str]] = None,
+        domain_filter: list[str] | None = None,
     ) -> str:
         """
         Build Tier 1 prompt section: names + descriptions only.
@@ -255,9 +255,9 @@ class LazySkillLoader:
 
     def load_tier2(
         self,
-        skill_names: List[str],
+        skill_names: list[str],
         force: bool = False,
-    ) -> Dict[str, bool]:
+    ) -> dict[str, bool]:
         """
         Load skills at Tier 2 (minified content).
         Skills are moved from the general pool to 'active'.
@@ -269,7 +269,7 @@ class LazySkillLoader:
         Returns:
             {skill_name: success}
         """
-        results: Dict[str, bool] = {}
+        results: dict[str, bool] = {}
 
         for name in skill_names:
             if name not in self._skills:
@@ -304,13 +304,13 @@ class LazySkillLoader:
 
     def load_tier3(
         self,
-        skill_names: List[str],
-    ) -> Dict[str, bool]:
+        skill_names: list[str],
+    ) -> dict[str, bool]:
         """
         Load skills at Tier 3 (full content).
         For complex tasks that need the complete skill definition.
         """
-        results: Dict[str, bool] = {}
+        results: dict[str, bool] = {}
 
         for name in skill_names:
             if name not in self._skills:
@@ -334,9 +334,9 @@ class LazySkillLoader:
 
     def load_for_domain(
         self,
-        domains: List[str],
+        domains: list[str],
         tier: int = 2,
-    ) -> Dict[str, int]:
+    ) -> dict[str, int]:
         """
         Load all skills relevant to given domains.
 
@@ -347,8 +347,8 @@ class LazySkillLoader:
         Returns:
             {skill_name: tier_loaded}
         """
-        results: Dict[str, int] = {}
-        to_load: List[str] = []
+        results: dict[str, int] = {}
+        to_load: list[str] = []
 
         for name, skill in self._skills.items():
             # Always-loaded skills
@@ -393,7 +393,7 @@ class LazySkillLoader:
         Returns:
             Formatted string for LLM context.
         """
-        parts: List[str] = []
+        parts: list[str] = []
 
         # Loaded skills (tier 2 or 3)
         if self._active_skills:
@@ -413,7 +413,7 @@ class LazySkillLoader:
 
         return "\n".join(parts)
 
-    def get_loaded_skill_names(self, tier: Optional[int] = None) -> List[str]:
+    def get_loaded_skill_names(self, tier: int | None = None) -> list[str]:
         """Get names of loaded skills, optionally filtered by tier."""
         if tier:
             return [n for n, s in self._skills.items() if s.tier >= tier]
@@ -423,7 +423,7 @@ class LazySkillLoader:
     # Domain detection
     # ------------------------------------------------------------------
 
-    def detect_domains(self, message: str) -> List[str]:
+    def detect_domains(self, message: str) -> list[str]:
         """
         Detect which domains are relevant to a message.
 
@@ -437,7 +437,7 @@ class LazySkillLoader:
             return ["general"]
 
         msg_lower = message.lower()
-        scores: Dict[str, int] = {}
+        scores: dict[str, int] = {}
 
         for domain, keywords in DOMAIN_KEYWORDS.items():
             score = sum(1 for kw in keywords if kw in msg_lower)
@@ -473,7 +473,7 @@ class LazySkillLoader:
             if skill.hit_count >= 3 and skill.tier < 2:
                 self.load_tier2([skill_name])
 
-    def get_skill(self, name: str) -> Optional[SkillInfo]:
+    def get_skill(self, name: str) -> SkillInfo | None:
         """Get skill info by name."""
         return self._skills.get(name)
 
@@ -481,7 +481,7 @@ class LazySkillLoader:
     # Stats
     # ------------------------------------------------------------------
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Return loader statistics."""
         stats = dict(self._stats)
         stats["total_skills"] = len(self._skills)

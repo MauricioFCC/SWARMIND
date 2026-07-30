@@ -522,22 +522,24 @@ class TestConfidenceInOrchestrator:
     @pytest.mark.slow
     def test_process_completion_logs_confidence(self, caplog):
         """After completing a subtask, confidence is evaluated and logged."""
+        import asyncio
+
         from harness.orchestrator.task_orchestrator import TaskOrchestrator
         orch = TaskOrchestrator()
 
-        result = orch.process_message("implementar API")
+        result = asyncio.run(orch.process_message("implementar API"))
         first_id = result.current_level[0]["id"]
 
         import logging
         caplog.set_level(logging.INFO)
 
-        next_result = orch.process_completion(
+        next_result = asyncio.run(orch.process_completion(
             session_id=result.session_id,
             subtask_id=first_id,
             result="API implementada correctamente con Rust y Actix-web. "
                    "Endpoints: GET /users, POST /users, DELETE /users. "
                    "Validación con serde, autenticación JWT.",
-        )
+        ))
         assert next_result is not None
 
         # Check that confidence evaluation was logged

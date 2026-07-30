@@ -1,5 +1,5 @@
-"""
-Agent Dispatcher — Skill-aware task routing.
+﻿"""
+Agent Dispatcher â€” Skill-aware task routing.
 
 Finds relevant procedural skills for a task description and includes them
 in the dispatch context if the match is strong enough (>70% similarity).
@@ -10,7 +10,7 @@ from __future__ import annotations
 import functools
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -43,10 +43,10 @@ class AgentDispatcher:
     context so the agent can reuse known patterns.
     """
 
-    def __init__(self, vector_store: Optional[LanceVectorStore] = None) -> None:
+    def __init__(self, vector_store: LanceVectorStore | None = None) -> None:
         """Inicializa la instancia de la clase."""
         self._vector_store = vector_store
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "total_dispatches": 0,
             "skill_matches": 0,
             "no_skill_matches": 0,
@@ -56,13 +56,13 @@ class AgentDispatcher:
     # Public API
     # ------------------------------------------------------------------
 
-    def find_skill_for_task(self, task_description: str) -> Optional[Dict[str, Any]]:
+    def find_skill_for_task(self, task_description: str) -> dict[str, Any] | None:
         """
         Find the best-matching skill for a task description.
 
         Search order:
-          1. YAML registry (``skills_registry.yaml``) — keyword match.
-          2. LanceDB ``procedural_skills`` — vector similarity.
+          1. YAML registry (``skills_registry.yaml``) â€” keyword match.
+          2. LanceDB ``procedural_skills`` â€” vector similarity.
 
         Returns:
             The best-matching skill dict with keys (name, path, domain, agent,
@@ -98,7 +98,7 @@ class AgentDispatcher:
         logger.debug("No skill found for: %s", task_description[:80])
         return None
 
-    def dispatch(self, agent_role: str, task_description: str) -> Dict[str, Any]:
+    def dispatch(self, agent_role: str, task_description: str) -> dict[str, Any]:
         """
         Dispatch a task to an agent, optionally including skill context.
 
@@ -118,7 +118,7 @@ class AgentDispatcher:
 
         skill = self.find_skill_for_task(task_description)
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "agent": agent_role,
             "task": task_description,
             "used_skill": False,
@@ -153,7 +153,7 @@ class AgentDispatcher:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _search_lancedb_skills(self, query: str) -> Optional[Dict[str, Any]]:
+    def _search_lancedb_skills(self, query: str) -> dict[str, Any] | None:
         """Search for skills in LanceDB procedural_skills collection."""
         if self._vector_store is None:
             return None
@@ -172,7 +172,7 @@ class AgentDispatcher:
             results = self._vector_store.search(
                 COLLECTION_PROCEDURAL_SKILLS, vec, top_k=3
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning("LanceDB skill search failed: %s", exc)
             return None
 
@@ -220,7 +220,7 @@ class AgentDispatcher:
                 return min_p.read_text(encoding='utf-8')
             if p.exists():
                 return p.read_text(encoding='utf-8')
-        except Exception as _exc:
+        except Exception as _exc:  # noqa: BLE001
             logger.warning("agent_dispatcher: %s", _exc)
         return ""
 
@@ -228,7 +228,7 @@ class AgentDispatcher:
     # Stats
     # ------------------------------------------------------------------
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Return dispatch statistics."""
         return dict(self._stats)
 
@@ -248,15 +248,15 @@ class AgentDispatcher:
         self,
         agent_role: str,
         task_description: str,
-        vector_store: Optional[Any] = None,
-        plan_context: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        vector_store: Any | None = None,
+        plan_context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Version ASYNC de dispatch(). Ejecuta en PARALELO:
         1. Busqueda de skill en LanceDB
         2. Contexto RAG
         3. Mensajes recientes del agent_bus
-        4. Plan de ejecución (si existe)
+        4. Plan de ejecuciÃ³n (si existe)
 
         Args:
             plan_context: Optional dict with plan info (from TaskOrchestrator).
@@ -285,7 +285,7 @@ class AgentDispatcher:
             skill_task, context_task, messages_task
         )
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "agent": agent_role,
             "task": task_description,
             "used_skill": skill_result is not None,
@@ -311,9 +311,9 @@ class AgentDispatcher:
 
     async def dispatch_batch(
         self,
-        tasks: List[Tuple[str, str]],
-        vector_store: Optional[Any] = None,
-    ) -> List[Dict[str, Any]]:
+        tasks: list[tuple[str, str]],
+        vector_store: Any | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Dispatch MULTIPLE tareas en PARALELO.
         Args:

@@ -11,10 +11,9 @@ Determina cuantos agentes lanzar segun la cantidad de trabajo detectada:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List
 
 # Keywords que indican cantidad de modulos/archivos
-SCALE_INDICATORS: Dict[str, int] = {
+SCALE_INDICATORS: dict[str, int] = {
     # Pequeno
     "un modulo": 1,
     "una funcion": 1,
@@ -29,8 +28,6 @@ SCALE_INDICATORS: Dict[str, int] = {
     "sistema": 4,
     "completo": 5,
     "full": 5,
-    "sistema": 4,
-    "completo": 5,
     "completa": 5,
     "grande": 6,
     "construye": 3,
@@ -55,7 +52,7 @@ SCALE_INDICATORS: Dict[str, int] = {
 }
 
 # Palabras que suman modulos
-MODULE_KEYWORDS: List[str] = [
+MODULE_KEYWORDS: list[str] = [
     "modulo", "modulos", "componente", "componentes",
     "servicio", "servicios", "microservicio",
     "api", "endpoint", "endpoints",
@@ -64,7 +61,7 @@ MODULE_KEYWORDS: List[str] = [
 ]
 
 # Tech stacks que sugieren mas archivos
-TECH_STACK_WEIGHTS: Dict[str, int] = {
+TECH_STACK_WEIGHTS: dict[str, int] = {
     "rust": 2,      # Rust tiene Cargo.toml + src/lib.rs + mod.rs
     "python": 1,
     "go": 2,        # Go tiene go.mod + multiple files
@@ -205,7 +202,7 @@ class ScopeAnalyzer:
         """Retorna nombre descriptivo del template segun scope."""
         return f"dynamic_{scope.level}_{scope.builders_needed}b_{scope.guardians_needed}g"
 
-    def generate_subtasks(self, scope: ScopeEstimate, base_id: int = 0) -> List[Dict]:
+    def generate_subtasks(self, scope: ScopeEstimate, base_id: int = 0) -> list[dict]:
         """
         Genera subtareas dinamicamente segun el alcance.
         Usa indices (0-based) para dependencias, como los templates estaticos.

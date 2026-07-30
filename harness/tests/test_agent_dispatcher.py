@@ -1,14 +1,14 @@
-"""
-Tests para AgentDispatcher — skill-aware task routing.
+﻿"""
+Tests para AgentDispatcher â€” skill-aware task routing.
 
-Cubre: dispatch síncrono, búsqueda en YAML registry, búsqueda LanceDB,
+Cubre: dispatch sÃ­ncrono, bÃºsqueda en YAML registry, bÃºsqueda LanceDB,
 lectura de skill .md, stats, dispatch_async y dispatch_batch.
 """
 
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -39,7 +39,7 @@ def dispatcher(mock_vector_store):
 
 
 @pytest.fixture
-def sample_skill() -> Dict[str, Any]:
+def sample_skill() -> dict[str, Any]:
     """Skill de ejemplo."""
     return {
         "name": "test-skill",
@@ -88,7 +88,7 @@ class TestFindSkillForTask:
         """Debe retornar skill si hay match en YAML registry."""
         mock_skill = {"name": "my-skill", "path": "/fake/path/my-skill.md",
                       "domain": "dev", "agent": "se", "trigger": "code"}
-        with patch.object(dispatcher.__class__, '_read_skill_md',
+        with patch.object(dispatcher.__class__, '_read_skill_md',  # noqa: SIM117
                           return_value="# My Skill") as mock_read:
             with patch("harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",
                        return_value=mock_skill):
@@ -103,7 +103,7 @@ class TestFindSkillForTask:
     def test_yaml_registry_match_no_path(self, dispatcher):
         """Debe retornar skill con content vacio si no hay path."""
         mock_skill = {"name": "no-path-skill", "domain": "dev"}
-        with patch("harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",
+        with patch("harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",  # noqa: SIM117
                    return_value=mock_skill):
             with patch.object(dispatcher, '_read_skill_md') as mock_read:
                 result = dispatcher.find_skill_for_task("test")
@@ -114,7 +114,7 @@ class TestFindSkillForTask:
 
     def test_lancedb_match(self, dispatcher, mock_vector_store, sample_skill):
         """Debe buscar en LanceDB si YAML no matchea."""
-        with patch("harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",
+        with patch("harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",  # noqa: SIM117
                    return_value=None):
             with patch.object(dispatcher, '_search_lancedb_skills',
                               return_value=sample_skill):
@@ -123,9 +123,9 @@ class TestFindSkillForTask:
         assert result is sample_skill
 
     def test_lancedb_match_below_threshold(self, dispatcher, mock_vector_store):
-        """Debe retornar None si el match de LanceDB está por debajo del threshold."""
+        """Debe retornar None si el match de LanceDB estÃ¡ por debajo del threshold."""
         low_skill = {"name": "low", "similarity": SIMILARITY_THRESHOLD - 0.05}
-        with patch("harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",
+        with patch("harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",  # noqa: SIM117
                    return_value=None):
             with patch.object(dispatcher, '_search_lancedb_skills',
                               return_value=low_skill):
@@ -135,7 +135,7 @@ class TestFindSkillForTask:
 
     def test_no_match(self, dispatcher, mock_vector_store):
         """Debe retornar None si no hay match en ninguna fuente."""
-        with patch("harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",
+        with patch("harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",  # noqa: SIM117
                    return_value=None):
             with patch.object(dispatcher, '_search_lancedb_skills',
                               return_value=None):
@@ -146,7 +146,7 @@ class TestFindSkillForTask:
     def test_no_vector_store_skip_lancedb(self, dispatcher):
         """Debe saltar LanceDB si no hay vector store."""
         d = AgentDispatcher()
-        with patch("harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",
+        with patch("harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",  # noqa: SIM117
                    return_value=None):
             with patch.object(d, '_search_lancedb_skills') as mock_search:
                 result = d.find_skill_for_task("test")
@@ -161,7 +161,7 @@ class TestFindSkillForTask:
 
 
 class TestDispatch:
-    """Tests para dispatch síncrono."""
+    """Tests para dispatch sÃ­ncrono."""
 
     def test_dispatch_with_skill(self, dispatcher, sample_skill):
         """Debe incluir skill context cuando hay match."""
@@ -192,7 +192,7 @@ class TestDispatch:
         assert "skill_name" not in result
 
     def test_dispatch_skill_below_threshold(self, dispatcher):
-        """Debe ignorar skill si su similitud está por debajo del threshold."""
+        """Debe ignorar skill si su similitud estÃ¡ por debajo del threshold."""
         low_skill = {"name": "low", "content": "x", "similarity": SIMILARITY_THRESHOLD - 0.01}
         with patch.object(dispatcher, 'find_skill_for_task',
                           return_value=low_skill):
@@ -203,7 +203,7 @@ class TestDispatch:
         assert dispatcher._stats["no_skill_matches"] == 1
 
     def test_dispatch_multiple_updates_stats(self, dispatcher, sample_skill):
-        """Las estadísticas deben acumularse correctamente."""
+        """Las estadÃ­sticas deben acumularse correctamente."""
         with patch.object(dispatcher, 'find_skill_for_task') as mock_find:
             mock_find.side_effect = [sample_skill, None, sample_skill, None]
 
@@ -231,7 +231,7 @@ class TestSearchLanceDBSkills:
         assert d._search_lancedb_skills("test") is None
 
     def test_exception_during_search(self, dispatcher, mock_vector_store):
-        """Debe manejar excepción en vector_store.search."""
+        """Debe manejar excepciÃ³n en vector_store.search."""
         mock_vector_store.search.side_effect = RuntimeError("DB down")
         result = dispatcher._search_lancedb_skills("test query")
         assert result is None
@@ -243,7 +243,7 @@ class TestSearchLanceDBSkills:
         assert result is None
 
     def test_score_below_threshold(self, dispatcher, mock_vector_store):
-        """Debe retornar None si el score está por debajo del threshold."""
+        """Debe retornar None si el score estÃ¡ por debajo del threshold."""
         mock_vector_store.search.return_value = [
             {"metadata": {"name": "x"}, "score": SIMILARITY_THRESHOLD - 0.1}
         ]
@@ -341,7 +341,7 @@ class TestReadSkillMd:
         assert content == ""
 
     def test_exception_handling(self):
-        """Debe retornar string vacio si hay una excepción."""
+        """Debe retornar string vacio si hay una excepciÃ³n."""
         mock_path, mock_min_path = self._setup_path_mocks("/fake/d.md")
         mock_min_path.exists.side_effect = OSError("permission denied")
         with patch("harness.orchestrator.agent_dispatcher.Path",
@@ -359,7 +359,7 @@ class TestStats:
     """Tests para get_stats y reset_stats."""
 
     def test_get_stats(self, dispatcher):
-        """Debe retornar copia del dict de estadísticas."""
+        """Debe retornar copia del dict de estadÃ­sticas."""
         dispatcher._stats["skill_matches"] = 5
         stats = dispatcher.get_stats()
         assert stats["skill_matches"] == 5
@@ -390,7 +390,7 @@ class TestDispatchAsync:
     def test_async_with_skill(self, dispatcher):
         """Debe retornar resultado con skill context."""
         skill = {"name": "sk", "content": "skill content"}
-        with patch.object(dispatcher, 'find_skill_for_task',
+        with patch.object(dispatcher, 'find_skill_for_task',  # noqa: SIM117
                           return_value=skill):
             with patch("harness.memory_rag.context_assembler.ContextAssembler"):
                 with patch("harness.orchestrator.agent_bus.AgentBus"):
@@ -407,7 +407,7 @@ class TestDispatchAsync:
 
     def test_async_without_skill(self, dispatcher):
         """Debe retornar resultado con from_scratch."""
-        with patch.object(dispatcher, 'find_skill_for_task',
+        with patch.object(dispatcher, 'find_skill_for_task',  # noqa: SIM117
                           return_value=None):
             with patch("harness.memory_rag.context_assembler.ContextAssembler"):
                 with patch("harness.orchestrator.agent_bus.AgentBus"):
@@ -430,7 +430,7 @@ class TestDispatchAsync:
             "communication_log": [],
             "is_complete": False,
         }
-        with patch.object(dispatcher, 'find_skill_for_task',
+        with patch.object(dispatcher, 'find_skill_for_task',  # noqa: SIM117
                           return_value=None):
             with patch("harness.memory_rag.context_assembler.ContextAssembler"):
                 with patch("harness.orchestrator.agent_bus.AgentBus"):

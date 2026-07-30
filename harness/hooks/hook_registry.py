@@ -11,9 +11,12 @@ from __future__ import annotations
 
 import logging
 import threading
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
+
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -74,10 +77,10 @@ class HookRegistry:
         >>> hooks = registry.get_hooks(HookType.PRE_TOOL)
     """
 
-    _instance: Optional[HookRegistry] = None
+    _instance: HookRegistry | None = None
     _lock: threading.Lock = threading.Lock()
 
-    def __new__(cls) -> HookRegistry:
+    def __new__(cls) -> Self:
         """Singleton thread-safe.
 
         Returns:
@@ -94,8 +97,8 @@ class HookRegistry:
         """Inicializa el registro (solo una vez)."""
         if getattr(self, "_initialized", False):
             return
-        self._hooks: Dict[str, HookRegistration] = {}
-        self._hooks_by_type: Dict[HookType, List[HookRegistration]] = {
+        self._hooks: dict[str, HookRegistration] = {}
+        self._hooks_by_type: dict[HookType, list[HookRegistration]] = {
             hook_type: [] for hook_type in HookType
         }
         self._lock = threading.Lock()
@@ -171,18 +174,18 @@ class HookRegistry:
             True si se elimino exitosamente, False si no existia.
         """
         with self._lock:
-            registration: Optional[HookRegistration] = self._hooks.pop(name, None)
+            registration: HookRegistration | None = self._hooks.pop(name, None)
             if registration is None:
                 return False
 
-            hooks_of_type: List[HookRegistration] = self._hooks_by_type[registration.hook_type]
+            hooks_of_type: list[HookRegistration] = self._hooks_by_type[registration.hook_type]
             self._hooks_by_type[registration.hook_type] = [
                 h for h in hooks_of_type if h.name != name
             ]
             logger.debug("[HookRegistry] Hook eliminado: %s", name)
             return True
 
-    def get_hooks(self, hook_type: HookType) -> List[HookRegistration]:
+    def get_hooks(self, hook_type: HookType) -> list[HookRegistration]:
         """Retorna los hooks de un tipo especifico, ordenados por prioridad.
 
         Args:
@@ -194,7 +197,7 @@ class HookRegistry:
         with self._lock:
             return list(self._hooks_by_type.get(hook_type, []))
 
-    def get_hook(self, name: str) -> Optional[HookRegistration]:
+    def get_hook(self, name: str) -> HookRegistration | None:
         """Retorna un hook por su nombre.
 
         Args:
@@ -215,7 +218,7 @@ class HookRegistry:
             True si se habilito exitosamente.
         """
         with self._lock:
-            hook: Optional[HookRegistration] = self._hooks.get(name)
+            hook: HookRegistration | None = self._hooks.get(name)
             if hook is None:
                 return False
             hook.enabled = True
@@ -231,13 +234,13 @@ class HookRegistry:
             True si se deshabilito exitosamente.
         """
         with self._lock:
-            hook: Optional[HookRegistration] = self._hooks.get(name)
+            hook: HookRegistration | None = self._hooks.get(name)
             if hook is None:
                 return False
             hook.enabled = False
             return True
 
-    def list_hooks(self) -> List[HookRegistration]:
+    def list_hooks(self) -> list[HookRegistration]:
         """Retorna todos los hooks registrados.
 
         Returns:

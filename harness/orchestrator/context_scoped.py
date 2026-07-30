@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +35,10 @@ class ScopedContext:
         created_at: Timestamp de creacion.
     """
     name: str
-    parent: Optional[ScopedContext] = None
-    data: Dict[str, Any] = field(default_factory=dict)
+    parent: ScopedContext | None = None
+    data: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    _children: List[ScopedContext] = field(default_factory=list)
+    _children: list[ScopedContext] = field(default_factory=list)
 
     def spawn(self, name: str) -> ScopedContext:
         """
@@ -77,7 +77,7 @@ class ScopedContext:
         """Establecer valor (solo en este contexto, no propaga)."""
         self.data[key] = value
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         """Tomar snapshot completo (propio + herencia plana)."""
         base = {}
         if self.parent:
@@ -96,6 +96,6 @@ class ScopedContext:
         return self.parent is None
 
     @property
-    def children(self) -> List[ScopedContext]:
+    def children(self) -> list[ScopedContext]:
         """Lista de contextos hijos."""
         return list(self._children)

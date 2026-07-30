@@ -17,7 +17,6 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +34,9 @@ class ExportResult:
     """
     success: bool
     files_exported: int = 0
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
-    target_dir: Optional[Path] = None
+    errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    target_dir: Path | None = None
 
 
 class HarnessConverter(ABC):
@@ -51,7 +50,7 @@ class HarnessConverter(ABC):
         project_root: Raiz del proyecto Swarmind.
     """
 
-    def __init__(self, project_root: Optional[Path] = None) -> None:
+    def __init__(self, project_root: Path | None = None) -> None:
         """Inicializa el convertidor con la raiz del proyecto.
 
         Args:
@@ -121,7 +120,7 @@ class HarnessConverter(ABC):
 
     # --- Metodos concretos ---
 
-    def export_all(self, dry_run: bool = False) -> Dict[str, ExportResult]:
+    def export_all(self, dry_run: bool = False) -> dict[str, ExportResult]:
         """Exporta agentes + skills + config al runtime destino.
 
         Args:
@@ -131,7 +130,7 @@ class HarnessConverter(ABC):
             Diccionario con {'agents': ExportResult, 'skills': ExportResult,
             'config': ExportResult}.
         """
-        results: Dict[str, ExportResult] = {
+        results: dict[str, ExportResult] = {
             "agents": self.export_agents(dry_run=dry_run),
             "skills": self.export_skills(dry_run=dry_run),
             "config": self.export_config(dry_run=dry_run),
@@ -145,13 +144,13 @@ class HarnessConverter(ABC):
         )
         return results
 
-    def validate(self) -> List[str]:
+    def validate(self) -> list[str]:
         """Valida que el proyecto Swarmind tenga los archivos minimos necesarios.
 
         Returns:
             Lista de errores de validacion. Lista vacia si todo esta correcto.
         """
-        errors: List[str] = []
+        errors: list[str] = []
         if not self._opencode_root.is_dir():
             errors.append(f"Directorio .opencode/ no encontrado en {self._root}")
         if not (self._opencode_root / "agents").is_dir():
@@ -160,7 +159,7 @@ class HarnessConverter(ABC):
             errors.append("Directorio .opencode/skills/ no encontrado")
         return errors
 
-    def _get_opencode_agents(self) -> List[Path]:
+    def _get_opencode_agents(self) -> list[Path]:
         """Retorna la lista de archivos de agentes en .opencode/agents/.
 
         Returns:
@@ -171,7 +170,7 @@ class HarnessConverter(ABC):
             return []
         return sorted(agents_dir.glob("*.md"))
 
-    def _get_opencode_skills(self) -> List[Path]:
+    def _get_opencode_skills(self) -> list[Path]:
         """Retorna la lista de archivos de skills en .opencode/skills/.
 
         Returns:

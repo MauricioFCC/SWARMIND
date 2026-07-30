@@ -8,9 +8,8 @@ _execute_job/_execute_job_once/_log_execution), backward-compat aliases.
 """
 from __future__ import annotations
 
-from pathlib import Path
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -109,7 +108,7 @@ class TestJobStore:
         class ConcreteStore(JobStore):
             def __init__(self, path):
                 self._jobs_path = str(path)
-                self._jobs: Dict[str, Any] = {}
+                self._jobs: dict[str, Any] = {}
                 self._load_jobs()
 
         return ConcreteStore

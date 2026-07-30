@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 EvalFactory — Framework de Evaluacion Multi-Capa para Swarmind.
 
@@ -53,10 +52,11 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from statistics import mean
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +94,7 @@ class EvalResult:
     value: float
     threshold: float
     timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Valida los campos obligatorios y reglas de negocio.
@@ -142,7 +142,7 @@ class EvalSuite:
     """
 
     name: str
-    evals: List[EvalResult | Callable[[], List[EvalResult]]] = field(default_factory=list)
+    evals: list[EvalResult | Callable[[], list[EvalResult]]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         """Valida que el nombre de la suite no este vacio.
@@ -153,7 +153,7 @@ class EvalSuite:
         if not self.name or not self.name.strip():
             raise ValueError("El nombre de la suite no puede estar vacio. Use un identificador descriptivo.")
 
-    def run(self, concurrency: int = 1) -> "EvalReport":
+    def run(self, concurrency: int = 1) -> EvalReport:
         """Ejecuta todas las evaluaciones de la suite y genera un reporte.
 
         Las funciones callable se invocan bajo demanda (lazy evaluation).
@@ -175,7 +175,7 @@ class EvalSuite:
                 concurrency,
             )
 
-        collected: List[EvalResult] = []
+        collected: list[EvalResult] = []
         start_ts = time.monotonic()
 
         for idx, entry in enumerate(self.evals):
@@ -199,17 +199,17 @@ class EvalSuite:
                         "WHERE: EvalSuite.run() | WHAT: elemento no es EvalResult ni callable.",
                         self.name, idx, type(entry).__name__,
                     )
-            except Exception as exc:
+            except Exception:
                 logger.exception(
-                    "[EvalFactory] Error ejecutando evaluacion #%d en suite '%s': %s. "
+                    "[EvalFactory] Error ejecutando evaluacion #%d en suite '%s'. "
                     "WHERE: EvalSuite.run() | WHAT: fallo en evaluacion | WHY: excepcion no controlada.",
-                    idx, self.name, exc,
+                    idx, self.name,
                 )
 
         elapsed = time.monotonic() - start_ts
         return EvalReport.from_results(suite_name=self.name, results=collected, elapsed=elapsed)
 
-    def add_eval(self, eval_entry: EvalResult | Callable[[], List[EvalResult]]) -> None:
+    def add_eval(self, eval_entry: EvalResult | Callable[[], list[EvalResult]]) -> None:
         """Agrega una evaluacion a la suite en tiempo de construccion.
 
         Args:
@@ -225,7 +225,7 @@ class EvalSuite:
             )
         self.evals.append(eval_entry)
 
-    def compare(self, other: "EvalSuite") -> "EvalDiff":
+    def compare(self, other: EvalSuite) -> EvalDiff:
         """Compara los resultados de esta suite con otra, produciendo un diff.
 
         Args:
@@ -277,17 +277,17 @@ class EvalReport:
     failed: int
     pass_rate: float
     avg_latency: float
-    results: List[EvalResult] = field(default_factory=list)
-    recommendations: List[str] = field(default_factory=list)
+    results: list[EvalResult] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
 
     @classmethod
     def from_results(
         cls,
         suite_name: str,
-        results: List[EvalResult],
+        results: list[EvalResult],
         elapsed: float,
-        latency_per_result: Optional[List[float]] = None,
-    ) -> "EvalReport":
+        latency_per_result: list[float] | None = None,
+    ) -> EvalReport:
         """Construye un EvalReport a partir de la lista de resultados y tiempo transcurrido.
 
         Args:
@@ -342,9 +342,9 @@ class EvalDiff:
         score_change: Diferencia neta en la tasa de aciertos (after - before).
     """
 
-    regressions: List[EvalResult] = field(default_factory=list)
-    improvements: List[EvalResult] = field(default_factory=list)
-    new: List[EvalResult] = field(default_factory=list)
+    regressions: list[EvalResult] = field(default_factory=list)
+    improvements: list[EvalResult] = field(default_factory=list)
+    new: list[EvalResult] = field(default_factory=list)
     score_change: float = 0.0
 
     @property
@@ -376,10 +376,10 @@ class EvalDiff:
 # ---------------------------------------------------------------------------
 
 # Mapa de capas a funciones de evaluacion builtin
-_LAYER_EVAL_REGISTRY: Dict[str, List[Callable[[], List[EvalResult]]]] = {}
+_LAYER_EVAL_REGISTRY: dict[str, list[Callable[[], list[EvalResult]]]] = {}
 
 
-def register_layer_evals(layer: str, *evals: Callable[[], List[EvalResult]]) -> None:
+def register_layer_evals(layer: str, *evals: Callable[[], list[EvalResult]]) -> None:
     """Registra funciones de evaluacion para una capa especifica.
 
     Args:
@@ -405,7 +405,7 @@ def register_layer_evals(layer: str, *evals: Callable[[], List[EvalResult]]) -> 
     )
 
 
-def _generate_recommendations(results: List[EvalResult]) -> List[str]:
+def _generate_recommendations(results: list[EvalResult]) -> list[str]:
     """Genera recomendaciones accionables a partir de los resultados.
 
     Analiza cada resultado fallido y produce una recomendacion especifica
@@ -417,8 +417,8 @@ def _generate_recommendations(results: List[EvalResult]) -> List[str]:
     Returns:
         Lista de cadenas con recomendaciones priorizadas.
     """
-    recs: List[str] = []
-    failed_by_layer: Dict[str, List[EvalResult]] = {}
+    recs: list[str] = []
+    failed_by_layer: dict[str, list[EvalResult]] = {}
 
     for r in results:
         if not r.passed:
@@ -498,7 +498,7 @@ def _generate_recommendations(results: List[EvalResult]) -> List[str]:
     return recs
 
 
-def run_layer(layer: str) -> List[EvalResult]:
+def run_layer(layer: str) -> list[EvalResult]:
     """Ejecuta todas las evaluaciones registradas para una capa especifica.
 
     Args:
@@ -518,7 +518,7 @@ def run_layer(layer: str) -> List[EvalResult]:
             "WHERE: run_layer()"
         )
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
     for eval_fn in evals:
         try:
             partial = eval_fn()
@@ -530,11 +530,11 @@ def run_layer(layer: str) -> List[EvalResult]:
                     "WHERE: run_layer() | WHAT: tipo de retorno inesperado.",
                     getattr(eval_fn, "__name__", "?"), type(partial).__name__,
                 )
-        except Exception as exc:
+        except Exception:
             logger.exception(
-                "[EvalFactory] Error ejecutando evaluacion para capa '%s' en funcion '%s': %s. "
+                "[EvalFactory] Error ejecutando evaluacion para capa '%s' en funcion '%s'. "
                 "WHERE: run_layer() | WHAT: fallo durante evaluacion | WHY: excepcion.",
-                layer, getattr(eval_fn, "__name__", "?"), exc,
+                layer, getattr(eval_fn, "__name__", "?"),
             )
 
     return results
@@ -549,7 +549,7 @@ def run_all() -> EvalReport:
     Returns:
         EvalReport con los resultados de todas las capas disponibles.
     """
-    all_results: List[EvalResult] = []
+    all_results: list[EvalResult] = []
     start_ts = time.monotonic()
 
     for layer in list(_LAYER_EVAL_REGISTRY.keys()):
@@ -560,11 +560,11 @@ def run_all() -> EvalReport:
                 "[EvalFactory] Capa '%s': %d evaluaciones completadas. WHERE: run_all()",
                 layer, len(layer_results),
             )
-        except Exception as exc:
+        except Exception:
             logger.exception(
-                "[EvalFactory] Error ejecutando todas las evaluaciones para capa '%s': %s. "
+                "[EvalFactory] Error ejecutando todas las evaluaciones para capa '%s'. "
                 "WHERE: run_all() | WHAT: fallo en capa completa | WHY: excepcion no controlada.",
-                layer, exc,
+                layer,
             )
 
     elapsed = time.monotonic() - start_ts
@@ -594,14 +594,14 @@ def compare_reports(before: EvalReport, after: EvalReport) -> EvalDiff:
         )
 
     # Indexar resultados anteriores por (layer, metric) para busqueda rapida
-    before_index: Dict[Tuple[str, str], EvalResult] = {}
+    before_index: dict[tuple[str, str], EvalResult] = {}
     for res in before.results:
         key = (res.layer, res.metric)
         before_index[key] = res
 
-    regressions: List[EvalResult] = []
-    improvements: List[EvalResult] = []
-    new_evals: List[EvalResult] = []
+    regressions: list[EvalResult] = []
+    improvements: list[EvalResult] = []
+    new_evals: list[EvalResult] = []
 
     for after_res in after.results:
         key = (after_res.layer, after_res.metric)
@@ -630,7 +630,7 @@ def compare_reports(before: EvalReport, after: EvalReport) -> EvalDiff:
     )
 
 
-def get_recommendations(report: EvalReport) -> List[str]:
+def get_recommendations(report: EvalReport) -> list[str]:
     """Extrae y retorna las recomendaciones de un reporte ya generado.
 
     Si el reporte ya contiene recomendaciones, las retorna directamente.

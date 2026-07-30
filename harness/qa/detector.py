@@ -25,10 +25,9 @@ import statistics
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum, auto
-from typing import Any, Optional
 from uuid import uuid4
 
-from harness.qa import QALayer, QAMetadata, QASeverity
+from harness.qa import QALayer, QAMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +69,7 @@ class AnomalyFinding:
     ubicacion: str
     valor_observado: float
     valor_esperado: float
-    metadata: Optional[QAMetadata] = None
+    metadata: QAMetadata | None = None
 
     def __post_init__(self) -> None:
         """Valida rango de severidad."""
@@ -131,7 +130,7 @@ class VisualAnomalyDetector:
 
     def __init__(
         self,
-        metadata: Optional[QAMetadata] = None,
+        metadata: QAMetadata | None = None,
         z_score_threshold: float = _Z_SCORE_ANOMALO,
     ) -> None:
         """Inicializa el detector con configuracion de umbrales."""
@@ -203,7 +202,7 @@ class VisualAnomalyDetector:
     def scan(
         self,
         resultados: dict[str, float],
-        linea_base: Optional[dict[str, float]] = None,
+        linea_base: dict[str, float] | None = None,
     ) -> AnomalyReport:
         """Ejecuta escaneo completo de anomalias sobre resultados.
 

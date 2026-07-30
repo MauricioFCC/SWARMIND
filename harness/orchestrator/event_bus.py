@@ -1,4 +1,4 @@
-"""EventBus — Sistema Pub/Sub para comunicacion asincrona entre agentes.
+﻿"""EventBus â€” Sistema Pub/Sub para comunicacion asincrona entre agentes.
 
 Permite que los agentes se comuniquen mediante eventos en lugar de
 llamadas directas, desacoplando emisores de receptores.
@@ -21,11 +21,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import threading
-import time
 import uuid
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class Event:
     """
     event_id: str
     channel: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     source: str
     priority: EventPriority
     timestamp: float
@@ -77,7 +77,7 @@ class Subscription:
     channel: str
     callback: Callable[[Event], None]
     agent_id: str
-    filter_fn: Optional[Callable[[Event], bool]] = None
+    filter_fn: Callable[[Event], bool] | None = None
     max_events: int = -1
     event_count: int = 0
 
@@ -116,10 +116,10 @@ class EventBus:
         """
         self._max_queue: int = max(max_queue, 100)
         self._lock: threading.RLock = threading.RLock()
-        self._subscriptions: Dict[str, Subscription] = {}
-        self._channel_subs: Dict[str, Set[str]] = {}  # channel -> set of sub_ids
-        self._agent_subs: Dict[str, Set[str]] = {}  # agent_id -> set of sub_ids
-        self._history: List[Event] = []
+        self._subscriptions: dict[str, Subscription] = {}
+        self._channel_subs: dict[str, set[str]] = {}  # channel -> set of sub_ids
+        self._agent_subs: dict[str, set[str]] = {}  # agent_id -> set of sub_ids
+        self._history: list[Event] = []
         self._max_history: int = 1000
 
         logger.info("[EventBus] Inicializado: max_queue=%d", self._max_queue)
@@ -146,7 +146,7 @@ class EventBus:
         channel: str,
         callback: Callable[[Event], None],
         agent_id: str = "",
-        filter_fn: Optional[Callable[[Event], bool]] = None,
+        filter_fn: Callable[[Event], bool] | None = None,
         max_events: int = -1,
     ) -> str:
         """Suscribe un callback a un canal.
@@ -208,7 +208,7 @@ class EventBus:
             True si se cancelo exitosamente.
         """
         with self._lock:
-            sub: Optional[Subscription] = self._subscriptions.pop(sub_id, None)
+            sub: Subscription | None = self._subscriptions.pop(sub_id, None)
             if sub is None:
                 return False
 
@@ -245,7 +245,7 @@ class EventBus:
                 self._history.pop(0)
 
             # Encontrar suscriptores que coinciden
-            matching_subs: List[Subscription] = []
+            matching_subs: list[Subscription] = []
             for sub_id, sub in list(self._subscriptions.items()):
                 if not self._match_channel(sub.channel, event.channel):
                     continue
@@ -261,7 +261,7 @@ class EventBus:
                     sub.event_count += 1
                     sub.callback(event)
                     notified += 1
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     logger.error(
                         "[EventBus] Error en callback %s: %s",
                         sub.sub_id[:12], exc,
@@ -277,7 +277,7 @@ class EventBus:
     def publish_async(
         self,
         event: Event,
-    ) -> "asyncio.Task[int]":
+    ) -> asyncio.Task[int]:
         """Publica un evento de forma asincrona usando create_task.
 
         Args:
@@ -292,11 +292,11 @@ class EventBus:
         except RuntimeError:
             # Sin loop en ejecucion, publicar sincrono
             count: int = self.publish(event)
-            future: "asyncio.Future[int]" = asyncio.Future()
+            future: asyncio.Future[int] = asyncio.Future()
             future.set_result(count)
             return future
 
-    def get_subscriptions(self, agent_id: str = "") -> List[Subscription]:
+    def get_subscriptions(self, agent_id: str = "") -> list[Subscription]:
         """Retora las suscripciones activas.
 
         Args:
@@ -307,7 +307,7 @@ class EventBus:
         """
         with self._lock:
             if agent_id:
-                sub_ids: Set[str] = self._agent_subs.get(agent_id, set())
+                sub_ids: set[str] = self._agent_subs.get(agent_id, set())
                 return [
                     self._subscriptions[sid]
                     for sid in sub_ids
@@ -319,7 +319,7 @@ class EventBus:
         self,
         channel: str = "",
         limit: int = 10,
-    ) -> List[Event]:
+    ) -> list[Event]:
         """Retora el historial de eventos.
 
         Args:
@@ -331,13 +331,13 @@ class EventBus:
         """
         with self._lock:
             if channel:
-                filtered: List[Event] = [
+                filtered: list[Event] = [
                     e for e in self._history if e.channel == channel
                 ]
                 return filtered[-limit:]
             return self._history[-limit:]
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Retora estadisticas del bus.
 
         Returns:

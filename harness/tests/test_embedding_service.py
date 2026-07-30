@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests para BatchedEmbeddingService — servicio de embeddings con batching
 inteligente y fallback determinista.
@@ -20,7 +19,6 @@ from harness.memory_rag.embedding_service import (
     EMBEDDING_DIM,
     BatchedEmbeddingService,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

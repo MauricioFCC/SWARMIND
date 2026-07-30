@@ -20,7 +20,7 @@ Ahorro estimado: 30-50% de tokens en historial de conversacion.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ class TrajectoryCompressor:
         self.summary_tokens = summary_tokens
         self.min_tokens = min_tokens
         self._phase: str = "exploring"
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "compressions": 0,
             "skipped": 0,
             "total_tokens_saved": 0,
@@ -99,10 +99,10 @@ class TrajectoryCompressor:
 
     def compress(
         self,
-        conversation: List[Dict[str, Any]],
-        target_tokens: Optional[int] = None,
-        phase: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        conversation: list[dict[str, Any]],
+        target_tokens: int | None = None,
+        phase: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Comprime una trayectoria de conversacion.
 
@@ -162,7 +162,7 @@ class TrajectoryCompressor:
             return conversation  # no hay region comprimible
 
         # 4. Calcular cuantos tokens ahorrar
-        region_tokens = self._count_tokens_list(conversation[compress_start:compress_end])
+        self._count_tokens_list(conversation[compress_start:compress_end])
         savings_needed = total_tokens - (target_tokens or self.min_tokens)
         tokens_to_compress = savings_needed + self.summary_tokens
 
@@ -229,7 +229,7 @@ class TrajectoryCompressor:
 
         return compressed
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Return compressor statistics."""
         return dict(self._stats)
 
@@ -314,15 +314,11 @@ class TrajectoryCompressor:
             return False
 
         # Compactar si la fase lo permite Y hay alta presion de contexto
-        if phase in ("completed", "converging"):
-            if context_usage_pct > 75 or turn_count > 15:
-                return True
-
-        # Fase 'resolving': solo si hay mucha presion
-        if phase == "resolving" and context_usage_pct > 85 and turn_count > 20:
+        if phase in ("completed", "converging") and (context_usage_pct > 75 or turn_count > 15):
             return True
 
-        return False
+        # Fase 'resolving': solo si hay mucha presion
+        return bool(phase == "resolving" and context_usage_pct > 85 and turn_count > 20)
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -334,7 +330,7 @@ class TrajectoryCompressor:
         return max(1, len(text) // CHAR_PER_TOKEN)
 
     @classmethod
-    def _count_tokens_list(cls, messages: List[Dict[str, Any]]) -> int:
+    def _count_tokens_list(cls, messages: list[dict[str, Any]]) -> int:
         """Cuenta tokens totales de una lista de mensajes."""
         total = 0
         for msg in messages:
@@ -348,7 +344,7 @@ class TrajectoryCompressor:
         return total
 
     @staticmethod
-    def _estimate_context_usage(conversation: List[Dict[str, Any]]) -> float:
+    def _estimate_context_usage(conversation: list[dict[str, Any]]) -> float:
         """
         Estima el porcentaje de contexto usado (0-100) asumiendo ventana de 8K tokens.
 
@@ -362,7 +358,7 @@ class TrajectoryCompressor:
         pct = (total / DEFAULT_MAX_CONTEXT_TOKENS) * 100
         return min(100.0, pct)
 
-    def _generate_summary(self, turns: List[Dict[str, Any]]) -> str:
+    def _generate_summary(self, turns: list[dict[str, Any]]) -> str:
         """
         Genera un summary de los turns a comprimir.
 
@@ -373,7 +369,7 @@ class TrajectoryCompressor:
             return ""
 
         # Extraer contenido relevante de cada turno
-        key_points: List[str] = []
+        key_points: list[str] = []
         for i, turn in enumerate(turns):
             role = turn.get("role", "unknown")
             content = turn.get("content", "")
@@ -404,10 +400,10 @@ class TrajectoryCompressor:
 
 
 def compress_conversation(
-    conversation: List[Dict[str, Any]],
-    target_tokens: Optional[int] = None,
-    phase: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+    conversation: list[dict[str, Any]],
+    target_tokens: int | None = None,
+    phase: str | None = None,
+) -> list[dict[str, Any]]:
     """
     Comprime una conversacion multi-turno (funcion de conveniencia).
 

@@ -14,7 +14,7 @@ Uso:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -26,10 +26,10 @@ logger = logging.getLogger(__name__)
 # Cada skill tiene keywords asociadas para matching semantico.
 # A menor cantidad de skills cargados, menor gasto de tokens.
 
-SKILL_REGISTRY: List[Dict[str, Any]] = [
+SKILL_REGISTRY: list[dict[str, Any]] = [
     {"name": "alpha-research",     "domain": "quantitative", "keywords": "factor research ml machine learning feature engineering statistical validation alpha backtest"},
     {"name": "evolve",             "domain": "meta",         "keywords": "self-improvement evolution loop cognition auto-mejora continua"},
-    {"name": "healthtech",         "domain": "healthtech",   "keywords": "health healthcare clinical hipaa ehr interoperabilidad paciente health-record medico"},
+    {"name": "healthtech",         "domain": "healthtech",   "keywords": "health healthcare clinical hipaa ehr interoperabilidad paciente health-record medico clinicas historia clinical historial"},
     {"name": "hedgefund",          "domain": "financial",    "keywords": "hedge fund institutional risk reward capital allocation portfolio"},
     {"name": "legal-doc",          "domain": "legal",        "keywords": "legal contract compliance law jurisprudence documento juridico"},
     {"name": "math-doc",           "domain": "academic",     "keywords": "math latex theorem proof equation estadistica algebra calculo"},
@@ -63,8 +63,8 @@ class SkillRouter:
                          Si es None, usa fallback interno.
         """
         self._embedding_fn = embedding_fn or self._default_embedding
-        self._skill_vectors: Optional[np.ndarray] = None
-        self._skill_names: List[str] = []
+        self._skill_vectors: np.ndarray | None = None
+        self._skill_names: list[str] = []
         self._build_skill_vectors()
 
     def _default_embedding(self, text: str) -> np.ndarray:
@@ -82,7 +82,7 @@ class SkillRouter:
             self._skill_names.append(skill["name"])
         self._skill_vectors = np.stack(vectors) if vectors else np.zeros((1, 384))
 
-    def route(self, message: str, max_skills: int = MAX_SKILLS_PER_TASK) -> List[str]:
+    def route(self, message: str, max_skills: int = MAX_SKILLS_PER_TASK) -> list[str]:
         """
         Encuentra los skills mas relevantes para un mensaje.
 
@@ -121,7 +121,7 @@ class SkillRouter:
 
         return list(ALWAYS_ACTIVE)
 
-    def _keyword_match(self, message: str) -> List[str]:
+    def _keyword_match(self, message: str) -> list[str]:
         """Matching rapido por keywords (sin embedding)."""
         msg_lower = message.lower()
         scored = []
@@ -136,7 +136,7 @@ class SkillRouter:
         scored.sort(reverse=True)
         return [name for _, name in scored]
 
-    def build_context(self, skill_names: List[str]) -> str:
+    def build_context(self, skill_names: list[str]) -> str:
         """
         Construye contexto SOLO para los skills seleccionados.
 
@@ -154,11 +154,11 @@ class SkillRouter:
                     break
         return "\n".join(parts) if parts else ""
 
-    def estimate_tokens(self, skill_names: List[str]) -> int:
+    def estimate_tokens(self, skill_names: list[str]) -> int:
         """Estima tokens que consumiran los skills seleccionados."""
         context = self.build_context(skill_names)
         return len(context) // 4
 
-    def get_available_skills(self) -> List[str]:
+    def get_available_skills(self) -> list[str]:
         """Retorna lista de todos los skills disponibles."""
         return [s["name"] for s in SKILL_REGISTRY]

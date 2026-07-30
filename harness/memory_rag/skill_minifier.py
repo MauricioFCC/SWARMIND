@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +88,7 @@ class SkillMinifier:
         self.preserve_code_blocks = preserve_code_blocks
         self.max_description_chars = max_description_chars
         self.max_body_tokens = max_body_tokens
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "minifications": 0,
             "total_chars_saved": 0,
             "total_chars_before": 0,
@@ -139,7 +139,7 @@ class SkillMinifier:
 
         return result
 
-    def minify_file(self, src_path: str, dst_path: Optional[str] = None) -> Tuple[str, str]:
+    def minify_file(self, src_path: str, dst_path: str | None = None) -> tuple[str, str]:
         """
         Comprime un archivo SKILL.md y opcionalmente lo guarda.
 
@@ -176,7 +176,7 @@ class SkillMinifier:
         minified = self.minify(content)
         return 1.0 - (len(minified) / len(content))
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Return minifier statistics."""
         stats = dict(self._stats)
         total_before = stats.get("total_chars_before", 1)
@@ -203,7 +203,7 @@ class SkillMinifier:
             return ""
 
         lines = frontmatter.split("\n")
-        compressed_lines: List[str] = []
+        compressed_lines: list[str] = []
         in_multiline = False
 
         for line in lines:
@@ -293,10 +293,10 @@ class SkillMinifier:
             return ""
 
         lines = body.split("\n")
-        compressed_lines: List[str] = []
+        compressed_lines: list[str] = []
         in_code_block = False
         in_table = False
-        table_lines: List[str] = []
+        table_lines: list[str] = []
         skip_section = False
 
         for line in lines:
@@ -314,7 +314,7 @@ class SkillMinifier:
                 continue
 
             # Detectar secciones removibles
-            if line_stripped.startswith("## ") or line_stripped.startswith("### "):
+            if line_stripped.startswith(("## ", "### ")):
                 section_name = line_stripped.lstrip("#").strip().lower()
                 skip_section = any(
                     removable in section_name
@@ -378,7 +378,7 @@ class SkillMinifier:
         compressed_lines = [l.rstrip() for l in compressed_lines]
 
         # Remover lineas consecutivas vacias (max 1)
-        result: List[str] = []
+        result: list[str] = []
         prev_empty = False
         for line in compressed_lines:
             is_empty = line.strip() == ""
@@ -389,7 +389,7 @@ class SkillMinifier:
 
         return "\n".join(result)
 
-    def _compress_table(self, table_lines: List[str]) -> List[str]:
+    def _compress_table(self, table_lines: list[str]) -> list[str]:
         """
         Comprimir tabla markdown.
         Mantener header + separator + primeras MAX_TABLE_ROWS filas.
@@ -419,7 +419,7 @@ class SkillMinifier:
         return kept
 
     @staticmethod
-    def _split_frontmatter(content: str) -> Tuple[str, str]:
+    def _split_frontmatter(content: str) -> tuple[str, str]:
         """Split YAML frontmatter from body."""
         if content.startswith("---"):
             parts = content.split("---", 2)
@@ -435,7 +435,7 @@ class SkillMinifier:
 def minify_all_skills(
     skills_dir: str = ".opencode/skills",
     dry_run: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Minifica todos los SKILL.md en un directorio de skills.
 
@@ -452,7 +452,7 @@ def minify_all_skills(
         return {}
 
     minifier = SkillMinifier()
-    results: Dict[str, Any] = {}
+    results: dict[str, Any] = {}
     total_before = 0
     total_after = 0
 

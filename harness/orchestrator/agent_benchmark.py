@@ -1,5 +1,5 @@
-"""
-AgentBenchmark — Evaluacion de agentes con metricas estandarizadas.
+﻿"""
+AgentBenchmark â€” Evaluacion de agentes con metricas estandarizadas.
 
 Implementa:
 - GAIA-style multi-step reasoning tasks
@@ -15,8 +15,9 @@ Usage:
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -35,7 +36,7 @@ class BenchmarkResult:
     score: float
     tokens_used: int
     time_seconds: float
-    errors: List[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
     success: bool = False
 
 
@@ -53,15 +54,15 @@ class AgentBenchmark:
                      Si no se provee, usa _mock_dispatch interno.
     """
 
-    def __init__(self, dispatch_fn: Optional[Callable] = None):
+    def __init__(self, dispatch_fn: Callable | None = None):
         """Inicializa el benchmark con un dispatch opcional."""
         self._dispatch = dispatch_fn or self._mock_dispatch
-        self._results: List[BenchmarkResult] = []
+        self._results: list[BenchmarkResult] = []
 
     def evaluate(
         self,
         task: str,
-        expected_output: Optional[str] = None,
+        expected_output: str | None = None,
     ) -> BenchmarkResult:
         """Evaluar un agente en una tarea.
 
@@ -96,7 +97,7 @@ class AgentBenchmark:
                 time_seconds=time_taken,
                 success=score > 0.5,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             time_taken = time.time() - start
             result = BenchmarkResult(
                 task=task,
@@ -109,7 +110,7 @@ class AgentBenchmark:
         self._results.append(result)
         return result
 
-    def evaluate_batch(self, tasks: List[str]) -> List[BenchmarkResult]:
+    def evaluate_batch(self, tasks: list[str]) -> list[BenchmarkResult]:
         """Evaluar un lote de tareas secuencialmente.
 
         Args:
@@ -120,7 +121,7 @@ class AgentBenchmark:
         """
         return [self.evaluate(t) for t in tasks]
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Obtener resumen estadistico de todas las evaluaciones.
 
         Returns:

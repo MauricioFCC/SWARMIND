@@ -23,14 +23,14 @@ from __future__ import annotations
 
 import importlib
 import logging
-from typing import Any, Dict
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Mapa de simbolos para lazy loading
 # ---------------------------------------------------------------------------
-_SYMBOL_MAP: Dict[str, str] = {
+_SYMBOL_MAP: dict[str, str] = {
     "AIFactory": "harness.aifactory.factory",
     "FactoryConfig": "harness.aifactory.factory",
     "FactoryResult": "harness.aifactory.factory",

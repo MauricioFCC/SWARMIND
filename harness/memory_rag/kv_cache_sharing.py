@@ -20,10 +20,7 @@ import hashlib
 import logging
 import threading
 import time
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
-
-import numpy as np
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -108,8 +105,8 @@ class KVCacheSharing:
         self._capacity: int = capacity
         self._bytes_per_token: float = 2.0  # 2 bytes por token en KV cache
         self._lock: threading.RLock = threading.RLock()
-        self._entries: Dict[str, KVCacheEntry] = {}
-        self._lru: List[str] = []
+        self._entries: dict[str, KVCacheEntry] = {}
+        self._lru: list[str] = []
         self._hits: int = 0
         self._misses: int = 0
 
@@ -187,7 +184,7 @@ class KVCacheSharing:
         )
         return key
 
-    def get(self, prompt: str, min_prefix: int = 10) -> Optional[KVCacheEntry]:
+    def get(self, prompt: str, min_prefix: int = 10) -> KVCacheEntry | None:
         """Recupera un KV cache por prompt exacto o prefijo.
 
         Args:
@@ -201,7 +198,7 @@ class KVCacheSharing:
 
         with self._lock:
             # Busqueda exacta
-            entry: Optional[KVCacheEntry] = self._entries.get(exact_key)
+            entry: KVCacheEntry | None = self._entries.get(exact_key)
             if entry is not None:
                 self._hits += 1
                 entry.hit_count += 1
@@ -212,11 +209,11 @@ class KVCacheSharing:
                 return entry
 
             # Busqueda por prefijo
-            best_match: Optional[Tuple[str, int, KVCacheEntry]] = None
+            best_match: tuple[str, int, KVCacheEntry] | None = None
             for key, ent in self._entries.items():
                 prefix_len: int = self._prefix_match(prompt, ent.prompt)
                 if prefix_len >= min_prefix:
-                    candidate: Tuple[str, int, KVCacheEntry] = (
+                    candidate: tuple[str, int, KVCacheEntry] = (
                         key, prefix_len, ent
                     )
                     if best_match is None or prefix_len > best_match[1]:
@@ -238,7 +235,7 @@ class KVCacheSharing:
             logger.debug("[KVCache] MISS: prefix=%d", min_prefix)
             return None
 
-    def _evict_lru(self) -> Optional[str]:
+    def _evict_lru(self) -> str | None:
         """Elimina la entrada LRU.
 
         Returns:
@@ -247,7 +244,7 @@ class KVCacheSharing:
         if not self._lru:
             return None
         lru_key: str = self._lru.pop(0)
-        entry: Optional[KVCacheEntry] = self._entries.pop(lru_key, None)
+        entry: KVCacheEntry | None = self._entries.pop(lru_key, None)
         if entry:
             logger.debug("[KVCache] LRU eviction: %s", lru_key[:12])
         return lru_key

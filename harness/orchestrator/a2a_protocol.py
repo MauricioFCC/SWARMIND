@@ -1,4 +1,4 @@
-"""A2AProtocol — Agent-to-Agent Protocol para interoperabilidad.
+﻿"""A2AProtocol â€” Agent-to-Agent Protocol para interoperabilidad.
 
 Implementa el protocolo A2A v1.0 para comunicacion estandarizada entre
 agentes, permitiendo discovery, mensajeria, invocacion de herramientas
@@ -19,13 +19,13 @@ Capas del protocolo:
 
 from __future__ import annotations
 
-import json
 import logging
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +66,8 @@ class AgentCapability:
     name: str
     description: str
     version: str = "1.0.0"
-    tools: List[str] = field(default_factory=list)
-    models: List[str] = field(default_factory=list)
+    tools: list[str] = field(default_factory=list)
+    models: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -88,7 +88,7 @@ class A2AMessage:
     msg_type: MessageType
     source: str
     target: str
-    payload: Dict[str, Any]
+    payload: dict[str, Any]
     correlation_id: str = ""
     timestamp: float = field(default_factory=time.time)
     ttl: float = 30.0
@@ -108,7 +108,7 @@ class AgentNode:
     """
     agent_id: str
     role: AgentRole
-    capabilities: List[AgentCapability]
+    capabilities: list[AgentCapability]
     address: str
     last_seen: float = field(default_factory=time.time)
     status: str = "online"
@@ -135,7 +135,7 @@ class A2AProtocol:
         self,
         agent_id: str,
         role: AgentRole = AgentRole.WORKER,
-        capabilities: Optional[List[AgentCapability]] = None,
+        capabilities: list[AgentCapability] | None = None,
         address: str = "local",
     ) -> None:
         """Inicializa un nodo del protocolo A2A.
@@ -148,15 +148,15 @@ class A2AProtocol:
         """
         self._agent_id: str = agent_id
         self._role: AgentRole = role
-        self._capabilities: List[AgentCapability] = capabilities or []
+        self._capabilities: list[AgentCapability] = capabilities or []
         self._address: str = address
 
         # Registro de agentes conocidos
-        self._agents: Dict[str, AgentNode] = {}
+        self._agents: dict[str, AgentNode] = {}
         # Manejadores de mensajes por tipo
-        self._handlers: Dict[MessageType, List[Callable]] = {}
+        self._handlers: dict[MessageType, list[Callable]] = {}
         # Historial de mensajes
-        self._history: List[A2AMessage] = []
+        self._history: list[A2AMessage] = []
         self._max_history: int = 1000
 
         logger.info(
@@ -180,7 +180,7 @@ class A2AProtocol:
         logger.info("[A2A] Registered: %s", self._agent_id)
         return node
 
-    def discover(self, capability: str = "") -> List[AgentNode]:
+    def discover(self, capability: str = "") -> list[AgentNode]:
         """Descubre agentes disponibles con una capacidad.
 
         Args:
@@ -189,7 +189,7 @@ class A2AProtocol:
         Returns:
             Lista de agentes que tienen la capacidad.
         """
-        results: List[AgentNode] = []
+        results: list[AgentNode] = []
         for agent in self._agents.values():
             if not capability:
                 results.append(agent)
@@ -204,7 +204,7 @@ class A2AProtocol:
         self,
         target: str,
         msg_type: MessageType,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         correlation_id: str = "",
     ) -> A2AMessage:
         """Envia un mensaje a otro agente.
@@ -274,17 +274,17 @@ class A2AProtocol:
         Args:
             msg: Mensaje a despachar.
         """
-        handlers: List[Callable] = self._handlers.get(msg.msg_type, [])
+        handlers: list[Callable] = self._handlers.get(msg.msg_type, [])
         for handler in handlers:
             try:
                 handler(msg)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.error(
                     "[A2A] Error en handler %s: %s. WHERE: _dispatch.",
                     handler.__name__, exc,
                 )
 
-    def get_agents(self) -> List[AgentNode]:
+    def get_agents(self) -> list[AgentNode]:
         """Retorna la lista de agentes conocidos.
 
         Returns:
@@ -292,7 +292,7 @@ class A2AProtocol:
         """
         return list(self._agents.values())
 
-    def get_agent(self, agent_id: str) -> Optional[AgentNode]:
+    def get_agent(self, agent_id: str) -> AgentNode | None:
         """Retorna un agente por su ID.
 
         Args:
@@ -321,8 +321,8 @@ class A2AProtocol:
     def get_history(
         self,
         limit: int = 10,
-        msg_type: Optional[MessageType] = None,
-    ) -> List[A2AMessage]:
+        msg_type: MessageType | None = None,
+    ) -> list[A2AMessage]:
         """Retorna el historial de mensajes.
 
         Args:
@@ -333,13 +333,13 @@ class A2AProtocol:
             Lista de mensajes.
         """
         if msg_type:
-            filtered: List[A2AMessage] = [
+            filtered: list[A2AMessage] = [
                 m for m in self._history if m.msg_type == msg_type
             ]
             return filtered[-limit:]
         return self._history[-limit:]
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Retorna estadisticas del protocolo.
 
         Returns:

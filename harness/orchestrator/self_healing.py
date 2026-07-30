@@ -23,7 +23,6 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Dict, Optional
 
 from harness.orchestrator.structured_log import StructuredLogRecord
 
@@ -134,7 +133,7 @@ class SelfHealingContext:
     current_level: int = 0
     level_timeout_sec: float = 300.0
     stall_timeout_sec: float = 120.0
-    circuit_breakers: Dict[str, CircuitBreaker] = field(default_factory=dict)
+    circuit_breakers: dict[str, CircuitBreaker] = field(default_factory=dict)
     stalled_warnings: int = 0
     max_stalled_warnings: int = 3
 
@@ -154,7 +153,7 @@ class SelfHealingContext:
         self.level_start_time = time.time()
         self.record_progress()
 
-    def check_timeout(self) -> Optional[str]:
+    def check_timeout(self) -> str | None:
         """Checkea timeout del nivel actual."""
         elapsed = time.time() - self.level_start_time
         if elapsed > self.level_timeout_sec:
@@ -164,7 +163,7 @@ class SelfHealingContext:
             )
         return None
 
-    def check_stalled(self) -> Optional[str]:
+    def check_stalled(self) -> str | None:
         """Checkea si el progreso está estancado."""
         elapsed = time.time() - self.last_progress_time
         if elapsed > self.stall_timeout_sec:
@@ -180,7 +179,7 @@ class SelfHealingContext:
         """Determina si la sesión está en estado crítico."""
         return self.stalled_warnings >= self.max_stalled_warnings
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "session_id": self.session_id,
             "level": self.current_level,

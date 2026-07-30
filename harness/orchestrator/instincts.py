@@ -16,8 +16,8 @@ Tipico uso:
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class InstinctSystem:
 
         Crea una lista interna para almacenar los instintos aprendidos.
         """
-        self._instincts: List[Instinct] = []
+        self._instincts: list[Instinct] = []
 
     def learn(
         self,
@@ -134,7 +134,7 @@ class InstinctSystem:
         )
         return instinct
 
-    def recall(self, context: str) -> Optional[Instinct]:
+    def recall(self, context: str) -> Instinct | None:
         """Busca un instinto que coincida con el contexto dado.
 
         Recorre los instintos registrados y retorna el primero cuyo
@@ -177,7 +177,7 @@ class InstinctSystem:
         logger.debug("recall: ningun instinto activado para el contexto dado")
         return None
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Retorna estadisticas de uso del sistema de instintos.
 
         Returns:
@@ -206,7 +206,7 @@ class InstinctSystem:
             "total_uses": total_uses,
         }
 
-    def _find_by_name(self, name: str) -> Optional[Instinct]:
+    def _find_by_name(self, name: str) -> Instinct | None:
         """Busca un instinto por su nombre (uso interno).
 
         Args:

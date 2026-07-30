@@ -3,27 +3,20 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List
 
-import pytest
-
-from harness.memory_rag.shared_cache import SharedSemanticCache, CacheStats
-from harness.orchestrator.event_bus import EventBus, Event, EventPriority
-from harness.orchestrator.speculative_decoder import (
-    SpeculativeDecoder,
-    SpeculativeConfig,
-    SpeculativeResult,
-    VerificationStrategy,
-)
-from harness.memory_rag.kv_cache_sharing import KVCacheSharing, KVCacheStats
+from harness.memory_rag.kv_cache_sharing import KVCacheSharing
+from harness.memory_rag.shared_cache import SharedSemanticCache
 from harness.orchestrator.a2a_protocol import (
     A2AProtocol,
-    AgentRole,
     AgentCapability,
+    AgentRole,
     MessageType,
-    A2AMessage,
 )
-
+from harness.orchestrator.event_bus import Event, EventBus, EventPriority
+from harness.orchestrator.speculative_decoder import (
+    SpeculativeDecoder,
+    SpeculativeResult,
+)
 
 # ============================================================================
 # SharedSemanticCache Tests
@@ -77,7 +70,7 @@ class TestEventBus:
         self.bus = EventBus()
 
     def test_subscribe_and_publish(self) -> None:
-        received: List[Event] = []
+        received: list[Event] = []
         self.bus.subscribe("test:channel", lambda e: received.append(e))
         event = Event(
             event_id="e1", channel="test:channel",
@@ -89,7 +82,7 @@ class TestEventBus:
         assert received[0].data["msg"] == "hello"
 
     def test_wildcard_subscribe(self) -> None:
-        received: List[Event] = []
+        received: list[Event] = []
         self.bus.subscribe("task:*", lambda e: received.append(e))
         e1 = Event("e1", "task:complete", {"id": 1}, "a", EventPriority.NORMAL, time.time())
         e2 = Event("e2", "task:failed", {"id": 2}, "a", EventPriority.NORMAL, time.time())
@@ -100,7 +93,7 @@ class TestEventBus:
         assert len(received) == 2
 
     def test_unsubscribe(self) -> None:
-        received: List[Event] = []
+        received: list[Event] = []
         sub_id = self.bus.subscribe("test", lambda e: received.append(e))
         self.bus.publish(Event("e1", "test", {}, "a", EventPriority.NORMAL, time.time()))
         assert len(received) == 1
@@ -125,10 +118,10 @@ class TestEventBus:
 
 class TestSpeculativeDecoder:
     def test_generate(self) -> None:
-        def draft_fn(prompt: str, n: int) -> List[str]:
+        def draft_fn(prompt: str, n: int) -> list[str]:
             return [f" token{i}" for i in range(n)]
 
-        def verify_fn(prompt: str, candidates: List[str]) -> List[bool]:
+        def verify_fn(prompt: str, candidates: list[str]) -> list[bool]:
             return [True] * len(candidates)
 
         decoder = SpeculativeDecoder(draft_fn, verify_fn)
@@ -138,10 +131,10 @@ class TestSpeculativeDecoder:
         assert result.text != ""
 
     def test_acceptance_rate(self) -> None:
-        def draft_fn(prompt: str, n: int) -> List[str]:
+        def draft_fn(prompt: str, n: int) -> list[str]:
             return [f" tok{i}" for i in range(n)]
 
-        def verify_fn(prompt: str, candidates: List[str]) -> List[bool]:
+        def verify_fn(prompt: str, candidates: list[str]) -> list[bool]:
             return [True] * len(candidates)
 
         decoder = SpeculativeDecoder(draft_fn, verify_fn)
@@ -149,9 +142,9 @@ class TestSpeculativeDecoder:
         assert result.acceptance_rate == 1.0
 
     def test_get_stats(self) -> None:
-        def draft_fn(p: str, n: int) -> List[str]:
+        def draft_fn(p: str, n: int) -> list[str]:
             return [" tok"] * n
-        def verify_fn(p: str, c: List[str]) -> List[bool]:
+        def verify_fn(p: str, c: list[str]) -> list[bool]:
             return [True] * len(c)
 
         decoder = SpeculativeDecoder(draft_fn, verify_fn)

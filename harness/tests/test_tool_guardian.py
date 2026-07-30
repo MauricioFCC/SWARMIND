@@ -4,13 +4,12 @@ from __future__ import annotations
 import pytest
 
 from harness.orchestrator.tool_guardian import (
-    CharacterizationStage,
     CharacterizationResult,
+    CharacterizationStage,
     ToolGuardian,
     ToolPolicy,
     ToolRiskLevel,
 )
-
 
 # ===========================================================================
 # Fixtures

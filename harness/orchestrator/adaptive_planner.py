@@ -21,11 +21,10 @@ from __future__ import annotations
 
 import json
 import logging
-from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -102,12 +101,12 @@ class PlanFeedback:
     success_rate: float
     adaptation_triggered: bool = False
     adaptation_reason: str = ""
-    metadata: Dict = field(default_factory=dict)
+    metadata: dict = field(default_factory=dict)
     timestamp: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "session_id": self.session_id,
             "task_hash": self.task_hash,
@@ -163,7 +162,7 @@ class StrategyStats:
         )
         self.last_used = feedback.timestamp
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "strategy": self.strategy.value,
             "total_uses": self.total_uses,
@@ -184,14 +183,14 @@ class PhasePlan:
     Almacena la asignación de fase angular por agente y el tipo de tarea
     para el cual fue generado el plan.
     """
-    agent_phases: Dict[str, float] = field(default_factory=dict)
+    agent_phases: dict[str, float] = field(default_factory=dict)
     task_type: str = ""
     window_degrees: float = PSMAS_DEFAULT_WINDOW
     created_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "agent_phases": dict(self.agent_phases),
             "task_type": self.task_type,
@@ -244,7 +243,7 @@ class AdaptivePlanner:
 
     def __init__(
         self,
-        storage_path: Optional[str] = None,
+        storage_path: str | None = None,
         min_samples: int = 3,
     ) -> None:
         """
@@ -256,16 +255,16 @@ class AdaptivePlanner:
         self._min_samples = min_samples
 
         # Estadísticas por estrategia
-        self._strategy_stats: Dict[str, StrategyStats] = {
+        self._strategy_stats: dict[str, StrategyStats] = {
             s.value: StrategyStats(strategy=s)
             for s in PlanStrategy
         }
 
         # Historial de feedback reciente
-        self._feedback_history: List[PlanFeedback] = []
+        self._feedback_history: list[PlanFeedback] = []
 
         # Mapa de task_hash → mejor estrategia conocida
-        self._best_strategies: Dict[str, Tuple[PlanStrategy, float]] = {}
+        self._best_strategies: dict[str, tuple[PlanStrategy, float]] = {}
 
         # Plan de fases PSMAS (phase-scheduled agents)
         self._phase_plan: PhasePlan = PhasePlan()
@@ -281,10 +280,10 @@ class AdaptivePlanner:
     def choose_strategy(
         self,
         task: str,
-        task_type: Optional[str] = None,
-        force_agent: Optional[str] = None,
-        known_strategy: Optional[PlanStrategy] = None,
-        agents: Optional[List[str]] = None,
+        task_type: str | None = None,
+        force_agent: str | None = None,
+        known_strategy: PlanStrategy | None = None,
+        agents: list[str] | None = None,
     ) -> PlanStrategy:
         """
         Elige la mejor estrategia de plan para una tarea.
@@ -341,7 +340,7 @@ class AdaptivePlanner:
     def _apply_phase_scheduling(
         self,
         strategy: PlanStrategy,
-        agents: Optional[List[str]],
+        agents: list[str] | None,
         task_type: str,
     ) -> None:
         """
@@ -380,9 +379,9 @@ class AdaptivePlanner:
 
     def _assign_agent_phases(
         self,
-        agents: List[str],
+        agents: list[str],
         task_type: str,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Asigna fase angular (0-360°) a cada agente según PSMAS.
 
@@ -403,7 +402,7 @@ class AdaptivePlanner:
         Returns:
             Dict[str, float] mapeando agente → fase en grados.
         """
-        phases: Dict[str, float] = {}
+        phases: dict[str, float] = {}
         n = len(agents)
         if n == 0:
             return phases
@@ -441,10 +440,10 @@ class AdaptivePlanner:
 
     def get_active_agents(
         self,
-        agents: List[str],
+        agents: list[str],
         phase_degrees: float,
         window: float = PSMAS_DEFAULT_WINDOW,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Retorna solo agentes dentro de la ventana angular desde ``phase_degrees``.
 
@@ -466,7 +465,7 @@ class AdaptivePlanner:
         if not self._phase_plan.agent_phases:
             return agents
 
-        active: List[str] = []
+        active: list[str] = []
         seen: set = set()
 
         # Primera pasada: agentes dentro de la ventana
@@ -547,8 +546,8 @@ class AdaptivePlanner:
         ]
 
         lines = context.split("\n")
-        essential_lines: List[str] = []
-        header_lines: List[str] = []
+        essential_lines: list[str] = []
+        header_lines: list[str] = []
 
         for line in lines:
             stripped = line.strip()
@@ -556,7 +555,7 @@ class AdaptivePlanner:
                 continue
 
             # Mantener encabezados de sección
-            if stripped.startswith("###") or stripped.startswith("==="):
+            if stripped.startswith(("###", "===")):
                 header_lines.append(stripped)
                 continue
 
@@ -589,7 +588,7 @@ class AdaptivePlanner:
 
         return compressed
 
-    def get_phase_plan(self) -> Dict:
+    def get_phase_plan(self) -> dict:
         """
         Obtiene el plan de fases PSMAS actual.
 
@@ -630,7 +629,7 @@ class AdaptivePlanner:
             feedback.session_id, feedback.strategy_used.value, feedback.success_rate,
         )
 
-    def get_recommendation(self, task: str) -> Dict:
+    def get_recommendation(self, task: str) -> dict:
         """
         Obtiene recomendación completa para una tarea.
 
@@ -638,13 +637,13 @@ class AdaptivePlanner:
             Dict con estrategia, confianza, stats y fase PSMAS.
         """
         task_type = self._detect_task_type(task)
-        task_hash = self._hash_task(task)
+        self._hash_task(task)
         strategy = self.choose_strategy(task, task_type)
 
         stats = self._strategy_stats[strategy.value]
         known = self._best_strategies.get(f"type:{task_type}")
 
-        recommendation: Dict = {
+        recommendation: dict = {
             "task_type": task_type,
             "recommended_strategy": strategy.value,
             "confidence": known[1] if known else stats.avg_success_rate,
@@ -667,8 +666,8 @@ class AdaptivePlanner:
     def should_replan(
         self,
         feedback: PlanFeedback,
-        healing_context: Optional[Dict] = None,
-    ) -> Tuple[bool, Optional[str]]:
+        healing_context: dict | None = None,
+    ) -> tuple[bool, str | None]:
         """
         Determina si se debe re-planificar basado en feedback.
 
@@ -794,7 +793,7 @@ class AdaptivePlanner:
         best_strategy = base_strategy
         best_rate = stats.avg_success_rate
 
-        for s_name, s_stats in self._strategy_stats.items():
+        for s_stats in self._strategy_stats.values():
             if s_stats.total_uses >= self._min_samples and s_stats.avg_success_rate > best_rate:
                 best_rate = s_stats.avg_success_rate
                 best_strategy = s_stats.strategy

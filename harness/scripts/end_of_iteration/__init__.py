@@ -1,13 +1,13 @@
-"""
-end_of_iteration — Pipeline de fin de iteracion.
+﻿"""
+end_of_iteration â€” Pipeline de fin de iteracion.
 
 Package que reemplaza el monolito original, dividiendo la funcionalidad en
-fases separadas y módulos auxiliares (cli, display).
+fases separadas y mÃ³dulos auxiliares (cli, display).
 
-REFACTOR: Aplica patrón RECURSIVO para ejecutar fases en lugar de un loop for.
-La función run_pipeline ejecuta fases recursivamente: cada fase retorna
-un contexto que se pasa a la siguiente fase, eliminando ~50 líneas de
-código secuencial repetitivo.
+REFACTOR: Aplica patrÃ³n RECURSIVO para ejecutar fases en lugar de un loop for.
+La funciÃ³n run_pipeline ejecuta fases recursivamente: cada fase retorna
+un contexto que se pasa a la siguiente fase, eliminando ~50 lÃ­neas de
+cÃ³digo secuencial repetitivo.
 
 Uso:
     from harness.scripts.end_of_iteration import run_pipeline
@@ -16,12 +16,10 @@ Uso:
 from __future__ import annotations
 
 import json
-import os
 import sys
 import time
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .cli import parse_args
 from .config import (
@@ -37,11 +35,9 @@ from .config import (
     _err,
     _get_changed_files_since_last_commit,
     _get_git_uncommitted,
-    _load_config,
     _ok,
     _print_banner,
     _safe_print,
-    _supports_unicode,
     _warn,
 )
 from .display import (
@@ -58,12 +54,27 @@ from .phase4_tokens import calculate_iteration_cost
 from .phase5_commit import interactive_commit, prepare_commit
 
 __all__ = [
-    "BugFinding", "SecurityFinding", "DocsStaleness", "TokenReport",
-    "IterationReport", "scan_for_bugs", "auto_fix_bugs", "security_scan",
-    "check_and_update_docs", "calculate_iteration_cost", "prepare_commit",
-    "interactive_commit", "run_pipeline", "run_quick_pipeline",
-    "run_auto_pipeline", "print_last_report", "get_last_report", "main",
-    "list_iteration_reports", "show_iteration_history", "show_iteration_diff",
+    "BugFinding",
+    "DocsStaleness",
+    "IterationReport",
+    "SecurityFinding",
+    "TokenReport",
+    "auto_fix_bugs",
+    "calculate_iteration_cost",
+    "check_and_update_docs",
+    "get_last_report",
+    "interactive_commit",
+    "list_iteration_reports",
+    "main",
+    "prepare_commit",
+    "print_last_report",
+    "run_auto_pipeline",
+    "run_pipeline",
+    "run_quick_pipeline",
+    "scan_for_bugs",
+    "security_scan",
+    "show_iteration_diff",
+    "show_iteration_history",
 ]
 
 
@@ -119,7 +130,7 @@ def _save_report_to_lancedb(report: IterationReport) -> bool:
         }
         store.insert("iteration_reports", vector, [metadata])
         return True
-    except Exception:
+    except Exception:  # noqa: BLE001
         return False
 
 
@@ -130,7 +141,7 @@ def _save_report_to_json(report: IterationReport) -> bool:
     reports_dir.mkdir(parents=True, exist_ok=True)
     existing = sorted(reports_dir.glob("report_*.json"))
     iter_num = len(existing) + 1
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     filename = f"report_{timestamp}_iter{iter_num:04d}.json"
     filepath = reports_dir / filename
 
@@ -143,7 +154,7 @@ def _save_report_to_json(report: IterationReport) -> bool:
             json.dump(data, f, indent=2, ensure_ascii=False, default=str)
         _safe_print(f"    {_ok('[OK]')} Reporte guardado: {filepath}")
         return True
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         _safe_print(f"    {_warn('[WARN]')} No se pudo guardar reporte JSON: {exc}")
         return False
 
@@ -153,7 +164,7 @@ def _save_report_to_json(report: IterationReport) -> bool:
 # =============================================================================
 
 
-def _phase_bugs(context: Dict[str, Any]) -> Dict[str, Any]:
+def _phase_bugs(context: dict[str, Any]) -> dict[str, Any]:
     """Phase 1: Bug Hunting."""
     report = context["report"]
     dry_run = context.get("dry_run", False)
@@ -202,7 +213,7 @@ def _phase_bugs(context: Dict[str, Any]) -> Dict[str, Any]:
     return context
 
 
-def _phase_security(context: Dict[str, Any]) -> Dict[str, Any]:
+def _phase_security(context: dict[str, Any]) -> dict[str, Any]:
     """Phase 2: Security Review."""
     report = context["report"]
     skip = context.get("skip_security", False)
@@ -239,7 +250,7 @@ def _phase_security(context: Dict[str, Any]) -> Dict[str, Any]:
     return context
 
 
-def _phase_docs(context: Dict[str, Any]) -> Dict[str, Any]:
+def _phase_docs(context: dict[str, Any]) -> dict[str, Any]:
     """Phase 3: Documentation Update."""
     report = context["report"]
     skip = context.get("skip_docs", False)
@@ -264,7 +275,7 @@ def _phase_docs(context: Dict[str, Any]) -> Dict[str, Any]:
     return context
 
 
-def _phase_tokens(context: Dict[str, Any]) -> Dict[str, Any]:
+def _phase_tokens(context: dict[str, Any]) -> dict[str, Any]:
     """Phase 4: Token Report."""
     report = context["report"]
     changed_files = context.get("changed_files", [])
@@ -290,7 +301,7 @@ def _phase_tokens(context: Dict[str, Any]) -> Dict[str, Any]:
     return context
 
 
-def _phase_commit(context: Dict[str, Any]) -> Dict[str, Any]:
+def _phase_commit(context: dict[str, Any]) -> dict[str, Any]:
     """Phase 5: Commit Seguro."""
     report = context["report"]
     dry_run = context.get("dry_run", False)
@@ -334,12 +345,12 @@ PHASES = [
 # =============================================================================
 
 
-def run_pipeline_recursive(phases, index: int, context: Dict[str, Any]) -> Dict[str, Any]:
+def run_pipeline_recursive(phases, index: int, context: dict[str, Any]) -> dict[str, Any]:
     """
     Ejecuta fases recursivamente en lugar de un loop for.
     
-    Patrón RECURSIVO: cada fase procesa el contexto y lo pasa a la siguiente.
-    Cuando no hay más fases, retorna el contexto final.
+    PatrÃ³n RECURSIVO: cada fase procesa el contexto y lo pasa a la siguiente.
+    Cuando no hay mÃ¡s fases, retorna el contexto final.
     
     Args:
         phases: Lista de tuplas (nombre, funcion_fase)
@@ -347,9 +358,9 @@ def run_pipeline_recursive(phases, index: int, context: Dict[str, Any]) -> Dict[
         context: Dict con estado compartido entre fases
     
     Returns:
-        Contexto final después de ejecutar todas las fases
+        Contexto final despuÃ©s de ejecutar todas las fases
     """
-    # Caso base: no hay más fases
+    # Caso base: no hay mÃ¡s fases
     if index >= len(phases):
         return context
 
@@ -407,7 +418,7 @@ def run_pipeline(
             _safe_print(f"    ... y {len(changed_files) - 10} mas")
 
     # Contexto compartido entre fases (pasa por el pipeline recursivo)
-    context: Dict[str, Any] = {
+    context: dict[str, Any] = {
         "report": report,
         "changed_files": changed_files,
         "skip_bugs": skip_bugs,
@@ -437,7 +448,7 @@ def run_pipeline(
 # =============================================================================
 
 
-def run_quick_pipeline() -> Dict[str, Any]:
+def run_quick_pipeline() -> dict[str, Any]:
     """Modo rapido: solo bugs + tokens, salta security, docs y commit.
 
     Tiempo objetivo < 2s. Escanea solo archivos staged.
@@ -453,10 +464,10 @@ def run_quick_pipeline() -> Dict[str, Any]:
     try:
         result = _subprocess.run(
             ["git", "diff", "--cached", "--name-only"],
-            capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT),
+            capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT), check=False,
         )
         staged = [f.strip() for f in result.stdout.split("\n") if f.strip()]
-    except Exception:
+    except Exception:  # noqa: BLE001
         staged = []
 
     if not staged:
@@ -501,7 +512,7 @@ def run_quick_pipeline() -> Dict[str, Any]:
     return {"status": status, "criticals": len(criticals), "bugs": len(bugs), "elapsed": elapsed}
 
 
-def run_auto_pipeline() -> Dict[str, Any]:
+def run_auto_pipeline() -> dict[str, Any]:
     """Modo automatico: ejecuta pipeline completo, hace commit si no hay criticals.
 
     Si hay criticals, aborta y muestra los issues para revision manual.
@@ -541,7 +552,7 @@ def run_auto_pipeline() -> Dict[str, Any]:
     try:
         r = subprocess.run(
             ["git", "commit", "-m", clean_msg],
-            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT),
+            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT), check=False,
         )
         if r.returncode == 0:
             _safe_print(f"    {_ok('Commit automatico exitoso')}")
@@ -555,7 +566,7 @@ def run_auto_pipeline() -> Dict[str, Any]:
             if push == "y":
                 r2 = subprocess.run(
                     ["git", "push"], capture_output=True, text=True, timeout=60,
-                    cwd=str(PROJECT_ROOT),
+                    cwd=str(PROJECT_ROOT), check=False,
                 )
                 if r2.returncode == 0:
                     _safe_print(f"    {_ok('Push exitoso')}")
@@ -564,7 +575,7 @@ def run_auto_pipeline() -> Dict[str, Any]:
         else:
             _safe_print(f"    {_warn(f'Error en commit: {r.stderr[:200]}')}")
             auto_committed = False
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         _safe_print(f"    {_warn(f'Error en commit: {exc}')}")
         auto_committed = False
 
@@ -598,17 +609,17 @@ def _run_pre_commit_pipeline(skip_security: bool = False) -> int:
     try:
         result = _subprocess.run(
             ["git", "diff", "--cached", "--name-only"],
-            capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT),
+            capture_output=True, text=True, timeout=15, cwd=str(PROJECT_ROOT), check=False,
         )
         staged = [f.strip() for f in result.stdout.split("\n") if f.strip()]
-    except Exception:
+    except Exception:  # noqa: BLE001
         staged = []
 
     if not staged:
         _safe_print("    No staged files to check.")
         return 0
 
-    scope_files = [f for f in staged if f.startswith("harness/") or f.startswith(".opencode/")]
+    scope_files = [f for f in staged if f.startswith(("harness/", ".opencode/"))]
     scope_files = [
         f for f in scope_files
         if not f.startswith("harness/db/") and "__pycache__" not in f and ".git/" not in f
@@ -695,7 +706,7 @@ def _run_watch_pipeline() -> int:
     if not changed_files:
         changed_files = _get_changed_files_since_last_commit()
 
-    scope_files = [f for f in changed_files if f.startswith("harness/") or f.startswith(".opencode/")]
+    scope_files = [f for f in changed_files if f.startswith(("harness/", ".opencode/"))]
     scope_files = [
         f for f in scope_files
         if not f.startswith("harness/db/") and "__pycache__" not in f and ".git/" not in f

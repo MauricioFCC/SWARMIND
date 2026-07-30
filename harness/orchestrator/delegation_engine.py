@@ -1,27 +1,30 @@
-"""Delegation engine with UNIVERSAL auto-routing.
+﻿"""Delegation engine with UNIVERSAL auto-routing.
 
-CONSOLIDACIÓN: 21 agentes especializados → 5 roles universales:
+CONSOLIDACIÃ“N: 21 agentes especializados â†’ 5 roles universales:
   - @coordinator (entry point, auto-detecta y delega)
-  - @builder     (toda implementación: Rust, Go, Python, Web, Mobile, Trading, Infra)
-  - @scientist   (investigación, papers, AI/ML, arquitectura, patrones)
+  - @builder     (toda implementaciÃ³n: Rust, Go, Python, Web, Mobile, Trading, Infra)
+  - @scientist   (investigaciÃ³n, papers, AI/ML, arquitectura, patrones)
   - @guardian    (calidad, seguridad, riesgo, docs, operaciones)
   - @evolve      (auto-mejora del sistema)
 
 No requiere @: si escribes "implementa una API en Rust", se detecta
-automáticamente y se enruta a @builder. El @ solo es necesario si
-quieres forzar un rol específico.
+automÃ¡ticamente y se enruta a @builder. El @ solo es necesario si
+quieres forzar un rol especÃ­fico.
 
-REFACTOR: Reemplaza ~200 líneas de mappings hardcodeados con
+REFACTOR: Reemplaza ~200 lÃ­neas de mappings hardcodeados con
 descubrimiento recursivo de agentes desde .opencode/agents/*.md.
-Ver agent_discovery.py para el patrón recursivo aplicado.
+Ver agent_discovery.py para el patrÃ³n recursivo aplicado.
 """
 
 from __future__ import annotations
 
+import logging
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 try:
     import yaml
@@ -46,6 +49,7 @@ from harness.orchestrator.agent_discovery import (
     resolve_agent_name as discovery_resolve_agent_name,
 )
 from harness.orchestrator.task_manager import TaskManager
+from harness.orchestrator.task_planner import TaskPlan
 
 
 def _find_routing_rules_path() -> str:
@@ -56,7 +60,7 @@ def _find_routing_rules_path() -> str:
     return ""
 
 
-def _load_yaml_rules(path: str) -> Dict[str, Any]:
+def _load_yaml_rules(path: str) -> dict[str, Any]:
     if not HAS_YAML:
         return {}
     try:
@@ -77,18 +81,18 @@ class DelegationEngine:
     en lugar de usar mappings hardcodeados.
     """
 
-    def __init__(self, task_manager: Optional[TaskManager] = None) -> None:
+    def __init__(self, task_manager: TaskManager | None = None) -> None:
         """Inicializa la instancia de la clase.
 
         Descubre agentes recursivamente y carga reglas YAML como override.
         """
-        self._task_manager: Optional[TaskManager] = task_manager
-        self._routing_rules: Dict[str, Any] = {}
+        self._task_manager: TaskManager | None = task_manager
+        self._routing_rules: dict[str, Any] = {}
 
-        # Descubrimiento recursivo de agentes (reemplaza ~200 líneas de dicts)
+        # Descubrimiento recursivo de agentes (reemplaza ~200 lÃ­neas de dicts)
         self._agents = discover_agents_recursive()
-        self._intent_map: Dict[str, str] = build_intent_map(self._agents)
-        self._capabilities: Dict[str, List[str]] = get_all_capabilities(self._agents)
+        self._intent_map: dict[str, str] = build_intent_map(self._agents)
+        self._capabilities: dict[str, list[str]] = get_all_capabilities(self._agents)
         self._router_v2: Any = None
 
         self._load_config()
@@ -127,16 +131,16 @@ class DelegationEngine:
                     self._intent_map[f"__domain_{domain}"] = agents[0]
 
             departments = data.get("departments", {})
-            for dept_name, dept_info in departments.items():
+            for dept_info in departments.values():
                 head = dept_info.get("head", "")
                 funciones = dept_info.get("funciones", [])
                 if head and funciones:
                     if head not in self._capabilities:
                         self._capabilities[head] = []
                     for func in funciones:
-                        slug = func.lower().replace(" ", "_").replace("á", "a").replace(
-                            "é", "e"
-                        ).replace("í", "i").replace("ó", "o").replace("ú", "u")
+                        slug = func.lower().replace(" ", "_").replace("Ã¡", "a").replace(
+                            "Ã©", "e"
+                        ).replace("Ã­", "i").replace("Ã³", "o").replace("Ãº", "u")
                         if slug not in self._capabilities[head]:
                             self._capabilities[head].append(slug)
 
@@ -144,9 +148,9 @@ class DelegationEngine:
                 for miembro in miembros:
                     if miembro in self._capabilities:
                         for func in funciones:
-                            slug = func.lower().replace(" ", "_").replace("á", "a").replace(
-                                "é", "e"
-                            ).replace("í", "i").replace("ó", "o").replace("ú", "u")
+                            slug = func.lower().replace(" ", "_").replace("Ã¡", "a").replace(
+                                "Ã©", "e"
+                            ).replace("Ã­", "i").replace("Ã³", "o").replace("Ãº", "u")
                             if slug not in self._capabilities[miembro]:
                                 self._capabilities[miembro].append(slug)
 
@@ -309,18 +313,18 @@ class DelegationEngine:
         Enruta un mensaje al agente apropiado.
         
         Soporta:
-          - @rol: mensaje (ruteo explícito)
-          - mensaje sin @ (auto-detección por contenido)
+          - @rol: mensaje (ruteo explÃ­cito)
+          - mensaje sin @ (auto-detecciÃ³n por contenido)
           - !comandos (comandos del sistema)
         
-        La auto-detección mapea a 5 roles universales:
+        La auto-detecciÃ³n mapea a 5 roles universales:
         coordinator, builder, scientist, guardian, evolve.
         """
         # !comandos van al coordinator (que los procesa directamente)
         if message.startswith("!"):
             return "coordinator"
 
-        # @rol: mensaje — ruteo explícito (backward compatible)
+        # @rol: mensaje â€” ruteo explÃ­cito (backward compatible)
         mentions = re.findall(r"@(\w[\w-]*)", message)
         if mentions:
             for mention in mentions:
@@ -335,21 +339,21 @@ class DelegationEngine:
                     return result.get("agent", "coordinator")
                 if isinstance(result, str) and result:
                     return result
-            except Exception as _exc:
+            except Exception as _exc:  # noqa: BLE001
                 logger.warning("delegation_engine: %s", _exc)
 
-        # Auto-detección por contenido (NO requiere @)
+        # Auto-detecciÃ³n por contenido (NO requiere @)
         return self.auto_route(message)
 
     def _resolve_agent_name(self, name: str) -> str:
-        """Resuelve alias (@pm, @swe) a nombre canónico usando descubrimiento recursivo.
+        """Resuelve alias (@pm, @swe) a nombre canÃ³nico usando descubrimiento recursivo.
 
         Delega en agent_discovery.resolve_agent_name() que construye
-        el mapa de alias dinámicamente desde los perfiles de agente.
+        el mapa de alias dinÃ¡micamente desde los perfiles de agente.
         """
         return discovery_resolve_agent_name(name, self._agents)
 
-    def get_agent_capabilities(self) -> Dict[str, List[str]]:
+    def get_agent_capabilities(self) -> dict[str, list[str]]:
         """Return a dict mapping each agent name to its list of capabilities."""
         return {k: list(v) for k, v in self._capabilities.items()}
 
@@ -357,7 +361,7 @@ class DelegationEngine:
         """Return the primary agent responsible for a given domain."""
         return discovery_get_agent_for_domain(domain, self._agents)
 
-    def list_agents(self) -> List[str]:
+    def list_agents(self) -> list[str]:
         """Return the list of all known agent names."""
         return discovery_list_agents(self._agents)
 
@@ -369,7 +373,7 @@ class DelegationEngine:
     # Plan-and-Execute integration
     # ------------------------------------------------------------------
 
-    def plan_task(self, message: str) -> "TaskPlan":
+    def plan_task(self, message: str) -> TaskPlan:
         """
         Decompose a user message into a structured execution plan.
 
@@ -386,7 +390,7 @@ class DelegationEngine:
         planner = TaskPlanner()
         return planner.decompose(message)
 
-    def route_with_plan(self, message: str) -> Dict:
+    def route_with_plan(self, message: str) -> dict:
         """
         Route a message AND return a structured execution plan.
 

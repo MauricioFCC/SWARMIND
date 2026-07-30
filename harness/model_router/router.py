@@ -1,30 +1,28 @@
-"""ModelRouter — Enrutamiento de tareas a modelos LLM."""
+﻿"""ModelRouter â€” Enrutamiento de tareas a modelos LLM."""
 from __future__ import annotations
 
 import logging
 import os
 import time
 from pathlib import Path
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from harness.model_router.multi_provider import (
     MAX_TOKENS_BY_AGENT,
+    ExecutionResult,
     MultiAPIProvider,
     ProviderConfig,
-    ProviderHealth,
     RoutingDecision,
-    ExecutionResult,
-    BudgetLimit,
 )
+from harness.model_router.multi_provider_types import ProviderTier
 
 logger = logging.getLogger(__name__)
 class ModelRouter:
     """Enrutador de tareas de agentes a modelos locales o cloud multi-provider.
 
-    Mejora sobre la versión original:
-      - Multi-provider con failover automático
-      - Health checks periódicos
+    Mejora sobre la versiÃ³n original:
+      - Multi-provider con failover automÃ¡tico
+      - Health checks periÃ³dicos
       - Cost tracking por proveedor y proyecto
       - Latencia P50/P95/P99
       - Round-robin entre proveedores del mismo tier
@@ -38,31 +36,31 @@ class ModelRouter:
         router.set_budget("project-alpha", 50.0)
     """
 
-    def __init__(self, config_path: Optional[str] = None):
-        """Inicializa el router con configuración y proveedores por defecto.
+    def __init__(self, config_path: str | None = None):
+        """Inicializa el router con configuraciÃ³n y proveedores por defecto.
 
         Args:
-            config_path: Ruta al archivo YAML de configuración. Si es None,
+            config_path: Ruta al archivo YAML de configuraciÃ³n. Si es None,
                 se busca 'router_config.yaml' en el mismo directorio.
 
-        WHY: Se requiere cargar configuración y registrar los proveedores
+        WHY: Se requiere cargar configuraciÃ³n y registrar los proveedores
         cloud disponibles para que el router funcione.
         WHERE: __init__ de ModelRouter.
         """
         self.config = self._load_config(config_path)
-        self._ollama_available: Optional[bool] = None  # lazy check
+        self._ollama_available: bool | None = None  # lazy check
 
         # Multi-provider engine
         self._multi_provider = MultiAPIProvider()
         self._register_default_providers()
 
         # Proyecto activo para cost tracking
-        self._active_project: Optional[str] = None
+        self._active_project: str | None = None
 
     def _register_default_providers(self) -> None:
-        """Registra los proveedores cloud definidos en la configuración.
+        """Registra los proveedores cloud definidos en la configuraciÃ³n.
 
-        WHY: Los proveedores deben estar disponibles sin configuración
+        WHY: Los proveedores deben estar disponibles sin configuraciÃ³n
         adicional del usuario.
         WHERE: _register_default_providers.
         """
@@ -87,10 +85,10 @@ class ModelRouter:
                     headers_extra=pcfg.get("headers_extra", {}),
                 )
                 self._multi_provider.register_provider(config)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning(
                     "Error registrando provider '%s': %s. "
-                    "WHY: Proveedor inválido en config será omitido. "
+                    "WHY: Proveedor invÃ¡lido en config serÃ¡ omitido. "
                     "WHERE: _register_default_providers",
                     pcfg.get("name", "?"), exc,
                 )
@@ -98,8 +96,8 @@ class ModelRouter:
     def _register_env_providers(self) -> None:
         """Registra proveedores detectando variables de entorno.
 
-        WHY: Para que funcione out-of-the-box sin configuración YAML,
-        detectando qué APIs están configuradas.
+        WHY: Para que funcione out-of-the-box sin configuraciÃ³n YAML,
+        detectando quÃ© APIs estÃ¡n configuradas.
         WHERE: _register_env_providers.
         """
         # OPENAI
@@ -186,24 +184,24 @@ class ModelRouter:
             ))
 
     # ------------------------------------------------------------------
-    # Public API — compatibilidad total
+    # Public API â€” compatibilidad total
     # ------------------------------------------------------------------
 
     def route(self, task: str, agent_role: str = "*") -> RoutingDecision:
         """Determina si una tarea debe ejecutarse local o en cloud.
 
         Prioridad (mayor a menor):
-        1. Keywords destructivas → cloud (seguridad)
-        2. Rol de agente con default explícito → usa ese default
-        3. Tarea corta (< threshold) → local
-        4. Wildcard default (*) o fallback → local
+        1. Keywords destructivas â†’ cloud (seguridad)
+        2. Rol de agente con default explÃ­cito â†’ usa ese default
+        3. Tarea corta (< threshold) â†’ local
+        4. Wildcard default (*) o fallback â†’ local
 
         Args:
-            task: Descripción de la tarea a enrutar.
+            task: DescripciÃ³n de la tarea a enrutar.
             agent_role: Rol del agente que solicita la tarea.
 
         Returns:
-            RoutingDecision con la decisión de enrutamiento.
+            RoutingDecision con la decisiÃ³n de enrutamiento.
         """
         task_stripped = task.strip()
         preview = task_stripped[:80]
@@ -211,7 +209,7 @@ class ModelRouter:
         agent_defaults = self.config.get("routing_rules", {}).get("agent_defaults", {})
         wildcard_default = agent_defaults.get("*", "local")
 
-        # Priority 1: Destructive keywords → siempre cloud
+        # Priority 1: Destructive keywords â†’ siempre cloud
         destructive = self.config.get("routing_rules", {}).get("destructive_keywords", [])
         task_upper = task_stripped.upper()
         for kw in destructive:
@@ -225,7 +223,7 @@ class ModelRouter:
                     task_preview=preview,
                 )
 
-        # Priority 2: Rol tiene default explícito
+        # Priority 2: Rol tiene default explÃ­cito
         role_source = agent_defaults.get(agent_role)
         if role_source is not None and role_source in ("cloud", "local"):
             return RoutingDecision(
@@ -237,7 +235,7 @@ class ModelRouter:
                 task_preview=preview,
             )
 
-        # Priority 3: Tarea corta → local
+        # Priority 3: Tarea corta â†’ local
         threshold = self.config.get("routing_rules", {}).get("short_task_threshold_chars", 200)
         if len(task_stripped) < threshold:
             return RoutingDecision(
@@ -262,15 +260,15 @@ class ModelRouter:
     def execute(self, task: str, agent_role: str = "*") -> ExecutionResult:
         """Enruta y ejecuta una tarea en el modelo apropiado.
 
-        Si se elige local pero no está disponible, hace fallback a cloud
-        si ``fallback_to_cloud`` está habilitado en config.
+        Si se elige local pero no estÃ¡ disponible, hace fallback a cloud
+        si ``fallback_to_cloud`` estÃ¡ habilitado en config.
 
         Args:
             task: Tarea a ejecutar.
             agent_role: Rol del agente.
 
         Returns:
-            ExecutionResult con el resultado de la ejecución.
+            ExecutionResult con el resultado de la ejecuciÃ³n.
         """
         decision = self.route(task, agent_role)
         start = time.perf_counter()
@@ -287,7 +285,7 @@ class ModelRouter:
                     duration_ms=round(elapsed, 2),
                 )
 
-            # Local falló — verificar fallback
+            # Local fallÃ³ â€” verificar fallback
             fallback = (
                 self.config.get("local", {}).get("fallback_to_cloud", True)
                 and self._cloud_enabled()
@@ -319,7 +317,7 @@ class ModelRouter:
                 error=result.error or "Local execution failed and fallback disabled",
             )
 
-        # Cloud execution — ahora usa MultiAPIProvider con failover
+        # Cloud execution â€” ahora usa MultiAPIProvider con failover
         cloud_result = self._execute_cloud(task, agent_role=agent_role)
         elapsed = (time.perf_counter() - start) * 1000
         return ExecutionResult(
@@ -332,9 +330,9 @@ class ModelRouter:
         )
 
     def route_with_fallback(self, task: str, agent_role: str = "*") -> ExecutionResult:
-        """Enruta y ejecuta con failover entre múltiples proveedores cloud.
+        """Enruta y ejecuta con failover entre mÃºltiples proveedores cloud.
 
-        A diferencia de execute(), este método ITERA sobre todos los
+        A diferencia de execute(), este mÃ©todo ITERA sobre todos los
         proveedores cloud registrados que tengan el modelo apropiado,
         intentando cada uno hasta obtener una respuesta exitosa.
 
@@ -343,9 +341,9 @@ class ModelRouter:
             agent_role: Rol del agente.
 
         Returns:
-            ExecutionResult con el resultado exitoso o el último error.
+            ExecutionResult con el resultado exitoso o el Ãºltimo error.
 
-        WHY: Maximiza la probabilidad de éxito usando failover automático
+        WHY: Maximiza la probabilidad de Ã©xito usando failover automÃ¡tico
         entre proveedores.
         WHERE: route_with_fallback en ModelRouter.
         """
@@ -365,7 +363,7 @@ class ModelRouter:
                     duration_ms=round(elapsed, 2),
                 )
 
-            # Local falló, intentamos cloud con failover multi-provider
+            # Local fallÃ³, intentamos cloud con failover multi-provider
             logger.info(
                 "Local no disponible, intentando cloud con failover. "
                 "WHERE: route_with_fallback",
@@ -384,7 +382,7 @@ class ModelRouter:
         )
 
         if not result.success:
-            # Último intento: proveedores con modelos alternativos
+            # Ãšltimo intento: proveedores con modelos alternativos
             result = self._multi_provider.execute(
                 model=self._get_fallback_model(),
                 prompt=task,
@@ -400,14 +398,14 @@ class ModelRouter:
     def _get_fallback_model(self) -> str:
         """Retorna un modelo de fallback cuando el principal no funciona.
 
-        WHY: Si el modelo principal no está disponible en ningún proveedor,
+        WHY: Si el modelo principal no estÃ¡ disponible en ningÃºn proveedor,
         se necesita una alternativa.
         WHERE: _get_fallback_model.
 
         Returns:
             Nombre del modelo de fallback.
         """
-        # Intentar modelos más baratos/comunes como fallback
+        # Intentar modelos mÃ¡s baratos/comunes como fallback
         fallback_models = [
             "gpt-4o-mini",
             "claude-3-5-haiku-20241022",
@@ -427,8 +425,8 @@ class ModelRouter:
     # Provider stats y budget
     # ------------------------------------------------------------------
 
-    def get_provider_stats(self) -> Dict[str, Any]:
-        """Retorna estadísticas detalladas de todos los proveedores cloud.
+    def get_provider_stats(self) -> dict[str, Any]:
+        """Retorna estadÃ­sticas detalladas de todos los proveedores cloud.
 
         Incluye:
           - Estado de salud (available/degraded/unavailable)
@@ -438,21 +436,21 @@ class ModelRouter:
           - Conteo de requests
 
         Returns:
-            Diccionario con métricas por proveedor y resumen global.
+            Diccionario con mÃ©tricas por proveedor y resumen global.
 
         WHY: Permite monitorear el rendimiento y costo de cada proveedor
-        para tomar decisiones de optimización.
+        para tomar decisiones de optimizaciÃ³n.
         WHERE: get_provider_stats en ModelRouter.
         """
         return self._multi_provider.get_stats()
 
     def set_budget(self, project: str, limit: float, alert_threshold: float = 0.8) -> None:
-        """Establece un presupuesto máximo para un proyecto.
+        """Establece un presupuesto mÃ¡ximo para un proyecto.
 
         Args:
             project: Identificador del proyecto.
-            limit: Límite máximo en USD.
-            alert_threshold: Fracción para alerta temprana (0.0 a 1.0).
+            limit: LÃ­mite mÃ¡ximo en USD.
+            alert_threshold: FracciÃ³n para alerta temprana (0.0 a 1.0).
 
         Raises:
             ValueError: Si limit <= 0.
@@ -463,7 +461,7 @@ class ModelRouter:
         self._multi_provider.set_budget(project, limit, alert_threshold)
         self._active_project = project
 
-    def check_budget(self, project: Optional[str] = None) -> Tuple[float, float, bool]:
+    def check_budget(self, project: str | None = None) -> tuple[float, float, bool]:
         """Verifica el estado del presupuesto de un proyecto.
 
         Args:
@@ -477,7 +475,7 @@ class ModelRouter:
             return 0.0, 0.0, False
         return self._multi_provider.check_budget(p)
 
-    def get_total_cost(self, provider: Optional[str] = None) -> float:
+    def get_total_cost(self, provider: str | None = None) -> float:
         """Retorna el costo total acumulado en USD.
 
         Args:
@@ -497,7 +495,7 @@ class ModelRouter:
 
         Args:
             prompt: Texto de entrada.
-            agent_role: Rol del agente para límite de tokens.
+            agent_role: Rol del agente para lÃ­mite de tokens.
 
         Returns:
             ExecutionResult con la respuesta local.
@@ -546,7 +544,7 @@ class ModelRouter:
                 duration_ms=0,  # caller fills this
             )
 
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             return ExecutionResult(
                 success=False,
                 output="",
@@ -557,7 +555,7 @@ class ModelRouter:
             )
 
     def _is_ollama_available(self) -> bool:
-        """Verifica si Ollama está corriendo y accesible.
+        """Verifica si Ollama estÃ¡ corriendo y accesible.
 
         Returns:
             True si Ollama responde correctamente.
@@ -571,7 +569,7 @@ class ModelRouter:
             endpoint = self._local_endpoint().rstrip("/")
             resp = requests.get(f"{endpoint}/api/tags", timeout=5)
             self._ollama_available = resp.status_code == 200
-        except Exception:
+        except Exception:  # noqa: BLE001
             self._ollama_available = False
 
         return self._ollama_available
@@ -608,15 +606,15 @@ class ModelRouter:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
-        """Carga configuración desde archivo YAML.
+    def _load_config(config_path: str | None = None) -> dict[str, Any]:
+        """Carga configuraciÃ³n desde archivo YAML.
 
         Args:
             config_path: Ruta al archivo. Si es None, busca en el directorio
-                del módulo.
+                del mÃ³dulo.
 
         Returns:
-            Diccionario con la configuración resuelta.
+            Diccionario con la configuraciÃ³n resuelta.
         """
         if config_path is None:
             config_path = str(Path(__file__).resolve().parent / "router_config.yaml")
@@ -627,7 +625,7 @@ class ModelRouter:
             with open(config_path, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f) or {}
                 return _resolve_env_vars(config)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.warning(
                 "Could not load router config: %s. Using defaults. "
                 "WHERE: _load_config",
@@ -648,7 +646,7 @@ class ModelRouter:
         return self.config.get("local", {}).get("endpoint", "http://localhost:11434")
 
     def _local_enabled(self) -> bool:
-        """Indica si el proveedor local está habilitado."""
+        """Indica si el proveedor local estÃ¡ habilitado."""
         return self.config.get("local", {}).get("enabled", True)
 
     def _cloud_model(self) -> str:
@@ -660,7 +658,7 @@ class ModelRouter:
         return self.config.get("cloud", {}).get("provider", "openai")
 
     def _cloud_enabled(self) -> bool:
-        """Indica si el cloud está habilitado."""
+        """Indica si el cloud estÃ¡ habilitado."""
         return self.config.get("cloud", {}).get("enabled", True)
 
     # ------------------------------------------------------------------
@@ -671,7 +669,7 @@ class ModelRouter:
         """Libera recursos: detiene health checks y limpia estado.
 
         WHY: Necesario para un shutdown graceful en aplicaciones de larga
-        duración.
+        duraciÃ³n.
         WHERE: shutdown en ModelRouter.
         """
         self._multi_provider.stop_health_checks()
@@ -684,13 +682,13 @@ class ModelRouter:
 
 
 def _resolve_env_vars(config: Any) -> Any:
-    """Resuelve recursivamente patrones ${VAR} en valores de configuración.
+    """Resuelve recursivamente patrones ${VAR} en valores de configuraciÃ³n.
 
     Args:
         config: Valor, dict o lista con posibles ${VAR} a resolver.
 
     Returns:
-        Configuración con variables de entorno resueltas.
+        ConfiguraciÃ³n con variables de entorno resueltas.
     """
     if isinstance(config, str):
         if config.startswith("${") and config.endswith("}"):
@@ -704,8 +702,8 @@ def _resolve_env_vars(config: Any) -> Any:
     return config
 
 
-def _default_config() -> Dict[str, Any]:
-    """Retorna una configuración por defecto si no hay archivo.
+def _default_config() -> dict[str, Any]:
+    """Retorna una configuraciÃ³n por defecto si no hay archivo.
 
     Returns:
         Diccionario con valores sensibles por defecto.

@@ -6,7 +6,7 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +50,6 @@ Uso:
 """
 
 
-import threading
 
 
 
@@ -152,9 +151,9 @@ class LayerTrace:
     layer_type: LayerType
     status: str = "ok"
     latency_ms: float = 0.0
-    input: Optional[str] = None
-    output: Optional[str] = None
-    error: Optional[str] = None
+    input: str | None = None
+    output: str | None = None
+    error: str | None = None
     retries: int = 0
 
 
@@ -175,8 +174,8 @@ class EvalReport:
     """
 
     pass_rate: float = 0.0
-    dimensions: Dict[str, float] = field(default_factory=dict)
-    recommendations: List[str] = field(default_factory=list)
+    dimensions: dict[str, float] = field(default_factory=dict)
+    recommendations: list[str] = field(default_factory=list)
     total_checks: int = 0
     passed_checks: int = 0
 
@@ -202,14 +201,14 @@ class FactoryResult:
     """
 
     input: str
-    output: Optional[str] = None
+    output: str | None = None
     status: FactoryStatus = FactoryStatus.IDLE
-    layers: List[LayerTrace] = field(default_factory=list)
+    layers: list[LayerTrace] = field(default_factory=list)
     latency_ms: float = 0.0
     eval_report: EvalReport = field(default_factory=EvalReport)
-    guardrail_results: List[Dict[str, Any]] = field(default_factory=list)
+    guardrail_results: list[dict[str, Any]] = field(default_factory=list)
     pipeline_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
-    error: Optional[str] = None
+    error: str | None = None
 
 
 # ===========================================================================
@@ -217,7 +216,7 @@ class FactoryResult:
 # ===========================================================================
 
 
-def _simulate_guardrail(text: str, role: str) -> Tuple[bool, Optional[str]]:
+def _simulate_guardrail(text: str, role: str) -> tuple[bool, str | None]:
     """Simula la evaluacion de un guardrail de seguridad.
 
     En produccion, esto se conectaria a un servicio de guardrails
@@ -237,7 +236,7 @@ def _simulate_guardrail(text: str, role: str) -> Tuple[bool, Optional[str]]:
         Si aprobado=False, razon contiene el motivo de bloqueo.
     """
     # Palabras/gatillos que activan el bloqueo en modo simulacion
-    _TRIGGERS: Dict[str, List[str]] = {
+    _TRIGGERS: dict[str, list[str]] = {
         "input": [
             "ignora instrucciones",
             "olvida tu prompt",
@@ -273,7 +272,7 @@ def _simulate_guardrail(text: str, role: str) -> Tuple[bool, Optional[str]]:
     return True, None
 
 
-def _simulate_llm_call(prompt: str, model: str) -> Tuple[str, float]:
+def _simulate_llm_call(prompt: str, model: str) -> tuple[str, float]:
     """Simula una llamada a un LLM (OpenAI, Anthropic, local, etc.).
 
     En produccion, esto se conectaria al API del LLM configurado
@@ -307,7 +306,7 @@ def _simulate_llm_call(prompt: str, model: str) -> Tuple[str, float]:
     return respuesta, latency
 
 
-def _simulate_rag_retrieval(query: str, top_k: int = 3) -> Tuple[List[Dict[str, Any]], float]:
+def _simulate_rag_retrieval(query: str, top_k: int = 3) -> tuple[list[dict[str, Any]], float]:
     """Simula una busqueda en base de conocimiento vectorial (RAG).
 
     En produccion, esto consultaria LanceDB, Pinecone, Weaviate, etc.
@@ -348,7 +347,7 @@ def _simulate_rag_retrieval(query: str, top_k: int = 3) -> Tuple[List[Dict[str, 
     return docs, latency
 
 
-def _simulate_agent_execution(task: str, context: Dict[str, Any]) -> Tuple[str, float]:
+def _simulate_agent_execution(task: str, context: dict[str, Any]) -> tuple[str, float]:
     """Simula la ejecucion de un agente AI con planificacion y herramientas.
 
     En produccion, el agente ejecutaria un ciclo de razonamiento-accion
@@ -390,7 +389,7 @@ def _simulate_agent_execution(task: str, context: Dict[str, Any]) -> Tuple[str, 
     return resultado, latency
 
 
-def _simulate_mcp_call(tool_name: str, params: Dict[str, Any]) -> Tuple[Dict[str, Any], float]:
+def _simulate_mcp_call(tool_name: str, params: dict[str, Any]) -> tuple[dict[str, Any], float]:
     """Simula una llamada a una herramienta externa via MCP.
 
     En produccion, esto se conectaria al MCP Manager del harness
@@ -424,7 +423,7 @@ def _simulate_mcp_call(tool_name: str, params: Dict[str, Any]) -> Tuple[Dict[str
 
 
 def _simulate_evals(
-    input_text: str, output_text: str, layers: List[LayerTrace]
+    input_text: str, output_text: str, layers: list[LayerTrace]
 ) -> EvalReport:
     """Simula la evaluacion continua del pipeline.
 

@@ -16,13 +16,13 @@ Referencias:
 
 from __future__ import annotations
 
-from harness.parallel.io_fusion import BatchAccumulator
 from harness.parallel.adaptive_pool import AdaptivePool
+from harness.parallel.io_fusion import BatchAccumulator
 from harness.parallel.pipeline_macu import PipelineMACU, PipelineTask
 
 __all__ = [
-    "BatchAccumulator",
     "AdaptivePool",
+    "BatchAccumulator",
     "PipelineMACU",
     "PipelineTask",
 ]

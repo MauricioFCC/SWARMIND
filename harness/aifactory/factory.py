@@ -1,18 +1,26 @@
-"""AIFactory - Core orchestrator."""
+﻿"""AIFactory - Core orchestrator."""
 from __future__ import annotations
 
 import logging
 import threading
 import time
 import uuid
-from typing import Any, Dict, List, Optional, Tuple
+from collections.abc import AsyncGenerator
+from typing import Any
 
 from harness.aifactory.factory_types import (
-    FactoryConfig, FactoryResult, FactoryStatus,
-    LayerTrace, LayerType, EvalReport,
-    _simulate_guardrail, _simulate_llm_call,
-    _simulate_rag_retrieval, _simulate_agent_execution,
-    _simulate_mcp_call, _simulate_evals,
+    EvalReport,
+    FactoryConfig,
+    FactoryResult,
+    FactoryStatus,
+    LayerTrace,
+    LayerType,
+    _simulate_agent_execution,
+    _simulate_evals,
+    _simulate_guardrail,
+    _simulate_llm_call,
+    _simulate_mcp_call,
+    _simulate_rag_retrieval,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,7 +42,7 @@ class AIFactory:
         status: Estado actual del pipeline.
     """
 
-    def __init__(self, config: Optional[FactoryConfig] = None) -> None:
+    def __init__(self, config: FactoryConfig | None = None) -> None:
         """Inicializa el AIFactory con configuracion opcional.
 
         Si no se provee config, se usa FactoryConfig con valores
@@ -45,7 +53,7 @@ class AIFactory:
         """
         self._config: FactoryConfig = config or FactoryConfig()
         self._status: FactoryStatus = FactoryStatus.IDLE
-        self._metrics: Dict[str, Any] = {
+        self._metrics: dict[str, Any] = {
             "total_pipelines": 0,
             "completed": 0,
             "failed": 0,
@@ -93,7 +101,7 @@ class AIFactory:
     def process(
         self,
         input_text: str,
-        config: Optional[FactoryConfig] = None,
+        config: FactoryConfig | None = None,
     ) -> FactoryResult:
         """Ejecuta el pipeline completo de 7 capas sobre el texto de entrada.
 
@@ -145,13 +153,13 @@ class AIFactory:
         self._is_locked = True
         pipeline_start = time.perf_counter()
 
-        layers: List[LayerTrace] = []
-        guardrail_results: List[Dict[str, Any]] = []
+        layers: list[LayerTrace] = []
+        guardrail_results: list[dict[str, Any]] = []
         current_input: str = input_text
-        current_output: Optional[str] = None
-        pipeline_error: Optional[str] = None
+        current_output: str | None = None
+        pipeline_error: str | None = None
         final_status: FactoryStatus = FactoryStatus.COMPLETED
-        context: Dict[str, Any] = {"docs": [], "tools": []}
+        context: dict[str, Any] = {"docs": [], "tools": []}
 
         logger.info(
             "[AIFactory] Pipeline iniciado | id=%s input_len=%d config=%s",
@@ -214,18 +222,16 @@ class AIFactory:
             )
             layers.append(llm_trace)
 
-            if llm_trace.status == "error":
-                # Intento de compensacion: reintento con modelo alternativo
-                if active_config.compensation_enabled:
-                    logger.info(
-                        "[AIFactory] Compensando fallo LLM | "
-                        "id=%s retry_model=gpt-4o-mini",
-                        pipeline_id,
-                    )
-                    llm_trace = self._execute_llm(
-                        current_input, "gpt-4o-mini", retry=True
-                    )
-                    layers[-1] = llm_trace
+            if llm_trace.status == "error" and active_config.compensation_enabled:
+                logger.info(
+                    "[AIFactory] Compensando fallo LLM | "
+                    "id=%s retry_model=gpt-4o-mini",
+                    pipeline_id,
+                )
+                llm_trace = self._execute_llm(
+                    current_input, "gpt-4o-mini", retry=True
+                )
+                layers[-1] = llm_trace
 
             if llm_trace.status == "error":
                 final_status = FactoryStatus.FAILED
@@ -414,7 +420,7 @@ class AIFactory:
     # ------------------------------------------------------------------
 
     async def process_stream(
-        self, input_text: str, config: Optional[FactoryConfig] = None
+        self, input_text: str, config: FactoryConfig | None = None
     ) -> AsyncGenerator[LayerTrace, None]:
         """Ejecuta el pipeline en modo streaming, yield por capa.
 
@@ -513,9 +519,7 @@ class AIFactory:
 
         except Exception as exc:
             logger.exception(
-                "[AIFactory] Error en streaming | id=%s error=%s",
-                pipeline_id,
-                exc,
+                "[AIFactory] Error en streaming | id=%s", pipeline_id,
             )
             self._status = FactoryStatus.FAILED
             yield LayerTrace(
@@ -543,7 +547,7 @@ class AIFactory:
         """
         return self._status
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """Retorna las metricas acumuladas de todas las ejecuciones.
 
         Incluye conteo de pipelines completados, fallidos, bloqueados,
@@ -582,7 +586,7 @@ class AIFactory:
 
     def _execute_guardrail_input(
         self, text: str
-    ) -> Tuple[LayerTrace, bool]:
+    ) -> tuple[LayerTrace, bool]:
         """Ejecuta la capa de guardrail de entrada.
 
         Args:
@@ -607,7 +611,7 @@ class AIFactory:
 
     def _execute_guardrail_output(
         self, text: str
-    ) -> Tuple[LayerTrace, bool]:
+    ) -> tuple[LayerTrace, bool]:
         """Ejecuta la capa de guardrail de salida.
 
         Args:
@@ -653,7 +657,7 @@ class AIFactory:
                 output=response if self._config.verbose_trace else None,
                 retries=1 if retry else 0,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             latency = (time.perf_counter() - start) * 1000
             error_msg = f"Error en LLM call: {exc}"
             logger.error(
@@ -695,7 +699,7 @@ class AIFactory:
                 input=query if self._config.verbose_trace else None,
                 output=output_data,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             latency = (time.perf_counter() - start) * 1000
             error_msg = f"Error en RAG retrieval: {exc}"
             logger.error(
@@ -714,7 +718,7 @@ class AIFactory:
             )
 
     def _execute_agent(
-        self, task: str, context: Dict[str, Any]
+        self, task: str, context: dict[str, Any]
     ) -> LayerTrace:
         """Ejecuta la capa de agente (planning + tool use).
 
@@ -736,7 +740,7 @@ class AIFactory:
                 input=task if self._config.verbose_trace else None,
                 output=result if self._config.verbose_trace else None,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             latency = (time.perf_counter() - start) * 1000
             error_msg = f"Error en Agent execution: {exc}"
             logger.error(
@@ -755,7 +759,7 @@ class AIFactory:
             )
 
     def _execute_mcp(
-        self, context: str, params: Dict[str, Any]
+        self, context: str, params: dict[str, Any]
     ) -> LayerTrace:
         """Ejecuta la capa de integracion (MCP).
 
@@ -782,7 +786,7 @@ class AIFactory:
                 input=context if self._config.verbose_trace else None,
                 output=output_str if self._config.verbose_trace else None,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             latency = (time.perf_counter() - start) * 1000
             error_msg = f"Error en MCP call '{tool_name}': {exc}"
             logger.error(
@@ -801,8 +805,8 @@ class AIFactory:
             )
 
     def _execute_evals(
-        self, input_text: str, output_text: str, layers: List[LayerTrace]
-    ) -> Tuple[LayerTrace, EvalReport]:
+        self, input_text: str, output_text: str, layers: list[LayerTrace]
+    ) -> tuple[LayerTrace, EvalReport]:
         """Ejecuta la capa de evaluacion continua.
 
         Args:
@@ -828,7 +832,7 @@ class AIFactory:
                 ),
             )
             return trace, report
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             latency = (time.perf_counter() - start) * 1000
             error_msg = f"Error en Evals: {exc}"
             logger.error(
@@ -852,14 +856,14 @@ class AIFactory:
     @staticmethod
     def _build_result(
         input_text: str,
-        output: Optional[str],
+        output: str | None,
         status: FactoryStatus,
-        layers: List[LayerTrace],
+        layers: list[LayerTrace],
         pipeline_start: float,
-        eval_report: EvalReport = EvalReport(),
-        guardrail_results: Optional[List[Dict[str, Any]]] = None,
+        eval_report: EvalReport | None = None,
+        guardrail_results: list[dict[str, Any]] | None = None,
         pipeline_id: str = "",
-        error: Optional[str] = None,
+        error: str | None = None,
     ) -> FactoryResult:
         """Construye un FactoryResult con los parametros dados.
 
@@ -892,10 +896,10 @@ class AIFactory:
 
 __all__ = [
     "AIFactory",
+    "EvalReport",
     "FactoryConfig",
     "FactoryResult",
-    "LayerTrace",
     "FactoryStatus",
+    "LayerTrace",
     "LayerType",
-    "EvalReport",
 ]

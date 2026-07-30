@@ -15,9 +15,8 @@ from __future__ import annotations
 
 import logging
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -40,13 +39,13 @@ class RuntimeInfo:
     config_dir: str
     env_var: str
     detected: bool = False
-    config_path: Optional[Path] = None
-    version: Optional[str] = None
+    config_path: Path | None = None
+    version: str | None = None
 
 
 # Registro canónico de runtimes (SSOT).
 # Orden de prioridad para deteccion: mas especifico primero.
-RUNTIME_REGISTRY: List[RuntimeInfo] = [
+RUNTIME_REGISTRY: list[RuntimeInfo] = [
     RuntimeInfo(
         name="gemini",
         display_name="Gemini CLI",
@@ -80,7 +79,7 @@ RUNTIME_REGISTRY: List[RuntimeInfo] = [
 ]
 
 
-def detect_runtime(project_root: Optional[Path] = None) -> RuntimeInfo:
+def detect_runtime(project_root: Path | None = None) -> RuntimeInfo:
     """Detecta automaticamente el runtime activo.
 
     El orden de deteccion es:
@@ -106,7 +105,7 @@ def detect_runtime(project_root: Optional[Path] = None) -> RuntimeInfo:
     root: Path = project_root or Path.cwd()
 
     # 1. Override explicito via variable de entorno
-    explicit: Optional[str] = os.environ.get("Swarmind_RUNTIME")
+    explicit: str | None = os.environ.get("Swarmind_RUNTIME")
     if explicit:
         for rt in RUNTIME_REGISTRY:
             if rt.name == explicit.lower():
@@ -158,21 +157,21 @@ def _resolve_config_path(rt: RuntimeInfo, root: Path) -> None:
         rt: RuntimeInfo a actualizar.
         root: Raiz del proyecto donde buscar.
     """
-    config_files: Dict[str, str] = {
+    config_files: dict[str, str] = {
         "opencode": ".opencode/opencode.json",
         "claude": ".claude/settings.json",
         "codex": ".codex/config.toml",
         "cursor": ".cursorrules",
         "gemini": ".gemini/instructions.md",
     }
-    cfg: Optional[str] = config_files.get(rt.name)
+    cfg: str | None = config_files.get(rt.name)
     if cfg:
         candidate: Path = root / cfg
         if candidate.exists():
             rt.config_path = candidate
 
 
-def get_detected_runtimes(project_root: Optional[Path] = None) -> List[RuntimeInfo]:
+def get_detected_runtimes(project_root: Path | None = None) -> list[RuntimeInfo]:
     """Retorna todos los runtimes detectados en el proyecto.
 
     A diferencia de detect_runtime() que retorna el activo, esta funcion
@@ -185,7 +184,7 @@ def get_detected_runtimes(project_root: Optional[Path] = None) -> List[RuntimeIn
         Lista de RuntimeInfo con detected=True para cada runtime presente.
     """
     root: Path = project_root or Path.cwd()
-    detected: List[RuntimeInfo] = []
+    detected: list[RuntimeInfo] = []
     for rt in RUNTIME_REGISTRY:
         if (root / rt.config_dir).is_dir():
             rt.detected = True

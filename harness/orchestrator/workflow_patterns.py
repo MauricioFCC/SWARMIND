@@ -1,11 +1,11 @@
-"""
-workflow_patterns.py — Patrones de flujo reutilizables para orquestacion de agentes.
+﻿"""
+workflow_patterns.py â€” Patrones de flujo reutilizables para orquestacion de agentes.
 
 4 patrones atomicos simples, intemporales y efectivos:
-  1. EVALUATOR_OPTIMIZER: Genera → Evalua → Loop hasta threshold
-  2. VOTING: N variantes → Ranking → Mejor
-  3. CRITIQUE_REVISE: Genera → Critica → Revisa → Loop
-  4. PARALLEL_TRANSFORM: Fan-out → Transforma → Fan-in merge
+  1. EVALUATOR_OPTIMIZER: Genera â†’ Evalua â†’ Loop hasta threshold
+  2. VOTING: N variantes â†’ Ranking â†’ Mejor
+  3. CRITIQUE_REVISE: Genera â†’ Critica â†’ Revisa â†’ Loop
+  4. PARALLEL_TRANSFORM: Fan-out â†’ Transforma â†’ Fan-in merge
 
 Uso:
     from harness.orchestrator.workflow_patterns import (
@@ -23,8 +23,9 @@ Uso:
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 AgentFn = Callable[[str], str]           # (task) -> resultado
 EvaluatorFn = Callable[[str, str], float]  # (task, resultado) -> puntaje 0..1
 CriticFn = Callable[[str, str], str]       # (task, resultado) -> critica
-MergeFn = Callable[[List[str]], str]       # ([resultados]) -> merge
+MergeFn = Callable[[list[str]], str]       # ([resultados]) -> merge
 
 
 @dataclass
@@ -44,9 +45,9 @@ class PatternResult:
     success: bool
     output: str
     iterations: int = 0
-    scores: List[float] = field(default_factory=list)
-    traces: List[Dict[str, Any]] = field(default_factory=list)
-    error: Optional[str] = None
+    scores: list[float] = field(default_factory=list)
+    traces: list[dict[str, Any]] = field(default_factory=list)
+    error: str | None = None
     total_tokens_est: int = 0
 
 
@@ -62,7 +63,7 @@ def evaluator_optimizer(
     quality_threshold: float = 0.8,
     task_id: str = "",
 ) -> PatternResult:
-    """Genera → Evalua → Loop hasta threshold o max_iterations.
+    """Genera â†’ Evalua â†’ Loop hasta threshold o max_iterations.
 
     Args:
         generator_fn: Funcion que genera una solucion.
@@ -75,8 +76,8 @@ def evaluator_optimizer(
     Returns:
         PatternResult con la mejor solucion encontrada.
     """
-    traces: List[Dict[str, Any]] = []
-    scores: List[float] = []
+    traces: list[dict[str, Any]] = []
+    scores: list[float] = []
     best_output = ""
     best_score = 0.0
 
@@ -121,12 +122,12 @@ def evaluator_optimizer(
 # ---------------------------------------------------------------------------
 
 def voting(
-    generator_fns: List[AgentFn],
+    generator_fns: list[AgentFn],
     evaluator_fn: EvaluatorFn,
     task: str,
     task_id: str = "",
 ) -> PatternResult:
-    """N agentes generan variantes → Se rankean → Mejor se entrega.
+    """N agentes generan variantes â†’ Se rankean â†’ Mejor se entrega.
 
     Args:
         generator_fns: Lista de funciones generadoras (3-5 ideal).
@@ -137,8 +138,8 @@ def voting(
     Returns:
         PatternResult con la mejor variante.
     """
-    candidates: List[Tuple[str, float, int]] = []  # (output, score, index)
-    traces: List[Dict[str, Any]] = []
+    candidates: list[tuple[str, float, int]] = []  # (output, score, index)
+    traces: list[dict[str, Any]] = []
 
     for i, gen_fn in enumerate(generator_fns):
         output = gen_fn(task)
@@ -153,7 +154,7 @@ def voting(
 
     # Rankear por score descendente
     candidates.sort(key=lambda c: c[1], reverse=True)
-    best_output, best_score, best_idx = candidates[0]
+    best_output, _best_score, _best_idx = candidates[0]
 
     return PatternResult(
         success=True,
@@ -175,7 +176,7 @@ def critique_revise(
     max_iterations: int = 3,
     task_id: str = "",
 ) -> PatternResult:
-    """Genera → Critica → Revisa → Loop hasta sin critica o max_iterations.
+    """Genera â†’ Critica â†’ Revisa â†’ Loop hasta sin critica o max_iterations.
 
     Args:
         generator_fn: Funcion que genera/refina una solucion.
@@ -187,7 +188,7 @@ def critique_revise(
     Returns:
         PatternResult con la solucion revisada.
     """
-    traces: List[Dict[str, Any]] = []
+    traces: list[dict[str, Any]] = []
     current = generator_fn(task)
 
     for i in range(1, max_iterations + 1):
@@ -224,12 +225,12 @@ def critique_revise(
 # ---------------------------------------------------------------------------
 
 def parallel_transform(
-    transform_fns: List[AgentFn],
+    transform_fns: list[AgentFn],
     merge_fn: MergeFn,
     task: str,
     task_id: str = "",
 ) -> PatternResult:
-    """Fan-out a N transformadores → Cada uno transforma → Fan-in merge.
+    """Fan-out a N transformadores â†’ Cada uno transforma â†’ Fan-in merge.
 
     Args:
         transform_fns: Lista de funciones transformadoras (ejecutadas en paralelo).
@@ -240,8 +241,8 @@ def parallel_transform(
     Returns:
         PatternResult con el resultado mergeado.
     """
-    partials: List[str] = []
-    traces: List[Dict[str, Any]] = []
+    partials: list[str] = []
+    traces: list[dict[str, Any]] = []
 
     for i, tfn in enumerate(transform_fns):
         partial = tfn(task)
@@ -282,7 +283,7 @@ def run_with_timeout(fn: Callable, timeout_sec: float = 30.0, *args, **kwargs) -
     def worker():
         try:
             result[0] = fn(*args, **kwargs)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             error[0] = e
 
     thread = threading.Thread(target=worker, daemon=True)

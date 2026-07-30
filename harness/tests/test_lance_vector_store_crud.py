@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 import logging
-from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
@@ -17,7 +16,6 @@ import pytest
 from harness.memory_rag.lance_schemas import DEFAULT_COLLECTIONS
 from harness.memory_rag.lance_vector_store import (
     CollectionNotFoundError,
-    LanceVectorStore,
     VectorStoreError,
 )
 

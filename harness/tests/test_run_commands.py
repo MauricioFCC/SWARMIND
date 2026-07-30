@@ -7,7 +7,7 @@ schedule, model routing, HITL, watch mode, hermes, guardrails, ANSI helpers.
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -792,7 +792,7 @@ class TestHermes:
     @pytest.fixture(autouse=True)
     def patch_hermes(self):
         """Parchea HermesBridge (import lazy dentro de la funcion)."""
-        with patch("harness.hermes_bridge.HermesBridge") as m:
+        with patch("harness.memory_rag.hermes_bridge.HermesBridge") as m:
             yield m
 
     def test_hermes_sync(self, patch_hermes):

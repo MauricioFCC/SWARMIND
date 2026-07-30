@@ -14,13 +14,13 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Recursive schema inference
 # ---------------------------------------------------------------------------
 
-def _infer_schema_recursive(metadata: Dict[str, Any], prefix: str = "") -> Dict[str, str]:
+def _infer_schema_recursive(metadata: dict[str, Any], prefix: str = "") -> dict[str, str]:
     """
     Infiere schema LanceDB recursivamente desde un dict de metadata.
     
@@ -34,7 +34,7 @@ def _infer_schema_recursive(metadata: Dict[str, Any], prefix: str = "") -> Dict[
     Returns:
         Dict[str, str] con field_name → type_string
     """
-    schema: Dict[str, str] = {}
+    schema: dict[str, str] = {}
 
     for key, value in metadata.items():
         full_key = f"{prefix}.{key}" if prefix else key
@@ -67,7 +67,7 @@ def _infer_schema_recursive(metadata: Dict[str, Any], prefix: str = "") -> Dict[
 # ---------------------------------------------------------------------------
 
 # Mapa de campos específicos por colección (para crear schema completo)
-_COLLECTION_SPECIFIC_FIELDS: Dict[str, Dict[str, Any]] = {
+_COLLECTION_SPECIFIC_FIELDS: dict[str, dict[str, Any]] = {
     "rag_chunks": {
         "source_file": "",
         "start_line": 0,
@@ -157,7 +157,7 @@ _COLLECTION_SPECIFIC_FIELDS: Dict[str, Dict[str, Any]] = {
 }
 
 
-def generate_sample_row(collection_name: str) -> Dict[str, Any]:
+def generate_sample_row(collection_name: str) -> dict[str, Any]:
     """
     Genera una fila sample con todas las columnas que una colección puede necesitar.
     
@@ -171,7 +171,7 @@ def generate_sample_row(collection_name: str) -> Dict[str, Any]:
     dim = 384
 
     # Campos base comunes a todas las colecciones
-    base: Dict[str, Any] = {
+    base: dict[str, Any] = {
         "id": "init",
         "vector": [0.0] * dim,
         "metadata": "{}",
@@ -188,7 +188,7 @@ def generate_sample_row(collection_name: str) -> Dict[str, Any]:
 # Schema diff & migration helpers
 # ---------------------------------------------------------------------------
 
-def diff_schemas(old_schema: Dict[str, str], new_schema: Dict[str, str]) -> Dict[str, List[str]]:
+def diff_schemas(old_schema: dict[str, str], new_schema: dict[str, str]) -> dict[str, list[str]]:
     """
     Compara dos schemas y retorna diferencias.
     

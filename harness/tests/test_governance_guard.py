@@ -11,9 +11,7 @@ import pytest
 from harness.orchestrator.governance_guard import (
     DEFAULT_CONSTRAINTS,
     GovernanceGuard,
-    PinnedConstraint,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

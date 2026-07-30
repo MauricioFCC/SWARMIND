@@ -1,11 +1,10 @@
-"""
-Phase 3: Documentation Update — check staleness and auto-regenerate.
+﻿"""
+Phase 3: Documentation Update â€” check staleness and auto-regenerate.
 """
 from __future__ import annotations
 
-from pathlib import Path
 import sys
-from typing import List, Tuple
+from pathlib import Path
 
 from .config import (
     HARNESS_ROOT,
@@ -19,12 +18,12 @@ from .config import (
 )
 
 
-def check_and_update_docs(changed_files: List[str], dry_run: bool = False) -> Tuple[List[DocsStaleness], int]:
+def check_and_update_docs(changed_files: list[str], dry_run: bool = False) -> tuple[list[DocsStaleness], int]:
     """Phase 3: Check documentation staleness and auto-update based on changed dirs.
 
     Returns (staleness_list, updated_count).
     """
-    staleness: List[DocsStaleness] = []
+    staleness: list[DocsStaleness] = []
     updated_count = 0
 
     if not changed_files:
@@ -33,13 +32,13 @@ def check_and_update_docs(changed_files: List[str], dry_run: bool = False) -> Tu
     py_changed = [f for f in changed_files if f.endswith(".py")]
     agent_changed = [f for f in changed_files if f.startswith(".opencode/agents/") and f.endswith(".md")]
 
-    # ── Check memory_rag/ changes → regenerate llms.txt ──
+    # â”€â”€ Check memory_rag/ changes â†’ regenerate llms.txt â”€â”€
     if _has_changed_files_in_dir(py_changed, "harness/memory_rag/"):
         staleness.append(DocsStaleness(
             module_path="harness/memory_rag/",
             docs_path="harness/docs/llms.txt",
             staleness_type="outdated",
-            message="Archivos .py en memory_rag/ cambiaron → regenerar llms.txt",
+            message="Archivos .py en memory_rag/ cambiaron â†’ regenerar llms.txt",
         ))
         if dry_run:
             _safe_print(f"    {_cyan('[DRY-RUN]')} Regeneraria llms.txt (cambios en memory_rag/)")
@@ -51,41 +50,41 @@ def check_and_update_docs(changed_files: List[str], dry_run: bool = False) -> Tu
                 generate_llms_txt()
                 _safe_print(f"    {_ok('[OK]')} llms.txt regenerado (cambios en memory_rag/)")
                 updated_count += 1
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 _safe_print(f"    {_err('[ERROR]')} No se pudo regenerar llms.txt: {exc}")
 
-    # ── Check model_router/ changes → update README.md ──
+    # â”€â”€ Check model_router/ changes â†’ update README.md â”€â”€
     if _has_changed_files_in_dir(py_changed, "harness/model_router/"):
         staleness.append(DocsStaleness(
             module_path="harness/model_router/",
             docs_path="harness/README.md",
             staleness_type="outdated",
-            message="Archivos .py en model_router/ cambiaron → actualizar README.md",
+            message="Archivos .py en model_router/ cambiaron â†’ actualizar README.md",
         ))
-        _safe_print(f"    {_warn('[REVIEW]')} model_router/ cambio — README.md requiere revision manual")
+        _safe_print(f"    {_warn('[REVIEW]')} model_router/ cambio â€” README.md requiere revision manual")
         updated_count += 1
 
-    # ── Check orchestrator/ changes → update README.md ──
+    # â”€â”€ Check orchestrator/ changes â†’ update README.md â”€â”€
     if _has_changed_files_in_dir(py_changed, "harness/orchestrator/"):
         staleness.append(DocsStaleness(
             module_path="harness/orchestrator/",
             docs_path="harness/README.md",
             staleness_type="outdated",
-            message="Archivos .py en orchestrator/ cambiaron → actualizar README.md",
+            message="Archivos .py en orchestrator/ cambiaron â†’ actualizar README.md",
         ))
-        _safe_print(f"    {_warn('[REVIEW]')} orchestrator/ cambio — README.md requiere revision manual")
+        _safe_print(f"    {_warn('[REVIEW]')} orchestrator/ cambio â€” README.md requiere revision manual")
         updated_count += 1
 
-    # ── Check .opencode/agents/ changes → update AGENTS.md ──
+    # â”€â”€ Check .opencode/agents/ changes â†’ update AGENTS.md â”€â”€
     if agent_changed:
         staleness.append(DocsStaleness(
             module_path=".opencode/agents/",
             docs_path="harness/AGENTS.md",
             staleness_type="outdated",
-            message="Agentes en .opencode/agents/ cambiaron → actualizar AGENTS.md",
+            message="Agentes en .opencode/agents/ cambiaron â†’ actualizar AGENTS.md",
         ))
         names = ", ".join(Path(a).stem for a in agent_changed[:5])
-        _safe_print(f"    {_warn('[REVIEW]')} Agentes modificados: {names} — AGENTS.md requiere revision manual")
+        _safe_print(f"    {_warn('[REVIEW]')} Agentes modificados: {names} â€” AGENTS.md requiere revision manual")
         updated_count += 1
 
     return staleness, updated_count

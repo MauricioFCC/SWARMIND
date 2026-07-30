@@ -10,7 +10,6 @@ Cubre:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List
 
 import pytest
 
@@ -18,7 +17,7 @@ import pytest
 # Config
 # ---------------------------------------------------------------------------
 
-PROJECTS: Dict[str, Path] = {
+PROJECTS: dict[str, Path] = {
     "CQE": Path(r"$HOME\Documents\DEV-SPACE\quant-engine"),
     "HC": Path(r"$HOME\Documents\DEV-SPACE\health-record"),
     "Onyx": Path(r"$HOME\Documents\DEV-SPACE\trading-bot-AIBot"),
@@ -49,7 +48,7 @@ KEY_FILES = [
 ]
 
 # Skills esperados por proyecto
-EXPECTED_SKILLS: Dict[str, List[str]] = {
+EXPECTED_SKILLS: dict[str, list[str]] = {
     "CQE": ["alpha-research", "evolve", "hedgefund", "math-doc", "quant-trading", "risk-execution", "science-doc"],
     "HC": ["evolve", "healthtech", "hedgefund", "legal-doc", "science-doc"],
     "Onyx": ["alpha-research", "evolve", "hedgefund", "math-doc", "quant-trading", "risk-execution", "science-doc"],
@@ -63,6 +62,7 @@ EXPECTED_SKILLS: Dict[str, List[str]] = {
 # ===========================================================================
 
 
+@pytest.mark.skip(reason="Requiere proyectos externos: CQE, HC, Onyx, PDV, Hermes")
 class TestRoutingRules:
     """routing_rules.yaml no debe contener agentes fantasma."""
 
@@ -88,6 +88,7 @@ class TestRoutingRules:
         assert "evolve" in content
 
 
+@pytest.mark.skip(reason="Requiere proyectos externos: CQE, HC, Onyx, PDV, Hermes")
 class TestKeyFiles:
     """Archivos clave del sistema deben estar presentes."""
 
@@ -102,6 +103,7 @@ class TestKeyFiles:
         assert not missing, f"{name} faltan: {missing}"
 
 
+@pytest.mark.skip(reason="Requiere proyectos externos: CQE, HC, Onyx, PDV, Hermes")
 class TestAgentFiles:
     """Agentes correctamente desplegados."""
 
@@ -122,6 +124,7 @@ class TestAgentFiles:
         assert not missing, f"{name} faltan agentes: {missing}"
 
 
+@pytest.mark.skip(reason="Requiere proyectos externos: CQE, HC, Onyx, PDV, Hermes")
 class TestSkills:
     """Skills correctamente desplegados por proyecto."""
 
@@ -135,6 +138,7 @@ class TestSkills:
         assert not missing, f"{name} faltan skills: {missing}"
 
 
+@pytest.mark.skip(reason="Requiere proyectos externos: CQE, HC, Onyx, PDV, Hermes")
 class TestTestFiles:
     """Tests correctamente desplegados."""
 
@@ -146,6 +150,7 @@ class TestTestFiles:
         assert len(test_files) >= 40, f"{name} tiene solo {len(test_files)} tests"
 
 
+@pytest.mark.skip(reason="Requiere proyecto externo: Hermes")
 class TestHermesSpecific:
     """Tests especificos para Hermes (memoria central)."""
 

@@ -18,9 +18,9 @@ import logging
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
-from harness.hooks.hook_manager import HookExecutionContext, HookResultStatus
+from harness.hooks.hook_manager import HookExecutionContext
 from harness.hooks.hook_registry import (
     HookPriority,
     HookRegistry,
@@ -30,7 +30,7 @@ from harness.hooks.hook_registry import (
 logger = logging.getLogger(__name__)
 
 # Patrones de argumentos peligrosos para SecurityValidator
-DANGEROUS_PATTERNS: List[re.Pattern] = [
+DANGEROUS_PATTERNS: list[re.Pattern] = [
     re.compile(r"rm\s+-rf\s+/", re.IGNORECASE),
     re.compile(r"DROP\s+TABLE", re.IGNORECASE),
     re.compile(r"TRUNCATE\s+TABLE", re.IGNORECASE),
@@ -42,7 +42,7 @@ DANGEROUS_PATTERNS: List[re.Pattern] = [
 ]
 
 # Archivos bloqueados para escritura (nucleo del sistema)
-PROTECTED_FILES: Set[str] = {
+PROTECTED_FILES: set[str] = {
     ".opencode/opencode.json",
     ".opencode/opencode.jsonc",
     "pyproject.toml",
@@ -105,7 +105,7 @@ def audit_logger_hook(ctx: HookExecutionContext) -> dict:
     Returns:
         Dict con la entrada de auditoria generada.
     """
-    audit_entry: Dict[str, Any] = {
+    audit_entry: dict[str, Any] = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "tool": ctx.tool_name,
         "hook_type": ctx.hook_type.name,
@@ -137,7 +137,7 @@ def metrics_collector_hook(ctx: HookExecutionContext) -> dict:
     Returns:
         Dict con las metricas recolectadas.
     """
-    metrics: Dict[str, Any] = {
+    metrics: dict[str, Any] = {
         "event": ctx.tool_name,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "metadata": ctx.metadata,
@@ -146,7 +146,7 @@ def metrics_collector_hook(ctx: HookExecutionContext) -> dict:
     return metrics
 
 
-def register_builtin_hooks(registry: Optional[HookRegistry] = None) -> int:
+def register_builtin_hooks(registry: HookRegistry | None = None) -> int:
     """Registra todos los hooks incorporados del sistema.
 
     Args:
@@ -163,7 +163,7 @@ def register_builtin_hooks(registry: Optional[HookRegistry] = None) -> int:
     reg: HookRegistry = registry or HookRegistry.get_instance()
     count: int = 0
 
-    hooks: List[tuple] = [
+    hooks: list[tuple] = [
         ("security_validator", HookType.PRE_TOOL, HookPriority.CRITICAL,
          security_validator_hook, "Valida comandos peligrosos en herramientas"),
         ("permission_checker", HookType.PRE_TOOL, HookPriority.HIGH,

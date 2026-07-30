@@ -1,14 +1,14 @@
-"""
-DB Migration Engine — Lógica central de migración de bases de datos LanceDB.
+﻿"""
+DB Migration Engine â€” LÃ³gica central de migraciÃ³n de bases de datos LanceDB.
 
-Extraída de migrate_db.py para separar concerns:
-  - migrate_engine.py: lógica de migración
+ExtraÃ­da de migrate_db.py para separar concerns:
+  - migrate_engine.py: lÃ³gica de migraciÃ³n
   - migrate_cli.py: interfaz CLI
   - migrate_discovery.py: descubrimiento recursivo de colecciones y schemas
 
-Patrón RECURSIVO: Usa Path.rglob() para descubrir archivos de migración
+PatrÃ³n RECURSIVO: Usa Path.rglob() para descubrir archivos de migraciÃ³n
 recursivamente y funciones recursivas para aplicar migraciones en orden
-topológico.
+topolÃ³gico.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ import logging
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -41,7 +41,7 @@ DEFAULT_TARGET_DIR = str(HARNESS_DIR / "db" / "lancedb")
 DEFAULT_ARCHIVE_DIR = str(HARNESS_DIR / "db" / "_archived")
 
 
-def _get_current_collections() -> Dict[str, Any]:
+def _get_current_collections() -> dict[str, Any]:
     """Lazy-import DEFAULT_COLLECTIONS to avoid circular imports at module level."""
     from harness.memory_rag.lance_vector_store import DEFAULT_COLLECTIONS
     return DEFAULT_COLLECTIONS
@@ -63,9 +63,9 @@ class DBMigrator:
 
     def __init__(
         self,
-        import_dir: Optional[str] = None,
-        target_dir: Optional[str] = None,
-        archive_dir: Optional[str] = None,
+        import_dir: str | None = None,
+        target_dir: str | None = None,
+        archive_dir: str | None = None,
     ) -> None:
         """Inicializa el migrador con directorios de import, target y archive."""
         self.import_dir = import_dir or DEFAULT_IMPORT_DIR
@@ -77,7 +77,7 @@ class DBMigrator:
     # Public API
     # ------------------------------------------------------------------
 
-    def scan_imports(self) -> List[Dict[str, Any]]:
+    def scan_imports(self) -> list[dict[str, Any]]:
         """
         Escanea import_dir en busca de bases LanceDB legacy.
 
@@ -87,7 +87,7 @@ class DBMigrator:
             Lista de dicts con: path, name, collections[], estimated_size,
             estimated_size_human.
         """
-        imports: List[Dict[str, Any]] = []
+        imports: list[dict[str, Any]] = []
         import_path = Path(self.import_dir)
 
         if not import_path.exists():
@@ -99,7 +99,7 @@ class DBMigrator:
             if not entry.is_dir():
                 continue
             name = entry.name
-            if name.startswith("_") or name.startswith("."):
+            if name.startswith(("_", ".")):
                 continue
 
             info = probe_db(str(entry))
@@ -109,7 +109,7 @@ class DBMigrator:
 
         return imports
 
-    def detect_format(self, db_path: str) -> Dict[str, Any]:
+    def detect_format(self, db_path: str) -> dict[str, Any]:
         """
         Inspecciona una base LanceDB y la compara con las colecciones actuales.
 
@@ -125,8 +125,8 @@ class DBMigrator:
     def migrate(
         self,
         import_path: str,
-        target_path: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        target_path: str | None = None,
+    ) -> dict[str, Any]:
         """
         Migra una base de datos desde import_path hacia target_path.
 
@@ -146,7 +146,7 @@ class DBMigrator:
             backup_path.
         """
         target = target_path or self.target_dir
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "migrated_collections": [],
             "skipped": [],
             "errors": [],
@@ -172,7 +172,7 @@ class DBMigrator:
         # 2. Conectar origen
         try:
             old_db = lancedb.connect(import_path)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             result["errors"].append(f"No se pudo abrir BD origen '{import_path}': {exc}")
             return result
 
@@ -209,7 +209,7 @@ class DBMigrator:
                 target_store.create_collection(name)
                 result["created"].append(name)
                 logger.info("Creada coleccion nueva: '%s'", name)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 result["errors"].append(f"Error creando '{name}': {exc}")
 
         # --- 5. Archivar colecciones obsoletas ---
@@ -222,7 +222,7 @@ class DBMigrator:
                     name,
                     archive_path,
                 )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 result["errors"].append(f"Error archivando '{name}': {exc}")
 
         return result
@@ -250,11 +250,11 @@ class DBMigrator:
             shutil.copytree(str(backup), str(restore_path))
             logger.info("Backup restaurado en: %s", restore_path)
             return True
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error("Error restaurando backup: %s", exc)
             return False
 
-    def get_stats(self, db_path: Optional[str] = None) -> Dict[str, Any]:
+    def get_stats(self, db_path: str | None = None) -> dict[str, Any]:
         """
         Estadisticas de una base LanceDB.
 
@@ -293,7 +293,7 @@ class DBMigrator:
 
         try:
             db = lancedb.connect(str(db_path_obj))
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             return {
                 "total_chunks": 0,
                 "collections": [],
@@ -306,7 +306,7 @@ class DBMigrator:
 
         tables = db.list_tables().tables
         total_chunks = 0
-        collections_info: List[Dict[str, Any]] = []
+        collections_info: list[dict[str, Any]] = []
 
         for name in sorted(tables):
             try:
@@ -318,7 +318,7 @@ class DBMigrator:
                     try:
                         last_row = tbl.head(count).to_pylist()[-1]
                         last_up = last_row.get("created_at", "")
-                    except Exception as _exc:
+                    except Exception as _exc:  # noqa: BLE001
                         logger.warning("migrate_engine: %s", _exc)
                 collections_info.append(
                     {
@@ -327,7 +327,7 @@ class DBMigrator:
                         "last_updated": last_up,
                     }
                 )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 collections_info.append(
                     {
                         "name": name,
@@ -359,7 +359,7 @@ class DBMigrator:
         }
 
     # ------------------------------------------------------------------
-    # Internal — import helpers
+    # Internal â€” import helpers
     # ------------------------------------------------------------------
 
     def _import_lancedb(self):
@@ -373,17 +373,17 @@ class DBMigrator:
         return self._lancedb_module if self._lancedb_module is not False else None
 
     # ------------------------------------------------------------------
-    # Internal — backup / archive
+    # Internal â€” backup / archive
     # ------------------------------------------------------------------
 
-    def _backup_import(self, import_path: str) -> Optional[str]:
+    def _backup_import(self, import_path: str) -> str | None:
         """Copia import_path a _backup_<timestamp>/."""
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         backup_dir = str(Path(import_path).parent / f"_backup_{timestamp}")
         try:
             shutil.copytree(import_path, backup_dir)
             return backup_dir
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error("Error creando backup: %s", exc)
             return None
 
@@ -413,7 +413,7 @@ class DBMigrator:
         return archive_path
 
     # ------------------------------------------------------------------
-    # Internal — migration core
+    # Internal â€” migration core
     # ------------------------------------------------------------------
 
     def _migrate_collection(
@@ -443,8 +443,8 @@ class DBMigrator:
             logger.info("Coleccion '%s' vacia - sin datos que migrar.", collection_name)
             return 0
 
-        vectors_list: List[np.ndarray] = []
-        metadata_list: List[Dict[str, Any]] = []
+        vectors_list: list[np.ndarray] = []
+        metadata_list: list[dict[str, Any]] = []
 
         for row in rows:
             vec_raw = row.get("vector")
@@ -488,7 +488,7 @@ class DBMigrator:
         return len(ids)
 
     @staticmethod
-    def _reconstruct_metadata(row: Dict[str, Any]) -> Dict[str, Any]:
+    def _reconstruct_metadata(row: dict[str, Any]) -> dict[str, Any]:
         """
         Reconstruye un dict de metadata desde una fila de LanceDB legacy.
 
@@ -498,7 +498,7 @@ class DBMigrator:
         meta_raw = row.get("metadata", "{}")
         if isinstance(meta_raw, str):
             try:
-                meta: Dict[str, Any] = json.loads(meta_raw)
+                meta: dict[str, Any] = json.loads(meta_raw)
             except (json.JSONDecodeError, TypeError):
                 meta = {}
         elif isinstance(meta_raw, dict):
@@ -521,7 +521,7 @@ class DBMigrator:
         return meta
 
     # ------------------------------------------------------------------
-    # Internal — utilities
+    # Internal â€” utilities
     # ------------------------------------------------------------------
 
     @staticmethod

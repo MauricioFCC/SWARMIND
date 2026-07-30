@@ -1,11 +1,10 @@
-"""
-Phase 4: Token Report — estimate consumption and efficiency.
+﻿"""
+Phase 4: Token Report â€” estimate consumption and efficiency.
 """
 from __future__ import annotations
 
 import re
 import subprocess
-from typing import Optional
 
 from .config import (
     PROJECT_ROOT,
@@ -23,7 +22,7 @@ def _count_tokens_in_file(filepath: str) -> int:
         with open(filepath, "r", encoding="utf-8") as f:
             text = f.read()
         return len(text) // 4
-    except Exception:
+    except Exception:  # noqa: BLE001
         return 0
 
 
@@ -32,15 +31,15 @@ def _estimate_tokens_from_git() -> TokenReport:
     report = TokenReport()
     try:
         changed = _get_git_uncommitted()
-        staged = subprocess.run(
+        subprocess.run(
             ["git", "diff", "--cached", "--stat"],
-            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT),
+            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT), check=False,
         )
         report.prompts_enviados = max(len(changed), 1)
 
         diff_result = subprocess.run(
             ["git", "diff", "--shortstat"],
-            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT),
+            capture_output=True, text=True, timeout=30, cwd=str(PROJECT_ROOT), check=False,
         )
         diff_text = diff_result.stdout.strip()
 
@@ -87,7 +86,7 @@ def _estimate_tokens_from_git() -> TokenReport:
             "skills": f"{skills_pct}% ahorro vs razonar desde cero",
             "total": f"{total_savings_pct}% ahorro total",
         }
-    except Exception:
+    except Exception:  # noqa: BLE001
         report.prompts_enviados = 1
         report.tokens_input_total = 0
         report.tokens_output_total = 0
@@ -95,7 +94,7 @@ def _estimate_tokens_from_git() -> TokenReport:
     return report
 
 
-def calculate_iteration_cost(report: Optional[TokenReport] = None) -> TokenReport:
+def calculate_iteration_cost(report: TokenReport | None = None) -> TokenReport:
     """Phase 4: Calculate token consumption and efficiency.
 
     Returns a TokenReport with usage estimates and efficiency metrics.

@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from harness.orchestrator.delegation_engine import DelegationEngine
 
-GOLDEN_SET: List[Tuple[str, str]] = [
+GOLDEN_SET: list[tuple[str, str]] = [
     ("implementa una API en Rust", "builder"),
     ("crea un endpoint REST en Go", "builder"),
     ("desarrolla una app Android", "builder"),
@@ -28,10 +28,10 @@ GOLDEN_SET: List[Tuple[str, str]] = [
 ]
 
 
-def bench_routing() -> Dict[str, Any]:
+def bench_routing() -> dict[str, Any]:
     engine = DelegationEngine()
     correct = 0
-    errors: List[Tuple[str, str, str]] = []
+    errors: list[tuple[str, str, str]] = []
     t0 = time.perf_counter()
     for msg, expected in GOLDEN_SET:
         result = engine.auto_route(msg)

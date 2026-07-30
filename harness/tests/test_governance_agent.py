@@ -1,5 +1,6 @@
 """Tests para GovernanceAgent — supervision de decisiones."""
 from __future__ import annotations
+
 from pathlib import Path
 
 import pytest

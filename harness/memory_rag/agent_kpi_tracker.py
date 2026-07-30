@@ -1,6 +1,6 @@
-"""
-Agent KPI Tracker — registra métricas de rendimiento de agentes y skills
-directamente en LanceDB para análisis y mejora continua.
+﻿"""
+Agent KPI Tracker â€” registra mÃ©tricas de rendimiento de agentes y skills
+directamente en LanceDB para anÃ¡lisis y mejora continua.
 
 Integra con:
   - TelemetryTracker (harness/orchestrator/telemetry.py)
@@ -8,10 +8,10 @@ Integra con:
   - MemoryConfig (harness/memory_rag/memory_config.py)
 
 Colecciones LanceDB utilizadas:
-  - agent_performance: métricas por agente por sesión
+  - agent_performance: mÃ©tricas por agente por sesiÃ³n
   - skill_effectiveness: efectividad de skills
-  - telemetry_events: eventos de telemetría
-  - session_kpis: KPIs agregados por sesión
+  - telemetry_events: eventos de telemetrÃ­a
+  - session_kpis: KPIs agregados por sesiÃ³n
   - agent_interactions: interacciones entre agentes
 """
 
@@ -22,7 +22,6 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -37,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Constants — nombres de colecciones KPI
+# Constants â€” nombres de colecciones KPI
 # ---------------------------------------------------------------------------
 
 COLL_AGENT_PERFORMANCE = "agent_performance"
@@ -61,7 +60,7 @@ ALL_KPI_COLLECTIONS = [
 
 @dataclass
 class AgentPerformanceRecord:
-    """Registro de rendimiento de un agente en una sesión."""
+    """Registro de rendimiento de un agente en una sesiÃ³n."""
     session_id: str
     agent_name: str
     task: str = ""
@@ -75,9 +74,9 @@ class AgentPerformanceRecord:
     tokens_output: int = 0
     pipeline_type: str = ""
     complexity_score: float = 0.0
-    metadata: Dict = field(default_factory=dict)
+    metadata: dict = field(default_factory=dict)
 
-    def to_lancedb_row(self) -> Dict:
+    def to_lancedb_row(self) -> dict:
         return {
             "id": str(uuid.uuid4()),
             "session_id": self.session_id,
@@ -109,9 +108,9 @@ class SkillEffectivenessRecord:
     avg_duration_ms: float = 0.0
     avg_tokens_saved: int = 0
     promotion_count: int = 0
-    metadata: Dict = field(default_factory=dict)
+    metadata: dict = field(default_factory=dict)
 
-    def to_lancedb_row(self) -> Dict:
+    def to_lancedb_row(self) -> dict:
         return {
             "id": str(uuid.uuid4()),
             "skill_name": self.skill_name,
@@ -130,7 +129,7 @@ class SkillEffectivenessRecord:
 
 @dataclass
 class TelemetryEventRecord:
-    """Registro de un evento de telemetría."""
+    """Registro de un evento de telemetrÃ­a."""
     event_type: str
     session_id: str = ""
     agent: str = ""
@@ -138,10 +137,10 @@ class TelemetryEventRecord:
     message: str = ""
     duration_ms: float = 0.0
     status: str = "success"
-    tags: List[str] = field(default_factory=list)
-    metadata: Dict = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    metadata: dict = field(default_factory=dict)
 
-    def to_lancedb_row(self) -> Dict:
+    def to_lancedb_row(self) -> dict:
         return {
             "id": str(uuid.uuid4()),
             "event_type": self.event_type,
@@ -159,7 +158,7 @@ class TelemetryEventRecord:
 
 @dataclass
 class SessionKPIRecord:
-    """KPIs agregados de una sesión completa."""
+    """KPIs agregados de una sesiÃ³n completa."""
     session_id: str
     task: str = ""
     project: str = ""
@@ -173,9 +172,9 @@ class SessionKPIRecord:
     agents_involved: int = 0
     pipeline_type: str = ""
     complexity: str = ""
-    metadata: Dict = field(default_factory=dict)
+    metadata: dict = field(default_factory=dict)
 
-    def to_lancedb_row(self) -> Dict:
+    def to_lancedb_row(self) -> dict:
         now = datetime.now(timezone.utc).isoformat()
         return {
             "id": str(uuid.uuid4()),
@@ -204,7 +203,7 @@ class SessionKPIRecord:
 
 class AgentKpiTracker:
     """
-    Tracker de KPIs que persiste métricas de rendimiento en LanceDB.
+    Tracker de KPIs que persiste mÃ©tricas de rendimiento en LanceDB.
 
     Uso:
         tracker = AgentKpiTracker(store=vector_store)
@@ -219,7 +218,7 @@ class AgentKpiTracker:
             total_duration_ms=12000.0,
         )
         
-        # Registrar evento de telemetría
+        # Registrar evento de telemetrÃ­a
         tracker.record_telemetry_event(
             event_type="plan_created",
             session_id="ses-001",
@@ -227,7 +226,7 @@ class AgentKpiTracker:
             duration_ms=450.0,
         )
         
-        # Finalizar sesión → genera KPIs agregados
+        # Finalizar sesiÃ³n â†’ genera KPIs agregados
         tracker.finalize_session_kpi(
             session_id="ses-001",
             task="implementar API",
@@ -239,8 +238,8 @@ class AgentKpiTracker:
 
     def __init__(
         self,
-        store: Optional[LanceVectorStore] = None,
-        config: Optional[MemoryConfig] = None,
+        store: LanceVectorStore | None = None,
+        config: MemoryConfig | None = None,
     ) -> None:
         """
         Args:
@@ -278,7 +277,7 @@ class AgentKpiTracker:
                 try:
                     self._store.create_collection(coll)
                     logger.info("Created KPI collection '%s'", coll)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     logger.warning("Could not create collection '%s': %s", coll, e)
 
     # ------------------------------------------------------------------
@@ -294,19 +293,19 @@ class AgentKpiTracker:
         error_count: int = 0,
         total_duration_ms: float = 0.0,
         avg_latency_ms: float = 0.0,
-        success_rate: Optional[float] = None,
+        success_rate: float | None = None,
         tokens_input: int = 0,
         tokens_output: int = 0,
         pipeline_type: str = "",
         complexity_score: float = 0.0,
         task: str = "",
-        metadata: Optional[Dict] = None,
-    ) -> Optional[str]:
+        metadata: dict | None = None,
+    ) -> str | None:
         """
-        Registra métricas de rendimiento de un agente.
+        Registra mÃ©tricas de rendimiento de un agente.
 
         Returns:
-            ID del registro creado, o None si telemetría está off.
+            ID del registro creado, o None si telemetrÃ­a estÃ¡ off.
         """
         if not self._enabled:
             return None
@@ -349,12 +348,12 @@ class AgentKpiTracker:
         duration_ms: float = 0.0,
         tokens_saved: int = 0,
         promoted: bool = False,
-        metadata: Optional[Dict] = None,
-    ) -> Optional[str]:
+        metadata: dict | None = None,
+    ) -> str | None:
         """
-        Registra o actualiza métricas de efectividad de un skill.
+        Registra o actualiza mÃ©tricas de efectividad de un skill.
 
-        Si el skill ya existe, actualiza sus métricas acumuladas.
+        Si el skill ya existe, actualiza sus mÃ©tricas acumuladas.
 
         Returns:
             ID del registro.
@@ -366,7 +365,7 @@ class AgentKpiTracker:
         existing = self._find_skill_record(skill_name, domain, agent)
 
         if existing:
-            # Actualizar métricas acumuladas
+            # Actualizar mÃ©tricas acumuladas
             existing_id = existing.get("id", "")
             meta = existing.get("metadata", {})
             if isinstance(meta, str):
@@ -419,7 +418,7 @@ class AgentKpiTracker:
 
     def _find_skill_record(
         self, skill_name: str, domain: str, agent: str,
-    ) -> Optional[Dict]:
+    ) -> dict | None:
         """Busca un registro de skill existente."""
         try:
             results = self._store.search(
@@ -439,7 +438,7 @@ class AgentKpiTracker:
                 r_agent = meta.get("agent", r.get("agent", ""))
                 if r_skill == skill_name and r_domain == domain and r_agent == agent:
                     return r
-        except Exception as _exc:
+        except Exception as _exc:  # noqa: BLE001
             logger.warning("agent_kpi_tracker: %s", _exc)
         return None
 
@@ -456,11 +455,11 @@ class AgentKpiTracker:
         message: str = "",
         duration_ms: float = 0.0,
         status: str = "success",
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict] = None,
-    ) -> Optional[str]:
+        tags: list[str] | None = None,
+        metadata: dict | None = None,
+    ) -> str | None:
         """
-        Registra un evento de telemetría.
+        Registra un evento de telemetrÃ­a.
 
         Con telemetry_level=BASIC, solo guarda eventos importantes
         (error, warning, plan_created, plan_complete).
@@ -469,7 +468,7 @@ class AgentKpiTracker:
         if not self._enabled:
             return None
 
-        # Filtrar eventos básicos vs full
+        # Filtrar eventos bÃ¡sicos vs full
         if not self._full_telemetry:
             important_events = {
                 "error", "warning", "plan_created", "plan_complete",
@@ -512,10 +511,10 @@ class AgentKpiTracker:
         agents_involved: int = 0,
         pipeline_type: str = "",
         complexity: str = "",
-        metadata: Optional[Dict] = None,
-    ) -> Optional[str]:
+        metadata: dict | None = None,
+    ) -> str | None:
         """
-        Registra KPIs agregados de una sesión completa.
+        Registra KPIs agregados de una sesiÃ³n completa.
 
         Si ya existe un KPI para esta session_id, lo actualiza.
         """
@@ -556,8 +555,8 @@ class AgentKpiTracker:
         else:
             return self._insert(COLL_SESSION_KPIS, record.to_lancedb_row())
 
-    def _find_session_kpi(self, session_id: str) -> Optional[Dict]:
-        """Busca un KPI de sesión existente."""
+    def _find_session_kpi(self, session_id: str) -> dict | None:
+        """Busca un KPI de sesiÃ³n existente."""
         try:
             results = self._store.search(
                 COLL_SESSION_KPIS,
@@ -573,7 +572,7 @@ class AgentKpiTracker:
                         meta = {}
                 if r.get("session_id", meta.get("session_id", "")) == session_id:
                     return r
-        except Exception as _exc:
+        except Exception as _exc:  # noqa: BLE001
             logger.warning("agent_kpi_tracker: %s", _exc)
         return None
 
@@ -590,10 +589,10 @@ class AgentKpiTracker:
         subtask_id: str = "",
         duration_ms: float = 0.0,
         success: bool = True,
-        metadata: Optional[Dict] = None,
-    ) -> Optional[str]:
+        metadata: dict | None = None,
+    ) -> str | None:
         """
-        Registra una interacción entre agentes (para grafos de colaboración).
+        Registra una interacciÃ³n entre agentes (para grafos de colaboraciÃ³n).
         """
         if not self._enabled or not self._full_telemetry:
             return None
@@ -618,7 +617,7 @@ class AgentKpiTracker:
 
     def get_agent_rankings(
         self, top_n: int = 10, min_sessions: int = 1,
-    ) -> List[Dict]:
+    ) -> list[dict]:
         """
         Obtiene ranking de agentes por success_rate.
 
@@ -631,11 +630,11 @@ class AgentKpiTracker:
                 query_vector=np.zeros(self._config.embedding_dim, dtype=np.float32),
                 top_k=100,
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
             return []
 
         # Aggregate by agent
-        agent_stats: Dict[str, Dict] = {}
+        agent_stats: dict[str, dict] = {}
         for r in results:
             meta = r.get("metadata", {})
             if isinstance(meta, str):
@@ -683,7 +682,7 @@ class AgentKpiTracker:
         rankings.sort(key=lambda x: x["success_rate"], reverse=True)
         return [r for r in rankings if r["total_sessions"] >= min_sessions][:top_n]
 
-    def get_skill_rankings(self, top_n: int = 10) -> List[Dict]:
+    def get_skill_rankings(self, top_n: int = 10) -> list[dict]:
         """
         Obtiene ranking de skills por uso y efectividad.
 
@@ -696,7 +695,7 @@ class AgentKpiTracker:
                 query_vector=np.zeros(self._config.embedding_dim, dtype=np.float32),
                 top_k=100,
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
             return []
 
         rankings = []
@@ -722,17 +721,17 @@ class AgentKpiTracker:
         return rankings[:top_n]
 
     def get_session_history(
-        self, limit: int = 20, status: Optional[str] = None,
-    ) -> List[Dict]:
+        self, limit: int = 20, status: str | None = None,
+    ) -> list[dict]:
         """
         Obtiene historial de sesiones con sus KPIs.
 
         Args:
-            limit: Máximo de sesiones a retornar.
+            limit: MÃ¡ximo de sesiones a retornar.
             status: Filtrar por estado ("completed", "failed", etc.).
 
         Returns:
-            Lista de dicts con KPIs de sesión.
+            Lista de dicts con KPIs de sesiÃ³n.
         """
         try:
             results = self._store.search(
@@ -740,7 +739,7 @@ class AgentKpiTracker:
                 query_vector=np.zeros(self._config.embedding_dim, dtype=np.float32),
                 top_k=limit * 2,
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
             return []
 
         sessions = []
@@ -770,12 +769,12 @@ class AgentKpiTracker:
         sessions.sort(key=lambda x: x.get("total_duration_ms", 0), reverse=True)
         return sessions[:limit]
 
-    def get_dashboard_summary(self) -> Dict:
+    def get_dashboard_summary(self) -> dict:
         """
         Obtiene un resumen ejecutivo para dashboard.
 
         Returns:
-            Dict con métricas globales del sistema.
+            Dict con mÃ©tricas globales del sistema.
         """
         agent_rankings = self.get_agent_rankings(top_n=5)
         skill_rankings = self.get_skill_rankings(top_n=5)
@@ -793,13 +792,13 @@ class AgentKpiTracker:
     # Internal
     # ------------------------------------------------------------------
 
-    def _insert(self, collection: str, row: Dict) -> Optional[str]:
-        """Inserta una fila en LanceDB como vector de ceros (búsqueda por metadata)."""
+    def _insert(self, collection: str, row: dict) -> str | None:
+        """Inserta una fila en LanceDB como vector de ceros (bÃºsqueda por metadata)."""
         try:
             # Use zero vector for metadata-only records
             vec = np.zeros(self._config.embedding_dim, dtype=np.float32)
             ids = self._store.insert(collection, vec.reshape(1, -1), [row])
             return ids[0] if ids else None
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning("KPI insert error in %s: %s", collection, e)
             return None

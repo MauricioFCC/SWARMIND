@@ -11,7 +11,7 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +33,8 @@ class SearchResult:
     """
     id: str
     score: float
-    payload: Dict[str, Any] = field(default_factory=dict)
-    vector: Optional[List[float]] = None
+    payload: dict[str, Any] = field(default_factory=dict)
+    vector: list[float] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -66,10 +66,10 @@ class VectorStoreAdapter(ABC):
     def add(
         self,
         collection: str,
-        vectors: List[List[float]],
-        payloads: List[Dict[str, Any]],
-        ids: Optional[List[str]] = None,
-    ) -> List[str]:
+        vectors: list[list[float]],
+        payloads: list[dict[str, Any]],
+        ids: list[str] | None = None,
+    ) -> list[str]:
         """Agrega vectores con sus metadatos a una coleccion.
 
         Args:
@@ -89,10 +89,10 @@ class VectorStoreAdapter(ABC):
     def search(
         self,
         collection: str,
-        vector: List[float],
+        vector: list[float],
         top_k: int = 5,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[SearchResult]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[SearchResult]:
         """Busqueda por similitud vectorial con filtros opcionales.
 
         Args:
@@ -109,7 +109,7 @@ class VectorStoreAdapter(ABC):
         """
 
     @abstractmethod
-    def delete(self, collection: str, ids: List[str]) -> None:
+    def delete(self, collection: str, ids: list[str]) -> None:
         """Elimina registros por sus IDs.
 
         Args:
@@ -121,7 +121,7 @@ class VectorStoreAdapter(ABC):
         """
 
     @abstractmethod
-    def list_collections(self) -> List[str]:
+    def list_collections(self) -> list[str]:
         """Lista todas las colecciones disponibles.
 
         Returns:
@@ -193,10 +193,10 @@ class LanceDBAdapter(VectorStoreAdapter):
     def add(
         self,
         collection: str,
-        vectors: List[List[float]],
-        payloads: List[Dict[str, Any]],
-        ids: Optional[List[str]] = None,
-    ) -> List[str]:
+        vectors: list[list[float]],
+        payloads: list[dict[str, Any]],
+        ids: list[str] | None = None,
+    ) -> list[str]:
         """Agrega registros a una tabla LanceDB.
 
         Args:
@@ -208,9 +208,8 @@ class LanceDBAdapter(VectorStoreAdapter):
         Returns:
             IDs asignados a los registros insertados.
         """
-        import numpy as np  # type: ignore[import-untyped]
 
-        data: List[Dict[str, Any]] = []
+        data: list[dict[str, Any]] = []
         now = datetime.now(timezone.utc).isoformat()
         for i, (vec, payload) in enumerate(zip(vectors, payloads)):
             record_id = (
@@ -218,7 +217,7 @@ class LanceDBAdapter(VectorStoreAdapter):
                 if ids and i < len(ids)
                 else str(hash(str(payload) + now))
             )
-            row: Dict[str, Any] = {"id": record_id, "vector": vec, "created_at": now}
+            row: dict[str, Any] = {"id": record_id, "vector": vec, "created_at": now}
             row.update(payload)
             data.append(row)
 
@@ -230,10 +229,10 @@ class LanceDBAdapter(VectorStoreAdapter):
     def search(
         self,
         collection: str,
-        vector: List[float],
+        vector: list[float],
         top_k: int = 5,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[SearchResult]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[SearchResult]:
         """Busqueda vectorial en tabla LanceDB con post-filtro opcional.
 
         Args:
@@ -251,7 +250,7 @@ class LanceDBAdapter(VectorStoreAdapter):
 
         # Post-filtro por metadatos
         if filters:
-            filtered: List[Dict[str, Any]] = []
+            filtered: list[dict[str, Any]] = []
             for r in results:
                 match = all(
                     r.get(k) == v or r.get("payload", {}).get(k) == v
@@ -261,7 +260,7 @@ class LanceDBAdapter(VectorStoreAdapter):
                     filtered.append(r)
             results = filtered
 
-        out: List[SearchResult] = []
+        out: list[SearchResult] = []
         for r in results:
             payload = {k: v for k, v in r.items() if k not in ("id", "vector", "_distance")}
             out.append(
@@ -274,7 +273,7 @@ class LanceDBAdapter(VectorStoreAdapter):
             )
         return out
 
-    def delete(self, collection: str, ids: List[str]) -> None:
+    def delete(self, collection: str, ids: list[str]) -> None:
         """Elimina registros por ID en una tabla LanceDB.
 
         Args:
@@ -295,7 +294,7 @@ class LanceDBAdapter(VectorStoreAdapter):
                 ) from exc
         logger.debug("LanceDBAdapter: %d registros eliminados de '%s'", len(ids), collection)
 
-    def list_collections(self) -> List[str]:
+    def list_collections(self) -> list[str]:
         """Lista las tablas disponibles en la base LanceDB.
 
         Returns:
@@ -360,10 +359,10 @@ class ChromaAdapter(VectorStoreAdapter):
     def add(
         self,
         collection: str,
-        vectors: List[List[float]],
-        payloads: List[Dict[str, Any]],
-        ids: Optional[List[str]] = None,
-    ) -> List[str]:
+        vectors: list[list[float]],
+        payloads: list[dict[str, Any]],
+        ids: list[str] | None = None,
+    ) -> list[str]:
         """Agrega vectores con metadatos a una coleccion Chroma.
 
         Args:
@@ -384,10 +383,10 @@ class ChromaAdapter(VectorStoreAdapter):
     def search(
         self,
         collection: str,
-        vector: List[float],
+        vector: list[float],
         top_k: int = 5,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[SearchResult]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[SearchResult]:
         """Busqueda vectorial en Chroma con filtro opcional (where).
 
         Args:
@@ -412,7 +411,7 @@ class ChromaAdapter(VectorStoreAdapter):
                 f"ChromaAdapter: fallo busqueda en '{collection}': {exc}"
             ) from exc
 
-        out: List[SearchResult] = []
+        out: list[SearchResult] = []
         ids_list = results.get("ids", [[]])[0]
         distances = results.get("distances", [[]])[0]
         metadatas = results.get("metadatas", [[]])[0]
@@ -431,7 +430,7 @@ class ChromaAdapter(VectorStoreAdapter):
             )
         return out
 
-    def delete(self, collection: str, ids: List[str]) -> None:
+    def delete(self, collection: str, ids: list[str]) -> None:
         """Elimina registros por ID en Chroma.
 
         Args:
@@ -442,7 +441,7 @@ class ChromaAdapter(VectorStoreAdapter):
         col.delete(ids=ids)
         logger.debug("ChromaAdapter: %d registros eliminados de '%s'", len(ids), collection)
 
-    def list_collections(self) -> List[str]:
+    def list_collections(self) -> list[str]:
         """Lista las colecciones disponibles en Chroma.
 
         Returns:
@@ -475,8 +474,8 @@ class QdrantAdapter(VectorStoreAdapter):
         host: str = "localhost",
         port: int = 6334,
         prefer_grpc: bool = True,
-        api_key: Optional[str] = None,
-        location: Optional[str] = None,
+        api_key: str | None = None,
+        location: str | None = None,
     ) -> None:
         """Inicializa el adaptador conectando a Qdrant.
 
@@ -569,10 +568,10 @@ class QdrantAdapter(VectorStoreAdapter):
     def add(
         self,
         collection: str,
-        vectors: List[List[float]],
-        payloads: List[Dict[str, Any]],
-        ids: Optional[List[str]] = None,
-    ) -> List[str]:
+        vectors: list[list[float]],
+        payloads: list[dict[str, Any]],
+        ids: list[str] | None = None,
+    ) -> list[str]:
         """Agrega puntos (vectores + payload) a una coleccion Qdrant.
 
         Args:
@@ -587,7 +586,7 @@ class QdrantAdapter(VectorStoreAdapter):
         models = self._models()
 
         resolved_ids = ids or [str(uuid.uuid4()) for _ in range(len(vectors))]
-        points: List[models.PointStruct] = []  # type: ignore[name-defined]
+        points: list[models.PointStruct] = []  # type: ignore[name-defined]
         for rid, vec, payload in zip(resolved_ids, vectors, payloads):
             points.append(
                 models.PointStruct(
@@ -606,10 +605,10 @@ class QdrantAdapter(VectorStoreAdapter):
     def search(
         self,
         collection: str,
-        vector: List[float],
+        vector: list[float],
         top_k: int = 5,
-        filters: Optional[Dict[str, Any]] = None,
-    ) -> List[SearchResult]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[SearchResult]:
         """Busqueda vectorial en Qdrant con filtro nativo.
 
         Args:
@@ -646,7 +645,7 @@ class QdrantAdapter(VectorStoreAdapter):
                 f"QdrantAdapter: fallo busqueda en '{collection}': {exc}"
             ) from exc
 
-        out: List[SearchResult] = []
+        out: list[SearchResult] = []
         for scored_point in results:
             out.append(
                 SearchResult(
@@ -658,7 +657,7 @@ class QdrantAdapter(VectorStoreAdapter):
             )
         return out
 
-    def delete(self, collection: str, ids: List[str]) -> None:
+    def delete(self, collection: str, ids: list[str]) -> None:
         """Elimina puntos por ID en Qdrant.
 
         Args:
@@ -671,7 +670,7 @@ class QdrantAdapter(VectorStoreAdapter):
         )
         logger.debug("QdrantAdapter: %d puntos eliminados de '%s'", len(ids), collection)
 
-    def list_collections(self) -> List[str]:
+    def list_collections(self) -> list[str]:
         """Lista las colecciones disponibles en Qdrant.
 
         Returns:
@@ -706,7 +705,7 @@ def create_vector_store(backend: str = "lancedb", **kwargs: Any) -> VectorStoreA
         >>> store = create_vector_store("chroma", db_path="/tmp/chroma")
         >>> store = create_vector_store("qdrant", host="qdrant.example.com", port=6334)
     """
-    adapters: Dict[str, type] = {
+    adapters: dict[str, type] = {
         "lancedb": LanceDBAdapter,
         "chroma": ChromaAdapter,
         "qdrant": QdrantAdapter,

@@ -13,15 +13,12 @@ Verifica:
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, patch
+from typing import Any
 
 import pytest
 
-from harness.memory_rag.persistent_memory import MemoryEntry, PersistentMemory
-
+from harness.memory_rag.persistent_memory import PersistentMemory
 
 # ---------------------------------------------------------------------------
 # Fixtures

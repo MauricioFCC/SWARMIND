@@ -7,7 +7,6 @@ Cada respuesta legal se verifica contra fuentes, jurisdiccion y confianza.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -43,11 +42,11 @@ class LegalAnswer:
     """
     question: str
     answer: str
-    sources: List[LegalSource] = field(default_factory=list)
+    sources: list[LegalSource] = field(default_factory=list)
     confidence: float = 0.0
     jurisdiction: str = "Colombia"
     verified: bool = False
-    warnings: List[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
 
 class LegalVerifier:
@@ -68,7 +67,7 @@ class LegalVerifier:
 
     def __init__(self) -> None:
         """Inicializa el verificador con un repositorio de fuentes vacio."""
-        self._sources: List[LegalSource] = []
+        self._sources: list[LegalSource] = []
 
     def add_source(self, source: LegalSource) -> None:
         """Agrega una fuente legal al repositorio interno del verificador.
@@ -95,7 +94,7 @@ class LegalVerifier:
         Returns:
             LegalAnswer actualizada con confidence, verified y warnings.
         """
-        warnings: List[str] = []
+        warnings: list[str] = []
         confidence = 1.0
 
         # 1. Check if sources support the conclusion

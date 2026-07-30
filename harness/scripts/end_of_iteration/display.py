@@ -1,21 +1,21 @@
-"""
-Display — Helpers de visualización para reportes de iteración.
+﻿"""
+Display â€” Helpers de visualizaciÃ³n para reportes de iteraciÃ³n.
 
-Extraído de __init__.py para reducir el monolito.
+ExtraÃ­do de __init__.py para reducir el monolito.
 Incluye:
   - print_last_report()
   - show_iteration_history()
   - show_iteration_diff()
   - list_iteration_reports()
 
-Patrón RECURSIVO: show_iteration_diff usa indexación recursiva
+PatrÃ³n RECURSIVO: show_iteration_diff usa indexaciÃ³n recursiva
 para navegar por la lista de reports.
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .config import (
     HARNESS_ROOT,
@@ -38,7 +38,7 @@ def _get_reports_dir() -> Path:
     return HARNESS_ROOT / "db" / "iteration_reports"
 
 
-def _get_last_report_path() -> Optional[Path]:
+def _get_last_report_path() -> Path | None:
     """Obtiene la ruta al reporte JSON mas reciente."""
     reports_dir = _get_reports_dir()
     if not reports_dir.exists():
@@ -95,7 +95,7 @@ def print_last_report() -> None:
     try:
         with open(report_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         _safe_print(f"  {_err('[ERROR]')} No se pudo leer el reporte: {exc}")
         return
 
@@ -133,7 +133,7 @@ def show_iteration_history(limit: int = 10):
     sep = "=" if not _supports_unicode() else "\u2500"
 
     actual_limit = limit if limit > 0 else None
-    reports = list_iteration_reports(limit if limit > 0 else 0)
+    reports = list_iteration_reports(max(0, limit))
 
     if not reports:
         _safe_print()
@@ -322,7 +322,7 @@ def show_iteration_diff(n: int = 1):
     _safe_print(f"\n  {icon_save:<4} Reporte: {r.get('_file', '?')}")
 
 
-def get_last_report() -> Optional[Dict[str, Any]]:
+def get_last_report() -> dict[str, Any] | None:
     """Recupera el ultimo reporte de iteracion desde JSON."""
     report_path = _get_last_report_path()
     if report_path is None:
@@ -331,6 +331,6 @@ def get_last_report() -> Optional[Dict[str, Any]]:
     try:
         with open(report_path, "r", encoding="utf-8") as f:
             return json.load(f)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         _safe_print(f"  Error al recuperar report: {exc}")
         return None

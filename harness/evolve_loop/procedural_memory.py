@@ -9,10 +9,9 @@ from __future__ import annotations
 
 import logging
 import re
-from pathlib import Path
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +25,9 @@ class ProceduralSkill:
     """ProceduralSkill."""
     name: str
     description: str
-    steps: List[str]
+    steps: list[str]
     agent: str
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     source_task_id: str = ""
     created_at: str = ""
     version: int = 1
@@ -72,7 +71,7 @@ class ProceduralMemory:
         """Inicializa la instancia de la clase."""
         self._skills_dir = skills_dir or AUTO_SKILLS_DIR
         Path(self._skills_dir).mkdir(parents=True, exist_ok=True)
-        self._skills: Dict[str, ProceduralSkill] = {}
+        self._skills: dict[str, ProceduralSkill] = {}
         self._load_skills()
 
     def _load_skills(self) -> None:
@@ -88,7 +87,7 @@ class ProceduralMemory:
                 description = ""
                 steps = []
                 agent = ""
-                tags: List[str] = []
+                tags: list[str] = []
                 in_steps = False
                 for line in lines:
                     if line.startswith("**Agent:** @"):
@@ -122,9 +121,9 @@ class ProceduralMemory:
         self,
         name: str,
         description: str,
-        steps: List[str],
+        steps: list[str],
         agent: str,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
         source_task_id: str = "",
     ) -> ProceduralSkill:
         """
@@ -158,7 +157,7 @@ class ProceduralMemory:
         )
         return skill
 
-    def find_skill(self, query: str) -> Optional[ProceduralSkill]:
+    def find_skill(self, query: str) -> ProceduralSkill | None:
         """
         Find a skill by exact name or partial match.
         """
@@ -176,11 +175,11 @@ class ProceduralMemory:
 
         return None
 
-    def list_skills(self) -> List[ProceduralSkill]:
+    def list_skills(self) -> list[ProceduralSkill]:
         """List skills."""
         return list(self._skills.values())
 
-    def get_skills_for_agent(self, agent: str) -> List[ProceduralSkill]:
+    def get_skills_for_agent(self, agent: str) -> list[ProceduralSkill]:
         """Get skills for agent."""
         return [s for s in self._skills.values() if s.agent == agent]
 

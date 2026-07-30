@@ -13,17 +13,13 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import json
 import logging
-import os
 import secrets
 import threading
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from enum import Enum, auto
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -56,10 +52,10 @@ class AgentIdentity:
     agent_id: str
     role: AgentRole
     public_key_hash: str
-    permissions: Set[str] = field(default_factory=set)
+    permissions: set[str] = field(default_factory=set)
     issued_at: float = field(default_factory=time.time)
     expires_at: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_expired(self) -> bool:
         """Verifica si la identidad ha expirado.
@@ -103,7 +99,7 @@ class AgentToken:
     signature: str
     issued_at: float
     expires_at: float
-    scopes: List[str] = field(default_factory=list)
+    scopes: list[str] = field(default_factory=list)
 
     def is_valid(self, secret_key: bytes) -> bool:
         """Verifica la validez del token contra una clave secreta.
@@ -150,7 +146,7 @@ class TokenManager:
     Thread-safe para entornos multi-agente.
     """
 
-    def __init__(self, config: Optional[ZeroTrustConfig] = None) -> None:
+    def __init__(self, config: ZeroTrustConfig | None = None) -> None:
         """Inicializa el gestor de tokens.
 
         Args:
@@ -158,15 +154,15 @@ class TokenManager:
         """
         self._config: ZeroTrustConfig = config or ZeroTrustConfig()
         self._lock: threading.Lock = threading.Lock()
-        self._active_tokens: Dict[str, AgentToken] = {}
-        self._revoked_tokens: Set[str] = set()
-        self._revoked_cache: Set[str] = set()
+        self._active_tokens: dict[str, AgentToken] = {}
+        self._revoked_tokens: set[str] = set()
+        self._revoked_cache: set[str] = set()
 
     def create_token(
         self,
         agent_id: str,
-        scopes: Optional[List[str]] = None,
-        ttl: Optional[int] = None,
+        scopes: list[str] | None = None,
+        ttl: int | None = None,
     ) -> AgentToken:
         """Crea un nuevo token de autenticacion para un agente.
 
@@ -211,7 +207,7 @@ class TokenManager:
             logger.debug("[ZeroTrust] Token creado: %s para agente %s", token_id, agent_id)
             return token
 
-    def verify_token(self, token_id: str) -> Optional[AgentToken]:
+    def verify_token(self, token_id: str) -> AgentToken | None:
         """Verifica y retorna un token si es valido.
 
         Fast-path:
@@ -234,7 +230,7 @@ class TokenManager:
             if token_id in self._revoked_tokens:
                 return None
 
-            token: Optional[AgentToken] = self._active_tokens.get(token_id)
+            token: AgentToken | None = self._active_tokens.get(token_id)
             if token is None:
                 return None
 
@@ -244,10 +240,9 @@ class TokenManager:
                 return None
 
             # Saltar verificacion HMAC si strict_mode es False (confiar en TTL)
-            if self._config.strict_mode:
-                if not token.is_valid(self._config.secret_key):
-                    self._revoke_token_internal(token_id)
-                    return None
+            if self._config.strict_mode and not token.is_valid(self._config.secret_key):
+                self._revoke_token_internal(token_id)
+                return None
 
             return token
 
@@ -306,7 +301,7 @@ class TokenManager:
         """
         with self._lock:
             now: float = time.time()
-            expired: List[str] = [
+            expired: list[str] = [
                 tid for tid, tok in self._active_tokens.items()
                 if now > tok.expires_at
             ]
@@ -362,8 +357,8 @@ class PolicyEngine:
 
     def __init__(self) -> None:
         """Inicializa el motor de politicas vacio."""
-        self._policies: Dict[str, Dict[str, bool]] = {}
-        self._role_permissions: Dict[AgentRole, Set[str]] = {}
+        self._policies: dict[str, dict[str, bool]] = {}
+        self._role_permissions: dict[AgentRole, set[str]] = {}
 
     def add_policy(self, resource: str, action: str, allowed: bool = True) -> None:
         """Agrega una politica de acceso.
@@ -395,7 +390,7 @@ class PolicyEngine:
             return True
         return False
 
-    def check_access(self, resource: str, action: str, role: Optional[AgentRole] = None) -> bool:
+    def check_access(self, resource: str, action: str, role: AgentRole | None = None) -> bool:
         """Verifica si una accion esta permitida sobre un recurso.
 
         Primero verifica politicas explicitas, luego politicas wildcard,
@@ -414,7 +409,7 @@ class PolicyEngine:
             return self._policies[resource][action]
 
         # 2. Wildcard por recurso (ej: 'harness/*')
-        parts: List[str] = resource.split("/")
+        parts: list[str] = resource.split("/")
         for i in range(len(parts), 0, -1):
             wildcard: str = "/".join(parts[:i]) + "/*"
             if wildcard in self._policies and action in self._policies[wildcard]:
@@ -434,7 +429,7 @@ class PolicyEngine:
         logger.debug("[PolicyEngine] Acceso denegado: %s/%s (role=%s)", resource, action, role)
         return False
 
-    def set_role_permissions(self, role: AgentRole, permissions: Set[str]) -> None:
+    def set_role_permissions(self, role: AgentRole, permissions: set[str]) -> None:
         """Define los permisos para un rol especifico.
 
         Args:
@@ -444,7 +439,7 @@ class PolicyEngine:
         self._role_permissions[role] = permissions
         logger.info("[PolicyEngine] Permisos para %s: %d reglas", role.name, len(permissions))
 
-    def get_role_permissions(self, role: AgentRole) -> Set[str]:
+    def get_role_permissions(self, role: AgentRole) -> set[str]:
         """Retorna los permisos de un rol.
 
         Args:
@@ -465,7 +460,7 @@ def verify_agent_identity(
     agent_id: str,
     token: str,
     token_manager: TokenManager,
-    required_permission: Optional[str] = None,
+    required_permission: str | None = None,
 ) -> bool:
     """Verifica la identidad completa de un agente.
 
@@ -483,7 +478,7 @@ def verify_agent_identity(
         True si la identidad es valida y tiene los permisos necesarios.
     """
     # 1. Verificar token
-    agent_token: Optional[AgentToken] = token_manager.verify_token(token)
+    agent_token: AgentToken | None = token_manager.verify_token(token)
     if agent_token is None:
         logger.warning("[ZeroTrust] Token invalido para agente: %s", agent_id)
         return False
@@ -494,12 +489,11 @@ def verify_agent_identity(
         return False
 
     # 3. Verificar permiso (si se requiere)
-    if required_permission:
-        if required_permission not in agent_token.scopes:
-            logger.warning(
-                "[ZeroTrust] Agente %s no tiene permiso: %s",
-                agent_id, required_permission,
-            )
-            return False
+    if required_permission and required_permission not in agent_token.scopes:
+        logger.warning(
+            "[ZeroTrust] Agente %s no tiene permiso: %s",
+            agent_id, required_permission,
+        )
+        return False
 
     return True

@@ -1,8 +1,6 @@
 """Tests para TokenOptimizer — optimizacion de tokens y velocidad."""
 from __future__ import annotations
 
-import pytest
-
 from harness.orchestrator.token_optimizer import (
     OutputFormat,
     PipelineTask,

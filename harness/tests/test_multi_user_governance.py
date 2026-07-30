@@ -7,20 +7,17 @@ y context manager de permisos temporales.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from harness.orchestrator.multi_user_governance import (
+    ROLE_PERMISSIONS,
+    ExecutionHooks,
     MultiUserGovernance,
     Role,
-    User,
-    AuditEntry,
-    ExecutionHooks,
     _resolve_role_permissions,
-    ROLE_PERMISSIONS,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

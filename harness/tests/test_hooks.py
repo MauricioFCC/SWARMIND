@@ -8,11 +8,6 @@ Cubre:
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Dict, List
-
-import pytest
-
 from harness.hooks.builtin_hooks import register_builtin_hooks, security_validator_hook
 from harness.hooks.hook_manager import (
     HookExecutionContext,
@@ -22,7 +17,6 @@ from harness.hooks.hook_manager import (
     HookType,
 )
 from harness.hooks.hook_registry import HookPriority, HookRegistry
-
 
 # ============================================================================
 # Tests: HookRegistry

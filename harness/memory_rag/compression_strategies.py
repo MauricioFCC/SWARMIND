@@ -1,21 +1,23 @@
 """CompressionStrategies - Implementation strategies for prompt compression."""
 from __future__ import annotations
 
-import math
-import random
-import re
-from typing import Any, Dict, List, Optional, Tuple
-
+import json
 import logging
+import re
+
 logger = logging.getLogger(__name__)
+
+# Keys whose values should not be truncated in YAML/JSON compression
+STRUCTURED_PRESERVE_KEYS: set[str] = {
+    "name", "description", "version", "title", "summary",
+    "instruction", "goal", "purpose", "constraint",
+}
 
 from harness.memory_rag.compression_types import (
     CHARS_PER_TOKEN,
-    DEFAULT_TARGET_RATIO,
     FILLER_PATTERNS,
-    FILLER_PHRASES,
-    METHOD_EXTRACTIVE,
     METHOD_ABSTRACTIVE,
+    METHOD_EXTRACTIVE,
     METHOD_STRUCTURED,
     PRESERVED_KEYWORDS,
     STOP_WORDS,
@@ -88,7 +90,7 @@ class CompressionStrategies:
             Texto con stop words eliminadas.
         """
         lines = text.split("\n")
-        result_lines: List[str] = []
+        result_lines: list[str] = []
 
         for line in lines:
             stripped = line.strip()
@@ -135,7 +137,7 @@ class CompressionStrategies:
             Texto comprimido agresivamente.
         """
         lines = text.split("\n")
-        result: List[str] = []
+        result: list[str] = []
 
         # Eliminar lineas de logging
         log_pattern = re.compile(
@@ -158,13 +160,11 @@ class CompressionStrategies:
 
             # Acortar lineas largas a primeras 3 palabras si tienen baja densidad
             word_count = len(stripped.split())
-            if word_count > 15:
-                # Mantener si tiene verbos (alta densidad de informacion)
-                if not self._has_verb(stripped):
-                    # Mantener solo primeras 8 palabras
-                    short = " ".join(stripped.split()[:8])
-                    result.append(short)
-                    continue
+            if word_count > 15 and not self._has_verb(stripped):
+                # Mantener solo primeras 8 palabras
+                short = " ".join(stripped.split()[:8])
+                result.append(short)
+                continue
 
             result.append(line)
 
@@ -237,7 +237,7 @@ class CompressionStrategies:
             YAML comprimido.
         """
         lines = text.split("\n")
-        compressed: List[str] = []
+        compressed: list[str] = []
 
         for line in lines:
             stripped = line.strip()
@@ -336,7 +336,7 @@ class CompressionStrategies:
 
         return self._method_fallback
 
-    def _split_into_sections(self, text: str) -> List[str]:
+    def _split_into_sections(self, text: str) -> list[str]:
         """
         Divide texto en secciones semanticas (separadas por doble newline).
 
@@ -383,7 +383,7 @@ class CompressionStrategies:
             return self.extractive_compress(section, ratio)
 
         # Acumular oraciones hasta llenar presupuesto
-        summary_parts: List[str] = []
+        summary_parts: list[str] = []
         used = 0
         for sentence in sentences:
             sent_tokens = self._count_tokens(sentence)
@@ -411,9 +411,9 @@ class CompressionStrategies:
 
     def _distribute_budget_proportional(
         self,
-        token_counts: List[int],
+        token_counts: list[int],
         total_budget: int,
-    ) -> List[int]:
+    ) -> list[int]:
         """
         Distribuye un presupuesto proporcionalmente entre secciones.
 
@@ -495,10 +495,7 @@ class CompressionStrategies:
         # Secciones que parecen definiciones de herramientas
         if '"""' in section or "'''" in section:
             return True
-        if section.strip().startswith("```"):
-            return True
-
-        return False
+        return bool(section.strip().startswith("```"))
 
     def _has_preserved_keywords(self, text: str) -> bool:
         """
@@ -565,7 +562,7 @@ class CompressionStrategies:
                 return True
         return False
 
-    def _detect_sections(self, text: str) -> List[str]:
+    def _detect_sections(self, text: str) -> list[str]:
         """
         Detecta nombres de secciones preservadas en el texto comprimido.
 
@@ -578,7 +575,7 @@ class CompressionStrategies:
         Returns:
             Lista de nombres de secciones encontradas.
         """
-        sections: List[str] = []
+        sections: list[str] = []
         for line in text.split("\n"):
             stripped = line.strip()
             # Detectar cabeceras markdown
@@ -655,14 +652,10 @@ class CompressionStrategies:
             lines = [l for l in lines if len(l.strip()) > 3]
             # Si aun excede, eliminar lineas con solo stop words
             if self._count_tokens("\n".join(lines)) > target_tokens:
-                critical_lines: List[str] = []
+                critical_lines: list[str] = []
                 for line in lines:
                     stripped = line.strip()
-                    if self._has_preserved_keywords(stripped):
-                        critical_lines.append(line)
-                    elif self._looks_like_code(stripped):
-                        critical_lines.append(line)
-                    elif not self._line_is_only_stop_words(stripped):
+                    if self._has_preserved_keywords(stripped) or self._looks_like_code(stripped) or not self._line_is_only_stop_words(stripped):
                         critical_lines.append(line)
                 # Asegurar que no quedamos vacios
                 if len(critical_lines) >= len(lines) // 2:

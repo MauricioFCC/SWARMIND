@@ -1,5 +1,5 @@
-"""
-Session Context — Preserves execution state across iterations.
+﻿"""
+Session Context â€” Preserves execution state across iterations.
 
 Tracks the current plan, which subtasks are completed, what's pending,
 and maintains a history of all results. This ensures the coordinator
@@ -19,7 +19,7 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from harness.common import EMPTY_VECTOR
 from harness.orchestrator.task_planner import SubTask, TaskPlan
@@ -40,13 +40,13 @@ class SessionState:
     """
     session_id: str
     original_message: str
-    plan: "TaskPlan"
+    plan: TaskPlan
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     completed: bool = False
-    messages: List[Dict] = field(default_factory=list)
+    messages: list[dict] = field(default_factory=list)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         return {
             "session_id": self.session_id,
             "original_message": self.original_message,
@@ -81,14 +81,14 @@ class SessionContext:
         summary = ctx.get_status(session)
     """
 
-    def __init__(self, vector_store: Optional[Any] = None) -> None:
+    def __init__(self, vector_store: Any | None = None) -> None:
         """
         Args:
             vector_store: LanceVectorStore instance. If None, runs in
                           memory-only mode (no persistence).
         """
         self._store = vector_store
-        self._active_sessions: Dict[str, SessionState] = {}
+        self._active_sessions: dict[str, SessionState] = {}
         self._embedding_dim = 384
 
     # ------------------------------------------------------------------
@@ -139,7 +139,7 @@ class SessionContext:
             logger.info("Session %s resumed.", last_session.session_id)
             return last_session
 
-        # No session exists — create one without a plan
+        # No session exists â€” create one without a plan
         sid = str(uuid.uuid4())[:8]
         empty_plan = TaskPlan(session_id=sid, original_message=message)
         session = SessionState(
@@ -152,13 +152,13 @@ class SessionContext:
         logger.info("Session %s created (no plan).", sid)
         return session
 
-    def get_session(self, session_id: str) -> Optional[SessionState]:
+    def get_session(self, session_id: str) -> SessionState | None:
         """Get a session by ID."""
         if session_id in self._active_sessions:
             return self._active_sessions[session_id]
         return self._load_from_store(session_id)
 
-    def get_active(self) -> Optional[SessionState]:
+    def get_active(self) -> SessionState | None:
         """Get the most recent active session."""
         if self._active_sessions:
             # Return most recently updated
@@ -241,30 +241,30 @@ class SessionContext:
         done = sum(1 for s in plan.subtasks if s.completed)
 
         lines = [
-            f"🔵 Sesión: {session.session_id}",
-            f"📝 Tarea original: {plan.original_message[:100]}",
-            f"📊 Progreso: {done}/{total} subtasks",
+            f"Sesi\u00f3n: {session.session_id}",
+            f"Tarea original: {plan.original_message[:100]}",
+            f"Progreso: {done}/{total} subtasks",
         ]
 
         # Show completed
         completed = [s for s in plan.subtasks if s.completed]
         if completed:
-            lines.append(f"\n✅ Completadas ({len(completed)}):")
+            lines.append(f"\nCompletadas ({len(completed)}):")
             for s in completed:
-                lines.append(f"   ✅ [{s.agent}] {s.description}")
+                lines.append(f"   [{s.agent}] {s.description}")
                 if s.result:
                     # Truncate long results
                     result_preview = s.result[:120].replace('\n', ' ')
-                    lines.append(f"      → {result_preview}...")
+                    lines.append(f"      -> {result_preview}...")
 
         # Show current level (ready to execute)
         next_level = plan.get_next_level()
         if next_level:
             is_parallel = len(next_level) > 1
-            mode = "⚡ PARALELO" if is_parallel else "→ SECUENCIAL"
-            lines.append(f"\n⏳ Siguiente nivel ({mode}):")
+            mode = "PARALELO" if is_parallel else "SECUENCIAL"
+            lines.append(f"\nâ³ Siguiente nivel ({mode}):")
             for s in next_level:
-                lines.append(f"   ⏳ [{s.agent}] {s.description}")
+                lines.append(f"   â³ [{s.agent}] {s.description}")
 
         # Show future levels
         all_levels = plan.get_levels()
@@ -275,14 +275,14 @@ class SessionContext:
             if all(s.id in {st.id for st in next_level} for s in level):
                 continue
             if not future_found:
-                lines.append("\n⏸️  Próximos pasos:")
+                lines.append("\nâ¸ï¸  PrÃ³ximos pasos:")
                 future_found = True
             for s in level:
                 if not s.completed and s not in next_level:
-                    lines.append(f"   ⏸️  [{s.agent}] {s.description}")
+                    lines.append(f"   â¸ï¸  [{s.agent}] {s.description}")
 
         if session.completed:
-            lines.append("\n🎉 ¡Sesión COMPLETA!")
+            lines.append("\nðŸŽ‰ Â¡SesiÃ³n COMPLETA!")
 
         return "\n".join(lines)
 
@@ -299,10 +299,10 @@ class SessionContext:
                 vec.reshape(1, -1),
                 [{"session_id": session.session_id, "data": json.dumps(data)}],
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.debug("Session persist error (non-fatal): %s", exc)
 
-    def _load_from_store(self, session_id: str) -> Optional[SessionState]:
+    def _load_from_store(self, session_id: str) -> SessionState | None:
         """Load a session from LanceDB."""
         if self._store is None:
             return None
@@ -313,11 +313,11 @@ class SessionContext:
             )
             if results:
                 return self._deserialize(results[0])
-        except Exception as _exc:
+        except Exception as _exc:  # noqa: BLE001
             logger.warning("session_context: %s", _exc)
         return None
 
-    def _load_most_recent(self) -> Optional[SessionState]:
+    def _load_most_recent(self) -> SessionState | None:
         """Load the most recent session from LanceDB."""
         if self._store is None:
             return None
@@ -331,11 +331,11 @@ class SessionContext:
                     json.loads(r.get("metadata", {}).get("data", "{}")).get("updated_at", ""))
                 )
                 return self._deserialize(best)
-        except Exception as _exc:
+        except Exception as _exc:  # noqa: BLE001
             logger.warning("session_context: %s", _exc)
         return None
 
-    def _deserialize(self, record: Dict) -> Optional[SessionState]:
+    def _deserialize(self, record: dict) -> SessionState | None:
         """Deserialize a LanceDB record into SessionState."""
         try:
             meta = record.get("metadata", {})
@@ -376,6 +376,6 @@ class SessionContext:
                 completed=data.get("completed", False),
                 messages=data.get("messages", []),
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.debug("Session deserialize error: %s", exc)
             return None

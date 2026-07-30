@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,7 @@ class ActivationLevel(str, Enum):
 
 
 # Keywords que determinan que agente se necesita
-AGENT_KEYWORDS: Dict[str, List[str]] = {
+AGENT_KEYWORDS: dict[str, list[str]] = {
     "builder": [
         "implement", "build", "code", "api", "endpoint", "rust", "go", "python",
         "typescript", "javascript", "web", "mobile", "frontend", "backend",
@@ -61,14 +60,14 @@ AGENT_KEYWORDS: Dict[str, List[str]] = {
 }
 
 # Palabras que indican tarea simple (no requiere SWARM)
-SIMPLE_INDICATORS: List[str] = [
+SIMPLE_INDICATORS: list[str] = [
     "simple", "basico", "rapido", "quick", "rapida",
     "solo una consulta", "duda rapida", "pregunta simple",
     "pequeno cambio", "minor fix",
 ]
 
 # Palabras que indican tarea compleja (requiere SWARM completo)
-COMPLEX_INDICATORS: List[str] = [
+COMPLEX_INDICATORS: list[str] = [
     "complejo", "grande", "multi-modulo", "multiples archivos",
     "arquitectura", "sistema completo", "full stack",
     "produccion", "enterprise", "escalable",
@@ -89,7 +88,7 @@ class AgentSelector:
     def __init__(self, default_level: ActivationLevel = ActivationLevel.STANDARD):
         self._default_level = default_level
 
-    def select(self, message: str) -> List[str]:
+    def select(self, message: str) -> list[str]:
         """
         Selecciona agentes basado en el mensaje.
 
@@ -140,9 +139,9 @@ class AgentSelector:
         else:
             return ActivationLevel.MINIMAL
 
-    def _score_agents(self, msg_lower: str) -> Dict[str, float]:
+    def _score_agents(self, msg_lower: str) -> dict[str, float]:
         """Puntua relevancia de cada agente (0.0 - 1.0)."""
-        scores: Dict[str, float] = {}
+        scores: dict[str, float] = {}
         for agent, keywords in AGENT_KEYWORDS.items():
             score = sum(1 for kw in keywords if kw in msg_lower)
             # Normalizar
@@ -150,7 +149,7 @@ class AgentSelector:
             scores[agent] = min(score / max(1, max_possible) * 2, 1.0)
         return scores
 
-    def _select_by_level(self, scores: Dict[str, float], level: ActivationLevel) -> List[str]:
+    def _select_by_level(self, scores: dict[str, float], level: ActivationLevel) -> list[str]:
         """Selecciona agentes segun nivel y puntajes."""
         # Ordenar por relevancia descendente
         ranked = sorted(scores.items(), key=lambda x: -x[1])
@@ -187,7 +186,7 @@ class AgentSelector:
 
         return selected
 
-    def estimate_tokens_saved(self, message: str) -> Dict[str, int]:
+    def estimate_tokens_saved(self, message: str) -> dict[str, int]:
         """Estima tokens ahorrados vs SWARM completo."""
         selected = self.select(message)
         full_swarm = ["builder", "scientist", "guardian"]

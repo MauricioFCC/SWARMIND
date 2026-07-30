@@ -1,5 +1,5 @@
-"""
-SwarmMode — Ejecucion paralela de agentes en flota (inspirado en CodeWhale fleet).
+﻿"""
+SwarmMode â€” Ejecucion paralela de agentes en flota (inspirado en CodeWhale fleet).
 
 Permite lanzar multiples agentes en paralelo para tareas complejas.
 Cada agente ejecuta su subtarea independientemente y los resultados
@@ -18,9 +18,9 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class SwarmTask:
 
     agent: str
     description: str
-    context: Optional[str] = None
+    context: str | None = None
     priority: int = 5
 
 
@@ -58,7 +58,7 @@ class SwarmResult:
     success: bool
     output: str
     time_seconds: float
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class SwarmMode:
@@ -77,7 +77,7 @@ class SwarmMode:
     def __init__(
         self,
         max_workers: int = 4,
-        dispatch_fn: Optional[Callable[[str, str], str]] = None,
+        dispatch_fn: Callable[[str, str], str] | None = None,
     ) -> None:
         """Inicializa el SwarmMode.
 
@@ -89,7 +89,7 @@ class SwarmMode:
         self._max_workers = max_workers
         self._dispatch = dispatch_fn or self._mock_dispatch
 
-    def run(self, tasks: List[SwarmTask]) -> List[SwarmResult]:
+    def run(self, tasks: list[SwarmTask]) -> list[SwarmResult]:
         """Ejecuta una lista de tareas en paralelo usando un pool de hilos.
 
         Las tareas se ordenan por prioridad descendente en el resultado final.
@@ -106,7 +106,7 @@ class SwarmMode:
         if tasks is None:
             raise ValueError("tasks no puede ser None")
 
-        results: List[SwarmResult] = []
+        results: list[SwarmResult] = []
         with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
             futures = {
                 executor.submit(self._execute, task): task for task in tasks
@@ -114,12 +114,12 @@ class SwarmMode:
             for future in as_completed(futures):
                 try:
                     results.append(future.result())
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     # Seguridad ante fallos en el propio future
                     task = futures[future]
                     logger.error(
                         "WHAT=FutureError | "
-                        f"WHY=El future para agent={task.agent} lanzó excepción | "
+                        f"WHY=El future para agent={task.agent} lanzÃ³ excepciÃ³n | "
                         f"WHERE=SwarmMode.run | error={exc}"
                     )
                     results.append(
@@ -158,7 +158,7 @@ class SwarmMode:
                 output=str(output),
                 time_seconds=elapsed,
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             elapsed = time.time() - start
             logger.error(
                 "WHAT=SwarmExecute | "
@@ -174,7 +174,7 @@ class SwarmMode:
                 error=str(e),
             )
 
-    def consolidate(self, results: List[SwarmResult]) -> str:
+    def consolidate(self, results: list[SwarmResult]) -> str:
         """Consolida los resultados del swarm en un reporte legible.
 
         Args:
@@ -189,7 +189,7 @@ class SwarmMode:
         if results is None:
             raise ValueError("results no puede ser None")
 
-        lines: List[str] = [
+        lines: list[str] = [
             "## Resultados del Swarm",
             "",
         ]

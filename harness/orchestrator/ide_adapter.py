@@ -1,4 +1,4 @@
-"""IDEAdapter — Fachada de compatibilidad multi-harness.
+﻿"""IDEAdapter â€” Fachada de compatibilidad multi-harness.
 
 Refactorizado para delegar en Multi-Harness Adapter Layer manteniendo
 compatibilidad hacia atras. Todos los metodos originales se conservan.
@@ -10,14 +10,11 @@ Este modulo es una fachada que mantiene la API publica original.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 from harness.orchestrator.multi_harness.cli.multi_harness_cli import (
-    cmd_detect,
     cmd_export,
-    cmd_status,
     cmd_validate,
 )
 from harness.orchestrator.multi_harness.runtime_detector import (
@@ -47,7 +44,7 @@ class IDESupport:
 
 
 # Lista canonica de IDEs soportados (SSOT) - mantenida para compatibilidad.
-SUPPORTED_IDES: List[IDESupport] = [
+SUPPORTED_IDES: list[IDESupport] = [
     IDESupport("Claude Code", ".claude/settings.json", "AGENTS.md", ".claude/skills/"),
     IDESupport("Codex CLI", ".codex/config.toml", "AGENTS.md", ".codex/prompts/"),
     IDESupport("Cursor", ".cursorrules", ".cursor/agents/", ".cursor/skills/"),
@@ -57,7 +54,7 @@ SUPPORTED_IDES: List[IDESupport] = [
 
 
 class IDEAdapter:
-    """Adaptador multi-harness — Fachada que delega en Multi-Harness Layer.
+    """Adaptador multi-harness â€” Fachada que delega en Multi-Harness Layer.
 
     Mantiene compatibilidad hacia atras con el codigo existente mientras
     utiliza la nueva arquitectura de Multi-Harness Adapter Layer.
@@ -66,7 +63,7 @@ class IDEAdapter:
         project_root: Ruta raiz del proyecto. Si es None, se usa CWD.
     """
 
-    def __init__(self, project_root: Optional[Path] = None) -> None:
+    def __init__(self, project_root: Path | None = None) -> None:
         """Inicializa el adaptador con la raiz del proyecto.
 
         Args:
@@ -74,9 +71,9 @@ class IDEAdapter:
                 se usa Path.cwd().
         """
         self._root: Path = project_root or Path.cwd()
-        self._detected_ides: List[str] = []
+        self._detected_ides: list[str] = []
 
-    def detect_ides(self) -> List[str]:
+    def detect_ides(self) -> list[str]:
         """Detecta que IDEs tienen configuracion presente en el proyecto.
 
         Delega en get_detected_runtimes() del Multi-Harness Layer.
@@ -84,7 +81,7 @@ class IDEAdapter:
         Returns:
             Lista con los nombres comerciales de los IDEs detectados.
         """
-        runtimes: List[RuntimeInfo] = get_detected_runtimes(self._root)
+        runtimes: list[RuntimeInfo] = get_detected_runtimes(self._root)
         self._detected_ides = [rt.display_name for rt in runtimes if rt.detected]
         return list(self._detected_ides)
 
@@ -104,14 +101,14 @@ class IDEAdapter:
             OSError: Si hay errores de permisos al escribir en el destino.
         """
         # Mapear nombre comercial a nombre interno de runtime
-        name_to_runtime: Dict[str, str] = {
+        name_to_runtime: dict[str, str] = {
             "Claude Code": "claude",
             "Codex CLI": "codex",
             "Cursor": "cursor",
             "OpenCode": "opencode",
             "Gemini CLI": "gemini",
         }
-        runtime_name: Optional[str] = name_to_runtime.get(target_ide)
+        runtime_name: str | None = name_to_runtime.get(target_ide)
 
         if not runtime_name:
             logger.warning("IDE destino no soportado: %s", target_ide)
@@ -121,11 +118,11 @@ class IDEAdapter:
             return cmd_export(runtime_name, dry_run=dry_run, project_root=self._root)
         except OSError:
             raise
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.error("Error exportando a %s: %s", target_ide, exc)
             return False
 
-    def export_all(self, dry_run: bool = False) -> Dict[str, bool]:
+    def export_all(self, dry_run: bool = False) -> dict[str, bool]:
         """Exporta la configuracion a todos los runtimes soportados.
 
         Args:
@@ -134,8 +131,8 @@ class IDEAdapter:
         Returns:
             Dict con nombre de runtime -> resultado (True/False).
         """
-        results: Dict[str, bool] = {}
-        name_to_runtime: Dict[str, str] = {
+        results: dict[str, bool] = {}
+        name_to_runtime: dict[str, str] = {
             "Claude Code": "claude",
             "Codex CLI": "codex",
             "Cursor": "cursor",
@@ -148,7 +145,7 @@ class IDEAdapter:
             )
         return results
 
-    def get_supported_ides(self) -> List[IDESupport]:
+    def get_supported_ides(self) -> list[IDESupport]:
         """Retorna la lista completa de IDEs soportados.
 
         Returns:

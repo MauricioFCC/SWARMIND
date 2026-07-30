@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from harness.orchestrator.multi_harness.converter_base import (
     ExportResult,
@@ -48,7 +47,7 @@ class OpenCodeAdapter(HarnessConverter):
         Returns:
             ExportResult con conteo de agentes encontrados.
         """
-        agents: List[Path] = self._get_opencode_agents()
+        agents: list[Path] = self._get_opencode_agents()
         if dry_run:
             logger.info("[OpenCode] DRY-RUN: %d agentes disponibles", len(agents))
         return ExportResult(
@@ -63,7 +62,7 @@ class OpenCodeAdapter(HarnessConverter):
         Returns:
             ExportResult con conteo de skills encontrados.
         """
-        skills: List[Path] = self._get_opencode_skills()
+        skills: list[Path] = self._get_opencode_skills()
         if dry_run:
             logger.info("[OpenCode] DRY-RUN: %d skills disponibles", len(skills))
         return ExportResult(
@@ -88,7 +87,7 @@ class OpenCodeAdapter(HarnessConverter):
             target_dir=self._opencode_root,
         )
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         """Retorna estadisticas del proyecto OpenCode.
 
         Returns:

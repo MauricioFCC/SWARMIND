@@ -1,4 +1,4 @@
-"""L3 — TestCaseGenerator: Generacion de casos de prueba con guardrails.
+﻿"""L3 â€” TestCaseGenerator: Generacion de casos de prueba con guardrails.
 
 Genera casos de prueba a partir de especificaciones usando Gen AI,
 aplicando multiples guardrails anti-alucinacion para garantizar:
@@ -8,7 +8,7 @@ aplicando multiples guardrails anti-alucinacion para garantizar:
 - Cobertura de casos borde y limite
 - Trazabilidad bidireccional requisito-caso
 
-Referencia: IMACS arXiv:2607.25446 — Guardrail Composition Framework
+Referencia: IMACS arXiv:2607.25446 â€” Guardrail Composition Framework
 
 Example:
     gen = TestCaseGenerator()
@@ -25,17 +25,17 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum, auto
-from typing import Any, Callable, Optional
 from uuid import uuid4
 
 from harness.qa import QALayer, QAMetadata
 
 logger = logging.getLogger(__name__)
 
-# ── Patrones de validacion anti-alucinacion ───────────────────────────────────
+# â”€â”€ Patrones de validacion anti-alucinacion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _PATRON_IMPORT_FANTASMA = re.compile(
     r"(?:from|import)\s+(?:\w+\.)*(\w+)", re.IGNORECASE
@@ -115,7 +115,7 @@ class TestCase:
     framework: str = "pytest"
     requisitos_asociados: tuple[str, ...] = field(default_factory=tuple)
     tags: frozenset[str] = field(default_factory=frozenset)
-    guardrail_result: Optional[GuardrailResult] = None
+    guardrail_result: GuardrailResult | None = None
 
 
 @dataclass(frozen=True)
@@ -131,7 +131,7 @@ class TestSuite:
 
     casos: tuple[TestCase, ...]
     especificacion_origen: str
-    metadata: Optional[QAMetadata] = None
+    metadata: QAMetadata | None = None
     generacion_id: str = field(default_factory=lambda: uuid4().hex[:12])
 
     @property
@@ -170,7 +170,7 @@ class TestCaseGenerator:
 
     def __init__(
         self,
-        metadata: Optional[QAMetadata] = None,
+        metadata: QAMetadata | None = None,
     ) -> None:
         """Inicializa el generador con guardrails por defecto."""
         self._metadata = metadata or QAMetadata(
@@ -323,7 +323,7 @@ class TestCaseGenerator:
                 resultado = guardrail_fn(caso, especificacion)
                 todas_violaciones.extend(resultado.violaciones)
                 score_total = min(score_total, resultado.score_fidelidad)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.error(
                     f"[L3][TestCaseGenerator] Guardrail fallo en caso={caso.nombre}. "
                     f"WHAT: {exc}. "

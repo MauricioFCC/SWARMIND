@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""
+"""Auto-Compact â€” Automatic context compaction pipeline.
 
-EMBEDDING_DIM = 384
-Auto-Compact — Automatic context compaction pipeline.
+Auto-Compact â€” Automatic context compaction pipeline.
 
 Inspirado en Anthropic context engineering (Sep 2025):
 Cuando el contexto se acumula, comprime automaticamente
@@ -22,7 +21,7 @@ import sys
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import numpy as np
 
@@ -35,20 +34,21 @@ logger = logging.getLogger(__name__)
 
 COGNITION_COLLECTION = "asi_cognition_store"
 MAX_ENTRIES_BEFORE_COMPACT = 30
+EMBEDDING_DIM = 384
 
 
 def compact_cognition_store(
     store: LanceVectorStore,
     cognition: CognitionSync,
     dry_run: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Agrupa entries por dominio, comprime grupos grandes con summary."""
     stats = {"groups_found": 0, "entries_compressed": 0}
 
     dummy = np.zeros(EMBEDDING_DIM, dtype=np.float32)
     try:
         results = store.search(COGNITION_COLLECTION, dummy, top_k=500)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         logger.warning("Error searching cognition store: %s", exc)
         return stats
 
@@ -57,20 +57,20 @@ def compact_cognition_store(
         return stats
 
     # Parse entries
-    entries: List[Dict[str, Any]] = []
+    entries: list[dict[str, Any]] = []
     for r in results:
         meta = r.get("metadata", {})
         if isinstance(meta, str):
             import json
             try:
                 meta = json.loads(meta)
-            except Exception as _exc:
+            except Exception as _exc:  # noqa: BLE001
                 logger.warning("auto_compact: %s", _exc)
                 meta = {}
         entries.append(meta)
 
     # Group by domain
-    groups: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for entry in entries:
         domain = entry.get("domain", "general")
         groups[domain].append(entry)
@@ -115,19 +115,17 @@ def compact_cognition_store(
                     scores.append(s)
 
         avg_score = sum(scores) / len(scores) if scores else 0
+        tags_str = ", ".join(sorted(tags_all)[:8])
+        snippets_str = "\n".join(snippets[:3])
         summary = (
-            "[COMPACTED] %d entries from '%s'\n"
-            "Score: %.2f\n"
-            "Tags: %s\n"
-            "---\n%s"
-        ) % (
-            len(compress), domain, avg_score,
-            ", ".join(sorted(tags_all)[:8]),
-            "\n".join(snippets[:3]),
+            f"[COMPACTED] {len(compress)} entries from '{domain}'\n"
+            f"Score: {avg_score:.2f}\n"
+            f"Tags: {tags_str}\n"
+            f"---\n{snippets_str}"
         )
 
         cognition.add_lesson(
-            title="[COMPACTED] %s: %d entries" % (domain, len(compress)),
+            title=f"[COMPACTED] {domain}: {len(compress)} entries",
             content=summary,
             domain=domain,
             tags=list(tags_all | {"compacted"}),
@@ -166,9 +164,9 @@ def main():
             time.sleep(args.interval * 3600)
 
     stats = compact_cognition_store(store, cognition, dry_run=args.dry_run)
-    msg = "Dry-run: %d groups" % stats["groups_found"] if args.dry_run else (
-        "Compacted %d entries across %d groups"
-        % (stats["entries_compressed"], stats["groups_found"])
+    msg = (
+        f"Dry-run: {stats['groups_found']} groups" if args.dry_run
+        else f"Compacted {stats['entries_compressed']} entries across {stats['groups_found']} groups"
     )
     logger.info(msg)
 

@@ -1,4 +1,4 @@
-"""SQLiteVecAdapter — Backend vectorial ligero via sqlite-vec.
+﻿"""SQLiteVecAdapter â€” Backend vectorial ligero via sqlite-vec.
 
 Proporciona almacenamiento vectorial portable sin dependencias externas.
 Ideal para edge computing, dispositivos sin GPU, y entornos offline.
@@ -20,23 +20,27 @@ import sqlite3
 import threading
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
+from typing_extensions import Self
+
+try:
+    import sqlite_vec
+except ImportError:
+    sqlite_vec = None  # type: ignore[assignment]
 
 from harness.memory_rag.sqlite_vec_utils import (
+    _DEFAULT_DIMENSION,
+    _META_TABLE,
+    _VEC_TABLE_PREFIX,
     HAS_SQLITE_VEC,
-    SQLiteVecError,
+    CollectionMeta,
     CollectionNotFoundError,
     DimensionMismatchError,
-    VectorNotFoundError,
+    SQLiteVecError,
     VectorRecord,
-    CollectionMeta,
     _cosine_similarity,
-    _l2_normalize,
-    _DEFAULT_DIMENSION,
-    _VEC_TABLE_PREFIX,
-    _META_TABLE,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,7 +70,7 @@ class SQLiteVecAdapter:
         self._db_path: Path = Path(db_path) if db_path != ":memory:" else Path(":memory:")
         self._default_dim: int = dimension
         self._lock: threading.Lock = threading.Lock()
-        self._conn: Optional[sqlite3.Connection] = None
+        self._conn: sqlite3.Connection | None = None
         self._vec_enabled: bool = HAS_SQLITE_VEC
         self._initialized: bool = False
 
@@ -74,12 +78,12 @@ class SQLiteVecAdapter:
     # Context manager
     # ------------------------------------------------------------------
 
-    def __enter__(self) -> SQLiteVecAdapter:
+    def __enter__(self) -> Self:
         """Soporte para 'with' statement."""
         self.initialize()
         return self
 
-    def __exit__(self, *args: Any) -> None:
+    def __exit__(self, *args: object) -> None:
         """Cierra conexion al salir del contexto."""
         self.close()
 
@@ -108,7 +112,7 @@ class SQLiteVecAdapter:
                 try:
                     sqlite_vec.load(self._conn)
                     logger.debug("[SQLiteVec] Extension sqlite-vec cargada exitosamente.")
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     logger.warning("[SQLiteVec] Fallback: fallo carga extension (%s)", exc)
                     self._vec_enabled = False
 
@@ -179,7 +183,7 @@ class SQLiteVecAdapter:
     def create_collection(
         self,
         name: str,
-        dimension: Optional[int] = None,
+        dimension: int | None = None,
     ) -> CollectionMeta:
         """Crea una nueva coleccion de vectores.
 
@@ -253,7 +257,7 @@ class SQLiteVecAdapter:
                     f"[SQLiteVec::delete_collection] Error eliminando '{name}': {exc}"
                 ) from exc
 
-    def list_collections(self) -> List[CollectionMeta]:
+    def list_collections(self) -> list[CollectionMeta]:
         """Lista todas las colecciones registradas.
 
         Returns:
@@ -266,7 +270,7 @@ class SQLiteVecAdapter:
                 cursor = self._conn.execute(
                     f"SELECT name, dimension, created_at FROM {_META_TABLE} ORDER BY name"
                 )
-                collections: List[CollectionMeta] = []
+                collections: list[CollectionMeta] = []
                 for row in cursor.fetchall():
                     name, dim, created = row
                     size = self._count_vectors_internal(name)
@@ -277,7 +281,7 @@ class SQLiteVecAdapter:
                     f"[SQLiteVec::list_collections] Error listando colecciones: {exc}"
                 ) from exc
 
-    def get_collection(self, name: str) -> Optional[CollectionMeta]:
+    def get_collection(self, name: str) -> CollectionMeta | None:
         """Obtiene metadatos de una coleccion especifica.
 
         Args:
@@ -333,15 +337,15 @@ class SQLiteVecAdapter:
             raise SQLiteVecError("Adaptador no inicializado. Llame a initialize() primero.")
 
     # ------------------------------------------------------------------
-    # Inserción de vectores
+    # InserciÃ³n de vectores
     # ------------------------------------------------------------------
 
     def add_vector(
         self,
         collection: str,
         vector_id: str,
-        vector: List[float] | np.ndarray,
-        metadata: Optional[Dict[str, Any]] = None,
+        vector: list[float] | np.ndarray,
+        metadata: dict[str, Any] | None = None,
     ) -> VectorRecord:
         """Inserta un vector individual en una coleccion.
 
@@ -397,9 +401,9 @@ class SQLiteVecAdapter:
     def batch_add(
         self,
         collection: str,
-        vectors: List[Tuple[str, List[float] | np.ndarray]],
-        metadatas: Optional[List[Dict[str, Any]]] = None,
-    ) -> List[VectorRecord]:
+        vectors: list[tuple[str, list[float] | np.ndarray]],
+        metadatas: list[dict[str, Any]] | None = None,
+    ) -> list[VectorRecord]:
         """Inserta multiples vectores en una sola transaccion.
 
         Args:
@@ -420,11 +424,11 @@ class SQLiteVecAdapter:
         with self._lock:
             self._assert_collection_exists(collection)
             dim = self._get_collection_dimension(collection)
-            records: List[VectorRecord] = []
+            records: list[VectorRecord] = []
             try:
                 assert self._conn is not None
                 tbl = self._vec_table_name(collection)
-                data_rows: List[Tuple[str, bytes, str, float]] = []
+                data_rows: list[tuple[str, bytes, str, float]] = []
                 now = time.time()
                 for (vid, vec_raw), meta in zip(vectors, metas):
                     vec = np.asarray(vec_raw, dtype=np.float32)
@@ -457,9 +461,9 @@ class SQLiteVecAdapter:
         self,
         collection: str,
         embeddings: np.ndarray,
-        ids: Optional[List[str]] = None,
-        metadatas: Optional[List[Dict[str, Any]]] = None,
-    ) -> List[str]:
+        ids: list[str] | None = None,
+        metadatas: list[dict[str, Any]] | None = None,
+    ) -> list[str]:
         """Inserta vectores desde una matriz numpy (batch optimizado).
 
         Args:
@@ -490,9 +494,9 @@ class SQLiteVecAdapter:
     def search(
         self,
         collection: str,
-        query: List[float] | np.ndarray,
+        query: list[float] | np.ndarray,
         k: int = 10,
-    ) -> List[Tuple[str, float, Dict[str, Any]]]:
+    ) -> list[tuple[str, float, dict[str, Any]]]:
         """Busqueda kNN por cosine similarity.
 
         Args:
@@ -521,14 +525,14 @@ class SQLiteVecAdapter:
                 cursor = self._conn.execute(
                     f"SELECT id, vector, metadata FROM {tbl}"
                 )
-                results: List[Tuple[str, float, Dict[str, Any]]] = []
+                results: list[tuple[str, float, dict[str, Any]]] = []
                 for row in cursor.fetchall():
                     vid, blob, meta_json = row
                                     #if isinstance(vid, memoryview):
                     #    vid = bytes(vid).decode('utf-8') if isinstance(vid, bytes) else str(vid)
                     vec = np.frombuffer(blob, dtype=np.float32)
                     score = _cosine_similarity(q, vec)
-                    meta: Dict[str, Any] = {}
+                    meta: dict[str, Any] = {}
                     if meta_json:
                         try:
                             meta = json.loads(meta_json) if isinstance(meta_json, str) else json.loads(bytes(meta_json).decode("utf-8"))
@@ -547,7 +551,7 @@ class SQLiteVecAdapter:
     # Lectura / eliminacion de vectores individuales
     # ------------------------------------------------------------------
 
-    def get_vector(self, collection: str, vector_id: str) -> Optional[VectorRecord]:
+    def get_vector(self, collection: str, vector_id: str) -> VectorRecord | None:
         """Obtiene un vector por su ID.
 
         Args:
@@ -572,7 +576,7 @@ class SQLiteVecAdapter:
                     return None
                 vid, blob, meta_json, created = row
                 vec = np.frombuffer(blob, dtype=np.float32)
-                meta: Dict[str, Any] = {}
+                meta: dict[str, Any] = {}
                 if meta_json:
                     try:
                         meta = json.loads(meta_json) if isinstance(meta_json, str) else json.loads(bytes(meta_json).decode("utf-8"))
@@ -689,7 +693,7 @@ class SQLiteVecAdapter:
             raise CollectionNotFoundError(f"Coleccion '{name}' no encontrada")
         return int(row[0])
 
-    def _get_collection_dimension_safe(self, name: str) -> Optional[int]:
+    def _get_collection_dimension_safe(self, name: str) -> int | None:
         """Obtiene dimension sin lanzar excepcion.
 
         Args:
@@ -711,7 +715,7 @@ class SQLiteVecAdapter:
         self,
         collection: str,
         include_vectors: bool = True,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Exporta una coleccion completa como lista de diccionarios.
 
         Util para backup o migracion.
@@ -733,10 +737,10 @@ class SQLiteVecAdapter:
             cursor = self._conn.execute(
                 f"SELECT id, vector, metadata, created_at FROM {tbl}"
             )
-            records: List[Dict[str, Any]] = []
+            records: list[dict[str, Any]] = []
             for row in cursor.fetchall():
                 vid, blob, meta_json, created = row
-                rec: Dict[str, Any] = {
+                rec: dict[str, Any] = {
                     "id": vid,
                     "metadata": json.loads(meta_json) if isinstance(meta_json, str) else {},
                     "created_at": created,
@@ -755,8 +759,8 @@ class SQLiteVecAdapter:
     def import_collection(
         self,
         collection: str,
-        records: List[Dict[str, Any]],
-        dimension: Optional[int] = None,
+        records: list[dict[str, Any]],
+        dimension: int | None = None,
     ) -> int:
         """Importa registros a una coleccion (debe existir o crearse).
 
@@ -771,8 +775,8 @@ class SQLiteVecAdapter:
         if not self._collection_exists(collection):
             detected_dim = dimension or (len(records[0]["vector"]) if records else self._default_dim)
             self.create_collection(collection, dimension=detected_dim)
-        vectors: List[Tuple[str, List[float]]] = []
-        metadatas: List[Dict[str, Any]] = []
+        vectors: list[tuple[str, list[float]]] = []
+        metadatas: list[dict[str, Any]] = []
         for rec in records:
             vid = rec.get("id", str(hash(str(rec))))
             vec = rec.get("vector", [])
@@ -802,7 +806,7 @@ class SQLiteVecAdapter:
                     f"[SQLiteVec::vacuum] Error en VACUUM: {exc}"
                 ) from exc
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """Retorna estadisticas generales del adaptador.
 
         Returns:

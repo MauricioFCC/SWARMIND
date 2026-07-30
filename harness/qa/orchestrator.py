@@ -1,4 +1,4 @@
-"""L5 — QAOrchestrator: Orquestacion de calidad extremo a extremo.
+﻿"""L5 â€” QAOrchestrator: Orquestacion de calidad extremo a extremo.
 
 Capa superior del pipeline QA 5-capas que coordina la ejecucion
 completa del ciclo de calidad agentico:
@@ -31,18 +31,18 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum, auto
-from typing import Any, Optional
+from typing import Any
 from uuid import uuid4
 
-from harness.qa import QALayer, QAMetadata, QAContext
-from harness.qa.predictor import FailurePredictor, RiskScore
-from harness.qa.detector import VisualAnomalyDetector, AnomalyReport
+from harness.qa import QAContext, QALayer, QAMetadata
+from harness.qa.agent import AgentResult, AutonomousTestAgent
+from harness.qa.detector import AnomalyReport, VisualAnomalyDetector
 from harness.qa.generator import TestCaseGenerator, TestSuite
-from harness.qa.agent import AutonomousTestAgent, AgentResult, TestResultStatus
+from harness.qa.predictor import FailurePredictor, RiskScore
 
 logger = logging.getLogger(__name__)
 
-# ── Pesos para calculo de calidad global ──────────────────────────────────────
+# â”€â”€ Pesos para calculo de calidad global â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _PESO_PREDICCION = 0.15
 _PESO_ANOMALIAS = 0.20
@@ -76,8 +76,8 @@ class LayerResult:
     layer: QALayer
     exitoso: bool
     duracion_ms: float
-    datos: Optional[Any] = None
-    error: Optional[str] = None
+    datos: Any | None = None
+    error: str | None = None
 
 
 @dataclass(frozen=True)
@@ -101,10 +101,10 @@ class OrchestrationReport:
     calidad_global: float
     estado: PipelineStatus
     layers: tuple[LayerResult, ...]
-    risk_score: Optional[RiskScore] = None
-    anomaly_report: Optional[AnomalyReport] = None
-    test_suite: Optional[TestSuite] = None
-    agent_result: Optional[AgentResult] = None
+    risk_score: RiskScore | None = None
+    anomaly_report: AnomalyReport | None = None
+    test_suite: TestSuite | None = None
+    agent_result: AgentResult | None = None
     ejecutado_en: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
@@ -140,7 +140,7 @@ class QAOrchestrator:
         metadata: Metadatos opcionales para capa L5.
     """
 
-    def __init__(self, metadata: Optional[QAMetadata] = None) -> None:
+    def __init__(self, metadata: QAMetadata | None = None) -> None:
         """Inicializa el orquestador con componentes de todas las capas."""
         self._metadata = metadata or QAMetadata(
             layer=QALayer.L5_ORCHESTRATOR,
@@ -166,7 +166,7 @@ class QAOrchestrator:
         layer: QALayer,
         fn: Any,
         args: tuple = (),
-        kwargs: Optional[dict[str, Any]] = None,
+        kwargs: dict[str, Any] | None = None,
     ) -> LayerResult:
         """Ejecuta una capa del pipeline con medicion y captura de errores.
 
@@ -197,7 +197,7 @@ class QAOrchestrator:
                 duracion_ms=duracion,
                 datos=resultado,
             )
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             duracion = (time.perf_counter() - inicio) * 1000.0
             logger.error(
                 f"[L5][QAOrchestrator] Capa {layer.name} fallo tras "
@@ -216,10 +216,10 @@ class QAOrchestrator:
     def execute(
         self,
         componente: str,
-        test_files: Optional[list[str]] = None,
-        especificacion: Optional[str] = None,
-        resultados_previos: Optional[dict[str, float]] = None,
-        config: Optional[dict[str, Any]] = None,
+        test_files: list[str] | None = None,
+        especificacion: str | None = None,
+        resultados_previos: dict[str, float] | None = None,
+        config: dict[str, Any] | None = None,
     ) -> OrchestrationReport:
         """Ejecuta el pipeline completo de calidad 5-capas.
 
@@ -243,7 +243,7 @@ class QAOrchestrator:
                 "WHERE: execute."
             )
 
-        ctx = QAContext(
+        QAContext(
             target=componente,
             config=config or {},
             metadata=self._metadata,
@@ -257,12 +257,12 @@ class QAOrchestrator:
         )
 
         layers: list[LayerResult] = []
-        risk_score: Optional[RiskScore] = None
-        anomaly_report: Optional[AnomalyReport] = None
-        test_suite: Optional[TestSuite] = None
-        agent_result: Optional[AgentResult] = None
+        risk_score: RiskScore | None = None
+        anomaly_report: AnomalyReport | None = None
+        test_suite: TestSuite | None = None
+        agent_result: AgentResult | None = None
 
-        # ── L1: FailurePredictor ──────────────────────────────────────────
+        # â”€â”€ L1: FailurePredictor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         res_l1 = self._ejecutar_capa(
             QALayer.L1_PREDICTOR,
             self._predictor.predict,
@@ -272,7 +272,7 @@ class QAOrchestrator:
         if res_l1.exitoso and isinstance(res_l1.datos, RiskScore):
             risk_score = res_l1.datos
 
-        # ── L2: VisualAnomalyDetector ─────────────────────────────────────
+        # â”€â”€ L2: VisualAnomalyDetector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if resultados_previos:
             res_l2 = self._ejecutar_capa(
                 QALayer.L2_DETECTOR,
@@ -291,7 +291,7 @@ class QAOrchestrator:
         if res_l2.exitoso and isinstance(res_l2.datos, AnomalyReport):
             anomaly_report = res_l2.datos
 
-        # ── L3: TestCaseGenerator ─────────────────────────────────────────
+        # â”€â”€ L3: TestCaseGenerator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         espec = especificacion or f"Tests para componente: {componente}"
         res_l3 = self._ejecutar_capa(
             QALayer.L3_GENERATOR,
@@ -307,7 +307,7 @@ class QAOrchestrator:
         if res_l3.exitoso and isinstance(res_l3.datos, TestSuite):
             test_suite = res_l3.datos
 
-        # ── L4: AutonomousTestAgent ───────────────────────────────────────
+        # â”€â”€ L4: AutonomousTestAgent â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         files = test_files or (list(test_suite.casos_validos) if test_suite else [])
         if files:
             res_l4 = self._ejecutar_capa(
@@ -325,7 +325,7 @@ class QAOrchestrator:
         if res_l4.exitoso and isinstance(res_l4.datos, AgentResult):
             agent_result = res_l4.datos
 
-        # ── Calculo de calidad global ─────────────────────────────────────
+        # â”€â”€ Calculo de calidad global â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         calidad_global = self._calcular_calidad_global(
             risk_score=risk_score,
             anomaly_report=anomaly_report,
@@ -334,7 +334,7 @@ class QAOrchestrator:
             layers=layers,
         )
 
-        # ── Determinacion de estado final ─────────────────────────────────
+        # â”€â”€ Determinacion de estado final â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         exitosas = sum(1 for l in layers if l.exitoso)
         total_capas = len(layers)
 
@@ -390,10 +390,10 @@ class QAOrchestrator:
 
     def _calcular_calidad_global(
         self,
-        risk_score: Optional[RiskScore],
-        anomaly_report: Optional[AnomalyReport],
-        test_suite: Optional[TestSuite],
-        agent_result: Optional[AgentResult],
+        risk_score: RiskScore | None,
+        anomaly_report: AnomalyReport | None,
+        test_suite: TestSuite | None,
+        agent_result: AgentResult | None,
         layers: list[LayerResult],
     ) -> float:
         """Calcula la metrica compuesta de calidad global del pipeline.

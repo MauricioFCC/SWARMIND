@@ -1,4 +1,4 @@
-"""
+﻿"""
 Secure execution environment for MCP (Model Context Protocol) tools.
 
 Provides a sandboxed executor that runs tools via subprocess with timeouts,
@@ -15,7 +15,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class SandboxResult:
     trace_id: str = ""
     exit_code: int = -1
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """To dict."""
         return {
             "success": self.success,
@@ -81,8 +81,8 @@ class MCPExecutor:
     def __init__(
         self,
         default_timeout: int = _DEFAULT_TIMEOUT,
-        allowed_commands: Optional[List[str]] = None,
-        workdir: Optional[str] = None,
+        allowed_commands: list[str] | None = None,
+        workdir: str | None = None,
     ) -> None:
         """
         Args:
@@ -95,7 +95,7 @@ class MCPExecutor:
         self.default_timeout = default_timeout
         self.allowed_commands = allowed_commands
         self.workdir = workdir
-        self._execution_log: List[Dict[str, Any]] = []
+        self._execution_log: list[dict[str, Any]] = []
 
     # ------------------------------------------------------------------
     # Public API
@@ -104,8 +104,8 @@ class MCPExecutor:
     def execute_tool(
         self,
         tool_name: str,
-        params: Dict[str, Any],
-        timeout: Optional[int] = None,
+        params: dict[str, Any],
+        timeout: int | None = None,
     ) -> SandboxResult:
         """
         Execute a tool in a sandboxed subprocess.
@@ -115,10 +115,10 @@ class MCPExecutor:
 
         Built-in tool mappings:
 
-        - ``"pytest"``  → ``pytest <test_path> [args]``
-        - ``"python"``  → ``python <script> [args]``
-        - ``"shell"``   → ``<command>``  (use with extreme caution)
-        - ``"echo"``   → echo the params (safe testing)
+        - ``"pytest"``  â†’ ``pytest <test_path> [args]``
+        - ``"python"``  â†’ ``python <script> [args]``
+        - ``"shell"``   â†’ ``<command>``  (use with extreme caution)
+        - ``"echo"``   â†’ echo the params (safe testing)
 
         Args:
             tool_name: Name / identifier of the tool.
@@ -173,8 +173,8 @@ class MCPExecutor:
     def validate_output(
         self,
         output: Any,
-        schema: Dict[str, Any],
-    ) -> Tuple[bool, str]:
+        schema: dict[str, Any],
+    ) -> tuple[bool, str]:
         """
         Validate that an output value conforms to a JSON-like schema.
 
@@ -239,7 +239,7 @@ class MCPExecutor:
         self,
         code: str,
         test_type: str = "pytest",
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
     ) -> SandboxResult:
         """
         Run a test snippet in the sandbox.
@@ -278,13 +278,13 @@ class MCPExecutor:
             try:
                 import shutil
                 shutil.rmtree(str(tmp_dir), ignore_errors=True)
-            except Exception as _exc:
+            except Exception as _exc:  # noqa: BLE001
                 logger.warning("mcp_executor: %s", _exc)
 
     def get_execution_log(
         self,
         limit: int = 50,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Return recent execution log entries.
 
@@ -306,14 +306,14 @@ class MCPExecutor:
     # ------------------------------------------------------------------
 
     def _resolve_command(
-        self, tool_name: str, params: Dict[str, Any]
-    ) -> List[str]:
+        self, tool_name: str, params: dict[str, Any]
+    ) -> list[str]:
         """
         Convert a tool name + params into a subprocess command list.
 
         Raises ``ValueError`` if the tool cannot be resolved.
         """
-        import sys  # noqa: PLC0415  — platform detection
+        import sys
 
         tool_name = tool_name.strip().lower()
 
@@ -347,7 +347,7 @@ class MCPExecutor:
 
     def _run_subprocess(
         self,
-        cmd: List[str],
+        cmd: list[str],
         timeout: int,
         trace_id: str,
     ) -> SandboxResult:
@@ -429,7 +429,7 @@ class MCPExecutor:
     def _log_execution(
         self,
         tool_name: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         result: SandboxResult,
     ) -> None:
         """Record an execution entry in the internal log."""

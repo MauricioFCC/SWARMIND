@@ -14,8 +14,7 @@ Verifica:
 
 from __future__ import annotations
 
-from typing import Any, Dict
-from unittest.mock import MagicMock, patch
+from typing import Any, ClassVar
 
 import pytest
 
@@ -26,7 +25,6 @@ from harness.orchestrator.worktable import (
     DebateRound,
     Worktable,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -40,15 +38,15 @@ def worktable() -> Worktable:
 
 
 @pytest.fixture
-def custom_dispatch() -> Dict[str, Any]:
+def custom_dispatch() -> dict[str, Any]:
     """Factory for a deterministic dispatch function."""
     def _dispatch(
         agent: str,
         topic: str,
         round_type: DebateRound,
-        profile: Dict[str, Any],
+        profile: dict[str, Any],
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if round_type == DebateRound.OPENING:
             return {
                 "stance": "a favor",
@@ -145,7 +143,7 @@ class TestDebateAllAgents:
 
     def test_debate_all_agents_positions(self, worktable: Worktable) -> None:
         """Despues del debate, todos los agentes tienen posiciones."""
-        compendium = worktable.debate(
+        worktable.debate(
             topic="Sistema de notificaciones en tiempo real",
         )
         positions = worktable.get_positions()
@@ -205,7 +203,7 @@ class TestDebateSubset:
     def test_debate_subset_positions(self, worktable: Worktable) -> None:
         """Solo los agentes seleccionados tienen posiciones."""
         selected = ["resilience", "observability", "testability"]
-        compendium = worktable.debate(
+        worktable.debate(
             topic="Sistema de monitoreo",
             agents=selected,
         )
@@ -408,7 +406,7 @@ class TestDebate1Round:
     def test_debate_1_round_no_critique(self) -> None:
         """Con 1 ronda, no hay concerns (critica no se ejecuta)."""
         wt = Worktable()
-        compendium = wt.debate(
+        wt.debate(
             topic="Sistema simple",
             agents=["soc", "coupling"],
             rounds=1,
@@ -424,7 +422,7 @@ class TestDebate1Round:
 
     def test_debate_1_round_log_length(self, worktable: Worktable) -> None:
         """Log debe tener solo entradas de ronda 1."""
-        compendium = worktable.debate(
+        worktable.debate(
             topic="Monolito vs microservicios",
             agents=["soc", "cohesion", "maintainability"],
             rounds=1,
@@ -435,13 +433,13 @@ class TestDebate1Round:
 
     def test_debate_1_round_positions_have_arguments(self, worktable: Worktable) -> None:
         """Posiciones tras 1 ronda tienen argumentos pero no concerns."""
-        compendium = worktable.debate(
+        worktable.debate(
             topic="Elegir base de datos",
             agents=["soc", "scalability"],
             rounds=1,
         )
         positions = worktable.get_positions()
-        for agent_name, pos in positions.items():
+        for pos in positions.values():
             assert len(pos.arguments) > 0
             assert pos.concerns == []
             assert pos.vote == "abstencion"
@@ -467,7 +465,7 @@ class TestDebate2Rounds:
     def test_debate_2_rounds_has_concerns(self) -> None:
         """Con 2 rondas, los agentes tienen concerns (critica)."""
         wt = Worktable()
-        compendium = wt.debate(
+        wt.debate(
             topic="Arquitectura hexagonal",
             agents=["soc", "coupling", "cohesion"],
             rounds=2,
@@ -481,7 +479,7 @@ class TestDebate2Rounds:
     def test_debate_2_rounds_no_vote(self) -> None:
         """Con 2 rondas, no hay voto (refinamiento no se ejecuta)."""
         wt = Worktable()
-        compendium = wt.debate(
+        wt.debate(
             topic="Patron CQRS",
             agents=["soc", "coupling"],
             rounds=2,
@@ -494,7 +492,7 @@ class TestDebate2Rounds:
 
     def test_debate_2_rounds_log_types(self, worktable: Worktable) -> None:
         """Log debe tener entradas de tipo opening y critique."""
-        compendium = worktable.debate(
+        worktable.debate(
             topic="Event sourcing",
             agents=["soc", "scalability", "resilience"],
             rounds=2,
@@ -560,7 +558,7 @@ class TestDebateEmptyAgents:
 class TestAgentProfilesCompleteness:
     """Todos los perfiles tienen campos requeridos."""
 
-    REQUIRED_FIELDS = ["name", "abbr", "description", "bias", "questions"]
+    REQUIRED_FIELDS: ClassVar[list[str]] = ["name", "abbr", "description", "bias", "questions"]
 
     def test_all_profiles_have_required_fields(self) -> None:
         """Cada perfil en AGENT_PROFILES tiene todos los campos requeridos."""
@@ -646,7 +644,7 @@ class TestGetLog:
 
     def test_log_after_debate(self, worktable: Worktable) -> None:
         """Log tiene entradas tras debate."""
-        compendium = worktable.debate(
+        worktable.debate(
             topic="API REST",
             agents=["soc", "coupling", "security"],
         )
@@ -655,7 +653,7 @@ class TestGetLog:
 
     def test_log_entry_structure(self, worktable: Worktable) -> None:
         """Cada entrada de log tiene round, agent, type, content."""
-        compendium = worktable.debate(
+        worktable.debate(
             topic="Sistema de pagos",
             agents=["soc", "coupling"],
         )
@@ -672,7 +670,7 @@ class TestGetLog:
 
     def test_log_round_types(self, worktable: Worktable) -> None:
         """Log contiene los tipos de ronda esperados."""
-        compendium = worktable.debate(
+        worktable.debate(
             topic="Microservicios vs monolitos",
             agents=["soc", "coupling", "cohesion"],
         )
@@ -684,7 +682,7 @@ class TestGetLog:
 
     def test_log_round_numbers(self, worktable: Worktable) -> None:
         """Rondas en el log son 1, 2, 3."""
-        compendium = worktable.debate(
+        worktable.debate(
             topic="Arquitectura limpia",
             agents=["soc", "coupling"],
         )
@@ -695,7 +693,7 @@ class TestGetLog:
     def test_log_agent_coverage(self, worktable: Worktable) -> None:
         """Todos los agentes aparecen en el log."""
         selected = ["soc", "resilience", "observability"]
-        compendium = worktable.debate(
+        worktable.debate(
             topic="Sistema de tracing",
             agents=selected,
         )
@@ -708,7 +706,7 @@ class TestGetLog:
         """Entradas de tipo opening tienen content con stance y arguments."""
         log = worktable.get_log()
         if not log:
-            compendium = worktable.debate(
+            worktable.debate(
                 topic="Test",
                 agents=["soc"],
             )
@@ -721,7 +719,7 @@ class TestGetLog:
 
     def test_log_immutable(self, worktable: Worktable) -> None:
         """get_log devuelve una copia (no la referencia interna)."""
-        compendium = worktable.debate(
+        worktable.debate(
             topic="Tema",
             agents=["soc"],
         )
@@ -759,7 +757,7 @@ class TestDebate3Rounds:
     def test_debate_3_rounds_full_positions(self) -> None:
         """Posiciones completas tras 3 rondas: arguments, concerns, vote."""
         wt = Worktable()
-        compendium = wt.debate(
+        wt.debate(
             topic="Arquitectura de software",
             agents=["soc", "coupling", "cohesion"],
             rounds=3,
@@ -772,7 +770,7 @@ class TestDebate3Rounds:
 
     def test_debate_3_rounds_log_complete(self, worktable: Worktable) -> None:
         """Log completo con opening, critique y refinement."""
-        compendium = worktable.debate(
+        worktable.debate(
             topic="CQRS + Event Sourcing",
             agents=["soc", "cohesion", "scalability"],
             rounds=3,
@@ -816,9 +814,9 @@ class TestCustomDispatch:
             agent: str,
             topic: str,
             round_type: DebateRound,
-            profile: Dict[str, Any],
+            profile: dict[str, Any],
             **kwargs: Any,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             call_log.append((agent, round_type.value))
             return {
                 "stance": "a favor",
@@ -828,7 +826,7 @@ class TestCustomDispatch:
             }
 
         wt = Worktable(dispatch_fn=tracking_dispatch)
-        compendium = wt.debate(
+        wt.debate(
             topic="Test",
             agents=["soc", "coupling"],
             rounds=2,
@@ -871,9 +869,9 @@ class TestEdgeCases:
     def test_multiple_debates_independent(self) -> None:
         """Debates multiples no contaminan estados."""
         wt = Worktable()
-        comp1 = wt.debate("Tema A", agents=["soc"])
+        wt.debate("Tema A", agents=["soc"])
         log1 = wt.get_log()
-        comp2 = wt.debate("Tema B", agents=["coupling"])
+        wt.debate("Tema B", agents=["coupling"])
         log2 = wt.get_log()
         # Cada debate tiene su propio log
         assert len(log1) > 0

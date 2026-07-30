@@ -7,14 +7,14 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from harness.db.migrate_engine import DBMigrator
 
 logger = logging.getLogger(__name__)
 
 
-def _print_result(result: Dict[str, Any]) -> None:
+def _print_result(result: dict[str, Any]) -> None:
     """Pretty-print resultado de migracion."""
     if result["migrated_collections"]:
         logger.info("  [OK] Migradas: %s", ", ".join(result["migrated_collections"]))

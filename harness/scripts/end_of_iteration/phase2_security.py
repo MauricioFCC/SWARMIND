@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import List, Optional
 
 from .config import (
     PROJECT_ROOT,
@@ -18,12 +17,12 @@ from .config import (
 )
 
 
-def _scan_secret_patterns(lines: List[str], filepath: str, patterns: List[str]) -> List[SecurityFinding]:
+def _scan_secret_patterns(lines: list[str], filepath: str, patterns: list[str]) -> list[SecurityFinding]:
     """Scan for hardcoded secrets."""
-    findings: List[SecurityFinding] = []
+    findings: list[SecurityFinding] = []
     for i, line in enumerate(lines, 1):
         stripped = line.strip()
-        if stripped.startswith("#") or stripped.startswith('"""') or stripped.startswith("'''"):
+        if stripped.startswith(("#", '"""', "'''")):
             continue
         for pattern in patterns:
             match = re.search(pattern, stripped)
@@ -38,9 +37,9 @@ def _scan_secret_patterns(lines: List[str], filepath: str, patterns: List[str]) 
     return findings
 
 
-def _scan_dangerous_functions(lines: List[str], filepath: str) -> List[SecurityFinding]:
+def _scan_dangerous_functions(lines: list[str], filepath: str) -> list[SecurityFinding]:
     """Scan for dangerous function calls."""
-    findings: List[SecurityFinding] = []
+    findings: list[SecurityFinding] = []
     dangerous = [
         (r"\beval\s*\(", "eval", "Ejecucion de codigo arbitrario"),
         (r"\bexec\s*\(", "exec", "Ejecucion de codigo arbitrario"),
@@ -51,7 +50,7 @@ def _scan_dangerous_functions(lines: List[str], filepath: str) -> List[SecurityF
     ]
     for i, line in enumerate(lines, 1):
         stripped = line.strip()
-        if stripped.startswith("#") or stripped.startswith('"""'):
+        if stripped.startswith(("#", '"""')):
             continue
         for pattern, category, message in dangerous:
             if re.search(pattern, stripped):
@@ -64,9 +63,9 @@ def _scan_dangerous_functions(lines: List[str], filepath: str) -> List[SecurityF
     return findings
 
 
-def _scan_http_urls(lines: List[str], filepath: str) -> List[SecurityFinding]:
+def _scan_http_urls(lines: list[str], filepath: str) -> list[SecurityFinding]:
     """Find hardcoded HTTP URLs (should use HTTPS)."""
-    findings: List[SecurityFinding] = []
+    findings: list[SecurityFinding] = []
     for i, line in enumerate(lines, 1):
         stripped = line.strip()
         if stripped.startswith("#"):
@@ -85,7 +84,7 @@ def _scan_http_urls(lines: List[str], filepath: str) -> List[SecurityFinding]:
     return findings
 
 
-def security_scan(directory: str = ".", changed_files: Optional[List[str]] = None) -> List[SecurityFinding]:
+def security_scan(directory: str = ".", changed_files: list[str] | None = None) -> list[SecurityFinding]:
     """Phase 2: Security review.
 
     If ``changed_files`` is provided, only scans those files (git-diff scope).
@@ -100,13 +99,12 @@ def security_scan(directory: str = ".", changed_files: Optional[List[str]] = Non
         all_files = []
         for rel_f in changed_files:
             abs_f = str(Path(PROJECT_ROOT) / rel_f)
-            if Path(abs_f).is_file() and _is_python_file(abs_f):
-                if not _should_exclude(abs_f, exclude):
-                    all_files.append(abs_f)
+            if Path(abs_f).is_file() and _is_python_file(abs_f) and not _should_exclude(abs_f, exclude):
+                all_files.append(abs_f)
     else:
         all_files = _walk_py_files(abs_dir, exclude)
 
-    findings: List[SecurityFinding] = []
+    findings: list[SecurityFinding] = []
     for filepath in all_files:
         lines, _total = _read_file_lines(filepath)
         if not lines:

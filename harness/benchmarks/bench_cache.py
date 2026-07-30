@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict
+from typing import Any
 
 from harness.memory_rag.semantic_cache import SemanticCache
 
 
-def bench_cache() -> Dict[str, Any]:
+def bench_cache() -> dict[str, Any]:
     cache = SemanticCache(threshold=0.5)
     n = 50
     t0 = time.perf_counter()

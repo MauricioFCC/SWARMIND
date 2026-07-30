@@ -20,7 +20,6 @@ import logging
 import shutil
 import time
 from pathlib import Path
-from typing import List
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
@@ -31,17 +30,17 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 def _size_str(size_bytes: int) -> str:
     for unit in ["B", "KB", "MB", "GB"]:
         if size_bytes < 1024:
-            return "%.1f %s" % (size_bytes, unit)
+            return f"{size_bytes:.1f} {unit}"
         size_bytes /= 1024
-    return "%.1f GB" % size_bytes
+    return f"{size_bytes:.1f} GB"
 
 
-def _find_cached_dirs() -> List[Path]:
+def _find_cached_dirs() -> list[Path]:
     """Find __pycache__ directories."""
     return list(ROOT.rglob("__pycache__"))
 
 
-def _find_temp_patterns() -> List[Path]:
+def _find_temp_patterns() -> list[Path]:
     """Find .pyc, .pyo, .log, .tmp files."""
     patterns = ["*.pyc", "*.pyo", "*.log", "*.tmp", "*.temp", "*.swp", "*.swo"]
     files = []
@@ -50,7 +49,7 @@ def _find_temp_patterns() -> List[Path]:
     return files
 
 
-def _find_aged_files(days: int) -> List[Path]:
+def _find_aged_files(days: int) -> list[Path]:
     """Find files not modified in N days."""
     cutoff = time.time() - (days * 86400)
     aged = []

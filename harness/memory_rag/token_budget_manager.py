@@ -1,10 +1,13 @@
 """TokenBudgetManager — Gestion de presupuesto de tokens por sesion."""
 from __future__ import annotations
 
+import logging
 import threading
 import time
-from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Any
+
+logger = logging.getLogger(__name__)
+
 
 class TokenBudgetManager:
     """
@@ -63,7 +66,7 @@ class TokenBudgetManager:
         self._max_sessions = max_sessions
 
         # {session_id: (budget_total, tokens_used, timestamp)}
-        self._sessions: Dict[str, Tuple[int, int, float]] = {}
+        self._sessions: dict[str, tuple[int, int, float]] = {}
         self._lock = threading.Lock()
 
         logger.info(
@@ -71,7 +74,7 @@ class TokenBudgetManager:
             default_budget, max_sessions,
         )
 
-    def track_usage(self, session_id: str, tokens: int) -> Dict[str, Any]:
+    def track_usage(self, session_id: str, tokens: int) -> dict[str, Any]:
         """
         Registra uso de tokens para una sesion.
 
@@ -154,7 +157,7 @@ class TokenBudgetManager:
             budget, used, _ = entry
             return max(0, budget - used)
 
-    def get_usage(self, session_id: str) -> Optional[Dict[str, Any]]:
+    def get_usage(self, session_id: str) -> dict[str, Any] | None:
         """
         Obtiene el estado completo de uso de una sesion.
 
@@ -237,7 +240,7 @@ class TokenBudgetManager:
             )
             return True
 
-    def get_all_sessions(self) -> Dict[str, Dict[str, Any]]:
+    def get_all_sessions(self) -> dict[str, dict[str, Any]]:
         """
         Obtiene el estado de todas las sesiones activas.
 
@@ -255,7 +258,7 @@ class TokenBudgetManager:
                 for sid, (budget, used, _) in self._sessions.items()
             }
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Retorna estadisticas del gestor de presupuesto.
 

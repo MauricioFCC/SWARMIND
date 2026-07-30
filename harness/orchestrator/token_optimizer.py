@@ -20,7 +20,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class OutputFormat(str, Enum):
 
 def structured_prompt(
     instruction: str,
-    schema: Optional[Dict[str, Any]] = None,
+    schema: dict[str, Any] | None = None,
     format: OutputFormat = OutputFormat.JSON_SCHEMA,
     max_tokens: int = 500,
 ) -> str:
@@ -103,7 +103,7 @@ class PipelineTask:
     id: str
     agent: str
     description: str
-    depends_on: List[str] = field(default_factory=list)
+    depends_on: list[str] = field(default_factory=list)
     estimated_tokens: int = 100
     priority: int = 5
 
@@ -118,12 +118,12 @@ class PipelineSchedule:
         total_tokens: Tokens totales estimados.
         parallel_steps: Numero de pasos en paralelo.
     """
-    levels: List[List[PipelineTask]] = field(default_factory=list)
+    levels: list[list[PipelineTask]] = field(default_factory=list)
     total_tokens: int = 0
     parallel_steps: int = 0
 
 
-def build_dag(tasks: List[PipelineTask]) -> PipelineSchedule:
+def build_dag(tasks: list[PipelineTask]) -> PipelineSchedule:
     """
     Construir schedule de ejecucion paralela desde un DAG de tareas.
 
@@ -138,8 +138,8 @@ def build_dag(tasks: List[PipelineTask]) -> PipelineSchedule:
     """
     # Construir grafo de dependencias
     task_map = {t.id: t for t in tasks}
-    dependents: Dict[str, Set[str]] = {t.id: set() for t in tasks}
-    in_degree: Dict[str, int] = {t.id: 0 for t in tasks}
+    dependents: dict[str, set[str]] = {t.id: set() for t in tasks}
+    in_degree: dict[str, int] = {t.id: 0 for t in tasks}
     
     for t in tasks:
         for dep in t.depends_on:
@@ -148,15 +148,15 @@ def build_dag(tasks: List[PipelineTask]) -> PipelineSchedule:
                 in_degree[t.id] = in_degree.get(t.id, 0) + 1
     
     # Topological sort con niveles paralelos (Kahn's algorithm)
-    levels: List[List[PipelineTask]] = []
+    levels: list[list[PipelineTask]] = []
     ready = [t.id for t in tasks if in_degree.get(t.id, 0) == 0]
     
     # Ordenar por prioridad para que tareas importantes vayan primero
     ready.sort(key=lambda tid: -task_map[tid].priority)
     
     while ready:
-        current_level: List[PipelineTask] = []
-        next_ready: List[str] = []
+        current_level: list[PipelineTask] = []
+        next_ready: list[str] = []
         
         for tid in ready:
             current_level.append(task_map[tid])
@@ -244,7 +244,7 @@ class TokenBudgetManager:
             total_budget: Presupuesto total de tokens.
         """
         self._total = total_budget
-        self._agents: Dict[str, AgentBudget] = {}
+        self._agents: dict[str, AgentBudget] = {}
     
     def register_agent(
         self,
@@ -293,7 +293,7 @@ class TokenBudgetManager:
             return True
         return False
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Obtener estadisticas de uso."""
         total_used = sum(a.used_tokens for a in self._agents.values())
         return {

@@ -1,7 +1,7 @@
-# pragma: allowlist secret
-"""Tests de inicialización para LanceVectorStore.
+﻿# pragma: allowlist secret
+"""Tests de inicializaciÃ³n para LanceVectorStore.
 
-Extraído de test_lance_vector_store.py — pruebas de __init__, _init_storage(),
+ExtraÃ­do de test_lance_vector_store.py â€” pruebas de __init__, _init_storage(),
 _try_import_lancedb y _ensure_lancedb_collections.
 """
 from __future__ import annotations
@@ -16,7 +16,7 @@ from harness.memory_rag.lance_vector_store import LanceVectorStore
 from harness.memory_rag.memory_config import MemoryConfig
 
 # ===========================================================================
-# TESTS — Inicialización y storage
+# TESTS â€” InicializaciÃ³n y storage
 # ===========================================================================
 
 
@@ -34,7 +34,7 @@ class TestInitAndStorage:
 
     def test_init_no_fallback_raises_importerror(self):
         """__init__ con allow_fallback=False y LanceDB ausente lanza ImportError."""
-        with patch.object(LanceVectorStore, "_try_import_lancedb", return_value=None):
+        with patch.object(LanceVectorStore, "_try_import_lancedb", return_value=None):  # noqa: SIM117
             with pytest.raises(ImportError) as excinfo:
                 LanceVectorStore(db_path="/tmp/mem", allow_fallback=False)
         assert "LanceDB no esta instalado" in str(excinfo.value)
@@ -46,40 +46,39 @@ class TestInitAndStorage:
                 LanceVectorStore, "_try_import_lancedb",
                 return_value=mock_lancedb["lancedb_module"],
             ),
-            patch("harness.memory_rag.lance_vector_store.os.makedirs"),
+            patch("harness.memory_rag.lance_vector_store.Path.mkdir"),
         ]
         with patches[0], patches[1]:
             store = LanceVectorStore(db_path="/fake/path", allow_fallback=False)
         assert store._lancedb_available is True
         assert store._db is mock_lancedb["db_conn"]
-        # Debió llamar a ensure_collections
+        # DebiÃ³ llamar a ensure_collections
         mock_lancedb["db_conn"].list_tables.assert_called_once()
         mock_lancedb["db_conn"].create_table.assert_not_called()  # ya existen
 
     def test_init_lancedb_connect_fails_no_fallback_raises(self, mock_lancedb):
-        """Conexión a LanceDB falla sin fallback → RuntimeError."""
+        """ConexiÃ³n a LanceDB falla sin fallback â†’ RuntimeError."""
         mock_lancedb["lancedb_module"].connect.side_effect = OSError("permission denied")
         patches = [
             patch.object(
                 LanceVectorStore, "_try_import_lancedb",
                 return_value=mock_lancedb["lancedb_module"],
             ),
-            patch("harness.memory_rag.lance_vector_store.os.makedirs"),
+            patch("harness.memory_rag.lance_vector_store.Path.mkdir"),
         ]
-        with patches[0], patches[1]:
-            with pytest.raises(RuntimeError) as excinfo:
-                LanceVectorStore(db_path="/fake/path", allow_fallback=False)
+        with patches[0], patches[1], pytest.raises(RuntimeError) as excinfo:
+            LanceVectorStore(db_path="/fake/path", allow_fallback=False)
         assert "LanceDB no pudo conectarse" in str(excinfo.value)
 
     def test_init_lancedb_connect_fails_with_fallback(self, mock_lancedb):
-        """Conexión a LanceDB falla con allow_fallback=True → modo memoria."""
+        """ConexiÃ³n a LanceDB falla con allow_fallback=True â†’ modo memoria."""
         mock_lancedb["lancedb_module"].connect.side_effect = OSError("permission denied")
         patches = [
             patch.object(
                 LanceVectorStore, "_try_import_lancedb",
                 return_value=mock_lancedb["lancedb_module"],
             ),
-            patch("harness.memory_rag.lance_vector_store.os.makedirs"),
+            patch("harness.memory_rag.lance_vector_store.Path.mkdir"),
         ]
         with patches[0], patches[1]:
             store = LanceVectorStore(db_path="/fake/path", allow_fallback=True)
@@ -96,12 +95,12 @@ class TestInitAndStorage:
         )
         with patch.object(LanceVectorStore, "_try_import_lancedb", return_value=None):
             store = LanceVectorStore(config=cfg)
-        # db_path debe venir del config porque no se pasó explícito
+        # db_path debe venir del config porque no se pasÃ³ explÃ­cito
         assert store.db_path == "/cfg/path"
         assert store._allow_fallback is True
 
     def test_init_config_overrides_explicit(self):
-        """__init__ con config + db_path explícito prioriza el explícito."""
+        """__init__ con config + db_path explÃ­cito prioriza el explÃ­cito."""
         cfg = MemoryConfig(
             lancedb_path="/cfg/path",
             allow_fallback=False,
@@ -109,11 +108,11 @@ class TestInitAndStorage:
         with patch.object(LanceVectorStore, "_try_import_lancedb", return_value=None):
             store = LanceVectorStore(db_path="/explicit/path", allow_fallback=True, config=cfg)
         assert store.db_path == "/explicit/path"
-        # allow_fallback explícito True prevalece sobre config False
+        # allow_fallback explÃ­cito True prevalece sobre config False
         assert store._allow_fallback is True
 
     def test_init_config_allow_fallback_from_config(self):
-        """Si no se pasa allow_fallback explícito, se usa el del config."""
+        """Si no se pasa allow_fallback explÃ­cito, se usa el del config."""
         cfg = MemoryConfig(
             lancedb_path="/cfg/path",
             allow_fallback=True,
@@ -131,7 +130,7 @@ class TestInitAndStorage:
         assert "lancedb" in store.db_path
 
     def test_try_import_lancedb_success(self):
-        """_try_import_lancedb retorna el módulo cuando está instalado."""
+        """_try_import_lancedb retorna el mÃ³dulo cuando estÃ¡ instalado."""
         # El test se ejecuta en un entorno donde lancedb puede no estar
         # instalado; usamos patch para simular
         fake_lancedb = MagicMock()
@@ -141,14 +140,14 @@ class TestInitAndStorage:
         assert result is fake_lancedb
 
     def test_try_import_lancedb_failure(self):
-        """_try_import_lancedb retorna None cuando lancedb no está instalado."""
+        """_try_import_lancedb retorna None cuando lancedb no estÃ¡ instalado."""
         with patch("builtins.__import__", side_effect=ImportError):
             result = LanceVectorStore._try_import_lancedb()
         assert result is None
 
     def test_ensure_lancedb_collections_guard(self, mem_store):
         """_ensure_lancedb_collections no hace nada en modo memoria."""
-        # En modo memoria, _lancedb_available es False → early return
+        # En modo memoria, _lancedb_available es False â†’ early return
         mem_store._ensure_lancedb_collections()
         # No debe explotar; no hay assert adicional necesario
 
@@ -163,12 +162,12 @@ class TestInitAndStorage:
                 LanceVectorStore, "_try_import_lancedb",
                 return_value=mock_lancedb["lancedb_module"],
             ),
-            patch("harness.memory_rag.lance_vector_store.os.makedirs"),
+            patch("harness.memory_rag.lance_vector_store.Path.mkdir"),
         ]
         with patches[0], patches[1]:
-            store = LanceVectorStore(db_path="/fake/path", allow_fallback=False)
+            LanceVectorStore(db_path="/fake/path", allow_fallback=False)
 
-        # Debió crear las tablas faltantes
+        # DebiÃ³ crear las tablas faltantes
         total = len(DEFAULT_COLLECTIONS)
         missing = total - len(existing_tables)
         assert mock_lancedb["db_conn"].create_table.call_count == missing
@@ -185,11 +184,11 @@ class TestInitAndStorage:
                 LanceVectorStore, "_try_import_lancedb",
                 return_value=mock_lancedb["lancedb_module"],
             ),
-            patch("harness.memory_rag.lance_vector_store.os.makedirs"),
+            patch("harness.memory_rag.lance_vector_store.Path.mkdir"),
         ]
         with caplog.at_level(logging.WARNING), patches[0], patches[1]:
             LanceVectorStore(db_path="/fake/path", allow_fallback=False)
 
         assert any("Could not create table" in rec.message for rec in caplog.records), (
-            "Debería loggear warning al fallar create_table"
+            "DeberÃ­a loggear warning al fallar create_table"
         )

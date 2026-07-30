@@ -101,9 +101,9 @@ class TestWarmStart:
         import harness  # primer import (puede ser lento si primera vez)
 
         # Segundo import (debe ser cacheado en sys.modules)
-        s = time.perf_counter()
+        time.perf_counter()
         importlib.reload(harness)  # Recarga forcada
-        t = time.perf_counter()
+        time.perf_counter()
         # Nota: reload() es mas lento que import normal
         # Lo importante es que import normal no recargue
 

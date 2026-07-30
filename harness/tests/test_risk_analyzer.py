@@ -3,7 +3,6 @@ Tests del modulo RiskAnalyzer — cobertura de registro, filtros, resumen y caso
 
 Cubre: defaults, filtros por dominio/nivel, insercion, resumen estadistico, enums, edge cases.
 """
-import pytest
 from harness.orchestrator.risk_analyzer import (
     Risk,
     RiskAnalyzer,

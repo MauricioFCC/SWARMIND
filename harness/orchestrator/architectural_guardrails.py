@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import ast
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, List, Optional
 
 
 @dataclass
@@ -28,15 +28,15 @@ class GuardrailViolation:
     rule: str
     severity: str  # error, warning
     message: str
-    line: Optional[int] = None
-    code: Optional[str] = None
+    line: int | None = None
+    code: str | None = None
 
 
 @dataclass
 class GuardrailResult:
     """Resultado de la validacion de guardrails."""
     passed: bool
-    violations: List[GuardrailViolation] = field(default_factory=list)
+    violations: list[GuardrailViolation] = field(default_factory=list)
     checked_rules: int = 0
 
     def summary(self) -> str:
@@ -130,7 +130,7 @@ def check_no_except_pass(source: str, filename: str) -> GuardrailResult:
 
 
 def check_forbidden_imports(source: str, filename: str,
-                            forbidden: Optional[List[str]] = None) -> GuardrailResult:
+                            forbidden: list[str] | None = None) -> GuardrailResult:
     """Verifica que no haya imports prohibidos."""
     if forbidden is None:
         forbidden = ["sys.path.insert(0,", "eval(", "exec(", "pickle.loads"]
@@ -149,7 +149,7 @@ def check_forbidden_imports(source: str, filename: str,
     return GuardrailResult(passed=len(violations) == 0, violations=violations, checked_rules=1)
 
 
-def builtin_guardrails() -> List[GuardrailFn]:
+def builtin_guardrails() -> list[GuardrailFn]:
     """Retorna la lista de guardrails predefinidos."""
     return [
         check_type_hints,
@@ -160,7 +160,7 @@ def builtin_guardrails() -> List[GuardrailFn]:
 
 
 def check_all(source: str, filename: str = "<string>",
-              guardrails: Optional[List[GuardrailFn]] = None) -> GuardrailResult:
+              guardrails: list[GuardrailFn] | None = None) -> GuardrailResult:
     """Ejecuta todos los guardrails sobre el codigo.
 
     Args:
@@ -174,7 +174,7 @@ def check_all(source: str, filename: str = "<string>",
     if guardrails is None:
         guardrails = builtin_guardrails()
 
-    all_violations: List[GuardrailViolation] = []
+    all_violations: list[GuardrailViolation] = []
     total_checks = 0
 
     for guardrail in guardrails:

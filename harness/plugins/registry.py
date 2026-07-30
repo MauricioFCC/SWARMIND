@@ -1,10 +1,11 @@
-"""Tool Registry — Auto-discovery via import-time registration."""
+﻿"""Tool Registry â€” Auto-discovery via import-time registration."""
 from __future__ import annotations
 
 import importlib
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -23,20 +24,20 @@ class ToolRegistry:
     """Central tool registry with auto-discovery."""
 
     def __init__(self):
-        self._tools: Dict[str, Type[PluginBase]] = {}
-        self._instances: Dict[str, PluginBase] = {}
+        self._tools: dict[str, type[PluginBase]] = {}
+        self._instances: dict[str, PluginBase] = {}
         self._discovered: bool = False
 
-    def register(self, name: Optional[str] = None) -> Callable:
+    def register(self, name: str | None = None) -> Callable:
         """Decorator to register a tool."""
-        def decorator(cls: Type[PluginBase]) -> Type[PluginBase]:
+        def decorator(cls: type[PluginBase]) -> type[PluginBase]:
             n = name or cls.__name__
             self._tools[n] = cls
             logger.debug("Registered: %s", n)
             return cls
         return decorator
 
-    def get(self, name: str) -> Optional[PluginBase]:
+    def get(self, name: str) -> PluginBase | None:
         """Get a tool instance by name."""
         if not self._discovered:
             self.discover_all()
@@ -49,7 +50,7 @@ class ToolRegistry:
         self._instances[name] = inst
         return inst
 
-    def discover_all(self, path: Optional[str] = None) -> int:
+    def discover_all(self, path: str | None = None) -> int:
         """Auto-discover tools by importing all .py files."""
         if self._discovered:
             return len(self._tools)
@@ -71,13 +72,13 @@ class ToolRegistry:
                     mod = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(mod)
                     count += 1
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 logger.warning("Failed: %s: %s", py_file.name, exc)
         self._discovered = True
         logger.info("Discovered %d tools", count)
         return count
 
-    def list_tools(self) -> List[Dict[str, Any]]:
+    def list_tools(self) -> list[dict[str, Any]]:
         if not self._discovered:
             self.discover_all()
         return sorted(
@@ -86,7 +87,7 @@ class ToolRegistry:
             key=lambda t: t["name"],
         )
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         return {"total": len(self._tools), "discovered": self._discovered, "tools": self.list_tools()}
 
 

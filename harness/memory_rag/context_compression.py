@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from harness.common import CHARS_PER_TOKEN
 
@@ -112,12 +112,12 @@ def compress_tool_outputs(
         return section.compressed
 
     lines = section.content.split("\n")
-    compressed: List[str] = []
+    compressed: list[str] = []
     in_tool_result = False
     tool_result_lines = 0
 
     for line in lines:
-        if line.startswith("Tool:") or line.startswith(">"):
+        if line.startswith(("Tool:", ">")):
             in_tool_result = True
             tool_result_lines = 0
             compressed.append(line)
@@ -155,7 +155,6 @@ def hard_truncate(
     """
     from harness.memory_rag.context_window_manager import (
         PRIORITY_LOW,
-        PRIORITY_BACKGROUND,
     )
 
     max_tokens_limit = int(window.total_budget * 0.95)
@@ -236,7 +235,7 @@ def _apply_observation_masking(text: str, max_tokens: int = 500) -> str:
     )
 
     lines = text.split('\n')
-    result: List[str] = []
+    result: list[str] = []
     i = 0
     block_counter = 0
 
@@ -253,8 +252,8 @@ def _apply_observation_masking(text: str, max_tokens: int = 500) -> str:
             result.append(line)
             i += 1
 
-            meta_buf: List[str] = []
-            content_buf: List[str] = []
+            meta_buf: list[str] = []
+            content_buf: list[str] = []
 
             while i < len(lines):
                 if inner_tool_starter.match(lines[i].strip()):
@@ -305,7 +304,7 @@ def _default_summary_fn(text: str) -> str:
     if len(text) <= MAX_SUMMARY_CHARS:
         return text
     lines = [l.strip() for l in text.split("\n") if l.strip()]
-    summary_lines: List[str] = []
+    summary_lines: list[str] = []
     char_count = 0
     for line in lines:
         char_count += len(line) + 1
@@ -315,7 +314,7 @@ def _default_summary_fn(text: str) -> str:
     return " | ".join(summary_lines) if summary_lines else text[:MAX_SUMMARY_CHARS]
 
 
-def summarize_messages(messages: List[Dict[str, Any]]) -> str:
+def summarize_messages(messages: list[dict[str, Any]]) -> str:
     """Summarize a list of messages.
 
     Args:
@@ -324,7 +323,7 @@ def summarize_messages(messages: List[Dict[str, Any]]) -> str:
     Returns:
         Resumen textual de los mensajes.
     """
-    key_points: List[str] = []
+    key_points: list[str] = []
     for msg in messages:
         role = msg.get("role", "?")
         content = msg.get("content", "")

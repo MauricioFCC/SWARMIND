@@ -15,7 +15,6 @@ import json
 import logging
 import shutil
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from harness.orchestrator.multi_harness.converter_base import (
     ExportResult,
@@ -55,9 +54,9 @@ class ClaudeAdapter(HarnessConverter):
         Returns:
             ExportResult con el resultado de la exportacion.
         """
-        agents: List[Path] = self._get_opencode_agents()
-        errors: List[str] = []
-        warnings: List[str] = []
+        agents: list[Path] = self._get_opencode_agents()
+        errors: list[str] = []
+        warnings: list[str] = []
 
         if not agents:
             warnings.append("No se encontraron agentes en .opencode/agents/")
@@ -71,7 +70,7 @@ class ClaudeAdapter(HarnessConverter):
         target_agents_dir: Path = self._ensure_target_dir("agents")
 
         # Generar AGENTS.md (indice de agentes)
-        agents_md_lines: List[str] = [
+        agents_md_lines: list[str] = [
             "# AGENTES DISPONIBLES — Exportados desde Swarmind\n",
             "",
             "> Generado automaticamente por Multi-Harness Adapter Layer.",
@@ -124,8 +123,8 @@ class ClaudeAdapter(HarnessConverter):
         Returns:
             ExportResult con el resultado de la exportacion.
         """
-        skills: List[Path] = self._get_opencode_skills()
-        errors: List[str] = []
+        skills: list[Path] = self._get_opencode_skills()
+        errors: list[str] = []
 
         if not skills:
             logger.info("[Claude] No hay skills para exportar")
@@ -162,7 +161,7 @@ class ClaudeAdapter(HarnessConverter):
         Returns:
             ExportResult con el resultado.
         """
-        settings: Dict = {
+        settings: dict = {
             "project": "Swarmind",
             "version": "3.0.0",
             "agents_path": ".claude/agents/AGENTS.md",

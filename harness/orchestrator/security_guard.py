@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -67,8 +67,8 @@ class SecurityCheckResult:
     """
     passed: bool = True
     score: float = 1.0
-    risks: List[str] = field(default_factory=list)
-    blocked_patterns: List[str] = field(default_factory=list)
+    risks: list[str] = field(default_factory=list)
+    blocked_patterns: list[str] = field(default_factory=list)
 
 
 class SecurityGuard:
@@ -85,7 +85,7 @@ class SecurityGuard:
             strict_mode: Si True, bloquea en lugar de solo advertir.
         """
         self._strict = strict_mode
-        self._alerts: List[str] = []
+        self._alerts: list[str] = []
 
     def check_prompt(self, text: str) -> SecurityCheckResult:
         """
@@ -107,7 +107,7 @@ class SecurityGuard:
 
         for pattern in SENSITIVE_PATTERNS:
             if re.search(pattern, text):
-                risks.append(f"Dato sensible detectado en prompt")
+                risks.append("Dato sensible detectado en prompt")
                 blocked.append(pattern)
 
         for redirect in FORBIDDEN_REDIRECTIONS:
@@ -164,7 +164,7 @@ class SecurityGuard:
         passed = len(risks) == 0
         return SecurityCheckResult(passed=passed, risks=risks)
 
-    def check_runtime(self, context: Dict[str, Any]) -> SecurityCheckResult:
+    def check_runtime(self, context: dict[str, Any]) -> SecurityCheckResult:
         """
         Verificaciones de seguridad en tiempo de ejecucion.
         
@@ -194,7 +194,7 @@ class SecurityGuard:
         passed = len(risks) == 0
         return SecurityCheckResult(passed=passed, risks=risks)
 
-    def get_alerts(self) -> List[str]:
+    def get_alerts(self) -> list[str]:
         """Obtener alertas acumuladas."""
         return list(self._alerts)
 

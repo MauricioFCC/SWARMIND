@@ -32,7 +32,7 @@ import math
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ WEIGHT_LENGTH_PENALTY = 0.10
 MIN_SECTION_TOKENS = 10
 
 # Cache de factoriales precomputados hasta 12 (soporta hasta 12 secciones)
-_FACTORIAL_CACHE: Dict[int, int] = {i: math.factorial(i) for i in range(13)}
+_FACTORIAL_CACHE: dict[int, int] = {i: math.factorial(i) for i in range(13)}
 
 
 def _factorial(n: int) -> int:
@@ -90,7 +90,7 @@ class ShapleyAllocation:
     shapley_value: float
     token_budget: int
     original_tokens: int
-    marginal_contributions: List[float] = field(default_factory=list)
+    marginal_contributions: list[float] = field(default_factory=list)
 
 
 @dataclass
@@ -186,7 +186,7 @@ class ShapleyFlow:
         # Estadisticas internas
         self._allocation_count: int = 0
         self._total_sections_processed: int = 0
-        self._last_allocation_stats: Dict[str, Any] = {}
+        self._last_allocation_stats: dict[str, Any] = {}
 
         logger.info(
             "ShapleyFlow initialized (threshold=%d, permutations=%d)",
@@ -199,9 +199,9 @@ class ShapleyFlow:
 
     def allocate(
         self,
-        sections: Dict[str, str],
+        sections: dict[str, str],
         total_budget: int,
-    ) -> List[ShapleyAllocation]:
+    ) -> list[ShapleyAllocation]:
         """Distribuye el presupuesto de tokens entre secciones del prompt.
 
         WHAT: Calcula el Shapley Value de cada seccion y asigna tokens
@@ -227,9 +227,9 @@ class ShapleyFlow:
         # --- Validaciones ---
         if not sections:
             raise ValueError(
-                f"WHAT: sections dict esta vacio. "
-                f"WHY: No hay secciones para asignar presupuesto. "
-                f"WHERE: ShapleyFlow.allocate"
+                "WHAT: sections dict esta vacio. "
+                "WHY: No hay secciones para asignar presupuesto. "
+                "WHERE: ShapleyFlow.allocate"
             )
         if total_budget < 64:
             raise ValueError(
@@ -276,7 +276,7 @@ class ShapleyFlow:
             ]
         else:
             # Redondear y ajustar para que sume exactamente total_budget
-            raw_budgets: Dict[str, float] = {}
+            raw_budgets: dict[str, float] = {}
             for feat in features_list:
                 ratio = shapley_values[feat.name] / total_value
                 raw_budgets[feat.name] = ratio * total_budget
@@ -320,7 +320,7 @@ class ShapleyFlow:
 
         return allocations
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Retorna estadisticas de uso del ShapleyFlow.
 
         Returns:
@@ -337,7 +337,7 @@ class ShapleyFlow:
                 "timestamp": time.time(),
             }
 
-    def get_last_allocation(self) -> Optional[Dict[str, Any]]:
+    def get_last_allocation(self) -> dict[str, Any] | None:
         """Retorna la ultima asignacion realizada (para depuracion).
 
         Returns:
@@ -355,9 +355,9 @@ class ShapleyFlow:
 
     def _extract_features(
         self,
-        sections: Dict[str, str],
-        section_names: List[str],
-    ) -> List[_SectionFeatures]:
+        sections: dict[str, str],
+        section_names: list[str],
+    ) -> list[_SectionFeatures]:
         """Extrae caracteristicas de cada seccion para el modelo de valor.
 
         Args:
@@ -367,7 +367,7 @@ class ShapleyFlow:
         Returns:
             Lista de ``_SectionFeatures`` con las metricas extraidas.
         """
-        features: List[_SectionFeatures] = []
+        features: list[_SectionFeatures] = []
         for idx, name in enumerate(section_names):
             text = sections[name]
             # Estimacion simple de tokens: ~4 chars por token
@@ -408,8 +408,8 @@ class ShapleyFlow:
 
     def _characteristic_function(
         self,
-        subset_indices: Set[int],
-        features: List[_SectionFeatures],
+        subset_indices: set[int],
+        features: list[_SectionFeatures],
     ) -> float:
         """Funcion caracteristica v(S): estima el valor de un subconjunto.
 
@@ -429,7 +429,7 @@ class ShapleyFlow:
         if not subset_indices:
             return 0.0
 
-        n = len(features)
+        len(features)
         subset_feats = [features[i] for i in subset_indices]
 
         # 1. Token count normalizado
@@ -471,8 +471,8 @@ class ShapleyFlow:
 
     def _compute_exact(
         self,
-        features: List[_SectionFeatures],
-    ) -> Dict[str, float]:
+        features: list[_SectionFeatures],
+    ) -> dict[str, float]:
         """Calcula Shapley Values exactos (O(n * 2^n)).
 
         Args:
@@ -486,7 +486,7 @@ class ShapleyFlow:
         """
         n = len(features)
         indices = list(range(n))
-        shapley_values: Dict[str, float] = {f.name: 0.0 for f in features}
+        shapley_values: dict[str, float] = {f.name: 0.0 for f in features}
 
         start_time = time.time()
         section_name_by_idx = {i: features[i].name for i in indices}
@@ -495,7 +495,7 @@ class ShapleyFlow:
             # Generar todos los subconjuntos que NO contienen i
             other_indices = [j for j in indices if j != i]
             marginal_sum = 0.0
-            marg_contributions: List[float] = []
+            marg_contributions: list[float] = []
 
             for r in range(n):
                 for subset in itertools.combinations(other_indices, r):
@@ -535,8 +535,8 @@ class ShapleyFlow:
 
     def _compute_approximate(
         self,
-        features: List[_SectionFeatures],
-    ) -> Dict[str, float]:
+        features: list[_SectionFeatures],
+    ) -> dict[str, float]:
         """Calcula Shapley Values aproximados por muestreo de permutaciones.
 
         Metodo de permutaciones aleatorias (Monte Carlo):
@@ -553,12 +553,12 @@ class ShapleyFlow:
 
         n = len(features)
         indices = list(range(n))
-        shapley_sum: Dict[str, float] = {f.name: 0.0 for f in features}
+        shapley_sum: dict[str, float] = {f.name: 0.0 for f in features}
         section_name_by_idx = {i: features[i].name for i in indices}
 
         for _ in range(self._num_permutations):
             random.shuffle(indices)
-            current_set: Set[int] = set()
+            current_set: set[int] = set()
             current_value = 0.0
 
             for idx in indices:
@@ -585,11 +585,11 @@ class ShapleyFlow:
 
     @staticmethod
     def _hamilton_allocation(
-        features: List[_SectionFeatures],
-        shapley_values: Dict[str, float],
-        raw_budgets: Dict[str, float],
+        features: list[_SectionFeatures],
+        shapley_values: dict[str, float],
+        raw_budgets: dict[str, float],
         total_budget: int,
-    ) -> List[ShapleyAllocation]:
+    ) -> list[ShapleyAllocation]:
         """Asignacion por metodo de resto mayor (Hamilton).
 
         Garantiza que la suma de token_budget sea exactamente total_budget
@@ -606,8 +606,8 @@ class ShapleyFlow:
         """
         n = len(features)
         # Asignacion base: truncar
-        base: Dict[str, int] = {}
-        remainders: Dict[str, float] = {}
+        base: dict[str, int] = {}
+        remainders: dict[str, float] = {}
         allocated_so_far = 0
 
         for feat in features:
@@ -644,7 +644,7 @@ class ShapleyFlow:
     def _shapley_value(
         self,
         section_name: str,
-        sections: Dict[str, str],
+        sections: dict[str, str],
     ) -> float:
         """Calcula el valor de Shapley para una seccion especifica.
 

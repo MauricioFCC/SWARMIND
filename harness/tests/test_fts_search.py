@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests para FTSSearch — full-text search sobre memoria (inspirado en FTS5).
 
@@ -10,12 +9,11 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from harness.memory_rag.fts_search import FTSSearch, STOPWORDS
-
+from harness.memory_rag.fts_search import STOPWORDS, FTSSearch
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -225,7 +223,7 @@ class TestSearchFTS5:
         fts_fts5._search_fts("trading Rust", top_k=10, domain_filter=None)
         # Verificar que la query incluye términos sin stopwords
         call_args = fts_fts5._conn.execute.call_args
-        sql, params = call_args[0]
+        _sql, params = call_args[0]
         assert "trading" in params[0] or "Rust" in params[0]
 
     def test_fts5_search_with_domain_filter(self, fts_fts5):
@@ -398,7 +396,6 @@ class TestEdgeCases:
 
     def test_stopwords_frozenset(self):
         """STOPWORDS debe ser un frozenset."""
-        from harness.memory_rag.fts_search import STOPWORDS
         assert isinstance(STOPWORDS, frozenset)
 
     def test_index_duplicate_overwrites(self, fts_memory):

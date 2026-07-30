@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -29,7 +29,6 @@ from harness.memory_rag.memory_config import (
     reset_memory_config,
     set_memory_config,
 )
-
 
 # ===========================================================================
 # Fixtures
@@ -258,7 +257,7 @@ class TestMemoryConfigSerialization:
 
     def test_from_dict_maneja_strings(self):
         """from_dict acepta strings para backend y telemetry_level."""
-        d: Dict[str, Any] = {
+        d: dict[str, Any] = {
             "backend": "memory",
             "telemetry_level": "full",
             "kpi_collections": ["kpi_a"],

@@ -1,5 +1,5 @@
-"""
-Governance Agent — Framework de supervision para decisiones autonomicas.
+﻿"""
+Governance Agent â€” Framework de supervision para decisiones autonomicas.
 
 Implementa el marco de gobernanza para agentes autonomos:
 - Registro de decisiones con contexto y justificacion
@@ -18,7 +18,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +58,7 @@ class GovernanceRecord:
     agent: str
     action: str
     context: str
-    alternatives: List[str] = field(default_factory=list)
+    alternatives: list[str] = field(default_factory=list)
     justification: str = ""
     risk_level: RiskLevel = RiskLevel.LOW
     status: DecisionStatus = DecisionStatus.PROPOSED
@@ -82,10 +81,10 @@ class GovernanceAgent:
         gov.approve(decision_id)
     """
     
-    def __init__(self, log_dir: Optional[Path] = None):
+    def __init__(self, log_dir: Path | None = None):
         self._log_dir = log_dir or Path("data/governance")
         self._log_dir.mkdir(parents=True, exist_ok=True)
-        self._records: Dict[str, GovernanceRecord] = {}
+        self._records: dict[str, GovernanceRecord] = {}
         self._load()
 
     def register_decision(
@@ -93,7 +92,7 @@ class GovernanceAgent:
         agent: str,
         action: str,
         context: str = "",
-        alternatives: Optional[List[str]] = None,
+        alternatives: list[str] | None = None,
         justification: str = "",
     ) -> str:
         """
@@ -210,11 +209,11 @@ class GovernanceAgent:
         logger.info(f"Governance: decision {decision_id} rejected: {reason}")
         return True
 
-    def get_pending(self) -> List[GovernanceRecord]:
+    def get_pending(self) -> list[GovernanceRecord]:
         """Obtener decisiones pendientes de aprobacion."""
         return [r for r in self._records.values() if r.status == DecisionStatus.PROPOSED]
 
-    def get_history(self, agent: Optional[str] = None) -> List[GovernanceRecord]:
+    def get_history(self, agent: str | None = None) -> list[GovernanceRecord]:
         """Obtener historial de decisiones."""
         if agent:
             return [r for r in self._records.values() if r.agent == agent]
@@ -245,5 +244,5 @@ class GovernanceAgent:
                     v['risk_level'] = RiskLevel(v['risk_level']) if isinstance(v.get('risk_level'), str) else v.get('risk_level', RiskLevel.LOW)
                     v['status'] = DecisionStatus(v['status']) if isinstance(v.get('status'), str) else v.get('status', DecisionStatus.PROPOSED)
                     self._records[k] = GovernanceRecord(**v)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning(f"Failed to load governance log: {e}")

@@ -9,16 +9,14 @@ Arquitectura Hexagonal:
 from __future__ import annotations
 
 import logging
-import re
-import time
-from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple
 
-from harness.memory_rag.compression_types import (
-    CompressionResult, TokenBudget,
-    DEFAULT_TARGET_RATIO, DEFAULT_MAX_CONTEXT_TOKENS,
-)
 from harness.memory_rag.compression_strategies import CompressionStrategies
+from harness.memory_rag.compression_types import (
+    DEFAULT_MAX_CONTEXT_TOKENS,
+    DEFAULT_TARGET_RATIO,
+    CompressionResult,
+    TokenBudget,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -58,9 +56,9 @@ class PromptCompressor(CompressionStrategies):
             )
         self._default_ratio: float = default_ratio
         self._max_context_tokens: int = max(max_context_tokens, 512)
-        self._cache: Dict[str, CompressionResult] = {}
+        self._cache: dict[str, CompressionResult] = {}
         self._cache_max: int = cache_size
-        self._stats: Dict[str, int] = {
+        self._stats: dict[str, int] = {
             "total_compressions": 0,
             "extractive_count": 0,
             "abstractive_count": 0,
@@ -82,7 +80,7 @@ class PromptCompressor(CompressionStrategies):
     def compress(
         self,
         text: str,
-        target_ratio: Optional[float] = None,
+        target_ratio: float | None = None,
         method: str = "auto",
     ) -> CompressionResult:
         """Comprime un texto usando la mejor estrategia disponible.
@@ -172,11 +170,11 @@ class PromptCompressor(CompressionStrategies):
         if self._count_tokens(text) <= 50:
             return text
 
-        sections: List[str] = self._split_into_sections(text)
+        sections: list[str] = self._split_into_sections(text)
         budget: int = max(1, int(self._count_tokens(text) * ratio))
-        budgets: List[int] = self._distribute_budget_proportional(sections, budget)
+        budgets: list[int] = self._distribute_budget_proportional(sections, budget)
 
-        compressed_sections: List[str] = []
+        compressed_sections: list[str] = []
         for section, sec_budget in zip(sections, budgets):
             if self._is_critical_section(section):
                 compressed_sections.append(section)
@@ -197,9 +195,9 @@ class PromptCompressor(CompressionStrategies):
         Returns:
             System prompt comprimido.
         """
-        lines: List[str] = prompt.split("\n")
-        preserved: List[str] = []
-        compressed: List[str] = []
+        lines: list[str] = prompt.split("\n")
+        preserved: list[str] = []
+        compressed: list[str] = []
 
         for line in lines:
             if self._is_critical_section(line) or self._has_preserved_keywords(line):
@@ -221,10 +219,10 @@ class PromptCompressor(CompressionStrategies):
 
     def compress_conversation(
         self,
-        messages: List[Dict[str, str]],
+        messages: list[dict[str, str]],
         max_tokens: int = 4000,
         preserve_system: bool = True,
-    ) -> List[Dict[str, str]]:
+    ) -> list[dict[str, str]]:
         """Comprime una conversacion multi-turno.
 
         Args:
@@ -239,8 +237,8 @@ class PromptCompressor(CompressionStrategies):
             return messages
 
         # Preservar system messages
-        system_msgs: List[Dict[str, str]] = []
-        other_msgs: List[Dict[str, str]] = []
+        system_msgs: list[dict[str, str]] = []
+        other_msgs: list[dict[str, str]] = []
         for msg in messages:
             if preserve_system and msg.get("role") == "system":
                 system_msgs.append(msg)
@@ -252,9 +250,9 @@ class PromptCompressor(CompressionStrategies):
 
         # Comprimir mensajes del centro (preservar primero y ultimo)
         if len(other_msgs) > 4:
-            head: List[Dict[str, str]] = other_msgs[:2]
-            tail: List[Dict[str, str]] = other_msgs[-2:]
-            middle: List[Dict[str, str]] = other_msgs[2:-2]
+            head: list[dict[str, str]] = other_msgs[:2]
+            tail: list[dict[str, str]] = other_msgs[-2:]
+            middle: list[dict[str, str]] = other_msgs[2:-2]
 
             for msg in middle:
                 content: str = msg.get("content", "")
@@ -277,7 +275,7 @@ class PromptCompressor(CompressionStrategies):
 
     def allocate_budget(
         self,
-        sections: Dict[str, str],
+        sections: dict[str, str],
         total_tokens: int,
     ) -> TokenBudget:
         """Asigna presupuesto de tokens entre secciones.
@@ -293,7 +291,7 @@ class PromptCompressor(CompressionStrategies):
         if total == 0:
             return TokenBudget(total=total_tokens, used=0, remaining=total_tokens)
 
-        budgets: Dict[str, int] = {}
+        budgets: dict[str, int] = {}
         used: int = 0
         for name, content in sections.items():
             proportion: float = self._count_tokens(content) / total
@@ -309,7 +307,7 @@ class PromptCompressor(CompressionStrategies):
             sections=budgets,
         )
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         """Retorna estadisticas de compresion.
 
         Returns:

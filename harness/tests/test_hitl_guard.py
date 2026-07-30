@@ -1,5 +1,5 @@
-"""
-Tests para HITLGuard — Human-in-the-Loop approval for destructive actions.
+﻿"""
+Tests para HITLGuard â€” Human-in-the-Loop approval for destructive actions.
 
 Cubre: check_action en modos hitl/auto_pilot/hitl_sensitive, request_approval
 con todas las respuestas, check_and_approve, patrones destructivos,
@@ -150,7 +150,7 @@ class TestCheckAction:
 
     def test_sensitive_mode_skips_non_critical(self, sensitive_guard):
         """Modo hitl_sensitive solo debe interceptar severidad critical."""
-        # npm publish es medium → skip
+        # npm publish es medium â†’ skip
         result = sensitive_guard.check_action("npm publish my-package", "se")
         assert result["approved"] is True
 
@@ -187,16 +187,16 @@ class TestRequestApproval:
     """Tests para request_approval."""
 
     def test_approve_y(self, hitl_guard):
-        """Respuesta 'y' debe aprobar la acción."""
-        with patch("builtins.input", return_value="y"):
+        """Respuesta 'y' debe aprobar la acciÃ³n."""
+        with patch("builtins.input", return_value="y"):  # noqa: SIM117
             with patch("harness.orchestrator.hitl_guard.select.select",
                        return_value=([sys.stdin], [], [])):
                 approved = hitl_guard.request_approval("DROP TABLE users", "se", timeout=5)
         assert approved is True
 
     def test_reject_n(self, hitl_guard):
-        """Respuesta 'n' debe rechazar la acción."""
-        with patch("builtins.input", side_effect=["n", ""]):
+        """Respuesta 'n' debe rechazar la acciÃ³n."""
+        with patch("builtins.input", side_effect=["n", ""]):  # noqa: SIM117
             with patch("harness.orchestrator.hitl_guard.select.select",
                        return_value=([sys.stdin], [], [])):
                 approved = hitl_guard.request_approval("DROP TABLE users", "se", timeout=5)
@@ -204,7 +204,7 @@ class TestRequestApproval:
 
     def test_skip_s(self, hitl_guard):
         """Respuesta 's' debe activar skip_all y aprobar."""
-        with patch("builtins.input", return_value="s"):
+        with patch("builtins.input", return_value="s"):  # noqa: SIM117
             with patch("harness.orchestrator.hitl_guard.select.select",
                        return_value=([sys.stdin], [], [])):
                 approved = hitl_guard.request_approval("DROP TABLE users", "se", timeout=5)
@@ -213,7 +213,7 @@ class TestRequestApproval:
 
     def test_timeout_denies(self, hitl_guard):
         """Timeout debe denegar la accion (fail-safe)."""
-        with patch("harness.orchestrator.hitl_guard.select.select",
+        with patch("harness.orchestrator.hitl_guard.select.select",  # noqa: SIM117
                    return_value=([], [], [])):
             with patch("harness.orchestrator.hitl_guard.time.time") as mock_time:
                 # Simular que el tiempo se acabo
@@ -224,7 +224,7 @@ class TestRequestApproval:
     def test_keyboard_interrupt_denies(self, hitl_guard):
         """KeyboardInterrupt debe denegar la accion."""
         # Parchear input para que el feedback opcional no toque stdin real
-        with patch("harness.orchestrator.hitl_guard.select.select",
+        with patch("harness.orchestrator.hitl_guard.select.select",  # noqa: SIM117
                    side_effect=KeyboardInterrupt()):
             with patch("builtins.input", return_value=""):
                 approved = hitl_guard.request_approval("DROP TABLE users", "se", timeout=5)
@@ -233,14 +233,13 @@ class TestRequestApproval:
     def test_eof_error_denies(self, hitl_guard):
         """EOFError debe denegar la accion."""
         with patch("harness.orchestrator.hitl_guard.select.select",
-                   side_effect=EOFError()):
-            with patch("builtins.input", return_value=""):
-                approved = hitl_guard.request_approval("DROP TABLE users", "se", timeout=5)
+                   side_effect=EOFError()), patch("builtins.input", return_value=""):
+            approved = hitl_guard.request_approval("DROP TABLE users", "se", timeout=5)
         assert approved is False
 
     def test_select_exception_fallback_input(self, hitl_guard):
         """Si select falla, debe caer en input()."""
-        with patch("harness.orchestrator.hitl_guard.select.select",
+        with patch("harness.orchestrator.hitl_guard.select.select",  # noqa: SIM117
                    side_effect=Exception("no select")):
             with patch("builtins.input", return_value="y"):
                 approved = hitl_guard.request_approval("rm -rf /", "se", timeout=5)
@@ -248,7 +247,7 @@ class TestRequestApproval:
 
     def test_select_exception_fallback_eof(self, hitl_guard):
         """Si el fallback input lanza EOFError, debe denegar."""
-        with patch("harness.orchestrator.hitl_guard.select.select",
+        with patch("harness.orchestrator.hitl_guard.select.select",  # noqa: SIM117
                    side_effect=Exception("no select")):
             with patch("builtins.input", side_effect=EOFError()):
                 approved = hitl_guard.request_approval("rm -rf /", "se", timeout=5)
@@ -256,7 +255,7 @@ class TestRequestApproval:
 
     def test_approval_logs_audit(self, hitl_guard, mock_vector_store):
         """La aprobacion debe registrarse en el vector store."""
-        with patch("builtins.input", return_value="y"):
+        with patch("builtins.input", return_value="y"):  # noqa: SIM117
             with patch("harness.orchestrator.hitl_guard.select.select",
                        return_value=([sys.stdin], [], [])):
                 hitl_guard.request_approval("DROP TABLE users", "se", timeout=5)
@@ -268,7 +267,7 @@ class TestRequestApproval:
 
     def test_rejection_logs_audit_with_feedback(self, hitl_guard, mock_vector_store):
         """El rechazo debe registrar feedback opcional."""
-        with patch("builtins.input", side_effect=["n", "no es seguro"]):
+        with patch("builtins.input", side_effect=["n", "no es seguro"]):  # noqa: SIM117
             with patch("harness.orchestrator.hitl_guard.select.select",
                        return_value=([sys.stdin], [], [])):
                 hitl_guard.request_approval("DROP TABLE users", "se", timeout=5)

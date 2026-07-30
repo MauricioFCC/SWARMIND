@@ -7,9 +7,9 @@ Cold-start: ~1ms vs ~500ms con imports eager.
 from __future__ import annotations
 
 import importlib
-from typing import Any, Dict
+from typing import Any
 
-_SYMBOL_MAP: Dict[str, str] = {
+_SYMBOL_MAP: dict[str, str] = {
     "TaskManager": "harness.orchestrator.task_manager",
     "DelegationEngine": "harness.orchestrator.delegation_engine",
     "AgentBus": "harness.orchestrator.agent_bus",

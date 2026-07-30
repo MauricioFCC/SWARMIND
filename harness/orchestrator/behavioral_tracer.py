@@ -25,7 +25,7 @@ import time
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -35,11 +35,11 @@ class DecisionRecord:
     """Una decision tomada por un agente."""
     action: str                           # Que decision (ej: "elegir_algoritmo")
     chosen: str                           # Opcion elegida
-    alternatives: List[str]               # Opciones consideradas
+    alternatives: list[str]               # Opciones consideradas
     rationale: str                        # Por que eligio esta
     confidence: float = 0.0               # Confianza 0..1
     timestamp: float = field(default_factory=time.time)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -48,13 +48,13 @@ class TraceSession:
     agent: str
     task_id: str
     start_time: float = field(default_factory=time.time)
-    end_time: Optional[float] = None
-    decisions: List[DecisionRecord] = field(default_factory=list)
-    result: Optional[str] = None
-    error: Optional[str] = None
+    end_time: float | None = None
+    decisions: list[DecisionRecord] = field(default_factory=list)
+    result: str | None = None
+    error: str | None = None
     tokens_consumed: int = 0
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "agent": self.agent,
             "task_id": self.task_id,
@@ -83,8 +83,8 @@ class BehavioralTracer:
     """Trazabilidad de decisiones de agentes."""
 
     def __init__(self):
-        self._sessions: Dict[str, TraceSession] = {}
-        self._agent_fingerprints: Dict[str, List[str]] = defaultdict(list)
+        self._sessions: dict[str, TraceSession] = {}
+        self._agent_fingerprints: dict[str, list[str]] = defaultdict(list)
 
     @contextmanager
     def trace(self, agent: str, task_id: str):
@@ -105,14 +105,14 @@ class BehavioralTracer:
         finally:
             session.end_time = time.time()
 
-    def get_report(self, task_id: str) -> Optional[Dict[str, Any]]:
+    def get_report(self, task_id: str) -> dict[str, Any] | None:
         """Obtiene el reporte de trazabilidad de una tarea."""
         session = self._sessions.get(task_id)
         if not session:
             return None
         return session.to_dict()
 
-    def get_agent_behavior_summary(self, agent: str) -> Dict[str, Any]:
+    def get_agent_behavior_summary(self, agent: str) -> dict[str, Any]:
         """Resumen del comportamiento historico de un agente.
 
         Returns:
@@ -146,7 +146,7 @@ class _TraceContext:
         self,
         action: str,
         chosen: str,
-        alternatives: Optional[List[str]] = None,
+        alternatives: list[str] | None = None,
         rationale: str = "",
         confidence: float = 0.0,
         **metadata,

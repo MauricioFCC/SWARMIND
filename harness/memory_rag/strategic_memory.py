@@ -16,7 +16,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +40,8 @@ class MemoryItem:
     access_count: int = 0
     last_accessed: float = 0.0
     importance_score: float = 0.5
-    entities: List[str] = field(default_factory=list)
-    semantic_tags: List[str] = field(default_factory=list)
+    entities: list[str] = field(default_factory=list)
+    semantic_tags: list[str] = field(default_factory=list)
 
 
 class StrategicMemory:
@@ -57,7 +57,7 @@ class StrategicMemory:
         path: Ruta al archivo JSON de persistencia.
     """
 
-    def __init__(self, max_items: int = 1000, path: Optional[Path] = None) -> None:
+    def __init__(self, max_items: int = 1000, path: Path | None = None) -> None:
         """Inicializa StrategicMemory con capacidad maxima y ruta de persistencia.
 
         Args:
@@ -72,7 +72,7 @@ class StrategicMemory:
 
         self._max_items = max_items
         self._path = path or Path("data/strategic_memory.json")
-        self._items: Dict[str, MemoryItem] = {}
+        self._items: dict[str, MemoryItem] = {}
         self._load()
 
     # ------------------------------------------------------------------
@@ -83,8 +83,8 @@ class StrategicMemory:
         self,
         key: str,
         value: Any,
-        tags: Optional[List[str]] = None,
-        entities: Optional[List[str]] = None,
+        tags: list[str] | None = None,
+        entities: list[str] | None = None,
     ) -> None:
         """Almacena un valor en memoria asociado a una clave.
 
@@ -116,7 +116,7 @@ class StrategicMemory:
             self._forget()
         self._save()
 
-    def recall(self, key: str) -> Optional[Any]:
+    def recall(self, key: str) -> Any | None:
         """Recupera un valor por su clave.
 
         Incrementa el contador de acceso, actualiza el timestamp y
@@ -139,7 +139,7 @@ class StrategicMemory:
         self._save()
         return item.value
 
-    def search_by_tags(self, tags: List[str]) -> List[MemoryItem]:
+    def search_by_tags(self, tags: list[str]) -> list[MemoryItem]:
         """Busca items que contengan al menos una de las etiquetas.
 
         Args:
@@ -155,7 +155,7 @@ class StrategicMemory:
             if tag_set.intersection(item.semantic_tags)
         ]
 
-    def search_by_entities(self, entities: List[str]) -> List[MemoryItem]:
+    def search_by_entities(self, entities: list[str]) -> list[MemoryItem]:
         """Busca items que contengan al menos una de las entidades.
 
         Args:
@@ -171,7 +171,7 @@ class StrategicMemory:
             if entity_set.intersection(item.entities)
         ]
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Retorna estadisticas actuales de la memoria.
 
         Returns:
@@ -184,7 +184,7 @@ class StrategicMemory:
         )
 
         # Top-5 tags
-        tag_counter: Dict[str, int] = {}
+        tag_counter: dict[str, int] = {}
         for item in self._items.values():
             for tag in item.semantic_tags:
                 tag_counter[tag] = tag_counter.get(tag, 0) + 1
@@ -277,7 +277,7 @@ class StrategicMemory:
 
     def _save(self) -> None:
         """Persiste el estado actual de la memoria a disco en JSON."""
-        data: Dict[str, Dict[str, Any]] = {}
+        data: dict[str, dict[str, Any]] = {}
         for key, item in self._items.items():
             data[key] = {
                 "key": item.key,
@@ -295,7 +295,7 @@ class StrategicMemory:
                 json.dumps(data, indent=2, ensure_ascii=False),
                 encoding="utf-8",
             )
-        except (OSError, IOError) as exc:
+        except OSError as exc:
             logger.error(
                 "StrategicMemory._save | No se pudo persistir a %s | WHAT=escritura_fallida | "
                 "WHY=sistema_archivos | WHERE=_save | error=%s",
