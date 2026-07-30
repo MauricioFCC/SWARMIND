@@ -90,7 +90,7 @@
 # Roadmap
 - [Estado del Proyecto](roadmap/estado.md)
 
-# ADR - Architecture Decision Records (28 activos de 38 totales)
+# ADR - Architecture Decision Records (28 nucleos + 8 fusionados)
 
 ### Grupo A: Fundacion (5 ADRs)
 - [ADR-0001: Mejora General + ADRs 0002-0006 (deprecados e integrados)](adr/adr0001-mejoras.md)
@@ -131,13 +131,13 @@
 ### Grupo E: Auditoria (1 ADR)
 - [ADR-0038: Comprehensive Audit & Refactoring](adr/adr0038-comprehensive-audit-2026.md)
 
-### ADRs Deprecados (10, contenido preservado)
-Los siguientes ADRs han sido deprecados y su contenido esta integrado en los ADRs activos listados arriba:
-- [ADR-0002 (Dynamic Scaling) → en ADR-0001](adr/adr0002-dynamic-scaling.md)
-- [ADR-0003 (Context Injector) → en ADR-0001/0007](adr/adr0003-context-injector.md)
-- [ADR-0004 (Skill Router) → en ADR-0019](adr/adr0004-skill-router.md)
-- [ADR-0005 (Memoria Portable) → en ADR-0033](adr/adr0005-memoria-portable.md)
-- [ADR-0006 (Legal Doc) → en ADR-0025/0036](adr/adr0006-legal-doc-colombia.md)
-- [ADR-0021 (Frontier Gaps v1) → en ADR-0028](adr/adr0021-frontier-gaps-2026.md)
-- [ADR-0025 (Frontier Coding Quality) → en ADR-0036](adr/adr0025-frontier-coding-quality-2026.md)
-- [ADR-0026 (Research Improvements) → en ADR-0027](adr/adr0026-research-improvements-2026.md)
+### ADRs Fusionados (8, contenido completo preservado en padres)
+Estos ADRs fueron fusionados DENTRO de los ADRs principales. Su contenido completo vive en el ADR destino:
+- [ADR-0002 (Dynamic Scaling) → fusionado en ADR-0001 §3](adr/adr0002-dynamic-scaling.md)
+- [ADR-0003 (Context Injector) → fusionado en ADR-0001 §4](adr/adr0003-context-injector.md)
+- [ADR-0004 (Skill Router) → fusionado en ADR-0019](adr/adr0004-skill-router.md)
+- [ADR-0005 (Memoria Portable) → fusionado en ADR-0033](adr/adr0005-memoria-portable.md)
+- [ADR-0006 (Legal Doc) → fusionado en ADR-0036](adr/adr0006-legal-doc-colombia.md)
+- [ADR-0021 (Frontier Gaps v1) → fusionado en ADR-0028](adr/adr0021-frontier-gaps-2026.md)
+- [ADR-0025 (Frontier Coding Quality) → fusionado en ADR-0036](adr/adr0025-frontier-coding-quality-2026.md)
+- [ADR-0026 (Research Improvements) → fusionado en ADR-0027](adr/adr0026-research-improvements-2026.md)

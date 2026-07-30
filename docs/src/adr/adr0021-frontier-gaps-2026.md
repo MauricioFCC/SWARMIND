@@ -1,58 +1,20 @@
-# ADR-0021: Frontier Gaps 2026 — Estado del Arte para AGENTIC
+# ADR-0021: Frontier Gaps 2026 — Estado del Arte para AGENTIC (v1)
 
 ## Estado
-**ACEPTADO** — Investigacion completada, gaps identificados, implementacion parcial.
+**FUSIONADO** — Contenido integrado en ADR-0028 (v2).
 
-## Contexto
-AGENTIC alcanzo 1904 tests, 30 skills, 8 agentes. Analisis de 40+ papers julio 2026
-identifica 5 gaps frontier con mayor ROI para alcanzar estado del arte.
+## Contenido Original
+Este ADR identifico los primeros 5 gaps frontier de 40+ papers analizados en Julio 2026:
 
-## Gaps Identificados
+| # | Gap | Paper | Impacto |
+|---|-----|-------|---------|
+| 1 | Agent Capsules | arXiv:2605.00410 | -51% tokens |
+| 2 | SePO | arXiv:2606.04465 | +4.49 pts accuracy |
+| 3 | Governance Decay | arXiv:2606.22528 | GovernanceGuard |
+| 4 | ReDNA Creative AI | arXiv:2605.28465 | CreativeWorktable |
+| 5 | Natural Language Tools | arXiv:2607.03953 | -25% tokens |
 
-### #1: Agent Capsules (arXiv:2605.00410)
-- **Impacto**: -51% tokens, calidad identica (+0.02)
-- **Implementacion**: capsule.execute(calls, strategy) en agent_capsules.py
-- **3 estrategias**: compound (-51%), two_phase (-35%), sequential (baseline)
+## Contenido Fusionado En
+[ADR-0028: Frontier Gaps 2026 v2](adr0028-frontier-gaps-2026-v2.md)
 
-### #2: SePO (arXiv:2606.04465)
-- **Impacto**: +4.49 pts accuracy, prompt auto-optimizacion
-- **Estado**: Pendiente de implementacion
-- **Requiere**: evolutionary archive, multi-task pool
-
-### #3: CADVP v1.1 + Binding Drift (arXiv:2606.04896 + arXiv:2607.18316)
-- **Impacto**: 0% fallos en canales A2A (vs 69-98% sin el)
-- **Estado**: Pendiente
-- **Requiere**: 13-dim verification protocol
-
-### #4: DLP + HALO (arXiv:2607.18847 + arXiv:2607.17883)
-- **Impacto**: 100% reduccion de fugas, 6 capas anti-hallucination
-- **Estado**: Pendiente
-
-### #5: Agentix + Helium
-- **Impacto**: 4-15x throughput, 1.56x scheduler speedup
-- **Estado**: Pendiente
-
-## Gaps Adicionales (Julio 2026)
-| Gap | Paper | Impacto |
-|-----|-------|---------|
-| SLIC Contribution Attribution | arXiv:2607.18255 | -93.3% costo atribucion |
-| Phionyx Deterministic Runtime | arXiv:2607.18246 | 31% menos overhead |
-| ZifaMem Structured Memory | arXiv:2607.17564 | +11.4% coherencia |
-
-## Roadmap de Implementacion
-1. Agent Capsules → COMPLETADO (agent_capsules.py, 8 tests)
-2. SePO → Proxima iteracion
-3. CADVP + BD → Proxima iteracion
-4. DLP + HALO → Futuro
-5. Agentix + Helium → Futuro
-
-> **DEPRECADO** � Este ADR ha sido integrado en ADRs posteriores.
-> - ADR-0021: Contenido fusionado en [ADR-0028](adr0028-frontier-gaps-2026-v2.md)
-> - ADR-0025: Contenido cubierto por [ADR-0036](adr0036-agentic-qa-pipeline-2026.md)
-> - ADR-0026: Contenido fusionado en [ADR-0027](adr0027-agentic-governance-cx-2026.md)
-> - Ver [SUMMARY.md](../SUMMARY.md) para la estructura actualizada.
-
-## Deprecacion
-**Fecha:** Julio 2026
-**Razon:** Compactacion de ADRs para eliminar redundancia.
-**Reemplazado por:** ADR-0028, ADR-0036, ADR-0027 respectivamente.
+La v2 expande el analisis a 15 papers implementados e incluye los gaps de v1 mas nuevos hallazgos.

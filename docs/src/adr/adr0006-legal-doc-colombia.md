@@ -1,13 +1,12 @@
-# ADR-0006: legal-doc Colombia — Skill Juridico Multi-Especialidad
+# ADR-0006: Legal Doc Colombia â€” Skill JurÃ­dico Multi-Especialidad
 
 ## Estado
-**ACEPTADO** — Implementado en commit 00ae958.
+**FUSIONADO** â€” Contenido integrado en ADR-0036.
 
-## Contexto
-El skill legal-doc era generico (GDPR, common law). Se necesita analisis juridico colombiano con fuentes oficiales, derecho comparado y multi-especialidad.
+## Contenido Original
+Este ADR documentaba la reescritura del skill `legal-doc` para analisis juridico colombiano.
 
-## Decision
-Reescribir legal-doc skill con:
+**DecisiÃ³n original:** Reescribir legal-doc skill con:
 - Metodologia RTF+C (Role-Task-Format-Context/Constraints)
 - 8 roles integrados (Analista, Teorico, Litigante, Academico, Comparatista, Procesalista, Riesgo, Pedagogo)
 - Fuentes colombianas: SUIN, Relatoria CC, Consejo Estado, Corte Suprema
@@ -15,16 +14,11 @@ Reescribir legal-doc skill con:
 - 8 especialidades: Const, Adm, Laboral, Penal, Familia, Trib, Civil, Comercial
 - Workflow de 7 fases
 
-## Skill en uso
-- AGENTIC/.opencode/skills/legal-doc/SKILL.md
-- JURIDICO project inicializado con AGENTIC completo
-- 3 documentos de referencia en knowledge/legal-colombia/
+**Archivos relacionados:**
+- `.opencode/skills/legal-doc/SKILL.md`
+- `knowledge/legal-colombia/` (3 documentos de referencia)
 
-> **DEPRECADO** — Este ADR ha sido integrado en ADRs posteriores.
-> - Contenido de este ADR ahora forma parte de [ADR-0001](adr0001-mejoras.md) (Fundacion)
-> - Ver [SUMMARY.md](../SUMMARY.md) para la estructura actualizada de ADRs.
+## Contenido Fusionado En
+[ADR-0036: Agentic QA Pipeline 5-Capas](adr0036-agentic-qa-pipeline-2026.md)
 
-## Deprecacion
-**Fecha:** Julio 2026
-**Razon:** Compactacion de ADRs para eliminar fragmentacion.
-**Reemplazado por:** ADR-0001 (Fundacion del Sistema)
+El contenido fue integrado en ADR-0036 como parte del Legal Verifier dentro de la capa L4 (AutonomousTestAgent) del pipeline QA.

@@ -1,26 +1,21 @@
-# ADR-0005: Memoria Portable — Paths Universales
+# ADR-0005: Memoria Portable â€” Paths Universales
 
 ## Estado
-**ACEPTADO** — Implementado en commit cebe7be.
+**FUSIONADO** â€” Contenido integrado en ADR-0033.
 
-## Contexto
-El sistema tenia paths absolutos (C:\Users\USUARIO\...) que rompian al cambiar de maquina o usuario.
+## Contenido Original
+Este ADR documentaba la creacion de `_resolve_hermes_root()` para eliminar paths absolutos del sistema.
 
-## Decision
-Crear _resolve_hermes_root() con 3 niveles de fallback:
-1. HERMES_ROOT env var
-2. ~/Documents/Hermes_Memory_Proyects/
-3. ~/Documents/AGENTIC_MEMORY/ (auto-creado)
+**DecisiÃ³n original:** Crear funcion con 3 niveles de fallback:
+1. `HERMES_ROOT` env var
+2. `~/Documents/Hermes_Memory_Proyects/`
+3. `~/Documents/AGENTIC_MEMORY/` (auto-creado)
 
-## Resultado
+**Resultado original:**
 - Funciona desde cualquier usuario/maquina
 - Sin paths absolutos en configuracion
 
-> **DEPRECADO** — Este ADR ha sido integrado en ADRs posteriores.
-> - Contenido de este ADR ahora forma parte de [ADR-0001](adr0001-mejoras.md) (Fundacion)
-> - Ver [SUMMARY.md](../SUMMARY.md) para la estructura actualizada de ADRs.
+## Contenido Fusionado En
+[ADR-0033: Federated Vector Search + SQLite-vec](adr0033-federated-vector-sqlite-2026.md)
 
-## Deprecacion
-**Fecha:** Julio 2026
-**Razon:** Compactacion de ADRs para eliminar fragmentacion.
-**Reemplazado por:** ADR-0001 (Fundacion del Sistema)
+El contenido fue integrado en ADR-0033 como parte de la capa de memoria portable, ahora expandido con soporte para SQLite-vec como backend edge.
