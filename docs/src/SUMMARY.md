@@ -124,3 +124,4 @@
 - [ADR-0033: Federated Vector Search + SQLite-vec](adr/adr0033-federated-vector-sqlite-2026.md)
 - [ADR-0034: Performance Optimization Post-Expansion](adr/adr0034-performance-optimization-2026.md)
 - [ADR-0035: Maximum Parallelism Architecture](adr/adr0035-maximum-parallelism-2026.md)
+- [ADR-0036: Agentic QA Pipeline 5-Capas](adr/adr0036-agentic-qa-pipeline-2026.md)
