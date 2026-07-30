@@ -90,9 +90,32 @@ lleva un recordatorio ultra-compacto (~23 tokens):
 - **Escalabilidad**: Dynamic scaling se adapta al tamaño de la tarea
 
 ### Negativas
-- **Complejidad**: 8 agent profiles, 10 skills, múltiples módulos de harness
+- **Complejidad**: 20 agent profiles, 31 skills, 48+ módulos de harness
 - **Dependencia LanceDB**: Requiere LanceDB para caché y memoria persistente
 - **Curva de aprendizaje**: Nuevos usuarios deben entender el patrón Swiss Watch
+
+## ADRs Deprecados Integrados Aqui
+
+Los siguientes ADRs han sido deprecados y su contenido esta resumido aqui:
+
+| ADR | Titulo | Resumen |
+|-----|--------|---------|
+| 0002 | Dynamic Scaling | ScopeAnalyzer analiza el mensaje y escala de 1-11 agentes segun complejidad (small→xlarge). 4 niveles, integrado en TaskPlanner.decompose(). |
+| 0003 | Context Injector | Inyecta recordatorio ultra-compacto (~23 tokens) en CADA subtarea: `[F]CleanCode+DRY+KISS+SSOT+<900LC+Patrones+CompRoot+Resiliencia+DoD+DocStringsES+tests>80+Seg`. Ahorra ~400 tokens por sesion. |
+| 0004 | Skill Router | Selecciona solo 1-2 skills relevantes por tarea usando keyword matching + embedding. Reduce 60-80% tokens en skills. |
+| 0005 | Memoria Portable | Sistema de paths con 3 niveles de fallback: HERMES_ROOT env var → ~/Documents/Hermes_Memory_Proyects/ → ~/Documents/AGENTIC_MEMORY/. Elimina paths absolutos. |
+| 0006 | Legal Doc Colombia | Skill legal-doc reescrito con metodologia RTF+C, 8 roles, fuentes colombianas (SUIN, Relatoria CC), 8 especialidades, 7 fases. |
+
+## Estado Actual (Julio 2026)
+
+| Metrica | Valor |
+|---------|-------|
+| Agentes | 20 especializados |
+| Skills | 31 contextuales |
+| ADRs | 28 activos (38 total, 10 deprecados) |
+| Tests | 3400+ pasando |
+| Modulos | 48 orchestrator + 30 memory_rag + 12 multi-harness |
+| Lineas Python | ~35,000 |
 
 ## Referencias
 
@@ -106,3 +129,4 @@ lleva un recordatorio ultra-compacto (~23 tokens):
 - `908935a` — Dynamic scaling (1-11 agents)
 - `2f8e46b` — CompositionRoot + Resilience + DoD
 - `00ae958` — legal-doc Colombia + JURIDICO project
+- `4168061` — Auditoria integral + compactacion ADRs

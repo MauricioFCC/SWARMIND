@@ -47,7 +47,6 @@
 - [Business Strategy](skills/business-strategy.md)
 - [Communication](skills/communication.md)
 - [Creative Design](skills/creative-design.md)
-- [Customize OpenCode](skills/customize-opencode.md)
 - [Data Science](skills/data-science.md)
 - [DevOps Infra](skills/devops-infra.md)
 - [Education](skills/education.md)
@@ -91,17 +90,16 @@
 # Roadmap
 - [Estado del Proyecto](roadmap/estado.md)
 
-# ADR - Architecture Decision Records
-- [ADR-0001: Mejora General del Sistema](adr/adr0001-mejoras.md)
-- [ADR-0002: Dynamic Scaling](adr/adr0002-dynamic-scaling.md)
-- [ADR-0003: Context Injector](adr/adr0003-context-injector.md)
-- [ADR-0004: Skill Router](adr/adr0004-skill-router.md)
-- [ADR-0005: Memoria Portable](adr/adr0005-memoria-portable.md)
-- [ADR-0006: legal-doc Colombia](adr/adr0006-legal-doc-colombia.md)
+# ADR - Architecture Decision Records (28 activos de 38 totales)
+
+### Grupo A: Fundacion (5 ADRs)
+- [ADR-0001: Mejora General + ADRs 0002-0006 (deprecados e integrados)](adr/adr0001-mejoras.md)
 - [ADR-0007: Memoria Estandares y Tecnicas](adr/adr0007-memoria-estandares.md)
 - [ADR-0008: Token Economy & Speed Optimization](adr/adr0008-token-economy-speed.md)
 - [ADR-0009: Competitive Programming 2026](adr/adr0009-competitive-programming-2026.md)
 - [ADR-0010: Text Analysis 2026](adr/adr0010-text-analysis-2026.md)
+
+### Grupo B: Calidad y Testing (9 ADRs)
 - [ADR-0011: Idempotencia Principle](adr/adr0011-idempotencia-principle.md)
 - [ADR-0012: DocStrings Obligatorios](adr/adr0012-docstrings-error-readability.md)
 - [ADR-0013: 6 Nuevas Tecnicas](adr/adr0013-six-new-techniques.md)
@@ -111,16 +109,16 @@
 - [ADR-0017: PaCoRe Async Concurrency](adr/adr0017-pacore-async-concurrency.md)
 - [ADR-0018: Token Economics Cache Shape](adr/adr0018-token-economics-cache-shape.md)
 - [ADR-0019: Agent & Skill Optimization](adr/adr0019-agent-skill-optimization-2026.md)
+
+### Grupo C: Frontier Research (6 ADRs)
 - [ADR-0020: MCP + A2A Architecture](adr/adr0020-mcp-a2a-architecture-2026.md)
-- [ADR-0021: Frontier Gaps 2026](adr/adr0021-frontier-gaps-2026.md)
-- [ADR-0022: Frontier Optimization](adr/adr0022-frontier-optimization-2026.md)
-- [ADR-0023: Creative AI Frameworks](adr/adr0023-creative-ai-frameworks-2026.md)
+- [ADR-0022: Frontier Optimization 2026](adr/adr0022-frontier-optimization-2026.md)
+- [ADR-0023: Creative AI Frameworks 2026](adr/adr0023-creative-ai-frameworks-2026.md)
 - [ADR-0024: Comparative Analysis ASDT+Traycer](adr/adr0024-comparative-analysis-asdt-traycer-2026.md)
-- [ADR-0025: Frontier Coding Quality](adr/adr0025-frontier-coding-quality-2026.md)
-- [ADR-0026: Research Improvements](adr/adr0026-research-improvements-2026.md)
-- [ADR-0027: Agentic Governance CX](adr/adr0027-agentic-governance-cx-2026.md)
 - [ADR-0028: Frontier Gaps 2026 v2](adr/adr0028-frontier-gaps-2026-v2.md)
 - [ADR-0029: DOFA Analysis 2026](adr/adr0029-dofa-analysis-2026.md)
+
+### Grupo D: Arquitectura Moderna (8 ADRs)
 - [ADR-0030: Multi-Harness Adapter Layer](adr/adr0030-multi-harness-2026.md)
 - [ADR-0031: Hook System — Automatizacion Determinista](adr/adr0031-hooks-system-2026.md)
 - [ADR-0032: Zero Trust Architecture](adr/adr0032-zero-trust-2026.md)
@@ -129,4 +127,17 @@
 - [ADR-0035: Maximum Parallelism Architecture](adr/adr0035-maximum-parallelism-2026.md)
 - [ADR-0036: Agentic QA Pipeline 5-Capas](adr/adr0036-agentic-qa-pipeline-2026.md)
 - [ADR-0037: AI Factory Stack — Integracion 7-Capas](adr/adr0037-ai-factory-stack-2026.md)
+
+### Grupo E: Auditoria (1 ADR)
 - [ADR-0038: Comprehensive Audit & Refactoring](adr/adr0038-comprehensive-audit-2026.md)
+
+### ADRs Deprecados (10, contenido preservado)
+Los siguientes ADRs han sido deprecados y su contenido esta integrado en los ADRs activos listados arriba:
+- [ADR-0002 (Dynamic Scaling) → en ADR-0001](adr/adr0002-dynamic-scaling.md)
+- [ADR-0003 (Context Injector) → en ADR-0001/0007](adr/adr0003-context-injector.md)
+- [ADR-0004 (Skill Router) → en ADR-0019](adr/adr0004-skill-router.md)
+- [ADR-0005 (Memoria Portable) → en ADR-0033](adr/adr0005-memoria-portable.md)
+- [ADR-0006 (Legal Doc) → en ADR-0025/0036](adr/adr0006-legal-doc-colombia.md)
+- [ADR-0021 (Frontier Gaps v1) → en ADR-0028](adr/adr0021-frontier-gaps-2026.md)
+- [ADR-0025 (Frontier Coding Quality) → en ADR-0036](adr/adr0025-frontier-coding-quality-2026.md)
+- [ADR-0026 (Research Improvements) → en ADR-0027](adr/adr0026-research-improvements-2026.md)

@@ -44,3 +44,14 @@ Investigacion profunda de 10+ papers 2026 identifico 2 areas de mejora critica:
 - **Papers 2026 integrados:** 14 nuevos
 - **Errores prevenidos:** Refinement types atrapan errores en desarrollo, no en produccion
 - **Cobertura de propiedades:** Semantic Cache, Token Optimizer, Structured Output, Token Budget
+
+> **DEPRECADO** — Este ADR ha sido integrado en ADRs posteriores.
+> - ADR-0021: Contenido fusionado en [ADR-0028](adr0028-frontier-gaps-2026-v2.md)
+> - ADR-0025: Contenido cubierto por [ADR-0036](adr0036-agentic-qa-pipeline-2026.md)
+> - ADR-0026: Contenido fusionado en [ADR-0027](adr0027-agentic-governance-cx-2026.md)
+> - Ver [SUMMARY.md](../SUMMARY.md) para la estructura actualizada.
+
+## Deprecacion
+**Fecha:** Julio 2026
+**Razon:** Compactacion de ADRs para eliminar redundancia.
+**Reemplazado por:** ADR-0028, ADR-0036, ADR-0027 respectivamente.

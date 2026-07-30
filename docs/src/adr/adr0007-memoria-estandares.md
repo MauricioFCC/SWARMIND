@@ -83,4 +83,4 @@ scientist: "MetodoCientifico+Fuentes+Analisis+Conclusiones+DocumentarES+DoD
 ## Consecuencias
 - 38 tokens por subtarea (antes ~400 tokens de preambulo manual)
 - 18 reglas fijas + tecnicas especializadas por rol
-- 351 tests pasando
+- 3400+ tests pasando (Julio 2026)
