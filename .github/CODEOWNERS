@@ -1,0 +1,28 @@
+# CODEOWNERS — quien revisa cada parte
+# Cada línea es un patrón de archivo seguido del/los revisores designados.
+# El último patrón que coincida tiene prioridad.
+
+*                              @mauricioFCC
+
+# Nucleo del harness — modulos de ejecucion
+/harness/orchestrator/          @mauricioFCC
+/harness/memory_rag/            @mauricioFCC
+/harness/security/              @mauricioFCC
+/harness/qa/                    @mauricioFCC
+/harness/aifactory/             @mauricioFCC
+/harness/evolve_loop/           @mauricioFCC
+/harness/model_router/          @mauricioFCC
+/harness/gateway/               @mauricioFCC
+/harness/guardrails/            @mauricioFCC
+/harness/hooks/                 @mauricioFCC
+/harness/observability/         @mauricioFCC
+/harness/parallel/              @mauricioFCC
+/harness/plugins/               @mauricioFCC
+/harness/tools_sandbox/         @mauricioFCC
+/harness/db/                    @mauricioFCC
+/harness/evals/                 @mauricioFCC
+
+# Configuracion del sistema
+/.opencode/                     @mauricioFCC
+/docs/                          @mauricioFCC
+/.github/                       @mauricioFCC
