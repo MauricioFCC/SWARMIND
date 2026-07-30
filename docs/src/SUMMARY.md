@@ -105,6 +105,7 @@
 - [Skills Registry](skills/registry.md)
 - [Otras Skills](skills/otras.md)
 - [Alpha Libraries List](reference/alpha_libraries_list.md)
+- [Analisis Retrospectivo y Comparativo 2026](reference/analisis-retrospectivo-2026.md)
 
 # Roadmap
 - [Estado del Proyecto](roadmap/estado.md)
