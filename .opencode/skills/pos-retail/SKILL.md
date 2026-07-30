@@ -53,7 +53,7 @@ Se activa automáticamente cuando el `router` detecta keywords del dominio retai
 - **Saga Pattern**: Para flujos distribuidos (venta → descuento stock → registro pago).
 - **Outbox Pattern**: Para eventos transaccionales sin pérdida.
 - **CQRS**: Separar comandos (venta) de consultas (reportes).
-- **Strategy Pattern**: Para cálculos de impuestos (IVA, ISR, regional).
+- **Strategy Pattern**: Para cálculos de impuestos (IVA/VAT/GST según jurisdicción).
 
 ### 4. Manejo de Estados
 ```

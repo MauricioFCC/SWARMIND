@@ -1,12 +1,12 @@
 ---
 name: alpha-research
 domain: research
-description: Investigación de alpha — factores, ML avanzado, feature engineering y validación estadística con CQE Rust
+description: Investigación de alpha — factores, ML avanzado, feature engineering y validación estadística con motores cuantitativos (ej. CQE Rust)
 ---
 
-# Alpha Research — CQE Rust Engine
+# Alpha Research — Motor de Investigación Cuantitativa
 
-Investigación sistemática de alpha usando **quant-engine** (CQE).
+Investigación sistemática de alpha usando motores cuantitativos (ej. **quant-engine** CQE).
 Enfoque: falsificación de hipótesis nula, walk-forward, out-of-sample robusto.
 
 ## 🧪 Factor Zoo (`domain::models::factor_zoo`)

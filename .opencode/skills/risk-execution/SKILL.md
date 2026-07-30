@@ -1,12 +1,12 @@
 ---
 name: risk-execution
 domain: trading
-description: Gestión de riesgo institucional y ejecución algorítmica con CQE Rust — position sizing, market making, TCA
+description: Gestión de riesgo institucional y ejecución algorítmica con motores cuantitativos de alto rendimiento (ej. CQE Rust) — position sizing, market making, TCA
 ---
 
-# Risk & Execution — CQE Rust Engine
+# Risk & Execution — Gestión de Riesgo Institucional
 
-Gestión de riesgo y ejecución algorítmica de nivel institucional.
+Gestión de riesgo y ejecución algorítmica de nivel institucional, implementable sobre motores cuantitativos (ej. CQE Rust).
 Prioriza: preservación de capital > Sharpe > alpha bruto.
 
 ## 📐 Risk Management (`domain::risk_management`)

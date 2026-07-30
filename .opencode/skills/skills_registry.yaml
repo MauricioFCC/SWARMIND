@@ -173,23 +173,8 @@ skills:
     version: 1.0.0
     project_agnostic: true
 
-
-
-- name: ads-optimizer
-  domain: marketing
-  description: "Optimizacion de campanas Ads con 12 sub-skills: BOAD, ShapleyFlow, MetaClaw, RL bidding"
-  version: 1.0.0
-  project_agnostic: true
-
-- name: ads-optimizer
-  domain: marketing
-  description: "Optimizacion de campanas Ads con 12 sub-skills: BOAD, ShapleyFlow, MetaClaw, RL bidding"
-  version: 1.0.0
-  project_agnostic: true
-
-
-- name: risk-intelligence
-  domain: risk
-  description: "Identificacion de riesgos emergentes (CRO Forum 2026): tecnologicos, geopoliticos, climaticos, salud, financieros"
-  version: 1.0.0
-  project_agnostic: true
+  - name: risk-intelligence
+    domain: risk
+    description: "Identificacion de riesgos emergentes (CRO Forum 2026): tecnologicos, geopoliticos, climaticos, salud, financieros"
+    version: 1.0.0
+    project_agnostic: true

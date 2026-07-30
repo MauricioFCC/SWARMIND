@@ -8,7 +8,7 @@ description: >
   personalizacion sample-efficient (Bayesian active preference learning),
   y validacion UX (WiserUI-Bench, WCAG 2.2 AA).
   Genera interfaces LLM-native con A2UI/OpenUI, componentes con StyleSeed design rules,
-  y especificaciones machine-readable para el ecosistema Swarmind.
+  y especificaciones machine-readable para ecosistemas de desarrollo agnosticos.
 version: 1.0.0
 project_agnostic: true
 inherit:

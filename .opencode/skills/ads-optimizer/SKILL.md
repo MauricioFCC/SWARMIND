@@ -1,7 +1,7 @@
 ---
 name: ads-optimizer
 domain: marketing
-description: "Optimizacion end-to-end de campanas Meta Ads con tecnicas frontier 2026: BOAD, ShapleyFlow, MetaClaw, RL Bidding"
+description: "Optimizacion end-to-end de campanas publicitarias digitales (ej. Meta Ads, Google Ads) con tecnicas frontier 2026: BOAD, ShapleyFlow, MetaClaw, RL Bidding"
 version: 1.0.0
 project_agnostic: true
 inherit:
@@ -12,10 +12,10 @@ variables:
   - BUDGET_STRATEGY: boad, shapley, rl
 ---
 
-# Meta Ads Optimizer — Skill de Publicidad Digital
+# Ads Optimizer â€” Skill de Publicidad Digital
 
 ## Descripcion
-Optimizacion end-to-end de campanas Meta Ads. Integra 12 sub-skills con tecnicas frontier 2026 para maximizar ROAS y minimizar CPA.
+Optimizacion end-to-end de campanas publicitarias digitales (ej. Meta Ads, Google Ads). Integra 12 sub-skills con tecnicas frontier 2026 para maximizar ROAS y minimizar CPA.
 
 ## Sub-Skills
 
@@ -35,7 +35,7 @@ Multi-arm bandit + ShapleyFlow para distribucion dinamica.
 RL (PPO) para ajuste de bids en tiempo real.
 
 ### compliance-guardian (guardian)
-Policy verification contra Meta Advertising Standards.
+Policy verification contra estandares publicitarios de cada plataforma (ej. Meta Advertising Standards).
 
 ### attribution-modeler (scientist)
 Shapley values + Markov chains para atribucion multi-touch.
@@ -47,7 +47,7 @@ DALL-E 3 + GPT-4 copywriting para 10 variantes por campana.
 XGBoost + SHAP para lead scoring desde Instant Forms.
 
 ### competitive-spy (scientist)
-Meta Ad Library API + NLP clustering para analisis competitivo.
+APIs de bibliotecas publicitarias (ej. Meta Ad Library) + NLP clustering para analisis competitivo.
 
 ### reporting-dashboard (builder)
 Generative UI (A2UI/OpenUI) para dashboard multi-pagina.
@@ -62,12 +62,12 @@ Nivel 2: account-safety
 Nivel 3: dashboard consolidado
 
 ## Comandos
-- !meta campaign <objetivo> — Disenar campana
-- !meta analyze <creativo> — Analizar creativo
-- !meta budget <total> — Optimizar budget
-- !meta bid <cpa_target> — Optimizar bids
-- !meta spy <competitor> — Analisis competitivo
-- !meta safety — Verificar estado de cuenta
+- !meta campaign <objetivo> ï¿½ Disenar campana
+- !meta analyze <creativo> ï¿½ Analizar creativo
+- !meta budget <total> ï¿½ Optimizar budget
+- !meta bid <cpa_target> ï¿½ Optimizar bids
+- !meta spy <competitor> ï¿½ Analisis competitivo
+- !meta safety ï¿½ Verificar estado de cuenta
 
 ## Referencias
 - BOAD: Bandit Optimization for Agent Design

@@ -16,7 +16,7 @@ project_agnostic: true
 - account-safety: Prevencion de bans
 
 ## Comandos
-- !meta campaign <objetivo> — Disenar campana
-- !meta analyze <creativo> — Analizar creativo
-- !meta budget <total> — Optimizar presupuesto
+- !meta campaign <objetivo> ï¿½ Disenar campana
+- !meta analyze <creativo> ï¿½ Analizar creativo
+- !meta budget <total> ï¿½ Optimizar presupuesto
 

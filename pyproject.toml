@@ -44,8 +44,9 @@ dev = [
 minversion = "8.0"
 testpaths = ["harness/tests"]
 python_files = ["test_*.py"]
+asyncio_mode = "auto"
 # Parallel ejecucion: pytest -n auto (requiere pytest-xdist)
-# Por defecto secuencial: la mayoria de tests comparten LanceDB temp
+# Por defecto secuencial: la mayoria de tests comparten LanceDB local
 addopts = ""
 markers = [
     "slow: tests lentos (>1s) que requieren integracion real",

@@ -1,29 +1,29 @@
 ---
 name: legal-doc
 domain: legal
-description: "Skill contextual para el dominio jurídico colombiano — análisis de jurisprudencia, normas, casos multi-especialidad, redacción de demandas, conceptos, derecho comparado y consulta de fuentes oficiales colombianas."
+description: "Skill contextual para el dominio jurídico con referencias a sistemas legales jurisdiccionales (ej. Colombia) — análisis de jurisprudencia, normas, casos multi-especialidad, redacción de demandas, conceptos, derecho comparado y consulta de fuentes oficiales."
 version: 1.0.0
 project_agnostic: true
 ---
 
-# Legal-Doc: Procesamiento de Documentos Jurídicos Colombianos
+# Legal-Doc: Procesamiento de Documentos Jurídicos con Perspectiva Comparada
 
-Skill contextual para el dominio **jurídico colombiano**: análisis de jurisprudencia, normas, casos multi-especialidad, redacción de demandas, conceptos, derecho comparado y consulta de fuentes oficiales colombianas.
+Skill contextual para el dominio **jurídico** con referencias a sistemas legales jurisdiccionales (ej. Colombia): análisis de jurisprudencia, normas, casos multi-especialidad, redacción de demandas, conceptos, derecho comparado y consulta de fuentes oficiales.
 
 Basado en metodología RTF+C (Role-Task-Format-Context/Constraints) con Role Stacking de 8 especialistas integrados.
 
 ## Activación
-Se activa automáticamente cuando el `router` detecta keywords del dominio legal colombiano.
+Se activa automáticamente cuando el `router` detecta keywords del dominio legal.
 
 ## Keywords de dominio
-- `derecho`, `jurídico`, `Colombia`, `abogado`, `tribunal`, `juez`
-- `Corte Constitucional`, `Consejo de Estado`, `Corte Suprema`, `CSJ`
-- `tutela`, `demanda`, `sentencia`, `auto`, `providencia`, `recurso`
-- `Código Civil`, `Código Penal`, `Código de Comercio`, `CGP`, `CPACA`
-- `Constitución Política`, `bloque de constitucionalidad`
-- `SUIN`, `Relatoría`, `jurisprudencia`, `precedente`, `ratio decidendi`
-- `acción popular`, `reparación directa`, `nulidad`, `restablecimiento`
-- `derechos fundamentales`, `Art. 86`, `Art 230`, `vulneración`, `amparo`
+- `derecho`, `jurídico`, `legal`, `abogado`, `tribunal`, `juez`, `court`
+- `jurisprudencia`, `precedente`, `ratio decidendi`, `sentencia`, `auto`, `providencia`
+- `demanda`, `recurso`, `tutela`, `acción`, `nulidad`, `amparo`
+- `Código Civil`, `Código Penal`, `Constitución`, `bloque de constitucionalidad`
+- `ley`, `norma`, `reglamento`, `decreto`, `código`, `estatuto`
+- `litigio`, `arbitraje`, `mediación`, `contrato`, `obligaciones`
+- Ejemplos por jurisdicción: `Colombia`, `Corte Constitucional`, `Consejo de Estado`, `Corte Suprema`
+- Ejemplos por norma: `CGP`, `CPACA`, `Constitución Política`, `Código de Comercio`
 
 ## Metodología: RTF+C + Role Stacking (8 roles integrados)
 
@@ -31,7 +31,7 @@ Cada análisis debe estructurarse aplicando simultáneamente estos 8 roles:
 
 | Rol | Función |
 |-----|---------|
-| **1. Analista Jurídico Senior** | Desglose de documentos jurídicos colombianos, estructuración técnica |
+| **1. Analista Jurídico Senior** | Desglose de documentos jurídicos, estructuración técnica jurisdiccional |
 | **2. Teórico de la Interpretación** | Métodos hermenéuticos: exegético, teleológico, sistemático, histórico |
 | **3. Litigante Estratégico** | Práctica forense en altas cortes, recursos, cargas probatorias |
 | **4. Académico Constitucional** | Bloque de constitucionalidad, control de convencionalidad, diálogo interamericano |
@@ -45,15 +45,15 @@ Cada análisis debe estructurarse aplicando simultáneamente estos 8 roles:
 | Capa | Restricción |
 |------|-------------|
 | **1. Explícita** | Fidelidad al texto. No inventar hechos, citas o argumentos no presentes |
-| **2. Técnica** | Formato Markdown estructurado + citas estandarizadas colombianas |
-| **3. Normativa-Jerárquica** | Pirámide normativa colombiana: Constitución > Tratados DDHH > Leyes Estatutarias > Leyes Ordinarias > Decretos > Reglamentos |
+| **2. Técnica** | Formato Markdown estructurado + citas estandarizadas jurisdiccionales |
+| **3. Normativa-Jerárquica** | Pirámide normativa jurisdiccional (ej. Colombia): Constitución > Tratados DDHH > Leyes Estatutarias > Leyes Ordinarias > Decretos > Reglamentos |
 | **4. Procesal-Raíz** | Todo análisis sustantivo anclado en principios procesales (debido proceso, carga probatoria, competencia, términos) |
 | **5. Cognitiva-Pedagógica** | Claridad sin simplismo; explicar tecnicismos la primera vez |
 | **6. Ética-Crítica-Comparada** | Neutralidad analítica + conciencia crítica + derecho comparado contextualizado |
 
-## Fuentes Oficiales Colombianas (Jerarquizadas)
+## Fuentes Jurisdiccionales (Ejemplo: Colombia)
 
-### N1: Fuentes Primarias Colombianas
+### N1: Fuentes Primarias (Ejemplo Colombia)
 | Fuente | URL | Uso |
 |--------|-----|-----|
 | SUIN-JURISCOL | https://www.suin-juriscol.gov.co/ | Vigencia de leyes, decretos |
@@ -82,10 +82,10 @@ Identificar tipo de documento (sentencia, ley, decreto, auto, concepto), corpora
 Extraer: identificación del documento, partes/intervinientes, hechos relevantes, problema jurídico, ratio decidendi, decisiones/pretensiones.
 
 ### FASE 2: Análisis Técnico-Jerárquico
-- Confrontar con pirámide normativa colombiana
-- Identificar bloque de constitucionalidad aplicable (Art. 93-94 CP)
+- Confrontar con pirámide normativa jurisdiccional (ej. Colombia: Constitución > Tratados > Leyes > Decretos)
+- Identificar bloque de constitucionalidad aplicable según jurisdicción
 - Marcar conflictos jerárquicos con [⚠️ JERARQUÍA]
-- Verificar vigencia normativa via SUIN
+- Verificar vigencia normativa via fuentes oficiales (ej. SUIN para Colombia)
 
 ### FASE 3: Análisis Procesal (Raíz)
 Validar: competencia del órgano, términos procesales, carga de la prueba, debido proceso, cosa juzgada, legitimación. Si falta información, añadir [🔍 ANÁLISIS PROCESAL PENDIENTE].
@@ -99,9 +99,9 @@ Identificar: activismo judicial vs autocontención, supuestos axiológicos, opor
 ### FASE 6: Síntesis y Recomendaciones
 Generar: conclusiones técnicas, hoja de ruta procesal, matriz de riesgos, recomendaciones accionables, fuentes verificables.
 
-## Especialidades Jurídicas Soportadas
+## Especialidades Jurídicas Soportadas (Ejemplo: Colombia)
 
-| Especialidad | Normas Clave | Jurisdicción |
+| Especialidad | Normas Clave (Ej. Colombia) | Jurisdicción |
 |-------------|--------------|--------------|
 | **Constitucional** | CP Arts. 1-220, Bloque de Constitucionalidad | Corte Constitucional |
 | **Administrativo** | CPACA, Ley 1437/2011, Código Contratación | Consejo de Estado |
@@ -114,10 +114,10 @@ Generar: conclusiones técnicas, hoja de ruta procesal, matriz de riesgos, recom
 
 ## Output esperado
 - Análisis jurisprudencial completo con metodología explícita (7 fases)
-- Dictamen técnico con citas estandarizadas colombianas
+- Dictamen técnico con citas estandarizadas jurisdiccionales
 - Hoja de ruta procesal con términos, competencias y riesgos
 - Matriz comparativa internacional contextualizada
-- Documentación en español jurídico colombiano preciso
+- Documentación en lenguaje jurídico preciso (adaptado a la jurisdicción)
 - Glosario integrado de términos técnicos
 
 ### NLP Juridico 2026
@@ -166,7 +166,7 @@ Generar: conclusiones técnicas, hoja de ruta procesal, matriz de riesgos, recom
 
 **Outlines + Guidance**: Generacion estructurada con gramaticas CFG
 - Formatos vinculados a metodologia RTF+C
-- Constraints de formato juridico colombiano
+- Constraints de formato juridico segun jurisdiccion
 - Drafting de demandas, recursos, conceptos
 
 **Constitutional AI**:

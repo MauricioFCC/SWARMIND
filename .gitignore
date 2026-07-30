@@ -2,6 +2,30 @@
 # NO ignorar harness/ ni .opencode/ porque ES la fuente.
 # Otros proyectos usan un .gitignore diferente que SI los ignora.
 
+# === Local scripts (KEEP) ===
+# scripts/launcher.py         # CLI entry point del proyecto
+# scripts/quality_audit.py    # Auditoria local de harness/
+# scripts/session_log.py      # Logging de sesion en LanceDB local
+# launcher.bat                # Menu principal del proyecto
+# run_tests.bat               # Wrapper de launcher.py test
+#
+# === Propagation scripts (IGNORE - to other projects) ===
+# Estos scripts contienen paths hardcoded a otros proyectos del
+# DEV-SPACE (quant-engine, health-record, pos-system, trading-bot-AIBot,
+# from_zero, shared_memory). Son específicos del entorno del autor.
+scripts/agentic_bridge_sync.py
+scripts/deploy_all.py
+scripts/deploy_routing_fix.py
+#
+# === Drive / archive exports (IGNORE) ===
+# Suben ZIPs a "Mi unidad/DEV/SIDEPROYECT/exports" (Google Drive) o
+# crean archivos para distribucion. Paths hardcoded al entorno del autor.
+scripts/export_all_projects.py
+scripts/export_archive.py
+scripts/export_to_drive.py
+# push.bat: wrapper de export_to_drive.py (Push to Drive) — path del autor
+push.bat
+
 # Python
 __pycache__/
 *.py[cod]
@@ -16,6 +40,7 @@ build/
 
 # LanceDB
 harness/db/lancedb/
+harness/db/lancedb/**
 harness/db/_archived/
 harness/db/import/
 harness/db/iteration_reports/
@@ -25,7 +50,7 @@ memory_rag/*.db
 # Environment
 .env
 .env.local
-*.env
+.env.*
 .envrc
 
 # IDE
@@ -53,10 +78,12 @@ logs/
 
 # Coverage
 .coverage
+.coverage.*
 coverage.xml
 htmlcov/
 *.profraw
 lcov.info
+*.cover
 
 # Exports (build artifacts)
 exports/

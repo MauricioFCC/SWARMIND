@@ -1,12 +1,12 @@
 ---
 name: quant-trading
 domain: trading
-description: Estrategias cuantitativas de trading con quant-engine (CQE) en Rust — prioriza rendimiento, baja latencia y generación de alpha
+description: Estrategias cuantitativas de trading con motores cuantitativos de alto rendimiento (ej. quant-engine en Rust) — prioriza rendimiento, baja latencia y generación de alpha
 ---
 
-# Quant Trading — CQE Rust Engine
+# Quant Trading — Motor Cuantitativo de Alto Rendimiento
 
-Estrategias cuantitativas implementadas sobre **quant-engine** (CQE) v2.1.0.
+Estrategias cuantitativas implementadas sobre motores cuantitativos (ej. **quant-engine** CQE).
 Stack: Rust 🦀 + Python bindings. Prioridad: rendimiento > legibilidad cuando hay trade-off.
 
 ## 📡 Data Processing (`domain::data_processing`)
@@ -200,14 +200,14 @@ let pikan = PIKANPortfolio::new()
 // Precision: 25.6% -> 59.0%, F1: 0.659 (+17.1% vs LLM baseline)
 ```
 
-### CQE ADR-0045 — Vanguardia Implementada
-- **KAN** networks para feature interaction (en CQE `domain::ml::kan`)
-- **GNN** para riesgo sistemico (en CQE `domain::ml::graph_neural`)
+### Frontier — Vanguardia Implementada
+- **KAN** networks para feature interaction
+- **GNN** para riesgo sistemico
 - **CubeCL** para GPU compute nativo Rust
 - **WASM** para browser-based backtesting
 
-## ✅ CHECKLIST PRE-COMMIT CQE
-- [ ] Usar tipos CQE (`Trade`, `Quote`, `Order`, `Signal`) no tipos genéricos
+## ✅ CHECKLIST PRE-COMMIT (MOTOR CUANTITATIVO)
+- [ ] Usar tipos del motor cuantitativo (`Trade`, `Quote`, `Order`, `Signal`) no tipos genéricos
 - [ ] Benchmarks: `cargo bench` en módulo relevante antes de merge
 - [ ] Memory: `cargo miri` para UB, `valgrind` para leaks en hot path
 - [ ] Fuzz: `cargo fuzz` en parsing de market data

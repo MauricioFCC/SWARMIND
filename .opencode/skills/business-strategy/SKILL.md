@@ -1,13 +1,13 @@
 ---
 name: business-strategy
 domain: business
-description: "Analisis estrategico de negocios, modelos de negocio, analisis DOFA, Porter, canvas, planes de negocio, ROI, KPIs de negocio, OKRs, y toma de decisiones estrategicas."
+description: "Analisis estrategico de negocios, modelos de negocio, analisis DOFA/SWOT, Porter, canvas, planes de negocio, ROI, KPIs de negocio, OKRs, y toma de decisiones estrategicas."
 version: 1.0.0
 project_agnostic: true
 inherit:
   - core/base_principles.md
 variables:
-  - ANALISIS_TYPE: dofa, porter, pestel, canvas, OKR ({{ANALISIS_TYPE}})
+  - ANALISIS_TYPE: dofa-swot, porter, pestel, canvas, OKR ({{ANALISIS_TYPE}})
   - INDUSTRY: tecnologia, salud, retail, finanzas, educacion ({{INDUSTRY}})
 ---
 # Business Strategy — Analisis Estrategico de Negocios
@@ -16,7 +16,7 @@ variables:
 Skill para analisis estrategico, modelos de negocio y toma de decisiones empresariales. Complementa el enfoque tecnico con vision de negocio.
 
 ## Responsabilidades
-1. Analisis DOFA/PESTEL/Porter de entornos de negocio
+1. Analisis DOFA (SWOT)/PESTEL/Porter de entornos de negocio
 2. Diseno de modelos de negocio (Canvas, Lean Canvas)
 3. Definicion de OKRs y KPIs de negocio
 4. Analisis de ROI y viabilidad economica
