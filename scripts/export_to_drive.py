@@ -31,9 +31,7 @@ logger = logging.getLogger(__name__)
 _HERE = Path(__file__).resolve().parent
 _ROOT = _HERE.parent
 
-_EXPORT_BASE = Path(
-    r"$HOME\Mi unidad\DEV\SIDEPROYECT\exports"
-)
+_EXPORT_BASE = Path.home() / "Mi unidad" / "DEV" / "SIDEPROYECT" / "exports"
 
 # Date-based naming matching other projects
 _TODAY = date.today().isoformat()  # 2026-07-20

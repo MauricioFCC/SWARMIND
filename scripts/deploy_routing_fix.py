@@ -13,6 +13,7 @@ Usage:
 
 from __future__ import annotations
 
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -22,8 +23,8 @@ _ROOT = _HERE.parent
 _SOURCE_ROUTING = _ROOT / ".opencode" / "config" / "routing_rules.yaml"
 
 # Same project configs as deploy_all.py
-_DEV_SPACE = Path("C:\\Users\\USUARIO\\Documents\\DEV-SPACE")
-_HERMES_PATH = Path("C:\\Users\\USUARIO\\Documents\\shared_memory")
+_DEV_SPACE = Path(os.environ.get("DEV_SPACE_ROOT", Path.home() / "Documents" / "DEV-SPACE"))
+_HERMES_PATH = Path(os.environ.get("HERMES_PATH", _DEV_SPACE / "shared_memory"))
 
 PROJECTS = [
     ("quant-engine", _DEV_SPACE / "quant-engine"),
