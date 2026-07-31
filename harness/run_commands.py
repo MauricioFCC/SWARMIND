@@ -368,13 +368,20 @@ def _handle_schedule_add(store, cmd: str) -> None:
     j = 3
     while j < len(parts):
         if parts[j] == "--cron" and j + 1 < len(parts):
-            trigger = "cron"; trigger_value = parts[j + 1]; j += 2
+            trigger = "cron"
+            trigger_value = parts[j + 1]
+            j += 2
         elif parts[j] == "--interval" and j + 1 < len(parts):
-            trigger = "interval"; trigger_value = parts[j + 1]; j += 2
+            trigger = "interval"
+            trigger_value = parts[j + 1]
+            j += 2
         elif parts[j] == "--once" and j + 1 < len(parts):
-            trigger = "once"; trigger_value = parts[j + 1]; j += 2
+            trigger = "once"
+            trigger_value = parts[j + 1]
+            j += 2
         elif parts[j] == "--task" and j + 1 < len(parts):
-            command = parts[j + 1]; j += 2
+            command = parts[j + 1]
+            j += 2
         else:
             j += 1
     if not trigger or not command:
@@ -621,14 +628,31 @@ def _run_guardrails(task: str, target_agent: str, ctx: Any,
 
 # â”€â”€ ANSI helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-_RED = "\033[91m"; _GREEN = "\033[92m"; _YELLOW = "\033[93m"
-_CYAN = "\033[96m"; _BOLD = "\033[1m"; _RESET = "\033[0m"
+_RED = "\033[91m"
+_GREEN = "\033[92m"
+_YELLOW = "\033[93m"
+_CYAN = "\033[96m"
+_BOLD = "\033[1m"
+_RESET = "\033[0m"
 
-def _ok(msg: str) -> str: return f"{_GREEN}{msg}{_RESET}"
-def _warn(msg: str) -> str: return f"{_YELLOW}{msg}{_RESET}"
-def _err(msg: str) -> str: return f"{_RED}{msg}{_RESET}"
-def _bold(msg: str) -> str: return f"{_BOLD}{msg}{_RESET}"
-def _cyan(msg: str) -> str: return f"{_CYAN}{msg}{_RESET}"
+def _ok(msg: str) -> str:
+    return f"{_GREEN}{msg}{_RESET}"
+
+
+def _warn(msg: str) -> str:
+    return f"{_YELLOW}{msg}{_RESET}"
+
+
+def _err(msg: str) -> str:
+    return f"{_RED}{msg}{_RESET}"
+
+
+def _bold(msg: str) -> str:
+    return f"{_BOLD}{msg}{_RESET}"
+
+
+def _cyan(msg: str) -> str:
+    return f"{_CYAN}{msg}{_RESET}"
 
 
 def _safe_print(*args, **kwargs) -> None:

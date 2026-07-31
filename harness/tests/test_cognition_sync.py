@@ -110,7 +110,10 @@ class TestCognitionSyncInit:
 
     def test_init_with_custom_embedding(self, mock_store):
         """Test init con embedding_fn personalizada."""
-        fn = lambda x: np.zeros(384, dtype=np.float32)
+        def _embed(x):
+            return np.zeros(384, dtype=np.float32)
+
+        fn = _embed
         cs = CognitionSync(vector_store=mock_store, embedding_fn=fn)
         assert cs._embedding_fn is fn
 

@@ -375,7 +375,7 @@ class SkillMinifier:
             compressed_lines.extend(self._compress_table(table_lines))
 
         # Remover trailing whitespace de cada linea
-        compressed_lines = [l.rstrip() for l in compressed_lines]
+        compressed_lines = [line.rstrip() for line in compressed_lines]
 
         # Remover lineas consecutivas vacias (max 1)
         result: list[str] = []

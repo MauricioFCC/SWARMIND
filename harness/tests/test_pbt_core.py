@@ -323,7 +323,7 @@ class TestDAGProperties:
             for i in task_ids
         ]
         schedule = build_dag(tasks)
-        total_tasks = sum(len(l) for l in schedule.levels)
+        total_tasks = sum(len(level) for level in schedule.levels)
         assert total_tasks == len(task_ids), (
             f"Expected {len(task_ids)} tasks, got {total_tasks}"
         )

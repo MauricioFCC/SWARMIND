@@ -21,7 +21,8 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(1, str(PROJECT_ROOT))
 
-from harness.hermes_bridge import DEFAULT_HERMES_ROOT, HermesBridge
+# Script standalone: sys.path debe configurarse antes de importar el paquete.
+from harness.hermes_bridge import DEFAULT_HERMES_ROOT, HermesBridge  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,

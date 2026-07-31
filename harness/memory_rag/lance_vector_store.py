@@ -19,6 +19,10 @@ from typing import Any
 
 import numpy as np
 
+from .lance_migration import generate_sample_row, serialize_for_schema
+from .lance_schemas import DEFAULT_COLLECTIONS
+from .memory_config import MemoryConfig, get_memory_config
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -28,10 +32,6 @@ logger = logging.getLogger(__name__)
 LANCEDB_ROOT = str(
     Path(__file__).resolve().parent.parent / "db" / "lancedb"
 )
-
-from .lance_migration import generate_sample_row, serialize_for_schema
-from .lance_schemas import DEFAULT_COLLECTIONS
-from .memory_config import MemoryConfig, get_memory_config
 
 # Collection name constants for external consumption
 COLLECTION_PROCEDURAL_SKILLS = "procedural_skills"

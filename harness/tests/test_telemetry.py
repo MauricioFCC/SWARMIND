@@ -136,43 +136,43 @@ class TestLevelRecord:
 
     def test_duration_ms_with_end_time(self) -> None:
         """duration_ms: end_time > 0 → (end - start) * 1000."""
-        l = LevelRecord(level=1, start_time=10.0, end_time=15.0)
-        assert l.duration_ms == 5000.0
+        level = LevelRecord(level=1, start_time=10.0, end_time=15.0)
+        assert level.duration_ms == 5000.0
 
     def test_duration_ms_without_end_time(self) -> None:
         """duration_ms: end_time == 0, start_time > 0 → (now - start) * 1000."""
-        l = LevelRecord(level=1, start_time=10.0, end_time=0.0)
+        level = LevelRecord(level=1, start_time=10.0, end_time=0.0)
         now = time.time()
-        assert l.duration_ms == pytest.approx((now - 10.0) * 1000, rel=0.1)
+        assert level.duration_ms == pytest.approx((now - 10.0) * 1000, rel=0.1)
 
     def test_duration_ms_no_times(self) -> None:
         """duration_ms: end_time == 0, start_time == 0 → 0.0."""
-        l = LevelRecord(level=1, start_time=0.0, end_time=0.0)
-        assert l.duration_ms == 0.0
+        level = LevelRecord(level=1, start_time=0.0, end_time=0.0)
+        assert level.duration_ms == 0.0
 
     def test_success_rate_empty(self) -> None:
         """success_rate: sin subtasks → 0.0."""
-        l = LevelRecord(level=1)
-        assert l.success_rate == 0.0
+        level = LevelRecord(level=1)
+        assert level.success_rate == 0.0
 
     def test_success_rate_all_success(self) -> None:
         """success_rate: todas success → 1.0."""
-        l = LevelRecord(level=1)
-        l.subtasks = [
+        level = LevelRecord(level=1)
+        level.subtasks = [
             SubtaskRecord("a", "ag", "d", status="success"),
             SubtaskRecord("b", "ag", "d", status="success"),
         ]
-        assert l.success_rate == 1.0
+        assert level.success_rate == 1.0
 
     def test_success_rate_mixed(self) -> None:
         """success_rate: mezcla success/failed."""
-        l = LevelRecord(level=1)
-        l.subtasks = [
+        level = LevelRecord(level=1)
+        level.subtasks = [
             SubtaskRecord("a", "ag", "d", status="success"),
             SubtaskRecord("b", "ag", "d", status="failed"),
             SubtaskRecord("c", "ag", "d", status="success"),
         ]
-        assert l.success_rate == pytest.approx(2 / 3)
+        assert level.success_rate == pytest.approx(2 / 3)
 
     def test_to_dict(self, level_record: LevelRecord) -> None:
         """to_dict: incluye level, duracion, subtasks, success_rate."""
@@ -230,10 +230,10 @@ class TestSessionTelemetry:
     def test_add_level(self) -> None:
         """add_level: agrega nivel a la lista."""
         s = SessionTelemetry("sid", "task")
-        l = LevelRecord(level=0)
-        s.add_level(l)
+        level = LevelRecord(level=0)
+        s.add_level(level)
         assert len(s.levels) == 1
-        assert s.levels[0] is l
+        assert s.levels[0] is level
 
     def test_record_subtask_new_level(self) -> None:
         """record_subtask: crea niveles intermedios si no existen."""

@@ -116,7 +116,7 @@ class PromptEvolver:
         result: list[str] = []
         skip_patterns = ["por ejemplo", "ejemplo:", "e.g.", "i.e.", "note:", "nota:"]
         kept = 0
-        total = len([l for l in lines if l.strip() and not l.startswith("#") and not l.startswith("---")])
+        total = len([line for line in lines if line.strip() and not line.startswith("#") and not line.startswith("---")])
         target = max(1, int(total * 0.7))
 
         for line in lines:

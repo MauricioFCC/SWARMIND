@@ -128,7 +128,7 @@ class TestContextWindowManager:
         result = mgr.optimize(window)
         after = result.total_tokens
         # Should be reduced (or at least not increased)
-        assert after <= before or result.over_budget == False
+        assert after <= before or not result.over_budget
 
     def test_stats_after_optimize(self):
         mgr = ContextWindowManager(total_budget=50)

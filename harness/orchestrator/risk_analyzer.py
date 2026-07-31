@@ -126,7 +126,7 @@ class RiskAnalyzer:
                 for d in RiskDomain
             },
             "by_level": {
-                l.value: sum(1 for r in self._risks if r.level == l)
-                for l in RiskLevel
+                level.value: sum(1 for r in self._risks if r.level == level)
+                for level in RiskLevel
             },
         }

@@ -117,9 +117,9 @@ class OrchestrationReport:
             "componente": self.componente,
             "calidad_global": f"{self.calidad_global:.2%}",
             "estado": self.estado.name,
-            "capas_ejecutadas": [l.layer.name for l in self.layers],
-            "capas_exitosas": sum(1 for l in self.layers if l.exitoso),
-            "capas_fallidas": sum(1 for l in self.layers if not l.exitoso),
+            "capas_ejecutadas": [layer.layer.name for layer in self.layers],
+            "capas_exitosas": sum(1 for layer in self.layers if layer.exitoso),
+            "capas_fallidas": sum(1 for layer in self.layers if not layer.exitoso),
             "execution_id": self.execution_id,
         }
 
@@ -335,7 +335,7 @@ class QAOrchestrator:
         )
 
         # â”€â”€ Determinacion de estado final â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        exitosas = sum(1 for l in layers if l.exitoso)
+        exitosas = sum(1 for layer in layers if layer.exitoso)
         total_capas = len(layers)
 
         if exitosas == total_capas:
@@ -416,7 +416,7 @@ class QAOrchestrator:
 
         # Penalizacion base por capas fallidas
         penalizacion_fallo = 1.0 - (
-            sum(1 for l in layers if not l.exitoso) / max(len(layers), 1)
+            sum(1 for layer in layers if not layer.exitoso) / max(len(layers), 1)
         )
 
         # Aporte L1: riesgo bajo = mejor calidad

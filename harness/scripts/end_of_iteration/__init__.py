@@ -542,8 +542,8 @@ def run_auto_pipeline() -> dict[str, Any]:
         _safe_print(f"    {_warn('No se genero mensaje de commit. Omitiendo.')}")
         return {"status": "ok", "auto_commit": False, "report": report}
 
-    clean_lines = [l for l in commit_msg.split('\n') if not l.strip().startswith('#')]
-    clean_msg = '\n'.join(l for l in clean_lines if l.strip())
+    clean_lines = [line for line in commit_msg.split('\n') if not line.strip().startswith('#')]
+    clean_msg = '\n'.join(line for line in clean_lines if line.strip())
 
     if not clean_msg:
         clean_msg = "chore: actualizacion automatica"

@@ -376,8 +376,8 @@ class TrajectoryCompressor:
 
             if isinstance(content, str) and content:
                 # Truncar y extraer primeras lineas significativas
-                lines = [l.strip() for l in content.split("\n") if l.strip()]
-                significant = [l for l in lines if len(l) > 20][:2]
+                lines = [line.strip() for line in content.split("\n") if line.strip()]
+                significant = [line for line in lines if len(line) > 20][:2]
                 if significant:
                     key_points.append(f"[{role}] {' '.join(significant)}")
                 elif lines:

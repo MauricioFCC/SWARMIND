@@ -466,7 +466,7 @@ def _simulate_evals(
             "temperatura del LLM o refinamiento del prompt."
         )
 
-    latency_total = sum(l.latency_ms for l in layers)
+    latency_total = sum(layer.latency_ms for layer in layers)
 
     logger.info(
         "[AIFactory] Evals | pass_rate=%.2f passed=%d/%d "

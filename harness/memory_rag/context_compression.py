@@ -285,7 +285,7 @@ def aggressive_compress(text: str) -> str:
     Returns:
         Texto comprimido (max 1000 chars).
     """
-    lines = [l for l in text.split("\n") if l.strip()]
+    lines = [line for line in text.split("\n") if line.strip()]
     text_compressed = "\n".join(lines)
     text_compressed = re.sub(r" {2,}", " ", text_compressed)
     return text_compressed[:1000]
@@ -303,7 +303,7 @@ def _default_summary_fn(text: str) -> str:
     text = text.strip()
     if len(text) <= MAX_SUMMARY_CHARS:
         return text
-    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    lines = [line.strip() for line in text.split("\n") if line.strip()]
     summary_lines: list[str] = []
     char_count = 0
     for line in lines:

@@ -232,7 +232,7 @@ class SessionTelemetry:
             "total_warnings": self.total_warnings,
             "success_rate": round(self.success_rate, 3),
             "agent_stats": self.agent_stats,
-            "levels": [l.to_dict() for l in self.levels],
+            "levels": [level.to_dict() for level in self.levels],
         }
 
 

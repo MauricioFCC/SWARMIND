@@ -511,7 +511,10 @@ class TestSemanticCacheInit:
         assert cache._default_ttl == 60
 
     def test_init_with_custom_embedding_fn(self):
-        custom_fn = lambda x: np.ones(384, dtype=np.float32)
+        def _embed(x):
+            return np.ones(384, dtype=np.float32)
+
+        custom_fn = _embed
         cache = SemanticCache(embedding_fn=custom_fn)
         result = cache._embedding_fn("test")
         assert np.all(result == 1.0)

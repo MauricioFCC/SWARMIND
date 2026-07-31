@@ -97,23 +97,27 @@ class QAContext:
 
 # ── Exportaciones publicas de todas las capas ─────────────────────────────────
 
-from harness.qa.agent import AgentResult, AutonomousTestAgent
-from harness.qa.detector import (
+# Los submódulos (agent, detector, generator, orchestrator, predictor) importan
+# QASeverity/QALayer/QAMetadata/QAContext desde este __init__ (ciclo circular
+# intencional): deben estar definidos ANTES de importar los submódulos, por lo
+# que estos imports no pueden moverse al top del archivo.
+from harness.qa.agent import AgentResult, AutonomousTestAgent  # noqa: E402
+from harness.qa.detector import (  # noqa: E402
     AnomalyReport,
     AnomalyType,
     VisualAnomalyDetector,
 )
-from harness.qa.generator import (
+from harness.qa.generator import (  # noqa: E402
     GuardrailResult,
     TestCaseGenerator,
     TestSuite,
 )
-from harness.qa.orchestrator import (
+from harness.qa.orchestrator import (  # noqa: E402
     OrchestrationReport,
     PipelineStatus,
     QAOrchestrator,
 )
-from harness.qa.predictor import (
+from harness.qa.predictor import (  # noqa: E402
     FailurePredictor,
     HistorialEjecucion,
     RiskScore,

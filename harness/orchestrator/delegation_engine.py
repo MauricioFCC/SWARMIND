@@ -24,14 +24,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger(__name__)
-
-try:
-    import yaml
-    HAS_YAML = True
-except ImportError:
-    HAS_YAML = False
-
 # Importar descubrimiento recursivo de agentes
 # (reemplaza _DEFAULT_CAPABILITIES, _DEFAULT_INTENT_AGENTS, _DEFAULT_DOMAIN_MAP)
 from harness.orchestrator.agent_discovery import (
@@ -50,6 +42,14 @@ from harness.orchestrator.agent_discovery import (
 )
 from harness.orchestrator.task_manager import TaskManager
 from harness.orchestrator.task_planner import TaskPlan
+
+logger = logging.getLogger(__name__)
+
+try:
+    import yaml
+    HAS_YAML = True
+except ImportError:
+    HAS_YAML = False
 
 
 def _find_routing_rules_path() -> str:

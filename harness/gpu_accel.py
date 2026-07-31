@@ -20,9 +20,12 @@ Usage:
 from __future__ import annotations
 
 import logging
+import os as _os
+from pathlib import Path as _Path
 from typing import Any
 
 import numpy as np
+from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +40,6 @@ DEVICE_NAME: str = "CPU"
 GPU_MEMORY_GB: float = 0.0
 
 # Asegurar que torch/lib con DLLs CUDA este en PATH (Windows)
-import os as _os
-from pathlib import Path as _Path
-
-from typing_extensions import Self
-
 _torch_lib = str(
     _Path(__file__).resolve().parent.parent / ".venv" / "Lib" / "site-packages" / "torch" / "lib"
 )

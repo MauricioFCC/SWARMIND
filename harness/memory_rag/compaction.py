@@ -102,7 +102,7 @@ def _flush_buffer(buf: list[str], target: list[str]) -> None:
     if not buf:
         return
     if len(buf) > 3:
-        total_chars = sum(len(l) for l in buf)
+        total_chars = sum(len(line) for line in buf)
         if total_chars > 500:
             target.append(f"[... {len(buf)} lines, {total_chars} chars compressed ...]")
             return

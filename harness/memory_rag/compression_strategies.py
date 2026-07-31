@@ -5,14 +5,6 @@ import json
 import logging
 import re
 
-logger = logging.getLogger(__name__)
-
-# Keys whose values should not be truncated in YAML/JSON compression
-STRUCTURED_PRESERVE_KEYS: set[str] = {
-    "name", "description", "version", "title", "summary",
-    "instruction", "goal", "purpose", "constraint",
-}
-
 from harness.memory_rag.compression_types import (
     CHARS_PER_TOKEN,
     FILLER_PATTERNS,
@@ -23,6 +15,14 @@ from harness.memory_rag.compression_types import (
     STOP_WORDS,
     estimate_tokens,
 )
+
+logger = logging.getLogger(__name__)
+
+# Keys whose values should not be truncated in YAML/JSON compression
+STRUCTURED_PRESERVE_KEYS: set[str] = {
+    "name", "description", "version", "title", "summary",
+    "instruction", "goal", "purpose", "constraint",
+}
 
 
 class CompressionStrategies:
@@ -649,7 +649,7 @@ class CompressionStrategies:
             # Truncado directo: eliminar lineas cortas no criticas
             lines = current.split("\n")
             # Eliminar lineas vacias o muy cortas (< 3 chars)
-            lines = [l for l in lines if len(l.strip()) > 3]
+            lines = [line for line in lines if len(line.strip()) > 3]
             # Si aun excede, eliminar lineas con solo stop words
             if self._count_tokens("\n".join(lines)) > target_tokens:
                 critical_lines: list[str] = []

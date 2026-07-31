@@ -172,7 +172,7 @@ def build_dag(tasks: list[PipelineTask]) -> PipelineSchedule:
         ready = next_ready
     
     total_tokens = sum(t.estimated_tokens for t in tasks)
-    max_parallel = max(len(l) for l in levels) if levels else 0
+    max_parallel = max(len(level) for level in levels) if levels else 0
     
     return PipelineSchedule(
         levels=levels,
@@ -193,7 +193,7 @@ def estimate_speedup(schedule: PipelineSchedule) -> float:
     """
     if not schedule.levels:
         return 1.0
-    serial_steps = sum(len(l) for l in schedule.levels)
+    serial_steps = sum(len(level) for level in schedule.levels)
     parallel_steps = len(schedule.levels)
     return serial_steps / max(parallel_steps, 1) if parallel_steps > 0 else 1.0
 

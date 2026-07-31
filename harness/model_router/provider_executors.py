@@ -7,8 +7,6 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 
-logger = logging.getLogger(__name__)
-
 from harness.model_router.multi_provider_types import (
     ExecutionResult,
     ProviderConfig,
@@ -17,6 +15,8 @@ from harness.model_router.multi_provider_types import (
 from harness.model_router.provider_health import (
     stop_health_checks,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def execute_openai_compat(

@@ -27,9 +27,11 @@ def _print_result(r: dict[str, Any]):
     name = r.get("name", "?")
     print(f"\n  [{name}]")
     for k, v in r.items():
-        if k in ("name", "errors"): continue
+        if k in ("name", "errors"):
+            continue
         if k == "errors" and isinstance(v, list):
-            if v: print(f"    Errors: {len(v)}")
+            if v:
+                print(f"    Errors: {len(v)}")
             continue
         print(f"    {k}: {v}")
 
@@ -69,9 +71,11 @@ def compare(results: list[dict]):
     for cur in results:
         name = cur.get("name", "?")
         prev = next((b for b in baseline if b.get("name") == name), None)
-        if not prev: continue
+        if not prev:
+            continue
         for k in cur:
-            if k in ("name", "errors"): continue
+            if k in ("name", "errors"):
+                continue
             cv, pv = cur[k], prev.get(k)
             if isinstance(cv, (int, float)) and isinstance(pv, (int, float)):
                 d = cv - pv

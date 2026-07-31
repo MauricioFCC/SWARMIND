@@ -575,7 +575,7 @@ class AdaptivePlanner:
 
         # Si no hay nada esencial, tomar las primeras líneas significativas
         if not compressed.strip():
-            meaningful = [l for l in lines if l.strip()][
+            meaningful = [line for line in lines if line.strip()][
                 :max(3, target_tokens // 10)
             ]
             compressed = "\n".join(meaningful)

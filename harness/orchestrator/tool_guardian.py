@@ -423,7 +423,7 @@ class ToolGuardian:
 
         # Penalizar codigo excesivamente denso (menos de 50% de lineas en blanco/comentarios)
         total_lines = tool_code.strip().split("\n")
-        code_no_comment = [l for l in total_lines if l.strip() and not l.strip().startswith("#")]
+        code_no_comment = [line for line in total_lines if line.strip() and not line.strip().startswith("#")]
         if len(total_lines) > 20 and len(code_no_comment) / len(total_lines) > 0.85:
             risk_score += 1
 

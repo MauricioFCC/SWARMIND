@@ -93,8 +93,8 @@ class AgentBuilder:
                 continue
 
             avg_score = sum(
-                l.get("metrics", {}).get("overall_score", 0)
-                for l in domain_lessons
+                lesson.get("metrics", {}).get("overall_score", 0)
+                for lesson in domain_lessons
             ) / len(domain_lessons)
 
             if avg_score < MIN_AVG_SCORE:

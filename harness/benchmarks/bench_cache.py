@@ -20,7 +20,8 @@ def bench_cache() -> dict[str, Any]:
     t0 = time.perf_counter()
     for i in range(n_get):
         r = cache.get(f"test prompt {i % n}", agent_role="test")
-        if r: hits += 1
+        if r:
+            hits += 1
     t_get = time.perf_counter() - t0
 
     return {

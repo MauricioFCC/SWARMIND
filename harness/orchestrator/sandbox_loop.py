@@ -27,8 +27,6 @@ Ejemplo de uso::
 """
 from __future__ import annotations
 
-EMBEDDING_DIM = 384
-
 import logging
 from typing import Any
 
@@ -36,6 +34,8 @@ from harness.evolve_loop.cognition_sync import CognitionSync
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 from harness.orchestrator.agent_bus import AgentBus
 from harness.tools_sandbox.mcp_executor import MCPExecutor, SandboxResult
+
+EMBEDDING_DIM = 384
 
 logger = logging.getLogger(__name__)
 

@@ -188,7 +188,7 @@ class TestSelfImproverRunRound:
         """Test run_round persiste leccion en cognition store."""
         improver.run_round("lesson-test", rounds=1)
         lessons = improver.cognition.search_lessons("C.A.S.E.", top_k=50)
-        assert any("lesson-test" in l.title for l in lessons)
+        assert any("lesson-test" in lesson.title for lesson in lessons)
 
 
 # ===================================================================
@@ -217,7 +217,7 @@ class TestSelfImproverPromote:
         improver.run_round("promo-log", rounds=1)
         improver.promote_best_snapshot("promo-log")
         lessons = improver.cognition.search_lessons("Snapshot promoted", top_k=50)
-        assert any("promo-log" in l.title for l in lessons)
+        assert any("promo-log" in lesson.title for lesson in lessons)
 
 
 # ===================================================================

@@ -57,12 +57,14 @@ except ImportError:
         "LanceDB no encontrado. Ejecuta: pip install lancedb && python harness/scripts/init.py"
     )
 
-from harness.evolve_loop.cognition_sync import CognitionSync
-from harness.memory_rag.context_assembler import ContextAssembler
-from harness.memory_rag.doc_ingester import DocumentChunker, ingest_directory
-from harness.memory_rag.lance_vector_store import LanceVectorStore
-from harness.orchestrator.hitl_guard import HITLGuard
-from harness.orchestrator.task_manager import TaskManager
+# Script standalone: sys.path debe configurarse (get_project_root + insert) antes
+# de importar los modulos harness.* para soportar ejecucion desde cualquier CWD.
+from harness.evolve_loop.cognition_sync import CognitionSync  # noqa: E402
+from harness.memory_rag.context_assembler import ContextAssembler  # noqa: E402
+from harness.memory_rag.doc_ingester import DocumentChunker, ingest_directory  # noqa: E402
+from harness.memory_rag.lance_vector_store import LanceVectorStore  # noqa: E402
+from harness.orchestrator.hitl_guard import HITLGuard  # noqa: E402
+from harness.orchestrator.task_manager import TaskManager  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Guardrails - AHORA ES ERROR EXPLICITO si no estÃ¡ disponible
@@ -82,7 +84,8 @@ except ImportError:
 
 
 # Import command handlers
-from harness.run_commands import (
+# (mismo criterio que arriba: requiere sys.path setup previo + guardrails)
+from harness.run_commands import (  # noqa: E402
     _apply_model_routing,
     _check_hitl,
     _handle_db_list_imports,
