@@ -1,0 +1,176 @@
+# Plan Maestro de Mejora: SWARMIND 2026 
+## Arquitectura Agéntica TDD-First, Gobernanza y Patrones de Flujo de Trabajo
+
+Basado en el análisis del repositorio **SWARMIND**, la filosofía de **"TDD + Agentes como Fuente Única de Verdad"** (Uncle Bob) y las técnicas frontera 2026 (Patrones de Anthropic, AGENTIC Harness, Gobernanza), he diseñado un plan de evolución integral. 
+
+El objetivo es transformar SWARMIND de un enjambre de agentes experimental a un **Sistema de Desarrollo de Software (SDLC) Autónomo, Gobernado y Matemáticamente Verificable**, donde el humano deja de revisar código y solo aprueba especificaciones.
+
+---
+
+## 🏛️ Pilar Central: El Paradigma "Spec-First, Code-Second"
+*Filosofía: "El código generado por el agente es un detalle de implementación desechable. Los tests son la ley."*
+
+### 1. Nuevo Flujo de Trabajo TDD Estricto (`tdd_strict`)
+Se implementa un template de orquestación que **bloquea** la escritura en `src/` hasta que los tests sean auditados y aprobados.
+
+```python
+# swarmind/harness/orchestrator/workflows/tdd_strict.py
+TDD_STRICT_DAG = {
+    "name": "tdd_strict",
+    "levels": [
+        # NIVEL 0: Solo Especificación (Humano/Scientist + Guardian)
+        [
+            SubTask(agent="scientist", action="Definir invariantes de negocio y tests PBT (Hypothesis)"),
+            SubTask(agent="guardian", action="Auditar legibilidad, exhaustividad y casos borde de los tests")
+        ],
+        # NIVEL 1: Ejecución Agéntica Autónoma (Builder + SandboxLoop)
+        [
+            SubTask(agent="builder", action="Implementar src/ hasta que tests pasen (Green)", dependencies=["st-0"]),
+            SubTask(agent="guardian", action="Ejecutar Mutation Testing (muTON/PROBE)", dependencies=["st-1"])
+        ],
+        # NIVEL 2: Reporte de Confianza (Coordinator)
+        [
+            SubTask(agent="coordinator", action="Generar Test Confidence Report (Sin mostrar código)", dependencies=["st-2"])
+        ]
+    ]
+}
+```
+
+### 2. El "Test Confidence Report" (Única salida al usuario)
+El sistema **oculta por defecto** el código generado. Al finalizar, el humano recibe:
+```text
+✅ ESPECIFICACIÓN APROBADA (Fuente Única de Verdad)
+📊 Métricas de Confianza:
+   • Tests Unitarios: 142/142 Passing (100%)
+   • Property-Based Testing (PBT): 5,000 generaciones sin fallos.
+   • Mutation Score: 88.5% (Robusto, 12 mutantes supervivientes aceptados como riesgo conocido).
+   • Cobertura de Ramas Lógicas: 96.2%
+⏱️ Ciclo Autónomo: 4 iteraciones en el SandboxLoop (3 min 12 seg).
+🛡️ Archivos modificados: 3 en `src/` (Ocultos. Usa `!show code` solo si es estrictamente necesario para debug).
+```
+
+---
+
+## 🔄 Fase 1: Integración de los 5 Patrones de Flujo de Trabajo (Anthropic)
+
+Para maximizar la velocidad y confiabilidad, SWARMIND debe mapear sus tareas a estos patrones probados:
+
+| Patrón Anthropic | Implementación en SWARMIND | Impacto |
+| :--- | :--- | :--- |
+| **1. Prompt Chaining** | Generación de Tests → Evaluación de Tests → Refinamiento de Tests → (Solo al final) Generación de Código. | +40% calidad de especificación, elimina alucinaciones de lógica. |
+| **2. Routing** | `DomainClassifier` enruta la tarea a bundles de skills específicos (ej: `legal-doc` + `security-audit` vs `frontend-uiux` + `data-science`). | -50% tokens, +23% precisión en dominio. |
+| **3. Parallelization** | **Swiss Watch Pattern**: `builder`, `scientist` y `guardian` operan en paralelo en el Nivel 0 del DAG. | 4.8x speedup en tareas complejas. |
+| **4. Orchestrator** | `AdaptivePlanner` descompone dinámicamente tareas sin una topología predefinida (ej: elegir qué datasets o APIs consultar). | Manejo de tareas "Very Complex" sin hardcoding. |
+| **5. Evaluator-Optimizer** | **Bucle de Calidad Autónomo**: El `guardian` ejecuta tests. Si fallan, el `builder` corrige. Si el *Mutation Score* < 85%, el `guardian` escribe *nuevos tests* y reinicia el ciclo. | Código matemáticamente verificable, no solo "que compila". |
+
+---
+
+## 🛡️ Fase 2: Gobernanza, Seguridad y Economía de Tokens (ADR-0027 Upgrade)
+
+Un sistema que no lee código necesita mecanismos infalibles para evitar que los agentes cometan errores costosos o inseguros.
+
+### 1. GovernanceAgent & HITLGuard Avanzado
+*   **Autoridad Granular**: El `builder` tiene permiso de escritura en `src/`, pero **cero permiso** para ejecutar `deploy` o modificar variables de entorno.
+*   **Auditoría Inmutable**: Cada decisión del agente (por qué eligió esa librería, por qué escribió ese test) se registra en el `WriteAheadLog` (WAL) con contexto y justificación.
+*   **Reversión Automática**: Si el `Continuous Verifier` detecta una degradación de métricas post-despliegue, ejecuta un rollback automático al commit anterior.
+
+### 2. Agent Cost Controller & LiteLLM Router
+*   **Detección de Loops Infinitos**: Si un agente hace la misma llamada a la API 3 veces con los mismos argumentos, el `Cost Controller` mata el proceso y escala al humano.
+*   **Model Routing Inteligente**: 
+    *   `agentic-reasoner` (Claude 3.5 Sonnet) para el `scientist` y `coordinator`.
+    *   `agentic-coder` (GPT-4o) para el `builder`.
+    *   `agentic-validator` (GPT-4o-mini / Mistral Small) para el `guardian` (ahorro de ~70% en costos de validación).
+
+### 3. Ephemeral Sandboxes (Wasm / Micro-VMs)
+*   El `MCPExecutor` no ejecuta el código del `builder` en el sistema host. Provisiona un entorno **WebAssembly (Wasm)** o una Micro-VM efímera (Firecracker) que se destruye inmediatamente después de ejecutar `pytest`. Cero polución de estado, aislamiento criptográfico.
+
+---
+
+## 🔬 Fase 3: El "Agentic Evaluation Harness" (La nueva frontera)
+
+Evaluar solo el *output* final no es suficiente. SWARMIND necesita evaluar la *trayectoria* y la *resiliencia*.
+
+### 1. Agentic Trajectory Evaluator
+Un módulo `harness/eval/trajectory_harness.py` que usa "LLM-as-a-Judge" para revisar el grafo de ejecución (DAG):
+*   *Pregunta*: "¿El `Coordinator` podría haber resuelto esta tarea con 2 agentes en lugar de 5?"
+*   *Pregunta*: "¿El `Builder` dio rodeos innecesarios antes de llegar a la solución?"
+*   **Acción**: Si la trayectoria es ineficiente, el `evolve` agent ajusta las reglas del `SkillBundler` para futuras tareas.
+
+### 2. Automated Red-Teaming (Agente Adversario)
+Antes de que cualquier nuevo skill o código pase a producción, un agente `@red-teamer` lo ataca:
+*   Inyección de *prompt injections* en los datos de entrada.
+*   Generación de inputs malformed o edge cases extremos.
+*   Intentos de escalada de privilegios dentro del Sandbox.
+*   **Regla**: Si el `red-teamer` encuentra una vulnerabilidad, el despliegue se bloquea automáticamente y se genera un nuevo test PBT para cubrir ese vector de ataque.
+
+### 3. Continuous Verification (CV) Post-Deploy
+Integración con métricas de negocio reales. Si el `builder` despliega una optimización de base de datos, el CV monitorea la latencia real durante 30 minutos. Si la latencia sube un 5% respecto al baseline, se revierte el cambio y se notifica al `evolve-analyzer`.
+
+
+Ten en cuenta esta arquitectura:
+
+Aquí tienes el plan de acción en 6 pasos: 
+
+Paso 1 → construir un ciclo: generar, criticar, revisar: un ciclo de autoevaluación supera a un modelo más inteligente sin ninguno. 
+
+Paso 2 → agregar herramientas: búsqueda, ejecución de código, base de datos: pensar sin herramientas es alucinar. 
+
+Paso 3 → Trabajar en paralelo: iniciar agentes en árboles de trabajo separados: mismo repositorio, ramas diferentes, sin conflictos. 
+
+Paso 4 → agregar un gráfico: los agentes escriben los hallazgos como nodos y aristas tipificados, no como transcripciones; cada afirmación conserva su origen. 
+
+Paso 5 → Base su evaluador: comprueba las afirmaciones contra los bordes del grafo, no contra las sensaciones: "Triple no encontrado" es mejor que "parece estar mal". 
+
+Paso 6 → El gráfico sobrevive a cada sesión: sus agentes dejan de reconstruir el contexto desde cero. 
+
+El resultado: Karpathy ejecutaba 1 agente en 1 dirección; este sistema ejecuta 1000 con memoria compartida; es el mismo modelo, es la arquitectura. 
+---
+
+## 🗺️ Roadmap de Implementación para SWARMIND
+
+### Sprint 1: Fundación TDD-First (Semanas 1-2)
+- [ ] Crear `harness/orchestrator/workflows/tdd_strict.py`.
+- [ ] Actualizar `.opencode/agents/builder.md` con la regla de oro: *"NUNCA modifiques tests. Tu único dominio es src/ para hacerlos pasar"*.
+- [ ] Integrar `hypothesis` (PBT) y `muTON`/`PROBE` (Mutation Testing) en el `guardian`.
+- [ ] Implementar la generación del **Test Confidence Report** como salida por defecto.
+
+### Sprint 2: Orquestación y Eficiencia (Semanas 3-4)
+- [ ] Implementar el **LiteLLM Router** (`harness/llm/router.py`) para fallbacks automáticos y cost tracking real en USD.
+- [ ] Activar el patrón **Swiss Watch Parallelization** (Nivel 0: Builder + Scientist + Guardian simultáneos).
+- [ ] Implementar **Agent Capsules** para fusionar prompts de agentes con >70% de superposición de contexto (-51% tokens).
+
+### Sprint 3: Gobernanza y Seguridad (Semanas 5-6)
+- [ ] Desplegar `GovernanceAgent` y `HITLGuard` con políticas de "Deny by Default" para acciones destructivas.
+- [ ] Implementar **Ephemeral Sandboxes** (Wasm) para la ejecución de código generado.
+- [ ] Integrar **OpenTelemetry + Langfuse** para trazabilidad completa de cada token, decisión y dólar gastado.
+
+### Sprint 4: Evaluación y Evolución Autónoma (Semanas 7-8)
+- [ ] Crear el `Agentic Trajectory Evaluator` para auditar la eficiencia del DAG.
+- [ ] Implementar el agente `@red-teamer` para pruebas adversariales pre-producción.
+- [ ] Activar el ciclo **ASI-Evolve** (Learn → Design → Experiment → Analyze → Deploy) para que el sistema mejore sus propios prompts y reglas basándose en los fallos del Red-Teaming.
+
+---
+
+## 📊 Métricas de Éxito del Nuevo SWARMIND
+
+| Métrica | Estado Actual (Estimado) | Objetivo Post-Mejora | Técnica de Medición |
+| :--- | :--- | :--- | :--- |
+| **Revisión Humana de Código** | 100% de los PRs | **0%** (Solo se revisan Tests/Specs) | Auditoría de flujo de trabajo |
+| **Mutation Score** | N/A o bajo | **≥ 85%** | `muTON` / `PROBE` |
+| **Eficiencia de Tokens** | Baseline | **-51%** vs Baseline | `Agent Capsules` + `LiteLLM Router` |
+| **Tasa de Rollback en Prod** | Variable | **< 5%** | `Continuous Verification` (CV) |
+| **Detección de Vulnerabilidades** | Reactiva | **100%** pre-producción | `Automated Red-Teaming` |
+| **Time-to-Market (Features)** | Días/Semanas | **Horas** | `Swiss Watch Parallelization` |
+
+---
+
+## 💡 Conclusión y Próximos Pasos
+
+Al adoptar este plan, **SWARMIND** deja de ser una herramienta que "ayuda a programar" para convertirse en una **Fábrica de Software Verificable**. 
+
+El rol del ingeniero humano asciende de "escritor de sintaxis" a **"Arquitecto de Especificaciones y Gobernanza"**. Definimos *qué* debe hacer el sistema y *qué reglas* no puede romper (a través de tests PBT y mutation testing). El enjambre de agentes se encarga del *cómo*, iterando autónomamente en un sandbox hasta alcanzar la excelencia métrica, sin que el humano tenga que leer una sola línea de su código generado.
+
+**¿Por dónde quieres empezar?** 
+1. ¿Generamos el código del `tdd_strict.py` y los prompts actualizados del `builder`/`guardian`?
+2. ¿Implementamos primero el `LiteLLM Router` y el `Agent Cost Controller` para asegurar la viabilidad económica?
+3. ¿Diseñamos el `Agentic Red-Teaming Harness`?

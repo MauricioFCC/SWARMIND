@@ -35,6 +35,15 @@ quality_metrics:
 | **MuTON/mewt** | Mutation Testing | Tree-sitter + SQLite | Prioritized mutants |
 | **TDAD MutationSmith** | Prompt Mutation | Mutation scores 86–100% | Agent eval oracle |
 | **CDBench** | Zero-sum Game | Attacker↔Defender | Code Defenders benchmark |
+| **TDDGate** | TDD estricto (ADR-0033) | Bloquea escribir en `src/` sin tests aprobados | `harness/orchestrator/workflows/tdd_strict.py` |
+| **SuccessCorrelation** | Aprendizaje fallo→exito | Lecciones accionables (paths, scope, comandos) | `harness/orchestrator/success_correlation.py` |
+
+## TDD Estricto (Spec-First, Code-Second) — ADR-0033
+Los tests son la ley. El guardian audita:
+- **RED**: el builder NO implementa hasta que el test falla correctamente (gate bloquea `src/`).
+- **GREEN**: el builder NO toca tests; solo implementacion minima. El guardian ejecuta mutation testing.
+- **REFACTOR**: solo mejora la cualidad nombrada, sin cambiar comportamiento.
+- Emitir `TestConfidenceReport` (mutation >= 85% = Robusto; < 85% = Requiere refuerzo).
 
 ## Capacidades
 

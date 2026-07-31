@@ -60,6 +60,26 @@ _SYMBOL_MAP: dict[str, str] = {
     "AgentProfile": "harness.orchestrator.mars_scheduler",
     "TaskSpec": "harness.orchestrator.mars_scheduler",
     "Assignment": "harness.orchestrator.mars_scheduler",
+    # Automated Red-Teaming (ADR-0033, Fase 3.2)
+    "AttackVector": "harness.orchestrator.red_teamer",
+    "RedTeamFinding": "harness.orchestrator.red_teamer",
+    "RedTeamer": "harness.orchestrator.red_teamer",
+    # Decision Trace + Resilience Governance (ADR-0033, OmniRoute)
+    "DecisionRecord": "harness.orchestrator.decision_trace",
+    "DecisionTrace": "harness.orchestrator.decision_trace",
+    "format_decision_header": "harness.orchestrator.decision_trace",
+    "ConnectionCooldown": "harness.orchestrator.resilience_governance",
+    "ModelLockout": "harness.orchestrator.resilience_governance",
+    "ResilienceGovernance": "harness.orchestrator.resilience_governance",
+    # Agentic Trajectory Evaluator (ADR-0033, Fase 3.1)
+    "TrajectoryStep": "harness.orchestrator.trajectory_evaluator",
+    "TrajectoryReport": "harness.orchestrator.trajectory_evaluator",
+    "TrajectoryEvaluator": "harness.orchestrator.trajectory_evaluator",
+    "build_judge_prompt": "harness.orchestrator.trajectory_evaluator",
+    # Continuous Verification post-deploy (ADR-0033, Fase 3.3)
+    "MetricSample": "harness.orchestrator.continuous_verifier",
+    "VerificationResult": "harness.orchestrator.continuous_verifier",
+    "ContinuousVerifier": "harness.orchestrator.continuous_verifier",
 }
 
 

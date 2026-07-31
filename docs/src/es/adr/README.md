@@ -36,6 +36,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0030 | [Comprehensive Audit & Refactoring](adr0030-comprehensive-audit-2026.md) | ACEPTADO | — |
 | 0031 | [Frontier Improvements 2026 — Multi-API, Prompt Compression, GoT](adr0031-frontier-improvements-2026.md) | ACEPTADO | — |
 | 0032 | [Remaining Improvements — Shared Cache, Event Bus, Spec Decoding, KV Cache, A2A](adr0032-remaining-improvements-2026.md) | ACEPTADO | — |
+| 0033 | [TDD + Agentes como Fuente Unica de Verdad — Spec-First, Code-Second](adr0033-tdd-agentes-ssot-2026.md) | ACEPTADO | — |
 
 ## Resumen por Categoria
 

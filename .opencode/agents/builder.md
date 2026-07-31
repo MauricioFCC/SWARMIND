@@ -34,6 +34,15 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 | Tests >80% | Unitarios + integracion + casos borde |
 | Seguridad | Validar entradas, parametrizar SQL, no hardcodear secrets |
 | **Errores Legibles** | **TODO error debe tener WHAT+WHY+WHERE. Sin `except: pass`. Logger con contexto. Stack trace estructurado.** |
+| **Regla de Oro TDD** | **NUNCA modifiques tests. Tu unico dominio es `src/` para hacerlos pasar.** (ADR-0033) |
+
+## TDD Estricto (Spec-First, Code-Second) — ADR-0033
+Los tests son la ley. El codigo generado es un detalle de implementacion desechable.
+- **RED**: prohibido implementar. El unico trabajo es el test que falla correctamente.
+- **GREEN**: prohibido tocar el test. Solo implementacion minima para pasar.
+- **REFACTOR**: prohibido cambiar comportamiento. Solo la cualidad nombrada.
+- Verificar con `TDDGate` (`harness/orchestrator/workflows/tdd_strict.py`).
+- Reportar con `TestConfidenceReport` (mutation >= 85% = Robusto).
 
 ## Definition of Done (DoD)
 Antes de marcar una tarea como completa:

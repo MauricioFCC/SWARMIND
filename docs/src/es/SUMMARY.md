@@ -1,4 +1,4 @@
-# Summary
+﻿# Summary
 
 [Introduccion](README.md)
 
@@ -6,18 +6,18 @@
 
 - [Filosofia del Sistema](guide/filosofia.md)
 - [Como Usar Swarmind](guide/como-usar.md)
-- [Agentes y Skills (completo)](guide/agentes-y-skills.md) — **SSOT** de agentes, skills, modulos y novedades
+- [Agentes y Skills (completo)](guide/agentes-y-skills.md) â€” **SSOT** de agentes, skills, modulos y novedades
 - [Velocidad y Paralelismo](guide/velocidad.md)
 - [Estandares Automaticos](guide/estandares.md)
-- [Analisis de Arquitectura](guide/analisis-arquitectura.md) — Python vs Rust, Monolith vs Microservicios
+- [Analisis de Arquitectura](guide/analisis-arquitectura.md) â€” Python vs Rust, Monolith vs Microservicios
 
 # Arquitectura
 
-- [Swiss Watch Pattern](architecture/swiss-watch.md) — **SSOT** arquitectura
-- [Dynamic Scaling](architecture/dynamic-scaling.md) — Estrategias de planificacion
-- [Composicion del Sistema](architecture/composicion.md) — Tecnicas frontier por agente y skill
+- [Swiss Watch Pattern](architecture/swiss-watch.md) â€” **SSOT** arquitectura
+- [Dynamic Scaling](architecture/dynamic-scaling.md) â€” Estrategias de planificacion
+- [Composicion del Sistema](architecture/composicion.md) â€” Tecnicas frontier por agente y skill
 
-# Manual Tecnico — Modulos Core
+# Manual Tecnico â€” Modulos Core
 
 - [Manual Tecnico Completo](technical/manual-tecnico.md)
 - [Multi-API Router](technical/multi_provider.md)
@@ -117,7 +117,7 @@
 
 # Roadmap
 
-- [Estado del Proyecto](roadmap/estado.md) — **SSOT** estado y roadmap
+- [Estado del Proyecto](roadmap/estado.md) â€” **SSOT** estado y roadmap
 
 # ADR - Architecture Decision Records (32 activos)
 
@@ -162,3 +162,5 @@
 ### Improvements
 - [ADR-0031: Frontier Improvements 2026](adr/adr0031-frontier-improvements-2026.md)
 - [ADR-0032: Remaining Improvements](adr/adr0032-remaining-improvements-2026.md)
+- [ADR-0033: TDD + Agentes como Fuente Unica de Verdad](adr/adr0033-tdd-agentes-ssot-2026.md)
+
