@@ -76,16 +76,16 @@ class HermesBridge:
 
     @staticmethod
     def _resolve_hermes_path(custom_path: str | None = None) -> str | None:
-        """Resuelve la ruta a shared_memory."""
+        """Resuelve la ruta a Hermes_Memory_Proyects (implementacion)."""
         if custom_path:
             return custom_path
 
-        # Buscar en ubicaciones conocidas
+        # Buscar en ubicaciones conocidas (implementacion canonica primero)
         candidates = [
             os.environ.get("HERMES_PATH", ""),
-            str(Path.home() / "Documents" / "DEV-SPACE" / "shared_memory"),
-            str(Path.home() / "shared_memory"),
-            str(Path.cwd() / "shared_memory"),
+            str(Path.home() / "Documents" / "Hermes_Memory_Proyects"),
+            str(Path.home() / "Documents" / "DEV-SPACE" / "Hermes_Memory_Proyects"),
+            str(Path.cwd() / "Hermes_Memory_Proyects"),
         ]
 
         for path in candidates:

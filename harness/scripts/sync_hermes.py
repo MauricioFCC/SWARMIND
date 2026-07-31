@@ -30,8 +30,8 @@ sys.path.insert(1, str(PROJECT_ROOT))
 # Script standalone: sys.path debe configurarse antes de importar el paquete.
 from harness.memory_rag.hermes_bridge import HermesBridge  # noqa: E402
 
-# Hermes root por defecto: Hermes_Memory_Proyects (memoria compartida real).
-DEFAULT_HERMES_ROOT = Path.home() / "Documents" / "DEV-SPACE" / "Hermes_Memory_Proyects"
+# Hermes root por defecto: implementacion canonica (Documents\Hermes_Memory_Proyects).
+DEFAULT_HERMES_ROOT = Path.home() / "Documents" / "Hermes_Memory_Proyects"
 
 # Directorio de memoria federada de Swarmind.
 SWARMIND_FEDERATED = PROJECT_ROOT / ".opencode" / "federated"
