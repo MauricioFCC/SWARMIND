@@ -2,6 +2,42 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-07-31] 🛡️ Seguridad endurecida + Mesa de Trabajo + Limpieza de código
+
+### Mesa de Trabajo (Auditoría integral)
+Auditoría completa del repositorio (4 dimensiones: calidad, ops, deps, tests) reveló:
+- **40 archivos >500 líneas** (objetivo <900LC): mars_scheduler 1141, factory 905, federated_search 865, adaptive_planner 859, debate_orchestrator 856, sqlite_vec_adapter 837, metaclaw 833, worktable 829, scheduler 811, agent_kpi_tracker 804, lance_vector_store 784, semantic_cache 773, natural_language_tools 771, router 752, tool_guardian 722, vector_store_adapter 721, context_window_manager 719, agent_bus 715, compression_strategies 712, shapley_flow 707, guardrail_engine 685, organizational_layer 676, run_commands 672, optimization_pipeline 662, multi_user_governance 661, eval_factory 655, task_orchestrator 644, task_planner 638, run.py 635, context_assembler 635.
+- **11 archivos de producción a 0% cobertura** (1669 stmts sin testear): mars_scheduler 339, sqlite_vec_adapter 337, federated_search 249, metaclaw 217, nudge_system 109, gpu_optimize 87, token_budget_manager 75, sqlite_vec_utils 54, hermes_adapter 52, __main__ 2, + 5 archivos de benchmarks (174 stmts).
+- **Cobertura real 74.95%** (no 71.56% como decía el roadmap — 3.39pp por encima).
+- **92 errores de mypy** en 32 archivos (deuda oculta por `|| true` en CI; queda en `|| true` con TODO ADR-0037).
+
+### Calidad
+- **ruff `--fix`**: 7 errores triviales eliminados (5× F401 unused-import `field` de dataclass, 1× F841 unused-variable, 1× F821 undefined-name resuelto con `TYPE_CHECKING` import en `telemetry.py`).
+- **bandit**: 0 hallazgos (exit 0). pip-audit: 0 vulnerabilidades.
+- **pre-commit + scanner**: 0 violaciones (ADR-0035).
+
+### Métricas
+| Métrica | Antes | Ahora | Delta |
+|---|---:|---:|---:|
+| Tests pasando | 3674 | 3674 | = |
+| Skipped | 36 | 36 | = |
+| xfailed | 4 | 4 | = |
+| Ruff errors | 7 | 0 | -7 |
+| Cobertura | 74.95% | 74.95% | = |
+| Archivos >500ln | 40 | 40 | = |
+| Cobertura 0% | 11 archivos | 11 archivos | = |
+| ADRs | 36 | 36 | = |
+
+### Pendiente (próximos loops)
+1. Tests para mars_scheduler, metaclaw, federated_search (top deuda 0%)
+2. Refactor mars_scheduler 1141 → <900ln
+3. Tests para sqlite_vec_adapter (337stmts 0%)
+4. Tests para 5 archivos de benchmarks
+5. Tipado progresivo mypy (ADR-0037, 92 errores)
+6. Optimizar 4 tests >4s en test_mcp_manager y test_orchestrator
+7. Mejorar Dockerfile (multi-stage + HEALTHCHECK)
+8. Tag `v0.2.0` (Opción A + Frontier 2026 + 3674 tests)
+
 ## [2026-07-20] ⚡ Optimización Speed + Token Economics + ADRs 0016-0018
 
 ### ADRs creados

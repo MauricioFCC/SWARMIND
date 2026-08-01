@@ -32,6 +32,9 @@ jobs:
       - name: Ruff
         run: ruff check harness/
       - name: MyPy
+        # TODO(ADR-0037): 92 errores de tipo en 32 archivos detectados 2026-07-31
+        # (build-up desde 2026-05). mypy queda en warning hasta tipado progresivo.
+        # Tracking: docs/src/es/roadmap/estado.md > Deuda tecnica.
         run: mypy harness/ --ignore-missing-imports || true
 
   test:

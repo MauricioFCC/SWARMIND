@@ -7,9 +7,9 @@
 
 Las metricas principales del sistema (tests, cobertura, ADRs, agentes, skills, modulos) estan en la [pagina principal](../README.md#estado-actual-julio-2026).
 
-**Resumen ejecutivo:** 3674 tests, 71.56% cobertura, 35 ADRs, 20 agentes, 31 skills, 48 modulos orchestrator, 30 modulos memory/rag, RTX 4060 6x speedup, 15 papers 2026 implementados, **Opción A SSOT global implementada**.
+**Resumen ejecutivo:** 3674 tests, **74.95% cobertura real**, 36 ADRs, 20 agentes, 31 skills, 48 modulos orchestrator, 30 modulos memory/rag, RTX 4060 6x speedup, 15 papers 2026 implementados, **Opción A SSOT global implementada**.
 
-**Metricas adicionales no incluidas en README:** 196+ commits, 258 archivos Python, suite completa ~150s (sin slow ~45s), 30+ tecnicas 2026 integradas.
+**Metricas adicionales no incluidas en README:** 196+ commits, 258 archivos Python, suite completa ~100s (sin slow ~45s), 30+ tecnicas 2026 integradas.
 
 ### Resumen de Cobertura por Modulo
 
@@ -95,12 +95,51 @@ Objetivo: 80%    (proximo hito)
 
 ### Legado de Deuda Tecnica
 
+**Archivos de producción a 0% de cobertura (Auditoria 2026-07-31):**
+
+| Archivo | Stmts | Lineas | Prioridad | Accion |
+|---------|------:|-------:|-----------|--------|
+| `harness/orchestrator/mars_scheduler.py` | 339 | 1141 | Alta | Tests + refactor <900ln |
+| `harness/memory_rag/sqlite_vec_adapter.py` | 337 | 837 | Alta | Tests (tras nosec B608) |
+| `harness/memory_rag/federated_search.py` | 249 | 865 | Alta | Tests faltantes |
+| `harness/orchestrator/metaclaw.py` | 217 | 833 | Alta | Tests (paper 2026 estrella) |
+| `harness/evolve_loop/nudge_system.py` | 109 | ~120 | Media | Tests faltantes |
+| `harness/gpu_optimize.py` | 87 | ~225 | Media | Tests + integracion real |
+| `harness/memory_rag/token_budget_manager.py` | 75 | ~80 | Media | Tests faltantes |
+| `harness/memory_rag/sqlite_vec_utils.py` | 54 | ~55 | Media | Tests faltantes |
+| `harness/model_router/hermes_adapter.py` | 52 | ~55 | Media | Tests faltantes |
+| `harness/benchmarks/bench_*.py` (×5) | 174 | ~200 | Baja | Tests faltantes |
+| `harness/__main__.py` | 2 | 4 | Baja | Smoke test entry point |
+
+**Archivos >500 lineas (Auditoria 2026-07-31, objetivo <900LC):**
+
 | Archivo | Lineas | Prioridad | Accion |
-|---------|--------|-----------|--------|
-| `harness/orchestrator/context_window.py` | ~1029 | Media | Refactor: extraer WindowManager, Strategy |
-| `harness/orchestrator/task_orchestrator.py` | ~813 | Media | Refactor: separar MessageHandler, PlanExecutor |
-| `harness/tools_sandbox/mcp_executor.py` | ~140 (26% cover) | Alta | Tests faltantes |
-| `harness/reset_state.py` | ~70 (43% cover) | Alta | Tests faltantes |
+|---------|-------:|-----------|--------|
+| `harness/orchestrator/mars_scheduler.py` | 1141 | Alta | Extraer ScheduleEngine, ResourceAllocator |
+| `harness/aifactory/factory.py` | 905 | Media | Extraer sub-fabricas |
+| `harness/memory_rag/federated_search.py` | 865 | Media | Refactor |
+| `harness/orchestrator/adaptive_planner.py` | 859 | Media | Refactor |
+| `harness/orchestrator/debate_orchestrator.py` | 856 | Media | Refactor |
+| `harness/memory_rag/sqlite_vec_adapter.py` | 837 | Media | Refactor |
+| `harness/orchestrator/metaclaw.py` | 833 | Media | Refactor |
+| `harness/orchestrator/worktable.py` | 829 | Baja | Refactor |
+| `harness/scheduler.py` | 811 | Baja | Refactor |
+| `harness/memory_rag/agent_kpi_tracker.py` | 804 | Baja | Refactor |
+
+**Tests lentos (>4s, encontrados 2026-07-31):**
+
+| Test | Tiempo | Archivo |
+|------|-------:|---------|
+| `TestConnectAll::test_connect_all_success` | 8.17s | `test_mcp_manager.py` |
+| `TestConnectAll::test_connect_all_some_fail` | 8.15s | `test_mcp_manager.py` |
+| `TestTaskOrchestrator::test_broadcast_plan_envia_subtask_especifica` | 5.73s | `test_orchestrator.py` |
+| `TestMultiAPIProvider::test_execute_basic` | 4.18s | `test_frontier_improvements.py` |
+| `TestConnectAll::test_connect_all_invalidates_index` | 4.10s | `test_mcp_manager.py` |
+| `TestLoadServers::test_load_success` | 4.07s | `test_mcp_manager.py` |
+
+**Deuda de tipos (ADR-0037 pendiente):** 92 errores de mypy en 32 archivos. mypy queda en `|| true` en CI con TODO hasta tipado progresivo. Categorías principales: `list-item`, `union-attr`, `no-redef`, `attr-defined`, `arg-type`, `valid-type` (uso de `callable`/`any` como tipo), `return-value`, `var-annotated`. Archivos más afectados: `task_manager.py` (8 errores), `shaped_cache.py` (7), `lance_vector_store.py` (5), `scope_analyzer.py` (5), `common.py` (3), `context_assembler.py` (1), `evolve_loop/cognition_sync.py` (1).
+
+
 
 ---
 

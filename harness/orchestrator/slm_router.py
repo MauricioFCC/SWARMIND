@@ -14,7 +14,7 @@ Determinista: misma entrada -> misma decisión (temperature=0, sin random).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 # Tipos de tarea que un SLM resuelve con alta fiabilidad (95-99%):
 # formato JSON, extracción, clasificación, validación de schema, resúmenes.

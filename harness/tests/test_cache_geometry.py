@@ -4,7 +4,6 @@ Cubre: clasificación static/dynamic, reorder preservando contenido, hash de
 prefijo estable, detección de invalidación silenciosa.
 """
 
-import pytest
 
 from harness.memory_rag.cache_geometry import CacheGeometry
 

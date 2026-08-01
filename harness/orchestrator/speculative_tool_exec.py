@@ -16,7 +16,7 @@ Seguridad:
 from __future__ import annotations
 
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 # Tools con side-effects: prohibidas de especulación por policy (como PASTE).
 FORBIDDEN_TOOLS: frozenset[str] = frozenset({
@@ -181,7 +181,7 @@ class SpeculativeToolExecutor:
                 continue
             try:
                 outcome = executor(tool)
-            except Exception as exc:  # la especulación nunca rompe el flujo.
+            except Exception:  # la especulación nunca rompe el flujo.
                 self._stats.misses += 1
                 continue
             self._pending[tool] = outcome
