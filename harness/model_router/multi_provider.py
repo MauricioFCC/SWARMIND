@@ -6,15 +6,13 @@ from collections import defaultdict, deque
 from typing import Any
 
 from harness.model_router.multi_provider_types import (
+    LATENCY_WINDOW_SIZE,
     MAX_TOKENS_BY_AGENT,
     BudgetLimit,
     ExecutionResult,
-    LATENCY_WINDOW_SIZE,
     ProviderConfig,
     ProviderHealth,
-    ProviderStatus as ProviderStatus,
     ProviderTier,
-    RoutingDecision as RoutingDecision,
 )
 
 logger = logging.getLogger(__name__)

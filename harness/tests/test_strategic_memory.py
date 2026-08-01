@@ -420,4 +420,6 @@ class TestEdgeCases:
         """El path por defecto es data/strategic_memory.json."""
         with patch.object(StrategicMemory, "_load", lambda self: None):
             sm = StrategicMemory()
-            assert str(sm._path) == "data\\strategic_memory.json"
+            # Usar os.sep en lugar de backslash literal (test portable Win/Linux)
+            import os
+            assert str(sm._path) == f"data{os.sep}strategic_memory.json"

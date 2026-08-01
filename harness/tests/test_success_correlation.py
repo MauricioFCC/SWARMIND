@@ -20,7 +20,6 @@ from harness.orchestrator.success_correlation import (
     SuccessCorrelationEngine,
 )
 
-
 # ===========================================================================
 # Tests: Lesson
 # ===========================================================================

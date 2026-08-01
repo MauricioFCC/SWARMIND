@@ -1,0 +1,133 @@
+name: Auto-merge on green
+
+# Activa auto-merge en PRs que:
+#   - NO son drafts
+#   - Pertenecen a este repo (no forks)
+#   - El autor no es dependabot
+#   - Todos los status checks requeridos estan en "success"
+#
+# Cuando se cumplen, llama a la API de GitHub para activar auto-merge.
+# El merge final ocurre automaticamente cuando:
+#   - Todos los status checks requeridos pasan
+#   - Conversaciones sin resolver
+#   - CODEOWNERS (si aplica)
+#
+# Este enfoque es robusto: NO falla si los checks aun estan corriendo
+# (simplemente no hace nada y espera al siguiente check_run completed).
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+  check_run:
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  checks: read
+  contents: read
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Activate auto-merge when checks pass
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # Determinar el PR a procesar segun el tipo de evento
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            PR_NUM="${{ github.event.pull_request.number }}"
+            IS_DRAFT="${{ github.event.pull_request.draft }}"
+            HEAD_REPO="${{ github.event.pull_request.head.repo.full_name }}"
+            AUTHOR="${{ github.event.pull_request.user.login }}"
+          else
+            COMMIT_SHA="${{ github.event.check_run.head_sha }}"
+            PR_META=$(gh api -H "Accept: application/vnd.github+json" \
+              "/repos/${REPO}/commits/${COMMIT_SHA}/pulls?state=open" \
+              --jq '.[0] // null')
+            if [ "$PR_META" = "null" ] || [ -z "$PR_META" ]; then
+              echo "No open PR for commit ${COMMIT_SHA}, skipping."
+              exit 0
+            fi
+            PR_NUM=$(echo "$PR_META" | jq -r '.number')
+            IS_DRAFT=$(echo "$PR_META" | jq -r '.draft')
+            HEAD_REPO=$(echo "$PR_META" | jq -r '.head.repo.full_name')
+            AUTHOR=$(echo "$PR_META" | jq -r '.user.login')
+          fi
+
+          echo "Processing PR #${PR_NUM}"
+          echo "  draft=${IS_DRAFT} head_repo=${HEAD_REPO} author=${AUTHOR}"
+
+          # Guard: solo PRs no-draft, mismo repo, no dependabot
+          if [ "$IS_DRAFT" = "true" ]; then
+            echo "PR is a draft, skipping."
+            exit 0
+          fi
+          if [ "$HEAD_REPO" != "$REPO" ]; then
+            echo "PR from fork (${HEAD_REPO} != ${REPO}), skipping."
+            exit 0
+          fi
+          if [ "$AUTHOR" = "dependabot[bot]" ] || [ "$AUTHOR" = "dependabot" ]; then
+            echo "PR from dependabot, skipping auto-merge (manual review required)."
+            exit 0
+          fi
+
+          # Verificar si auto-merge ya esta activo
+          CURRENT=$(gh api -H "Accept: application/vnd.github+json" \
+            "/repos/${REPO}/pulls/${PR_NUM}" \
+            --jq '.auto_merge // null')
+          if [ "$CURRENT" != "null" ] && [ -n "$CURRENT" ]; then
+            echo "Auto-merge already enabled, nothing to do."
+            exit 0
+          fi
+
+          # Verificar todos los status checks del PR via statusCheckRollup
+          # (este campo es accesible con GITHUB_TOKEN y refleja el estado real).
+          ROLLUP=$(gh api -H "Accept: application/vnd.github+json" \
+            "/repos/${REPO}/pulls/${PR_NUM}" \
+            --jq '.statusCheckRollup')
+
+          # Si no hay checks, salir (no auto-merge sin CI)
+          TOTAL=$(echo "$ROLLUP" | jq 'length')
+          if [ "$TOTAL" = "0" ] || [ "$TOTAL" = "null" ]; then
+            echo "No status checks reported yet, will retry on next event."
+            exit 0
+          fi
+
+          # Verificar que TODOS los checks esten en SUCCESS (o SKIPPED/NEUTRAL)
+          echo "Status checks rollup:"
+          echo "$ROLLUP" | jq -r '.[] | "  \(.name // .context): \(.conclusion // .state // "PENDING")"'
+
+          ALL_GREEN=true
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            STATE=$(echo "$line" | awk -F': ' '{print $2}' | tr -d ' ')
+            if [ "$STATE" != "SUCCESS" ] && [ "$STATE" != "SKIPPED" ] && [ "$STATE" != "NEUTRAL" ]; then
+              ALL_GREEN=false
+            fi
+          done <<< "$(echo "$ROLLUP" | jq -r '.[] | "\(.name // .context): \(.conclusion // .state // "PENDING")"')"
+
+          if [ "$ALL_GREEN" != "true" ]; then
+            echo "Not all checks are green yet, will retry on next event."
+            exit 0
+          fi
+
+          # Activar auto-merge via API
+          echo "All checks green. Enabling auto-merge..."
+          HTTP_CODE=$(gh api -X PUT \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${REPO}/pulls/${PR_NUM}/auto-merge" \
+            -f "merge_method=squash" \
+            --silent --output /dev/null --write-out '%{http_code}' 2>/dev/null || echo "0")
+
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
+            echo "Auto-merge enabled for PR #${PR_NUM}."
+          else
+            echo "::warning::Failed to enable auto-merge (HTTP ${HTTP_CODE}). Likely already enabled or policy conflict."
+          fi

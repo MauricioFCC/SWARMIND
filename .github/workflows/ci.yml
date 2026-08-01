@@ -59,7 +59,7 @@ jobs:
         run: uv sync --group test
       - name: Run tests
         run: |
-          python -m pytest harness/tests/ -v --cov=harness --cov-report=term --cov-report=xml
+          uv run python -m pytest harness/tests/ -v --cov=harness --cov-report=term --cov-report=xml
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
@@ -86,12 +86,19 @@ jobs:
             uv-${{ runner.os }}-
       - name: Install dependencies
         run: |
-          uv pip install bandit pip-audit
           uv sync
+          # safety: alternativa a pip-audit que no requiere pip en el venv
+          uv pip install 'safety>=3.0' bandit
       - name: Bandit
-        run: bandit -r harness/ -x harness/tests -ll -q
-      - name: Pip audit
-        run: pip-audit
+        run: uv run bandit -r harness/ -x harness/tests -ll -q
+      - name: Security audit
+        # Genera requirements desde el lockfile y los audita con safety
+        # (no requiere pip en el venv, a diferencia de pip-audit).
+        # Setuptools >= 83.0.0 ya esta en el lockfile (CVE-2026-3447).
+        run: |
+          uv export --format requirements-txt --no-hashes > /tmp/requirements.txt
+          uv run safety check -r /tmp/requirements.txt --output text
+        continue-on-error: false
 
   compile:
     name: Compile
