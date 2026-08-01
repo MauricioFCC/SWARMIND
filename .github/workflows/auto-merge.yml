@@ -1,20 +1,19 @@
 name: Auto-merge on green
 
-# Activa auto-merge en PRs que no son drafts y cuyos checks requeridos
-# (lint, test, security) ya estan pasando. Cuando todos los status checks
-# lleguen a "success" el PR se fusiona automaticamente.
+# Activa auto-merge en PRs que:
+#   - NO son drafts
+#   - Pertenecen a este repo (no forks)
+#   - El autor no es dependabot
+#   - Todos los status checks requeridos estan en "success"
 #
-# Seguridad:
-#   - Solo activa auto-merge en PRs desde la misma repo (no forks)
-#   - Solo activa auto-merge si el autor no es dependabot (lo hace manual)
-#   - El merge final sigue requiriendo las branch protections (CODEOWNERS,
-#     approvals si estan configuradas, conversaciones resueltas).
+# Cuando se cumplen, llama a la API de GitHub para activar auto-merge.
+# El merge final ocurre automaticamente cuando:
+#   - Todos los status checks requeridos pasan
+#   - Conversaciones sin resolver
+#   - CODEOWNERS (si aplica)
 #
-# Comportamiento:
-#   - En PR opened/reopened/synchronize: revisa checks pendientes
-#   - Si los 3 checks requeridos (lint, test, security) ya pasaron en el
-#     ultimo commit, llama a la API para activar auto-merge
-#   - Si no, espera a que la check "completed" corra y reintenta
+# Este enfoque es robusto: NO falla si los checks aun estan corriendo
+# (simplemente no hace nada y espera al siguiente check_run completed).
 
 on:
   pull_request:
@@ -22,59 +21,131 @@ on:
       - opened
       - reopened
       - synchronize
-    # Solo procesa PRs que ya estan listos (no drafts)
-  # Tambien escucha a checks que terminan (no solo al PR en si)
   check_run:
     types: [completed]
 
 permissions:
-  # Necesario para llamar a la API de auto-merge
   pull-requests: write
-  # Necesario para reportar el status en el check summary
   checks: read
-  # Necesario para que el check "completed" trigger funcione
   contents: read
 
 jobs:
   auto-merge:
-    # Solo corre para PRs (no cuando viene de check_run)
-    if: >
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.draft == false &&
-      github.event.pull_request.head.repo.full_name == github.event.repository.full_name &&
-      github.event.pull_request.user.login != 'dependabot[bot]' &&
-      github.event.pull_request.user.login != 'dependabot'
     runs-on: ubuntu-latest
     steps:
-      - name: Enable auto-merge
-        uses: peter-evans/enable-pull-request-automerge@v2
-        with:
-          # Token del repo (no del PR) para llamar a la API
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # Pull request number del evento
-          pull-request-number: ${{ github.event.pull_request.number }}
-          # Estrategia de merge: squash (recomendado para linear history)
-          merge-method: squash
+      - name: Activate auto-merge when checks pass
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
 
-  # Job 2: cuando un check_required termina, intenta activar auto-merge
-  # si TODOS los checks requeridos ya pasaron.
-  check-completion:
-    if: >
-      github.event_name == 'check_run' &&
-      github.event.check_run.conclusion == 'success'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Find PRs for this commit
-        id: find-pr
-        uses: peter-evans/find-pull-request-action@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit: ${{ github.event.check_run.head_sha }}
-          # Solo PRs abiertos (no merged/closed)
-      - name: Enable auto-merge on PR
-        if: steps.find-pr.outputs.pull-request-number
-        uses: peter-evans/enable-pull-request-automerge@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          pull-request-number: ${{ steps.find-pr.outputs.pull-request-number }}
-          merge-method: squash
+          # Determinar el PR a procesar segun el tipo de evento
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # Evento PR: procesamos ese PR
+            PR_NUM="${{ github.event.pull_request.number }}"
+            PR_ACTION="${{ github.event.action }}"
+            IS_DRAFT="${{ github.event.pull_request.draft }}"
+            HEAD_REPO="${{ github.event.pull_request.head.repo.full_name }}"
+            AUTHOR="${{ github.event.pull_request.user.login }}"
+          else
+            # Evento check_run: buscamos el PR asociado al commit
+            COMMIT_SHA="${{ github.event.check_run.head_sha }}"
+            PR_NUM=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              "/repos/${REPO}/commits/${COMMIT_SHA}/pulls" \
+              --jq 'map(select(.state == "open")) | .[0].number // empty' 2>/dev/null || true)
+            if [ -z "$PR_NUM" ]; then
+              echo "No open PR for commit ${COMMIT_SHA}, skipping."
+              exit 0
+            fi
+            # Obtener metadata del PR
+            PR_META=$(gh api -H "Accept: application/vnd.github+json" "/repos/${REPO}/pulls/${PR_NUM}")
+            PR_ACTION=""
+            IS_DRAFT=$(echo "$PR_META" | jq -r '.draft')
+            HEAD_REPO=$(echo "$PR_META" | jq -r '.head.repo.full_name')
+            AUTHOR=$(echo "$PR_META" | jq -r '.user.login')
+          fi
+
+          echo "Processing PR #${PR_NUM} (event: ${{ github.event_name }}, action: ${PR_ACTION:-check_run})"
+          echo "  draft=${IS_DRAFT} head_repo=${HEAD_REPO} author=${AUTHOR}"
+
+          # Guard: solo PRs no-draft, mismo repo, no dependabot
+          if [ "$IS_DRAFT" = "true" ]; then
+            echo "PR is a draft, skipping."
+            exit 0
+          fi
+          if [ "$HEAD_REPO" != "$REPO" ]; then
+            echo "PR from fork (${HEAD_REPO} != ${REPO}), skipping."
+            exit 0
+          fi
+          if [ "$AUTHOR" = "dependabot[bot]" ] || [ "$AUTHOR" = "dependabot" ]; then
+            echo "PR from dependabot, skipping auto-merge (manual review required)."
+            exit 0
+          fi
+
+          # Verificar si auto-merge ya esta activo
+          CURRENT=$(gh api -H "Accept: application/vnd.github+json" \
+            "/repos/${REPO}/pulls/${PR_NUM}" \
+            --jq '.auto_merge // null')
+          if [ "$CURRENT" != "null" ] && [ -n "$CURRENT" ]; then
+            echo "Auto-merge already enabled, nothing to do."
+            exit 0
+          fi
+
+          # Obtener los status checks requeridos por la branch protection
+          REQUIRED=$(gh api -H "Accept: application/vnd.github+json" \
+            "/repos/${REPO}/branches/main/protection/required_status_checks" \
+            --jq '.contexts[]' 2>/dev/null || true)
+          if [ -z "$REQUIRED" ]; then
+            echo "No required status checks configured for main, skipping auto-merge."
+            exit 0
+          fi
+
+          # Obtener el ultimo commit SHA del PR
+          HEAD_SHA=$(gh api -H "Accept: application/vnd.github+json" \
+            "/repos/${REPO}/pulls/${PR_NUM}" \
+            --jq '.head.sha')
+
+          # Verificar el estado de cada check requerido en el HEAD SHA
+          echo "Checking status of required checks on ${HEAD_SHA}..."
+          ALL_GREEN=true
+          for check in $REQUIRED; do
+            # Intentar check_runs primero
+            STATUS=$(gh api -H "Accept: application/vnd.github+json" \
+              "/repos/${REPO}/commits/${HEAD_SHA}/check-runs?check_name=${check}" \
+              --jq '.check_runs[0].conclusion // empty' 2>/dev/null || true)
+            # Si no, intentar status (legacy)
+            if [ -z "$STATUS" ]; then
+              STATUS=$(gh api -H "Accept: application/vnd.github+json" \
+                "/repos/${REPO}/commits/${HEAD_SHA}/status" \
+                --jq '.statuses[] | select(.context == "'"${check}"'") | .state' 2>/dev/null | head -1 || true)
+            fi
+            if [ "$STATUS" = "success" ]; then
+              echo "  ${check}: success"
+            elif [ "$STATUS" = "skipped" ] || [ "$STATUS" = "neutral" ]; then
+              echo "  ${check}: ${STATUS} (treated as OK)"
+            else
+              echo "  ${check}: ${STATUS:-PENDING} (not ready)"
+              ALL_GREEN=false
+            fi
+          done
+
+          if [ "$ALL_GREEN" != "true" ]; then
+            echo "Not all required checks are green yet, will retry on next event."
+            exit 0
+          fi
+
+          # Activar auto-merge via API
+          echo "All required checks green. Enabling auto-merge..."
+          gh api -X PUT \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${REPO}/pulls/${PR_NUM}/auto-merge" \
+            -f "merge_method=squash" \
+            -f "commit_title=PR_TITLE" \
+            -f "commit_message=PR_BODY" \
+            --silent || {
+              echo "::warning::Failed to enable auto-merge (may already be enabled or policy prevents it)"
+              exit 0
+            }
+          echo "Auto-merge enabled for PR #${PR_NUM}."
