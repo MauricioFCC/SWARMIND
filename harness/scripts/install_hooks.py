@@ -41,21 +41,37 @@ _STATUS_PATH = _HARNESS_ROOT / "db" / ".hook_status.json"
 # fully autonomous â€” no external template dependency.
 _LOCAL_HOOK_TEMPLATE = r'''#!/bin/sh
 # PRE-COMMIT HOOK -- Auto-generado por Swarmind Harness (portable, ADR-0035)
+# 1) QA rapido (pipeline end_of_iteration --pre-commit --quick)
+# 2) Sync global opencode (Opción A: SSOT en ~/.config/opencode) -- best effort
 # Usa uv si esta disponible; fallback a python3 / python.
 _HOOK_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
 _PIPELINE="$_HOOK_DIR/harness/scripts/end_of_iteration.py"
-if [ -f "$_PIPELINE" ]; then
+_SYNC="$_HOOK_DIR/scripts/sync_opencode_global.py"
+
+_run_python() {
     if command -v uv >/dev/null 2>&1; then
-        uv run python "$_PIPELINE" --pre-commit --quick
+        uv run python "$@"
     elif command -v python3 >/dev/null 2>&1; then
-        python3 "$_PIPELINE" --pre-commit --quick
+        python3 "$@"
     else
-        python "$_PIPELINE" --pre-commit --quick
+        python "$@"
     fi
+}
+
+if [ -f "$_PIPELINE" ]; then
+    _run_python "$_PIPELINE" --pre-commit --quick
     _rc=$?
-    exit $_rc
+    if [ "$_rc" -ne 0 ]; then
+        exit "$_rc"
+    fi
 fi
-echo "[pre-commit] Harness no encontrado. Commit permitido."
+
+# Sync global opencode: no bloquea el commit si falla (best effort)
+if [ -f "$_SYNC" ]; then
+    _run_python "$_SYNC" --quiet >/dev/null 2>&1 || echo "[pre-commit] aviso: sync opencode global fallo (commit continuo)"
+fi
+
+echo "[pre-commit] OK"
 exit 0
 '''
 
