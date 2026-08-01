@@ -87,17 +87,17 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync
-          # Bootstrap pip en el venv (uv no lo incluye por default).
-          # `uv pip install pip` solo instala el wrapper, no el modulo.
-          uv run python -m ensurepip --upgrade
           uv pip install bandit pip-audit
       - name: Bandit
         run: uv run bandit -r harness/ -x harness/tests -ll -q
       - name: Pip audit
-        # Forzamos que pip-audit audite el venv (no el Python del sistema)
-        # via PIPAPI_PYTHON_LOCATION. El venv tiene setuptools >= 83.0.0.
-        run: uv run pip-audit
+        # Genera requirements desde el lockfile y audita ese archivo.
+        # Esto evita introspeccionar el venv (que tiene pip 24.0 con CVEs).
+        run: |
+          uv export --format requirements-txt --no-hashes > /tmp/requirements.txt
+          uv run pip-audit -r /tmp/requirements.txt
         env:
+          # Suprimir warning sobre pip del sistema (estamos auditando el lockfile)
           PIPAPI_PYTHON_LOCATION: ${{ github.workspace }}/.venv/bin/python
 
   compile:
