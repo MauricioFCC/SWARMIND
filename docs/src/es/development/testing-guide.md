@@ -808,7 +808,7 @@ if str(PROJECT_ROOT) not in sys.path:
 Si el error persiste, ejecutar los tests desde la raíz del proyecto:
 
 ```bash
-cd $HOME\Documents\DEV-SPACE\Swarmind
+cd <PROJECT_ROOT>
 pytest
 ```
 

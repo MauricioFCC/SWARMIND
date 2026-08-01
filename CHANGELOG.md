@@ -121,7 +121,7 @@
 ### Soluciones implementadas
 
 #### 1. `.env` creado con HERMES_ROOT
-- `.env` generado desde `.env.example` con `HERMES_ROOT=$HOME\Documents\shared_memory`
+- `.env` generado desde `.env.example` con `HERMES_ROOT=~/shared_memory`
 - `hermes_bridge.py` ahora carga automáticamente `.env` al importarse (busca en 3 ubicaciones)
 - No sobreescribe variables de entorno ya existentes
 
@@ -473,7 +473,7 @@ Cubre `ContextSection`, `ContextWindow`, `ContextWindowManager`:
 ### Archivos modificados
 - `harness/orchestrator/task_planner.py` — Fix dep_ids con idx_to_id mapping
 - `harness/tests/test_task_planner.py` — Test actualizado para nuevo DAG (2 niveles)
-- `$HOME\AppData\Local\Temp\opencode\deploy_v2.py` — Clean dead dirs automático
+- `<TMP>/opencode/deploy_v2.py` — Clean dead dirs automático
 
 ---
 

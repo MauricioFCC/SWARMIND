@@ -39,24 +39,26 @@ _STATUS_PATH = _HARNESS_ROOT / "db" / ".hook_status.json"
 # This script is written into .git/hooks/pre-commit.
 # It uses ONLY stdlib, resolves paths relative to __file__, and is
 # fully autonomous â€” no external template dependency.
-_LOCAL_HOOK_TEMPLATE = r'''#!/usr/bin/env python3
-"""PRE-COMMIT HOOK â€” Auto-generado por Swarmind Harness"""
-import sys, os, subprocess
-_HOOK_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_HARNESS = os.path.join(_HOOK_DIR, "harness")
-_PIPELINE = os.path.join(_HARNESS, "scripts", "end_of_iteration.py")
-    if os.path.exists(_PIPELINE):
-        try:
-            _r = subprocess.run([sys.executable, _PIPELINE, "--pre-commit", "--quick"],
-                                cwd=_HOOK_DIR, timeout=30)
-            sys.exit(_r.returncode)
-        except Exception as _e:
-            print(f"[pre-commit] Error ejecutando pipeline: {_e}. Commit permitido.")
-            sys.exit(0)
-else:
-    print("[pre-commit] Harness no encontrado. Commit permitido.")
-    sys.exit(0)
+_LOCAL_HOOK_TEMPLATE = r'''#!/bin/sh
+# PRE-COMMIT HOOK -- Auto-generado por Swarmind Harness (portable, ADR-0035)
+# Usa uv si esta disponible; fallback a python3 / python.
+_HOOK_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
+_PIPELINE="$_HOOK_DIR/harness/scripts/end_of_iteration.py"
+if [ -f "$_PIPELINE" ]; then
+    if command -v uv >/dev/null 2>&1; then
+        uv run python "$_PIPELINE" --pre-commit --quick
+    elif command -v python3 >/dev/null 2>&1; then
+        python3 "$_PIPELINE" --pre-commit --quick
+    else
+        python "$_PIPELINE" --pre-commit --quick
+    fi
+    _rc=$?
+    exit $_rc
+fi
+echo "[pre-commit] Harness no encontrado. Commit permitido."
+exit 0
 '''
+
 
 # â”€â”€ ANSI colours â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 _RED = "\033[91m"

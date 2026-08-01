@@ -12,12 +12,12 @@ tests y scripts exponían información de la máquina del desarrollador y
 contenían bugs de portabilidad:
 
 1. **`harness/tests/test_propagation.py`**: rutas hardcodeadas
-   `$HOME\Documents\DEV-SPACE\quant-engine` etc. (estructura personal).
+   `<HOME>\Documents\DEV-SPACE\<proyecto>` (estructura personal).
 2. **`scripts/deploy_all.py`**: defaults `Path(r"$HOME\Documents\DEV-SPACE")`
    — el literal `$HOME` NUNCA se expande en `Path()`, produciendo rutas
    inexistentes (bug funcional) además de exponer la estructura del usuario.
 3. **`scripts/export_to_drive.py`**: docstring con ruta real
-   `C:\Users\USUARIO\Mi unidad\...` (nombre de usuario expuesto).
+   `C:\Users\<user>\Mi unidad\...` (nombre de usuario expuesto).
 4. **`harness/db/.hook_status.json`**: ruta absoluta del workspace
    (`.git/hooks/pre-commit`) trackeada en git.
 5. **`scripts/agentic_bridge_sync.py`**, **`scripts/export_all_projects.py`**,
@@ -56,6 +56,7 @@ Nuevo módulo `harness/qa/security_policy.py` que escanea el repo y detecta:
 |---|---|---|
 | `PATHS_NO_PORTABLES` | HIGH | rutas con nombre de usuario (`C:\Users\X`, `/home/X`, `/Users/X`) |
 | `HOME_LITERAL_PY` | HIGH | `$HOME` literal en código Python (no en docs) |
+| `DOC_HOME_STRUCTURE` | HIGH | `$HOME` + estructura personal (Documents, Mi unidad, AppData, DEV-SPACE, SIDEPROYECT, ...) en CUALQUIER archivo (docs y código) |
 | `SECRETO` | CRITICAL | API keys, tokens (sk-*, ghp_*, AKIA), passwords, PEM, Bearer |
 | `ENV_TRACKEADO` | CRITICAL | `.env` con credenciales trackeado en git |
 
@@ -82,8 +83,9 @@ con CI y pre-commit.
 
 ### Negativas
 - Requiere que scripts nuevos sigan la convención (guardrails + tests).
-- El scanner auto-excluye sus propios archivos (`_SELF_FILES`) porque
-  contienen patrones de ejemplo en docstrings/tests.
+- El scanner auto-excluye sus propios archivos y el ADR canónico
+  (`_SELF_FILES`) porque contienen patrones de ejemplo en docstrings,
+  fixtures y la descripción de los bugs hallados.
 
 ### Riesgos y mitigaciones
 - Falsos positivos en paths de repo (`docs/home/`): mitigado con lookbehind
@@ -109,7 +111,7 @@ uv run python scripts/security_scan.py
 
 # Tests del scanner
 uv run pytest harness/tests/test_security_policy.py -q
-# 19 passed
+# 23 passed
 ```
 
 ## Referencias

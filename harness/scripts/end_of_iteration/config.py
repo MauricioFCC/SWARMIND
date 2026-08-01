@@ -22,6 +22,27 @@ PROJECT_ROOT = HARNESS_ROOT.parent
 
 CONFIG_PATH = HERE / "iteration_config.yaml"
 
+
+def _rel_project(filepath: str | Path) -> str:
+    """Ruta relativa portable al proyecto.
+
+    Normaliza a absoluto antes de ``relative_to`` porque el filepath puede
+    llegar relativo (hook pre-commit con changed_files) mientras
+    ``PROJECT_ROOT`` es absoluto. Fallback defensivo: devuelve la ruta
+    normalizada si el archivo queda fuera del proyecto.
+
+    Args:
+        filepath: ruta del archivo (relativa o absoluta).
+
+    Returns:
+        Ruta relativa al proyecto, o normalizada si no cabe en el.
+    """
+    abs_path = str(Path(filepath).resolve())
+    try:
+        return str(Path(abs_path).relative_to(PROJECT_ROOT))
+    except ValueError:
+        return abs_path
+
 # ANSI colours for rich terminal output
 _RED = "\033[91m"
 _GREEN = "\033[92m"

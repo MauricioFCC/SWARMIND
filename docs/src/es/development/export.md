@@ -1,6 +1,6 @@
 ﻿# Exportacion, Backup y Deploy — Swarmind
 
-> **Destino:** `$HOME\Mi unidad\DEV\SIDEPROYECT\exports\`  
+> **Destino:** `<EXPORT_BASE>` (configurable via `EXPORT_BASE` en el script, default `~/GoogleDrive/DEV/exports/`)  
 > **Scripts:** Todos en `scripts/`
 
 ---
@@ -60,7 +60,7 @@ python scripts/Swarmind_bridge_sync.py --status    # Ver estado del bridge
 ## 6. Estructura de Exports
 
 ```
-$HOME\Mi unidad\DEV\SIDEPROYECT\exports\
+<EXPORT_BASE>/
 ├── Swarmind_2026-07-24.zip
 ├── CQE_2026-07-24.zip
 ├── HC_2026-07-24.zip
@@ -70,4 +70,4 @@ $HOME\Mi unidad\DEV\SIDEPROYECT\exports\
 └── README.md
 ```
 
-La carpeta `Mi unidad` es sincronizada por Google Drive — los ZIPs quedan disponibles en la nube automaticamente.
+La carpeta de destino (`<EXPORT_BASE>`) es sincronizada por Google Drive — los ZIPs quedan disponibles en la nube automaticamente.

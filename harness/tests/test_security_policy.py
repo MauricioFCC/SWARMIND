@@ -80,6 +80,37 @@ class TestHomeLiteralPy:
 
 
 # ---------------------------------------------------------------------------
+# DOC_HOME_STRUCTURE
+# ---------------------------------------------------------------------------
+
+
+class TestDocHomeStructure:
+    def test_detects_personal_structure_in_docs(self, scanner, tmp_path):
+        _write(tmp_path, "docs/guia.md",
+               "Mi proyecto esta en $HOME\\Documents\\DEV-SPACE\\Swarmind\n")
+        findings = scanner.scan()
+        assert any(f.rule == "DOC_HOME_STRUCTURE" for f in findings)
+
+    def test_detects_mi_unidad_in_docs(self, scanner, tmp_path):
+        _write(tmp_path, "docs/export.md",
+               "Destino: `$HOME\\Mi unidad\\DEV\\SIDEPROYECT\\exports\\`\n")
+        findings = scanner.scan()
+        assert any(f.rule == "DOC_HOME_STRUCTURE" for f in findings)
+
+    def test_generic_home_placeholder_allowed(self, scanner, tmp_path):
+        _write(tmp_path, "docs/guia.md",
+               "cd $HOME/proyecto\npython $HOME/tools/x.py\n")
+        findings = scanner.scan()
+        assert not any(f.rule == "DOC_HOME_STRUCTURE" for f in findings)
+
+    def test_detects_in_python_too(self, scanner, tmp_path):
+        _write(tmp_path, "scripts/x.py",
+               'p = Path(r"$HOME\\AppData\\Local\\Temp")\n')
+        findings = scanner.scan()
+        assert any(f.rule == "DOC_HOME_STRUCTURE" for f in findings)
+
+
+# ---------------------------------------------------------------------------
 # SECRETOS
 # ---------------------------------------------------------------------------
 

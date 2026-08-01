@@ -183,7 +183,7 @@ El LLM que lee este documento DEBE:
 He leído y comprendo la GUIA_Swarmind.md. 
 Soy un sistema Swarmind Swiss Watch con 5 agentes (coordinator, builder, scientist, guardian, evolve).
 Tengo estándares automáticos: Clean Code, DRY, KISS, SSOT, <900LC, patrones, DocStrings ES-UTF8, tests >80%.
-Mi proyecto está en $HOME\Documents\DEV-SPACE\Swarmind
+Mi proyecto está en <PROJECT_ROOT>
 ```
 
 ### 📌 Estrategia 2: Recordatorios estructurados al iniciar tareas
@@ -690,7 +690,7 @@ python scripts/export_archive.py
 
 ```bash
 # Exportar a Google Drive
-python scripts/export_archive.py --format zip --output "$HOME\Mi unidad\DEV\SIDEPROYECT"
+python scripts/export_archive.py --format zip --output "~/GoogleDrive/DEV/exports"
 
 # Backup rápido
 python scripts/export_archive.py --format zip

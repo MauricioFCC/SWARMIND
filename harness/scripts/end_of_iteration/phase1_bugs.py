@@ -13,6 +13,7 @@ from .config import (
     _is_python_file,
     _load_config,
     _read_file_lines,
+    _rel_project,
     _should_exclude,
     _walk_py_files,
 )
@@ -105,7 +106,7 @@ def _scan_long_files(all_files: list[str]) -> list[BugFinding]:
     for filepath in all_files:
         _lines, total = _read_file_lines(filepath)
         if total > max_lines:
-            rel_path = str(Path(filepath).relative_to(PROJECT_ROOT))
+            rel_path = _rel_project(filepath)
             findings.append(BugFinding(
                 file=rel_path, line=0, severity="major",
                 category="long_file",
@@ -143,14 +144,14 @@ def _scan_missing_docstrings(lines: list[str], filepath: str) -> list[BugFinding
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             if not ast.get_docstring(node):
                 findings.append(BugFinding(
-                    file=str(Path(filepath).relative_to(PROJECT_ROOT)),
+                    file=_rel_project(filepath),
                     line=node.lineno or 0, severity="minor",
                     category="missing_docstring",
                     message=f"Funcion '{node.name}' sin docstring", auto_fixable=False,
                 ))
         elif isinstance(node, ast.ClassDef) and not ast.get_docstring(node):
             findings.append(BugFinding(
-                file=str(Path(filepath).relative_to(PROJECT_ROOT)),
+                file=_rel_project(filepath),
                 line=node.lineno or 0, severity="minor",
                 category="missing_docstring",
                 message=f"Clase '{node.name}' sin docstring", auto_fixable=False,
@@ -183,7 +184,7 @@ def _scan_missing_type_hints(lines: list[str], filepath: str) -> list[BugFinding
             params_hinted = all(a.annotation is not None for a in all_args)
             if not has_return_hint or not params_hinted:
                 findings.append(BugFinding(
-                    file=str(Path(filepath).relative_to(PROJECT_ROOT)),
+                    file=str(_rel_project(filepath)),
                     line=node.lineno or 0, severity="minor",
                     category="missing_type_hint",
                     message=f"Funcion '{node.name}' sin type hints completos",
@@ -213,7 +214,7 @@ def _scan_inconsistent_returns(lines: list[str], filepath: str) -> list[BugFindi
                         returns_value = True
             if returns_value and returns_none:
                 findings.append(BugFinding(
-                    file=str(Path(filepath).relative_to(PROJECT_ROOT)),
+                    file=_rel_project(filepath),
                     line=node.lineno or 0, severity="major",
                     category="inconsistent_return",
                     message=f"Funcion '{node.name}' retorna inconsistentemente (valor y None)",
@@ -252,7 +253,7 @@ def scan_for_bugs(
         lines, _total = _read_file_lines(filepath)
         if not lines:
             continue
-        rel_path = str(Path(filepath).relative_to(PROJECT_ROOT))
+        rel_path = _rel_project(filepath)
         findings.extend(_scan_silent_except(lines, rel_path))
         findings.extend(_scan_print_statements(lines, rel_path))
         findings.extend(_scan_hardcoded_creds(lines, rel_path))

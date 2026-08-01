@@ -7,14 +7,18 @@ Escanea el repositorio en busca de violaciones de la politica de seguridad:
    estructura del equipo y fallan en otra maquina.
 2. HOME_LITERAL_PY: ``$HOME`` literal en codigo Python — nunca se expande en
    ``Path("$HOME/...")``, produce rutas inexistentes (bug) y puede revelar
-   estructura personal. En documentacion ``.md`` SI es placeholder valido.
-3. SECRETOS: API keys, tokens (sk-...), passwords hardcodeados, llaves
+   estructura personal.
+3. DOC_HOME_STRUCTURE: ``$HOME`` seguido de estructura personal
+   (``$HOME\\Documents\\...``, ``$HOME\\Mi unidad\\...``) en CUALQUIER archivo
+   incluyendo documentacion — revela el layout del equipo del desarrollador.
+4. SECRETOS: API keys, tokens (sk-...), passwords hardcodeados, llaves
    privadas PEM y credenciales en codigo fuente.
-4. ENV_TRACKEADO: archivos ``.env`` con contenido real trackeados en git.
+5. ENV_TRACKEADO: archivos ``.env`` con contenido real trackeados en git.
 
 La politica exige: env vars con fallback a ``Path.home()`` (nunca ``$HOME``
-literal ni rutas absolutas personales). Codigo determinista: misma entrada
--> mismas violaciones.
+literal ni rutas absolutas personales), y documentacion con placeholders
+genericos (``~/proyecto``, ``<HOME>/proyecto``) sin estructura personal.
+Codigo determinista: misma entrada -> mismas violaciones.
 
 Uso:
     from harness.qa.security_policy import SecurityPolicyScanner
@@ -45,6 +49,17 @@ _PERSONAL_PATH_RE = re.compile(
 # $HOME literal en codigo (Path("$HOME...") o r"$HOME...")
 _HOME_LITERAL_RE = re.compile(r"\$HOME[/\\\\]")
 
+# $HOME con estructura personal del usuario (revela layout del equipo):
+# $HOME\Documents\..., $HOME\Mi unidad\..., $HOME\AppData\...
+# En documentacion, $HOME generico ("cd $HOME/proyecto") es placeholder valido,
+# pero la estructura personal NO debe documentarse.
+_HOME_STRUCTURE_RE = re.compile(
+    r"\$HOME[/\\\\](?:Documents|Documentos|Mi unidad|Desktop|Escritorio|"
+    r"AppData|Downloads|Descargas|DEV-SPACE|SIDEPROYECT|shared_memory|"
+    r"Hermes_Memory_Proyects)[/\\\\]?",
+    re.IGNORECASE,
+)
+
 # Secretos: claves API, tokens, passwords, llaves privadas
 _SECRET_PATTERNS: list[tuple[str, re.Pattern]] = [
     ("api_key_assign", re.compile(r"(?:api[_-]?key|apikey)\s*=\s*[\"'][A-Za-z0-9_\-]{16,}[\"']", re.IGNORECASE)),
@@ -73,11 +88,13 @@ _IGNORED_FILES = {
     "coverage.xml", "Pipfile.lock", "go.sum",
 }
 
-# Auto-exclusion del propio scanner y su test: contienen patrones de ejemplo
-# deliberadamente (docstrings y fixtures) que no son violaciones reales.
+# Auto-exclusion del propio scanner, su test y el ADR canonico de la politica:
+# contienen patrones de ejemplo deliberadamente (docstrings, fixtures y
+# descripcion de bugs hallados) que no son violaciones reales.
 _SELF_FILES = {
     "harness/qa/security_policy.py",
     "harness/tests/test_security_policy.py",
+    "docs/src/es/adr/adr0035-security-policy-portable-paths-2026.md",
 }
 
 
@@ -238,6 +255,16 @@ class SecurityPolicyScanner:
                     line=lineno, severity="HIGH",
                     message="'$HOME' literal no se expande en Path(); "
                             "usa Path.home()",
+                ))
+            # 2b) $HOME con estructura personal (docs Y codigo): revela el
+            #     layout del equipo del desarrollador.
+            if _HOME_STRUCTURE_RE.search(line):
+                findings.append(SecurityFinding(
+                    rule="DOC_HOME_STRUCTURE", file=self._rel(fpath),
+                    line=lineno, severity="HIGH",
+                    message="'$HOME' con estructura personal (Documents, "
+                            "Mi unidad, DEV-SPACE...); usa placeholder "
+                            "generico ~/ o <HOME>/",
                 ))
             # 3) Secretos (en cualquier archivo).
             for rule_name, pattern in _SECRET_PATTERNS:

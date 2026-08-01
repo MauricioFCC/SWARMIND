@@ -12,6 +12,7 @@ from .config import (
     _is_python_file,
     _load_config,
     _read_file_lines,
+    _rel_project,
     _should_exclude,
     _walk_py_files,
 )
@@ -109,7 +110,7 @@ def security_scan(directory: str = ".", changed_files: list[str] | None = None) 
         lines, _total = _read_file_lines(filepath)
         if not lines:
             continue
-        rel_path = str(Path(filepath).relative_to(PROJECT_ROOT))
+        rel_path = _rel_project(filepath)
         findings.extend(_scan_secret_patterns(lines, rel_path, secret_patterns))
         findings.extend(_scan_dangerous_functions(lines, rel_path))
         findings.extend(_scan_http_urls(lines, rel_path))
