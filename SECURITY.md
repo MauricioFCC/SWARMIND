@@ -31,3 +31,28 @@ When a vulnerability is reported:
 ## Hardcoded Secrets
 
 Swarmind includes automated secret scanning in the pre-commit hook. Never commit API keys, tokens, passwords, or other credentials to the repository. Use environment variables or a `.env` file (excluded via `.gitignore`) for local development.
+
+## Branch Protection & Code Owners
+
+The `main` branch is protected by GitHub branch protection rules. To contribute, you must open a Pull Request; direct pushes to `main` are rejected.
+
+### Required Status Checks
+
+Every PR must pass these CI jobs before merge:
+
+| Job | What it checks |
+|---|---|
+| `lint` | ruff + mypy |
+| `test` | pytest with coverage |
+| `security` | bandit + pip-audit |
+
+### Code Owners
+
+`CODEOWNERS` (at the repo root) defines the review policy. The owner of each area is automatically requested as a reviewer on any PR that touches it. Areas with stricter review:
+
+- `/scripts/`, `/.github/` — deployment & CI changes (high blast radius)
+- `/harness/security/`, `/harness/qa/` — security & quality gates
+- `/harness/tests/` — test contracts
+- Root config: `pyproject.toml`, `uv.lock`, `Dockerfile`, `.env.example`
+
+To add co-maintainers or team-based ownership, use the GitHub UI under **Settings → Code owners** or edit `CODEOWNERS` directly. Note: GitHub usernames are case-sensitive; the file uses `@MauricioFCC` (correct casing) and GitHub will silently ignore mismatched handles.

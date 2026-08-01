@@ -1,28 +1,58 @@
-# CODEOWNERS — quien revisa cada parte
+# CODEOWNERS — quién revisa cada parte del proyecto.
 # Cada línea es un patrón de archivo seguido del/los revisores designados.
-# El último patrón que coincida tiene prioridad.
+# El ÚLTIMO patrón que coincida tiene prioridad (orden de abajo hacia arriba).
+#
+# IMPORTANTE: Los usernames en GitHub son case-sensitive. Este archivo usa
+# @MauricioFCC (mayúscula) que es el username real del owner.
 
-*                              @mauricioFCC
+# --- Regla por defecto: todo el repo requiere revisión del owner ---
+*                              @MauricioFCC
 
-# Nucleo del harness — modulos de ejecucion
-/harness/orchestrator/          @mauricioFCC
-/harness/memory_rag/            @mauricioFCC
-/harness/security/              @mauricioFCC
-/harness/qa/                    @mauricioFCC
-/harness/aifactory/             @mauricioFCC
-/harness/evolve_loop/           @mauricioFCC
-/harness/model_router/          @mauricioFCC
-/harness/gateway/               @mauricioFCC
-/harness/guardrails/            @mauricioFCC
-/harness/hooks/                 @mauricioFCC
-/harness/observability/         @mauricioFCC
-/harness/parallel/              @mauricioFCC
-/harness/plugins/               @mauricioFCC
-/harness/tools_sandbox/         @mauricioFCC
-/harness/db/                    @mauricioFCC
-/harness/evals/                 @mauricioFCC
+# --- Áreas críticas con doble revisión (seguridad + calidad) ---
+# Cambios en scripts de deploy/propagación son de alto impacto.
+# Cambios en CI/CD pueden romper todo el pipeline.
+/scripts/                      @MauricioFCC
+/.github/                      @MauricioFCC
+/harness/security/             @MauricioFCC
+/harness/qa/                   @MauricioFCC
 
-# Configuracion del sistema
-/.opencode/                     @mauricioFCC
-/docs/                          @mauricioFCC
-/.github/                       @mauricioFCC
+# --- Núcleo del harness (código de orquestación) ---
+/harness/orchestrator/         @MauricioFCC
+/harness/memory_rag/           @MauricioFCC
+/harness/evolve_loop/          @MauricioFCC
+/harness/aifactory/            @MauricioFCC
+/harness/model_router/         @MauricioFCC
+/harness/guardrails/           @MauricioFCC
+/harness/hooks/                @MauricioFCC
+/harness/observability/        @MauricioFCC
+/harness/parallel/             @MauricioFCC
+/harness/plugins/              @MauricioFCC
+/harness/tools_sandbox/        @MauricioFCC
+/harness/db/                   @MauricioFCC
+/harness/evals/                @MauricioFCC
+/harness/gateway/              @MauricioFCC
+
+# --- Cerebro opencode + skills (configuración agente-aware) ---
+/.opencode/                    @MauricioFCC
+/.opencode/agents/             @MauricioFCC
+/.opencode/skills/             @MauricioFCC
+
+# --- Documentación y ADRs ---
+/docs/                         @MauricioFCC
+/docs/src/es/adr/              @MauricioFCC
+/docs/src/es/roadmap/          @MauricioFCC
+
+# --- Tests requieren revisión cuidadosa ---
+# Los tests nuevos/modificados cambian el contrato del sistema.
+/harness/tests/                @MauricioFCC
+
+# --- Raíz del proyecto (configuración crítica) ---
+/pyproject.toml                @MauricioFCC
+/uv.lock                       @MauricioFCC
+/Dockerfile                    @MauricioFCC
+/docker-compose.yml            @MauricioFCC
+/.dockerignore                 @MauricioFCC
+/CHANGELOG.md                  @MauricioFCC
+/SECURITY.md                   @MauricioFCC
+/README.md                     @MauricioFCC
+/SETUP.md                      @MauricioFCC
