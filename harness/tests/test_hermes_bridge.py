@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -457,14 +458,26 @@ class TestImportModules:
         hermes_dir.mkdir()
         bridge = HermesBridge(hermes_path=str(hermes_dir), auto_import=False)
 
-        # Simular que el path existe pero los mÃ³dulos no
+        # Simular que el path existe pero los módulos no
         with patch.object(bridge, "_hermes_path", tmp_path / "Hermes"):  # noqa: SIM117
-            # Limpiar sys.path para que no encuentre los mÃ³dulos
+            # Limpiar sys.path y sys.modules para que no encuentre los módulos
+            # (otros tests pueden haber importado core/* de la canónica real).
             with patch("harness.memory_rag.hermes_bridge.sys.path", []):
-                with caplog.at_level(logging.WARNING):
-                    bridge._try_import_hermes_modules()
-                # Debe loguear el error sin lanzar excepciÃ³n
-                assert bridge._hermes_modules == {}
+                saved = {}
+                for name in ("core", "core.models"):
+                    saved[name] = sys.modules.pop(name, None)
+                try:
+                    with caplog.at_level(logging.WARNING):
+                        bridge._try_import_hermes_modules()
+                    # Debe loguear el error sin lanzar excepción
+                    assert bridge._hermes_modules == {}
+                finally:
+                    # Restaurar sys.modules para no romper otros tests.
+                    for name, mod in saved.items():
+                        if mod is not None:
+                            sys.modules[name] = mod
+                        elif name in sys.modules:
+                            del sys.modules[name]
 
 
 # ---------------------------------------------------------------------------

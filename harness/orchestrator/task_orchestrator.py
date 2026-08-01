@@ -126,6 +126,8 @@ class TaskOrchestrator:
         self._healing_contexts: dict[str, SelfHealingContext] = {}
         self._global_cb = CircuitBreaker(failure_threshold=5, recovery_timeout=60.0)
         self._shaped_cache = None
+        self._telemetry = None  # TelemetryTracker (ADR-0034 Golden Signals)
+        self._speculative_executor = None  # SpeculativeToolExecutor (ADR-0034)
         self._recent_messages: dict[str, float] = {}
         self._dedup_window: float = 30.0
         self._wal: Any | None = None
@@ -582,6 +584,53 @@ def enable_cache(orchestrator: TaskOrchestrator, max_tokens: int = 50000) -> Non
     StructuredLogRecord.info(
         "cache_enabled", message=f"ShapedCache activado: max_tokens={max_tokens}",
         session_id="", **(orchestrator._shaped_cache.get_stats()),
+    )
+
+
+def enable_golden_signals(orchestrator: TaskOrchestrator, **kwargs) -> None:
+    """Habilitar Golden Signals LLM en el tracker de telemetria (ADR-0034).
+
+    Expone latencia (p50/p95/p99), costo por tarea y hit-rate de cache en
+    el resumen exportado por TelemetryTracker. Composition Root.
+
+    Args:
+        orchestrator: instancia activa de TaskOrchestrator.
+        **kwargs: parametros de costo para GoldenSignals
+            (cost_input_per_1k, cost_output_per_1k, cache_read_discount).
+    """
+    if orchestrator._telemetry is None:
+        StructuredLogRecord.warning(
+            "golden_signals_skipped",
+            message="TaskOrchestrator no tiene telemetria habilitada; "
+                    "Golden Signals no activado",
+            session_id="",
+        )
+        return
+    orchestrator._telemetry.enable_golden_signals(**kwargs)
+    StructuredLogRecord.info(
+        "golden_signals_enabled",
+        message="Golden Signals LLM activados en telemetria",
+        session_id="",
+    )
+
+
+def enable_speculative_tools(orchestrator: TaskOrchestrator, **kwargs) -> None:
+    """Habilitar Speculative Tool Execution (ADR-0034).
+
+    Predice patrones de llamadas a herramientas y las ejecuta en paralelo
+    (dry-run) mientras el LLM genera, confirmando solo las acertadas.
+
+    Args:
+        orchestrator: instancia activa de TaskOrchestrator.
+        **kwargs: argumentos para SpeculativeToolExecutor
+            (eligible_tools, dry_run).
+    """
+    from harness.orchestrator.speculative_tool_exec import SpeculativeToolExecutor
+    orchestrator._speculative_executor = SpeculativeToolExecutor(**kwargs)
+    StructuredLogRecord.info(
+        "speculative_tools_enabled",
+        message="Speculative Tool Execution activada",
+        session_id="",
     )
 
 

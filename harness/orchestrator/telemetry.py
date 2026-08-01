@@ -255,6 +255,31 @@ class TelemetryTracker:
         self._export_dir = Path(export_dir)
         self._export_dir.mkdir(parents=True, exist_ok=True)
         self._sessions: dict[str, SessionTelemetry] = {}
+        self._golden_signals = None  # GoldenSignals (ADR-0034), lazy import
+
+    # ------------------------------------------------------------------
+    # Golden Signals (ADR-0034)
+    # ------------------------------------------------------------------
+
+    def enable_golden_signals(self, **kwargs) -> "GoldenSignals":
+        """Habilita Golden Signals LLM en este tracker (Composition Root).
+
+        Args:
+            **kwargs: argumentos para GoldenSignals (cost_input_per_1k,
+                cost_output_per_1k, cache_read_discount).
+
+        Returns:
+            La instancia de GoldenSignals creada.
+        """
+        from harness.orchestrator.golden_signals import GoldenSignals
+        if self._golden_signals is None:
+            self._golden_signals = GoldenSignals(**kwargs)
+        return self._golden_signals
+
+    @property
+    def golden_signals(self):
+        """Acceso a GoldenSignals (None si no está habilitado)."""
+        return self._golden_signals
 
     # ------------------------------------------------------------------
     # Session management
@@ -323,6 +348,9 @@ class TelemetryTracker:
                 s.summary() for s in self._sessions.values()
             ],
         }
+        # Golden Signals (ADR-0034): agregar snapshot LLM si está habilitado.
+        if self._golden_signals is not None:
+            summary["golden_signals"] = self._golden_signals.snapshot()
         filepath = self._export_dir / "telemetry_summary.json"
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2, ensure_ascii=False)

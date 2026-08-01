@@ -13,11 +13,11 @@ Uso:
     # Default: usa LanceDB en harness/db/lancedb/
     config = MemoryConfig()
     
-    # Custom: apunta a shared_memory
+    # Custom: apunta a shared_memory (rutas portables via Path.home())
     config = MemoryConfig(
         backend="lancedb",
-        lancedb_path="$HOME/Documents/DEV-SPACE/shared_memory/99_Hermes_Brain/lancedb_data",
-        hermes_path="$HOME/Documents/DEV-SPACE/shared_memory",
+        lancedb_path=str(Path.home() / "Documents" / "DEV-SPACE" / "shared_memory" / "99_Hermes_Brain" / "lancedb_data"),
+        hermes_path=str(Path.home() / "Documents" / "DEV-SPACE" / "shared_memory"),
     )
     
     # Modo memoria (sin persistencia)

@@ -37,6 +37,8 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0031 | [Frontier Improvements 2026 — Multi-API, Prompt Compression, GoT](adr0031-frontier-improvements-2026.md) | ACEPTADO | — |
 | 0032 | [Remaining Improvements — Shared Cache, Event Bus, Spec Decoding, KV Cache, A2A](adr0032-remaining-improvements-2026.md) | ACEPTADO | — |
 | 0033 | [TDD + Agentes como Fuente Unica de Verdad — Spec-First, Code-Second](adr0033-tdd-agentes-ssot-2026.md) | ACEPTADO | — |
+| 0034 | [Frontier Operations 2026 — Golden Signals, Cache Geometry, Dreaming, SLM-first, LAMaS, Speculative Tools](adr0034-frontier-operations-2026.md) | ACEPTADO | — |
+| 0035 | [Política de Seguridad — Paths Portables + Detección de Secretos](adr0035-security-policy-portable-paths-2026.md) | ACEPTADO | — |
 
 ## Resumen por Categoria
 
@@ -92,6 +94,12 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 - **ADR-0024**: Zero Trust Architecture — seguridad por defecto en toda la plataforma
 - **ADR-0029**: AI Factory Stack — integracion 7-capas del stack completo
 - **ADR-0032**: Remaining Improvements — Shared Cache, Event Bus, Spec Decoding, KV Cache, A2A
+
+### Operaciones y Costo LLM
+- **ADR-0034**: Frontier Operations 2026 — Golden Signals LLM, Cache Geometry, Dreaming-lite, SLM-first, LAMaS, Speculative Tool Execution
+
+### Seguridad
+- **ADR-0035**: Política de Seguridad — paths portables (env vars + Path.home()), scanner de secretos y rutas personales automatizado
 
 ### Estrategia y Dominio
 - **ADR-0001**: Mejoras base transversales del sistema multi-agente

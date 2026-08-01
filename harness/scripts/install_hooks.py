@@ -1,4 +1,4 @@
-﻿"""
+"""
 install_hooks.py â€” Git pre-commit hook installer for the Swarmind Harness.
 
 Installs a **self-contained local** pre-commit hook that runs the
@@ -121,13 +121,17 @@ def _is_git_repo() -> bool:
 
 
 def _save_status(installed: bool, timestamp: str = "") -> None:
-    """Persist hook installation metadata to JSON (informational only)."""
+    """Persist hook installation metadata to JSON (informational only).
+
+    Portabilidad (ADR-0035): hook_path se guarda RELATIVO al proyecto para
+    no exponer rutas absolutas ni el nombre de usuario de la máquina.
+    """
     status_dir = _STATUS_PATH.parent
     status_dir.mkdir(parents=True, exist_ok=True)
     status = {
         "installed": installed,
         "timestamp": timestamp or datetime.now(timezone.utc).isoformat(),
-        "hook_path": str(_HOOK_PATH),
+        "hook_path": os.path.relpath(_HOOK_PATH, _PROJECT_ROOT),
     }
     with open(_STATUS_PATH, "w", encoding="utf-8") as f:
         json.dump(status, f, indent=2)
@@ -136,12 +140,14 @@ def _save_status(installed: bool, timestamp: str = "") -> None:
 def _load_status() -> dict:
     """Load hook installation metadata. Returns empty-safe dict."""
     if not _STATUS_PATH.exists():
-        return {"installed": False, "timestamp": "", "hook_path": str(_HOOK_PATH)}
+        return {"installed": False, "timestamp": "", "hook_path": ""}
     try:
         with open(_STATUS_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+            status = json.load(f)
+        status.setdefault("hook_path", "")
+        return status
     except (json.JSONDecodeError, Exception):  # noqa: BLE001
-        return {"installed": False, "timestamp": "", "hook_path": str(_HOOK_PATH)}
+        return {"installed": False, "timestamp": "", "hook_path": ""}
 
 
 def _is_hook_ours(hook_path: Path = _HOOK_PATH) -> bool:

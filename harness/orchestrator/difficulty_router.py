@@ -247,6 +247,48 @@ class DifficultyRouter:
         features = self._extract_features(message)
         return self._estimate_subtasks(features)
 
+    def route_slm(self, message: str, task_type: str = "classification") -> dict:
+        """Recomienda la ruta de ejecución SLM-first (ADR-0034).
+
+        Punto de integración con SlmRouter: para tareas de baja complejidad
+        (TRIVIAL/SIMPLE -> SHALLOW pipeline) sugiere ejecución con modelo
+        pequeño, reservando frontier para planning y razonamiento.
+
+        Args:
+            message: La tarea del usuario.
+            task_type: tipo de tarea para SlmRouter (ver SLM_FRIENDLY_TASKS).
+
+        Returns:
+            Dict con decision (slm/frontier), pipeline, y score.
+        """
+        decision = self.route(message)
+        difficulty = self._complexity_to_difficulty(decision.complexity)
+        route = "frontier"
+        # SHALLOW + tarea mecánica verificable -> SLM-first.
+        if decision.pipeline == PipelineType.SHALLOW:
+            try:
+                from harness.orchestrator.slm_router import SlmRouter
+                route = SlmRouter().decide(task_type, difficulty)
+            except ImportError:
+                route = "frontier"  # Fallback seguro
+        return {
+            "route": route,
+            "pipeline": decision.pipeline.value,
+            "score": round(decision.score, 3),
+            "difficulty": difficulty,
+        }
+
+    def _complexity_to_difficulty(self, complexity: ComplexityLevel) -> int:
+        """Mapea ComplexityLevel (0..4) a la escala 0..4 de SlmRouter."""
+        mapping = {
+            ComplexityLevel.TRIVIAL: 0,
+            ComplexityLevel.SIMPLE: 1,
+            ComplexityLevel.MODERATE: 2,
+            ComplexityLevel.COMPLEX: 3,
+            ComplexityLevel.VERY_COMPLEX: 4,
+        }
+        return mapping[complexity]
+
     # ------------------------------------------------------------------
     # Feature Extraction
     # ------------------------------------------------------------------

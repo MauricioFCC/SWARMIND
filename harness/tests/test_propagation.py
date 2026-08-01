@@ -5,24 +5,46 @@ Cubre:
 - routing_rules.yaml sin agentes fantasma
 - Archivos clave presentes
 - Agentes y skills correctos
+
+Seguridad (ADR-0035): las rutas de proyectos externos se resuelven por
+variables de entorno (CQE_ROOT, HC_ROOT, ...) con fallback portable a
+``Path.home()``. Nunca se hardcodean rutas absolutas ni nombres de usuario.
 """
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
+
+
+def _project_root(env_var: str, *parts: str) -> Path:
+    """Resuelve la raíz de un proyecto externo sin exponer rutas personales.
+
+    Args:
+        env_var: variable de entorno con la ruta (ej. CQE_ROOT).
+        *parts: subdirectorios relativos al home (fallback portable).
+
+    Returns:
+        Path a la raíz del proyecto.
+    """
+    env_value = os.environ.get(env_var)
+    if env_value:
+        return Path(env_value)
+    return Path.home().joinpath(*parts)
+
 
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
 
 PROJECTS: dict[str, Path] = {
-    "CQE": Path(r"$HOME\Documents\DEV-SPACE\quant-engine"),
-    "HC": Path(r"$HOME\Documents\DEV-SPACE\health-record"),
-    "Onyx": Path(r"$HOME\Documents\DEV-SPACE\trading-bot-AIBot"),
-    "PDV": Path(r"$HOME\Documents\DEV-SPACE\pos-system"),
-    "Hermes": Path(r"$HOME\Documents\shared_memory"),
+    "CQE": _project_root("CQE_ROOT", "Documents", "DEV-SPACE", "quant-engine"),
+    "HC": _project_root("HC_ROOT", "Documents", "DEV-SPACE", "health-record"),
+    "Onyx": _project_root("ONYX_ROOT", "Documents", "DEV-SPACE", "trading-bot-AIBot"),
+    "PDV": _project_root("PDV_ROOT", "Documents", "DEV-SPACE", "pos-system"),
+    "Hermes": _project_root("HERMES_ROOT", "Documents", "shared_memory"),
 }
 
 # Agentes fantasma que NO deben aparecer en routing_rules.yaml

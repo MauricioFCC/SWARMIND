@@ -97,6 +97,51 @@ def _write_hermes_knowledge_to_federated(bridge: HermesBridge) -> int:
     return count
 
 
+def _run_dreaming(
+    hermes_root: Path,
+    *,
+    similarity_threshold: float = 0.85,
+    max_age_days: int = 90,
+    source: Path | None = None,
+) -> None:
+    """Consolida sesiones de memoria (Dreaming-lite, ADR-0034).
+
+    Fuente: hermes_root/sessions/*.json por defecto, o el directorio pasado
+    en source (ej. federated de un proyecto hermano).
+    Destino: hermes_root/knowledge/Swarmind_bridge/.
+
+    Args:
+        hermes_root: raíz de la implementación canónica de Hermes.
+        similarity_threshold: umbral de similitud Jaccard para dedup.
+        max_age_days: entradas viejas sin referencias se eliminan.
+        source: directorio alternativo de sesiones (opcional).
+    """
+    from harness.memory_rag.dreaming import DreamingConsolidator
+
+    sessions_dir = source or (hermes_root / "sessions")
+    knowledge_dir = hermes_root / "knowledge" / "Swarmind_bridge"
+
+    if not sessions_dir.is_dir():
+        logger.warning(
+            "WHAT: no hay directorio de sesiones. WHY: %s no existe. "
+            "WHERE: _run_dreaming() en sync_hermes.py.",
+            sessions_dir,
+        )
+        return
+
+    consolidator = DreamingConsolidator(
+        similarity_threshold=similarity_threshold,
+        max_age_days=max_age_days,
+    )
+    result = consolidator.consolidate_dir(sessions_dir, knowledge_dir)
+    logger.info(
+        "Dreaming complete: %d sesiones -> %d entradas consolidadas "
+        "(%d eliminadas, %d compactadas)",
+        result.source_entries, len(result.entries),
+        result.removed, result.compacted,
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Sync Swarmind cognition store with shared_memory",
@@ -127,6 +172,32 @@ def main() -> None:
         action="store_true",
         help="Show bridge statistics",
     )
+    parser.add_argument(
+        "--dream",
+        action="store_true",
+        help="Consolidar memoria (Dreaming-lite, ADR-0034): dedup + stale + "
+             "compactacion de sessions/ hacia knowledge/Swarmind_bridge/",
+    )
+    parser.add_argument(
+        "--similarity",
+        type=float,
+        default=0.85,
+        help="Umbral de similitud Jaccard para dedup en --dream (default 0.85)",
+    )
+    parser.add_argument(
+        "--max-age-days",
+        type=int,
+        default=90,
+        help="Entradas mas viejas que esto y sin referencias se eliminan en "
+             "--dream (default 90)",
+    )
+    parser.add_argument(
+        "--dream-source",
+        type=str,
+        default="",
+        help="Directorio de sesiones a consolidar en --dream. Por defecto "
+             "usa <hermes_root>/sessions/ (canonica).",
+    )
 
     args = parser.parse_args()
 
@@ -140,6 +211,16 @@ def main() -> None:
     if args.stats:
         stats = bridge.get_status()
         print("Bridge status:", json.dumps(stats, indent=2, ensure_ascii=False))
+        return
+
+    if args.dream:
+        # Dreaming-lite (ADR-0034): consolidar sesiones -> knowledge.
+        _run_dreaming(
+            hermes_root,
+            similarity_threshold=args.similarity,
+            max_age_days=args.max_age_days,
+            source=Path(args.dream_source) if args.dream_source else None,
+        )
         return
 
     if args.dry_run:

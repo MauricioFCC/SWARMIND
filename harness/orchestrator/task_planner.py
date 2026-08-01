@@ -45,6 +45,7 @@ class SubTask:
     completed: bool = False
     result: str = ""
     confidence_impact: str = "neutral"  # "critical" | "neutral" | "validation"
+    estimated_latency_ms: float | None = None  # Peso para ruta crítica (LAMaS, ADR-0034)
 
     def to_dict(self) -> dict:
         return {
@@ -84,6 +85,10 @@ class TaskPlan:
         Level 1: depend on level 0
         Level 2: depend on level 1
         etc.
+
+        LAMaS-lite (ADR-0034): dentro de cada nivel, las subtasks de la ruta
+        crítica se ordenan primero para reducir el tiempo end-to-end sin
+        violar dependencias.
         """
         remaining = {s.id: s for s in self.subtasks}
         completed_ids: set = set()
@@ -102,12 +107,30 @@ class TaskPlan:
                     "Breaking by adding %d remaining subtasks.",
                     self.session_id, len(level),
                 )
-            levels.append(level)
+            levels.append(self._order_level(level))
             for s in level:
                 del remaining[s.id]
                 completed_ids.add(s.id)
 
         return levels
+
+    def _order_level(self, level: list[SubTask]) -> list[SubTask]:
+        """Ordena un nivel priorizando la ruta crítica (LAMaS-lite, ADR-0034).
+
+        Args:
+            level: subtasks listas para ejecutarse en este nivel.
+
+        Returns:
+            Subtasks ordenadas: las críticas primero, el resto en orden.
+        """
+        if len(level) <= 1:
+            return level
+        try:
+            from harness.orchestrator.latency_aware import CriticalPath
+            return CriticalPath().optimize(level)
+        except ImportError:
+            # Fallback: mantener orden original si no se puede importar.
+            return level
 
     def get_pending(self) -> list[SubTask]:
         """Get subtasks that are not yet completed and whose deps are met."""
