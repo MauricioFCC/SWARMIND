@@ -90,4 +90,23 @@ fail_under = 62
 # Siguiente:   fail_under = 70
 # Objetivo:    fail_under = 80
 
+# ---------------------------------------------------------------------------
+# Ruff (linter)
+# ---------------------------------------------------------------------------
+# Config: mantenemos defaults E/F/I/W/B/UP/SIM/etc y solo ignoramos reglas
+# que generan falsos positivos en este proyecto o no aportan valor.
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+# Reglas ignoradas (con justificacion):
+#   EXE001 - "shebang present but file is not executable": ruff solo aplica
+#            esta regla en sistemas Unix-like (no en Windows). En CI (Ubuntu)
+#            los scripts standalone en harness/scripts/ tienen shebang pero
+#            no se ejecutan directamente; se invocan via `uv run` o
+#            `python -m`. Mantener la regla activa generaria errores en
+#            CI que no podemos verificar localmente. Desactivada globalmente.
+ignore = ["EXE001"]
+
 
