@@ -87,13 +87,17 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync
-          uv pip install bandit pip-audit
+          # Instalar pip en el venv para que pip-audit pueda auditarlo via
+          # PIPAPI_PYTHON_LOCATION (sin esto, uv crea un venv sin pip).
+          uv pip install pip bandit pip-audit
       - name: Bandit
         run: uv run bandit -r harness/ -x harness/tests -ll -q
       - name: Pip audit
-        # uv run activa el venv (que tiene setuptools >= 83.0.0 gracias al
-        # bump en build-system.requires) y pip-audit audita ese venv.
+        # Forzamos que pip-audit audite el venv (no el Python del sistema)
+        # via PIPAPI_PYTHON_LOCATION. El venv tiene setuptools >= 83.0.0.
         run: uv run pip-audit
+        env:
+          PIPAPI_PYTHON_LOCATION: ${{ github.workspace }}/.venv/bin/python
 
   compile:
     name: Compile
