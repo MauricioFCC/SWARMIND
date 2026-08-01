@@ -207,7 +207,7 @@ class SlmRouter:
             )
         out = backend(payload)
         if not isinstance(out, dict):
-            raise RuntimeError(
+            raise TypeError(
                 f"WHAT: backend {label} devolvió tipo inválido. "
                 f"WHY: se esperaba dict, se obtuvo {type(out).__name__}. "
                 f"WHERE: _call() en slm_router.py."

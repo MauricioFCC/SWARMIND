@@ -335,9 +335,7 @@ class ResilienceGovernance:
         """
         if self.connection_cooldown.is_cooling_down(resource):
             return False
-        if self.model_lockout.is_locked(resource, agent, model):
-            return False
-        return True
+        return not self.model_lockout.is_locked(resource, agent, model)
 
     def get_circuit_breaker(self, provider: str) -> CircuitBreaker:
         """

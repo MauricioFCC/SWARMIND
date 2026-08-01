@@ -31,12 +31,12 @@ if str(_HARNESS.parent) not in sys.path:
     sys.path.insert(0, str(_HARNESS.parent))
 
 # Test standalone: sys.path debe configurarse antes de importar el paquete harness.
-import pytest  # noqa: E402
-from orchestrator.agent_discovery import discover_agents_recursive  # noqa: E402
-from orchestrator.health import AgentHealthChecker, CognitiveState  # noqa: E402
-from orchestrator.task_orchestrator import TaskOrchestrator  # noqa: E402
-from orchestrator.task_planner import TaskPlan, TaskPlanner  # noqa: E402
-from orchestrator.telemetry import (  # noqa: E402
+import pytest
+from orchestrator.agent_discovery import discover_agents_recursive
+from orchestrator.health import AgentHealthChecker, CognitiveState
+from orchestrator.task_orchestrator import TaskOrchestrator
+from orchestrator.task_planner import TaskPlan, TaskPlanner
+from orchestrator.telemetry import (
     SubtaskRecord,
     TelemetryTracker,
 )

@@ -265,7 +265,7 @@ class TelemetryTracker:
     # Golden Signals (ADR-0034)
     # ------------------------------------------------------------------
 
-    def enable_golden_signals(self, **kwargs) -> "GoldenSignals":
+    def enable_golden_signals(self, **kwargs) -> GoldenSignals:
         """Habilita Golden Signals LLM en este tracker (Composition Root).
 
         Args:

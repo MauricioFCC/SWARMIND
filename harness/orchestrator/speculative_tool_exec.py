@@ -181,7 +181,7 @@ class SpeculativeToolExecutor:
                 continue
             try:
                 outcome = executor(tool)
-            except Exception:  # la especulación nunca rompe el flujo.
+            except Exception:  # noqa: BLE001 - la especulacion nunca rompe el flujo principal
                 self._stats.misses += 1
                 continue
             self._pending[tool] = outcome

@@ -238,7 +238,7 @@ class SecurityPolicyScanner:
 
         for lineno, raw_line in enumerate(content.splitlines(), start=1):
             line = raw_line.strip()
-            if not line or line.startswith("#") or line.startswith("//"):
+            if not line or line.startswith(("#", "//")):
                 continue
             # 1) Rutas personales (en cualquier archivo).
             if _PERSONAL_PATH_RE.search(line):
@@ -301,6 +301,7 @@ class SecurityPolicyScanner:
                 ["git", "ls-files", "--error-unmatch", "--", rel],
                 cwd=self._root, capture_output=True, text=True,
                 timeout=10,
+                check=False,
             )
             return result.returncode == 0
         except (OSError, subprocess.SubprocessError):

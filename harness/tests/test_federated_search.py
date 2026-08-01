@@ -24,7 +24,6 @@ from harness.memory_rag.federated_search import (
 )
 from harness.memory_rag.vector_store_adapter import SearchResult, VectorStoreAdapter
 
-
 # ---------------------------------------------------------------------------
 # Mocks: FakeVectorStoreAdapter
 # ---------------------------------------------------------------------------
