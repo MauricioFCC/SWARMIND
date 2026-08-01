@@ -91,7 +91,11 @@ jobs:
       - name: Bandit
         run: uv run bandit -r harness/ -x harness/tests -ll -q
       - name: Pip audit
+        # pip-audit por defecto inspecciona el Python del sistema, no el venv.
+        # Forzamos que audite el venv via PIPAPI_PYTHON_LOCATION.
         run: uv run pip-audit
+        env:
+          PIPAPI_PYTHON_LOCATION: ${{ github.workspace }}/.venv/bin/python
 
   compile:
     name: Compile

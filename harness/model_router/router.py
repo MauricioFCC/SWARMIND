@@ -12,9 +12,8 @@ from harness.model_router.multi_provider import (
     ExecutionResult,
     MultiAPIProvider,
     ProviderConfig,
-    RoutingDecision,
 )
-from harness.model_router.multi_provider_types import ProviderTier
+from harness.model_router.multi_provider_types import ProviderTier, RoutingDecision
 
 logger = logging.getLogger(__name__)
 class ModelRouter:
