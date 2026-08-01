@@ -42,32 +42,26 @@ jobs:
 
           # Determinar el PR a procesar segun el tipo de evento
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            # Evento PR: procesamos ese PR
             PR_NUM="${{ github.event.pull_request.number }}"
-            PR_ACTION="${{ github.event.action }}"
             IS_DRAFT="${{ github.event.pull_request.draft }}"
             HEAD_REPO="${{ github.event.pull_request.head.repo.full_name }}"
             AUTHOR="${{ github.event.pull_request.user.login }}"
           else
-            # Evento check_run: buscamos el PR asociado al commit
             COMMIT_SHA="${{ github.event.check_run.head_sha }}"
-            PR_NUM=$(gh api \
-              -H "Accept: application/vnd.github+json" \
-              "/repos/${REPO}/commits/${COMMIT_SHA}/pulls" \
-              --jq 'map(select(.state == "open")) | .[0].number // empty' 2>/dev/null || true)
-            if [ -z "$PR_NUM" ]; then
+            PR_META=$(gh api -H "Accept: application/vnd.github+json" \
+              "/repos/${REPO}/commits/${COMMIT_SHA}/pulls?state=open" \
+              --jq '.[0] // null')
+            if [ "$PR_META" = "null" ] || [ -z "$PR_META" ]; then
               echo "No open PR for commit ${COMMIT_SHA}, skipping."
               exit 0
             fi
-            # Obtener metadata del PR
-            PR_META=$(gh api -H "Accept: application/vnd.github+json" "/repos/${REPO}/pulls/${PR_NUM}")
-            PR_ACTION=""
+            PR_NUM=$(echo "$PR_META" | jq -r '.number')
             IS_DRAFT=$(echo "$PR_META" | jq -r '.draft')
             HEAD_REPO=$(echo "$PR_META" | jq -r '.head.repo.full_name')
             AUTHOR=$(echo "$PR_META" | jq -r '.user.login')
           fi
 
-          echo "Processing PR #${PR_NUM} (event: ${{ github.event_name }}, action: ${PR_ACTION:-check_run})"
+          echo "Processing PR #${PR_NUM}"
           echo "  draft=${IS_DRAFT} head_repo=${HEAD_REPO} author=${AUTHOR}"
 
           # Guard: solo PRs no-draft, mismo repo, no dependabot
@@ -93,59 +87,47 @@ jobs:
             exit 0
           fi
 
-          # Obtener los status checks requeridos por la branch protection
-          REQUIRED=$(gh api -H "Accept: application/vnd.github+json" \
-            "/repos/${REPO}/branches/main/protection/required_status_checks" \
-            --jq '.contexts[]' 2>/dev/null || true)
-          if [ -z "$REQUIRED" ]; then
-            echo "No required status checks configured for main, skipping auto-merge."
+          # Verificar todos los status checks del PR via statusCheckRollup
+          # (este campo es accesible con GITHUB_TOKEN y refleja el estado real).
+          ROLLUP=$(gh api -H "Accept: application/vnd.github+json" \
+            "/repos/${REPO}/pulls/${PR_NUM}" \
+            --jq '.statusCheckRollup')
+
+          # Si no hay checks, salir (no auto-merge sin CI)
+          TOTAL=$(echo "$ROLLUP" | jq 'length')
+          if [ "$TOTAL" = "0" ] || [ "$TOTAL" = "null" ]; then
+            echo "No status checks reported yet, will retry on next event."
             exit 0
           fi
 
-          # Obtener el ultimo commit SHA del PR
-          HEAD_SHA=$(gh api -H "Accept: application/vnd.github+json" \
-            "/repos/${REPO}/pulls/${PR_NUM}" \
-            --jq '.head.sha')
+          # Verificar que TODOS los checks esten en SUCCESS (o SKIPPED/NEUTRAL)
+          echo "Status checks rollup:"
+          echo "$ROLLUP" | jq -r '.[] | "  \(.name // .context): \(.conclusion // .state // "PENDING")"'
 
-          # Verificar el estado de cada check requerido en el HEAD SHA
-          echo "Checking status of required checks on ${HEAD_SHA}..."
           ALL_GREEN=true
-          for check in $REQUIRED; do
-            # Intentar check_runs primero
-            STATUS=$(gh api -H "Accept: application/vnd.github+json" \
-              "/repos/${REPO}/commits/${HEAD_SHA}/check-runs?check_name=${check}" \
-              --jq '.check_runs[0].conclusion // empty' 2>/dev/null || true)
-            # Si no, intentar status (legacy)
-            if [ -z "$STATUS" ]; then
-              STATUS=$(gh api -H "Accept: application/vnd.github+json" \
-                "/repos/${REPO}/commits/${HEAD_SHA}/status" \
-                --jq '.statuses[] | select(.context == "'"${check}"'") | .state' 2>/dev/null | head -1 || true)
-            fi
-            if [ "$STATUS" = "success" ]; then
-              echo "  ${check}: success"
-            elif [ "$STATUS" = "skipped" ] || [ "$STATUS" = "neutral" ]; then
-              echo "  ${check}: ${STATUS} (treated as OK)"
-            else
-              echo "  ${check}: ${STATUS:-PENDING} (not ready)"
+          while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            STATE=$(echo "$line" | awk -F': ' '{print $2}' | tr -d ' ')
+            if [ "$STATE" != "SUCCESS" ] && [ "$STATE" != "SKIPPED" ] && [ "$STATE" != "NEUTRAL" ]; then
               ALL_GREEN=false
             fi
-          done
+          done <<< "$(echo "$ROLLUP" | jq -r '.[] | "\(.name // .context): \(.conclusion // .state // "PENDING")"')"
 
           if [ "$ALL_GREEN" != "true" ]; then
-            echo "Not all required checks are green yet, will retry on next event."
+            echo "Not all checks are green yet, will retry on next event."
             exit 0
           fi
 
           # Activar auto-merge via API
-          echo "All required checks green. Enabling auto-merge..."
-          gh api -X PUT \
+          echo "All checks green. Enabling auto-merge..."
+          HTTP_CODE=$(gh api -X PUT \
             -H "Accept: application/vnd.github+json" \
             "/repos/${REPO}/pulls/${PR_NUM}/auto-merge" \
             -f "merge_method=squash" \
-            -f "commit_title=PR_TITLE" \
-            -f "commit_message=PR_BODY" \
-            --silent || {
-              echo "::warning::Failed to enable auto-merge (may already be enabled or policy prevents it)"
-              exit 0
-            }
-          echo "Auto-merge enabled for PR #${PR_NUM}."
+            --silent --output /dev/null --write-out '%{http_code}' 2>/dev/null || echo "0")
+
+          if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
+            echo "Auto-merge enabled for PR #${PR_NUM}."
+          else
+            echo "::warning::Failed to enable auto-merge (HTTP ${HTTP_CODE}). Likely already enabled or policy conflict."
+          fi
