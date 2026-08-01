@@ -59,7 +59,7 @@ jobs:
         run: uv sync --group test
       - name: Run tests
         run: |
-          python -m pytest harness/tests/ -v --cov=harness --cov-report=term --cov-report=xml
+          uv run python -m pytest harness/tests/ -v --cov=harness --cov-report=term --cov-report=xml
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
@@ -86,12 +86,12 @@ jobs:
             uv-${{ runner.os }}-
       - name: Install dependencies
         run: |
-          uv pip install bandit pip-audit
+          uv pip install 'bandit[pip-audit]' pip-audit
           uv sync
       - name: Bandit
-        run: bandit -r harness/ -x harness/tests -ll -q
+        run: uv run bandit -r harness/ -x harness/tests -ll -q
       - name: Pip audit
-        run: pip-audit
+        run: uv run pip-audit
 
   compile:
     name: Compile
