@@ -327,7 +327,8 @@ class TaskManager:
             set_clause = ", ".join(f"{k} = ?" for k in serialized if k != "id")
             values = [v for k, v in serialized.items() if k != "id"] + [task_id]
             self._run_sqlite_execute(
-                f"UPDATE tasks_board SET {set_clause} WHERE id = ?",
+                # keys de allowed_fields validados, valores parametrizados
+                f"UPDATE tasks_board SET {set_clause} WHERE id = ?",  # nosec B608
                 tuple(values),
             )
 
@@ -401,7 +402,8 @@ class TaskManager:
             return [self._deserialize_task(row.to_dict()) for _, row in results.iterrows()]
         else:
             where_clause = " AND ".join(conditions) if conditions else "1=1"
-            sql = f"SELECT * FROM tasks_board WHERE {where_clause} ORDER BY created_at DESC LIMIT ? OFFSET ?"
+            # condiciones fijas construidas internamente, valores parametrizados
+            sql = f"SELECT * FROM tasks_board WHERE {where_clause} ORDER BY created_at DESC LIMIT ? OFFSET ?"  # nosec B608
             params.extend([limit, offset])
             rows = self._run_sqlite_query(sql, tuple(params))
             return [self._deserialize_task(r) for r in rows]
@@ -443,7 +445,8 @@ class TaskManager:
             set_clause = ", ".join(f"{k} = ?" for k in serialized if k != "id")
             values = [v for k, v in serialized.items() if k != "id"] + [task_id]
             self._run_sqlite_execute(
-                f"UPDATE tasks_board SET {set_clause} WHERE id = ?",
+                # keys validados, valores parametrizados
+                f"UPDATE tasks_board SET {set_clause} WHERE id = ?",  # nosec B608
                 tuple(values),
             )
 

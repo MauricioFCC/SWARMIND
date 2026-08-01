@@ -39,6 +39,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0033 | [TDD + Agentes como Fuente Unica de Verdad — Spec-First, Code-Second](adr0033-tdd-agentes-ssot-2026.md) | ACEPTADO | — |
 | 0034 | [Frontier Operations 2026 — Golden Signals, Cache Geometry, Dreaming, SLM-first, LAMaS, Speculative Tools](adr0034-frontier-operations-2026.md) | ACEPTADO | — |
 | 0035 | [Política de Seguridad — Paths Portables + Detección de Secretos](adr0035-security-policy-portable-paths-2026.md) | ACEPTADO | — |
+| 0036 | [Opción A — SSOT Global OpenCode + Mirror Local por Proyecto](adr0036-opcion-a-ssot-global-2026.md) | ACEPTADO | — |
 
 ## Resumen por Categoria
 
@@ -100,6 +101,9 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 
 ### Seguridad
 - **ADR-0035**: Política de Seguridad — paths portables (env vars + Path.home()), scanner de secretos y rutas personales automatizado
+
+### Infraestructura y Distribución
+- **ADR-0036**: Opción A — SSOT global OpenCode (`~/.config/opencode/`) con sync automático en cada commit + mirror local completo por proyecto DEV-SPACE (preservando config propia)
 
 ### Estrategia y Dominio
 - **ADR-0001**: Mejoras base transversales del sistema multi-agente

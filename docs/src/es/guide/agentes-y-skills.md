@@ -475,9 +475,17 @@ harness/
 │   └── ...
 ├── tools_sandbox/
 ├── evolve_loop/
-├── tests/                        # 1894+ tests (52+ suites)
+├── tests/                        # 3674+ tests (52+ suites)
 └── ...
 ```
+
+> **Opcion A — SSOT Global OpenCode (NUEVO):** `.opencode/` de Swarmind es la
+> **fuente unica de verdad** del cerebro (agents, skills, core, registry). Se
+> sincroniza automaticamente al global `~/.config/opencode/` en **cada commit**
+> (pre-commit hook → `scripts/sync_opencode_global.py`) y se propaga como
+> **mirror local** completo a todos los proyectos de DEV-SPACE
+> (`scripts/deploy_all.py`, preservando la config propia de cada uno). Guia
+> completa: [Opcion A — SSOT Global OpenCode](opcion-a-ssot-global.md).
 
 ---
 

@@ -1,4 +1,4 @@
-"""
+﻿"""
 ToolGuardian — Seguridad declarativa para interacciones agente-herramienta.
 
 Basado en arXiv:2607.21835 (Ravindran & Deochake, Jul 2026):
@@ -169,7 +169,8 @@ class ToolGuardian:
             blocked_actions=["delete", "format", "chmod", "chown", "mkfs",
                              "mount", "umount", "truncate"],
             max_execution_time=10,
-            allowed_paths=["/tmp", "/home", "/data", "./"],
+            # sandbox: lista de rutas permitidas por diseno (no se escribe ahi)
+            allowed_paths=["/tmp", "/home", "/data", "./"],  # nosec B108
         )
 
         # Red: solo GET/POST a dominios permitidos

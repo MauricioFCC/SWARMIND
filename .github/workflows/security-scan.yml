@@ -17,6 +17,6 @@ jobs:
       - name: Install
         run: pip install pip-audit bandit
       - name: Dependencies
-        run: pip-audit || true
+        run: pip-audit
       - name: Bandit
-        run: bandit -r harness/ -ll || true
+        run: bandit -r harness/ -x harness/tests -ll -q

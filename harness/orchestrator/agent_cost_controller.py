@@ -100,7 +100,7 @@ class AgentCostController:
             True si la llamada esta dentro de los limites,
             False si debe detenerse por costo excesivo o loop detectado.
         """
-        call_hash = hashlib.md5(prompt.encode()).hexdigest()[:16]
+        call_hash = hashlib.md5(prompt.encode(), usedforsecurity=False).hexdigest()[:16]
         if agent not in self._records:
             self._records[agent] = AgentCostRecord(
                 agent=agent,

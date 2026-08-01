@@ -760,7 +760,7 @@ class AdaptivePlanner:
         # Normalizar: lowercase, strip, sort words
         words = sorted(task.lower().strip().split())
         normalized = " ".join(words)
-        return hashlib.md5(normalized.encode()).hexdigest()[:12]
+        return hashlib.md5(normalized.encode(), usedforsecurity=False).hexdigest()[:12]
 
     def _select_by_task_type(self, task: str, task_type: str) -> PlanStrategy:
         """Selecciona estrategia basada en tipo de tarea."""

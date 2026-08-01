@@ -6,6 +6,7 @@
 
 - [Filosofia del Sistema](guide/filosofia.md)
 - [Como Usar Swarmind](guide/como-usar.md)
+- [Opcion A — SSOT Global OpenCode](guide/opcion-a-ssot-global.md) â€” **NUEVO**: config global + mirror local + sync automatico
 - [Agentes y Skills (completo)](guide/agentes-y-skills.md) â€” **SSOT** de agentes, skills, modulos y novedades
 - [Velocidad y Paralelismo](guide/velocidad.md)
 - [Estandares Automaticos](guide/estandares.md)
@@ -119,7 +120,7 @@
 
 - [Estado del Proyecto](roadmap/estado.md) â€” **SSOT** estado y roadmap
 
-# ADR - Architecture Decision Records (32 activos)
+# ADR - Architecture Decision Records (35 activos)
 
 ### Fundacion
 - [ADR-0001: Sistema Multi-Agente Evolutivo](adr/adr0001-mejoras.md)
@@ -163,4 +164,7 @@
 - [ADR-0031: Frontier Improvements 2026](adr/adr0031-frontier-improvements-2026.md)
 - [ADR-0032: Remaining Improvements](adr/adr0032-remaining-improvements-2026.md)
 - [ADR-0033: TDD + Agentes como Fuente Unica de Verdad](adr/adr0033-tdd-agentes-ssot-2026.md)
+- [ADR-0034: Frontier Operations 2026](adr/adr0034-frontier-operations-2026.md)
+- [ADR-0035: Politica de Seguridad — Paths Portables](adr/adr0035-security-policy-portable-paths-2026.md)
+- [ADR-0036: Opcion A — SSOT Global OpenCode](adr/adr0036-opcion-a-ssot-global-2026.md)
 

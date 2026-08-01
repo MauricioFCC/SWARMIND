@@ -1,13 +1,13 @@
 # Roadmap y Estado del Proyecto
 
-> Estado actual del sistema Swarmind Harness a 2026-07-29.
+> Estado actual del sistema Swarmind Harness a 2026-07-31.
 > Documento vivo que refleja el progreso, hitos y proximos objetivos.
 
-## Estado Actual (2026-07-29)
+## Estado Actual (2026-07-31)
 
 Las metricas principales del sistema (tests, cobertura, ADRs, agentes, skills, modulos) estan en la [pagina principal](../README.md#estado-actual-julio-2026).
 
-**Resumen ejecutivo:** 3420 tests, 71.56% cobertura, 32 ADRs, 20 agentes, 31 skills, 48 modulos orchestrator, 30 modulos memory/rag, RTX 4060 6x speedup, 15 papers 2026 implementados.
+**Resumen ejecutivo:** 3674 tests, 71.56% cobertura, 35 ADRs, 20 agentes, 31 skills, 48 modulos orchestrator, 30 modulos memory/rag, RTX 4060 6x speedup, 15 papers 2026 implementados, **Opción A SSOT global implementada**.
 
 **Metricas adicionales no incluidas en README:** 196+ commits, 258 archivos Python, suite completa ~150s (sin slow ~45s), 30+ tecnicas 2026 integradas.
 
@@ -60,6 +60,8 @@ Las metricas principales del sistema (tests, cobertura, ADRs, agentes, skills, m
 | **Learned Adaptive Memory** | 2026-07-29 | arXiv:2607.13591 — memoria adaptativa con retencion aprendida |
 | **Expansion agentes** | 2026-07-29 | 8 → 20 agentes especializados (100% perfiles) |
 | **32 ADRs** | 2026-07-29 | De 28 a 32 ADRs documentados e implementados |
+| **Seguridad ADR-0035** | 2026-07-30 | Scanner de secretos + paths portables en CI y pre-commit |
+| **Opción A — SSOT Global** | 2026-07-31 | Cerebro `.opencode/` → `~/.config/opencode/` (sync automático en cada commit) + mirror local en 7 proyectos DEV-SPACE |
 
 ### Evolucion de Cobertura
 
@@ -107,17 +109,17 @@ Objetivo: 80%    (proximo hito)
 | Metrica | Actual | Objetivo | Tendencia |
 |---------|--------|----------|-----------|
 | Cobertura de tests | 71.56% | 80% | Subiendo |
-| Tests totales | 3420 | ~4000 | Subiendo |
+| Tests totales | 3674 | ~4000 | Subiendo |
 | Agentes | 20 | 30+ | Subiendo |
 | Skills | 31 | 50+ | Subiendo |
 | Modulos Orchestrator | 48 | 55+ | Subiendo |
 | Modulos Memory/RAG | 30 | 35+ | Subiendo |
 | Archivos <900LC | 100% | 100% | Mantenido |
 | DocStrings ES-UTF8 | ~95% | 100% | Subiendo |
-| Tiempo full suite | ~150s | <60s | Bajando |
+| Tiempo full suite | ~100s | <60s | Bajando |
 | Tiempo sin slow | ~45s | <30s | Bajando |
-| ADRs implementados | 32/32 | 32/32 | Completo |
-| Commits totales | 196+ | N/A | Subiendo |
+| ADRs implementados | 35/35 | 35/35 | Completo |
+| Commits totales | 230+ | N/A | Subiendo |
 | Tecnicas 2026 | 30+ | 40+ | Subiendo |
 | Papers implementados | 15 | 20+ | Subiendo |
 | GPU Speedup | 6x search | 10x full pipeline | Subiendo |
@@ -126,6 +128,8 @@ Objetivo: 80%    (proximo hito)
 
 ## Notas de la Version
 
+- **2026-07-31**: Opción A implementada — SSOT global opencode (`~/.config/opencode/`) con sync automático en cada commit (pre-commit hook → `scripts/sync_opencode_global.py`). Mirror local completo (`.opencode/` 125 archivos + `harness/` 8451 + 31 skills + registry) desplegado en 7 proyectos de DEV-SPACE preservando config propia. Seguridad: ADR-0035 scanner 0 violaciones, bandit 0 hallazgos en producción (MD5 `usedforsecurity=False`, nosec justificado), gates CI endurecidos (bandit/pip-audit bloquean), dependabot + github-actions. Guia: [docs/src/es/guide/opcion-a-ssot-global.md](../guide/opcion-a-ssot-global.md).
+- **2026-07-30**: ADR-0035 política de paths portables + scanner de secretos/rutas personales (0 violaciones). Limpieza de rutas personales en toda la documentación.
 - **2026-07-29**: Gap Analysis 2026 completo (15 papers implementados). Nuevos modulos: GovernanceGuard (arXiv:2606.22528), NaturalLanguageToolkit (arXiv:2607.03953), MultiUserGovernance (arXiv:2606.21856), OrganizationalLayer (arXiv:2607.25446), Learned Adaptive Memory (arXiv:2607.13591). Expansion de 8 a 20 agentes. 3420 tests, 32 ADRs, 31 skills, 48 modulos orchestrator, 30 modulos memory/rag.
 - **2026-07-20 (final)**: GPU acceleration (RTX 4060, 6x search, 3.2x embedding). Refactor task_orch 994→830, ctx_window 1029→943. ShapedCache threshold 0.88. Seguridad: path traversal hardening. 2900+ tests, ~60% coverage.
 - **2026-07-20**: Documentacion completa del sistema. Se anaden glosario, roadmap, y se completa SUMMARY con todas las secciones. Cobertura en ~60% con 2900+ tests pasando.

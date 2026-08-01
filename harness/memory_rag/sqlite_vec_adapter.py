@@ -209,7 +209,8 @@ class SQLiteVecAdapter:
                 assert self._conn is not None
                 now = time.time()
                 self._conn.execute(
-                    f"INSERT INTO {_META_TABLE} (name, dimension, created_at) VALUES (?, ?, ?)",
+                    # tabla interna constante, valores parametrizados
+                    f"INSERT INTO {_META_TABLE} (name, dimension, created_at) VALUES (?, ?, ?)",  # nosec B608
                     (name, dim, now),
                 )
                 tbl = self._vec_table_name(name)
@@ -246,8 +247,10 @@ class SQLiteVecAdapter:
             try:
                 assert self._conn is not None
                 tbl = self._vec_table_name(name)
-                self._conn.execute(f"DROP TABLE IF EXISTS {tbl}")
-                self._conn.execute(f"DELETE FROM {_META_TABLE} WHERE name = ?", (name,))
+                # tbl sanitizado por _vec_table_name
+                self._conn.execute(f"DROP TABLE IF EXISTS {tbl}")  # nosec B608
+                # tabla interna, valor parametrizado
+                self._conn.execute(f"DELETE FROM {_META_TABLE} WHERE name = ?", (name,))  # nosec B608
                 self._conn.commit()
                 logger.info("[SQLiteVec] Coleccion '%s' eliminada", name)
                 return True
@@ -268,7 +271,8 @@ class SQLiteVecAdapter:
             try:
                 assert self._conn is not None
                 cursor = self._conn.execute(
-                    f"SELECT name, dimension, created_at FROM {_META_TABLE} ORDER BY name"
+                    # tabla interna constante
+                    f"SELECT name, dimension, created_at FROM {_META_TABLE} ORDER BY name"  # nosec B608
                 )
                 collections: list[CollectionMeta] = []
                 for row in cursor.fetchall():
@@ -308,7 +312,8 @@ class SQLiteVecAdapter:
         try:
             assert self._conn is not None
             cursor = self._conn.execute(
-                f"SELECT COUNT(*) FROM {_META_TABLE} WHERE name = ?", (name,)
+                # tabla interna, valor parametrizado
+                f"SELECT COUNT(*) FROM {_META_TABLE} WHERE name = ?", (name,)  # nosec B608
             )
             row = cursor.fetchone()
             return row is not None and row[0] > 0
@@ -523,7 +528,8 @@ class SQLiteVecAdapter:
                 assert self._conn is not None
                 tbl = self._vec_table_name(collection)
                 cursor = self._conn.execute(
-                    f"SELECT id, vector, metadata FROM {tbl}"
+                    # tbl sanitizado por _vec_table_name
+                    f"SELECT id, vector, metadata FROM {tbl}"  # nosec B608
                 )
                 results: list[tuple[str, float, dict[str, Any]]] = []
                 for row in cursor.fetchall():
@@ -568,7 +574,8 @@ class SQLiteVecAdapter:
                 assert self._conn is not None
                 tbl = self._vec_table_name(collection)
                 cursor = self._conn.execute(
-                    f"SELECT id, vector, metadata, created_at FROM {tbl} WHERE id = ?",
+                    # tbl sanitizado, valor parametrizado
+                    f"SELECT id, vector, metadata, created_at FROM {tbl} WHERE id = ?",  # nosec B608
                     (vector_id,),
                 )
                 row = cursor.fetchone()
@@ -608,7 +615,8 @@ class SQLiteVecAdapter:
                 assert self._conn is not None
                 tbl = self._vec_table_name(collection)
                 cursor = self._conn.execute(
-                    f"DELETE FROM {tbl} WHERE id = ?", (vector_id,)
+                    # tbl sanitizado, valor parametrizado
+                    f"DELETE FROM {tbl} WHERE id = ?", (vector_id,)  # nosec B608
                 )
                 deleted = cursor.rowcount > 0
                 self._conn.commit()
@@ -651,7 +659,8 @@ class SQLiteVecAdapter:
         try:
             assert self._conn is not None
             tbl = self._vec_table_name(collection)
-            cursor = self._conn.execute(f"SELECT COUNT(*) FROM {tbl}")
+            # tbl sanitizado por _vec_table_name
+            cursor = self._conn.execute(f"SELECT COUNT(*) FROM {tbl}")  # nosec B608
             row = cursor.fetchone()
             return int(row[0]) if row else 0
         except sqlite3.Error:
@@ -686,7 +695,8 @@ class SQLiteVecAdapter:
         """
         assert self._conn is not None
         cursor = self._conn.execute(
-            f"SELECT dimension FROM {_META_TABLE} WHERE name = ?", (name,)
+            # tabla interna, valor parametrizado
+            f"SELECT dimension FROM {_META_TABLE} WHERE name = ?", (name,)  # nosec B608
         )
         row = cursor.fetchone()
         if row is None:
@@ -735,7 +745,8 @@ class SQLiteVecAdapter:
             assert self._conn is not None
             tbl = self._vec_table_name(collection)
             cursor = self._conn.execute(
-                f"SELECT id, vector, metadata, created_at FROM {tbl}"
+                # tbl sanitizado por _vec_table_name
+                f"SELECT id, vector, metadata, created_at FROM {tbl}"  # nosec B608
             )
             records: list[dict[str, Any]] = []
             for row in cursor.fetchall():

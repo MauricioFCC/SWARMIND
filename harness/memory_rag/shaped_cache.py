@@ -102,7 +102,7 @@ class ShapedCache:
             return None
 
         self._hit_count += 1
-        prompt_hash = hashlib.md5(prompt.encode()).hexdigest()
+        prompt_hash = hashlib.md5(prompt.encode(), usedforsecurity=False).hexdigest()
 
         # Refrescar LRU
         self._lru[prompt_hash] = datetime.now(timezone.utc).timestamp()
@@ -146,7 +146,7 @@ class ShapedCache:
         Returns:
             Hash del prompt almacenado.
         """
-        prompt_hash = hashlib.md5(prompt.encode()).hexdigest()
+        prompt_hash = hashlib.md5(prompt.encode(), usedforsecurity=False).hexdigest()
         self._lru[prompt_hash] = datetime.now(timezone.utc).timestamp()
         meta = {
             "token_cost": token_cost,

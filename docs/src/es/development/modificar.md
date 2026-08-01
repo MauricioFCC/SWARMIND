@@ -1,6 +1,6 @@
 ﻿# Cómo Modificar el Proyecto — Swarmind Harness
 
-> **Última actualización:** Julio 2026 · Python 3.10+ · 92 archivos test · 2900+ tests · cobertura ~65%
+> **Última actualización:** Julio 2026 · Python 3.10+ · 96 archivos test · 3674 tests · cobertura ~72%
 
 ---
 
@@ -29,6 +29,34 @@ Todo el código fuente vive dentro de `harness/`, dividido en dominios:
 | VectorStoreAdapter | `memory_rag/vector_store_adapter.py` | Abstracción multi-DB: LanceDB, Chroma, Qdrant con conmutación en caliente |
 
 **Regla <900LC:** Ningún archivo supera 900 líneas. Si un módulo crece, se divide.
+
+---
+
+## 1b. Estructura `.opencode/` — CEREBRO SSOT (Opción A)
+
+> **NUEVO (2026-07-31):** `.opencode/` es el cerebro del sistema (20 agents,
+> 31 skills, core, registry). Se sincroniza automáticamente al global
+> `~/.config/opencode/` en cada commit (pre-commit hook) y se propaga como
+> mirror local a todos los proyectos de DEV-SPACE.
+
+| Ruta | Contenido | Sync |
+|------|-----------|------|
+| `.opencode/agents/` | 20 perfiles (`*.md` + `*.agent.min.md`) + `auto/` | Global + mirrors |
+| `.opencode/skills/` | 31 skills (`SKILL.md` + `SKILL.min.md`) + `skills_registry.yaml` | Global + mirrors |
+| `.opencode/core/` | base_principles, registry, prompt_optimizer, base_skill_template | Global + mirrors |
+| `.opencode/config/` | **Config propia del proyecto** (NO se sobrescribe en deploy) | Solo local |
+| `.opencode/federated/` | Memoria federada entre proyectos | Solo local (preservada) |
+| `.opencode/agents/auto/` | Agentes generados por evolve | Solo local (preservada) |
+
+Scripts clave:
+
+| Script | Función |
+|--------|---------|
+| `scripts/sync_opencode_global.py` | SWARMIND `.opencode/` → `~/.config/opencode/` (SSOT global) |
+| `scripts/deploy_all.py` | SWARMIND → mirrors locales de DEV-SPACE (preserva config propia) |
+| `harness/scripts/install_hooks.py` | Instala pre-commit (QA rápido + sync global automático) |
+
+Guía completa: [docs/src/es/guide/opcion-a-ssot-global.md](../guide/opcion-a-ssot-global.md).
 
 ---
 
@@ -72,7 +100,7 @@ pre-commit run --all-files  # Hooks: compile-check, secret-scan, ruff-lint
 `.opencode/skills/` contiene 31 skills en formato `SKILL.md` + `SKILL.min.md` (cobertura 100%):
 
 **Core:** evolve, hedgefund, architecture, rust-lang  
-**Cuantitativo:** quant-trading, alpha-research, risk-execution, math-doc  
+**Cuantitativo:** quant-trading, alpha-research, risk-execution, risk-intelligence, math-doc  
 **Datos/ML:** data-science, science-doc  
 **Frontend/UX:** frontend-uiux, responsive-ui, creative-design  
 **Negocio:** business-strategy, communication, project-management  
@@ -80,4 +108,4 @@ pre-commit run --all-files  # Hooks: compile-check, secret-scan, ruff-lint
 **Educación/Salud/Legal:** education, sustainability, healthtech, legal-doc  
 **Infra/Seguridad:** devops-infra, security-audit  
 **Retail/Física:** pos-retail, physical-sciences  
-**Marketing:** meta-ads-optimizer
+**Marketing:** ads-optimizer

@@ -113,7 +113,28 @@ print(hc.check_liveness())
 "
 ```
 
-### 6. Investigar Mejoras (Research First Loop)
+### 6. Opcion A — SSOT Global OpenCode + Mirror Local (NUEVO)
+
+Swarmind centraliza su cerebro (agents/skills/core) en `~/.config/opencode/`
+(**SSOT global**) y mantiene un **mirror local** completo en cada proyecto de
+DEV-SPACE para que sigan abiertos a otros editores.
+
+```powershell
+# 1. Instalar el hook pre-commit (QA rapido + sync global automatico en cada commit)
+uv run python harness/scripts/install_hooks.py --install
+
+# 2. Sincronizar el cerebro al global opencode (~/.config/opencode/)
+uv run python scripts/sync_opencode_global.py
+
+# 3. Desplegar mirror local + 31 skills + config propia a todos los proyectos
+uv run python scripts/deploy_all.py --dry-run    # Ver que va a hacer
+uv run python scripts/deploy_all.py              # Ejecutar deploy completo
+```
+
+> **Reinicia opencode** despues del primer sync (la config se carga al inicio).
+> Guia completa: [docs/src/es/guide/opcion-a-ssot-global.md](docs/src/es/guide/opcion-a-ssot-global.md)
+
+### 7. Investigar Mejoras (Research First Loop)
 
 ```powershell
 # Antes de empezar a trabajar, investiga el estado del arte:
@@ -133,22 +154,31 @@ print(hc.check_liveness())
 
 ```
 Swarmind/
-├── .opencode/             # Framework de agentes (5 core + configs)
-│   ├── agents/            # coordinator, builder, scientist, guardian, evolve
-│   ├── config/            # routing_rules, token_budgets, project_config
-│   ├── core/              # router, guardrails, registry, base_principles
-│   └── skills/            # 10 skills (alpha-research, evolve, etc.)
+├── .opencode/             # CEREBRO SSOT (20 agents, 31 skills, core, registry)
+│   ├── agents/            # coordinator, builder, scientist, guardian, evolve, ...
+│   ├── config/            # project_config, routing_rules, token_budgets (config propia del proyecto)
+│   ├── core/              # router, guardrails, registry, base_principles, prompt_optimizer
+│   ├── federated/         # memoria federada entre proyectos
+│   └── skills/            # 31 skills (SKILL.md + SKILL.min.md + skills_registry.yaml)
 ├── harness/               # Motor de orquestacion Python
 │   ├── orchestrator/      # Planificador, health, telemetria, self-healing
 │   ├── memory_rag/        # Memoria vectorial LanceDB + Token Economics
 │   ├── evolve_loop/       # Auto-mejora ASI-Evolve
 │   ├── model_router/      # Routing local/cloud
 │   ├── tools_sandbox/     # MCP tools
-│   ├── tests/             # 394 tests
-│   └── common.py          # SSOT: embedding, token estimation, compression
-├── docs/                  # ADRs (0001-0010)
-└── SETUP.md               # Este archivo
+│   ├── tests/             # 3674 tests
+│   ├── scripts/           # install_hooks.py (pre-commit), end_of_iteration, ...
+│   └── qa/                # security_policy.py (scanner ADR-0035)
+├── scripts/               # sync_opencode_global.py (sync global SSOT)
+├── docs/                  # ADRs (0001-0035) + guias + manuales
+├── SETUP.md               # Este archivo
+└── .opencode/  → ~/.config/opencode/  (SSOT global, sync en cada commit)
 ```
+
+> **Opcion A**: `.opencode/` de Swarmind es la fuente; se sincroniza al global
+> `~/.config/opencode/` en cada commit y se propaga como mirror local a todos
+> los proyectos de DEV-SPACE. Ver
+> [docs/src/es/guide/opcion-a-ssot-global.md](docs/src/es/guide/opcion-a-ssot-global.md).
 
 ### Agentes Core
 

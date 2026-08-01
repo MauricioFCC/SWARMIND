@@ -12,7 +12,7 @@
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
 [![Tests](https://img.shields.io/badge/tests-3420_passing-brightgreen.svg)](harness/tests/)
-[![ADRs](https://img.shields.io/badge/ADRs-32-blueviolet.svg)](docs/src/es/adr/README.md)
+[![ADRs](https://img.shields.io/badge/ADRs-35-blueviolet.svg)](docs/src/es/adr/README.md)
 [![Skills](https://img.shields.io/badge/skills-31-orange.svg)](.opencode/skills/)
 [![Agents](https://img.shields.io/badge/agents-20-ff69b4.svg)](.opencode/agents/)
 
@@ -76,7 +76,7 @@ swarmind --help
 |--------|-------|
 | Tests | 3420 passing (29 QA + AIFactory verified) |
 | Coverage | ~65% (actual 71.56%, target: 80%) |
-| ADRs | 32 (all implemented, sequential 0001-0032) |
+| ADRs | 35 (all implemented, sequential 0001-0036) |
 | Agents | 20 specialized (100% profiles + .min.md) |
 | Skills | 31 contextual (100% SKILL.md + SKILL.min.md) |
 | Orchestrator Modules | 48 |
@@ -139,11 +139,18 @@ Refactored to **full asyncio** with 4.8x speedup (ADR-0017).
 
 ```
 Swarmind/
-├── .opencode/        ← SSOT (agents, skills, config)
+├── .opencode/        ← CEREBRO SSOT (20 agents, 31 skills, core, registry)
 ├── harness/          ← Execution engine (orchestrator, memory, hooks, security, tests)
+├── scripts/          ← sync_opencode_global.py (Opción A: SSOT global sync)
 ├── docs/src/         ← mdbook documentation
 └── pyproject.toml
 ```
+
+**Opción A (SSOT Global OpenCode)**: the `.opencode/` brain lives once in
+`~/.config/opencode/` and syncs automatically on every commit (pre-commit
+hook). Each DEV-SPACE project keeps a full local mirror (`.opencode/` +
+`harness/` + 31 skills) so it stays open to any editor. See
+[Opción A guide](docs/src/es/guide/opcion-a-ssot-global.md).
 
 For detailed structure, see [Architecture — Swiss Watch Pattern](docs/src/en/architecture/swiss-watch.md).
 
@@ -151,10 +158,11 @@ For detailed structure, see [Architecture — Swiss Watch Pattern](docs/src/en/a
 
 - [English README](docs/src/en/README.md) — Full documentation entry point
 - [Architecture](docs/src/en/architecture/swiss-watch.md) — Swiss Watch Pattern, Dynamic Scaling, Composition
+- [Opción A — SSOT Global OpenCode](docs/src/es/guide/opcion-a-ssot-global.md) — Global SSOT + local mirrors + auto-sync
 - [Usage Guide (ES)](docs/src/es/guide/como-usar.md) — How to delegate tasks to agents
 - [Agents & Skills (ES)](docs/src/es/guide/agentes-y-skills.md) — Detailed system documentation
 - [Technical Manual (ES)](docs/src/es/technical/manual-tecnico.md) — Complete harness technical documentation
-- [ADR](docs/src/es/adr/README.md) — Architecture Decision Records (32 documents)
+- [ADR](docs/src/es/adr/README.md) — Architecture Decision Records (35 documents)
 - [Skills Registry](docs/src/es/skills/registry.md) — Complete skill registry (31)
 - [Roadmap](docs/src/es/roadmap/estado.md) — Project status and next steps
 

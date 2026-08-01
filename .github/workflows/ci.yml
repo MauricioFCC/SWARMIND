@@ -86,9 +86,9 @@ jobs:
           uv pip install bandit pip-audit
           uv sync
       - name: Bandit
-        run: bandit -r harness/ -ll || true
+        run: bandit -r harness/ -x harness/tests -ll -q
       - name: Pip audit
-        run: pip-audit || true
+        run: pip-audit
 
   compile:
     name: Compile

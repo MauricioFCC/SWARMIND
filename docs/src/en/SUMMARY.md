@@ -18,6 +18,7 @@ All detailed documentation is currently available in **Spanish** and is being pr
 
 - [Philosophy](../es/guide/filosofia.md) — Design principles
 - [How to Use Swarmind](../es/guide/como-usar.md) — Usage tutorial
+- [Option A — Global OpenCode SSOT](../es/guide/opcion-a-ssot-global.md) — Global SSOT + local mirrors + auto-sync
 - [Agents & Skills (complete)](../es/guide/agentes-y-skills.md) — SSOT of agents, skills, modules
 - [Speed & Parallelism](../es/guide/velocidad.md)
 - [Automatic Standards](../es/guide/estandares.md)
