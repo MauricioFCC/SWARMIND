@@ -87,18 +87,18 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync
-          uv pip install bandit pip-audit
+          # safety: alternativa a pip-audit que no requiere pip en el venv
+          uv pip install 'safety>=3.0' bandit
       - name: Bandit
         run: uv run bandit -r harness/ -x harness/tests -ll -q
-      - name: Pip audit
-        # Genera requirements desde el lockfile y audita ese archivo.
-        # Esto evita introspeccionar el venv (que tiene pip 24.0 con CVEs).
+      - name: Security audit
+        # Genera requirements desde el lockfile y los audita con safety
+        # (no requiere pip en el venv, a diferencia de pip-audit).
+        # Setuptools >= 83.0.0 ya esta en el lockfile (CVE-2026-3447).
         run: |
           uv export --format requirements-txt --no-hashes > /tmp/requirements.txt
-          uv run pip-audit -r /tmp/requirements.txt
-        env:
-          # Suprimir warning sobre pip del sistema (estamos auditando el lockfile)
-          PIPAPI_PYTHON_LOCATION: ${{ github.workspace }}/.venv/bin/python
+          uv run safety check -r /tmp/requirements.txt --output text
+        continue-on-error: false
 
   compile:
     name: Compile
