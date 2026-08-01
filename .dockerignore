@@ -1,6 +1,54 @@
-.venv
+# .dockerignore — minimiza el contexto de build de Docker
+# Evita copiar caches, entorno virtual, datos y artefactos al contexto.
+
+# Python
 __pycache__
 *.pyc
+*.pyo
+*.pyd
+*.egg-info
+*.egg
+.eggs/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
+
+# Entorno virtual
+.venv
+venv/
+env/
+
+# Git y CI
 .git
-docs/book
+.gitignore
+.gitattributes
+.github/
+
+# IDE y editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Builds y docs
+docs/book/
+dist/
+build/
+
+# Datos y configs runtime (se montan como volumes en docker-compose)
 data/
+.opencode/federated/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests locales y reportes
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+
+# Secrets (defense in depth, aunque .env.example debe quedarse)
+.env

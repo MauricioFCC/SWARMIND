@@ -11,7 +11,6 @@ Cubre:
 """
 from __future__ import annotations
 
-import random
 import threading
 
 import pytest
@@ -21,7 +20,6 @@ from harness.orchestrator.mars_scheduler import (
     MIN_MATCH_THRESHOLD,
     Q_DISCOUNT_FACTOR,
     Q_EXPLORATION_RATE,
-    Q_INITIAL_VALUE,
     Q_LEARNING_RATE,
     AgentProfile,
     Assignment,

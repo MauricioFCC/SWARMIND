@@ -11,16 +11,11 @@ Cubre:
 """
 from __future__ import annotations
 
-import threading
 from typing import Any
 
-import numpy as np
 import pytest
 
 from harness.memory_rag.federated_search import (
-    DEFAULT_CACHE_MAX_SIZE,
-    DEFAULT_CACHE_TTL_SEC,
-    DEFAULT_EMBEDDING_DIM,
     DEFAULT_MMR_LAMBDA,
     FederatedResult,
     FederatedStats,
@@ -129,7 +124,6 @@ class TestFederatedSearchInit:
             FederatedVectorSearch(backends={"x": be}, mmr_lambda=-0.1)
         with pytest.raises(ValueError, match="mmr_lambda"):
             FederatedVectorSearch(backends={"x": be}, mmr_lambda=1.5)
-        be_fallback = FakeVectorStoreAdapter("x")
         # dict vacio con lambda invalido tambien valida
         with pytest.raises(ValueError, match="mmr_lambda"):
             FederatedVectorSearch(backends={}, mmr_lambda=2.0)

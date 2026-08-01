@@ -38,7 +38,6 @@ import math
 import random
 import threading
 import time
-from dataclasses import dataclass, field
 from typing import Any
 
 from harness.orchestrator.mars_scheduler_types import (
@@ -51,7 +50,6 @@ from harness.orchestrator.mars_scheduler_types import (
     Q_EXPLORATION_RATE,
     Q_INITIAL_VALUE,
     Q_LEARNING_RATE,
-    SKILL_VECTOR_DIM,
     WEIGHT_COST_PENALTY,
     WEIGHT_LATENCY_PENALTY,
     WEIGHT_SUCCESS_PROB,
