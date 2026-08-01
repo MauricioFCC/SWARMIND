@@ -87,9 +87,10 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync
-          # Instalar pip en el venv para que pip-audit pueda auditarlo via
-          # PIPAPI_PYTHON_LOCATION (sin esto, uv crea un venv sin pip).
-          uv pip install pip bandit pip-audit
+          # Bootstrap pip en el venv (uv no lo incluye por default).
+          # `uv pip install pip` solo instala el wrapper, no el modulo.
+          uv run python -m ensurepip --upgrade
+          uv pip install bandit pip-audit
       - name: Bandit
         run: uv run bandit -r harness/ -x harness/tests -ll -q
       - name: Pip audit
