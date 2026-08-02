@@ -267,7 +267,7 @@ class RedTeamer:
         for vector in self.generate_vectors(target):
             try:
                 response = responder_fn(vector.payload)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - red-teamer atrapa cualquier fallo del responder (input hostil)
                 logger.error(
                     "RedTeamer: el responder fallo ante el vector %s (target=%s): "
                     "%s: %s. WHY: un input hostil no debe romper al responder. "

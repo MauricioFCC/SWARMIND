@@ -22,7 +22,7 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class BatchStats:
     dropped_items: int = 0
 
 
-class BatchAccumulator(Generic[T]):
+class BatchAccumulator[T]:
     """Acumulador de items para I/O batch fusionado.
 
     Bufferiza items hasta que se alcanza max_batch_size O max_latency_ms,

@@ -235,8 +235,8 @@ class DreamingConsolidator:
                 text = text[:-1] + "+00:00"
             parsed = _dt.datetime.fromisoformat(text)
             if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=_dt.timezone.utc)
-            delta = _dt.datetime.now(_dt.timezone.utc) - parsed
+                parsed = parsed.replace(tzinfo=_dt.UTC)
+            delta = _dt.datetime.now(_dt.UTC) - parsed
             return max(0.0, delta.total_seconds() / 86400.0)
         except ValueError:
             return 0.0

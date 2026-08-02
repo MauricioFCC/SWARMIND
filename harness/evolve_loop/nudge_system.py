@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
@@ -198,7 +198,7 @@ class AutoNudge:
         """
         Persiste un nudge en la cognition store.
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Construir contenido del nudge
         domains = set()

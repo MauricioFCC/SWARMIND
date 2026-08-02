@@ -22,7 +22,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
@@ -138,7 +138,7 @@ class AgentBus:
             "task_id": task_id or "",
             "iteration": iteration,
             "attachments": json.dumps(attachments or []),
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
 
     # ------------------------------------------------------------------

@@ -1,7 +1,7 @@
 ---
 name: base-principles
 description: Principios universales de programacion + ASI-Evolve + FDE - multi-nivel
-version: 2.0.0
+version: 2.1.0
 project_agnostic: true
 inherit:
   - core/base_principles.md
@@ -36,6 +36,7 @@ AGR: Architectural Guardrails | layers | type hints | tamano | imports prohibido
 SVE: Semantic Versioning | MAJOR.MINOR.PATCH | changelog | skills y prompts
 MCL: MetaClaw continual learning | skills evolucionan con RL | sin GPU local
 MKS: Memento-Skills | cognition store como skill library | router contrastivo
+UPG: Upgrade Continuo | siempre ultimas versiones estables | investigar antes | migrar si hay alternativa mas eficiente | mesa de trabajo para consenso
 ```
 
 ---
@@ -65,6 +66,7 @@ MKS: Memento-Skills | cognition store como skill library | router contrastivo
 | **EVO** | Loop learn→design→experiment→analyze. Cognition store persiste lecciones. Experiment DB registra todo. Best snapshot automatico. SURS >= 90% en cada deploy. |
 | **MCL** | MetaClaw continual meta-learning: skill-driven fast adaptation + RL process reward optimization. Skills como behavioral instructions que evolucionan. MARS reflection single-cycle. |
 | **MKS** | Memento-Skills: skill-as-memory en cognition store. Router contrastivo recupera lecciones relevantes. ERL heuristics > raw trajectories para transferencia entre skills. |
+| **UPG** | **Upgrade Continuo (regla universal)**: TODO stack tecnologico debe estar en la ultima version estable viable. Investigar ANTES de actuar (web research exhaustiva + mesa de trabajo). Lenguajes, librerias, frameworks, runtimes, dependencias build, deps transitivas: TODAS. Si una version mas reciente es incompatible con el codigo actual, se documenta el delta y se migra. Si existe alternativa mas eficiente (mismo problema, menor costo/memoria/latencia), se evalua via mesa de trabajo y se migra. Excluye: paquetes en EOL (deprecation > 6 meses) sin LTS, alphas/betas/RCs inestable, versiones que rompen contratos publicos sin migracion posible. |
 
 ---
 
@@ -177,6 +179,37 @@ MKS: Memento-Skills | cognition store como skill library | router contrastivo
 - [ ] REGISTER: Experimento guardado en DB con score y analysis
 - [ ] SNAPSHOT: Best snapshot actualizado si mejora
 
+### UPG - Upgrade Continuo (regla universal para TODO stack)
+- [ ] **Aplicar a TODO cambio de stack** (no solo upgrades completos):
+  - [ ] Lenguajes: Python, Rust, TypeScript, Go, etc. — ultima estable
+  - [ ] Librerias/frameworks: Django, FastAPI, React, numpy, torch — ultima estable
+  - [ ] Runtimes: uv, npm, cargo, pip — ultima estable
+  - [ ] Build deps: setuptools, hatchling, maturin — ultima estable
+  - [ ] Deps transitivas (incluidas via lockfile) — todas en latest
+- [ ] **Protocolo obligatorio antes de cambiar versiones**:
+  1. **Investigacion web exhaustiva** (PyPI, GitHub releases, endoflife.date, blogs oficiales)
+  2. **Mesa de trabajo** con la siguiente estructura minima:
+     - Inventario actual vs. ultima estable (tabla con todas las deps)
+     - Analisis de incompatibilidades (breaking changes, EOL, deprecation)
+     - Alternativas mas eficientes evaluadas (e.g., `lancedb` vs `duckdb-vss`)
+     - **Consenso**: voto unanime, mayoria cualificada, o decision justificada del coordinator
+  3. **Implementacion incremental**: lockfile regenerado, tests, lint, scanner
+  4. **Validacion**: suite de tests + bandit + scanner + cross-platform (Win/Linux)
+  5. **Propagacion local** (sync opencode + deploy_all) — NUNCA push automatico
+  6. **PR al usuario** con mesa de trabajo adjunta para revision y aprobacion
+- [ ] **Criterios de exclusion** (no upgrade automatico):
+  - Paquete en EOL con deprecation > 6 meses y sin LTS
+  - Alpha/beta/RC inestable en produccion
+  - Breaking change sin ruta de migracion posible (deferred a ADR)
+  - Incompatibilidad con hardware/OS objetivo (e.g., Python 3.13 en Win7)
+- [ ] **Metricas de exito**:
+  - Cobertura de tests no disminuye
+  - Latencia P95 no aumenta > 10%
+  - 0 vulnerabilidades nuevas de severidad HIGH/CRITICAL
+  - Lockfile sin duplicados (un solo version por paquete)
+- [ ] **Frecuencia sugerida**: investigacion trimestral + upgrade inmediato cuando hay EOL < 6 meses
+- [ ] **Skills que aplican esta regla por defecto**: builder, scientist, guardian, evolve
+
 ---
 
 ## MAPA DE ROLES -> CATEGORIAS
@@ -198,7 +231,7 @@ MKS: Memento-Skills | cognition store como skill library | router contrastivo
 | quality-gate | TST, CMT, SEG, DOC, QLT, FDE, EVO |
 | enterprise-architect | ARQ, FDE, CMT, DOC |
 | ai-engineer | ARQ, TST, EVO, FDE, OPS |
-| evolve | EVO, FDE, CMT, QLT |
+| evolve | EVO, FDE, CMT, QLT, UPG |
 
 ---
 
@@ -247,6 +280,8 @@ MKS: Memento-Skills | cognition store como skill library | router contrastivo
 | StructAgent state-centered framework | SAG |
 | Bandit Optimization for Agent Design | BOAD |
 | MuTON language-agnostic mutation testing | MUT |
+| Upgrade Continuo (regla universal) | UPG |
+| Mesa de Trabajo (consenso para upgrades) | MT |
 
 ---
 

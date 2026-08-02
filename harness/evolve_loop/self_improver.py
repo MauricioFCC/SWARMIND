@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from harness.evolve_loop.cognition_sync import CognitionLesson, CognitionSync
 from harness.evolve_loop.evaluator import CASEEvaluator, FullEvaluation
@@ -39,7 +39,7 @@ class ImprovementRound:
     def __post_init__(self) -> None:
         """Post init."""
         if not self.timestamp:
-            self.timestamp = datetime.now(timezone.utc).isoformat()
+            self.timestamp = datetime.now(UTC).isoformat()
 
 
 @dataclass

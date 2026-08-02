@@ -22,7 +22,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 
@@ -103,7 +103,7 @@ class PlanFeedback:
     adaptation_reason: str = ""
     metadata: dict = field(default_factory=dict)
     timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
     def to_dict(self) -> dict:
@@ -187,7 +187,7 @@ class PhasePlan:
     task_type: str = ""
     window_degrees: float = PSMAS_DEFAULT_WINDOW
     created_at: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
     def to_dict(self) -> dict:
@@ -820,7 +820,7 @@ class AdaptivePlanner:
                 for k, v in self._best_strategies.items()
             },
             "feedback_count": len(self._feedback_history),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
 
         with open(self._storage_path, "w", encoding="utf-8") as f:

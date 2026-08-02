@@ -17,7 +17,7 @@ import json
 import logging
 import time
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, TypeVar
@@ -62,7 +62,7 @@ class WALEntry:
         self.operation_type = operation_type
         self.payload = payload
         self.status = WALStatus.PENDING
-        self.created_at = datetime.now(timezone.utc).isoformat()
+        self.created_at = datetime.now(UTC).isoformat()
         self.retry_count = 0
         self.max_retries = max_retries
         self.error: str | None = None

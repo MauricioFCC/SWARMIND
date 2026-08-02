@@ -11,7 +11,7 @@ import random
 import re
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class MutantPrompt:
     def __post_init__(self):
         """Post init."""
         if not self.created_at:
-            self.created_at = datetime.now(timezone.utc).isoformat()
+            self.created_at = datetime.now(UTC).isoformat()
 
 
 _MUTATION_STRATEGIES = [
@@ -304,7 +304,7 @@ class GEPAMutator:
         winner_score: float,
     ) -> None:
         entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "num_mutants": len(mutants),
             "winner_id": winner.id,
             "winner_score": winner_score,

@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 
@@ -62,7 +62,7 @@ class GovernanceRecord:
     justification: str = ""
     risk_level: RiskLevel = RiskLevel.LOW
     status: DecisionStatus = DecisionStatus.PROPOSED
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     approved_by: str = "system"
 
 

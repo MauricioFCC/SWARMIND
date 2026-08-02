@@ -10,7 +10,7 @@ import logging
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -210,7 +210,7 @@ class LanceDBAdapter(VectorStoreAdapter):
         """
 
         data: list[dict[str, Any]] = []
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         for i, (vec, payload) in enumerate(zip(vectors, payloads)):
             record_id = (
                 ids[i]

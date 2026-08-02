@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
@@ -133,7 +133,7 @@ class CognitionSync:
             domain=domain,
             tags=tags or [],
             metrics=metrics or {},
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
             access_count=0,
             last_accessed="",
         )

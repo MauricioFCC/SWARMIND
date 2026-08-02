@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class StructuredLogRecord:
         **extra,
     ) -> None:
         self._data = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": level,
             "module": "task_orchestrator",
             "event": event,

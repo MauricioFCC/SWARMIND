@@ -18,7 +18,7 @@ import json
 import logging
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from harness.common import EMPTY_VECTOR
@@ -41,8 +41,8 @@ class SessionState:
     session_id: str
     original_message: str
     plan: TaskPlan
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    updated_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     completed: bool = False
     messages: list[dict] = field(default_factory=list)
 
@@ -132,9 +132,9 @@ class SessionContext:
             last_session.messages.append({
                 "role": "user",
                 "content": message,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             })
-            last_session.updated_at = datetime.now(timezone.utc).isoformat()
+            last_session.updated_at = datetime.now(UTC).isoformat()
             self._persist(last_session)
             logger.info("Session %s resumed.", last_session.session_id)
             return last_session
@@ -189,7 +189,7 @@ class SessionContext:
             if st.id == subtask_id:
                 st.completed = True
                 st.result = result
-                session.updated_at = datetime.now(timezone.utc).isoformat()
+                session.updated_at = datetime.now(UTC).isoformat()
                 self._persist(session)
 
                 progress = (
@@ -221,9 +221,9 @@ class SessionContext:
         session.messages.append({
             "role": role,
             "content": content,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         })
-        session.updated_at = datetime.now(timezone.utc).isoformat()
+        session.updated_at = datetime.now(UTC).isoformat()
         self._persist(session)
 
     def get_status(self, session: SessionState) -> str:

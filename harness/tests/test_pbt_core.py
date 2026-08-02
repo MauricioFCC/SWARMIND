@@ -13,7 +13,7 @@ Regla: Cada test explora el espacio de entrada con Hypothesis para encontrar
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from hypothesis import given
@@ -84,8 +84,8 @@ class TestCacheEntryProperties:
             response=response,
             agent_role=agent_role,
             hit_count=hit_count,
-            created_at=datetime.now(timezone.utc).isoformat(),
-            last_accessed=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
+            last_accessed=datetime.now(UTC).isoformat(),
             ttl_seconds=DEFAULT_TTL_SECONDS,
         )
         d = entry.to_dict()
@@ -137,7 +137,7 @@ class TestCacheEntryProperties:
             prompt_text=prompt_text,
             response=response,
             agent_role="*",
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
             ttl_seconds=max(ttl, 1),
         )
         assert not entry.is_expired()
@@ -295,7 +295,7 @@ class TestShapedCacheProperties:
         mock_cache = MagicMock()
         mock_cache.get.return_value = {
             "response": response,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         shaped = ShapedCache(mock_cache)
         shaped.set_shaped(prompt, response, token_cost=token_cost)

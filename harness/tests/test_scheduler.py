@@ -8,7 +8,7 @@ _execute_job/_execute_job_once/_log_execution), backward-compat aliases.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -325,7 +325,7 @@ class TestSimpleScheduler:
         """_compute_next_run con croniter disponible debe retornar ISO datetime."""
         mock_cron = MagicMock()
         mock_cron.get_next.return_value = datetime(2026, 7, 20, 10, 0, 0,
-                                                    tzinfo=timezone.utc)
+                                                    tzinfo=UTC)
         with patch("harness.scheduler.croniter", return_value=mock_cron,
                    create=True), \
              patch("harness.scheduler.HAS_CRONITER", True):
@@ -371,7 +371,7 @@ class TestSimpleScheduler:
     def test_run_due_execute(self, scheduler):
         """run_due debe ejecutar jobs cuya hora haya pasado."""
         scheduler.add_job("due_job", "0 * * * *", "task")
-        past = datetime(2020, 1, 1, tzinfo=timezone.utc).isoformat()
+        past = datetime(2020, 1, 1, tzinfo=UTC).isoformat()
         scheduler._jobs["due_job"].next_run = past
 
         with patch.object(scheduler, '_execute_job') as mock_exec:

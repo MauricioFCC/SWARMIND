@@ -13,7 +13,7 @@ import json
 import logging
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -179,7 +179,7 @@ class LanceVectorStore:
             self._mem_collections[name] = _Collection(
                 name=name,
                 schema_def=info["schema"],
-                last_updated=datetime.now(timezone.utc).isoformat(),
+                last_updated=datetime.now(UTC).isoformat(),
             )
 
     @staticmethod
@@ -241,7 +241,7 @@ class LanceVectorStore:
             self._mem_collections[name] = _Collection(
                 name=name,
                 schema_def=schema or {},
-                last_updated=datetime.now(timezone.utc).isoformat(),
+                last_updated=datetime.now(UTC).isoformat(),
             )
 
     def list_collections(self) -> list[str]:
@@ -276,7 +276,7 @@ class LanceVectorStore:
             return []
 
         ids: list[str] = []
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         if self._lancedb_available and self._db is not None:
             ids = self._insert_lancedb(collection, vectors, metadata, now)
@@ -343,7 +343,7 @@ class LanceVectorStore:
             self._mem_collections[name] = _Collection(
                 name=name,
                 schema_def={},
-                last_updated=datetime.now(timezone.utc).isoformat(),
+                last_updated=datetime.now(UTC).isoformat(),
             )
         return self._mem_collections[name]
 
@@ -451,7 +451,7 @@ class LanceVectorStore:
 
         col = self._mem_collections[collection]
         count = 0
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         for item in col.items.values():
             match = all(
@@ -763,7 +763,7 @@ class LanceVectorStore:
             self._mem_collections[name] = _Collection(
                 name=name,
                 schema_def=info["schema"],
-                last_updated=datetime.now(timezone.utc).isoformat(),
+                last_updated=datetime.now(UTC).isoformat(),
             )
 
     @classmethod

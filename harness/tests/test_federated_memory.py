@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 import threading
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -161,13 +161,13 @@ class TestKnowledgeRecord:
             id="t", type=KnowledgeType.PATTERN,
             source_project="p", source_agent="a",
             key="k", value=1, ttl_seconds=3600,
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
         )
         assert record.is_expired() is False
 
     def test_is_expired_true(self) -> None:
         """is_expired con TTL vencido debe retornar True."""
-        past = datetime.now(timezone.utc) - timedelta(seconds=10)
+        past = datetime.now(UTC) - timedelta(seconds=10)
         record = KnowledgeRecord(
             id="t", type=KnowledgeType.PATTERN,
             source_project="p", source_agent="a",
@@ -291,8 +291,8 @@ class TestFederatedMemoryStoreInit:
                 "value": 99,
                 "tags": [],
                 "version": 1,
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
                 "ttl_seconds": 0,
                 "confidence": 1.0,
             }
@@ -445,7 +445,7 @@ class TestQueryKnowledge:
 
     def test_query_exclude_expired(self, store: FederatedMemoryStore) -> None:
         """query_knowledge debe excluir expirados por defecto."""
-        past = (datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat()
+        past = (datetime.now(UTC) - timedelta(seconds=10)).isoformat()
         record = KnowledgeRecord(
             id="expired:id", type=KnowledgeType.PATTERN,
             source_project="test_project", source_agent="a",
@@ -458,7 +458,7 @@ class TestQueryKnowledge:
 
     def test_query_include_expired(self, store: FederatedMemoryStore) -> None:
         """query_knowledge con include_expired=True debe incluir expirados."""
-        past = (datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat()
+        past = (datetime.now(UTC) - timedelta(seconds=10)).isoformat()
         record = KnowledgeRecord(
             id="expired:id", type=KnowledgeType.PATTERN,
             source_project="test_project", source_agent="a",
@@ -589,8 +589,8 @@ class TestSync:
                 "value": 100,
                 "tags": [],
                 "version": 1,
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
                 "ttl_seconds": 0,
                 "confidence": 1.0,
             }
@@ -629,8 +629,8 @@ class TestSync:
                 "value": "other_v1",
                 "tags": [],
                 "version": 1,
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
                 "ttl_seconds": 0,
                 "confidence": 1.0,
             }
@@ -659,8 +659,8 @@ class TestSync:
                 "value": "other_v5",
                 "tags": [],
                 "version": 5,
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
                 "ttl_seconds": 0,
                 "confidence": 1.0,
             }

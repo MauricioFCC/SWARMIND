@@ -23,10 +23,9 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Self
 
 import numpy as np
-from typing_extensions import Self
 
 from harness.memory_rag.vector_store_adapter import (
     SearchResult,

@@ -18,7 +18,7 @@ import logging
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -482,7 +482,7 @@ class MultiUserGovernance:
             detail: Descripcion del evento.
         """
         entry = AuditEntry(
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             username="system",
             action=action,
             detail=detail,
@@ -498,7 +498,7 @@ class MultiUserGovernance:
             detail: Descripcion del evento.
         """
         entry = AuditEntry(
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             username=username,
             action=action,
             detail=detail,

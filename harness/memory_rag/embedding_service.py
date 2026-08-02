@@ -184,7 +184,7 @@ class BatchedEmbeddingService:
                     self._queue.get(), timeout=self._batch_window * 2
                 )
                 batch.append((key, text))
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # No hay requests pendientes, seguir esperando
                 continue
             except Exception as _exc:  # noqa: BLE001
@@ -202,7 +202,7 @@ class BatchedEmbeddingService:
                         self._queue.get(), timeout=remaining
                     )
                     batch.append((key, text))
-                except (asyncio.TimeoutError, asyncio.CancelledError):
+                except (TimeoutError, asyncio.CancelledError):
                     break
                 except Exception as _exc:  # noqa: BLE001
                     logger.warning("embedding_service: %s", _exc)

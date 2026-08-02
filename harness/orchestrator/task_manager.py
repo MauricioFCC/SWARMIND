@@ -11,7 +11,7 @@ import logging
 import sqlite3
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -85,10 +85,10 @@ if HAS_PYDANTIC:
         status: TaskStatus = "pending"
         priority: int = 0
         created_at: str = Field(
-            default_factory=lambda: datetime.now(timezone.utc).isoformat()
+            default_factory=lambda: datetime.now(UTC).isoformat()
         )
         updated_at: str = Field(
-            default_factory=lambda: datetime.now(timezone.utc).isoformat()
+            default_factory=lambda: datetime.now(UTC).isoformat()
         )
         transition_history: list[dict[str, Any]] = Field(default_factory=list)
 
@@ -114,7 +114,7 @@ else:
 
 
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _make_id() -> str:

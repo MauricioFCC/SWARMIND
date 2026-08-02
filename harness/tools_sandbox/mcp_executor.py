@@ -13,7 +13,7 @@ import tempfile
 import time
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -434,7 +434,7 @@ class MCPExecutor:
     ) -> None:
         """Record an execution entry in the internal log."""
         entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "trace_id": result.trace_id,
             "tool_name": tool_name,
             "params": params,

@@ -87,7 +87,7 @@ class ScheduledJob:
 
     def __post_init__(self) -> None:
         if not self.created_at:
-            self.created_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            self.created_at = datetime.datetime.now(datetime.UTC).isoformat()
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary, omitting empty fields for cleaner output."""
@@ -364,7 +364,7 @@ class SimpleScheduler(BaseScheduler, JobStore):
         """
         if HAS_CRONITER:
             try:
-                base = datetime.datetime.now(datetime.timezone.utc)
+                base = datetime.datetime.now(datetime.UTC)
                 cron = croniter(cron_expr, base)
                 next_dt = cron.get_next(datetime.datetime)
                 return next_dt.isoformat()
@@ -377,7 +377,7 @@ class SimpleScheduler(BaseScheduler, JobStore):
 
         Returns a list of job names that were executed.
         """
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.UTC)
         executed: list[str] = []
 
         for job in list(self._jobs.values()):
@@ -717,7 +717,7 @@ class LanceScheduler(BaseScheduler, JobStore):
             error_msg = str(exc)
 
         elapsed = time.time() - start
-        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        now = datetime.datetime.now(datetime.UTC).isoformat()
 
         # Update job state
         with self._lock:

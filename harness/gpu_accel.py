@@ -22,10 +22,9 @@ from __future__ import annotations
 import logging
 import os as _os
 from pathlib import Path as _Path
-from typing import Any
+from typing import Any, Self
 
 import numpy as np
-from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 

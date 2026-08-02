@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -106,7 +106,7 @@ def audit_logger_hook(ctx: HookExecutionContext) -> dict:
         Dict con la entrada de auditoria generada.
     """
     audit_entry: dict[str, Any] = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "tool": ctx.tool_name,
         "hook_type": ctx.hook_type.name,
         "file_path": ctx.file_path if ctx.file_path else None,
@@ -139,7 +139,7 @@ def metrics_collector_hook(ctx: HookExecutionContext) -> dict:
     """
     metrics: dict[str, Any] = {
         "event": ctx.tool_name,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "metadata": ctx.metadata,
     }
     logger.debug("[Metrics] %s", json.dumps(metrics))

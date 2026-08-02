@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -109,7 +109,7 @@ class KnowledgeGraph:
                 node_id,
                 type=node_type,
                 metadata=metadata or {},
-                created_at=datetime.now(timezone.utc).isoformat(),
+                created_at=datetime.now(UTC).isoformat(),
             )
 
     def connect(
@@ -143,7 +143,7 @@ class KnowledgeGraph:
             relation=relation,
             weight=weight,
             metadata=metadata or {},
-            created_at=datetime.now(timezone.utc).isoformat(),
+            created_at=datetime.now(UTC).isoformat(),
         )
 
     def query(

@@ -19,7 +19,7 @@ from __future__ import annotations
 import hashlib
 import logging
 from collections import OrderedDict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from harness.memory_rag.semantic_cache import (
@@ -105,7 +105,7 @@ class ShapedCache:
         prompt_hash = hashlib.md5(prompt.encode(), usedforsecurity=False).hexdigest()
 
         # Refrescar LRU
-        self._lru[prompt_hash] = datetime.now(timezone.utc).timestamp()
+        self._lru[prompt_hash] = datetime.now(UTC).timestamp()
         self._lru.move_to_end(prompt_hash)
 
         # Verificar TTL
@@ -115,7 +115,7 @@ class ShapedCache:
                 ts = datetime.fromisoformat(ts).timestamp()
             except (ValueError, TypeError):
                 ts = 0
-        if ts and (datetime.now(timezone.utc).timestamp() - ts > self._ttl_sec):
+        if ts and (datetime.now(UTC).timestamp() - ts > self._ttl_sec):
             self._lru.pop(prompt_hash, None)
             return None
 
@@ -147,10 +147,10 @@ class ShapedCache:
             Hash del prompt almacenado.
         """
         prompt_hash = hashlib.md5(prompt.encode(), usedforsecurity=False).hexdigest()
-        self._lru[prompt_hash] = datetime.now(timezone.utc).timestamp()
+        self._lru[prompt_hash] = datetime.now(UTC).timestamp()
         meta = {
             "token_cost": token_cost,
-            "stored_at": datetime.now(timezone.utc).isoformat(),
+            "stored_at": datetime.now(UTC).isoformat(),
             **(metadata or {}),
         }
         result = self._cache.set(prompt, response, metadata=meta)
@@ -173,7 +173,7 @@ class ShapedCache:
         Returns:
             Numero de entradas eliminadas.
         """
-        now = datetime.now(timezone.utc).timestamp()
+        now = datetime.now(UTC).timestamp()
         expired = []
         for key, last_access in list(self._lru.items()):
             if last_access and (now - last_access > self._ttl_sec):

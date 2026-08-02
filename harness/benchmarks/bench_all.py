@@ -14,7 +14,7 @@ import argparse
 import json
 import logging
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -44,7 +44,7 @@ def run_all() -> list[dict[str, Any]]:
 
     print("=" * 60)
     print("  Swarmind Benchmark Suite")
-    print("  " + datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"))
+    print("  " + datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC"))
     print("=" * 60)
 
     results = []

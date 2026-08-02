@@ -11,7 +11,11 @@ exclude = ["docs*", ".opencode*"]
 name = "Swarmind-harness"
 version = "0.1.0"
 description = "Multi-Agent Evolutionary Harness"
-requires-python = ">=3.10"
+# Bump a >=3.12: Python 3.10 EOL 2026-10-31 (3 meses), 3.11 EOL 2027-10-31.
+# numpy 2.5.1 (latest stable) requiere >=3.12, pandas 3.x requiere 3.11+, networkx 3.6+ requiere 3.11+.
+# Subir a 3.12 permite resolver una sola version de numpy (sin markers duales).
+# Trade-off: deja fuera Python 3.11. Justificacion: 3.12 es LTS-ish y CI ya usa 3.12.
+requires-python = ">=3.12"
 readme = "README.md"
 authors = [
     {name = "Mauricio Fonseca Cardona", email = "maodevcol@gmail.com"},
@@ -23,30 +27,21 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "hypothesis>=6.163.0",
-    "lancedb>=0.33",
-    "numpy>=1.24",
+    "hypothesis>=6.165.0",
+    "lancedb>=0.36",
+    "numpy>=2.0",
     "pytest-asyncio>=1.4.0",
     "pyyaml>=6.0",
     "requests>=2.31",
     "schedule>=1.2",
     "torch>=2.0",
 ]
-
-[project.urls]
-Homepage = "https://github.com/MauricioFCC/SWARMIND"
-Repository = "https://github.com/MauricioFCC/SWARMIND"
-Issues = "https://github.com/MauricioFCC/SWARMIND/issues"
-Changelog = "https://github.com/MauricioFCC/SWARMIND/blob/main/CHANGELOG.md"
-Documentation = "https://github.com/MauricioFCC/SWARMIND/blob/main/docs/src/en/SUMMARY.md"
-Citation = "https://github.com/MauricioFCC/SWARMIND/blob/main/CITATION.cff"
 
 [project.optional-dependencies]
 dev = [
@@ -55,8 +50,10 @@ dev = [
     "pytest-mock>=3",
     "pytest-xdist>=3",
     "pytest-split>=0.9",
-    "ruff>=0.4",
-    "mypy>=1.8",
+    "ruff>=0.16",
+    "mypy>=2.3",
+    "bandit>=1.9",
+    "safety>=3.0",
 ]
 test = ["pytest>=8", "pytest-cov>=5", "pytest-mock>=3", "pytest-xdist>=3", "pytest-split>=0.9"]
 

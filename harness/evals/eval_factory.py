@@ -54,7 +54,7 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from statistics import mean
 from typing import Any
 
@@ -93,7 +93,7 @@ class EvalResult:
     metric: str
     value: float
     threshold: float
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:

@@ -20,7 +20,7 @@ import shutil
 import stat
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -148,7 +148,7 @@ def _save_status(installed: bool, timestamp: str = "") -> None:
     status_dir.mkdir(parents=True, exist_ok=True)
     status = {
         "installed": installed,
-        "timestamp": timestamp or datetime.now(timezone.utc).isoformat(),
+        "timestamp": timestamp or datetime.now(UTC).isoformat(),
         "hook_path": os.path.relpath(_HOOK_PATH, _PROJECT_ROOT),
     }
     with open(_STATUS_PATH, "w", encoding="utf-8") as f:

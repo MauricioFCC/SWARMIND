@@ -7,7 +7,7 @@ y context manager de permisos temporales.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -453,7 +453,7 @@ class TestAuditLog:
         assert isinstance(entry.timestamp, datetime)
         assert entry.timestamp.tzinfo is not None
         # Debe ser cercano al tiempo actual
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         diff = abs((now - entry.timestamp).total_seconds())
         assert diff < 10  # Menos de 10 segundos de diferencia
 
@@ -486,13 +486,13 @@ class TestAuditLog:
         fecha especificada.
         """
         gov.add_user("oscar", Role.AUDITOR)
-        before = datetime.now(timezone.utc) - timedelta(hours=1)
+        before = datetime.now(UTC) - timedelta(hours=1)
         # Todas las entradas deben ser posteriores a 'before'
         entries = gov.get_audit_log_since(before)
         assert len(entries) >= 1
 
         # Filtrar por un futuro: debe retornar lista vacia
-        future = datetime.now(timezone.utc) + timedelta(hours=1)
+        future = datetime.now(UTC) + timedelta(hours=1)
         entries_future = gov.get_audit_log_since(future)
         assert len(entries_future) == 0
 

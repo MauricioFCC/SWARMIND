@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from .cli import parse_args
@@ -141,7 +141,7 @@ def _save_report_to_json(report: IterationReport) -> bool:
     reports_dir.mkdir(parents=True, exist_ok=True)
     existing = sorted(reports_dir.glob("report_*.json"))
     iter_num = len(existing) + 1
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     filename = f"report_{timestamp}_iter{iter_num:04d}.json"
     filepath = reports_dir / filename
 
@@ -401,7 +401,7 @@ def run_pipeline(
         IterationReport with all findings.
     """
     start_time = time.time()
-    report = IterationReport(timestamp=datetime.now(timezone.utc).isoformat())
+    report = IterationReport(timestamp=datetime.now(UTC).isoformat())
 
     changed_files = _get_changed_files_since_last_commit()
     if not changed_files:

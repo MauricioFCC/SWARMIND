@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -242,7 +242,7 @@ class DBMigrator:
             logger.error("Backup no encontrado: %s", backup_path)
             return False
 
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         restore_name = f"_restored_{timestamp}"
         restore_path = backup.parent / restore_name
 
@@ -346,7 +346,7 @@ class DBMigrator:
         ]
         if mod_times:
             last_modified = datetime.fromtimestamp(
-                max(mod_times), tz=timezone.utc
+                max(mod_times), tz=UTC
             ).isoformat()
 
         return {
@@ -378,7 +378,7 @@ class DBMigrator:
 
     def _backup_import(self, import_path: str) -> str | None:
         """Copia import_path a _backup_<timestamp>/."""
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         backup_dir = str(Path(import_path).parent / f"_backup_{timestamp}")
         try:
             shutil.copytree(import_path, backup_dir)
@@ -397,7 +397,7 @@ class DBMigrator:
         row_count = tbl.count_rows()
         data = tbl.head(row_count).to_pylist() if row_count > 0 else []
 
-        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         archive_name = f"{collection_name}_{ts}.json"
         archive_path = str(Path(self.archive_dir) / archive_name)
 

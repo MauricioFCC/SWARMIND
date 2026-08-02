@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import logging
 import random
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from harness.evals.eval_agent import (
     eval_agent_completion,
@@ -94,7 +94,7 @@ def eval_vectordb_recall() -> list[EvalResult]:
                 metric="recall@k",
                 value=round(recall, 4),
                 threshold=_DEFAULT_THRESHOLDS["vectordb"]["recall@k"],
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 metadata={
                     "top_k": k,
                     "n_queries": _N_QUERIES,
@@ -138,7 +138,7 @@ def eval_vectordb_latency() -> list[EvalResult]:
                 metric="latency",
                 value=round(latency, 6),
                 threshold=_DEFAULT_THRESHOLDS["vectordb"]["latency"],
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 metadata={
                     "index_size": size,
                     "unit": "seconds",
@@ -194,7 +194,7 @@ def eval_mcp_availability() -> list[EvalResult]:
                 metric="availability",
                 value=round(availability, 4),
                 threshold=_DEFAULT_THRESHOLDS["mcp"]["availability"],
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 metadata={
                     "server": server["name"],
                     "eval_type": "simulated",
