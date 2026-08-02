@@ -1,7 +1,8 @@
 ---
+
 name: physical-sciences
 domain: science
-description: "Ciencias naturales experimentales: fisica, quimica, biologia, metodos cientificos, diseno experimental, y analisis de datos cientificos."
+description: "Ciencias naturales experimentales: fisica, quimica, biologia, metodos cientificos, diseno experimental, y analisis de datos cientificos. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
 version: 1.0.0
 project_agnostic: true
 ---

@@ -1,10 +1,11 @@
 ---
+
 name: devops
 domain: devops
 triggers: [deploy, ci/cd, pipeline, infrastructure, kubernetes, docker, terraform, ansible, monitoring, observability, prometheus, grafana, helm, argocd, gitops, sre, reliability, incident, on-call, release, rollback]
 capabilities: [ci_cd, infrastructure_as_code, monitoring_observability, deployment_strategy, incident_response, capacity_management, sre_practices]
 aliases: [devops, devops-engineer, sre, platform-engineer, infrastructure-engineer]
-description: "Ingeniero DevOps especializado en CI/CD, infraestructura, despliegue y monitoreo con estándares SRE."
+description: "Ingeniero DevOps especializado en CI/CD, infraestructura, despliegue y monitoreo con estándares SRE. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
 ---
 
 # DevOps | Ingeniero de Infraestructura y Operaciones

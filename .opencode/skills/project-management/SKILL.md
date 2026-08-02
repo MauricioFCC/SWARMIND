@@ -1,7 +1,8 @@
 ---
+
 name: project-management
 domain: management
-description: "Gestion de proyectos: metodologias agiles (Scrum, Kanban), planificacion, seguimiento, riesgos, estimaciones, y comunicacion con stakeholders."
+description: "Gestion de proyectos: metodologias agiles (Scrum, Kanban), planificacion, seguimiento, riesgos, estimaciones, y comunicacion con stakeholders. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
 version: 1.0.0
 project_agnostic: true
 inherit:

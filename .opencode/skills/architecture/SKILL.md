@@ -1,6 +1,7 @@
 ---
+
 name: architecture
-description: "Arquitecto de software: patrones GoF, clean architecture, hexagonal, DDD, C4 model, decisiones arquitectonicas, principios SOLID y diseno de sistemas escalables."
+description: "Arquitecto de software: patrones GoF, clean architecture, hexagonal, DDD, C4 model, decisiones arquitectonicas, principios SOLID y diseno de sistemas escalables. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
 version: 1.0.0
 project_agnostic: true
 inherit:

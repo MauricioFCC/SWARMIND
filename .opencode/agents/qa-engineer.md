@@ -1,10 +1,11 @@
 ---
+
 name: qa-engineer
 domain: quality
 triggers: [test, qa, quality, automation, e2e, integration, testing, playwright, cypress, vitest, jest, mocha, coverage, tdd, bdd, performance-test, load-test, regression]
 capabilities: [test_automation, e2e_testing, integration_testing, performance_test, mutation_testing, quality_gates]
 aliases: [qa, tester, test-automation, qa-automation, sdet]
-description: "QA engineer especializado en testing automatizado, calidad de software y pipelines de integración continua."
+description: "QA engineer especializado en testing automatizado, calidad de software y pipelines de integración continua. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
 quality: {docstrings_es: true, error_actionable: true, clean_code: true, coverage: 90, mutation_testing: true, tdad: true}
 ---
 

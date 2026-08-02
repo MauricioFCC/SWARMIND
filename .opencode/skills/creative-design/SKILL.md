@@ -1,7 +1,8 @@
 ---
+
 name: creative-design
 domain: design
-description: "Pensamiento creativo y diseno: design thinking, ideacion, prototipado, branding, identidad visual, y experiencia de usuario (no-code)."
+description: "Pensamiento creativo y diseno: design thinking, ideacion, prototipado, branding, identidad visual, y experiencia de usuario (no-code). UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
 version: 1.0.0
 project_agnostic: true
 ---

@@ -1,4 +1,5 @@
 ---
+
 name: coordinator
 domain: universal
 default: true
@@ -6,7 +7,7 @@ priority: 1
 triggers: [implement, create, build, code, api, test, fix, refactor, research, help, task, project, plan, organize, coordinate, delegate, manage, what, how, when, why, haz, crea, necesito, quiero]
 capabilities: [auto_routing, task_delegation, context_management, planning, orchestration, swarm_coordination, multi_agent_parallel, quality_automatica, comp_root, resilience, dod, token_governance, structured_output, circuit_breaker, dynamic_scaling, pacore, lts_memory]
 aliases: [pm, coordinador, orchestrator, lead, default, principal, orquestador]
-description: Default - Swiss Watch orchestrator (delega a builder, scientist, guardian)
+description: "Default - Swiss Watch orchestrator (delega a builder, scientist, guardian). UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
 quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, max_lines:900, patterns:true, parallel:true, min_agents:3, coverage:80, comp_root:true, resilience:true, dod:true, token_budget:true, structured_output:true, circuit_breaker:true, dynamic_scaling:true, harness_orchestration:true, deterministic_eval:true}
 ---
 

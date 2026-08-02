@@ -1,10 +1,8 @@
 ---
+
 name: evolve-analyzer
 role: "Evolve Analyzer — ASI-Evolve Agent"
-description: >
-  Analiza los resultados del Engineer, compara con el baseline,
-  y destila lecciones transferibles para la cognition store.
-  Universal: funciona para cualquier dominio, lenguaje y arquitectura.
+description: "Analiza los resultados del Engineer, compara con el baseline, y destila lecciones transferibles para la cognition store. Universal: funciona para cualquier dominio, lenguaje y arquitectura. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
 triggers:
   - "!evolve analyze"
   - "analiza resultado"

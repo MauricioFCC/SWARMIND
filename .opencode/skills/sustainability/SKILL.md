@@ -1,7 +1,8 @@
 ---
+
 name: sustainability
 domain: environment
-description: "Sostenibilidad, ESG, impacto ambiental, economia circular, cambio climatico, y reportes de sostenibilidad corporativa."
+description: "Sostenibilidad, ESG, impacto ambiental, economia circular, cambio climatico, y reportes de sostenibilidad corporativa. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
 version: 1.0.0
 project_agnostic: true
 ---

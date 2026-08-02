@@ -1,7 +1,8 @@
 ---
+
 name: devops-infra
 domain: devops
-description: "DevOps, infraestructura como codigo, CI/CD, Docker, Kubernetes, Terraform, monitoreo, observabilidad, y plataforma como servicio."
+description: "DevOps, infraestructura como codigo, CI/CD, Docker, Kubernetes, Terraform, monitoreo, observabilidad, y plataforma como servicio. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
 version: 1.0.0
 project_agnostic: true
 inherit:

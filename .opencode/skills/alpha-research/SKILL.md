@@ -1,7 +1,8 @@
 ---
+
 name: alpha-research
 domain: research
-description: Investigación de alpha — factores, ML avanzado, feature engineering y validación estadística con motores cuantitativos (ej. CQE Rust)
+description: "Investigación de alpha — factores, ML avanzado, feature engineering y validación estadística con motores cuantitativos (ej. CQE Rust). UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
 ---
 
 # Alpha Research — Motor de Investigación Cuantitativa

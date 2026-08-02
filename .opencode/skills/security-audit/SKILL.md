@@ -1,10 +1,8 @@
 ---
+
 name: security-audit
 domain: security
-description: >
-  Experto en seguridad de aplicaciones y sistemas. Realiza auditorias de seguridad,
-  threat modeling, SAST/DAST, analisis de dependencias (SBOM), y cumple con
-  estandares OWASP Top 10, STRIDE, y compliance SOC2/ISO27001.
+description: "Experto en seguridad de aplicaciones y sistemas. Realiza auditorias de seguridad, threat modeling, SAST/DAST, analisis de dependencias (SBOM), y cumple con estandares OWASP Top 10, STRIDE, y compliance SOC2/ISO27001. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
 version: 1.0.0
 project_agnostic: true
 inherit:

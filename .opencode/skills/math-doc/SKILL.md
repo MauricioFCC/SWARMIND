@@ -1,7 +1,8 @@
 ---
+
 name: math-doc
 domain: math
-description: "Skill contextual para el dominio matemático y cuantitativo — análisis de papers, fórmulas LaTeX, demostraciones, estadística, álgebra, cálculo y modelado matemático."
+description: "Skill contextual para el dominio matemático y cuantitativo — análisis de papers, fórmulas LaTeX, demostraciones, estadística, álgebra, cálculo y modelado matemático. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
 version: 1.0.0
 project_agnostic: true
 ---
