@@ -1,8 +1,9 @@
 ---
 
+
 name: behavioral-economics
 domain: economics
-description: "Economia del comportamiento: teoria de juegos, sesgos cognitivos, heurísticas, toma de decisiones bajo incertidumbre, y diseno de incentivos. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
+description: "Economia del comportamiento: teoria de juegos, sesgos cognitivos, heurísticas, toma de decisiones bajo incertidumbre, y diseno de incentivos. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
 version: 1.0.0
 project_agnostic: true
 inherit:

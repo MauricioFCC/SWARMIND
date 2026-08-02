@@ -1,11 +1,12 @@
 ---
 
+
 name: builder
 domain: universal
 triggers: [implement, build, create, code, refactor, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, design-system, accesibilidad, responsive, web-vitals, a11y]
 capabilities: [full_stack, backend, frontend, mobile, api_design, database, refactoring, design_system, component_library, accessibility, visual_testing, generative_ui]
 aliases: [swe, software-engineer, developer, dev]
-description: "Builder - calidad institucional automatica. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
+description: "Builder - calidad institucional automatica. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
 quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, max_lines:900, patterns:true, coverage:80}
 ---
 

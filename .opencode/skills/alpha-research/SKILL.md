@@ -1,8 +1,9 @@
 ---
 
+
 name: alpha-research
 domain: research
-description: "Investigación de alpha — factores, ML avanzado, feature engineering y validación estadística con motores cuantitativos (ej. CQE Rust). UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
+description: "Investigación de alpha — factores, ML avanzado, feature engineering y validación estadística con motores cuantitativos (ej. CQE Rust). UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
 ---
 
 # Alpha Research — Motor de Investigación Cuantitativa

@@ -1,8 +1,9 @@
 ---
 
+
 name: psychology
 domain: psychology
-description: "Psicologia aplicada a sistemas multi-agente: psicologia cognitiva, organizacional, del aprendizaje y positiva para mejorar la interaccion y efectividad de agentes. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
+description: "Psicologia aplicada a sistemas multi-agente: psicologia cognitiva, organizacional, del aprendizaje y positiva para mejorar la interaccion y efectividad de agentes. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
 version: 1.0.0
 project_agnostic: true
 inherit:

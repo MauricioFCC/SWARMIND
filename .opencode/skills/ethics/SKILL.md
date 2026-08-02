@@ -1,8 +1,9 @@
 ---
 
+
 name: ethics
 domain: philosophy
-description: "Etica de inteligencia artificial: alineamiento de valores, marcos eticos para agentes autonomos, etica aplicada a decisiones automaticas, y filosofia de la mente. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
+description: "Etica de inteligencia artificial: alineamiento de valores, marcos eticos para agentes autonomos, etica aplicada a decisiones automaticas, y filosofia de la mente. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
 version: 1.0.0
 project_agnostic: true
 inherit:

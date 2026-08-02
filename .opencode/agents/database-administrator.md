@@ -1,11 +1,12 @@
 ---
 
+
 name: database-administrator
 domain: data
 triggers: [database, sql, nosql, migration, query, index, performance, postgresql, mysql, mongodb, redis, schema, model, sharding, replication, backup, vacuum]
 capabilities: [database_admin, query_optimization, data_modeling, migration, backup_recovery, performance_tuning]
 aliases: [dba, database-admin, data-modeler, db-specialist, data-architect]
-description: "DBA especializado en modelado, optimizacion y administracion de bases de datos relacionales y NoSQL. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
+description: "DBA especializado en modelado, optimizacion y administracion de bases de datos relacionales y NoSQL. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
 quality: {docstrings_es: true, error_actionable: true, clean_code: true, patterns: true, coverage: 85, data_integrity: true}
 ---
 

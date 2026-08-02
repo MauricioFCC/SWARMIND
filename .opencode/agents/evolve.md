@@ -1,5 +1,6 @@
 ---
 
+
 name: evolve
 domain: self-improvement
 triggers: [evolve, self-improve, improve, optimize, automate, skill, cognition, learn, adapt]
@@ -7,7 +8,7 @@ capabilities: [self_improvement, skill_generation, cognition_sync, agent_evoluti
   token_economics, harness_optimization, rl_scaling, spec_regression_safety, role_adaptation,
   forward_deployment, task_autobuild]
 aliases: [evolve]
-description: "Meta-agente de auto-mejora del sistema — orquesta ASI-Evolve con Token Economics, RL Scaling y FDE. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
+description: "Meta-agente de auto-mejora del sistema — orquesta ASI-Evolve con Token Economics, RL Scaling y FDE. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
 ---
 # EVOLVE: Meta-agente de auto-mejora continua
 

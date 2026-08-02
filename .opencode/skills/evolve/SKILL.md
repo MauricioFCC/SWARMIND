@@ -1,7 +1,8 @@
 ---
 
+
 name: evolve
-description: "Meta-skill de auto-mejora continua. Orquesta el loop ASI-Evolve (Learn → Design → Experiment → Analyze) para mejorar todos los skills del sistema. Integra Forward Deployment Engineering (FDE) para asegurar que cada mejora resuelva un delta real. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
+description: "Meta-skill de auto-mejora continua. Orquesta el loop ASI-Evolve (Learn → Design → Experiment → Analyze) para mejorar todos los skills del sistema. Integra Forward Deployment Engineering (FDE) para asegurar que cada mejora resuelva un delta real. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
 version: 3.0.0
 project_agnostic: true
 inherit:

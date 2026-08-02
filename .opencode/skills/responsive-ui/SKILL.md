@@ -1,7 +1,8 @@
 ---
 
+
 name: responsive-ui
-description: "Experto en interfaces responsivas, accesibilidad WCAG 2.2 AA/AAA, design systems tokenizados, component libraries y optimizacion de experiencia de usuario. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
+description: "Experto en interfaces responsivas, accesibilidad WCAG 2.2 AA/AAA, design systems tokenizados, component libraries y optimizacion de experiencia de usuario. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
 version: 1.0.0
 project_agnostic: true
 inherit:

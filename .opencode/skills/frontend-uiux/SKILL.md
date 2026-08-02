@@ -1,8 +1,9 @@
 ---
 
+
 name: frontend-uiux
 domain: frontend
-description: "Skill profesional de UI/UX y frontend engineering basado en Generative UI 2026. Integra design systems tokenizados (Geeklego 3-tier, 7onic zero-drift, useVyre semantic), semantic guidance jerarquico (Product -> DesignSystem -> Feature -> Component), personalizacion sample-efficient (Bayesian active preference learning), y validacion UX (WiserUI-Bench, WCAG 2.2 AA). Genera interfaces LLM-native con A2UI/OpenUI, componentes con StyleSeed design rules, y especificaciones machine-readable para ecosistemas de desarrollo agnosticos. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
+description: "Skill profesional de UI/UX y frontend engineering basado en Generative UI 2026. Integra design systems tokenizados (Geeklego 3-tier, 7onic zero-drift, useVyre semantic), semantic guidance jerarquico (Product -> DesignSystem -> Feature -> Component), personalizacion sample-efficient (Bayesian active preference learning), y validacion UX (WiserUI-Bench, WCAG 2.2 AA). Genera interfaces LLM-native con A2UI/OpenUI, componentes con StyleSeed design rules, y especificaciones machine-readable para ecosistemas de desarrollo agnosticos. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
 version: 1.0.0
 project_agnostic: true
 inherit:

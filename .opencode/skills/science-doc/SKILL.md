@@ -1,8 +1,9 @@
 ---
 
+
 name: science-doc
 domain: science
-description: "Skill contextual para el dominio científico multidisciplina — análisis de papers académicos, tesis, informes técnicos, revisiones sistemáticas y documentación de investigación. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
+description: "Skill contextual para el dominio científico multidisciplina — análisis de papers académicos, tesis, informes técnicos, revisiones sistemáticas y documentación de investigación. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
 version: 1.0.0
 project_agnostic: true
 ---

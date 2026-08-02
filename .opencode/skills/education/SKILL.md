@@ -1,8 +1,9 @@
 ---
 
+
 name: education
 domain: education
-description: "Ciencias de la educacion: diseno instruccional, pedagogia, andragogia, taxonomia de Bloom, microlearning, y evaluacion educativa. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
+description: "Ciencias de la educacion: diseno instruccional, pedagogia, andragogia, taxonomia de Bloom, microlearning, y evaluacion educativa. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
 version: 1.0.0
 project_agnostic: true
 inherit:

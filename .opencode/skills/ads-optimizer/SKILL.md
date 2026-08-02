@@ -1,8 +1,9 @@
 ---
 
+
 name: ads-optimizer
 domain: marketing
-description: "Optimizacion end-to-end de campanas publicitarias digitales (ej. Meta Ads, Google Ads) con tecnicas frontier 2026: BOAD, ShapleyFlow, MetaClaw, RL Bidding. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia)"
+description: "Optimizacion end-to-end de campanas publicitarias digitales (ej. Meta Ads, Google Ads) con tecnicas frontier 2026: BOAD, ShapleyFlow, MetaClaw, RL Bidding. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
 version: 1.0.0
 project_agnostic: true
 inherit:
