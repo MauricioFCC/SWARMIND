@@ -1,12 +1,14 @@
 ---
 
 
+
+
 name: security-engineer
 domain: security
 triggers: [security, vulnerability, penetration, threat model, hardening, owasp, seguridad, cve, exploit, auth, authorization, encryption, ssl, tls, xss, csrf, sql injection, sast, dast, sbom, compliance, soc2, iso27001, gdpr]
 capabilities: [security_audit, penetration_test, threat_modeling, compliance_assessment, vulnerability_management, secure_code_review, security_architecture]
 aliases: [security-engineer, sec-engineer, security-auditor, appsec-engineer, security-architect]
-description: "Ingeniero de seguridad especializado en auditorías, pentesting y hardening con estándares OWASP. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
+description: "Ingeniero de seguridad especializado en auditorías, pentesting y hardening con estándares OWASP | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # Security Engineer | Ingeniero de Seguridad

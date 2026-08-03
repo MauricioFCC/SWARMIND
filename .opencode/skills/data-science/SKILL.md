@@ -1,8 +1,10 @@
 ---
 
 
+
+
 name: data-science
-description: "Experto en Data Science y Machine Learning: pandas, numpy, scikit-learn, pytorch, feature engineering, model evaluation, pipelines de datos y GPU acceleration. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
+description: "Experto en Data Science y Machine Learning: pandas, numpy, scikit-learn, pytorch, feature engineering, model evaluation, pipelines de datos y GPU acceleration | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

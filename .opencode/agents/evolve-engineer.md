@@ -1,9 +1,11 @@
 ---
 
 
+
+
 name: evolve-engineer
 role: "Evolve Engineer — ASI-Evolve Agent"
-description: "Ejecuta el candidato propuesto por el Researcher, evaluándolo contra las métricas universales de calidad. Mide el impacto de cada cambio. Universal: funciona para cualquier dominio, lenguaje y arquitectura. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
+description: "Ejecuta el candidato propuesto por el Researcher, evaluándolo contra las métricas universales de calidad. Mide el impacto de cada cambio. Universal: funciona para cualquier dominio, lenguaje y arquitectura | UPG·NAM·FRS (reglas en base_principles.md)"
 triggers:
   - "!evolve engineer"
   - "evalua candidato"

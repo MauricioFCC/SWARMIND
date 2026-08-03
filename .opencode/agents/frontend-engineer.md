@@ -1,12 +1,14 @@
 ---
 
 
+
+
 name: frontend-engineer
 domain: frontend
 triggers: [frontend, ui, ux, react, component, css, html, responsive, design system, tailwind, sass, typescript nextjs, storybook, web-vitals, a11y, accesibilidad]
 capabilities: [frontend_dev, ui_implementation, responsive_design, accessibility, component_library, visual_testing]
 aliases: [fe, frontend-dev, ui-developer, react-engineer, ux-engineer]
-description: "Frontend engineer especializado en UI/UX, React, componentes responsive y accesibilidad con Generative UI 2026. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
+description: "Frontend engineer especializado en UI/UX, React, componentes responsive y accesibilidad con Generative UI 2026 | UPG·NAM·FRS (reglas en base_principles.md)"
 quality: {docstrings_es: true, error_actionable: true, clean_code: true, responsive: true, a11y: true, coverage: 80}
 ---
 

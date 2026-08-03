@@ -1,9 +1,11 @@
 ---
 
 
+
+
 name: risk-intelligence
 domain: risk
-description: "Identificacion y analisis de riesgos emergentes basado en el framework CRO Forum 2026: riesgos tecnologicos, geopoliticos, climaticos, de salud y financieros. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
+description: "Identificacion y analisis de riesgos emergentes basado en el framework CRO Forum 2026: riesgos tecnologicos, geopoliticos, climaticos, de salud y financieros | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

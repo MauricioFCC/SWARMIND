@@ -1,0 +1,21 @@
+{
+  "drift_history": {
+    "2026-08-03T00:18:53.412267+00:00": {
+      "project_config": 3,
+      "routing_rules": 0,
+      "token_budgets": 0
+    },
+    "2026-08-03T00:19:07.330754+00:00": {
+      "project_config": 1,
+      "routing_rules": 0,
+      "token_budgets": 0
+    },
+    "2026-08-03T00:27:19.076952+00:00": {
+      "project_config": 0,
+      "routing_rules": 0,
+      "token_budgets": 0
+    }
+  },
+  "known_drifts": {},
+  "last_evolve": "2026-08-03T00:27:19.076952+00:00"
+}

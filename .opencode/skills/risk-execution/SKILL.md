@@ -1,9 +1,11 @@
 ---
 
 
+
+
 name: risk-execution
 domain: trading
-description: "Gestión de riesgo institucional y ejecución algorítmica con motores cuantitativos de alto rendimiento (ej. CQE Rust) — position sizing, market making, TCA. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
+description: "Gestión de riesgo institucional y ejecución algorítmica con motores cuantitativos de alto rendimiento (ej. CQE Rust) — position sizing, market making, TCA | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # Risk & Execution — Gestión de Riesgo Institucional

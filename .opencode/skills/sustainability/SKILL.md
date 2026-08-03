@@ -1,9 +1,11 @@
 ---
 
 
+
+
 name: sustainability
 domain: environment
-description: "Sostenibilidad, ESG, impacto ambiental, economia circular, cambio climatico, y reportes de sostenibilidad corporativa. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
+description: "Sostenibilidad, ESG, impacto ambiental, economia circular, cambio climatico, y reportes de sostenibilidad corporativa | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

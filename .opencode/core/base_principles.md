@@ -1,7 +1,7 @@
 ---
 name: base-principles
 description: Principios universales de programacion + ASI-Evolve + FDE - multi-nivel
-version: 2.4.0
+version: 2.5.0
 project_agnostic: true
 inherit:
   - core/base_principles.md
@@ -45,6 +45,7 @@ MAG: Magic Numbers | sin literales magicos | constantes con nombre semantico | t
 FSZ: Function Size | max 30 lineas | una responsabilidad | extraer helpers | guard clauses tempranas
 CMP: Composition over Inheritance | preferir composicion sobre herencia | estrategia + interfaces | evitar jerarquias profundas | HAS-A sobre IS-A
 DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un punto por linea | tell dont ask
+FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | elegir la solucion mas avanzada/frontera/eficiente/confiable | al finalizar: actualizar docs + commit
 ```
 
 ---
@@ -83,6 +84,7 @@ DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un p
 | **FSZ** | **Function Size**: funciones MAX 30 lineas (excluyendo docstring; Google style guide sugiere 40 como limite laxo, preferimos 30). Si excede: extraer helpers, aplicar guard clauses tempranas, dividir por responsabilidad. Una funcion = una tarea. Si el nombre necesita "and" o "or", dividir. Parametros: max 4-5 (si mas, usar un dataclass de input). Cyclomatic complexity < 10. Return temprano sobre if-else anidados. |
 | **CMP** | **Composition over Inheritance** (GoF 1994): preferir COMPOSICION (HAS-A: "tiene un") sobre HERENCIA (IS-A: "es un"). Usar protocolos/ABC pequenos inyectados como componentes. Evitar jerarquias de herencia >2 niveles. Strategy pattern, State pattern, Decorator pattern son composicion. Herencia solo para tipos claramente relacionados (ej. Exception -> ValueError). Mixing composicion+herencia: subclase para especializar, composicion para variar comportamiento. |
 | **DEM** | **Law of Demeter** (Principle of Least Knowledge, 1987): un objeto solo habla con sus "amigos directos" (sus propios metodos, sus atributos, los metodos de los objetos que recibe como parametro, los objetos que crea). NO chains: `customer.wallet.money.total()` (3 puntos = 2 violaciones). Max 1 punto por linea: `total = customer.total_money()` (delegar). Favorece Tell-Dont-Ask: en vez de pedirle datos a un objeto y decidir por el, pedirle que el mismo decida (command/query separation). Reduce acoplamiento y facilita testing. |
+| **FRS** | **Frontier Research & Solution (regla universal obligatoria)**: TODO requerimiento del usuario — sea cual sea — debe iniciar con **busqueda web exhaustiva** para identificar la solucion MAS avanzada (frontera), de mejor calidad, mas eficiente y mas confiable disponible en el momento. NO resolver desde memoria o habitos: investigar primero. Criterios de eleccion: (1) frontier 2026 (papers, frameworks, tools), (2) calidad (adoptada, mantenida, documentada), (3) eficiencia (menor costo/memoria/latencia), (4) confiabilidad (estable, testada, comunidad). AL FINALIZAR toda tarea: **actualizar documentacion** (README/CHANGELOG/ADRs si aplica) y **crear commit** (conventional commit). |
 
 ---
 
@@ -430,7 +432,7 @@ DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un p
 | quality-gate | TST, CMT, SEG, DOC, NAM, FDE, EVO |
 | enterprise-architect | ARQ, FDE, CMT, DOC |
 | ai-engineer | ARQ, TST, EVO, FDE, OPS |
-| evolve | EVO, FDE, CMT, UPG, NAM, TYP, IMM, SOL, MAG, FSZ, CMP, DEM |
+| evolve | EVO, FDE, CMT, UPG, NAM, TYP, IMM, SOL, MAG, FSZ, CMP, DEM, FRS |
 
 ---
 
@@ -489,6 +491,43 @@ DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un p
 | Function Size (max 30 lineas) | FSZ |
 | Composition over Inheritance | CMP |
 | Law of Demeter (Tell, Don't Ask) | DEM |
+| Frontier Research & Solution (regla universal) | FRS |
+
+---
+
+### FRS - Frontier Research & Solution (regla universal obligatoria)
+
+> **SE CUMPLE SIEMPRE**: para CUALQUIER requerimiento del usuario, sin excepcion.
+
+- [ ] **1. Web research ANTES de resolver**: todo requerimiento inicia con
+      busqueda web exhaustiva (papers arXiv, frameworks, tools, repos, blogs).
+      Buscar: "<problema> 2026 best solution", "<problema> state of the art",
+      "<problema> frontier".
+- [ ] **2. Criterios de eleccion** (elegir la solucion que mejor cumpla):
+  - **Frontera**: la mas avanzada disponible (2026+), no soluciones obsoletas
+  - **Calidad**: adoptada, mantenida, documentada, con comunidad
+  - **Eficiencia**: menor costo computacional, memoria, latencia, tokens
+  - **Confiabilidad**: estable, testada, con fallback y recovery
+- [ ] **3. NO resolver desde memoria o habito**: si la tarea ya se hizo antes,
+      aun asi verificar que la solucion usada sigue siendo la frontier
+      (RSF + UPG aplicados: la vanguardia se renueva sola).
+- [ ] **4. Documentar la decision**: brevemente anotar en el commit/PR la fuente
+      investigada y por que se eligio esa solucion sobre las alternativas.
+- [ ] **5. AL FINALIZAR toda tarea**:
+  - [ ] **Actualizar documentacion**: README/CHANGELOG/ADRs si la tarea cambio
+        comportamiento, API, dependencias o arquitectura.
+  - [ ] **Crear commit**: conventional commit `type(scope): descripcion #ISSUE`.
+- [ ] **Ejemplos de busquedas obligatorias**:
+  - `X "implementa un cache"` → `OK buscar "cache python 2026 best practice" → elegir
+    ShapedCache/LRU+TTL frontier → implementar → docs + commit`
+  - `X "arregla este error"` → `OK buscar el error exacto + "2026 fix" → entender
+    causa raiz → aplicar fix frontier → docs + commit`
+  - `X "agrega una API"` → `OK buscar "fastapi vs litestar 2026" → elegir el mas
+    eficiente/confiable → implementar → docs + commit`
+- [ ] **Excepciones validas** (NO requieren web research):
+  - Cambios triviales de formato/typo sin impacto (aun asi, commit).
+  - Operaciones urgentes de rollback/revert (despues se investiga).
+  - La tarea es SOLO actualizar documentacion (la investigacion ya se hizo).
 
 ---
 

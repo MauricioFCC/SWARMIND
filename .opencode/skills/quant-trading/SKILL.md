@@ -1,9 +1,11 @@
 ---
 
 
+
+
 name: quant-trading
 domain: trading
-description: "Estrategias cuantitativas de trading con motores cuantitativos de alto rendimiento (ej. quant-engine en Rust) — prioriza rendimiento, baja latencia y generación de alpha. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
+description: "Estrategias cuantitativas de trading con motores cuantitativos de alto rendimiento (ej. quant-engine en Rust) — prioriza rendimiento, baja latencia y generación de alpha | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # Quant Trading — Motor Cuantitativo de Alto Rendimiento

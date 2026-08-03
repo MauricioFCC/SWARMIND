@@ -1,9 +1,11 @@
 ---
 
 
+
+
 name: math-doc
 domain: math
-description: "Skill contextual para el dominio matemático y cuantitativo — análisis de papers, fórmulas LaTeX, demostraciones, estadística, álgebra, cálculo y modelado matemático. UPG: usar ultima version estable (pyproject.toml/uv.lock al dia). NAM: snake_case archivos+vars+funcs, PascalCase clases, UPPER_SNAKE constants, sin magic numbers, nombres comprensibles"
+description: "Skill contextual para el dominio matemático y cuantitativo — análisis de papers, fórmulas LaTeX, demostraciones, estadística, álgebra, cálculo y modelado matemático | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---
