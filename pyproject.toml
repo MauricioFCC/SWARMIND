@@ -59,8 +59,16 @@ dev = [
 test = ["pytest>=8", "pytest-cov>=5", "pytest-mock>=3", "pytest-xdist>=3", "pytest-split>=0.9"]
 
 [dependency-groups]
+# Compatibilidad con `uv sync --group <name>` en CI (PEP 735)
 dev = [
     "pytest-asyncio>=1.4.0",
+]
+test = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "pytest-mock>=3",
+    "pytest-xdist>=3",
+    "pytest-split>=0.9",
 ]
 
 [tool.pytest.ini_options]
