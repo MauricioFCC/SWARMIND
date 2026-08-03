@@ -12,10 +12,9 @@ from harness.model_router.multi_provider import (
     MultiAPIProvider,
     ProviderConfig,
     ProviderHealth,
-    ProviderStatus,
     ProviderTier,
-    RoutingDecision,
 )
+from harness.model_router.multi_provider_types import ProviderStatus, RoutingDecision
 from harness.model_router.router import ModelRouter
 
 __all__ = [
