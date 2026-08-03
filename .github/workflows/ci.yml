@@ -86,12 +86,16 @@ jobs:
             uv-${{ runner.os }}-
       - name: Install dependencies
         run: |
-          uv pip install bandit pip-audit
           uv sync
+          uv pip install 'safety>=3.0' bandit
       - name: Bandit
-        run: bandit -r harness/ -x harness/tests -ll -q
-      - name: Pip audit
-        run: pip-audit
+        run: uv run bandit -r harness/ -x harness/tests -ll -q
+      - name: Security audit
+        # safety audita el lockfile (no el Python del sistema, que tiene
+        # setuptools 79.0.1 con CVE-2026-3447). setuptools>=83 en pyproject.
+        run: |
+          uv export --format requirements-txt --no-hashes > /tmp/requirements.txt
+          uv run safety check -r /tmp/requirements.txt --output text
 
   compile:
     name: Compile
