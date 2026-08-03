@@ -59,7 +59,7 @@ jobs:
         run: uv sync --group test
       - name: Run tests
         run: |
-          python -m pytest harness/tests/ -v --cov=harness --cov-report=term --cov-report=xml
+          uv run python -m pytest harness/tests/ -v --cov=harness --cov-report=term --cov-report=xml
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
@@ -115,7 +115,7 @@ jobs:
         run: uv sync
       - name: Check compile
         run: |
-          python -c "
+          uv run python -c "
           import py_compile, glob
           files = glob.glob('harness/**/*.py', recursive=True)
           errors = 0
@@ -151,7 +151,7 @@ jobs:
         run: uv sync
       - name: Verify agents
         run: |
-          python -c "
+          uv run python -c "
           import sys; sys.path.insert(0, '.')
           from harness.orchestrator.agent_discovery import discover_agents_recursive
           agents = discover_agents_recursive()
