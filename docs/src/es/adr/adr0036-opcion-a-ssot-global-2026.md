@@ -1,6 +1,6 @@
 # ADR-0036 — Opción A: SSOT Global OpenCode + Mirror Local por Proyecto
 
-- **Estado**: ACEPTADO
+- **Estado**: ACEPTADO (enmendado v2.5 el 2026-08-02)
 - **Fecha**: 2026-08-01
 - **Decisores**: Coordinador Swiss Watch, Builder, Guardian
 - **Categoría**: Infraestructura / Distribución
@@ -157,3 +157,77 @@ uv run python -m pytest harness/tests/ -q
 - Guía: [docs/src/es/guide/opcion-a-ssot-global.md](../guide/opcion-a-ssot-global.md)
 - `scripts/sync_opencode_global.py`
 - `harness/scripts/install_hooks.py`
+
+---
+
+## Enmienda v2.5 (2026-08-02) — OpenCode Global = Fuente de Verdad Total
+
+> Actualiza partes de la decisión original. El resto permanece vigente.
+
+### Cambio 1: el MOTOR (harness/) también vive en opencode global
+
+La decisión original copiaba `harness/` (hasta 88,160 archivos) a CADA
+proyecto de DEV-SPACE. Medición real del costo:
+
+| Proyecto | Peso duplicado |
+|----------|----------------|
+| Hermes_Memory_Proyects | 3.3 GB / 88,160 archivos |
+| sugurityOs | 1.7 GB / 43,454 archivos |
+| de_0_a_Alfa | 55 MB / 7,062 archivos |
+| Historia Clinica | 77 MB / 3,732 archivos |
+| Otros (CQE, Onyx, PDV) | ~86 MB / 6,388 archivos |
+| **Total duplicado** | **~5.3 GB / 146,000 archivos** |
+
+**Decisión v2.5**: el motor (`harness/`) vive **UNA vez** en
+`~/.config/opencode/harness`. Los proyectos conservan solo `.opencode/`
+(cerebro) + skills + config propia. Los 3 únicos imports de harness en
+proyectos (session_log, deploy_all, optimization_pipeline) son scripts
+auxiliares, no runtime core — pueden importar desde el global via PYTHONPATH.
+
+### Cambio 2: nuevo script `scripts/setup_swarmind.py`
+
+Para un usuario que clona SWARMIND de GitHub, un solo comando configura todo:
+
+```bash
+python scripts/setup_swarmind.py
+# 1. Verifica Python >= 3.12
+# 2. Instala uv
+# 3. uv sync --extra dev
+# 4. Sync cerebro + motor a opencode global
+# 5. Verifica imports
+```
+
+### Cambio 3: `sync_opencode_global.py` ahora sincroniza cerebro + motor
+
+- `--cerebro`: solo agents/skills/core/registry
+- `--motor`: solo harness/ (módulos de código, sin datos runtime)
+- Default: ambos (completo)
+
+### Verificación v2.5
+
+```bash
+# Setup desde cero (usuario nuevo)
+python scripts/setup_swarmind.py
+
+# Sync cerebro + motor al global
+uv run python scripts/sync_opencode_global.py
+# → agents 42 · skills 63 · core 13 · skills_registry · harness NNN
+
+# Deploy: proyectos reciben SOLO .opencode/ + skills (harness SKIPPED)
+uv run python scripts/deploy_all.py --dry-run
+# → .opencode=125 · harness=0 · skills=31 en los 7 proyectos + Hermes
+```
+
+### Consecuencias del cambio v2.5
+
+**Positivas**
+- Elimina **~5.3 GB** de duplicación (146k archivos menos en disco).
+- Deploy más rápido: solo `.opencode/` (125 archivos) por proyecto.
+- Una sola fuente de verdad total: `~/.config/opencode/` (cerebro + motor).
+
+**Negativas / mitigaciones**
+- Proyectos que importen harness deben usar PYTHONPATH al global:
+  `set PYTHONPATH=%USERPROFILE%\.config\opencode` (Windows) o
+  `export PYTHONPATH=$HOME/.config/opencode` (Linux/macOS).
+- La copia local antigua de harness/ en proyectos puede borrarse manualmente
+  (no afecta al funcionamiento; es solo liberar espacio).

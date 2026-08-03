@@ -45,14 +45,14 @@ Cada ejecucion agrega valor nuevo o no se ejecuta.
 ### 1. Pre-requisitos
 
 ```powershell
-# Python 3.11+ (recomendado: via uv)
+# Python 3.12+ (3.10 EOL 2026-10-31, 3.11 EOL 2027-10-31)
 winget install astral-sh.uv
-uv python install 3.11
+uv python install 3.12
 
 # Git
 winget install Git.Git
 
-# Editor
+# Editor (OpenCode recomendado)
 winget install OpenCode
 ```
 
@@ -65,45 +65,51 @@ cd Swarmind
 
 # 🔬 RESEARCH FIRST: Antes de instalar, investiga
 # ?Que ha cambiado desde la ultima vez?
-# ?Hay nuevas herramientas de virtualenv/package management?
 # Buscar: "uv pip vs poetry 2026", "python package management best practices 2026"
 ```
 
-### 3. Entorno Virtual + Dependencias
+### 3. ⚡ Setup Automático (estándar v2.5 — recomendado)
+
+Un solo comando configura todo: verifica Python >= 3.12, instala uv,
+instala dependencias, sincroniza cerebro + motor a opencode global y
+verifica la instalación.
 
 ```powershell
-# Crear entorno con uv (mas rapido que pip)
-uv venv
-.venv\Scripts\activate
+# Configuracion inicial completa
+python scripts/setup_swarmind.py
 
-# Instalar dependencias
-uv pip install -e ".[dev]"
-
-# 🔬 INVESTIGAR: ?Sigue siendo ruff el mejor linter?
-# ?Hay herramientas mejores que pytest para testing?
+# (Opcional) solo simular
+python scripts/setup_swarmind.py --dry-run
 ```
 
-### 4. Configuracion
+### 4. Configuración Manual (alternativa paso a paso)
 
 ```powershell
-# Copiar .env y configurar
+# Entorno + dependencias
+uv sync --extra dev
+
+# Copiar .env y configurar API keys
 cp .env.example .env
-# Editar .env con tus API keys (ZENFREE_API_KEY, etc.)
+
+# Instalar hook pre-commit (QA rapido + sync global automatico en cada commit)
+uv run python harness/scripts/install_hooks.py --install
+
+# Sincronizar CEREBRO + MOTOR a opencode global (~/.config/opencode/)
+uv run python scripts/sync_opencode_global.py
 
 # Verificar config
-python -c "from pathlib import Path; print('✅ Path OK')"
-python -c "import harness; print(f'✅ Harness v{harness.__version__}')"
+python -c "import harness; print(f'✅ Harness OK')"
 ```
 
 ### 5. Verificar Instalacion
 
 ```powershell
-# 🔬 RESEARCH FIRST: Antes de ejecutar tests, investiga
-# ?Sigue siendo pytest la mejor opcion?
-# Buscar: "pytest alternatives 2026", "python testing tools 2026"
-
 # Ejecutar tests
 uv run python -m pytest harness/tests/ -x -q
+
+# Reglas universales + auto-mejora (ADR-0037)
+uv run pytest harness/tests/test_universal_rules.py -q
+uv run pytest harness/tests/test_opencode_config_sync.py -q
 
 # Health check
 uv run python -c "
@@ -113,28 +119,60 @@ print(hc.check_liveness())
 "
 ```
 
-### 6. Opcion A — SSOT Global OpenCode + Mirror Local (NUEVO)
+### 6. Opción A v2.5 — OpenCode Global = Fuente de Verdad Total
 
-Swarmind centraliza su cerebro (agents/skills/core) en `~/.config/opencode/`
-(**SSOT global**) y mantiene un **mirror local** completo en cada proyecto de
-DEV-SPACE para que sigan abiertos a otros editores.
+Swarmind centraliza **cerebro** (agents/skills/core) y **motor** (harness/)
+en `~/.config/opencode/` (**SSOT global**). Los proyectos de DEV-SPACE
+conservan solo `.opencode/` + skills + config propia (sin copiar harness,
+eliminando ~5.3 GB de duplicación).
 
 ```powershell
-# 1. Instalar el hook pre-commit (QA rapido + sync global automatico en cada commit)
-uv run python harness/scripts/install_hooks.py --install
-
-# 2. Sincronizar el cerebro al global opencode (~/.config/opencode/)
+# 1. Sync cerebro + motor al global opencode
 uv run python scripts/sync_opencode_global.py
 
-# 3. Desplegar mirror local + 31 skills + config propia a todos los proyectos
+# 2. Solo cerebro (si ya sincronizaste el motor)
+uv run python scripts/sync_opencode_global.py --cerebro
+
+# 3. Solo motor (harness)
+uv run python scripts/sync_opencode_global.py --motor
+
+# 4. Desplegar a proyectos DEV-SPACE (.opencode/ + skills, sin harness)
 uv run python scripts/deploy_all.py --dry-run    # Ver que va a hacer
 uv run python scripts/deploy_all.py              # Ejecutar deploy completo
 ```
 
 > **Reinicia opencode** despues del primer sync (la config se carga al inicio).
+> **Proyectos que importen harness**: usa PYTHONPATH al global.
 > Guia completa: [docs/src/es/guide/opcion-a-ssot-global.md](docs/src/es/guide/opcion-a-ssot-global.md)
+> ADR: [ADR-0036](docs/src/es/adr/adr0036-opcion-a-ssot-global-2026.md)
 
-### 7. Investigar Mejoras (Research First Loop)
+### 7. Memoria Central + Backup Automático (estándar v3.x)
+
+La memoria vive **UNA vez** en `<Documents>/Memory_Proyects` (portable via
+`MEMORY_ROOT`). Antes era local por proyecto (duplicada); ahora es central.
+
+```powershell
+# 1. Configurar memoria central (construye estructura + preserva db LanceDB)
+uv run python scripts/setup_memory_central.py
+
+# 2. Menú de configuración interactivo (MEMORY_ROOT, backup, frecuencia, rotación)
+uv run python scripts/config_swarmind.py
+
+# 3. Backup manual + ver backups
+uv run python scripts/backup_memory.py --force     # backup inmediato
+uv run python scripts/backup_memory.py --list      # listar backups
+
+# 4. Registrar tarea programada (Windows Task Scheduler / Linux cron)
+uv run python scripts/backup_memory.py --schedule
+```
+
+**Seguridad de datos (ADR-0038)**:
+- NUNCA se borra la db sin backup previo.
+- Backup automático cada N horas/días/commit (configurable en el menú).
+- Rotación automática: conserva los N backups más recientes.
+- Restaurar: `python scripts/backup_memory.py --restore <dir>`.
+
+### 8. Investigar Mejoras (Research First Loop)
 
 ```powershell
 # Antes de empezar a trabajar, investiga el estado del arte:
@@ -160,25 +198,51 @@ Swarmind/
 │   ├── core/              # router, guardrails, registry, base_principles, prompt_optimizer
 │   ├── federated/         # memoria federada entre proyectos
 │   └── skills/            # 31 skills (SKILL.md + SKILL.min.md + skills_registry.yaml)
-├── harness/               # Motor de orquestacion Python
+├── harness/               # Motor de orquestacion Python (VIVE EN OPENCODE GLOBAL, v2.5)
 │   ├── orchestrator/      # Planificador, health, telemetria, self-healing
 │   ├── memory_rag/        # Memoria vectorial LanceDB + Token Economics
 │   ├── evolve_loop/       # Auto-mejora ASI-Evolve
 │   ├── model_router/      # Routing local/cloud
 │   ├── tools_sandbox/     # MCP tools
-│   ├── tests/             # 3674 tests
+│   ├── tests/             # 3937 tests + TDD + universal_rules + config_sync
 │   ├── scripts/           # install_hooks.py (pre-commit), end_of_iteration, ...
 │   └── qa/                # security_policy.py (scanner ADR-0035)
-├── scripts/               # sync_opencode_global.py (sync global SSOT)
-├── docs/                  # ADRs (0001-0035) + guias + manuales
+├── scripts/               # setup_swarmind.py, sync_opencode_global.py, setup_memory_central.py,
+│                          # backup_memory.py, config_swarmind.py, deploy_all.py
+├── docs/                  # ADRs (0001-0037) + guias + manuales
 ├── SETUP.md               # Este archivo
-└── .opencode/  → ~/.config/opencode/  (SSOT global, sync en cada commit)
+├── ~/.config/opencode/    # SSOT GLOBAL: cerebro (.opencode/) + motor (harness/)
+└── <Documents>/Memory_Proyects/  # MEMORIA CENTRAL portable (MEMORY_ROOT)
+    ├── knowledge/         # conocimiento por dominio
+    ├── syntheses/         # sintesis de sesiones
+    ├── 99_Hermes_Brain/   # cerebro central
+    ├── data/lancedb/      # db central (con backup automatico)
+    └── backups/           # copias de seguridad (rotacion automatica)
 ```
 
-> **Opcion A**: `.opencode/` de Swarmind es la fuente; se sincroniza al global
-> `~/.config/opencode/` en cada commit y se propaga como mirror local a todos
-> los proyectos de DEV-SPACE. Ver
-> [docs/src/es/guide/opcion-a-ssot-global.md](docs/src/es/guide/opcion-a-ssot-global.md).
+> **Opción A v2.5**: opencode global (`~/.config/opencode/`) es la fuente de
+> verdad TOTAL. Cerebro (.opencode/) y motor (harness/) viven UNA vez ahí.
+> Los proyectos reciben solo `.opencode/` + skills. Ver
+> [docs/src/es/guide/opcion-a-ssot-global.md](docs/src/es/guide/opcion-a-ssot-global.md)
+> y [ADR-0036](docs/src/es/adr/adr0036-opcion-a-ssot-global-2026.md).
+
+### Reglas Universales (ADR-0037)
+
+El sistema aplica 10 reglas universales de código, validadas por tests con
+auto-mejora:
+
+| Regla | Qué valida | Test |
+|-------|-----------|------|
+| UPG | Últimas versiones estables | test_universal_rules.py |
+| NAM | Naming (snake_case, PascalCase) | test_universal_rules.py |
+| TYP | Type hints PEP 604/585 | test_universal_rules.py |
+| IMM | Immutability (frozen, NamedTuple) | test_universal_rules.py |
+| SOL | SOLID principles | test_universal_rules.py |
+| MAG | Sin magic numbers | test_universal_rules.py |
+| FSZ | Function size (umbral gradual) | test_universal_rules.py |
+| CMP | Composition over inheritance | test_universal_rules.py |
+| DEM | Law of Demeter | test_universal_rules.py |
+| CFG | Config YAML sync con realidad | test_opencode_config_sync.py |
 
 ### Agentes Core
 
@@ -280,10 +344,12 @@ python harness/run.py "@builder: implementa un segment tree"
 
 ## 📚 Referencias
 
-- `docs/src/adr/` — Architecture Decision Records (0001-0010)
-- `.opencode/core/base_principles.md` — 9 categorias universales
+- `docs/src/adr/` — Architecture Decision Records (0001-0037)
+- `.opencode/core/base_principles.md` — 9+ categorias universales (v2.4.0)
 - `.opencode/core/fde_principles.md` — Forward Deployment Engineering
 - `harness/common.py` — SSOT: embedding, tokens, compression
+- `harness/tests/test_universal_rules.py` — Reglas universales + auto-mejora (ADR-0037)
+- `harness/tests/test_opencode_config_sync.py` — Config YAML sync (ADR-0037)
 - `.env.example` — Variables de entorno documentadas
 
 ---

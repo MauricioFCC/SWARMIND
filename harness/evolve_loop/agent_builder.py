@@ -148,10 +148,20 @@ class AgentBuilder:
             return []
 
     @staticmethod
+    @staticmethod
     def _group_by_domain(
         lessons: list[dict[str, Any]],
     ) -> dict[str, list[dict[str, Any]]]:
-        """Agrupa lessons por dominio."""
+        """Agrupa lessons por dominio.
+
+        Args:
+            lessons: Lista de dicts de lecciones con key 'domain'
+                (ej. "trading.ml") y 'created_at' opcional.
+
+        Returns:
+            Dict {dominio_base: [lessons]} filtrando las fuera de
+            la ventana de tiempo (SCORE_WINDOW_DAYS).
+        """
         groups: dict[str, list[dict[str, Any]]] = {}
         for lesson in lessons:
             domain = lesson.get("domain", "general")

@@ -1,6 +1,6 @@
 ﻿# Cómo Modificar el Proyecto — Swarmind Harness
 
-> **Última actualización:** Julio 2026 · Python 3.10+ · 96 archivos test · 3674 tests · cobertura ~72%
+> **Última actualización:** Agosto 2026 · Python 3.12+ · 96 archivos test · 3937 tests · cobertura ~72%
 
 ---
 

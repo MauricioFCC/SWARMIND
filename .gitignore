@@ -13,8 +13,8 @@
 # Estos scripts contienen paths hardcoded a otros proyectos del
 # DEV-SPACE (quant-engine, health-record, pos-system, trading-bot-AIBot,
 # from_zero, shared_memory). Son específicos del entorno del autor.
+# NOTA: deploy_all.py ya NO se ignora (v2.5 portable via MEMORY_ROOT/DEV_SPACE_ROOT).
 scripts/agentic_bridge_sync.py
-scripts/deploy_all.py
 scripts/deploy_routing_fix.py
 #
 # === Drive / archive exports (IGNORE) ===

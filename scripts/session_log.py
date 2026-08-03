@@ -16,11 +16,9 @@ Uso:
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import sys
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
@@ -36,12 +34,12 @@ def _get_cognition():
     except ImportError as e:
         print(f"Error: No se pudo importar. Ejecuta desde la raiz del proyecto: {e}")
         sys.exit(1)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - init defensivo
         print(f"Error al inicializar: {e}")
         sys.exit(1)
 
 
-def _lesson_to_dict(lesson) -> Dict[str, Any]:
+def _lesson_to_dict(lesson) -> dict[str, Any]:
     """Convierte CognitionLesson a dict."""
     return {
         "id": getattr(lesson, "id", "N/A"),
@@ -72,7 +70,7 @@ def cmd_add(args: argparse.Namespace) -> None:
     print(f"  Dominio: {d['domain']}")
     print(f"  Tags: {tags}")
     if args.metrics:
-        print(f"  Nota: Las metricas deben pasarse como JSON valido: '{{\"k\":\"v\"}}'")
+        print("  Nota: Las metricas deben pasarse como JSON valido: '{\"k\":\"v\"}'")
 
 
 def cmd_search(args: argparse.Namespace) -> None:
@@ -99,7 +97,7 @@ def cmd_last(args: argparse.Namespace) -> None:
     r = resultados[0]
     d = _lesson_to_dict(r)
     print(f"\n{'=' * 60}")
-    print(f"  Ultima decision")
+    print("  Ultima decision")
     print(f"{'=' * 60}")
     print(f"  ID:       {d['id']}")
     print(f"  Titulo:   {d['title']}")

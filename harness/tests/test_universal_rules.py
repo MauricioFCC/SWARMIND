@@ -33,7 +33,7 @@ import re
 import subprocess
 import sys
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -180,12 +180,12 @@ class TestNAM:
         for py_file in (ROOT / "harness").rglob("*.py"):
             if py_file.name in allowed or py_file.name == "__init__.py":
                 continue
-            if not re.match(r"^[a-z][a-z0-9_]*\.py$", py_file.name):
-                if not re.match(r"^test_[a-z][a-z0-9_]*\.py$", py_file.name):
-                    pytest.fail(
-                        f"NAM: archivo '{py_file.relative_to(ROOT)}' no sigue snake_case "
-                        f"(permitidos: {sorted(allowed)} + test_*.py)"
-                    )
+            if (not re.match(r"^[a-z][a-z0-9_]*\.py$", py_file.name)
+                    and not re.match(r"^test_[a-z][a-z0-9_]*\.py$", py_file.name)):
+                pytest.fail(
+                    f"NAM: archivo '{py_file.relative_to(ROOT)}' no sigue snake_case "
+                    f"(permitidos: {sorted(allowed)} + test_*.py)"
+                )
 
     def test_class_names_pascalcase(self) -> None:
         """NAM: clases en PascalCase (no snake_case)."""
@@ -317,8 +317,7 @@ class TestSOL:
                     bases = [b.strip() for b in m.group(1).split(",")]
                     builtin_bases = {
                         "object", "ABC", "Protocol", "Generic", "Exception",
-                        "ValueError", "TypeError", "RuntimeError", "Exception",
-                        "BaseException", "NamedTuple", "dataclass",
+                        "ValueError", "TypeError", "RuntimeError", "BaseException", "NamedTuple", "dataclass",
                     }
                     custom_bases = [b for b in bases if b not in builtin_bases]
                     if len(custom_bases) > 2:
@@ -442,7 +441,6 @@ class TestCMP:
     def test_no_deep_inheritance_chains(self) -> None:
         """CMP: max 2 niveles de herencia (composicion preferida)."""
         # Cubierto en TestSOL.test_no_class_inherits_more_than_2_levels
-        pass
 
 
 # ===========================================================================
@@ -522,7 +520,7 @@ class TestSelfImprovement:
         total = sum(len(v) for v in results.values())
         assert total >= 0
         state = load_state()
-        state["violation_history"][datetime.now(timezone.utc).isoformat()] = {
+        state["violation_history"][datetime.now(UTC).isoformat()] = {
             rule: len(v) for rule, v in results.items()
         }
         save_state(state)
@@ -548,7 +546,7 @@ class TestRuleCurrency:
         last = state.get("last_web_check")
         if last:
             last_dt = datetime.fromisoformat(last)
-            days = (datetime.now(timezone.utc) - last_dt).days
+            days = (datetime.now(UTC) - last_dt).days
             assert days <= 7, (
                 f"UPG: TARGET_VERSIONS sin check-web hace {days} dias. "
                 f"Ejecutar: python -m harness.tests.test_universal_rules check-web"
@@ -622,7 +620,7 @@ def check_pypi_versions(packages: list[str]) -> dict[str, str]:
             with urllib.request.urlopen(req, timeout=5) as r:
                 info = json.loads(r.read()).get("info", {})
                 results[pkg] = info.get("version", "?")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - cualquier fallo de red/PyPI se reporta, no aborta
             results[pkg] = f"ERROR: {e}"
     return results
 
@@ -651,7 +649,7 @@ def update_pyproject_toml(updates: dict[str, str]) -> bool:
 
 def update_test_targets(updates: dict[str, str]) -> bool:
     """Actualiza TARGET_VERSIONS en este archivo."""
-    global TARGET_VERSIONS
+    global TARGET_VERSIONS  # noqa: PLW0602 - actualiza el dict de targets via reescritura del archivo
     changed = False
     for pkg, new_constraint in updates.items():
         if pkg in TARGET_VERSIONS and TARGET_VERSIONS[pkg] != new_constraint:
@@ -672,7 +670,7 @@ def update_test_targets(updates: dict[str, str]) -> bool:
 
 def run_uv_lock() -> bool:
     """Regenera el lockfile. Retorna True si exito."""
-    result = subprocess.run(
+    result = subprocess.run(  # noqa: PLW1510 - returncode se valida manualmente
         ["uv", "lock"],
         cwd=ROOT,
         capture_output=True,
@@ -683,7 +681,7 @@ def run_uv_lock() -> bool:
 
 def run_tests() -> bool:
     """Ejecuta los tests del proyecto para verificar que siguen pasando."""
-    result = subprocess.run(
+    result = subprocess.run(  # noqa: PLW1510 - returncode se valida manualmente
         ["uv", "run", "pytest", "harness/tests/test_universal_rules.py", "--no-header", "-q"],
         cwd=ROOT,
         capture_output=True,
@@ -786,7 +784,7 @@ if __name__ == "__main__":
             current = TARGET_VERSIONS.get(pkg, "?")
             print(f"  {pkg}: latest={ver}, target={current}")
         state = load_state()
-        state["last_web_check"] = datetime.now(timezone.utc).isoformat()
+        state["last_web_check"] = datetime.now(UTC).isoformat()
         save_state(state)
         print(f"\nEstado actualizado: last_web_check={state['last_web_check']}")
     else:

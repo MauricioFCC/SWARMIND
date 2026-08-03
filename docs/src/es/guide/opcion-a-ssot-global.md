@@ -18,13 +18,16 @@ DEV-SPACE mediante un esquema **SSOT (Single Source of Truth)**:
 
 C:\Users\<user>\Documents\DEV-SPACE\<proyecto>\
   ├── .opencode/             ← MIRROR LOCAL (cerebro + config propia)
-  ├── harness/               ← MIRROR LOCAL (motor Python)
   └── README.md              ← Generado con tipo, skills y config
 ```
 
 El **pre-commit hook** de SWARMIND sincroniza el cerebro al global en **cada
 commit** (best-effort, no bloquea). El script `deploy_all.py` (local, no
 versionado) actualiza el mirror de todos los proyectos bajo demanda.
+
+> **Estándar v2.5**: el motor (`harness/`) ya NO se copia a los proyectos.
+> Vive una sola vez en `~/.config/opencode/harness`. Si un proyecto necesita
+> el motor Python, importa desde el global via PYTHONPATH.
 
 ## 2. Por que existe
 
@@ -34,9 +37,9 @@ versionado) actualiza el mirror de todos los proyectos bajo demanda.
 - **El harness Python** (`harness/run.py`, `agent_discovery.py`, `delegate.py`,
   `run_commands.py`, `compile_agents.py`, `compile_skills.py`) lee
   `.opencode/agents` y `.opencode/skills` del proyecto en runtime → el mirror
-  local es **obligatorio**, no se puede borrar.
+  local de `.opencode/` es **obligatorio**.
 - **Portabilidad (ADR-0035)**: todas las rutas via `Path.home()` o env vars
-  (`DEV_SPACE_ROOT`, `HERMES_ROOT`, `OPENCODE_GLOBAL_DIR`). Nunca `$HOME`
+  (`DEV_SPACE_ROOT`, `MEMORY_ROOT`, `OPENCODE_GLOBAL_DIR`). Nunca `$HOME`
   literal ni rutas personales hardcodeadas.
 
 ## 3. Arquitectura de sincronizacion
@@ -60,22 +63,25 @@ uv run python scripts/sync_opencode_global.py --quiet  # Modo silencioso (hook)
 
 ### Deploy a proyectos (`deploy_all.py`)
 
-Actualiza el mirror local completo de todos los proyectos de DEV-SPACE:
-`.opencode/` (125 archivos) + `harness/` (8451 archivos) + las **31 skills**
-+ `skills_registry.yaml`. **Preserva siempre la config propia** del proyecto:
+Actualiza el mirror de todos los proyectos de DEV-SPACE. **Estándar v2.5**:
+los proyectos reciben solo `.opencode/` (125 archivos) + las **31 skills** +
+`skills_registry.yaml`. El motor (`harness/`) **NO se copia** — vive una sola
+vez en opencode global (elimina ~5.3 GB de duplicación). **Preserva siempre
+la config propia** del proyecto:
 
 - `.opencode/config/project_config.yaml`
 - `.opencode/config/routing_rules.yaml`
 - `.opencode/config/token_budgets.yaml`
 - `.env`, `.env.example`
 - `.opencode/federated/`, `.opencode/agents/auto`, `.opencode/skills/auto`
-- `.opencode/memory/`, `.opencode/db/`, `harness/db/`
+- `.opencode/memory/`, `.opencode/db/`
 
 ```bash
 uv run python scripts/deploy_all.py                    # Deploy completo
 uv run python scripts/deploy_all.py --dry-run          # Simular sin escribir
 uv run python scripts/deploy_all.py --project CQE      # Solo un proyecto (alias o nombre)
 uv run python scripts/deploy_all.py --sync-global      # Solo sync del global opencode
+uv run python scripts/deploy_all.py --sync-harness-global  # Solo sync harness -> global
 ```
 
 ### Alias de proyectos
@@ -86,9 +92,14 @@ uv run python scripts/deploy_all.py --sync-global      # Solo sync del global op
 | `HC` | `Historia Clinica` | healthtech |
 | `ONYX` | `Onyx-Quan-AIBot` | trading |
 | `PDV` | `PDV Basic` | retail |
-| `HERMES` | `Hermes_Memory_Proyects` | memoria principal |
+| `HERMES` | `Hermes_Memory_Proyects` | memoria por proyecto (deprecated, ver central) |
 | `ALFA` | `de_0_a_Alfa` | general |
 | `SECURITY` | `sugurityOs` | security |
+
+> **Memoria central (v3.x)**: la memoria ahora vive UNA vez en
+> `<Documents>/Memory_Proyects` (portable via `MEMORY_ROOT`). Ver
+> [ADR-0038](../adr/adr0038-memoria-central-backup-2026.md) y
+> `scripts/setup_memory_central.py`.
 
 ### Hermes Memory (caso especial)
 

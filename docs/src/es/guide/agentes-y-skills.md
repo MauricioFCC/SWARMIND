@@ -475,7 +475,7 @@ harness/
 │   └── ...
 ├── tools_sandbox/
 ├── evolve_loop/
-├── tests/                        # 3674+ tests (52+ suites)
+├── tests/                        # 3937+ tests (52+ suites)
 └── ...
 ```
 

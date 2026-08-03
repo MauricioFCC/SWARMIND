@@ -7,7 +7,7 @@
 
 Las metricas principales del sistema (tests, cobertura, ADRs, agentes, skills, modulos) estan en la [pagina principal](../README.md#estado-actual-julio-2026).
 
-**Resumen ejecutivo:** 3674 tests, **74.95% cobertura real**, 36 ADRs, 20 agentes, 31 skills, 48 modulos orchestrator, 30 modulos memory/rag, RTX 4060 6x speedup, 15 papers 2026 implementados, **Opción A SSOT global implementada**.
+**Resumen ejecutivo:** 3937 tests, **74.95% cobertura real**, 37 ADRs, 20 agentes, 31 skills, 48 modulos orchestrator, 30 modulos memory/rag, RTX 4060 6x speedup, 15 papers 2026 implementados, **Opción A SSOT global implementada + memoria central portable (v3.x)**.
 
 **Metricas adicionales no incluidas en README:** 196+ commits, 258 archivos Python, suite completa ~100s (sin slow ~45s), 30+ tecnicas 2026 integradas.
 
@@ -147,8 +147,8 @@ Objetivo: 80%    (proximo hito)
 
 | Metrica | Actual | Objetivo | Tendencia |
 |---------|--------|----------|-----------|
-| Cobertura de tests | 71.56% | 80% | Subiendo |
-| Tests totales | 3674 | ~4000 | Subiendo |
+| Cobertura de tests | 74.95% | 80% | Subiendo |
+| Tests totales | 3937 | ~4200 | Subiendo |
 | Agentes | 20 | 30+ | Subiendo |
 | Skills | 31 | 50+ | Subiendo |
 | Modulos Orchestrator | 48 | 55+ | Subiendo |
@@ -167,6 +167,7 @@ Objetivo: 80%    (proximo hito)
 
 ## Notas de la Version
 
+- **2026-08-03**: Memoria central portable (v3.x) en `<Documents>/Memory_Proyects` (MEMORY_ROOT) + backup automático con rotación (ADR-0038, `backup_memory.py` + tarea programada) + menú de configuración al instalar (`config_swarmind.py`). TDD: 58 tests nuevos en 5 módulos a 0% cobertura (ADR-0033). Optimización de tokens: descripciones de agents/skills -57% (3875→1684 tokens). Deuda técnica: test_agent_builder fechas hardcodeadas corregidas. **3937 tests**.
 - **2026-07-31**: Opción A implementada — SSOT global opencode (`~/.config/opencode/`) con sync automático en cada commit (pre-commit hook → `scripts/sync_opencode_global.py`). Mirror local completo (`.opencode/` 125 archivos + `harness/` 8451 + 31 skills + registry) desplegado en 7 proyectos de DEV-SPACE preservando config propia. Seguridad: ADR-0035 scanner 0 violaciones, bandit 0 hallazgos en producción (MD5 `usedforsecurity=False`, nosec justificado), gates CI endurecidos (bandit/pip-audit bloquean), dependabot + github-actions. Guia: [docs/src/es/guide/opcion-a-ssot-global.md](../guide/opcion-a-ssot-global.md).
 - **2026-07-30**: ADR-0035 política de paths portables + scanner de secretos/rutas personales (0 violaciones). Limpieza de rutas personales en toda la documentación.
 - **2026-07-29**: Gap Analysis 2026 completo (15 papers implementados). Nuevos modulos: GovernanceGuard (arXiv:2606.22528), NaturalLanguageToolkit (arXiv:2607.03953), MultiUserGovernance (arXiv:2606.21856), OrganizationalLayer (arXiv:2607.25446), Learned Adaptive Memory (arXiv:2607.13591). Expansion de 8 a 20 agentes. 3420 tests, 32 ADRs, 31 skills, 48 modulos orchestrator, 30 modulos memory/rag.
