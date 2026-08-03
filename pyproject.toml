@@ -88,4 +88,18 @@ fail_under = 62
 # Siguiente:   fail_under = 70
 # Objetivo:    fail_under = 80
 
+# ---------------------------------------------------------------------------
+# Ruff (linter)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+# EXE001: "shebang present but file is not executable" — ruff solo aplica en
+# sistemas Unix-like (no en Windows local). Los scripts standalone tienen
+# shebang pero se invocan via `uv run`/`python -m`. Ignorada globalmente
+# para que CI (Ubuntu) no falle por archivos que Windows no puede marcar +x.
+ignore = ["EXE001"]
+
 
