@@ -120,7 +120,7 @@
 
 - [Estado del Proyecto](roadmap/estado.md) â€” **SSOT** estado y roadmap
 
-# ADR - Architecture Decision Records (35 activos)
+# ADR - Architecture Decision Records (40 activos)
 
 ### Fundacion
 - [ADR-0001: Sistema Multi-Agente Evolutivo](adr/adr0001-mejoras.md)
@@ -167,4 +167,8 @@
 - [ADR-0034: Frontier Operations 2026](adr/adr0034-frontier-operations-2026.md)
 - [ADR-0035: Politica de Seguridad — Paths Portables](adr/adr0035-security-policy-portable-paths-2026.md)
 - [ADR-0036: Opcion A — SSOT Global OpenCode](adr/adr0036-opcion-a-ssot-global-2026.md)
+- [ADR-0037: Reglas Universales + Auto-Mejora](adr/adr0037-reglas-universales-auto-mejora-2026.md)
+- [ADR-0038: Memoria Central Portable + Backup](adr/adr0038-memoria-central-backup-2026.md)
+- [ADR-0039: Frontier Optimization 2026 v2](adr/adr0039-frontier-optimization-2026-v2.md)
+- [ADR-0040: Auditoria Token-Economics (H1-H8)](adr/adr0040-token-audit-plan-2026.md)
 
