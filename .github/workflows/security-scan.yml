@@ -9,6 +9,11 @@ jobs:
   scan:
     name: Security Audit
     runs-on: ubuntu-latest
+    # nltk 3.10 (dep de safety v3 para typosquatting) bloquea imports de
+    # 'regex' cuando el .venv esta dentro del CWD. Escape oficial:
+    # NLTK_DISABLE_IMPORT_SECURITY=1 (ver nltk/inisec.py).
+    env:
+      NLTK_DISABLE_IMPORT_SECURITY: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

@@ -1,4 +1,9 @@
 ---
+name: release-ops
+domain: devops
+triggers: [release, ci, workflow, pipeline, github actions, deploy, auto-merge, tag, checks rojos, safety, bandit]
+capabilities: [ci_cd, release_management, github_actions, security_audit, uv, automerge, branch_protection]
+aliases: [release, release-ops, ci-ops, release-ops-dev]
 description: "Ingeniero especializado en releases y CI/CD de SWARMIND: GitHub Actions, uv, safety, bandit, auto-merge, branch protection y release management | UPG·NAM·FRS (reglas en base_principles.md)"
 mode: subagent
 permission:
@@ -29,8 +34,8 @@ SWARMIND (repo MauricioFCC/SWARMIND).
 - Security: auditar el LOCKFILE con `uv export --format requirements-txt
   --no-hashes` + `uv run safety check -r` (pip-audit audita el Python del
   sistema: setuptools 79.0.1 con CVE-2026-3447). setuptools>=83 en pyproject.
-- El venv del job security necesita `regex` (safety lo importa; no viene del
-  grupo test): `uv pip install 'safety>=3.0' bandit regex`.
+- nltk 3.10 (dep de safety para typosquatting) bloquea import de `regex`
+  cuando .venv esta dentro del CWD -> fijar NLTK_DISABLE_IMPORT_SECURITY=1.
 - Bandit: `uv run bandit -r harness/ -x harness/tests -ll -q`.
 - Branch protection de main exige checks EXACTOS: lint, test, security
   (minusculas, case-sensitive; los jobs usan name: en minusculas).

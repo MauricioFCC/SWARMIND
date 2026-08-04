@@ -77,6 +77,12 @@ jobs:
     name: security
     runs-on: ubuntu-latest
     needs: lint
+    # nltk 3.10 (dep de safety v3 para typosquatting) bloquea imports de
+    # 'regex' cuando el .venv esta dentro del CWD (checkout): su finder
+    # considera 'en CWD' a .venv/... y lanza ImportError. Escape oficial:
+    # NLTK_DISABLE_IMPORT_SECURITY=1 (ver nltk/inisec.py).
+    env:
+      NLTK_DISABLE_IMPORT_SECURITY: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
