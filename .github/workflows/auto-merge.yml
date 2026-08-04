@@ -32,8 +32,9 @@ permissions:
   pull-requests: write
   # Necesario para reportar el status en el check summary
   checks: read
-  # Necesario para que el check "completed" trigger funcione
-  contents: read
+  # enable-pull-request-automerge (v3) llama a la API de auto-merge y
+  # requiere contents: write (con read: "Resource not accessible by integration")
+  contents: write
 
 jobs:
   auto-merge:
@@ -47,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Enable auto-merge
-        uses: peter-evans/enable-pull-request-automerge@v2
+        uses: peter-evans/enable-pull-request-automerge@v3
         with:
           # Token del repo (no del PR) para llamar a la API
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -73,7 +74,7 @@ jobs:
           # Solo PRs abiertos (no merged/closed)
       - name: Enable auto-merge on PR
         if: steps.find-pr.outputs.pull-request-number
-        uses: peter-evans/enable-pull-request-automerge@v2
+        uses: peter-evans/enable-pull-request-automerge@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pull-request-number: ${{ steps.find-pr.outputs.pull-request-number }}
