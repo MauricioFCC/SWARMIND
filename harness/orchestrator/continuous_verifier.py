@@ -373,4 +373,4 @@ class ContinuousVerifier:
         return samples[-1].value
 
 
-__all__ = ["MetricSample", "VerificationResult", "ContinuousVerifier"]
+__all__ = ["ContinuousVerifier", "MetricSample", "VerificationResult"]

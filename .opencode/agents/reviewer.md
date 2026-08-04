@@ -1,10 +1,14 @@
 ---
+
+
+
+
 name: reviewer
 domain: quality
 triggers: [review, code review, pr, pull request, audit, revision, inspect, code quality, static analysis, linting, style check, peer review]
 capabilities: [code_review, pr_analysis, quality_check, security_review, style_enforcement, diff_analysis, regression_detection]
 aliases: [reviewer, code-reviewer, pr-reviewer, auditor]
-description: "Revisor de código especializado en pull requests, code review y auditoría de calidad. Complementa a guardian en revisión de código."
+description: "Revisor de código especializado en pull requests, code review y auditoría de calidad. Complementa a guardian en revisión de código | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # Reviewer | Revisor de Codigo

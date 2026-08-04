@@ -15,7 +15,7 @@ Cubre:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -51,7 +51,7 @@ class TestCacheEntry:
         assert entry.metadata == {}
 
     def test_is_expired_fresh(self):
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         entry = CacheEntry(
             prompt_hash="abc",
             prompt_text="test",
@@ -63,7 +63,7 @@ class TestCacheEntry:
         assert not entry.is_expired()
 
     def test_is_expired_old(self):
-        old = datetime(2020, 1, 1, tzinfo=timezone.utc).isoformat()
+        old = datetime(2020, 1, 1, tzinfo=UTC).isoformat()
         entry = CacheEntry(
             prompt_hash="abc",
             prompt_text="test",
@@ -243,11 +243,11 @@ class TestNormalizeSimilarity:
 
 class TestIsExpired:
     def test_fresh_not_expired(self):
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         assert not SemanticCache._is_expired(now, 3600)
 
     def test_expired_by_ttl(self):
-        old = datetime(2020, 1, 1, tzinfo=timezone.utc).isoformat()
+        old = datetime(2020, 1, 1, tzinfo=UTC).isoformat()
         assert SemanticCache._is_expired(old, 1)
 
     def test_empty_created_at(self):
@@ -298,7 +298,7 @@ class TestShapedCache:
         mock_cache.set.return_value = True
         mock_cache.get.return_value = {
             "response": "cached answer",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         shaped = ShapedCache(mock_cache)
 
@@ -326,7 +326,7 @@ class TestShapedCache:
         # Hit 1
         mock_cache.get.return_value = {
             "response": "resp",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         shaped.get_shaped("prompt_b")
         assert shaped.hit_rate == 0.5
@@ -341,7 +341,7 @@ class TestShapedCache:
     def test_shaped_cache_ttl_expiry(self):
         """Entrada expirada por TTL retorna None aunque el cache subyacente responda."""
         mock_cache = MagicMock()
-        old_ts = datetime(2020, 1, 1, tzinfo=timezone.utc).isoformat()
+        old_ts = datetime(2020, 1, 1, tzinfo=UTC).isoformat()
         mock_cache.get.return_value = {
             "response": "stale data",
             "timestamp": old_ts,
@@ -384,7 +384,7 @@ class TestShapedCache:
         mock_cache = MagicMock()
         shaped = ShapedCache(mock_cache, ttl_sec=1.0)
 
-        now = datetime.now(timezone.utc).timestamp()
+        now = datetime.now(UTC).timestamp()
         old_ts = now - 100.0  # muy vencida
 
         # Dos entradas vencidas + una reciente

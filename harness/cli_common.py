@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 import re
 import sys
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
@@ -197,7 +198,7 @@ def load_vector_store(db_path: str | None = None) -> Any:
 
 def check_first_run(harness_root: Path) -> bool:
     """Detecta si es primera ejecuciÃ³n y guÃ­a al usuario en la configuraciÃ³n."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     marker_file = harness_root / ".harness_initialized"
     if marker_file.exists():
@@ -291,7 +292,7 @@ def check_first_run(harness_root: Path) -> bool:
             logger.info("  (RAG ingest difiere: %s)", exc)
 
     # Paso 7: Crear marker
-    marker_file.write_text(f"initialized: {datetime.now(timezone.utc).isoformat()}\nproject: {project_name}\n")
+    marker_file.write_text(f"initialized: {datetime.now(UTC).isoformat()}\nproject: {project_name}\n")
     logger.info("")
     logger.info("  Harness configurado. Listo para usar!")
     logger.info("")

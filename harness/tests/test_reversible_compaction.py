@@ -191,12 +191,7 @@ class TestBm25LikeSearch:
 
     def test_query_con_ambas_palabras_prioriza_linea(self):
         """La linea con ambos tokens del query aparece primero."""
-        original = "\n".join([
-            "Linea sin relevancia para la consulta.",
-            "alpha y beta aparecen juntos aqui.",
-            "alpha aparece sola en esta linea.",
-            "beta aparece sola en esta otra.",
-        ])
+        original = "Linea sin relevancia para la consulta.\nalpha y beta aparecen juntos aqui.\nalpha aparece sola en esta linea.\nbeta aparece sola en esta otra."
         resultado = bm25_like_search(original, "alpha beta")
         assert resultado[0] == "alpha y beta aparecen juntos aqui."
 
@@ -208,10 +203,7 @@ class TestBm25LikeSearch:
 
     def test_top_k_respetado(self):
         """top_k limita el numero de lineas retornadas."""
-        original = "\n".join([
-            "alpha uno", "alpha dos", "alpha tres",
-            "alpha cuatro", "alpha cinco", "alpha seis",
-        ])
+        original = "alpha uno\nalpha dos\nalpha tres\nalpha cuatro\nalpha cinco\nalpha seis"
         resultado = bm25_like_search(original, "alpha", top_k=3)
         assert len(resultado) == 3
 

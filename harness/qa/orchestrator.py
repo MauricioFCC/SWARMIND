@@ -29,7 +29,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum, auto
 from typing import Any
 from uuid import uuid4
@@ -106,7 +106,7 @@ class OrchestrationReport:
     test_suite: TestSuite | None = None
     agent_result: AgentResult | None = None
     ejecutado_en: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
     execution_id: str = field(default_factory=lambda: uuid4().hex[:12])
 
@@ -145,7 +145,7 @@ class QAOrchestrator:
         self._metadata = metadata or QAMetadata(
             layer=QALayer.L5_ORCHESTRATOR,
             version="1.0.0",
-            timestamp_iso=datetime.now(timezone.utc).isoformat(),
+            timestamp_iso=datetime.now(UTC).isoformat(),
             execution_id=uuid4().hex[:12],
         )
         self._predictor = FailurePredictor()

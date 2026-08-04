@@ -1,7 +1,11 @@
 ---
+
+
+
+
 name: behavioral-economics
 domain: economics
-description: "Economia del comportamiento: teoria de juegos, sesgos cognitivos, heurísticas, toma de decisiones bajo incertidumbre, y diseno de incentivos."
+description: "Economia del comportamiento: teoria de juegos, sesgos cognitivos, heurísticas, toma de decisiones bajo incertidumbre, y diseno de incentivos | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

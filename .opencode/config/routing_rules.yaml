@@ -54,7 +54,11 @@ routing_rules:
     - domain: "frontend"
       agents: ["builder"]
       priority: 8
+    - domain: "swarm-release-ops"
+      agents: ["release-ops", "devops", "builder"]
+      priority: 9
     - domain: "universal"
       agents: ["coordinator", "builder", "scientist", "guardian", "evolve",
-               "evolve-researcher", "evolve-engineer", "evolve-analyzer"]
+               "evolve-researcher", "evolve-engineer", "evolve-analyzer",
+               "release-ops", "token-budget-auditor"]
       priority: 10

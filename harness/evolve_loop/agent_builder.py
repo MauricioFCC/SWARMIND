@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -148,10 +148,20 @@ class AgentBuilder:
             return []
 
     @staticmethod
+    @staticmethod
     def _group_by_domain(
         lessons: list[dict[str, Any]],
     ) -> dict[str, list[dict[str, Any]]]:
-        """Agrupa lessons por dominio."""
+        """Agrupa lessons por dominio.
+
+        Args:
+            lessons: Lista de dicts de lecciones con key 'domain'
+                (ej. "trading.ml") y 'created_at' opcional.
+
+        Returns:
+            Dict {dominio_base: [lessons]} filtrando las fuera de
+            la ventana de tiempo (SCORE_WINDOW_DAYS).
+        """
         groups: dict[str, list[dict[str, Any]]] = {}
         for lesson in lessons:
             domain = lesson.get("domain", "general")
@@ -163,7 +173,7 @@ class AgentBuilder:
             if created:
                 try:
                     dt = datetime.fromisoformat(created)
-                    if datetime.now(timezone.utc) - dt > timedelta(days=SCORE_WINDOW_DAYS):
+                    if datetime.now(UTC) - dt > timedelta(days=SCORE_WINDOW_DAYS):
                         continue  # saltar lessons viejas
                 except (ValueError, TypeError):
                     pass
@@ -242,7 +252,7 @@ class AgentBuilder:
         profile_content += (
             "\n---\n"
             f"*Generado por Hermes AgentBuilder el "
-            f"{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
+            f"{datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
         )
 
         # Escribir archivo
@@ -340,7 +350,7 @@ class AgentPruner:
             if last_used:
                 try:
                     last = datetime.fromisoformat(last_used)
-                    age = datetime.now(timezone.utc) - last
+                    age = datetime.now(UTC) - last
                     if age > timedelta(days=MAX_AGENT_AGE_DAYS):
                         should_prune = True
                         reasons.append(f"not used in {age.days}d (> {MAX_AGENT_AGE_DAYS}d)")

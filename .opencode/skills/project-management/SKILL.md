@@ -1,7 +1,11 @@
 ---
+
+
+
+
 name: project-management
 domain: management
-description: "Gestion de proyectos: metodologias agiles (Scrum, Kanban), planificacion, seguimiento, riesgos, estimaciones, y comunicacion con stakeholders."
+description: "Gestion de proyectos: metodologias agiles (Scrum, Kanban), planificacion, seguimiento, riesgos, estimaciones, y comunicacion con stakeholders | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

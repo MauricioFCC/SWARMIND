@@ -1,5 +1,6 @@
 [build-system]
-requires = ["setuptools>=64"]
+# UPG (regla universal): setuptools >= 83 (CVE-2026-3447 PYSEC fixed en 83.0.0)
+requires = ["setuptools>=83.0.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -11,7 +12,11 @@ exclude = ["docs*", ".opencode*"]
 name = "Swarmind-harness"
 version = "0.1.0"
 description = "Multi-Agent Evolutionary Harness"
-requires-python = ">=3.10"
+# Bump a >=3.12: Python 3.10 EOL 2026-10-31 (3 meses), 3.11 EOL 2027-10-31.
+# numpy 2.5.1 (latest stable) requiere >=3.12, pandas 3.x requiere 3.11+, networkx 3.6+ requiere 3.11+.
+# Subir a 3.12 permite resolver una sola version de numpy (sin markers duales).
+# Trade-off: deja fuera Python 3.11. Justificacion: 3.12 es LTS-ish y CI ya usa 3.12.
+requires-python = ">=3.12"
 readme = "README.md"
 authors = [
     {name = "Mauricio Fonseca Cardona", email = "maodevcol@gmail.com"},
@@ -23,30 +28,21 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "hypothesis>=6.163.0",
-    "lancedb>=0.33",
-    "numpy>=1.24",
+    "hypothesis>=6.165.0",
+    "lancedb>=0.36.0",
+    "numpy>=2.5.1",
     "pytest-asyncio>=1.4.0",
     "pyyaml>=6.0",
     "requests>=2.31",
     "schedule>=1.2",
-    "torch>=2.0",
+    "torch>=2.13.0",
 ]
-
-[project.urls]
-Homepage = "https://github.com/MauricioFCC/SWARMIND"
-Repository = "https://github.com/MauricioFCC/SWARMIND"
-Issues = "https://github.com/MauricioFCC/SWARMIND/issues"
-Changelog = "https://github.com/MauricioFCC/SWARMIND/blob/main/CHANGELOG.md"
-Documentation = "https://github.com/MauricioFCC/SWARMIND/blob/main/docs/src/en/SUMMARY.md"
-Citation = "https://github.com/MauricioFCC/SWARMIND/blob/main/CITATION.cff"
 
 [project.optional-dependencies]
 dev = [
@@ -55,14 +51,24 @@ dev = [
     "pytest-mock>=3",
     "pytest-xdist>=3",
     "pytest-split>=0.9",
-    "ruff>=0.4",
-    "mypy>=1.8",
+    "ruff>=0.16.1",
+    "mypy>=2.3.0",
+    "bandit>=1.9.4",
+    "safety>=3.8.1",
 ]
 test = ["pytest>=8", "pytest-cov>=5", "pytest-mock>=3", "pytest-xdist>=3", "pytest-split>=0.9"]
 
 [dependency-groups]
+# Compatibilidad con `uv sync --group <name>` en CI (PEP 735)
 dev = [
     "pytest-asyncio>=1.4.0",
+]
+test = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "pytest-mock>=3",
+    "pytest-xdist>=3",
+    "pytest-split>=0.9",
 ]
 
 [tool.pytest.ini_options]
@@ -89,5 +95,19 @@ fail_under = 62
 # Proximo PR: fail_under = 55
 # Siguiente:   fail_under = 70
 # Objetivo:    fail_under = 80
+
+# ---------------------------------------------------------------------------
+# Ruff (linter)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+# EXE001: "shebang present but file is not executable" — ruff solo aplica en
+# sistemas Unix-like (no en Windows local). Los scripts standalone tienen
+# shebang pero se invocan via `uv run`/`python -m`. Ignorada globalmente
+# para que CI (Ubuntu) no falle por archivos que Windows no puede marcar +x.
+ignore = ["EXE001"]
 
 

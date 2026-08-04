@@ -1,7 +1,11 @@
 ---
+
+
+
+
 name: devops-infra
 domain: devops
-description: "DevOps, infraestructura como codigo, CI/CD, Docker, Kubernetes, Terraform, monitoreo, observabilidad, y plataforma como servicio."
+description: "DevOps, infraestructura como codigo, CI/CD, Docker, Kubernetes, Terraform, monitoreo, observabilidad, y plataforma como servicio | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

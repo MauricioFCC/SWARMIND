@@ -11,7 +11,7 @@ import logging
 import os
 import shutil
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -306,7 +306,7 @@ class PromptEvolver:
             return False
 
         # Backup original
-        backup_name = f"{agent_name}_backup_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.md"
+        backup_name = f"{agent_name}_backup_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.md"
         backup_path = PROMPT_ARCHIVE_DIR / backup_name
         shutil.copy2(str(original_path), str(backup_path))
         logger.info("Backup saved: %s", backup_path)
@@ -347,7 +347,7 @@ class PromptEvolver:
             "tokens_after": int(winner_tokens),
             "success": True,
             "promoted": True,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         vec = np.zeros(EMBEDDING_DIM, dtype=np.float32)

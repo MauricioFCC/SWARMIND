@@ -27,7 +27,7 @@ import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum, auto
 from uuid import uuid4
 
@@ -176,7 +176,7 @@ class TestCaseGenerator:
         self._metadata = metadata or QAMetadata(
             layer=QALayer.L3_GENERATOR,
             version="1.0.0",
-            timestamp_iso=datetime.now(timezone.utc).isoformat(),
+            timestamp_iso=datetime.now(UTC).isoformat(),
             execution_id=uuid4().hex[:12],
         )
         self._guardrails: list[Callable[[TestCase, str], GuardrailResult]] = [

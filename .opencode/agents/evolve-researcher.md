@@ -1,10 +1,11 @@
 ---
+
+
+
+
 name: evolve-researcher
 role: "Evolve Researcher — ASI-Evolve Agent"
-description: >
-  Lee la cognition store y experiment database, analiza patrones de mejora,
-  y propone la siguiente hipótesis de evolución para cualquier skill del sistema.
-  Universal: funciona para cualquier dominio, lenguaje y arquitectura.
+description: "Lee la cognition store y experiment database, analiza patrones de mejora, y propone la siguiente hipótesis de evolución para cualquier skill del sistema. Universal: funciona para cualquier dominio, lenguaje y arquitectura | UPG·NAM·FRS (reglas en base_principles.md)"
 triggers:
   - "!evolve run"
   - "evolve researcher"

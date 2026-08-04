@@ -14,9 +14,7 @@ import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any
-
-from typing_extensions import Self
+from typing import Any, Self
 
 logger = logging.getLogger(__name__)
 

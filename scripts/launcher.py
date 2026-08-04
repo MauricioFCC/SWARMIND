@@ -31,11 +31,11 @@ def cmd(args: list[str], desc: str = "") -> int:
         print(f"  {desc}")
         print(f"{'='*60}")
     print(f"  $ {' '.join(args)}\n")
-    result = subprocess.run(args, cwd=ROOT)
+    result = subprocess.run(args, cwd=ROOT, check=False)
     if result.returncode != 0:
         print(f"\n  ❌ Failed (exit {result.returncode})")
     else:
-        print(f"\n  ✅ OK")
+        print("\n  ✅ OK")
     return result.returncode
 
 
@@ -80,7 +80,7 @@ def do_lint(args: list[str]) -> int:
 
 def do_gpu() -> int:
     """Show GPU information."""
-    from harness.gpu_accel import HAVE_CUDA, DEVICE_NAME, GPU_MEMORY_GB
+    from harness.gpu_accel import DEVICE_NAME, GPU_MEMORY_GB, HAVE_CUDA
     print(f"\n{'='*60}")
     print("  GPU Information")
     print(f"{'='*60}")

@@ -39,7 +39,9 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0033 | [TDD + Agentes como Fuente Unica de Verdad — Spec-First, Code-Second](adr0033-tdd-agentes-ssot-2026.md) | ACEPTADO | — |
 | 0034 | [Frontier Operations 2026 — Golden Signals, Cache Geometry, Dreaming, SLM-first, LAMaS, Speculative Tools](adr0034-frontier-operations-2026.md) | ACEPTADO | — |
 | 0035 | [Política de Seguridad — Paths Portables + Detección de Secretos](adr0035-security-policy-portable-paths-2026.md) | ACEPTADO | — |
-| 0036 | [Opción A — SSOT Global OpenCode + Mirror Local por Proyecto](adr0036-opcion-a-ssot-global-2026.md) | ACEPTADO | — |
+| 0036 | [Opción A — SSOT Global OpenCode + Mirror Local por Proyecto](adr0036-opcion-a-ssot-global-2026.md) | ACEPTADO (v2.5) | — |
+| 0037 | [Reglas Universales de Código + Auto-Mejora Continua](adr0037-reglas-universales-auto-mejora-2026.md) | ACEPTADO | — |
+| 0038 | [Memoria Central Portable + Backup Automático con Rotación](adr0038-memoria-central-backup-2026.md) | ACEPTADO | — |
 
 ## Resumen por Categoria
 
@@ -103,7 +105,10 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 - **ADR-0035**: Política de Seguridad — paths portables (env vars + Path.home()), scanner de secretos y rutas personales automatizado
 
 ### Infraestructura y Distribución
-- **ADR-0036**: Opción A — SSOT global OpenCode (`~/.config/opencode/`) con sync automático en cada commit + mirror local completo por proyecto DEV-SPACE (preservando config propia)
+- **ADR-0036**: Opción A — SSOT global OpenCode (`~/.config/opencode/`) con sync automático en cada commit + mirror local por proyecto DEV-SPACE (preservando config propia). **Enmendado v2.5**: el motor (harness/) también vive en el global; los proyectos solo reciben `.opencode/` + skills.
+
+### Gobernanza de Código
+- **ADR-0037**: Reglas universales (UPG, NAM, TYP, IMM, SOL, MAG, FSZ, CMP, DEM, CFG) + tests de auto-mejora (`test_universal_rules.py`, `test_opencode_config_sync.py`) + actualización automática de versiones via PyPI + sync de config YAML a la realidad.
 
 ### Estrategia y Dominio
 - **ADR-0001**: Mejoras base transversales del sistema multi-agente

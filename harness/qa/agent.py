@@ -28,7 +28,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum, auto
 from typing import Any
 from uuid import uuid4
@@ -85,7 +85,7 @@ class MCPCommand:
     params: dict[str, Any] = field(default_factory=dict)
     context_id: str = field(default_factory=lambda: uuid4().hex[:8])
     timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
 
@@ -174,7 +174,7 @@ class AutonomousTestAgent:
         self._metadata = metadata or QAMetadata(
             layer=QALayer.L4_AGENT,
             version="1.0.0",
-            timestamp_iso=datetime.now(timezone.utc).isoformat(),
+            timestamp_iso=datetime.now(UTC).isoformat(),
             execution_id=uuid4().hex[:12],
         )
         self._timeout_s = timeout_s

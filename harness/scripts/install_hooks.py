@@ -20,7 +20,7 @@ import shutil
 import stat
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -43,10 +43,12 @@ _LOCAL_HOOK_TEMPLATE = r'''#!/bin/sh
 # PRE-COMMIT HOOK -- Auto-generado por Swarmind Harness (portable, ADR-0035)
 # 1) QA rapido (pipeline end_of_iteration --pre-commit --quick)
 # 2) Sync global opencode (Opción A: SSOT en ~/.config/opencode) -- best effort
+# 3) Backup memoria central (si MEMORY_ROOT existe y backup habilitado) -- best effort
 # Usa uv si esta disponible; fallback a python3 / python.
 _HOOK_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
 _PIPELINE="$_HOOK_DIR/harness/scripts/end_of_iteration.py"
 _SYNC="$_HOOK_DIR/scripts/sync_opencode_global.py"
+_BACKUP="$_HOOK_DIR/scripts/backup_memory.py"
 
 _run_python() {
     if command -v uv >/dev/null 2>&1; then
@@ -69,6 +71,11 @@ fi
 # Sync global opencode: no bloquea el commit si falla (best effort)
 if [ -f "$_SYNC" ]; then
     _run_python "$_SYNC" --quiet >/dev/null 2>&1 || echo "[pre-commit] aviso: sync opencode global fallo (commit continuo)"
+fi
+
+# Backup memoria central: respeta config (intervalo), no bloquea (best effort)
+if [ -f "$_BACKUP" ]; then
+    _run_python "$_BACKUP" >/dev/null 2>&1 || echo "[pre-commit] aviso: backup memoria fallo (commit continuo)"
 fi
 
 echo "[pre-commit] OK"
@@ -148,7 +155,7 @@ def _save_status(installed: bool, timestamp: str = "") -> None:
     status_dir.mkdir(parents=True, exist_ok=True)
     status = {
         "installed": installed,
-        "timestamp": timestamp or datetime.now(timezone.utc).isoformat(),
+        "timestamp": timestamp or datetime.now(UTC).isoformat(),
         "hook_path": os.path.relpath(_HOOK_PATH, _PROJECT_ROOT),
     }
     with open(_STATUS_PATH, "w", encoding="utf-8") as f:

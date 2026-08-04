@@ -111,7 +111,7 @@ class TestTDDFlowIntegration:
 
     def test_trajectory_judge_flags_inefficient_overdelegation(self) -> None:
         """El LLM-as-judge puede declarar INEFFICIENT por sobre-delegacion."""
-        judge = lambda prompt: (  # noqa: E731 - juez deterministico para test.
+        judge = lambda prompt: (
             "VERDICTO: INEFFICIENT\n"
             "RAZON: 5 agentes para 2 pasos es sobre-delegacion evidente.\n"
         )
@@ -175,7 +175,7 @@ class TestTDDFlowIntegration:
         assert "ESPECIFICACIÓN APROBADA" in report.render()
         # 4) Red-team: responder sano (rechaza todo) -> deploy permitido.
         red_teamer = RedTeamer()
-        safe_responder = lambda payload: ""  # noqa: E731 - rechazo generico determinista.
+        safe_responder = lambda payload: ""
         _, deploy_allowed = red_teamer.audit("src/feature_x.py", responder=safe_responder)
         assert deploy_allowed
         # 5) CV post-deploy: sin degradacion -> sin rollback.

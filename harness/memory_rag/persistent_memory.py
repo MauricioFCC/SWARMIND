@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -37,7 +37,7 @@ class MemoryEntry:
     value: Any
     agent: str
     session_id: str
-    timestamp: float = field(default_factory=lambda: datetime.now(timezone.utc).timestamp())
+    timestamp: float = field(default_factory=lambda: datetime.now(UTC).timestamp())
     ttl: int = 0
 
 
@@ -96,7 +96,7 @@ class PersistentMemory:
         entry = self._data.get(key)
         if not entry:
             return None
-        if entry.ttl > 0 and (datetime.now(timezone.utc).timestamp() - entry.timestamp) > entry.ttl:
+        if entry.ttl > 0 and (datetime.now(UTC).timestamp() - entry.timestamp) > entry.ttl:
             del self._data[key]
             self._save()
             return None

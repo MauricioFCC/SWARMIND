@@ -162,18 +162,7 @@ def test_gate_fails_refactor_when_tests_touched() -> None:
 
 def test_report_renders_expected_format(sample_report: TestConfidenceReport) -> None:
     """El render produce EXACTAMENTE el formato del ADR-0033 sin mostrar codigo."""
-    expected = "\n".join(
-        [
-            "✅ ESPECIFICACIÓN APROBADA (Fuente Única de Verdad)",
-            "📊 Métricas de Confianza:",
-            "   • Tests Unitarios: 142/142 Passing (100%)",
-            "   • Property-Based Testing (PBT): 5,000 generaciones sin fallos.",
-            "   • Mutation Score: 88.5% (Robusto, 12 mutantes supervivientes aceptados como riesgo conocido).",
-            "   • Cobertura de Ramas Lógicas: 96.2%",
-            "⏱️ Ciclo Autónomo: 4 iteraciones en el SandboxLoop (3 min 12 seg).",
-            "🛡️ Archivos modificados: 3 en `src/` (Ocultos. Usa `!show code` solo si es estrictamente necesario para debug).",
-        ]
-    )
+    expected = "✅ ESPECIFICACIÓN APROBADA (Fuente Única de Verdad)\n📊 Métricas de Confianza:\n   • Tests Unitarios: 142/142 Passing (100%)\n   • Property-Based Testing (PBT): 5,000 generaciones sin fallos.\n   • Mutation Score: 88.5% (Robusto, 12 mutantes supervivientes aceptados como riesgo conocido).\n   • Cobertura de Ramas Lógicas: 96.2%\n⏱️ Ciclo Autónomo: 4 iteraciones en el SandboxLoop (3 min 12 seg).\n🛡️ Archivos modificados: 3 en `src/` (Ocultos. Usa `!show code` solo si es estrictamente necesario para debug)."
 
     assert sample_report.render() == expected
 

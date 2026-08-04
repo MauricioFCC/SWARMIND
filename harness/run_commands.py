@@ -6,6 +6,7 @@ from __future__ import annotations
 import logging
 import sys
 import time
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
@@ -482,7 +483,6 @@ def _handle_watch_mode(harness_root: Path) -> None:
     """Handle --watch flag - monitors harness/ and .opencode/ for changes."""
     import time as _time
     from datetime import datetime as _datetime
-    from datetime import timezone as _timezone
 
     from harness.cli_common import get_project_root
 
@@ -533,7 +533,7 @@ def _handle_watch_mode(harness_root: Path) -> None:
             if now - idle_since < debounce_seconds:
                 continue
 
-            timestamp = _datetime.now(_timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+            timestamp = _datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
             for f in changed_files[:5]:
                 rel = str(Path(f).relative_to(get_project_root()))
                 _safe_print(f"  [{timestamp}] change detected: {rel}")

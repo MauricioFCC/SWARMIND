@@ -21,7 +21,7 @@ import json
 import logging
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -51,7 +51,7 @@ def cmd_write(args: argparse.Namespace) -> None:
     store = LanceVectorStore()
     _ensure_collection(store)
     
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     note_id = str(uuid.uuid4())
     
     metadata = {
@@ -173,7 +173,7 @@ def cmd_export(args: argparse.Namespace) -> None:
         return
     
     print("# Agent Notes\n")
-    print("*Exported {}*\n".format(datetime.now(timezone.utc).strftime("%Y-%m-%d")))
+    print("*Exported {}*\n".format(datetime.now(UTC).strftime("%Y-%m-%d")))
     
     from collections import defaultdict
     groups: dict[str, list] = defaultdict(list)

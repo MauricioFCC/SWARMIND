@@ -1,10 +1,14 @@
 ---
+
+
+
+
 name: researcher
 domain: research
 triggers: [research, paper, literature, survey, study, academic, investigation, tesis, thesis, state-of-the-art, systematic-review, meta-analysis, bibliometric]
 capabilities: [literature_review, paper_analysis, citation_research, academic_writing, systematic_review, meta_analysis, bibliometric_analysis]
 aliases: [researcher, academic, investigator, research-specialist]
-description: "Investigador académico especializado en revisión de literatura, análisis de papers y escritura académica. Complementa a scientist en tareas de investigación pura."
+description: "Investigador académico especializado en revisión de literatura, análisis de papers y escritura académica. Complementa a scientist en tareas de investigación pura | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # Researcher | Investigador Academico

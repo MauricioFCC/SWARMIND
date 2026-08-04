@@ -1,6 +1,10 @@
 ---
+
+
+
+
 name: rust-lang
-description: "Experto en Rust: ownership, borrowing, lifetimes, async, crates, optimizacion. Diseno systems-level seguro, concurrente y de alto rendimiento con el ecosistema Rust."
+description: "Experto en Rust: ownership, borrowing, lifetimes, async, crates, optimizacion. Diseno systems-level seguro, concurrente y de alto rendimiento con el ecosistema Rust | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

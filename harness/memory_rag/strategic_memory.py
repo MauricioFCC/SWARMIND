@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -107,7 +107,7 @@ class StrategicMemory:
         item = MemoryItem(
             key=key,
             value=value,
-            last_accessed=datetime.now(timezone.utc).timestamp(),
+            last_accessed=datetime.now(UTC).timestamp(),
             semantic_tags=tags or [],
             entities=entities or [],
         )
@@ -133,7 +133,7 @@ class StrategicMemory:
             return None
 
         item.access_count += 1
-        item.last_accessed = datetime.now(timezone.utc).timestamp()
+        item.last_accessed = datetime.now(UTC).timestamp()
         # Refuerzo de importancia por re-acceso
         item.importance_score = min(1.0, item.importance_score + 0.05)
         self._save()

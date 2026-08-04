@@ -16,7 +16,7 @@ import json
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
@@ -62,7 +62,7 @@ class CacheEntry:
             return True
         try:
             created = datetime.fromisoformat(self.created_at)
-            elapsed = (datetime.now(timezone.utc) - created).total_seconds()
+            elapsed = (datetime.now(UTC) - created).total_seconds()
             return elapsed > self.ttl_seconds
         except (ValueError, TypeError):
             return True
@@ -275,7 +275,7 @@ class SemanticCache:
             True si se almaceno correctamente.
         """
         self._stats["sets"] += 1
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         prompt_hash = self._hash_prompt(prompt)
         effective_ttl = ttl_seconds or self._default_ttl
 
@@ -507,7 +507,7 @@ class SemanticCache:
                 filters={"prompt_hash": entry.prompt_hash},
                 updates={
                     "hit_count": entry.hit_count + 1,
-                    "last_accessed": datetime.now(timezone.utc).isoformat(),
+                    "last_accessed": datetime.now(UTC).isoformat(),
                 },
             )
         except Exception as _exc:  # noqa: BLE001
@@ -548,7 +548,7 @@ class SemanticCache:
             return True
         try:
             created = datetime.fromisoformat(created_at)
-            elapsed = (datetime.now(timezone.utc) - created).total_seconds()
+            elapsed = (datetime.now(UTC) - created).total_seconds()
             return elapsed > ttl_seconds
         except (ValueError, TypeError):
             return True
@@ -658,7 +658,7 @@ class SemanticCache:
         lancedb_db = getattr(self._store, '_db', None)
 
         if lancedb_available and lancedb_db is not None:
-            now = datetime.now(timezone.utc).isoformat()
+            now = datetime.now(UTC).isoformat()
             sample = {
                 "id": "__schema_init__",
                 "vector": [0.0] * DEFAULT_EMBEDDING_DIM,
@@ -695,7 +695,7 @@ class SemanticCache:
         lancedb_db = getattr(self._store, '_db', None)
 
         if lancedb_available and lancedb_db is not None:
-            now = datetime.now(timezone.utc).isoformat()
+            now = datetime.now(UTC).isoformat()
             sample = {
                 "id": "__schema_init__",
                 "vector": [0.0] * DEFAULT_EMBEDDING_DIM,

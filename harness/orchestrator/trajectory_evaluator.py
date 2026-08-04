@@ -274,7 +274,7 @@ class TrajectoryEvaluator:
         prompt = build_judge_prompt(task_id, steps)
         try:
             response = self._judge(prompt)  # type: ignore[misc]
-        except Exception as exc:  # pragma: no cover - defensivo
+        except Exception as exc:  # noqa: BLE001 - fallback defensivo si judge falla  # pragma: no cover - defensivo
             logger.error(
                 "WHAT: el judge fallo al evaluar '%s'. WHY: excepcion %s al "
                 "invocar el callable. WHERE: TrajectoryEvaluator._evaluate_with_judge() "
@@ -371,8 +371,8 @@ class TrajectoryEvaluator:
 
 
 __all__ = [
-    "TrajectoryStep",
-    "TrajectoryReport",
     "TrajectoryEvaluator",
+    "TrajectoryReport",
+    "TrajectoryStep",
     "build_judge_prompt",
 ]

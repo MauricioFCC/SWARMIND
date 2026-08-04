@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from harness.qa import QALayer, QAMetadata
@@ -133,7 +133,7 @@ class FailurePredictor:
         self._metadata = metadata or QAMetadata(
             layer=QALayer.L1_PREDICTOR,
             version="1.0.0",
-            timestamp_iso=datetime.now(timezone.utc).isoformat(),
+            timestamp_iso=datetime.now(UTC).isoformat(),
             execution_id=uuid4().hex[:12],
         )
         self._historial: dict[str, HistorialEjecucion] = {}

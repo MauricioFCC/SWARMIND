@@ -1,7 +1,11 @@
 ---
+
+
+
+
 name: psychology
 domain: psychology
-description: "Psicologia aplicada a sistemas multi-agente: psicologia cognitiva, organizacional, del aprendizaje y positiva para mejorar la interaccion y efectividad de agentes."
+description: "Psicologia aplicada a sistemas multi-agente: psicologia cognitiva, organizacional, del aprendizaje y positiva para mejorar la interaccion y efectividad de agentes | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

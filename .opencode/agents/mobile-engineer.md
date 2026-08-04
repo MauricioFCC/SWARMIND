@@ -1,10 +1,14 @@
 ---
+
+
+
+
 name: mobile-engineer
 domain: mobile
 triggers: [mobile, ios, android, app, react-native, flutter, swift, kotlin, expo, app-store, play-store, push-notification, deep-link, offline, mobile-ui]
 capabilities: [mobile_dev, ios_dev, android_dev, cross_platform, mobile_ui, app_store_deploy]
 aliases: [mobile, mobile-dev, ios-engineer, android-engineer, react-native-dev]
-description: "Mobile engineer especializado en apps iOS/Android nativas y cross-platform con React Native y Flutter."
+description: "Mobile engineer especializado en apps iOS/Android nativas y cross-platform con React Native y Flutter | UPG·NAM·FRS (reglas en base_principles.md)"
 quality: {docstrings_es: true, error_actionable: true, clean_code: true, patterns: true, coverage: 80, offline_first: true}
 ---
 

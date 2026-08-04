@@ -13,7 +13,7 @@ para inferir tipos de datos, reemplazando ~100 líneas de if/elif anidados.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 # ---------------------------------------------------------------------------
@@ -167,7 +167,7 @@ def generate_sample_row(collection_name: str) -> dict[str, Any]:
     Returns:
         Dict con campos base + específicos de la colección
     """
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     dim = 384
 
     # Campos base comunes a todas las colecciones

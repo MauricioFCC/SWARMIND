@@ -35,7 +35,7 @@ import json
 import logging
 import threading
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -88,10 +88,10 @@ class KnowledgeRecord:
     tags: list[str] = field(default_factory=list)
     version: int = 1
     created_at: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
     updated_at: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
     ttl_seconds: int = 0
     confidence: float = 1.0
@@ -121,7 +121,7 @@ class KnowledgeRecord:
         if self.ttl_seconds <= 0:
             return False
         created = datetime.fromisoformat(self.created_at)
-        elapsed = (datetime.now(timezone.utc) - created).total_seconds()
+        elapsed = (datetime.now(UTC) - created).total_seconds()
         return elapsed > self.ttl_seconds
 
 
@@ -246,7 +246,7 @@ class FederatedMemoryStore:
                 # Update existing
                 existing.value = value
                 existing.version += 1
-                existing.updated_at = datetime.now(timezone.utc).isoformat()
+                existing.updated_at = datetime.now(UTC).isoformat()
                 existing.confidence = confidence
                 existing.tags = list(set(existing.tags + (tags or [])))
                 record = existing
@@ -458,7 +458,7 @@ class FederatedMemoryStore:
         ]
         data = {
             "project": self._project_name,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "record_count": len(records),
             "records": records,
         }

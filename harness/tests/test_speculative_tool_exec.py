@@ -7,9 +7,9 @@ políticas de seguridad (nada side-effect sin registro), confirm lossless.
 import pytest
 
 from harness.orchestrator.speculative_tool_exec import (
+    FORBIDDEN_TOOLS,
     PatternLearner,
     SpeculativeToolExecutor,
-    FORBIDDEN_TOOLS,
 )
 
 

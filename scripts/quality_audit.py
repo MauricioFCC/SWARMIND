@@ -134,7 +134,7 @@ if os.path.exists(adr_path):
 print("\n6. ULTIMOS 5 COMMITS")
 result = subprocess.run(
     ["git", "log", "--oneline", "-5"],
-    capture_output=True,
+    capture_output=True, check=False,
     text=True,
 )
 for line in result.stdout.strip().split("\n"):

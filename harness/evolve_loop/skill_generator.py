@@ -12,7 +12,7 @@ import logging
 import os
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -183,7 +183,7 @@ class SkillGenerator:
             lines.append(f"{i}. {step}")
         lines.append("")
         lines.append("---")
-        lines.append(f"*Generado automaticamente por SkillGenerator en {datetime.now(timezone.utc).isoformat()}*")
+        lines.append(f"*Generado automaticamente por SkillGenerator en {datetime.now(UTC).isoformat()}*")
         return "\n".join(lines)
 
     def _register_in_yaml(
@@ -195,7 +195,7 @@ class SkillGenerator:
             "path": str(md_path),
             "domain": domain,
             "agent": agent,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "trigger": trigger[:200],  # cap length
         }
 
@@ -237,7 +237,7 @@ class SkillGenerator:
         import numpy as np
 
         steps_text = "\n".join(f"{i+1}. {s}" for i, s in enumerate(steps))
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         metadata: dict[str, Any] = {
             "name": slug,

@@ -1,7 +1,11 @@
 ---
+
+
+
+
 name: legal-doc
 domain: legal
-description: "Skill contextual para el dominio jurídico con referencias a sistemas legales jurisdiccionales (ej. Colombia) — análisis de jurisprudencia, normas, casos multi-especialidad, redacción de demandas, conceptos, derecho comparado y consulta de fuentes oficiales."
+description: "Skill contextual para el dominio jurídico con referencias a sistemas legales jurisdiccionales (ej. Colombia) — análisis de jurisprudencia, normas, casos multi-especialidad, redacción de demandas, conceptos, derecho comparado y consulta de fuentes oficiales | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

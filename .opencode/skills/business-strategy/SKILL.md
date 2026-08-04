@@ -1,7 +1,11 @@
 ---
+
+
+
+
 name: business-strategy
 domain: business
-description: "Analisis estrategico de negocios, modelos de negocio, analisis DOFA/SWOT, Porter, canvas, planes de negocio, ROI, KPIs de negocio, OKRs, y toma de decisiones estrategicas."
+description: "Analisis estrategico de negocios, modelos de negocio, analisis DOFA/SWOT, Porter, canvas, planes de negocio, ROI, KPIs de negocio, OKRs, y toma de decisiones estrategicas | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

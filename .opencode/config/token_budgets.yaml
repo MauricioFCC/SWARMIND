@@ -15,7 +15,6 @@ role_budgets:
     compression_level: medium
     include_principles: always
     reason: "Orquestador Swiss Watch: contexto completo de delegacion + token economics"
-
   builder:
     budget: 3072
     compression_level: medium
@@ -39,6 +38,18 @@ role_budgets:
     compression_level: medium
     include_principles: always
     reason: "Auto-mejora: contexto de cognition store + experiment history"
+
+  release-ops:
+    budget: 2048
+    compression_level: medium
+    include_principles: space_available
+    reason: "Releases/CI: contexto de workflows + branch protection, presupuesto moderado"
+
+  token-budget-auditor:
+    budget: 2048
+    compression_level: high
+    include_principles: space_available
+    reason: "Auditoria de tokens: reglas concisas, compresion agresiva por diseno"
 
 # Tecnicas de compresion por nivel
 compression_levels:

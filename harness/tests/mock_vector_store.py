@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Union
 
 import numpy as np
@@ -97,7 +97,7 @@ class _MemCollection:
             Lista de IDs insertados.
         """
         ids: list[str] = []
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         for item_dict in items:
             item_id = item_dict.get("id", str(uuid.uuid4()))
             ids.append(item_id)
@@ -298,7 +298,7 @@ class MockVectorStore:
 
         ids: list[str] = []
         items: list[dict[str, Any]] = []
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         for i in range(n):
             rid = str(uuid.uuid4())
             ids.append(rid)
@@ -351,7 +351,7 @@ class MockVectorStore:
             "name": name,
             "item_count": len(col.items),
             "schema": {},
-            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "last_updated": datetime.now(UTC).isoformat(),
         }
 
     def hybrid_search(
@@ -434,7 +434,7 @@ class MockVectorStore:
             )
 
         count = 0
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         for item in col.items.values():
             match = all(
                 item.metadata.get(k) == v

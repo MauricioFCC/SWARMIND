@@ -1,10 +1,14 @@
 ---
+
+
+
+
 name: guardian
 domain: quality
 triggers: [test, testing, security, audit, risk, documentation, docs, monitor, monitoring, quality, review, check, validate, hardening, lint, format, coverage, ci, pipeline, compliance, alert, logging, observability]
 capabilities: [quality_gates, security_review, risk_assessment, documentation, monitoring, code_review, compliance, mutation_testing, adversarial_testing, property_based_testing]
 aliases: [guardian, qa, sec, risk, docs, ops]
-description: Guardián universal — calidad, seguridad, riesgo, documentación y operaciones
+description: "Guardián universal — calidad, seguridad, riesgo, documentación y operaciones | UPG·NAM·FRS (reglas en base_principles.md)"
 quality_metrics:
   Swarmind_mutation_score: "≥85%"
   adversarial_resilience: "≥90%"

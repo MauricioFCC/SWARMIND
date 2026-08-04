@@ -1,0 +1,81 @@
+name: Auto-merge on green
+
+# Activa auto-merge en PRs que no son drafts y cuyos checks requeridos
+# (lint, test, security) ya estan pasando. Cuando todos los status checks
+# lleguen a "success" el PR se fusiona automaticamente.
+#
+# Seguridad:
+#   - Solo activa auto-merge en PRs desde la misma repo (no forks)
+#   - Solo activa auto-merge si el autor no es dependabot (lo hace manual)
+#   - El merge final sigue requiriendo las branch protections (CODEOWNERS,
+#     approvals si estan configuradas, conversaciones resueltas).
+#
+# Comportamiento:
+#   - En PR opened/reopened/synchronize: revisa checks pendientes
+#   - Si los 3 checks requeridos (lint, test, security) ya pasaron en el
+#     ultimo commit, llama a la API para activar auto-merge
+#   - Si no, espera a que la check "completed" corra y reintenta
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+    # Solo procesa PRs que ya estan listos (no drafts)
+  # Tambien escucha a checks que terminan (no solo al PR en si)
+  check_run:
+    types: [completed]
+
+permissions:
+  # Necesario para llamar a la API de auto-merge
+  pull-requests: write
+  # Necesario para reportar el status en el check summary
+  checks: read
+  # enable-pull-request-automerge (v3) llama a la API de auto-merge y
+  # requiere contents: write (con read: "Resource not accessible by integration")
+  contents: write
+
+jobs:
+  auto-merge:
+    # Solo corre para PRs (no cuando viene de check_run)
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.event.repository.full_name &&
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      github.event.pull_request.user.login != 'dependabot'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          # Token del repo (no del PR) para llamar a la API
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Pull request number del evento
+          pull-request-number: ${{ github.event.pull_request.number }}
+          # Estrategia de merge: squash (recomendado para linear history)
+          merge-method: squash
+
+  # Job 2: cuando un check_required termina, intenta activar auto-merge
+  # si TODOS los checks requeridos ya pasaron.
+  check-completion:
+    if: >
+      github.event_name == 'check_run' &&
+      github.event.check_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find PRs for this commit
+        id: find-pr
+        uses: peter-evans/find-pull-request-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit: ${{ github.event.check_run.head_sha }}
+          # Solo PRs abiertos (no merged/closed)
+      - name: Enable auto-merge on PR
+        if: steps.find-pr.outputs.pull-request-number
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ steps.find-pr.outputs.pull-request-number }}
+          merge-method: squash

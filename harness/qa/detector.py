@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 import statistics
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum, auto
 from uuid import uuid4
 
@@ -100,7 +100,7 @@ class AnomalyReport:
     anomaly_rate: float
     scan_id: str = field(default_factory=lambda: uuid4().hex[:12])
     ejecutado_en: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+        default_factory=lambda: datetime.now(UTC).isoformat()
     )
 
     @property
@@ -137,7 +137,7 @@ class VisualAnomalyDetector:
         self._metadata = metadata or QAMetadata(
             layer=QALayer.L2_DETECTOR,
             version="1.0.0",
-            timestamp_iso=datetime.now(timezone.utc).isoformat(),
+            timestamp_iso=datetime.now(UTC).isoformat(),
             execution_id=uuid4().hex[:12],
         )
         self._z_score_threshold = z_score_threshold

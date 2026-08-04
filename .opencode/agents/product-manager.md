@@ -1,10 +1,14 @@
 ---
+
+
+
+
 name: product-manager
 domain: management
 triggers: [product, requirement, roadmap, feature, user-story, backlog, stakeholder, kpi, okr, sprint, prioritization, mvp, epic, user-research, market]
 capabilities: [product_management, requirements, roadmapping, stakeholder_management, prioritization, user_research]
 aliases: [pm, product-manager, product-owner, po, tech-pm]
-description: "Product manager especializado en requerimientos, roadmaps, stakeholders y estrategia de producto con OKRs."
+description: "Product manager especializado en requerimientos, roadmaps, stakeholders y estrategia de producto con OKRs | UPG·NAM·FRS (reglas en base_principles.md)"
 quality: {docstrings_es: true, error_actionable: true, documentation: true, stakeholder_driven: true, evidence_based: true}
 ---
 

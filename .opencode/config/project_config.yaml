@@ -77,8 +77,8 @@ HARNESS:
     - telemetry_events
     - session_kpis
     - agent_interactions
-  agent_count: 8
-  skill_count: 10
+  agent_count: 22
+  skill_count: 32
   model_routing: "hybrid (local Ollama + cloud API)"
   hitl_enabled: true
   gateway_modes: ["cli"]
@@ -93,27 +93,63 @@ HARNESS:
 
 # ── Agent Ecosystem ───────────────────────────────────────────────────────────
 AGENTS:
-  total: 8
+  total: 22
   agent_list:
-    - coordinator        # Swiss Watch orchestrator (default)
-    - builder             # Implementacion + Competitive Programming
-    - scientist           # Investigacion + AI/ML + Text Analysis
-    - guardian            # Calidad + Testing vanguardia + Seguridad
-    - evolve              # Meta-agente: auto-mejora continua
-    - evolve-researcher   # Sub-agente: investigacion para evolve
-    - evolve-engineer     # Sub-agente: ingenieria para evolve
-    - evolve-analyzer     # Sub-agente: analisis para evolve
+    - architect
+    - backend-engineer
+    - builder
+    - coordinator
+    - data-engineer
+    - database-administrator
+    - devops
+    - evolve
+    - evolve-analyzer
+    - evolve-engineer
+    - evolve-researcher
+    - frontend-engineer
+    - guardian
+    - mobile-engineer
+    - product-manager
+    - qa-engineer
+    - release-ops
+    - researcher
+    - reviewer
+    - scientist
+    - security-engineer
+    - token-budget-auditor
 
 SKILLS:
-  total: 10
+  total: 32
   skill_list:
+    - ads-optimizer
     - alpha-research
+    - architecture
+    - behavioral-economics
+    - business-strategy
+    - communication
+    - creative-design
+    - data-science
+    - devops-infra
+    - education
+    - ethics
     - evolve
+    - frontend-uiux
     - healthtech
     - hedgefund
     - legal-doc
+    - linguistics
     - math-doc
+    - physical-sciences
     - pos-retail
+    - project-management
+    - psychology
     - quant-trading
+    - responsive-ui
     - risk-execution
+    - risk-intelligence
+    - rust-lang
     - science-doc
+    - security-audit
+    - sociology
+    - sustainability
+    - swarm-release-ops

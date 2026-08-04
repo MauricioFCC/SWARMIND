@@ -1,7 +1,11 @@
 ---
+
+
+
+
 name: education
 domain: education
-description: "Ciencias de la educacion: diseno instruccional, pedagogia, andragogia, taxonomia de Bloom, microlearning, y evaluacion educativa."
+description: "Ciencias de la educacion: diseno instruccional, pedagogia, andragogia, taxonomia de Bloom, microlearning, y evaluacion educativa | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

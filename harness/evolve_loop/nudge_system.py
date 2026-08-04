@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
@@ -97,15 +97,26 @@ class AutoNudge:
         if not force and (now - self._last_nudge) < self._interval:
             return None
 
-        # 1. Recolectar contexto actual
-        context = self._collect_context()
+        # 1. Recolectar contexto actual (tolerante a fallos: si falla,
+        #    se registra error y se omite el nudge — el nudge es best-effort)
+        try:
+            context = self._collect_context()
+        except Exception as exc:  # noqa: BLE001 - nudge nunca debe romper el loop principal
+            self._stats["errors"] += 1
+            logger.warning("Nudge: error recolectando contexto (%s), omitido", exc)
+            return None
 
         # 2. Evaluar si hay contexto valioso
         if not context:
             logger.debug("Nudge: no context to persist")
             return None
 
-        score = self._evaluate_context(context)
+        try:
+            score = self._evaluate_context(context)
+        except Exception as exc:  # noqa: BLE001 - evaluacion best-effort
+            self._stats["errors"] += 1
+            logger.warning("Nudge: error evaluando contexto (%s), omitido", exc)
+            return None
         if score < NUDGE_MIN_SCORE:
             logger.debug("Nudge: context score %.2f < %.2f, skipping", score, NUDGE_MIN_SCORE)
             return None
@@ -198,7 +209,7 @@ class AutoNudge:
         """
         Persiste un nudge en la cognition store.
         """
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         # Construir contenido del nudge
         domains = set()

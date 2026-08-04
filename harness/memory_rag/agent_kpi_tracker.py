@@ -21,7 +21,7 @@ import json
 import logging
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import numpy as np
 
@@ -93,7 +93,7 @@ class AgentPerformanceRecord:
             "pipeline_type": self.pipeline_type,
             "complexity_score": round(self.complexity_score, 3),
             "metadata": json.dumps(self.metadata),
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
 
 
@@ -121,9 +121,9 @@ class SkillEffectivenessRecord:
             "avg_duration_ms": round(self.avg_duration_ms, 2),
             "avg_tokens_saved": self.avg_tokens_saved,
             "promotion_count": self.promotion_count,
-            "last_used": datetime.now(timezone.utc).isoformat(),
+            "last_used": datetime.now(UTC).isoformat(),
             "metadata": json.dumps(self.metadata),
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
 
 
@@ -152,7 +152,7 @@ class TelemetryEventRecord:
             "status": self.status,
             "tags": json.dumps(self.tags),
             "metadata": json.dumps(self.metadata),
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
 
 
@@ -175,7 +175,7 @@ class SessionKPIRecord:
     metadata: dict = field(default_factory=dict)
 
     def to_lancedb_row(self) -> dict:
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         return {
             "id": str(uuid.uuid4()),
             "session_id": self.session_id,
@@ -391,7 +391,7 @@ class AgentKpiTracker:
                 "avg_duration_ms": round(new_avg, 2),
                 "avg_tokens_saved": existing.get("avg_tokens_saved", 0) + tokens_saved,
                 "promotion_count": existing.get("promotion_count", 0) + (1 if promoted else 0),
-                "last_used": datetime.now(timezone.utc).isoformat(),
+                "last_used": datetime.now(UTC).isoformat(),
             }
 
             self._store.update_records(
@@ -607,7 +607,7 @@ class AgentKpiTracker:
             "duration_ms": round(duration_ms, 2),
             "success": success,
             "metadata": json.dumps(metadata or {}),
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
         }
         return self._insert(COLL_AGENT_INTERACTIONS, row)
 

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import random
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from harness.evals.eval_factory import EvalResult
 
@@ -67,7 +67,7 @@ def eval_agent_completion() -> list[EvalResult]:
                 metric="completion",
                 value=round(rate, 4),
                 threshold=_DEFAULT_THRESHOLDS["agent"]["completion"],
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 metadata={
                     "complexity": complexity,
                     "n_tasks": config["count"],
@@ -159,7 +159,7 @@ def eval_agent_tool_usage() -> list[EvalResult]:
                 metric="tool_usage",
                 value=round(combined, 4),
                 threshold=_DEFAULT_THRESHOLDS["agent"]["tool_usage"],
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 metadata={
                     "tool": tool["name"],
                     "n_invocations": _N_INVOCATIONS_PER_TOOL,

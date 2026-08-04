@@ -27,7 +27,6 @@ from harness.orchestrator.mars_scheduler import (
     TaskSpec,
 )
 
-
 # ---------------------------------------------------------------------------
 # Validacion de parametros del constructor
 # ---------------------------------------------------------------------------

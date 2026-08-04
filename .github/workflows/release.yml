@@ -19,7 +19,8 @@ jobs:
           version: "latest"
 
       - name: Set up Python
-        run: uv python install 3.11
+        # requires-python >=3.12 en pyproject.toml
+        run: uv python install 3.12
 
       - name: Build package
         run: uv build

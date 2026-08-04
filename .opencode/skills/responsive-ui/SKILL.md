@@ -1,6 +1,10 @@
 ---
+
+
+
+
 name: responsive-ui
-description: "Experto en interfaces responsivas, accesibilidad WCAG 2.2 AA/AAA, design systems tokenizados, component libraries y optimizacion de experiencia de usuario."
+description: "Experto en interfaces responsivas, accesibilidad WCAG 2.2 AA/AAA, design systems tokenizados, component libraries y optimizacion de experiencia de usuario | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

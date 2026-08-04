@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import random
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from harness.evals.eval_factory import EvalResult
 
@@ -68,7 +68,7 @@ def eval_llm_accuracy() -> list[EvalResult]:
                 metric="accuracy",
                 value=round(accuracy, 4),
                 threshold=_DEFAULT_THRESHOLDS["llm"]["accuracy"],
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 metadata={
                     "model": variant["model"],
                     "prompt_type": variant["prompt"],
@@ -155,7 +155,7 @@ def eval_llm_latency() -> list[EvalResult]:
                     metric=metric_name,
                     value=value,
                     threshold=_DEFAULT_THRESHOLDS["llm"]["latency"],
-                    timestamp=datetime.now(timezone.utc).isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                     metadata={
                         "model": model_name,
                         "percentile": percentile_name,
@@ -218,7 +218,7 @@ def eval_llm_cost() -> list[EvalResult]:
                 metric="cost",
                 value=round(total, 6),
                 threshold=_DEFAULT_THRESHOLDS["llm"]["cost"],
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 metadata={
                     "model": model_name,
                     "input_tokens": _AVG_INPUT_TOKENS,

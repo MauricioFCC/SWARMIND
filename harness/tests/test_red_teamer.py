@@ -11,8 +11,8 @@ import pytest
 
 from harness.orchestrator.red_teamer import (
     AttackVector,
-    RedTeamFinding,
     RedTeamer,
+    RedTeamFinding,
 )
 
 ATTACK_TYPES = {

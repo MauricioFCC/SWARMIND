@@ -1,7 +1,11 @@
 ---
+
+
+
+
 name: creative-design
 domain: design
-description: "Pensamiento creativo y diseno: design thinking, ideacion, prototipado, branding, identidad visual, y experiencia de usuario (no-code)."
+description: "Pensamiento creativo y diseno: design thinking, ideacion, prototipado, branding, identidad visual, y experiencia de usuario (no-code) | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

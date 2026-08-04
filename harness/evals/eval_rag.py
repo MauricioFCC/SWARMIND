@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import random
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from harness.evals.eval_factory import EvalResult
 
@@ -68,7 +68,7 @@ def eval_rag_recall() -> list[EvalResult]:
                 metric="recall",
                 value=round(recall, 4),
                 threshold=_DEFAULT_THRESHOLDS["rag"]["recall"],
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 metadata={
                     "top_k": k,
                     "n_queries": _N_QUERIES,
@@ -138,7 +138,7 @@ def eval_rag_faithfulness() -> list[EvalResult]:
                 metric="faithfulness",
                 value=faithfulness,
                 threshold=_DEFAULT_THRESHOLDS["rag"]["faithfulness"],
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 metadata={
                     "level": level_name,
                     "n_scenarios": n_cases,

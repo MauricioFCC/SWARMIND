@@ -12,7 +12,7 @@ import hashlib
 import json
 import logging
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from harness.memory_rag.compaction import structured_compact
@@ -154,7 +154,7 @@ class ReversibleCompactor:
         payload = {
             _KEY_HASH: hash_id,
             _KEY_ORIGINAL: original,
-            _KEY_CREATED: datetime.now(timezone.utc).isoformat(),
+            _KEY_CREATED: datetime.now(UTC).isoformat(),
         }
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         return path

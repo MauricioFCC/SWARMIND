@@ -20,7 +20,7 @@ import json
 import logging
 import time
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -265,7 +265,7 @@ class TelemetryTracker:
     # Golden Signals (ADR-0034)
     # ------------------------------------------------------------------
 
-    def enable_golden_signals(self, **kwargs) -> "GoldenSignals":
+    def enable_golden_signals(self, **kwargs) -> GoldenSignals:
         """Habilita Golden Signals LLM en este tracker (Composition Root).
 
         Args:
@@ -346,7 +346,7 @@ class TelemetryTracker:
     def export_summary(self) -> str:
         """Exporta un resumen de todas las sesiones."""
         summary = {
-            "export_time": datetime.now(timezone.utc).isoformat(),
+            "export_time": datetime.now(UTC).isoformat(),
             "total_sessions": len(self._sessions),
             "sessions": [
                 s.summary() for s in self._sessions.values()

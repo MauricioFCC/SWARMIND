@@ -1,10 +1,14 @@
 ---
+
+
+
+
 name: data-engineer
 domain: data
 triggers: [data, etl, pipeline, database, warehouse, big data, streaming, datos, data pipeline, data lake, data warehouse, spark, airflow, dbt, sql, nosql, analytics, bi, batch, real-time]
 capabilities: [data_pipeline, etl_elt, data_warehouse, streaming_processing, data_modeling, data_quality, orchestration]
 aliases: [data-engineer, data-engineer, etl-engineer, data-pipeline-engineer, analytics-engineer]
-description: "Ingeniero de datos especializado en pipelines ETL, data warehouses y procesamiento de datos con calidad."
+description: "Ingeniero de datos especializado en pipelines ETL, data warehouses y procesamiento de datos con calidad | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # Data Engineer | Ingeniero de Datos
