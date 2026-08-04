@@ -92,9 +92,12 @@ jobs:
           restore-keys: |
             uv-${{ runner.os }}-
       - name: Install dependencies
+        # regex es dependencia de safety (import directo); no viene del
+        # dependency-group test -> sin el, safety falla en Python 3.12
+        # ('Blocked import of regex from current working directory').
         run: |
           uv sync
-          uv pip install 'safety>=3.0' bandit
+          uv pip install 'safety>=3.0' bandit regex
       - name: Bandit
         run: uv run bandit -r harness/ -x harness/tests -ll -q
       - name: Security audit

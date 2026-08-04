@@ -24,9 +24,11 @@ jobs:
           restore-keys: |
             uv-${{ runner.os }}-
       - name: Install dependencies
+        # regex es dependencia de safety (import directo); no viene del
+        # dependency-group test -> sin el, safety falla en Python 3.12.
         run: |
           uv sync
-          uv pip install 'safety>=3.0' bandit
+          uv pip install 'safety>=3.0' bandit regex
       - name: Bandit
         # Mismo patron que el job Security de ci.yml (fix a032c36):
         # se audita el lockfile exportado, NO el Python del sistema

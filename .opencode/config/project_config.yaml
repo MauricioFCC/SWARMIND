@@ -77,8 +77,8 @@ HARNESS:
     - telemetry_events
     - session_kpis
     - agent_interactions
-  agent_count: 20
-  skill_count: 31
+  agent_count: 22
+  skill_count: 32
   model_routing: "hybrid (local Ollama + cloud API)"
   hitl_enabled: true
   gateway_modes: ["cli"]
@@ -93,7 +93,7 @@ HARNESS:
 
 # ── Agent Ecosystem ───────────────────────────────────────────────────────────
 AGENTS:
-  total: 20
+  total: 22
   agent_list:
     - architect
     - backend-engineer
@@ -111,41 +111,15 @@ AGENTS:
     - mobile-engineer
     - product-manager
     - qa-engineer
+    - release-ops
     - researcher
     - reviewer
     - scientist
     - security-engineer
-    - architect
-    - backend-engineer
-    - builder
-    - coordinator
-    - data-engineer
-    - database-administrator
-    - devops
-    - evolve
-    - evolve-analyzer
-    - evolve-engineer
-    - evolve-researcher
-    - frontend-engineer
-    - guardian
-    - mobile-engineer
-    - product-manager
-    - qa-engineer
-    - researcher
-    - reviewer
-    - scientist
-    - security-engineer
-    - coordinator        # Swiss Watch orchestrator (default)
-    - builder             # Implementacion + Competitive Programming
-    - scientist           # Investigacion + AI/ML + Text Analysis
-    - guardian            # Calidad + Testing vanguardia + Seguridad
-    - evolve              # Meta-agente: auto-mejora continua
-    - evolve-researcher   # Sub-agente: investigacion para evolve
-    - evolve-engineer     # Sub-agente: ingenieria para evolve
-    - evolve-analyzer     # Sub-agente: analisis para evolve
+    - token-budget-auditor
 
 SKILLS:
-  total: 31
+  total: 32
   skill_list:
     - ads-optimizer
     - alpha-research
@@ -178,44 +152,4 @@ SKILLS:
     - security-audit
     - sociology
     - sustainability
-    - ads-optimizer
-    - alpha-research
-    - architecture
-    - behavioral-economics
-    - business-strategy
-    - communication
-    - creative-design
-    - data-science
-    - devops-infra
-    - education
-    - ethics
-    - evolve
-    - frontend-uiux
-    - healthtech
-    - hedgefund
-    - legal-doc
-    - linguistics
-    - math-doc
-    - physical-sciences
-    - pos-retail
-    - project-management
-    - psychology
-    - quant-trading
-    - responsive-ui
-    - risk-execution
-    - risk-intelligence
-    - rust-lang
-    - science-doc
-    - security-audit
-    - sociology
-    - sustainability
-    - alpha-research
-    - evolve
-    - healthtech
-    - hedgefund
-    - legal-doc
-    - math-doc
-    - pos-retail
-    - quant-trading
-    - risk-execution
-    - science-doc
+    - swarm-release-ops

@@ -1,6 +1,8 @@
 ---
 name: swarm-release-ops
-description: "Release engineering y CI/CD para SWARMIND: GitHub Actions, workflows de CI, uv, safety, bandit, auto-merge, branch protection, releases semver y diagnostico de checks rojos. Usar cuando se pida release, CI, pipeline, workflow, GitHub Actions, auto-merge, deploy, tag, checks rojos o diagnostico de runs | UPG·NAM·FRS (reglas en base_principles.md)"
+domain: swarm-release-ops
+version: 1.0.0
+description: "Release engineering y CI/CD de SWARMIND: GitHub Actions, uv, safety, bandit, auto-merge, branch protection. Usar con release, CI, workflow, pipeline, deploy, checks rojos | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # Swarm Release Ops | Release Engineering y CI/CD de SWARMIND
