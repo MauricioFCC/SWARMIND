@@ -1,10 +1,11 @@
 # ADR-0040: Auditoría Token-Economics — Plan de Acción H1-H8
 
 ## Estado
-**PROPUESTO (plan de acción)** — Auditoría ejecutada el 2026-08-04 por
-token-budget-auditor (verificación directa de archivos y ejecución de chequeos).
-Extiende ADR-0039 (recomendaciones frontier) y ADR-0013/ADR-0031. Ejecución
-priorizada pendiente de validación por equipo.
+**IMPLEMENTADO (H1, H3, H4, H5, H6, H7, H8 — 2026-08-04). H2 PENDIENTE (baja prioridad)** —
+Auditoría ejecutada el 2026-08-04 por token-budget-auditor (verificación directa de
+archivos y ejecución de chequeos). Extiende ADR-0039 (recomendaciones frontier) y
+ADR-0013/ADR-0031. Verificación: 176+ tests pasando (suite de sincronía, agentes,
+token budgets, orquestador, reglas universales).
 
 ## Contexto
 La arquitectura de economía de SWARMIND es sólida en diseño (minificación 2-tier
@@ -112,3 +113,84 @@ tool output (POOL_TOOL_OUTPUT = 0.20 del presupuesto, token_budget.py:44),
 - P0 (H1-H3): siguiente iteración de builder/evolve-engineer con test de validación.
 - P1 (H4-H7): iteración posterior con medición de éxito (catálogo de métricas).
 - P2 (H8): aplicar junto con ADR-0039 en la próxima ventana de configuración.
+
+## Registro de implementación (2026-08-04)
+
+### H3 — ALINEADO (DONE)
+`routing_rules.yaml` v2.1: ahora cubre los 32 skills reales de `skills_registry.yaml`
+con ruta propia (domain = nombre del skill) + mantiene las 14 rutas agrupadoras
+existentes (quantitative-analysis, risk-management, trading, ai-ml, memory,
+quality, documentation, security, devops, mobile, data, frontend, architecture,
+swarm-release-ops) con sus agentes originales preservados (primer agente intacto
+para retrocompatibilidad del DelegationEngine). `universal` reducido de 10 agentes
+a 2: `[coordinator, token-budget-auditor]`. Verificación: todos los domains son
+skills reales o dominios fijos válidos (test_domains_reference_known_skills) y
+todos los agentes referenciados existen en `.opencode/agents/*.md`
+(test_all_agents_in_routes_exist).
+
+### H7 — IMPLEMENTADO (DONE)
+- Creado `.opencode/core/base_principles_full.md` (537 líneas, contenido completo
+  N1+N2+N3 + MAPA DE ROLES + ABREVIACIONES) para consulta bajo demanda.
+- `.opencode/core/base_principles.md` v2.6.0 reducido a N1+N2 (líneas 17-89
+  intactas) + sección "## NIVEL 3 (bajo demanda)" con puntero al full (5 líneas).
+- **Injector auditado**: el único loader de principios en código es
+  `.opencode/core/prompt_optimizer.py::_load_principles_from_file()` (línea 307),
+  que carga EXCLUSIVAMENTE `core/base_principles.md` — ya sin N3, por lo que el
+  runtime inyecta solo N1+N2 sin tocar código. Los regex del parser (N1 block,
+  tabla N2) siguen matcheando el archivo reducido; el MAPA DE ROLES (estaba en N3)
+  degrada con fallback hardcoded (`fallback_roles`) sin error. No existe inyector
+  en `harness/` (solo referencias en descripciones de skills/agentes y docs).
+- Impacto de tokens: N3 ≈ 24.7K chars (~6.2K tokens) ya NO se inyecta en runtime
+  con `include_principles: always` (5 roles core) → se resuelve el overflow del
+  budget de coordinator (4,277 > 4,096 documentado en el contexto).
+
+### H1 — IMPLEMENTADO (DONE) — 2026-08-04
+Los 10 SKILL.min.md con frontmatter roto (5 YAML-error + 5 sin frontmatter) quedaron
+válidos: 31/31 parsean con yaml.safe_load. Reparados por guardian + coordinador
+(description con indentación corregida, claves `inherit` restauradas en hedgefund y
+evolve). Test de regresión añadido: `TestSkillMinFiles` en
+`harness/tests/test_opencode_config_sync.py` (valida delimitador `---`, parse YAML,
+name/description no vacíos para todos los SKILL.min.md). Evita el fallback a tier
+full (~20K tokens/sesión multi-skill).
+
+### H4 — IMPLEMENTADO (DONE) — 2026-08-04
+`agents/release-ops.md` deduplicado: body 2.7KB → 924B (-66%). Conserva rol + reglas
+fijas + 2 líneas de conocimiento crítico (uv run, NLTK_DISABLE_IMPORT_SECURITY) +
+referencia al skill swarm-release-ops (fuente única). Elimina drift entre copias.
+Además: se generaron `.agent.min.md` para release-ops y token-budget-auditor (los
+únicos sin versión compacta, preferida por el runtime).
+
+### H5 — IMPLEMENTADO (DONE) — 2026-08-04
+Triada evolve-analyzer/engineer/researcher consolidada (enfoque conservador):
+bodies compactados a stubs de rol (< 900 chars) con referencia al skill evolve
+(ROLE STACKING): 7.297 → 2.923 chars (-59,9%, ~1.100 tokens/loop). Frontmatter
+limpiado (4 líneas vacías eliminadas). No se eliminaron archivos (el harness los
+referencia en agent_list/routing/tests).
+
+### H6 — IMPLEMENTADO (DONE) — 2026-08-04
+token_budgets.yaml ahora gobierna el runtime: `TokenBudgetManager` carga el YAML
+(role_budgets, defaults, compression_threshold, compression_levels) con fallback a
+las constantes históricas si el archivo no existe y error ruidoso si está corrupto.
+Nueva API: get_agent_budget, get_role_budget, get_session_budget,
+get_compression_level, get_threshold, has_budget_config. BudgetManager.register_agent
+resuelve budget explícito → role_budget YAML → default histórico. 23 tests nuevos
+(test_token_budget_yaml.py) + backward compatibility verificada. Nota: guardian y
+token-budget-auditor bajan de 4000 a 2048 — calibrar con monitoring.metrics.
+
+### H8 — IMPLEMENTADO (DONE) — 2026-08-04
+opencode.json con economía de tokens (validado contra schema oficial):
+compaction {auto: true, prune: true, reserved: 10000}, tool_output {max_lines: 200,
+max_bytes: 8192}, experimental {mcp_timeout: 30000}. Se omitieron deliberadamente
+small_model y provider.options (providers del usuario desconocidos; riesgo de
+romper el arranque — pendiente de decisión). `opencode agent list` carga sin
+ConfigInvalidError.
+
+### H2 — PENDIENTE (baja prioridad, justificado)
+Recompactación de hedgefund (88%), quant-trading (77%), risk-execution (66%),
+alpha-research (61%), evolve (59%): el peso de estos mins está en PROSA y pasos
+numerados de API CQE (señal, no tablas truncadas — verificado con parser de
+bloques). El recorte automático de tablas no produjo ahorro y el ADR advierte
+"riesgo alto si se sobre-compactan (contenido denso es señal)". Requiere
+reescritura manual cuidadosa de contenido API; beneficio marginal (~8K tokens en
+sesiones multi-skill) no justifica el riesgo hoy. Opción sistémica futura: ajustar
+compile_skills.py para omitir tablas de métricas en la generación.

@@ -1,6 +1,6 @@
 ---
 name: quant-trading
-  description: "Estrategias cuantitativas de trading con quant-engine (CQE) en Rust — prioriza rendimiento, baja latencia y generación de alpha"
+description: "Estrategias cuantitativas de trading con quant-engine (CQE) en Rust — prioriza rendimiento, baja latencia y generación de alpha"
 ---
 
 # Quant Trading — CQE Rust Engine

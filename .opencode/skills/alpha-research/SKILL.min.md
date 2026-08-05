@@ -1,6 +1,6 @@
 ---
 name: alpha-research
-  description: "Investigación de alpha — factores, ML avanzado, feature engineering y validación estadística con CQE Rust"
+description: "Investigación de alpha — factores, ML avanzado, feature engineering y validación estadística con CQE Rust"
 ---
 
 # Alpha Research — CQE Rust Engine

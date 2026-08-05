@@ -55,7 +55,10 @@ PRIORITY_BACKGROUND = 10
 CONFIDENCE_HIGH = 0.90    # > 90% confidence → stop further spending
 CONFIDENCE_MEDIUM = 0.70  # > 70% → reduce spending rate
 
-# Default per-agent token budget
+# Default per-agent token budget (fallback plano).
+# Los budgets por rol viven en el SSOT .opencode/config/token_budgets.yaml
+# (ADR-0040 H6): cuando el YAML existe, TokenBudgetManager los aplica por rol
+# (coordinator 4096, guardian 2048, ...) en vez de este flat 4000.
 DEFAULT_AGENT_BUDGET = 4000
 DEFAULT_SESSION_BUDGET = 16000
 MIN_RESERVE_TOKENS = 500  # never starve an agent below this
@@ -342,6 +345,32 @@ class TokenBudget:
 # Budget Manager (session-level)
 # ---------------------------------------------------------------------------
 
+_token_budget_manager_instance: Any = None
+
+
+def get_token_budget_manager() -> Any:
+    """Retorna el TokenBudgetManager global (singleton perezoso).
+
+    WHAT: Crea o reutiliza la instancia unica del manager de budgets que
+    carga el SSOT ``.opencode/config/token_budgets.yaml``.
+    WHY: Evitar reparsear el YAML en cada registro de agente; la
+    configuracion de budgets es global y de solo lectura.
+    WHERE: ``BudgetManager.register_agent`` — resolucion de budget por rol
+    (ADR-0040 H6).
+
+    Returns:
+        Instancia unica de ``TokenBudgetManager``.
+    """
+    global _token_budget_manager_instance
+    if _token_budget_manager_instance is None:
+        # Import local: evita ciclo de importacion (el manager importa
+        # constantes de este modulo en tiempo de carga).
+        from harness.memory_rag.token_budget_manager import TokenBudgetManager
+
+        _token_budget_manager_instance = TokenBudgetManager()
+    return _token_budget_manager_instance
+
+
 class BudgetManager:
     """
     Manages token budgets across all agents in a session.
@@ -383,9 +412,18 @@ class BudgetManager:
                 logger.debug("BudgetManager: agent '%s' already registered", agent_id)
                 return self._agent_budgets[agent_id]
 
+            # Presupuesto por rol desde el SSOT token_budgets.yaml (ADR-0040 H6):
+            # si el rol esta declarado, se aplica su budget (ej. guardian 2048);
+            # si el YAML no existe o el rol no esta, se usa el default historico.
+            if budget:
+                total_budget = budget
+            else:
+                role_budget = get_token_budget_manager().get_role_budget(agent_id)
+                total_budget = role_budget if role_budget is not None else self._default_agent_budget
+
             agent_budget = TokenBudget(
                 agent_id=agent_id,
-                total_budget=budget or self._default_agent_budget,
+                total_budget=total_budget,
                 priority=priority,
                 min_reserve=self._min_reserve,
                 parent_session=session_id,

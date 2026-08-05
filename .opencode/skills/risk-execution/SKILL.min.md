@@ -1,6 +1,6 @@
 ---
 name: risk-execution
-  description: "Gestión de riesgo institucional y ejecución algorítmica con CQE Rust — position sizing, market making, TCA"
+description: "Gestión de riesgo institucional y ejecución algorítmica con CQE Rust — position sizing, market making, TCA"
 ---
 
 # Risk & Execution — CQE Rust Engine

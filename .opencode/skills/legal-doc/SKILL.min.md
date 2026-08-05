@@ -1,3 +1,11 @@
+---
+name: legal-doc
+domain: legal
+description: "Skill contextual para el dominio jurídico con referencias a sistemas legales jurisdiccionales (ej. Colombia) — análisis de jurisprudencia, normas, casos multi-especialidad, redacción de demandas, conceptos, derecho comparado y consulta de fuentes oficiales"
+version: 1.0.0
+project_agnostic: true
+---
+
 # Legal-Doc Colombia: Analisis juridico colombiano multi-especialidad
 
 Metodologia RTF+C + Role Stacking (8 roles): Analista Senior, Teorico Interpretacion, Litigante Estrategico, Academico Constitucional, Comparatista, Procesalista, Gestor Riesgo, Comunicador.

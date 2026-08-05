@@ -1,8 +1,9 @@
 ---
 name: evolve
-  description: "Meta-skill de auto-mejora continua. Orquesta el loop ASI-Evolve (Learn → Design → Experiment → Analyze) para mejorar todos los skills del sistema. Integra Forward Deployment Engineering (FDE) para asegurar que cada mejora resuelva un delta real."
+description: "Meta-skill de auto-mejora continua. Orquesta el loop ASI-Evolve (Learn → Design → Experiment → Analyze) para mejorar todos los skills del sistema. Integra Forward Deployment Engineering (FDE) para asegurar que cada mejora resuelva un delta real."
 version: 3.0.0
 project_agnostic: true
+inherit:
   - core/base_principles.md
   - core/fde_principles.md
 variables:

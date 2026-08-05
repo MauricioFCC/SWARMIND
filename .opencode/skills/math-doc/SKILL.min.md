@@ -1,3 +1,11 @@
+---
+name: math-doc
+domain: math
+description: "Skill contextual para el dominio matemático y cuantitativo — análisis de papers, fórmulas LaTeX, demostraciones, estadística, álgebra, cálculo y modelado matemático"
+version: 1.0.0
+project_agnostic: true
+---
+
 # Math-Doc (min)
 Dominio matemático/cuantitativo: análisis de papers, LaTeX, demostraciones, estadística, álgebra, cálculo.
 

@@ -2,5 +2,17 @@
   "$schema": "https://opencode.ai/config.json",
   "skills": {
     "paths": [".opencode/skills"]
+  },
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 10000
+  },
+  "tool_output": {
+    "max_lines": 200,
+    "max_bytes": 8192
+  },
+  "experimental": {
+    "mcp_timeout": 30000
   }
 }

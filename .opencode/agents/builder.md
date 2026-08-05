@@ -1,8 +1,4 @@
 ---
-
-
-
-
 name: builder
 domain: universal
 triggers: [implement, build, create, code, refactor, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, design-system, accesibilidad, responsive, web-vitals, a11y]

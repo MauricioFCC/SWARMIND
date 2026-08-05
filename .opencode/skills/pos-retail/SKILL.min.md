@@ -1,65 +1,32 @@
+---
+name: pos-retail
+domain: pos-retail
+description: "Skill contextual para el dominio Pos-Retail — punto de venta, retail, e-commerce, inventario, facturación, pagos y logística"
+version: 1.0.0
+project_agnostic: true
+---
+
 # Pos-Retail Contextual Skill
 Skill contextual para el dominio **Pos-Retail** (punto de venta, retail, e-commerce, inventario, facturación).
 ## Activación
-Se activa automáticamente cuando el `router` detecta keywords del dominio retail/POS.
-## Keywords de dominio
-- `pos`, `point of sale`, `retail`, `e-commerce`, `ecommerce`, `shop`, `store`
-- `inventory`, `stock`, `warehouse`, `supply chain`, `logistics`
-- `invoice`, `receipt`, `billing`, `payment`, `checkout`, `cart`
-- `customer`, `loyalty`, `promotion`, `discount`, `coupon`
-- `punto de venta`, `tienda`, `comercio`, `factura`, `inventario`
-- `pago`, `tarjeta`, `efectivo`, `terminal`, `caja`
-## Reglas contextuales
-### 1. Dominios Funcionales
-#### POS Core
-- **Venta**: Captura de items, cálculo de totales, impuestos, descuentos.
-- **Pago**: Múltiples medios (efectivo, tarjeta, bono, mixto), split payment.
-- **Devolución**: Procesar devoluciones con trazabilidad al ticket original.
-- **Arqueo**: Cuadre de caja al cierre de turno.
-#### Inventario
-- **Stock**: Control de stock en tiempo real por Sucursal/UUID.
-- **Movimientos**: Entradas, salidas, ajustes, transferencias entre sucursales.
-- **Valoración**: Costo promedio ponderado, FIFO, LIFO.
-- **Pedidos**: Orden de compra, recepción, dropshipping.
-#### Clientes
-- **Perfil**: Historial de compras, preferencias, crédito.
-- **Loyalty**: Puntos, niveles, beneficios.
-- **Crédito**: Límite de crédito, estado de cuenta, cobranza.
-### 2. Arquitectura Recomendada
-- **Backend**: Microservicios (POS, Inventory, Customer, Billing).
-- **Event Bus**: RabbitMQ/Kafka para eventos en tiempo real (venta → descuento stock).
-- **Caché**: Redis para catálogo de productos y precios.
-- **Base de datos**: PostgreSQL (transaccional) + Elasticsearch (búsqueda).
-- **Offline-first**: POS debe funcionar sin conexión y sincronizar al reconectar.
-### 3. Patrones de Diseño
-- **Saga Pattern**: Para flujos distribuidos (venta → descuento stock → registro pago).
-- **Outbox Pattern**: Para eventos transaccionales sin pérdida.
-- **CQRS**: Separar comandos (venta) de consultas (reportes).
-- **Strategy Pattern**: Para cálculos de impuestos (IVA, ISR, regional).
-### 4. Manejo de Estados
+Se activa cuando el `router` detecta keywords del dominio retail/POS.
+## Keywords
+pos, point of sale, retail, e-commerce, shop, store, inventory, stock, warehouse, supply chain, invoice, receipt, billing, payment, checkout, cart, loyalty, promotion, discount, punto de venta, tienda, factura, inventario, pago, caja
+## Dominios funcionales
+- **POS Core**: venta (items, totales, impuestos, descuentos), pago multi-medio (split), devolución con trazabilidad al ticket, arqueo de caja.
+- **Inventario**: stock en tiempo real por Sucursal/UUID, movimientos (entradas/salidas/ajustes/transferencias), valoración (promedio, FIFO, LIFO), pedidos (OC, recepción, dropshipping).
+- **Clientes**: historial de compras, loyalty (puntos/niveles), crédito (límite, estado de cuenta, cobranza).
+## Arquitectura
+Microservicios (POS, Inventory, Customer, Billing); Event Bus RabbitMQ/Kafka (venta → descuento stock); Redis (catálogo/precios); PostgreSQL transaccional + Elasticsearch búsqueda; **offline-first** con sincronización al reconectar.
+## Patrones
+Saga (venta → stock → pago), Outbox (eventos sin pérdida), CQRS (comandos vs reportes), Strategy (impuestos IVA/ISR/regional).
+## Estados
 ```
-Venta: PENDING → COMPLETED → REFUNDED
-       PENDING → CANCELLED
-
-Pago: PENDING → COMPLETED → REFUNDED
-      PENDING → FAILED → RETRY → COMPLETED
-
-Pedido: DRAFT → APPROVED → PICKING → SHIPPED → DELIVERED
-        DRAFT → CANCELLED
+Venta: PENDING → COMPLETED → REFUNDED | PENDING → CANCELLED
+Pago: PENDING → COMPLETED → REFUNDED | PENDING → FAILED → RETRY → COMPLETED
+Pedido: DRAFT → APPROVED → PICKING → SHIPPED → DELIVERED | DRAFT → CANCELLED
 ```
-### 5. Requisitos No Funcionales
-- **Latencia POS**: < 200ms para cobro en caja.
-- **Disponibilidad**: 99.9% en horario comercial.
-- **Offline**: Capacidad de operar hasta 4h sin conexión.
-- **Concurrencia**: Soportar N sucursales en hora pico sin degradación.
-- **Audit**: Toda transacción financiera auditada.
-### 6. Seguridad
-- Pagos: PCI-DSS compliant (tokenización de tarjetas).
-- Autenticación: 2FA para operaciones sensibles (devoluciones, ajustes de stock).
-- Roles: cajero, supervisor, admin, gerente — cada uno con permisos granulares.
+## NFR y Seguridad
+Latencia cobro < 200ms; disponibilidad 99.9% horario comercial; offline hasta 4h; concurrencia multi-sucursal en hora pico; auditoría financiera total. Pagos PCI-DSS (tokenización); 2FA en devoluciones/ajustes de stock; roles granulares (cajero, supervisor, admin, gerente).
 ## Output esperado
-- Código transaccional con manejo offline.
-- Modelo de datos para catálogo, stock, clientes, ventas.
-- API RESTful con versionado (ej. /api/v1/pos/sale).
-- Tests de concurrencia y consistencia de stock.
-- Documentación de flujos de pago y devolución.
+Código transaccional offline-first, modelo de datos (catálogo/stock/clientes/ventas), API REST versionada (/api/v1/pos/sale), tests de concurrencia y consistencia de stock, documentación de pagos/devoluciones.

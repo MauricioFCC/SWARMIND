@@ -42,8 +42,8 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0036 | [Opción A — SSOT Global OpenCode + Mirror Local por Proyecto](adr0036-opcion-a-ssot-global-2026.md) | ACEPTADO (v2.5) | — |
 | 0037 | [Reglas Universales de Código + Auto-Mejora Continua](adr0037-reglas-universales-auto-mejora-2026.md) | ACEPTADO | — |
 | 0038 | [Memoria Central Portable + Backup Automático con Rotación](adr0038-memoria-central-backup-2026.md) | ACEPTADO | — |
-| 0039 | [Frontier Optimization 2026 v2 — Tokens, Agentes y Configuración](adr0039-frontier-optimization-2026-v2.md) | APROBADO (recomendaciones) | — |
-| 0040 | [Auditoría Token-Economics — Plan de Acción H1-H8](adr0040-token-audit-plan-2026.md) | PROPUESTO | — |
+| 0039 | [Frontier Optimization 2026 v2 — Tokens, Agentes y Configuración](adr0039-frontier-optimization-2026-v2.md) | PARCIALMENTE IMPLEMENTADO | — |
+| 0040 | [Auditoría Token-Economics — Plan de Acción H1-H8](adr0040-token-audit-plan-2026.md) | IMPLEMENTADO (H2 pendiente) | — |
 
 ## Resumen por Categoria
 

@@ -483,6 +483,89 @@ class TestDescriptionTokenBudget:
 
 
 # ===========================================================================
+# SKILL.min.md: frontmatter YAML valido
+# ===========================================================================
+
+
+class TestSkillMinFiles:
+    """Verifica que todos los .opencode/skills/*/SKILL.min.md tengan
+    frontmatter YAML valido.
+
+    Cada skill minificado conserva el frontmatter original (--- ... ---)
+    con al menos 'name' y 'description' no vacios. Si el frontmatter se
+    corrompe o se vacia, el loader de opencode no puede registrar el skill
+    y las rutas/skills de config (routing_rules, token_budgets) quedan
+    huerfanas.
+
+    Nota: load_yaml() no aplica aqui porque SKILL.min.md NO es YAML puro
+    (el cuerpo es Markdown). Se extrae solo el bloque entre el primer y
+    segundo '---' y se parsea con yaml.safe_load, igual que hace
+    TestDescriptionTokenBudget.
+    """
+
+    @staticmethod
+    def _min_files() -> list[Path]:
+        """Todos los SKILL.min.md del proyecto, ordenados."""
+        return sorted(SKILLS_DIR.rglob("SKILL.min.md"))
+
+    @staticmethod
+    def _frontmatter(path: Path) -> str:
+        """Retorna el texto del frontmatter (entre primer y segundo '---').
+
+        Lanza AssertionError con mensaje claro (archivo + problema) si el
+        delimitador inicial o el cierre faltan.
+        """
+        text = path.read_text(encoding="utf-8")
+        assert text.startswith("---"), (
+            f"{path.relative_to(ROOT)}: no empieza con '---' — frontmatter "
+            f"ausente o delimitador inicial roto"
+        )
+        parts = text.split("---", 2)
+        assert len(parts) >= 3, (
+            f"{path.relative_to(ROOT)}: solo hay un delimitador '---' — "
+            f"falta el cierre del frontmatter"
+        )
+        return parts[1]
+
+    def test_all_min_skills_frontmatter_valid(self) -> None:
+        """Todos los SKILL.min.md empiezan con '---' y su frontmatter parsea YAML."""
+        invalid: list[str] = []
+        for path in self._min_files():
+            try:
+                yaml.safe_load(self._frontmatter(path))
+            except Exception as e:  # noqa: BLE001 - reporte agregado con archivo
+                invalid.append(f"{path.relative_to(ROOT)}: {e}")
+        assert not invalid, (
+            "SKILL.min.md con frontmatter invalido:\n  - " + "\n  - ".join(invalid)
+        )
+
+    def test_min_skills_have_name_and_description(self) -> None:
+        """Todo frontmatter de SKILL.min.md tiene 'name' y 'description' no vacios."""
+        missing: list[str] = []
+        for path in self._min_files():
+            try:
+                data = yaml.safe_load(self._frontmatter(path))
+            except Exception as e:  # noqa: BLE001 - reporte agregado con archivo
+                missing.append(f"{path.relative_to(ROOT)}: frontmatter no parsea: {e}")
+                continue
+            if not isinstance(data, dict):
+                missing.append(
+                    f"{path.relative_to(ROOT)}: frontmatter no es dict "
+                    f"(es {type(data).__name__})"
+                )
+                continue
+            for key in ("name", "description"):
+                value = data.get(key)
+                if not value or not str(value).strip():
+                    missing.append(
+                        f"{path.relative_to(ROOT)}: campo '{key}' ausente o vacio"
+                    )
+        assert not missing, (
+            "SKILL.min.md sin name/description:\n  - " + "\n  - ".join(missing)
+        )
+
+
+# ===========================================================================
 # CLI
 # ===========================================================================
 

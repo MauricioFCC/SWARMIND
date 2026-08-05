@@ -1,9 +1,13 @@
 # ADR-0039: Frontier Optimization 2026 v2 — Tokens, Agentes y Configuración
 
 ## Estado
-**APROBADO (recomendaciones)** — Consulta web frontier realizada el 2026-08-04.
-12+ fuentes verificadas por fetch directo (docs opencode 1.18, Anthropic Engineering,
-arXiv 2026). Complementa ADR-0013, ADR-0014, ADR-0031. Ejecución por fases (ver ADR-0040).
+**PARCIALMENTE IMPLEMENTADO (2026-08-04)** — Consulta web frontier realizada el
+2026-08-04. 12+ fuentes verificadas por fetch directo (docs opencode 1.18, Anthropic
+Engineering, arXiv 2026). Complementa ADR-0013, ADR-0014, ADR-0031. Aplicado vía
+ADR-0040: H8 (compaction.prune + tool_output + mcp_timeout en opencode.json).
+Pendiente: setCacheKey/provider options (requiere conocer providers), small_model +
+steps por agente, plugin de compactación custom, routing adaptativo (Σ-Mem),
+memoria gobernada (PatchBoard/MemClaw), stop rules (CONVOLVE).
 
 ## Contexto
 SWARMIND tiene Token Economics v2026 implementado (Cache-Shape -38%, Structured
