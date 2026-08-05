@@ -9,7 +9,7 @@ Las metricas principales del sistema (tests, cobertura, ADRs, agentes, skills, m
 
 **Resumen ejecutivo:** 3994+ tests, **80.83% cobertura CI**, 40 ADRs, 22 agentes, 32 skills, 48 modulos orchestrator, 30 modulos memory/rag, RTX 4060 6x speedup, 15 papers 2026 implementados, **Opción A SSOT global implementada + memoria central portable (v3.x)**.
 
-**Actualización 2026-08-04 (ADR-0039/0040):** implementados H1 (10 SKILL.min.md con YAML roto reparados + test TestSkillMinFiles), H3 (routing 45 rutas, universal 10→2 agentes), H4 (release-ops deduplicado), H5 (triada evolve -59.9%), H6 (token_budgets.yaml conectado al runtime, 23 tests nuevos), H7 (base_principles N3 bajo demanda, -6.2K tokens/agente), H8 (opencode.json: compaction.prune + tool_output + mcp_timeout). H2 pendiente (mins API densos, baja prioridad). PR #7 mergado: CI con checks requeridos lint/test/security, python 3.12, auto-merge funcional.
+**Actualización 2026-08-04 (ADR-0039/0040):** implementados H1-H8 completos — H1 (10 SKILL.min.md con YAML roto reparados + test TestSkillMinFiles), H2 (5 mins API densos recompactados con compile_skills.py: 58-88% → 35-54%), H3 (routing 45 rutas, universal 10→2 agentes), H4 (release-ops deduplicado), H5 (triada evolve -59.9%), H6 (token_budgets.yaml conectado al runtime, 23 tests nuevos), H7 (base_principles N3 bajo demanda, -6.2K tokens/agente), H8 (opencode.json: compaction.prune + tool_output + mcp_timeout). 22/22 agentes con role_budget. PR #7 mergado: CI con checks requeridos lint/test/security, python 3.12, auto-merge funcional.
 
 **Metricas adicionales no incluidas en README:** 196+ commits, 258 archivos Python, suite completa ~100s (sin slow ~45s), 30+ tecnicas 2026 integradas.
 

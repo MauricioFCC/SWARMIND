@@ -1,11 +1,11 @@
 # ADR-0040: Auditoría Token-Economics — Plan de Acción H1-H8
 
 ## Estado
-**IMPLEMENTADO (H1, H3, H4, H5, H6, H7, H8 — 2026-08-04). H2 PENDIENTE (baja prioridad)** —
+**IMPLEMENTADO (H1-H8 completos — 2026-08-04)** —
 Auditoría ejecutada el 2026-08-04 por token-budget-auditor (verificación directa de
 archivos y ejecución de chequeos). Extiende ADR-0039 (recomendaciones frontier) y
-ADR-0013/ADR-0031. Verificación: 176+ tests pasando (suite de sincronía, agentes,
-token budgets, orquestador, reglas universales).
+ADR-0013/ADR-0031. Verificación: 138+ tests pasando (suite de sincronía, agentes,
+token budgets, orquestador, reglas universales), ruff limpio.
 
 ## Contexto
 La arquitectura de economía de SWARMIND es sólida en diseño (minificación 2-tier
@@ -185,12 +185,25 @@ small_model y provider.options (providers del usuario desconocidos; riesgo de
 romper el arranque — pendiente de decisión). `opencode agent list` carga sin
 ConfigInvalidError.
 
-### H2 — PENDIENTE (baja prioridad, justificado)
-Recompactación de hedgefund (88%), quant-trading (77%), risk-execution (66%),
-alpha-research (61%), evolve (59%): el peso de estos mins está en PROSA y pasos
-numerados de API CQE (señal, no tablas truncadas — verificado con parser de
-bloques). El recorte automático de tablas no produjo ahorro y el ADR advierte
-"riesgo alto si se sobre-compactan (contenido denso es señal)". Requiere
-reescritura manual cuidadosa de contenido API; beneficio marginal (~8K tokens en
-sesiones multi-skill) no justifica el riesgo hoy. Opción sistémica futura: ajustar
-compile_skills.py para omitir tablas de métricas en la generación.
+### H2 — IMPLEMENTADO (DONE) — 2026-08-04
+Recompactados con el minificador oficial `harness/scripts/compile_skills.py`
+(preserva pasos, checklists, variables y guardrails — señal de API/doctrina):
+hedgefund 16197→7604 chars (47%), quant-trading 8922→3156 (35%), risk-execution
+8394→4096 (49%), alpha-research 8040→4357 (54%), evolve 7541→3559 (47%).
+Antes estaban en 58-88% del full; ahora 35-54%, dentro del rango objetivo del ADR
+(40%, 50-60% para los densos). 31/31 SKILL.min.md parsean YAML. Verificado con
+TestSkillMinFiles + suite de sync.
+
+### Extra — IMPLEMENTADO (DONE) — 2026-08-04
+Los 22 agentes tienen role_budget en token_budgets.yaml (antes solo 7): añadidos
+architect, backend-engineer, data-engineer, database-administrator, devops,
+evolve-analyzer, evolve-engineer, evolve-researcher, frontend-engineer,
+mobile-engineer, product-manager, qa-engineer, researcher, reviewer,
+security-engineer (2048-4096 según carga; researcher 4096/low como scientist,
+roles de testing/análisis 2048/high). Verificado: test_role_budgets_reference_core_agents
++ test_all_role_budgets_exist_as_agents pasan.
+
+### Deuda menor (no bloqueante, fuera del ADR)
+- 3 archivos > 500 líneas (hook local, max oficial del framework 900):
+  token_budget.py (542), token_budget_manager.py (581), test_opencode_config_sync.py (593).
+  Refactor pendiente de prioridad baja; no exceden la regla UPG (< 900).
