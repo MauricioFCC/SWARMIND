@@ -197,3 +197,13 @@ monitoring:
     - cache_hit_rate
     - failure_spend_ratio
     - phase_activation_count
+
+# Stop rules / abstencion (ADR-0039 #8, CONVOLVE 2606.28733)
+# Politica declarativa: el runtime (Failure-Spend Governance + Circuit Breaker
+# del coordinator) aplica la mecanica; estos umbrales son la config SSOT.
+abstention_policy:
+  enabled: true
+  max_failure_spend_ratio: 0.30      # >30% del presupuesto en fallos -> abstener/re-planificar
+  max_steps_without_progress: 5      # 5 pasos sin progreso medible -> parar y reportar
+  abstain_message: "Sin progreso medible; se abstiene y reporta estado actual + siguiente accion"
+  re_plan_after_abstain: true        # tras abstener, re-planificar con contexto reducido

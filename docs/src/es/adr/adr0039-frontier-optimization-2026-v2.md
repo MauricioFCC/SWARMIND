@@ -1,13 +1,30 @@
 # ADR-0039: Frontier Optimization 2026 v2 — Tokens, Agentes y Configuración
 
 ## Estado
-**PARCIALMENTE IMPLEMENTADO (2026-08-04)** — Consulta web frontier realizada el
-2026-08-04. 12+ fuentes verificadas por fetch directo (docs opencode 1.18, Anthropic
-Engineering, arXiv 2026). Complementa ADR-0013, ADR-0014, ADR-0031. Aplicado vía
-ADR-0040: H8 (compaction.prune + tool_output + mcp_timeout en opencode.json).
-Pendiente: setCacheKey/provider options (requiere conocer providers), small_model +
-steps por agente, plugin de compactación custom, routing adaptativo (Σ-Mem),
-memoria gobernada (PatchBoard/MemClaw), stop rules (CONVOLVE).
+**IMPLEMENTADO (2026-08-04)** — Consulta web frontier realizada el 2026-08-04.
+12+ fuentes verificadas por fetch directo (docs opencode 1.18, Anthropic Engineering,
+arXiv 2026). Complementa ADR-0013, ADR-0014, ADR-0031. Registro de implementación:
+
+| # | Item | Aplicado | Evidencia |
+|---|------|----------|-----------|
+| 1 | compaction.prune | SI (via ADR-0040 H8) | opencode.json: compaction{auto,prune,reserved:10000} |
+| 2 | setCacheKey + prefijo estable | PARCIAL: prefijo estable SI, setCacheKey NO | base_principles.md como prefijo inmutable; setCacheKey diferido (requiere conocer providers) |
+| 3 | Plugin compaction custom | SI | .opencode/plugin/compaction-context.js (hook experimental.session.compacting) |
+| 4 | Subagentes condensados + artefactos | SI (regla en coordinator) | .opencode/agents/coordinator.md: retorno 1-2K tokens, artefactos a filesystem, checks estructurales (41.8% hand-off fallos) |
+| 5 | small_model + steps | PARCIAL: steps SI, small_model NO | steps: 8 en release-ops.md y token-budget-auditor.md; small_model diferido |
+| 6 | Σ-Mem routing adaptativo | SI (MVP) | harness/memory_rag/reliability_memory.py (342 líneas, persistencia data/reliability_memory.json) + 22 tests |
+| 7 | Memoria gobernada | SI (MVP) | harness/memory_rag/memory_guard.py (294 líneas, schema filtering anti-poisoning) + 22 tests |
+| 8 | Stop rules / abstención | SI (política declarativa) | token_budgets.yaml: abstention_policy{max_failure_spend_ratio:0.30, max_steps_without_progress:5} |
+| 9 | Config provider + permission | NO (diferido) | timeout/chunkTimeout/setCacheKey requieren providers del usuario; no aplicar ciegos |
+
+Decisiones diferidas (justificadas): (a) setCacheKey/provider options/small_model —
+el usuario usa opencode-go/deepseek-v4-flash con providers no documentados; aplicar
+sin conocerlos arriesga ConfigInvalidError al arranque. (b) Routing adaptativo
+completo — el MVP Σ-Mem esta listo; la integracion al router requiere feedback de
+correctitud y cold-start (roadmap).
+
+Verificacion: 182 passed / 1 skipped (suite clave + 44 tests nuevos), ruff limpio,
+opencode carga config sin errores, plugin auto-descubierto.
 
 ## Contexto
 SWARMIND tiene Token Economics v2026 implementado (Cache-Shape -38%, Structured

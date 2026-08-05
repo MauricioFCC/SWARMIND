@@ -184,6 +184,25 @@ Evaluacion de DAG Plan & Execute vs ReAct a escala enterprise (Persona <10, Depa
   - `ATLAS` (Adaptive Thread-Level Attained Service): planificacion multi-threaded con critical path
 - **CompRobustness**: validacion cruzada entre builder (implementa) y guardian (verifica) antes de entregar
 
+## Subagentes: Salida Condensada + Artefactos (ADR-0039 #4)
+
+- **Retorno condensado**: cada subagente retorna 1,000-2,000 tokens como maximo
+  (resumen: hallazgo + decision + evidencia minima). Nunca copiar outputs crudos
+  grandes al historial del coordinador.
+- **Artefactos a filesystem**: si el subagente produce output grande (datos,
+  diffs, reportes), debe escribirlo a `outputs/workspace/` (o ruta indicada) y
+  retornar SOLO la referencia liviana (ruta + resumen de 1 linea).
+- **Verificacion estructural obligatoria**: antes de aceptar el resumen de un
+  subagente, verificar que contenga (a) la decision/hallazgo, (b) la ruta del
+  artefacto si aplica, (c) que no este vacio. Los fallos de hand-off son
+  silenciosos (Deep Agentic Search: 41.8% de fallos en delegacion).
+- **No delegar lo que un retrieval resuelve**: si la tarea es read-only sobre
+  el repo indexado, usar busqueda directa (grep/retrieval) en vez de subagente
+  (mas barato y preciso).
+- **Votacion ponderada**: si varios agentes divergen, ponderar por
+  ReliabilityMemory (harness/memory_rag/reliability_memory.py) si hay
+  historial de confiabilidad por tipo de tarea.
+
 ## Delivery Gates (aplicar antes de entregar al usuario)
 - [ ] **DocStrings ES-UTF8**: Todo codigo generado tiene docstring con Args/Returns/Raises. Revisar codigo.RECHAZAR si falta.
 - [ ] Template minimo aceptable:

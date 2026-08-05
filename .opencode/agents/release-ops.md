@@ -5,6 +5,7 @@ triggers: [release, ci, workflow, pipeline, github actions, deploy, auto-merge, 
 capabilities: [ci_cd, release_management, github_actions, security_audit, uv, automerge, branch_protection]
 aliases: [release, release-ops, ci-ops, release-ops-dev]
 description: "Ingeniero especializado en releases y CI/CD de SWARMIND: GitHub Actions, uv, safety, bandit, auto-merge, branch protection y release management | UPG·NAM·FRS (reglas en base_principles.md)"
+steps: 8
 mode: subagent
 permission:
   edit: allow

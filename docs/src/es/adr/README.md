@@ -42,7 +42,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0036 | [Opción A — SSOT Global OpenCode + Mirror Local por Proyecto](adr0036-opcion-a-ssot-global-2026.md) | ACEPTADO (v2.5) | — |
 | 0037 | [Reglas Universales de Código + Auto-Mejora Continua](adr0037-reglas-universales-auto-mejora-2026.md) | ACEPTADO | — |
 | 0038 | [Memoria Central Portable + Backup Automático con Rotación](adr0038-memoria-central-backup-2026.md) | ACEPTADO | — |
-| 0039 | [Frontier Optimization 2026 v2 — Tokens, Agentes y Configuración](adr0039-frontier-optimization-2026-v2.md) | PARCIALMENTE IMPLEMENTADO | — |
+| 0039 | [Frontier Optimization 2026 v2 — Tokens, Agentes y Configuración](adr0039-frontier-optimization-2026-v2.md) | IMPLEMENTADO | — |
 | 0040 | [Auditoría Token-Economics — Plan de Acción H1-H8](adr0040-token-audit-plan-2026.md) | IMPLEMENTADO (H1-H8) | — |
 
 ## Resumen por Categoria
@@ -119,5 +119,5 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 - **ADR-0021**: DOFA Analysis & Strategic Positioning 2026 — analisis estrategico
 
 ### Tokens, Agentes y Configuración
-- **ADR-0039**: Frontier Optimization 2026 v2 - compaction.prune, setCacheKey, small_model + steps, subagentes condensados, routing adaptativo (Σ-Mem), memoria gobernada (PatchBoard/MemClaw), stop rules (CONVOLVE) + configs provider (timeout/chunkTimeout)
+- **ADR-0039**: Frontier Optimization 2026 v2 - compaction.prune, prefijo estable, plugin compaction-context.js, subagentes condensados (regla en coordinator), steps:8, Σ-Mem MVP (reliability_memory.py), memoria gobernada MVP (memory_guard.py), stop rules (abstention_policy); diferidos: setCacheKey/small_model/provider options
 - **ADR-0040**: Auditoría Token-Economics - 3 fugas (mins corruptos, budgets desconectados del runtime, routing desalineado) + plan H1-H8 priorizado
