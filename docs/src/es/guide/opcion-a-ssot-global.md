@@ -16,7 +16,7 @@ DEV-SPACE mediante un esquema **SSOT (Single Source of Truth)**:
   ├── core/                  ← 13 modulos core (registry, base_principles, ...)
   └── skills_registry.yaml   ← Registro completo de skills
 
-C:\Users\<user>\Documents\DEV-SPACE\<proyecto>\
+$DEV_SPACE_ROOT\<proyecto>\
   ├── .opencode/             ← MIRROR LOCAL (cerebro + config propia)
   └── README.md              ← Generado con tipo, skills y config
 ```
