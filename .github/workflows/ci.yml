@@ -33,9 +33,11 @@ jobs:
         # herramientas de lint; ruff/mypy viven en el venv -> uv run.
         run: |
           uv sync
-          uv pip install ruff mypy
+          uv pip install ruff mypy vulture
       - name: Ruff
         run: uv run ruff check harness/
+      - name: Vulture (dead code)
+        run: uv run vulture harness/ harness/vulture_whitelist.py --exclude harness/tests --min-confidence 80
       - name: MyPy
         # TODO(ADR-0037): 92 errores de tipo en 32 archivos detectados 2026-07-31
         # (build-up desde 2026-05). mypy queda en warning hasta tipado progresivo.

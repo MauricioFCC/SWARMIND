@@ -44,6 +44,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0038 | [Memoria Central Portable + Backup Automático con Rotación](adr0038-memoria-central-backup-2026.md) | ACEPTADO | — |
 | 0039 | [Frontier Optimization 2026 v2 — Tokens, Agentes y Configuración](adr0039-frontier-optimization-2026-v2.md) | IMPLEMENTADO | — |
 | 0040 | [Auditoría Token-Economics — Plan de Acción H1-H8](adr0040-token-audit-plan-2026.md) | IMPLEMENTADO (H1-H8) | — |
+| 0041 | [Frontier Adaptation 2026 — MCP Stateless, OTel GenAI, DeltaChannel, Agent Factory y Skills](adr0041-frontier-adaptation-2026.md) | IMPLEMENTADO (H1-H6) | — |
 
 ## Resumen por Categoria
 
@@ -121,3 +122,4 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 ### Tokens, Agentes y Configuración
 - **ADR-0039**: Frontier Optimization 2026 v2 - compaction.prune, prefijo estable, plugin compaction-context.js, subagentes condensados (regla en coordinator), steps:8, Σ-Mem MVP (reliability_memory.py), memoria gobernada MVP (memory_guard.py), stop rules (abstention_policy); diferidos: setCacheKey/small_model/provider options
 - **ADR-0040**: Auditoría Token-Economics - 3 fugas (mins corruptos, budgets desconectados del runtime, routing desalineado) + plan H1-H8 priorizado
+- **ADR-0041**: Frontier Adaptation 2026 (Fase 1+2) - MCP stateless 2026-07-28, OTel GenAI semconv, DeltaChannel durable exec, Agent Factory on-demand (8 plantillas + recommender + render Markdown opencode), validador skills agentskills.io (32/32 válidos), skills de dominio 2026 (reviewer adversarial, science citas/reproducibilidad, legal vigencia/citas) | ADR interno (no se pushea)

@@ -80,8 +80,6 @@ def check_ollama() -> bool:
         logger.info(f"âŒ Error al verificar API Ollama: {exc}")
         return False
 
-    return True
-
 
 def list_local_models() -> list[str]:
     """List available Ollama models."""

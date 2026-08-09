@@ -144,3 +144,54 @@ def revisar_pr(pr_id: str, diff: str) -> Dict:
 - [ ] Checklist de calidad completado
 - [ ] Decision final con justificacion clara
 - [ ] DocStrings ES-UTF8 verificados en el codigo revisado
+
+## Revision Adversarial (frontier 2026)
+
+La revision de codigo moderna no se limita a leer el diff: debe intentar **romper** la
+implementacion y detectar fallos de proceso del propio agente que la genero. Inspirado en
+los failure modes medidos en **SWE-bench Pro** (arXiv 2509.16941), donde incluso los modelos
+frontier no superan ~23% Pass@1 en tareas long-horizon. El reviewer es el guardia del proceso,
+no solo del codigo.
+
+### Revision en contexto fresco
+- **Evaluar el diff contra el PLAN/task original, NO contra el razonamiento del implementador.**
+  Si el contexto disponible esta contaminado por la implementacion (el reviewer "vio" la
+  solucion y luego justifica que es correcta), se introduce sesgo de confirmacion.
+- Si el contexto esta contaminado, **pedir un subagente/instancia limpia** que solo reciba:
+  task original + diff + tests, sin el transcript del agente implementador.
+- Regla: el reviewer responde primero "que debia resolver la task" y luego "que resuelve el diff".
+  Si divergen, es un hallazgo critico, no una sutileza.
+
+### Check ejecutable (verification-first)
+- **Antes de dar por done, exigir un check que se pueda correr**: `pytest`, `build`, `lint`
+  u otra suite verificable. Los tests son el **loop de verificacion**, no un accesorio.
+- El reviewer no aprueba una revision sin un comando ejecutable reproducido:
+  - Comando exacto documentado (con workdir y flags).
+  - Resultado (exit code, resumen de tests, coverage) anclado al review.
+- Si el implementador entrega "confio en mi logica" sin check ejecutable, solicitar cambios.
+
+### Anti-patterns dominantes 2026 (SWE-bench Pro failure modes)
+Marcar en el review cual anti-pattern aplica si se detecta en la trayectoria del agente:
+
+| Anti-pattern | Senal | Accion del reviewer |
+|--------------|-------|---------------------|
+| **(a) Context overflow** | Carga de codigo/litigio excesivo en la ventana, diffs gigantes sin foco, copia innecesaria de archivos completos | Pedir reducir alcance, chunking semantico, revisar solo el delta relevante |
+| **(b) Endless file reading** | Lectura de archivos sin proposito: explora de mas, repite lecturas del mismo archivo sin accion | Marcar perdida de tiempo/tokens; pedir plan de lectura con objetivo |
+| **(c) Stuck-in-loop** | Itera sobre el mismo problema sin progreso (mismos errores, mismos parches) | Detener el ciclo; pedir cambio de enfoque o escalar a instancia limpia |
+| **(d) Tool error** | Fallos de herramientas no manejados: comandos rotos, timeouts, outputs no verificados | Exigir manejo de errores de tool, retry y verificacion de cada paso |
+| **(e) Wrong solution** | Resuelve el problema equivocado por no explorar primero el contexto/requirements | Revertir a plan-mode: explorar -> planear -> codificar; exigir el plan antes del diff |
+
+### Proceso adversarial
+```
+plan-mode first -> adversarial diff review -> verificacion con suite completa
+  1. PLAN-MODE FIRST: exigir que la trayectoria del agente muestre
+     exploracion -> plan -> codigo. Si salta directo a codigo, senalarlo.
+  2. ADVERSARIAL DIFF REVIEW: intentar invalidar la solucion
+     (edge cases, regresiones, supersets no cubiertos, casos vacios).
+  3. VERIFICACION CON SUITE DE REGRESION COMPLETA: no solo tests focales
+     del cambio; correr la suite completa del modulo/pack afectado.
+```
+- Si el agente genero los tests junto con el codigo, el reviewer DEBE sospechar de
+  tests "acomodados" (que solo verifican el camino feliz del propio codigo).
+- Cualquier anti-pattern detectado se reporta explicitamente con la letra (a)-(e)
+  en el hallazgo, junto con la evidencia de la trayectoria.

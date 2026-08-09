@@ -75,7 +75,6 @@ class KVCacheSharing:
 
     Args:
         capacity: Maximo de entradas (default: 50).
-        tokens_per_entry: Estimacion de tokens por entrada (default: 1024).
 
     Example:
         >>> cache = KVCacheSharing()
@@ -86,13 +85,11 @@ class KVCacheSharing:
     def __init__(
         self,
         capacity: int = _DEFAULT_CAPACITY,
-        tokens_per_entry: int = 1024,
     ) -> None:
         """Inicializa el KV cache compartido.
 
         Args:
             capacity: Maximo de entradas.
-            tokens_per_entry: Tokens estimados por entrada.
 
         Raises:
             ValueError: Si capacity < 1.
