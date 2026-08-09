@@ -1,13 +1,15 @@
-# ADR-0041: Frontier Adaptation 2026 — MCP Stateless, OTel GenAI, DeltaChannel, Agent Factory y Skills 2026
+# ADR-0041: Frontier Adaptation 2026 — MCP Stateless, OTel GenAI, DeltaChannel, Agent Factory, Skills y Tokens
 
 ## Estado
-**Fase 1 IMPLEMENTADO + Fase 2 IMPLEMENTADO (2026-08-08)** — Tras dos rondas de
+**Fase 1 + Fase 2 + Fase 3 IMPLEMENTADO (2026-08-08)** — Tras tres rondas de
 investigación web exhaustiva (agosto 2026): (a) sistemas agénticos y opencode v1.18.x
 (anomalyco/opencode, 195k stars); (b) skills de programación frontier, análisis de
 textos científicos y legales, y construcción de agentes on-demand (arXiv 2604.27882,
-SWE-bench Pro, agentskills.io, LegalGraphRAC ACL 2026, OpenScholar, Terminus).
-Mesa de trabajo con verificación IDP sobre el harness en ambas fases: se descartaron
-las recomendaciones ya implementadas o de bajo ROI; se adoptan 6 deltas con impacto
+SWE-bench Pro, agentskills.io, LegalGraphRAC ACL 2026, OpenScholar, Terminus);
+(c) ahorro de tokens (prompt caching, context engineering, RouteLLM arXiv 2406.18665,
+multi-agent token economics).
+Mesa de trabajo con verificación IDP sobre el harness en las tres fases: se descartaron
+las recomendaciones ya implementadas o de bajo ROI; se adoptan 8 deltas con impacto
 verificable y ciclo TDD corto.
 
 > **ADR interno**: no se pushea a remoto; vive solo en el repo local (regla del proyecto).
@@ -118,10 +120,38 @@ qué+hace+cuándo, verbos accionables), `license`, `compatibility`, `metadata`
   verificación de vigencia (VIGENTE/MODIFICADO/DEROGADO/INEXEQUIBLE) contra SUIN/
   relatorías/Kelsen MCP, marca `APÓCRIFA-REVISAR`, diagnostic checklists por norma.
 
+### FASE 3 — Ahorro de tokens 2026 (investigación frontier token economics)
+
+> Tercera investigación (2026-08-08): prompt caching (Anthropic cache_control,
+> OpenAI breakpoints + prompt_cache_key + cache writes 1.25x, Gemini implicit),
+> context engineering (Anthropic CEN, server-side compaction), RouteLLM
+> (arXiv 2406.18665, costo -2x), multi-agent token economics (Anthropic: usage
+> explica ~80% de la varianza de rendimiento). Mesa de trabajo IDP: cache-shaping
+> (prompt_cache_builder), shaped/semantic/kv cache, token budgets y compaction
+> ya existían. Deltas adoptados:
+
+### H7. ComplexityRouter (RouteLLM-style) — `harness/model_router/complexity_router.py` (nuevo)
+Router por complejidad semántica 0..100 (señales: longitud, keywords de
+razonamiento, dominio complejo, términos simples, multi-instrucción) con umbral
+calibrable (`set_threshold`), `route()` (small vs frontier) y `route_with_validation()`
+(fallback con red de seguridad: si el small no valida, escala a frontier).
+Ahorro ~2x sin perder calidad (patrón RouteLLM). Complementario al `ModelRouter`
+existente (dominio/longitud). 26 tests TDD.
+
+### H8. TokenUsageTracker — `harness/memory_rag/token_usage_tracker.py` (nuevo)
+Medición de tokens por agente/llamada (input/output/cache_read/cache_write)
+con buffer circular thread-safe, agregación por agente, `top_consumers`,
+`cache_hit_ratio` y `alerts(budgets)` (umbral 80% del presupuesto). Detecta
+fugas de tokens (Anthropic: usage = 80% de la varianza). `export()` JSON
+alimenta spans `gen_ai.usage.*`. Complementario a `TokenBudget` (asignación).
+39 tests TDD.
+
 ### No-acciones (documentadas, evitando YAGNI)
 - Shepherd scaling (P2), A2A 1.0 (P3), routing Terminus (P3) y marketplace externo
   (P3) se difieren; no hay consumo que los justifique hoy.
 - Sandboxing Codex-style se difiere: el harness corre local con permisos de opencode.
+- P3 (assisted decoding, KV-cache sharing multi-servidor vLLM) se difiere: requiere
+  infra self-hosted que no existe hoy.
 
 ## Consecuencias
 - **Positivas**: cliente MCP futuro-proof (spec 2026-07-28); trazabilidad estándar
@@ -130,20 +160,25 @@ qué+hace+cuándo, verbos accionables), `license`, `compatibility`, `metadata`
   lenguaje natural (con revisión humana); skills interoperables con el estándar
   agentskills.io (Claude Code/Codex/opencode); análisis científico y legal con
   verificación de citas/vigencia (mitiga sanción por citas apócrifas IA);
-  suite TDD crece ~100 tests.
+  ahorro de tokens ~2x en tareas simples (ComplexityRouter) y visibilidad de
+  fugas (TokenUsageTracker, usage = 80% de la varianza en agentes);
+  suite TDD crece ~200 tests.
 - **Negativas**: fallback legacy añade rama de compat en MCP; semconv GenAI añade
   atributos sin eliminar los legacy (leve redundancia); el validador de skills
   reporta warnings en los 32 skills (campos opcionales del estándar no presentes).
 - **Riesgos**: servidores MCP antiguos pueden rechazar requests sin `initialize` →
   mitigado con fallback; DeltaChannel requiere batching-invariance en reducers →
   documentado en el módulo; el recommender de agentes es keyword-based (mejorable a
-  embedding-based en iteración futura).
+  embedding-based en iteración futura); ComplexityRouter usa señales heurísticas
+  (mejorable con embeddings tipo RouteLLM en iteración futura).
 
 ## Verificación (DoD)
-- [x] Tests TDD para H1/H2/H3/H4/H5 (red → green → refactor) con docstrings ES-UTF8.
+- [x] Tests TDD para H1/H2/H3/H4/H5/H7/H8 (red → green → refactor) con docstrings ES-UTF8.
 - [x] H6: secciones añadidas en reviewer.md, science-doc/SKILL.md, legal-doc/SKILL.md.
-- [x] Suite completa pasa (4068+ tests); ruff limpio; sin `except: pass` silencioso.
+- [x] Suite completa pasa (4277+ tests); ruff limpio; sin `except: pass` silencioso.
 - [x] Validador agentskills.io: 32/32 skills válidos (0 errores).
 - [x] Agent Factory demo: tarea legal → recomienda legal-review → genera Markdown opencode.
+- [x] ComplexityRouter: 26 tests (routing small/frontier + fallback validación).
+- [x] TokenUsageTracker: 39 tests (agregación, cache ratio, alerts, thread-safe).
 - [x] API pública sin breaking changes.
 - [x] ADR interno marcado IMPLEMENTADO (sin push).

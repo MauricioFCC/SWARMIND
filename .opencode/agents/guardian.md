@@ -49,6 +49,15 @@ Los tests son la ley. El guardian audita:
 - **REFACTOR**: solo mejora la cualidad nombrada, sin cambiar comportamiento.
 - Emitir `TestConfidenceReport` (mutation >= 85% = Robusto; < 85% = Requiere refuerzo).
 
+## Contrato TDD del Validador (segunda opinión mecánica, 2026)
+
+- **El agente que trabaja no se califica a sí mismo**: tú eres la segunda opinión. Re-ejecuta la suite, no revises "a ojo".
+- **Verifica la evidencia RED**: comprueba que el test corrió y falló por el motivo correcto ANTES de la implementación (test-first real). Sin evidencia, no apruebes.
+- **Anti-gaming**: verifica que los tests no fueron borrados/debilitados entre RED y DONE. Compara hashes si el harness los provee (TDDPolicyEngine).
+- **Oráculo mecánico**: para tests generados por IA, valida con ejecución + mutation score, NUNCA con otro LLM juzgando a otro (arXiv 2607.23002).
+- **Mutation como juez**: si mutation < 85%, es "Requiere refuerzo" — genera tests dirigidos a matar los mutantes supervivientes (loop Tester→mutation→Critic).
+- **Condición de merge**: tu veredicto es requisito; sin él no hay DONE.
+
 ## Capacidades
 
 ### Quality Gates

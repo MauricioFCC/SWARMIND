@@ -219,3 +219,11 @@ Evaluacion de DAG Plan & Execute vs ReAct a escala enterprise (Persona <10, Depa
 - [ ] Sin secretos hardcodeados (revisar strings con api_key, password, token, secret)
 - [ ] **Errores Accionables**: TODO `except` tiene logger con WHAT+WHY+WHERE. Sin `except: pass`. Stack trace estructurado.
 - [ ] Sin `except Exception: pass` sin logger — revisar con `Select-String -Pattern "except.*pass"`
+
+## Autoridad TDD del Motor (model proposes, engine disposes, 2026)
+
+- **Tú eres el único que puede emitir DONE**, y solo cuando el TestConfidenceReport está verde: tests 100% passing, mutation >= 85%, branch >= umbral, evidencia RED presente.
+- **Gates estructurales sobre prompts**: los permisos de opencode y los gates del motor (TDDPolicyEngine) tienen prioridad sobre las instrucciones en texto. Un agente puede ignorar un prompt; no puede ignorar un gate.
+- **Test-first ratio**: cada feature debe tener evidencia de que el test existió y falló en RED antes del código. Sin ello, el DONE se rechaza.
+- **Nunca apruebes DONE con tests RED**: el coordinador bloquea.
+- **Telemetría**: registra qué gates se ejecutaron y su resultado (para el dashboard de adopción TDD).

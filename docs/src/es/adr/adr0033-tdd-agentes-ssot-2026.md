@@ -1,7 +1,42 @@
 # ADR-0033: TDD + Agentes como Fuente Unica de Verdad — Spec-First, Code-Second
 
 ## Estado
-**ACEPTADO** — Implementado Julio 2026.
+**ACEPTADO** — Implementado Julio 2026. **Actualizado Ago 2026 (TDD always-on)**.
+> **ADR interno**: no se pushea a remoto (regla del proyecto).
+
+## Actualización 2026-08 — TDD siempre-on (investigación frontier TDD 2026)
+
+Segunda investigación web (agosto 2026: arXiv 2604.26615, 2603.17973 TDAD,
+2607.23002, 2608.05917; Codex KB; Claude Code best practices) confirma que 2026
+re-contextualiza TDD como **el mecanismo de verificación que cierra el loop del
+agente** ("el agente no sabe cuándo terminó; la suite sí"). Tres lecciones con
+evidencia dura aplicadas al harness:
+
+1. **Contexto > procedimiento** (TDAD: mapa src↔tests reduce regresiones −70%;
+   instrucciones procedimentales sin contexto las EMPEORAN +64%).
+2. **Enforcement estructural > prompt** (los LLM optimizan "done" no "correct";
+   Beck reportó agentes que borran tests para pasar la suite).
+3. **Oráculo mecánico, nunca un LLM juzgando a otro** (mutation como juez).
+
+**Nuevos módulos (TDD estricto, 74 tests nuevos, 97 totales TDD):**
+
+| Módulo | Rol | Fuente |
+|---|---|---|
+| `workflows/tdd_policy.py` | `TDDPolicyEngine`: autoridad del motor ("model proposes, engine disposes") — 6 checks (fase, test-first real con evidencia RED, anti-gaming por hash de tests, completitud 100%, mutation ≥85%, branch ≥80%) + `can_emit_done()` para el orchestrator | arXiv 2604.26615 |
+| `workflows/test_dependency_map.py` | `TestDependencyMap`: mapa src↔tests vía AST (TDAD-style) — "si cambias X, corre estos tests"; `render()` como skill estático para el agente | arXiv 2603.17973 |
+| `workflows/test_reinforcement.py` | `TestReinforcementLoop`: Tester→mutation→Critic — sugiere tests dirigidos a matar mutantes supervivientes (kill rate incremental ~78%) | arXiv 2607.23002 |
+
+**Contrato TDD 2026 en agentes** (builder/guardian/coordinator): nunca modificar
+tests salvo bug demostrable, pytest completo antes de done, passing/total antes
+y después, nunca done con tests RED, guardian como segunda opinión mecánica
+(re-ejecuta, verifica evidencia RED, anti-gaming, oráculo mecánico), coordinator
+como único emisor de DONE con TestConfidenceReport verde.
+
+**Ahorro de tokens (compaginado)**: la documentación sigue progressive disclosure
+— el ADR resume; el detalle vive en los módulos/docstrings. El mapa de dependencias
+se inyecta solo al agente que toca el src (contexto dirigido, no contexto global).
+Los gates son deterministas (costo de ejecución, no de tokens). Ver ADR-0041
+(vulture/ruff) y ADR-0039 (token economics) para los gates de calidad base.
 
 ## Contexto
 
@@ -147,6 +182,13 @@ Se implementa `harness/orchestrator/success_correlation.py`.
   post-deploy (Fase 3.3: ventana de 30 min, umbral 5%, rollback automatico
   al commit anterior + log para evolve-analyzer)
 - `.opencode/agents/builder.md`, `.opencode/agents/guardian.md` — reglas de oro TDD
+
+**Actualización 2026-08 (TDD always-on):**
+- `harness/orchestrator/workflows/tdd_policy.py` — `TDDPolicyEngine` (engine authority, 6 gates, `can_emit_done`)
+- `harness/orchestrator/workflows/test_dependency_map.py` — `TestDependencyMap` (TDAD src↔tests)
+- `harness/orchestrator/workflows/test_reinforcement.py` — `TestReinforcementLoop` (Tester→mutation→Critic)
+- `harness/tests/test_tdd_policy.py`, `test_dependency_map.py`, `test_reinforcement.py` — 74 tests nuevos
+- `.opencode/agents/builder.md`, `guardian.md`, `coordinator.md` — Contrato TDD 2026 (secciones nuevas)
 
 ## Referencias
 
