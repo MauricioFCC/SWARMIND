@@ -48,6 +48,21 @@ def _capture_system(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     return calls
 
 
+def _clear_real_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Limpia env vars reales persistidas (setx ADR-0042) para tests herméticos.
+
+    Los tests de persistencia deben ser independientes del entorno de la
+    máquina: si DEV_SPACE_ROOT/MEMORY_ROOT ya están en el entorno real
+    (persistidos por setx), persist_env_vars() correctamente NO los vuelve
+    a setear (idempotencia), y el assert del test fallaría.
+
+    Args:
+        monkeypatch: Fixture de monkeypatch de pytest.
+    """
+    for var in ("DEV_SPACE_ROOT", "MEMORY_ROOT"):
+        monkeypatch.delenv(var, raising=False)
+
+
 # ---------------------------------------------------------------------------
 # 1. Harness global empaquetado completo (Causa 2 ADR-0042)
 # ---------------------------------------------------------------------------
@@ -188,6 +203,7 @@ def test_persist_env_no_pisa_pythonpath_existente(
 ) -> None:
     """PYTHONPATH existente se preserva: el global se anade con ';'."""
     monkeypatch.setenv("PYTHONPATH", r"C:\otro\path")
+    _clear_real_env(monkeypatch)
     monkeypatch.setattr(verify_swarmind_setup, "_GLOBAL_DIR", tmp_path / "global")
     monkeypatch.setattr(verify_swarmind_setup, "_MEMORY_ROOT", tmp_path / "mem")
     monkeypatch.setattr(verify_swarmind_setup.Path, "home", lambda: tmp_path)
@@ -206,6 +222,7 @@ def test_persist_env_detecta_dev_space(monkeypatch: pytest.MonkeyPatch,
                                        tmp_path: Path) -> None:
     """DEV_SPACE_ROOT se detecta del Documents real (DEV_SPACE con underscore)."""
     monkeypatch.setenv("PYTHONPATH", "")
+    _clear_real_env(monkeypatch)
     monkeypatch.setattr(verify_swarmind_setup, "_GLOBAL_DIR", tmp_path / "global")
     monkeypatch.setattr(verify_swarmind_setup, "_MEMORY_ROOT", tmp_path / "mem")
     _capture_system(monkeypatch)
@@ -223,6 +240,7 @@ def test_persist_env_no_duplica_pythonpath(monkeypatch: pytest.MonkeyPatch,
     """Si el global ya esta en PYTHONPATH, no se duplica (idempotente)."""
     gdir = tmp_path / "global"
     monkeypatch.setenv("PYTHONPATH", str(gdir))
+    _clear_real_env(monkeypatch)
     monkeypatch.setattr(verify_swarmind_setup, "_GLOBAL_DIR", gdir)
     monkeypatch.setattr(verify_swarmind_setup, "_MEMORY_ROOT", tmp_path / "mem")
     _capture_system(monkeypatch)

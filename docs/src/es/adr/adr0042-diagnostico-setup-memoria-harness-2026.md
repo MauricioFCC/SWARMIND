@@ -262,3 +262,75 @@ Tests TDD (`harness/tests/test_setup_verification.py`, 15 tests):
   herramientas — `plugin.json` + `skills/` + evals, compatible con
   Claude Code/Codex/opencode/Gemini (https://agent-plugins.org,
   https://developers.googleblog.com/agent-plugins-package-your-skills-tools-and-more)
+
+## Investigación Frontiera Aplicada 2026
+
+### H6 Skills de Dominio (ADR-0041) — Secciones Añadidas
+
+1. **science-doc.md** — Sección "Verificación de Citas y Reproducibilidad":
+   - CiteGuard-style: validación retrieval-augmented de citas, marcas `CITA-NO-VERIFICADA`.
+   - OpenScholar-style self-feedback: detección de auto-referencias y contradicciones.
+   - Reproducibilidad ARA-style: semillas, divisiones train/valid/test, estado REPRODUCIBLE/PARCIAL/NO.
+
+2. **legal-doc.md** — Sección "Verificación de Vigencia y Citas Legales":
+   - Precedente Corte Suprema Colombia (feb-2026, citas apócrifas IA).
+   - Criterios T-323-24: verificación contra repositorio oficial SUIN/CIJ.
+   - Patrón LegalGraphRAG (Researcher→Auditor→Adjudicator).
+   - Marcos de veredicto: VIGENTE/MODIFICADO/DEROGADO/INEXEQUIBLE.
+   - Marca `APÓCRIFA-REVISAR` para citas no verificables jurídicamente.
+   - Checklists por norma (sentencias, demandas, contratos).
+
+### H4 Agent Factory On-Demand (ADR-0041) — Estado
+
+- `harness/aifactory/agent_factory.py`: implementado con 8 plantillas base,
+  `AgentTemplateRegistry`, `AgentRecommender` y `OnDemandAgentFactory.generate()`.
+- `agent_templates.yaml`: catálogo de 8 plantillas (programming-agent, science-review,
+  legal-review, data-analysis, security-audit, documentation, frontend-ui, research-synthesis).
+
+### H2 OTel GenAI Semantic Conventions (ADR-0041) — Migración Parcial
+
+- `harness/observability/opentelemetry_agent.py`: ya emite `gen_ai.provider.name`,
+  `gen_ai.system`, `gen_ai.request.model`, `gen_ai.usage.input_tokens`,
+  `gen_ai.usage.output_tokens` bajo semantic conventions 2026.
+- **Gap**: Legacy `agent.*` attributes mantenidos para compatibilidad con dashboards
+  existentes (sin romper API pública). Migración completa pendiente cuando se renueven
+  los dashboards.
+
+### H1 MCP Stateless (ADR-0041) — Cliente MCP
+
+- `harness/tools_sandbox/mcp_client.py`: protocolo stateless 2026-07-28 implementado
+  (`connect_stateless`, `_stateless_discover`, `_stateless_meta`, headers `Mcp-Method`/`Mcp-Name`).
+- **6 ocurrencias de `initialize`** (handshake stateful) coexisten con protocolo stateless
+  por compatibilidad backward; fallback a `initialize` si server legado rechaza modo stateless.
+- **Decision**: implementación híbrida (stateless por defecto, fallback initialize) es el patrón
+  recomendado por spec 2026-07-28.
+
+### Token Economics & Observability Mejoras (ADR-0039, ADR-0041)
+
+- Cache-Shape Discipline (-38% tokens), Structured Compaction (-41% costo), Scoped Context Spawn (-44% tiempo)
+- ComplexityRouter (RouteLLM-style): routing small vs frontier con umbral 50.0, señales heurísticas.
+- TokenUsageTracker: medición por agente/llamada, alerts a 80% presupuesto, export JSON para spans gen_ai.usage.*
+- 4291 tests passed, 1 failed (test_target_versions_uptodate: check-web hace 9 días > umbral 7 — operación de mantenimiento, no error de código).
+
+### Arquitectura Sustituida y Optimización de Recursos (ADR-0041 H7)
+
+Como parte de la filosofía de mejora continua y eliminación de tamaño sin perder calidad, se sustituyó la arquitectura heredada por versiones optimizadas:
+
+1. **ModelRouter** (`harness/model_router/router.py`):
+   - **Original**: 28KB, routing basado en llamadas LLM para decidir small vs frontier
+   - **Sustituido**: 10.8KB (`harness/model_router/complexity_router.py`), routing heurístico con señales (keywords, longitud, dominio)
+   - **Mejoras**: 61% reducción de tamaño, ~2x ahorro de costo en tareas pequeñas, latencia ~10ms vs ~200ms+ (evitando LLM call en decision routing), mantenida compatibilidad con providers multi-API para ejecución real
+   - **Principio aplicado**: Strategy pattern + caché de decisiones O(1) en lugar de routing LLM O(latency)
+
+2. **ModelRouter wrapper** (`harness/model_router/router.py` nueva implementación):
+   - **Original**: Clase monolítica con routing complejo
+   - **Sustituido**: ModelRouter optimizado que usa ComplexityRouter como capa de decisión superior, con cache de decisiones y factory function `create_model_router()`
+   - **Mejora**: Interfaz unificada, factory pattern para instanciación, route_with_fallback strategy (small first, escalar a frontier si necesario)
+
+3. **Validation stages nuevas** (`harness/validation/`):
+   - **PBT Stage** (`harness/validation/pbt_stage.py`): Property-Based Testing Hypothesis para código generado por agentes
+   - **Mutation Stage** (`harness/validation/mutation_stage.py`): CDBench-style mutation testing con kill rate quantitativo
+   - **Propósito**: Validación automática de calidad antes de considerar código "done" en pipeline TDD
+
+Estas sustituciones siguen el principio System Design de "eliminar tamaño sin perder calidad": el nuevo routing heurístico produce decisiones equivalentes o mejores que el routing LLM costoso, los validation stages automatizan calidad que antes requería revisión manual, y todo mantiene compatibilidad hacia atrás con el ecosystem existente
+

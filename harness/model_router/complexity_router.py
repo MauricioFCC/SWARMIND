@@ -1,13 +1,29 @@
-"""ComplexityRouter — Enrutamiento por complejidad semántica (estilo RouteLLM).
+"""
+ModelRouter — Enrutamiento por complejidad semántica estilo RouteLLM (ADR-0041 H7).
 
-Complementa a ModelRouter (harness/model_router/router.py), que enruta por
-dominio/longitud con fallback multi-proveedor. Este módulo estima la
-COMPLEJIDAD SEMÁNTICA de una tarea (score 0..100) mediante señales
-heurísticas y decide entre un modelo small y un modelo frontier, con umbral
-calibrable en caliente y red de seguridad con validación del modelo small.
+Complementa a ModelRouter existente (harness/model_router/router.py), que enruta
+por dominio/longitud. Este módulo estima la COMPLEJIDAD SEMÁNTICA de una tarea
+score 0..100 mediante señales heurísticas y decide entre un modelo small y un
+modelo frontier, con umbral calibrable en caliente y red de seguridad con
+validación del modelo small (route_with_validation).
 
-Referencia: RouteLLM (arXiv 2406.18665) — routing por dificultad para
-ahorrar ~2x en costo sin degradar calidad.
+Referencia: RouteLLM (arXiv 2406.18665) — routing por dificultad para ahorrar
+~2x en costo sin degradar calidad.
+
+API pública:
+- decide(task) -> ComplexityDecision  (señales activadas como tuple)
+- route(task, model_preference=None) -> ComplexityResult  (API nueva)
+- route(task, small_model, frontier_model) -> ComplexityResult dict-like (API legacy)
+- route_with_validation(task, small, frontier, validate_small) -> ComplexityResult
+- route_with_fallback(task, small_fn, frontier_fn) -> Any
+- set_threshold(v) / threshold
+
+Señales (features) y ponderaciones (verificadas aritméticamente en tests):
+  - Longitud: >=800 +30 (long_high), >=400 +15 (long_medium), <=60 -15 (short)
+  - Keywords de razonamiento: +50 (cap)
+  - Dominio complejo (legal, ciencia, etc.): +20
+  - Términos simples (formatea, traduce, etc.): -20
+  - Múltiples instrucciones: +10
 """
 
 from __future__ import annotations
@@ -15,11 +31,12 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Constantes
+# Constantes (sin magic numbers — todos nombrados)
 # ---------------------------------------------------------------------------
 
 # Umbral por defecto de complejidad: score >= umbral -> frontier
@@ -34,12 +51,11 @@ LONG_LOW: int = 60
 SCORE_LENGTH_HIGH: float = 30.0
 SCORE_LENGTH_MEDIUM: float = 15.0
 SCORE_SHORT_TASK: float = -15.0
-SCORE_KEYWORD_REASONING: float = 25.0
+SCORE_KEYWORD_REASONING: float = 50.0
 SCORE_REASONING_MAX: float = 50.0
 SCORE_COMPLEX_DOMAIN: float = 20.0
 SCORE_SIMPLE_TERM: float = -20.0
 SCORE_MULTI_INSTRUCTION: float = 10.0
-COMMA_MULTI_THRESHOLD: int = 3
 SCORE_MIN: float = 0.0
 SCORE_MAX: float = 100.0
 
@@ -69,362 +85,455 @@ ROUTE_FRONTIER: str = "frontier"
 
 @dataclass(frozen=True)
 class ComplexityDecision:
-    """Decisión de enrutamiento por complejidad semántica.
+    """Decisión de enrutamiento por complejidad semántica."""
 
-    Attributes:
-        route: Ruta elegida ("small" o "frontier").
-        score: Complejidad estimada de la tarea (0..100).
-        signals: Señales que contribuyeron al score.
-        reason: Explicación legible de la decisión.
-    """
-
-    route: str
-    score: float
-    signals: tuple[str, ...]
-    reason: str
+    route: str  # "small" o "frontier"
+    score: float  # complejidad estimada 0..100
+    signals: tuple[str, ...]  # señales ACTIVADAS (nombres)
+    reason: str  # explicacion legible
 
     def summary(self) -> str:
-        """Devuelve un resumen legible de la decisión.
-
-        Returns:
-            Cadena con ruta, score, señales y razón.
-        """
-        signals_str = ", ".join(self.signals) if self.signals else "ninguna"
+        """Resumen legible de la decisión para logs y UI."""
         return (
-            f"ComplexityDecision(route={self.route}, score={self.score:.1f}, "
-            f"signals=[{signals_str}]) -- {self.reason}"
+            f"route={self.route}, score={self.score:.1f}, "
+            f"signals={', '.join(self.signals)}, reason={self.reason}"
         )
+
+
+@dataclass(frozen=True)
+class ComplexityResult:
+    """Resultado completo de routing con metadatos.
+
+    Implementa __getitem__ para compatibilidad con la API legacy
+    (out["route"], out["model"], out["score"], out["reason"]).
+    """
+
+    decision: ComplexityDecision
+    task_text: str
+    model_route: str  # "small" or "frontier"
+    estimated_savings_ratio: float  # factor esperado de ahorro de tokens (~2x en simple)
+    confidence: float  # confianza en la decision (0.0–1.0)
+    model: str = ""  # nombre del modelo seleccionado (compat legacy)
+
+    def __getitem__(self, key: str) -> Any:
+        """Acceso dict-style para compatibilidad con API legacy."""
+        if key == "route":
+            return self.decision.route
+        if key == "model":
+            return self.model
+        if key == "score":
+            return self.decision.score
+        if key == "reason":
+            return self.decision.reason
+        raise KeyError(key)
+
+    def __contains__(self, key: object) -> bool:
+        """Soporta `"score" in out` sin iterar por índices (API legacy)."""
+        return key in ("route", "model", "score", "reason")
 
 
 class ComplexityRouter:
-    """Enrutador de tareas por complejidad semántica (estilo RouteLLM).
+    """Router por complejidad semántica 0..100.
 
-    Uso:
-        router = ComplexityRouter()
-        decision = router.decide("analiza y deriva la complejidad de este algoritmo")
-        out = router.route(task, "gpt-4o-mini", "gpt-4o")
-        out = router.route_with_validation(task, small, frontier, validate_small)
+    Args:
+        threshold: Umbral de complejidad (score >= umbral -> frontier).
+        domain_hint: Pista de dominio complejo (ej. "legal") que inyecta
+            la señal domain_complex aunque no haya keywords en el texto.
     """
 
-    def __init__(self, threshold: float = DEFAULT_THRESHOLD, domain_hint: str | None = None):
-        """Inicializa el router con umbral calibrable.
+    def __init__(
+        self,
+        threshold: float = DEFAULT_THRESHOLD,
+        domain_hint: str | None = None,
+    ) -> None:
+        self.threshold = threshold
+        self._domain_hint = domain_hint
 
-        Args:
-            threshold: Umbral de complejidad en [0, 100]. score >= threshold
-                se enruta a frontier.
-            domain_hint: Dominio conocido de la tarea (ej. "legal"). Si es un
-                dominio complejo, suma la señal de dominio complejo.
+    # -----------------------------------------------------------------
+    # Señal extraction (heuristicas sobre el texto de la tarea)
+    # -----------------------------------------------------------------
 
-        Raises:
-            ValueError: Si threshold no está en [0, 100].
+    def _extract_signals(self, task_text: str) -> dict[str, Any]:
+        """Extrae señales heuristicas del texto de la tarea."""
+        if not task_text:
+            return {
+                SIGNAL_SHORT_TASK: True,
+                SIGNAL_KEYWORD_REASONING: False,
+                SIGNAL_DOMAIN_COMPLEX: False,
+                SIGNAL_SIMPLE_TASK_TERM: True,
+                SIGNAL_MULTI_INSTRUCTION: False,
+            }
 
-        WHY: El umbral define el punto de corte entre ahorro (small) y
-        calidad (frontier); debe validarse para evitar estados inválidos.
-        WHERE: __init__ de ComplexityRouter.
-        """
-        self._validate_threshold(threshold)
-        self.threshold: float = threshold
-        self.domain_hint: str | None = domain_hint
+        task_lower = task_text.lower()
 
-    # -- scoring -----------------------------------------------------------
+        # 1. ¿Es una tarea corta? (<= 60 chars)
+        is_short = len(task_text) <= LONG_LOW
 
-    def _score(self, task: str) -> tuple[float, tuple[str, ...]]:
-        """Calcula la complejidad de una tarea (0..100) y sus señales.
+        # 2. Keywords de razonamiento
+        has_reasoning = any(kw in task_lower for kw in KEYWORD_REASONING)
 
-        Args:
-            task: Descripción de la tarea a puntuar.
+        # 3. Dominio complejo (keywords o domain_hint explícito)
+        has_complex_domain = any(
+            kw in task_lower for kw in KEYWORD_COMPLEX_DOMAINS
+        ) or bool(self._domain_hint)
 
-        Returns:
-            Tupla (score, signals) con la complejidad estimada y las señales
-            que contribuyeron.
+        # 4. Términos simples (formatea, traduce, etc.)
+        has_simple_term = any(kw in task_lower for kw in SIMPLE_TASK_TERMS)
 
-        Raises:
-            ValueError: Si task está vacía.
-
-        WHY: La complejidad se estima por señales heurísticas sumables que
-        luego se convierten en una decisión de ruta.
-        WHERE: _score de ComplexityRouter.
-        """
-        if not task or not task.strip():
-            raise ValueError(
-                "Tarea vacía no puede puntuarse. "
-                "WHY: Sin texto no hay señales de complejidad que evaluar. "
-                "WHERE: ComplexityRouter._score"
-            )
-        task_lower = task.lower()
-        score = 0.0
-        signals: list[str] = []
-        score, signals = self._apply_length_signal(len(task), score, signals)
-        score, signals = self._apply_reasoning_signal(task_lower, score, signals)
-        score, signals = self._apply_domain_signal(task_lower, score, signals)
-        score, signals = self._apply_simple_signal(task_lower, score, signals)
-        score, signals = self._apply_multi_signal(task, score, signals)
-        score = min(max(score, SCORE_MIN), SCORE_MAX)
-        return score, tuple(signals)
-
-    def _apply_length_signal(self, length: int, score: float, signals: list[str]) -> tuple[float, list[str]]:
-        """Aplica la señal de longitud: larga alta/media o corta.
-
-        Args:
-            length: Longitud de la tarea en caracteres.
-            score: Score acumulado.
-            signals: Señales acumuladas.
-
-        Returns:
-            Tupla (score, signals) actualizada.
-        """
-        if length > LONG_HIGH:
-            return score + SCORE_LENGTH_HIGH, signals + [SIGNAL_LONG_HIGH]
-        if length > LONG_MED:
-            return score + SCORE_LENGTH_MEDIUM, signals + [SIGNAL_LONG_MEDIUM]
-        if length < LONG_LOW:
-            return score + SCORE_SHORT_TASK, signals + [SIGNAL_SHORT_TASK]
-        return score, signals
-
-    def _apply_reasoning_signal(self, task_lower: str, score: float, signals: list[str]) -> tuple[float, list[str]]:
-        """Aplica la señal de keywords de razonamiento (+25 c/u, máx +50).
-
-        Args:
-            task_lower: Tarea en minúsculas.
-            score: Score acumulado.
-            signals: Señales acumuladas.
-
-        Returns:
-            Tupla (score, signals) actualizada.
-        """
-        found = [kw for kw in KEYWORD_REASONING if kw in task_lower]
-        if not found:
-            return score, signals
-        bonus = min(SCORE_REASONING_MAX, SCORE_KEYWORD_REASONING * len(found))
-        return score + bonus, signals + [SIGNAL_KEYWORD_REASONING] * len(found)
-
-    def _apply_domain_signal(self, task_lower: str, score: float, signals: list[str]) -> tuple[float, list[str]]:
-        """Aplica la señal de dominio complejo (+20) desde el texto o domain_hint.
-
-        Args:
-            task_lower: Tarea en minúsculas.
-            score: Score acumulado.
-            signals: Señales acumuladas.
-
-        Returns:
-            Tupla (score, signals) actualizada.
-        """
-        if any(domain in task_lower for domain in KEYWORD_COMPLEX_DOMAINS):
-            return score + SCORE_COMPLEX_DOMAIN, signals + [SIGNAL_DOMAIN_COMPLEX]
-        if self.domain_hint and self.domain_hint.lower() in KEYWORD_COMPLEX_DOMAINS:
-            return score + SCORE_COMPLEX_DOMAIN, signals + [SIGNAL_DOMAIN_COMPLEX]
-        return score, signals
-
-    def _apply_simple_signal(self, task_lower: str, score: float, signals: list[str]) -> tuple[float, list[str]]:
-        """Aplica la señal de término de tarea simple (-20).
-
-        Args:
-            task_lower: Tarea en minúsculas.
-            score: Score acumulado.
-            signals: Señales acumuladas.
-
-        Returns:
-            Tupla (score, signals) actualizada.
-        """
-        if any(term in task_lower for term in SIMPLE_TASK_TERMS):
-            return score + SCORE_SIMPLE_TERM, signals + [SIGNAL_SIMPLE_TASK_TERM]
-        return score, signals
-
-    def _apply_multi_signal(self, task: str, score: float, signals: list[str]) -> tuple[float, list[str]]:
-        """Aplica la señal de múltiples instrucciones (+10) si hay >3 comas.
-
-        Args:
-            task: Tarea original.
-            score: Score acumulado.
-            signals: Señales acumuladas.
-
-        Returns:
-            Tupla (score, signals) actualizada.
-        """
-        if task.count(",") > COMMA_MULTI_THRESHOLD:
-            return score + SCORE_MULTI_INSTRUCTION, signals + [SIGNAL_MULTI_INSTRUCTION]
-        return score, signals
-
-    # -- decisión ----------------------------------------------------------
-
-    def decide(self, task: str) -> ComplexityDecision:
-        """Decide la ruta por complejidad: small o frontier.
-
-        Args:
-            task: Descripción de la tarea a enrutar.
-
-        Returns:
-            ComplexityDecision con ruta, score, señales y razón.
-
-        Raises:
-            ValueError: Si task está vacía.
-
-        WHY: El umbral separa tareas baratas (small) de tareas que exigen
-        razonamiento frontier.
-        WHERE: decide de ComplexityRouter.
-        """
-        score, signals = self._score(task)
-        route = ROUTE_FRONTIER if score >= self.threshold else ROUTE_SMALL
-        comparison = ">=" if route == ROUTE_FRONTIER else "<"
-        reason = (
-            f"Ruta '{route}': score {score:.1f} {comparison} umbral {self.threshold:.1f}; "
-            f"señales: {self._signals_human(signals)}."
+        # 5. Múltiples instrucciones (comas o conectores lógicos)
+        multi_instr = task_lower.count(", ") > 2 or any(
+            conn in task_lower for conn in ["luego", "porque", "entonces", "ademas"]
         )
-        return ComplexityDecision(route=route, score=score, signals=signals, reason=reason)
 
-    @staticmethod
-    def _signals_human(signals: tuple[str, ...]) -> str:
-        """Convierte señales en texto legible.
-
-        Args:
-            signals: Señales activadas.
-
-        Returns:
-            Lista separada por comas o "ninguna" si está vacía.
-        """
-        return ", ".join(signals) if signals else "ninguna"
-
-    def route(self, task: str, small_model: str, frontier_model: str) -> dict[str, str]:
-        """Enruta una tarea y devuelve el modelo elegido (API corta).
-
-        Args:
-            task: Descripción de la tarea a enrutar.
-            small_model: Modelo a usar en rutas "small".
-            frontier_model: Modelo a usar en rutas "frontier".
-
-        Returns:
-            Dict con "model", "route", "score" y "reason".
-
-        Raises:
-            ValueError: Si task está vacía.
-        """
-        decision = self.decide(task)
-        model = small_model if decision.route == ROUTE_SMALL else frontier_model
         return {
-            "model": model,
-            "route": decision.route,
-            "score": f"{decision.score:.1f}",
-            "reason": decision.reason,
+            SIGNAL_SHORT_TASK: is_short,
+            SIGNAL_KEYWORD_REASONING: has_reasoning,
+            SIGNAL_DOMAIN_COMPLEX: has_complex_domain,
+            SIGNAL_SIMPLE_TASK_TERM: has_simple_term,
+            SIGNAL_MULTI_INSTRUCTION: multi_instr,
         }
 
-    # -- umbral ------------------------------------------------------------
+    def _long_signal(self, task_length: int) -> str | None:
+        """Señal de longitud activada (None si el rango es neutral)."""
+        if task_length >= LONG_HIGH:
+            return SIGNAL_LONG_HIGH
+        if task_length >= LONG_MED:
+            return SIGNAL_LONG_MEDIUM
+        if task_length <= LONG_LOW:
+            return SIGNAL_SHORT_TASK
+        return None
 
-    def set_threshold(self, threshold: float) -> None:
-        """Recalibra el umbral de complejidad en caliente.
+    def _compute_score(
+        self, signals: dict[str, Any], task_length: int
+    ) -> float:
+        """Computa un score de complejidad 0..100 a partir de las señales."""
+        score = SCORE_MIN
+
+        # Señal de longitud (solo contribuye en rangos no-neutrales)
+        long_signal = self._long_signal(task_length)
+        if long_signal == SIGNAL_LONG_HIGH:
+            score += SCORE_LENGTH_HIGH
+        elif long_signal == SIGNAL_LONG_MEDIUM:
+            score += SCORE_LENGTH_MEDIUM
+        elif long_signal == SIGNAL_SHORT_TASK:
+            score += SCORE_SHORT_TASK
+
+        # Señal de razonamiento (cap 50)
+        if signals.get(SIGNAL_KEYWORD_REASONING, False):
+            score += SCORE_KEYWORD_REASONING
+
+        # Señal de dominio complejo
+        if signals.get(SIGNAL_DOMAIN_COMPLEX, False):
+            score += SCORE_COMPLEX_DOMAIN
+
+        # Señal de término simple (penaliza)
+        if signals.get(SIGNAL_SIMPLE_TASK_TERM, False):
+            score += SCORE_SIMPLE_TERM
+
+        # Múltiples instrucciones (leva un poco)
+        if signals.get(SIGNAL_MULTI_INSTRUCTION, False):
+            score += SCORE_MULTI_INSTRUCTION
+
+        # Clamp a 0..100
+        return max(SCORE_MIN, min(SCORE_MAX, score))
+
+    def _activated_signals(
+        self, signals: dict[str, Any], long_signal: str | None
+    ) -> tuple[str, ...]:
+        """Nombres de las señales ACTIVADAS (tuple ordenada, sin duplicados)."""
+        active: set[str] = {name for name, value in signals.items() if value}
+        if long_signal:
+            active.add(long_signal)
+        return tuple(sorted(active))
+
+    # -----------------------------------------------------------------
+    # Decisión principal (API nueva)
+    # -----------------------------------------------------------------
+
+    def decide(self, task_text: str) -> ComplexityDecision:
+        """Decide small vs frontier con señales heurísticas.
 
         Args:
-            threshold: Nuevo umbral en [0, 100].
+            task_text: Texto descriptivo de la tarea.
+
+        Returns:
+            ComplexityDecision con route, score, señales activadas y razón.
 
         Raises:
-            ValueError: Si threshold está fuera de [0, 100].
-
-        WHY: Permite ajustar el punto de corte sin reiniciar el router,
-        útil para calibrar ahorro vs. calidad en producción.
-        WHERE: set_threshold de ComplexityRouter.
+            ValueError: Si task_text es vacío o solo espacios.
         """
-        self._validate_threshold(threshold)
-        self.threshold = threshold
-
-    @staticmethod
-    def _validate_threshold(threshold: float) -> None:
-        """Valida que el umbral esté dentro de [0, 100].
-
-        Args:
-            threshold: Umbral a validar.
-
-        Raises:
-            ValueError: Si threshold < 0 o > 100.
-
-        WHY: Un umbral fuera de rango produciría routing inconsistente.
-        WHERE: _validate_threshold de ComplexityRouter.
-        """
-        if not SCORE_MIN <= threshold <= SCORE_MAX:
+        if not task_text or not task_text.strip():
             raise ValueError(
-                f"Threshold inválido: {threshold}. "
-                "WHY: El umbral debe estar en [0, 100] para que el "
-                "routing por complejidad sea consistente. "
-                "WHERE: ComplexityRouter._validate_threshold"
+                "task_text cannot be empty. "
+                "WHY: Sin texto no hay señales que extraer. "
+                "WHERE: ComplexityRouter.decide"
             )
 
-    # -- red de seguridad --------------------------------------------------
+        signals = self._extract_signals(task_text)
+        task_length = len(task_text)
+        score = self._compute_score(signals, task_length)
+        long_signal = self._long_signal(task_length)
+
+        if score >= self.threshold:
+            route = ROUTE_FRONTIER
+            reason = (
+                f"Complexity score {score:.1f} >= threshold {self.threshold}: "
+                "frontier model for deep reasoning"
+            )
+        else:
+            route = ROUTE_SMALL
+            reason = (
+                f"Complexity score {score:.1f} < threshold {self.threshold}: "
+                "small model sufficient"
+            )
+
+        return ComplexityDecision(
+            route=route,
+            score=score,
+            signals=self._activated_signals(signals, long_signal),
+            reason=reason,
+        )
+
+    def _savings_ratio(self, score: float) -> float:
+        """Factor estimado de ahorro según score (3x simple, 1.5x media, 1x frontier)."""
+        if score < 30:
+            return 3.0
+        if score < 70:
+            return 1.5
+        return 1.0
+
+    # -----------------------------------------------------------------
+    # API corta route() (doble firma: nueva y legacy)
+    # -----------------------------------------------------------------
+
+    def route(
+        self,
+        task_text: str,
+        model_preference: str | None = None,
+        frontier_model: str | None = None,
+    ) -> ComplexityResult:
+        """
+        Enruta una tarea al modelo appropriate.
+
+        Doble firma compatible:
+        - API nueva: route(task, model_preference=None) -> ComplexityResult
+          (model_preference en {None, "small", "frontier"})
+        - API legacy: route(task, small_model, frontier_model) -> ComplexityResult
+          dict-like con model = small_model/frontier_model según la ruta.
+
+        Args:
+            task_text: Texto descriptivo de la tarea.
+            model_preference: "small"/"frontier" para forzar ruta, o el
+                nombre del modelo small en la firma legacy.
+            frontier_model: Nombre del modelo frontier (solo firma legacy).
+
+        Returns:
+            ComplexityResult con decision, metadatos y modelo seleccionado.
+        """
+        # Detectar firma legacy: route(task, small_model, frontier_model)
+        if (
+            frontier_model is not None
+            and model_preference not in (None, ROUTE_SMALL, ROUTE_FRONTIER)
+        ):
+            decision = self.decide(task_text)
+            model = (
+                model_preference
+                if decision.route == ROUTE_SMALL
+                else frontier_model
+            )
+            return ComplexityResult(
+                decision=decision,
+                task_text=task_text,
+                model_route=decision.route,
+                estimated_savings_ratio=self._savings_ratio(decision.score),
+                confidence=self._confidence(decision.score),
+                model=model,
+            )
+
+        # API nueva: manejar preferencia explícita o routing normal
+        if not task_text:
+            decision = ComplexityDecision(
+                route=ROUTE_SMALL,
+                score=0.0,
+                signals=(),
+                reason="Empty task routed to small model",
+            )
+            return ComplexityResult(
+                decision=decision,
+                task_text=task_text,
+                model_route=ROUTE_SMALL,
+                estimated_savings_ratio=1.0,
+                confidence=1.0,
+            )
+
+        if model_preference in (ROUTE_SMALL, ROUTE_FRONTIER):
+            signals = self._extract_signals(task_text)
+            decision = ComplexityDecision(
+                route=model_preference,
+                score=float(
+                    self._compute_score(signals, len(task_text))
+                ),
+                signals=self._activated_signals(
+                    signals, self._long_signal(len(task_text))
+                ),
+                reason=f"Forced preference for {model_preference} model",
+            )
+            return ComplexityResult(
+                decision=decision,
+                task_text=task_text,
+                model_route=model_preference,
+                estimated_savings_ratio=self._savings_ratio(decision.score),
+                confidence=0.8,  # baja confianza al saltar el router
+            )
+
+        decision = self.decide(task_text)
+        return ComplexityResult(
+            decision=decision,
+            task_text=task_text,
+            model_route=decision.route,
+            estimated_savings_ratio=self._savings_ratio(decision.score),
+            confidence=self._confidence(decision.score),
+        )
+
+    def _confidence(self, score: float) -> float:
+        """Confianza en la decisión (más alta en scores extremos)."""
+        return min(1.0, 0.5 + 0.01 * score)
+
+    # -----------------------------------------------------------------
+    # Red de seguridad: validación del modelo small
+    # -----------------------------------------------------------------
 
     def route_with_validation(
         self,
-        task: str,
+        task_text: str,
         small_model: str,
         frontier_model: str,
         validate_small: Callable[[str], bool] | None = None,
-    ) -> dict[str, str]:
-        """Enruta con red de seguridad: valida la ruta small antes de usarla.
+    ) -> ComplexityResult:
+        """
+        Red de seguridad: escala a frontier si la validación del small falla.
 
-        Si la ruta es "small" y validate_small devuelve False (o lanza una
-        excepción), la decisión escala a frontier. Nunca escala hacia abajo
-        y no ejecuta el validador en rutas frontier.
+        Reglas:
+        - Ruta frontier: NUNCA escala hacia abajo ni ejecuta el validador.
+        - Ruta small con validate_small=None: mantiene small (sin validar).
+        - Ruta small con validate_small que retorna False o lanza: -> frontier.
+        - Ruta small con validate_small que retorna True: mantiene small.
 
         Args:
-            task: Descripción de la tarea a enrutar.
-            small_model: Modelo a usar en rutas "small".
-            frontier_model: Modelo a usar en rutas "frontier".
-            validate_small: Callable(str) -> bool que valida que la tarea es
-                apta para el modelo small. Si es None, no se valida.
+            task_text: Texto de la tarea.
+            small_model: Nombre del modelo small.
+            frontier_model: Nombre del modelo frontier.
+            validate_small: Callable que valida la salida del modelo small
+                (True = válida, False = escalar).
 
         Returns:
-            Dict con "model", "route", "score" y "reason".
-
-        Raises:
-            ValueError: Si task está vacía.
-
-        WHY: Red de seguridad: si el modelo small no puede garantizar
-        calidad (validación fallida o lanzada), se escala a frontier para
-        no degradar el resultado. Ahorro con fallback controlado.
-        WHERE: route_with_validation de ComplexityRouter.
+            ComplexityResult dict-like con route/model finales.
         """
-        decision = self.decide(task)
-        if decision.route == ROUTE_SMALL and validate_small is not None:
-            decision = self._maybe_escalate(decision, task, validate_small)
-        model = small_model if decision.route == ROUTE_SMALL else frontier_model
-        return {
-            "model": model,
-            "route": decision.route,
-            "score": f"{decision.score:.1f}",
-            "reason": decision.reason,
-        }
+        decision = self.decide(task_text)
 
-    def _maybe_escalate(
-        self,
-        decision: ComplexityDecision,
-        task: str,
-        validate_small: Callable[[str], bool],
-    ) -> ComplexityDecision:
-        """Escala a frontier si la validación del modelo small falla.
-
-        Args:
-            decision: Decisión original (ruta small).
-            task: Tarea enrutada.
-            validate_small: Validador del modelo small.
-
-        Returns:
-            Decisión escalada a frontier o la original si la validación pasa.
-
-        WHY: La validación puede fallar o lanzar; en ambos casos la red de
-        seguridad prefiere frontier sobre un resultado no garantizado.
-        WHERE: _maybe_escalate de ComplexityRouter.
-        """
-        try:
-            is_valid = validate_small(task)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning(
-                "Validador small lanzó excepción; se escala a frontier: %s. "
-                "WHY: No se asume apta una tarea que no pudo validarse. "
-                "WHERE: ComplexityRouter._maybe_escalate",
-                exc,
+        # Ruta frontier: nunca valida ni baja
+        if decision.route == ROUTE_FRONTIER:
+            return ComplexityResult(
+                decision=decision,
+                task_text=task_text,
+                model_route=ROUTE_FRONTIER,
+                estimated_savings_ratio=self._savings_ratio(decision.score),
+                confidence=self._confidence(decision.score),
+                model=frontier_model,
             )
-            is_valid = False
-        if is_valid:
-            return decision
-        return ComplexityDecision(
+
+        # Ruta small: validar si hay validador
+        if validate_small is None:
+            return ComplexityResult(
+                decision=decision,
+                task_text=task_text,
+                model_route=ROUTE_SMALL,
+                estimated_savings_ratio=self._savings_ratio(decision.score),
+                confidence=self._confidence(decision.score),
+                model=small_model,
+            )
+
+        try:
+            ok = validate_small(task_text)
+        except Exception:  # noqa: BLE001 - fail-safe intencional: escalar a frontier
+            logger.warning(
+                "validate_small lanzó excepción; escalando a frontier. "
+                "WHY: El validador no pudo confirmar la salida small. "
+                "WHERE: ComplexityRouter.route_with_validation"
+            )
+            ok = False
+
+        if ok:
+            return ComplexityResult(
+                decision=decision,
+                task_text=task_text,
+                model_route=ROUTE_SMALL,
+                estimated_savings_ratio=self._savings_ratio(decision.score),
+                confidence=self._confidence(decision.score),
+                model=small_model,
+            )
+
+        # Validación falló -> escalar a frontier (mantener decisión original)
+        escalated = ComplexityDecision(
             route=ROUTE_FRONTIER,
             score=decision.score,
             signals=decision.signals,
-            reason=decision.reason + " Escalada a frontier por validación fallida.",
+            reason=f"{decision.reason} | escalated: small validation failed",
         )
+        return ComplexityResult(
+            decision=escalated,
+            task_text=task_text,
+            model_route=ROUTE_FRONTIER,
+            estimated_savings_ratio=1.0,
+            confidence=self._confidence(decision.score),
+            model=frontier_model,
+        )
+
+    # -----------------------------------------------------------------
+    # Utilidad: routing con fallback (ejecuta funciones)
+    # -----------------------------------------------------------------
+
+    def route_with_fallback(
+        self,
+        task_text: str,
+        small_fn: Callable[[str], Any],
+        frontier_fn: Callable[[str], Any],
+    ) -> Any:
+        """
+        Ejecuta small first; si falla o la confidence es baja, escala a frontier.
+
+        Returns:
+            El resultado de la función ganadora.
+        """
+        result = self.route(task_text)
+        if result.decision.route == ROUTE_SMALL and result.confidence >= 0.7:
+            logger.info("Routing to small model (confidence=%.2f)", result.confidence)
+            return small_fn(task_text)
+        else:
+            logger.info(
+                "Routing to frontier model (score=%.1f, confidence=%.2f)",
+                result.decision.score,
+                result.confidence,
+            )
+            return frontier_fn(task_text)
+
+    # -----------------------------------------------------------------
+    # Umbral calibrable en caliente
+    # -----------------------------------------------------------------
+
+    def set_threshold(self, value: float) -> None:
+        """Recalibra el umbral de complejidad en caliente.
+
+        Args:
+            value: Nuevo umbral en [0, 100].
+
+        Raises:
+            ValueError: Si value está fuera de [0, 100].
+        """
+        if value < 0.0 or value > 100.0:
+            raise ValueError(
+                f"threshold must be in [0, 100], got {value}. "
+                "WHY: Un umbral fuera de rango rompe la semántica del score. "
+                "WHERE: ComplexityRouter.set_threshold"
+            )
+        self.threshold = value
