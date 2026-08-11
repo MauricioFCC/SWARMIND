@@ -92,13 +92,13 @@ def force_gpu() -> None:
 
 def to_gpu(data: Any) -> Any:
     """
-    Transferir datos a GPU si esta disponible (retorna numpy array siempre).
+    Transferir datos a GPU si esta disponible.
 
     Args:
         data: numpy array o torch tensor.
 
     Returns:
-        numpy array (copia en GPU si disponible, CPU si no).
+        torch tensor en DEVICE si GPU activa; el dato original en CPU.
     """
     if not HAVE_CUDA:
         return data
@@ -115,14 +115,38 @@ def to_cpu(data: Any) -> np.ndarray | Any:
     Transferir datos de GPU a CPU como numpy array.
 
     Args:
-        data: torch tensor en GPU.
+        data: torch tensor (GPU o CPU) o numpy array.
 
     Returns:
-        numpy array.
+        numpy array equivalente.
     """
-    if HAVE_CUDA and hasattr(data, "cpu"):
-        return data.cpu().numpy()
+    if hasattr(data, "cpu"):
+        return data.detach().cpu().numpy()
     return data
+
+
+def get_device_info() -> dict[str, Any]:
+    """
+    Informacion estandar del dispositivo de aceleracion (health-check).
+
+    Usada por health-checks (ADR-0042), reportes y diagnósticos.
+
+    Returns:
+        Dict con: available, device, device_name, memory_gb,
+        cuda_version (si aplica) y torch_version.
+    """
+    import torch as _torch
+
+    info: dict[str, Any] = {
+        "available": HAVE_CUDA,
+        "device": DEVICE,
+        "device_name": DEVICE_NAME,
+        "memory_gb": GPU_MEMORY_GB,
+        "torch_version": _torch.__version__,
+    }
+    if HAVE_CUDA:
+        info["cuda_version"] = _torch.version.cuda
+    return info
 
 
 def cosine_similarity(
@@ -198,20 +222,22 @@ def normalize(vectors: np.ndarray) -> np.ndarray:
     return np.where(norms > 0, vectors / norms, 0.0)
 
 
-def zeros(dim: int, dtype: Any = np.float32) -> np.ndarray:
+def zeros(dim: int, dtype: Any = np.float32, on_gpu: bool = False) -> np.ndarray | Any:
     """
-    Crear vector de zeros (en GPU si disponible).
+    Crear vector de zeros (en GPU si disponible y on_gpu=True).
 
     Args:
         dim: Dimension del vector.
         dtype: Tipo de dato.
+        on_gpu: Si True y GPU activa, retorna torch tensor en DEVICE
+            (para pipelines GPU puros sin transferencias innecesarias).
 
     Returns:
-        Vector de zeros.
+        numpy array de zeros, o tensor en DEVICE si on_gpu y GPU activa.
     """
-    if HAVE_CUDA:
+    if HAVE_CUDA and on_gpu:
         import torch
-        return torch.zeros(dim, dtype=torch.float32, device=DEVICE).cpu().numpy()
+        return torch.zeros(dim, dtype=torch.float32, device=DEVICE)
     return np.zeros(dim, dtype=dtype)
 
 

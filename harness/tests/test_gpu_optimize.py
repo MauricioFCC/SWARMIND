@@ -93,3 +93,46 @@ class TestGPUEmbeddingInvariants:
         """Spec: gpu_self_test ejecuta sin error y devuelve dict."""
         result = gpu_self_test()
         assert isinstance(result, dict)
+
+
+class TestGPUEmbeddingVectorized:
+    """Mejoras 2026: embeddings vectorizados (Knuth hash, sin loops Python)."""
+
+    def test_cpu_gpu_determinism(self) -> None:
+        """Mismo texto -> mismo vector en CPU y GPU (determinismo cruzado)."""
+        from harness.gpu_accel import HAVE_CUDA
+        from harness.gpu_optimize import _gpu_single_embedding
+
+        text = "misma frase de prueba para ambos caminos"
+        cpu_v = _cpu_embedding(text)
+        if HAVE_CUDA:
+            gpu_v = _gpu_single_embedding(text)
+            assert np.allclose(cpu_v, gpu_v, atol=1e-5)
+
+    def test_batch_matches_single_embeddings(self) -> None:
+        """Batch produce los mismos vectores que singles (consistencia)."""
+        texts = ["uno", "dos", "tres palabras"]
+        batch = gpu_embedding("ignorado", texts=texts)
+        for i, t in enumerate(texts):
+            single = _cpu_embedding(t)
+            assert np.allclose(batch[i], single, atol=1e-5)
+
+    def test_batch_gpu_matches_cpu(self) -> None:
+        """Batch GPU (hashing en GPU) coincide con batch CPU."""
+        from harness.gpu_accel import HAVE_CUDA
+        from harness.gpu_optimize import _gpu_batch_embedding
+
+        texts = ["mensaje uno", "mensaje dos", "mensaje tres largo"]
+        if HAVE_CUDA:
+            gpu_batch = _gpu_batch_embedding(texts)
+            cpu_batch = np.array([_cpu_embedding(t) for t in texts])
+            assert np.allclose(gpu_batch, cpu_batch, atol=1e-5)
+
+    def test_batch_normalized_rows(self) -> None:
+        """Cada fila del batch queda normalizada (norma 1 o cero)."""
+        texts = ["alpha", "", "beta gamma delta", "x" * 500]
+        batch = gpu_embedding("ignorado", texts=texts)
+        for i in range(len(texts)):
+            norm = np.linalg.norm(batch[i])
+            assert abs(norm - 1.0) < 1e-5 or norm == 0.0
+

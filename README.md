@@ -57,6 +57,21 @@ swarmind --help
 
 > **Requirements**: Python 3.12+, [uv](https://github.com/astral-sh/uv), optional CUDA-capable GPU.
 
+### GPU Acceleration (optional)
+
+El harness detecta GPU automáticamente (`harness/gpu_accel.py`). La dependencia
+`torch` de PyPI es CPU-only en Windows/Linux; para activar CUDA:
+
+```bash
+uv pip install --python .venv\Scripts\python.exe "torch==2.13.0" --index-url https://download.pytorch.org/whl/cu126
+```
+
+Verificación: `python -c "from harness.gpu_accel import HAVE_CUDA; print(HAVE_CUDA)"`
+→ `True` con NVIDIA RTX (medido: x10.9 speedup en vector search 10k). El health-check
+(`AgentHealthChecker.get_hardware_info()`) reporta el dispositivo en liveness.
+**Importante**: no ejecutar `uv sync` después de la instalación CUDA (volvería a
+la wheel CPU; el lock de PyPI no incluye las wheels del índice CUDA).
+
 ## Contents
 
 - [What is Swarmind?](#what-is-swarmind)

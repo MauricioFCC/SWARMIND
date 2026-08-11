@@ -304,18 +304,39 @@ class AgentHealthChecker:
     # Public API
     # ------------------------------------------------------------------
 
+    def get_hardware_info(self) -> dict:
+        """Info de hardware de aceleracion (GPU/CPU) para observabilidad.
+
+        Usa harness.gpu_accel.get_device_info() (lazy import para no
+        romper entornos sin torch). Reporta: available, device,
+        device_name, memory_gb, torch_version y cuda_version.
+
+        Returns:
+            Dict con la informacion del dispositivo.
+        """
+        try:
+            from harness.gpu_accel import get_device_info
+            return get_device_info()
+        except ImportError:
+            return {
+                "available": False,
+                "device": "cpu",
+                "device_name": "CPU (torch no instalado)",
+                "memory_gb": 0.0,
+            }
+
     def check_liveness(self) -> HealthStatus:
         """
         Nivel 1: Liveness Check.
 
         Verifica que el sistema base responda:
-          - Importaciones bÃ¡sicas funcionan
+          - Importaciones básicas funcionan
           - Directorios esenciales existen
-          - MÃ³dulos core cargan correctamente
+          - Módulos core cargan correctamente
         """
         issues = []
 
-        # Check 1: imports bÃ¡sicos
+        # Check 1: imports básicos
         try:
             from harness.orchestrator.agent_bus import AgentBus  # noqa
             from harness.orchestrator.task_planner import TaskPlanner  # noqa
@@ -339,7 +360,11 @@ class AgentHealthChecker:
             level="liveness",
             status="ok" if healthy else "critical",
             message="Sistema vivo" if healthy else f"Issues: {'; '.join(issues)}",
-            details={"issues": issues, "base_path": str(base)},
+            details={
+                "issues": issues,
+                "base_path": str(base),
+                "hardware": self.get_hardware_info(),
+            },
         )
 
     def check_readiness(self) -> HealthStatus:

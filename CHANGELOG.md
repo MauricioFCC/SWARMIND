@@ -2,6 +2,41 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-08-11] GPU enablement (RTX 4060 CUDA 12.6) + Fase 1 TDD
+
+### GPU enablement (mejoras pertinentes con aceleracion de hardware)
+- **torch 2.13.0+cu126** instalado con wheels CUDA (antes CPU-only: la GPU estaba
+  fisicamente presente pero inutilizada). Activada NVIDIA RTX 4060 8GB CUDA 12.6.
+- **gpu_accel.py**: nueva API `get_device_info()` (health-checks ADR-0042),
+  `zeros(on_gpu=True)` para pipelines GPU puros, `to_cpu()`/`to_gpu()` con
+  semantica corregida (to_cpu detach+cpu+numpy; to_gpu documenta tensor).
+- **gpu_optimize.py**: embeddings vectorizados DRY con `common.fallback_embedding`
+  (Knuth hash numpy, elimina loops Python por caracter); hashing y normalizacion
+  en GPU via `torch.index_add_`; `gpu_self_test` con speedup GPU vs CPU.
+- **health.py**: `AgentHealthChecker.get_hardware_info()` + liveness details
+  incluyen hardware (available/device/device_name/memory_gb/cuda_version).
+- **pyproject.toml**: perfil opcional `gpu` con instrucciones de instalacion
+  (uv pip install --index-url https://download.pytorch.org/whl/cu126).
+- **Benchmark RTX 4060**: vector search GPU **x10.9 (10k)** y **x9.2 (100k)**;
+  embeddings batch 41us/mensaje; cache semantico x1.3.
+- 156 tests nuevos/actualizados en areas GPU (gpu_accel 26, gpu_optimize 14,
+  health 3, comunes).
+
+### Fase 1 TDD (oraculos reales + modulos huerfanos)
+- `pbt_stage.py` reescrito: oraculo Hypothesis REAL en subprocess (5 invariantes
+  incl. conmutativa), sin exec() en proceso principal. 18 tests.
+- `mutation_stage.py`: mutacion AST real + subprocess aislado + check=False. 19 tests.
+- `orchestrator_patterns.py` (nuevo): DynamicDAG + Conductor YAML + DurableExecutionWAL
+  con fix de bugs (shadowing de metodo, os.replace en Windows, dependencies=predecesores,
+  dag_id hashlib determinista). 22 tests.
+- `test_router.py` (nuevo): 25 tests que destaparon bug real de tipos en ModelRouter
+  (ComplexityDecision sin confidence) -> fix `_to_model_route()`.
+- `router.py`/`complexity_router.py`: PEP 585, Optional/Dict legacy eliminados,
+  imports limpios (ruff 0 errores).
+- UPG: check-web PyPI actualizado (hypothesis 6.165.3, lancedb 0.37.1, numpy 2.5.2,
+  ruff 0.16.2).
+- Suite: **4386 passed, 37 skipped, 4 xfailed** (antes 4146).
+
 ## [2026-07-31] 🛡️ Seguridad endurecida + Mesa de Trabajo + Limpieza de código
 
 ### Mesa de Trabajo (Auditoría integral)
