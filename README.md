@@ -66,11 +66,18 @@ El harness detecta GPU automáticamente (`harness/gpu_accel.py`). La dependencia
 uv pip install --python .venv\Scripts\python.exe "torch==2.13.0" --index-url https://download.pytorch.org/whl/cu126
 ```
 
+O usar el script de activación (reinstala + verifica; `--check` solo diagnostica):
+
+```bash
+python scripts/enable_gpu.py
+```
+
 Verificación: `python -c "from harness.gpu_accel import HAVE_CUDA; print(HAVE_CUDA)"`
 → `True` con NVIDIA RTX (medido: x10.9 speedup en vector search 10k). El health-check
 (`AgentHealthChecker.get_hardware_info()`) reporta el dispositivo en liveness.
 **Importante**: no ejecutar `uv sync` después de la instalación CUDA (volvería a
-la wheel CPU; el lock de PyPI no incluye las wheels del índice CUDA).
+la wheel CPU; el lock de PyPI no incluye las wheels del índice CUDA) — re-ejecutar
+`python scripts/enable_gpu.py` tras cada `uv sync`/commit.
 
 ## Contents
 
