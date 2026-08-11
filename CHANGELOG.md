@@ -2,6 +2,33 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-08-11] ParallelExecutor — fan-out paralelo + voting gobernado (aportacion ORCA)
+
+### Mesa de trabajo ORCA (5 especialistas en paralelo)
+- Evaluacion minuciosa de stablyai/orca (ADE 2026, 42.7k stars, MIT): NO es
+  embebible (app Electron, sin SDK Python), NO aporta ahorro de tokens
+  (worktrees aislados multiplican contexto por N), CLI inestable (5 meses,
+  ship diario). Sus unicas ganancias reales — paralelismo wall-clock 1.5-4x
+  y calidad por votacion — son replicables nativamente.
+- **Decision**: anexar la aportacion de ORCA (paralelismo + voting) como
+  modulo nativo; descartar la integracion de la herramienta.
+
+### `harness/orchestrator/parallel_executor.py` (nuevo, 21 tests)
+- `ParallelExecutor.run_parallel()`: N tasks independientes en paralelo
+  (ThreadPoolExecutor, max_workers=3) sobre MultiAPIProvider.execute
+  (thread-safe, failover), ruta small/frontier via ModelRouter.
+- `vote_on_task()`: voting gobernado — solo paga costo N=3 cuando el router
+  marca la tarea compleja Y ambigua (score>=70 y confidence<0.7). Tope de
+  presupuesto: MAX_TOKENS_BY_AGENT[rol] * budget_factor (ADR-0040).
+- `vote()`: mayoria por similitud coseno de embeddings (GPU acelerado);
+  sin mayoria gana el mas rapido; empate por duracion.
+- `get_stats()`: fan_out_factor, tokens_per_parallel_agent, voting_events.
+- Aislamiento de fallos: una task que falla no impide completar las demas.
+- Expuesto via lazy import en `harness/__init__.py` (PEP 562).
+- SSOT token_budgets.yaml: metricas `fan_out_factor`, `tokens_per_parallel_agent`,
+  `provider_cache_hit_rate` en monitoring.metrics.
+- Suite: **4407 passed, 37 skipped, 4 xfailed**.
+
 ## [2026-08-11] GPU enablement (RTX 4060 CUDA 12.6) + Fase 1 TDD
 
 ### GPU enablement (mejoras pertinentes con aceleracion de hardware)

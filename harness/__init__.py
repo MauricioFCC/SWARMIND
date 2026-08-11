@@ -51,6 +51,9 @@ _SYMBOL_MAP: dict[str, str] = {
     "TEMPLATES": "harness.orchestrator.pbt_templates",
     "BehavioralTracer": "harness.orchestrator.behavioral_tracer",
     "check_all": "harness.orchestrator.architectural_guardrails",
+    # Parallel execution + voting (aportacion ORCA 2026, nativa)
+    "ParallelExecutor": "harness.orchestrator.parallel_executor",
+    "ParallelTask": "harness.orchestrator.parallel_executor",
 }
 
 
