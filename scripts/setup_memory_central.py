@@ -313,7 +313,8 @@ def main() -> None:
     if ok:
         logger.info("")
         logger.info("🎉 MEMORIA CENTRAL LISTA. Ruta portable via MEMORY_ROOT.")
-        logger.info("   Configurar: $env:MEMORY_ROOT = '<tu>/Documents/Memory_Proyects'")
+        logger.info("   Configurar (cualquier SO): export MEMORY_ROOT=<tu>/Memory_Proyects")
+        logger.info("   Windows PowerShell:        $env:MEMORY_ROOT = '<tu>/Memory_Proyects'")
         sys_exit = 0
     else:
         logger.error("  ❌ Hay directorios faltantes (ejecuta sin --dry-run).")

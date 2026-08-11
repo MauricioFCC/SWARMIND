@@ -111,7 +111,13 @@ class LanceVectorStore:
             if not allow_fallback:
                 allow_fallback = config.allow_fallback
         else:
-            self.db_path = db_path or LANCEDB_ROOT
+            # Default: memoria central (MemoryConfig resuelve env > .swarmind_config
+            # > legacy). Evita DBs paralelas en rutas relativas al codigo.
+            self.db_path = (
+                db_path
+                or get_memory_config().lancedb_path
+                or LANCEDB_ROOT
+            )
         self._lancedb_available = False
         self._db: Any = None  # LanceDB connection or None
         self._mem_collections: dict[str, _Collection] = {}

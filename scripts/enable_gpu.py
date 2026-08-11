@@ -20,15 +20,35 @@ Reglas: docstring ES, errores accionables (WHAT+WHY+WHERE), sin secrets.
 """
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PYTHON = ROOT / ".venv" / "Scripts" / "python.exe"
 
 TORCH_VERSION = "torch==2.13.0"
 CUDA_INDEX = "https://download.pytorch.org/whl/cu126"
+
+
+def _venv_python() -> Path:
+    """Localiza el python del venv del proyecto (portable Windows/Linux/Mac).
+
+    En Windows el binario vive en ``.venv/Scripts/python.exe``; en
+    Linux/macOS en ``.venv/bin/python``. Si el script se ejecuta desde el
+    propio venv, ``sys.executable`` ya es el correcto.
+
+    Returns:
+        Ruta al python del venv.
+    """
+    if Path(sys.executable).resolve().parent.name == ".venv":
+        return Path(sys.executable)
+    if os.name == "nt":
+        return ROOT / ".venv" / "Scripts" / "python.exe"
+    return ROOT / ".venv" / "bin" / "python"
+
+
+PYTHON = _venv_python()
 
 
 def check_gpu() -> tuple[bool, str]:
@@ -48,7 +68,7 @@ def check_gpu() -> tuple[bool, str]:
         "print(torch.cuda.get_device_name(0) "
         "if torch.cuda.is_available() else 'cpu')"
     )
-    proc = sp.run([str(PYTHON), "-c", code], capture_output=True, text=True, timeout=120)
+    proc = sp.run([str(PYTHON), "-c", code], capture_output=True, text=True, timeout=120, check=False)
     lines = proc.stdout.strip().splitlines()
     ok = len(lines) >= 1 and lines[0] == "CUDA"
     detail = lines[1] if len(lines) >= 2 else proc.stderr.strip()[:200]
@@ -68,7 +88,7 @@ def install_torch_cuda() -> bool:
         TORCH_VERSION, "--index-url", CUDA_INDEX,
     ]
     print(f"Instalando {TORCH_VERSION} desde {CUDA_INDEX} ...")
-    proc = subprocess.run(cmd, cwd=str(ROOT), timeout=1800)
+    proc = subprocess.run(cmd, cwd=str(ROOT), timeout=1800, check=False)
     return proc.returncode == 0
 
 

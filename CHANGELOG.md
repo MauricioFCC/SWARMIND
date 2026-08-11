@@ -2,6 +2,41 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-08-11] Memoria central SSOT (Memory_Proyects) + portabilidad Linux/Mac
+
+### Memoria central: una sola DB (Memory_Proyects), sin duplicados
+- **Problema**: el harness global creaba DB paralela en ``harness/db/lancedb``
+  (ruta relativa al codigo) ademas de la central ``Memory_Proyects/data/lancedb``.
+- **memory_config.py**: el default de ``lancedb_path`` resuelve ahora a la
+  memoria central via ``.swarmind_config.json`` (SSOT de backup_memory.py):
+  prioridad env ``LANCEDB_PATH`` > ``MEMORY_ROOT``/.swarmind_config.json >
+  legacy ``harness/db/lancedb``. ``hermes_path`` usa Memory_Proyects si tiene
+  ``99_Hermes_Brain``. Rutas centralizadas en constantes (nada hardcode).
+- **lance_vector_store.py**: sin config, el default delega en
+  ``get_memory_config().lancedb_path`` (antes usaba LANCEDB_ROOT relativo).
+- **Resiliencia**: ``_safe_home()`` — no crashea en entornos sin HOME
+  (CI/headless); degrada a env/defaults. Tests: 51 memory_config + 66
+  lance_vector_store.
+- **Limpieza**: borradas DBs duplicadas (7.5GB) en repo y global
+  ``.config/opencode/harness/db`` (clones identicos de Memory_Proyects);
+  conservado el paquete de codigo de migracion ``harness/db/*.py``.
+- Verificado: ``LanceVectorStore()`` → ``Memory_Proyects/data/lancedb`` y NO
+  regenera ``harness/db/lancedb``.
+
+### Portabilidad multiplataforma (Linux/Mac)
+- **enable_gpu.py**: ``_venv_python()`` portable (``.venv/Scripts/python.exe``
+  en Windows, ``.venv/bin/python`` en Unix; ``sys.executable`` si ya se esta
+  dentro del venv). Antes era Windows-only.
+- **setup_memory_central.py**: mensaje de config portable (export para
+  cualquier SO + nota PowerShell).
+- Verificada la cadena de primera generacion:
+  ``setup_swarmind → config_swarmind → setup_memory_central`` +
+  ``ensure_memory_structure`` (crea 11 carpetas + data/lancedb + backups,
+  idempotente, portable via Path/MEMORY_ROOT).
+- ``verify_swarmind_setup.py`` ya era portable (winreg solo con ``os.name=="nt"``,
+  Unix via ~/.bashrc).
+- Suite: **4414 passed, 37 skipped, 4 xfailed**.
+
 ## [2026-08-11] ParallelExecutor — fan-out paralelo + voting gobernado (aportacion ORCA)
 
 ### Mesa de trabajo ORCA (5 especialistas en paralelo)
