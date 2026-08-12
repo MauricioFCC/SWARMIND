@@ -9,7 +9,6 @@
 
 | Abreviatura | Significado | Descripcion |
 |-------------|-------------|-------------|
-| ADR | Architecture Decision Record | Decision arquitectonica documentada (25 en total) |
 | WAL | Write-Ahead Log | Log de operaciones con soporte de retry y cancelacion para tolerancia a fallos |
 | MCP | Model Context Protocol | Protocolo estandarizado de contexto para interaccion con LLMs (spec v2025-11-25) |
 | HITL | Human In The Loop | Supervision humana obligatoria para acciones criticas o de alto riesgo |
@@ -116,7 +115,6 @@
 |---------|-------------|---------|
 | `test_` | Archivo/funcion de test | `test_agent_bus.py` |
 | `mock_` | Objeto simulador para tests | `mock_vector_store.py` |
-| `ADR-` | Architecture Decision Record | `ADR-0018-token-economics-cache-shape.md` |
 | `ERR_` | Codigo de error estructurado | `ERR_AGENT_NOT_FOUND` |
 | `DOC_` | Directiva de documentacion | `DOC_ES_UTF8` |
 

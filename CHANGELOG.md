@@ -89,7 +89,7 @@
   (thread-safe, failover), ruta small/frontier via ModelRouter.
 - `vote_on_task()`: voting gobernado — solo paga costo N=3 cuando el router
   marca la tarea compleja Y ambigua (score>=70 y confidence<0.7). Tope de
-  presupuesto: MAX_TOKENS_BY_AGENT[rol] * budget_factor (ADR-0040).
+  presupuesto: MAX_TOKENS_BY_AGENT[rol] * budget_factor (SSOT token_budgets.yaml).
 - `vote()`: mayoria por similitud coseno de embeddings (GPU acelerado);
   sin mayoria gana el mas rapido; empate por duracion.
 - `get_stats()`: fan_out_factor, tokens_per_parallel_agent, voting_events.
@@ -104,7 +104,7 @@
 ### GPU enablement (mejoras pertinentes con aceleracion de hardware)
 - **torch 2.13.0+cu126** instalado con wheels CUDA (antes CPU-only: la GPU estaba
   fisicamente presente pero inutilizada). Activada NVIDIA RTX 4060 8GB CUDA 12.6.
-- **gpu_accel.py**: nueva API `get_device_info()` (health-checks ADR-0042),
+- **gpu_accel.py**: nueva API `get_device_info()` (health-checks hardware),
   `zeros(on_gpu=True)` para pipelines GPU puros, `to_cpu()`/`to_gpu()` con
   semantica corregida (to_cpu detach+cpu+numpy; to_gpu documenta tensor).
 - **gpu_optimize.py**: embeddings vectorizados DRY con `common.fallback_embedding`
@@ -141,12 +141,12 @@ Auditoría completa del repositorio (4 dimensiones: calidad, ops, deps, tests) r
 - **40 archivos >500 líneas** (objetivo <900LC): mars_scheduler 1141, factory 905, federated_search 865, adaptive_planner 859, debate_orchestrator 856, sqlite_vec_adapter 837, metaclaw 833, worktable 829, scheduler 811, agent_kpi_tracker 804, lance_vector_store 784, semantic_cache 773, natural_language_tools 771, router 752, tool_guardian 722, vector_store_adapter 721, context_window_manager 719, agent_bus 715, compression_strategies 712, shapley_flow 707, guardrail_engine 685, organizational_layer 676, run_commands 672, optimization_pipeline 662, multi_user_governance 661, eval_factory 655, task_orchestrator 644, task_planner 638, run.py 635, context_assembler 635.
 - **11 archivos de producción a 0% cobertura** (1669 stmts sin testear): mars_scheduler 339, sqlite_vec_adapter 337, federated_search 249, metaclaw 217, nudge_system 109, gpu_optimize 87, token_budget_manager 75, sqlite_vec_utils 54, hermes_adapter 52, __main__ 2, + 5 archivos de benchmarks (174 stmts).
 - **Cobertura real 74.95%** (no 71.56% como decía el roadmap — 3.39pp por encima).
-- **92 errores de mypy** en 32 archivos (deuda oculta por `|| true` en CI; queda en `|| true` con TODO ADR-0037).
+- **92 errores de mypy** en 32 archivos (deuda oculta por `|| true` en CI; queda en `|| true` con TODO tipado progresivo).
 
 ### Calidad
 - **ruff `--fix`**: 7 errores triviales eliminados (5× F401 unused-import `field` de dataclass, 1× F841 unused-variable, 1× F821 undefined-name resuelto con `TYPE_CHECKING` import en `telemetry.py`).
 - **bandit**: 0 hallazgos (exit 0). pip-audit: 0 vulnerabilidades.
-- **pre-commit + scanner**: 0 violaciones (ADR-0035).
+- **pre-commit + scanner**: 0 violaciones (política de paths portables).
 
 ### Métricas
 | Métrica | Antes | Ahora | Delta |
@@ -158,26 +158,25 @@ Auditoría completa del repositorio (4 dimensiones: calidad, ops, deps, tests) r
 | Cobertura | 74.95% | 74.95% | = |
 | Archivos >500ln | 40 | 40 | = |
 | Cobertura 0% | 11 archivos | 11 archivos | = |
-| ADRs | 36 | 36 | = |
 
 ### Pendiente (próximos loops)
 1. Tests para mars_scheduler, metaclaw, federated_search (top deuda 0%)
 2. Refactor mars_scheduler 1141 → <900ln
 3. Tests para sqlite_vec_adapter (337stmts 0%)
 4. Tests para 5 archivos de benchmarks
-5. Tipado progresivo mypy (ADR-0037, 92 errores)
+5. Tipado progresivo mypy (92 errores)
 6. Optimizar 4 tests >4s en test_mcp_manager y test_orchestrator
 7. Mejorar Dockerfile (multi-stage + HEALTHCHECK)
 8. Tag `v0.2.0` (Opción A + Frontier 2026 + 3674 tests)
 
-## [2026-07-20] ⚡ Optimización Speed + Token Economics + ADRs 0016-0018
+## [2026-07-20] ⚡ Optimización Speed + Token Economics
 
-### ADRs creados
-| ADR | Título | Estado |
-|-----|--------|--------|
-| **ADR-0016** | Parallel Test Execution & Fail-Under Progresivo | **ACEPTADO** |
-| **ADR-0017** | PaCoRe Async Concurrency Pattern | **PROPUESTO** |
-| **ADR-0018** | Token Economics — Cache Shape + Structured Compaction | **PROPUESTO** |
+### Decisiones de arquitectura registradas (internas, no publicadas)
+| # | Título | Estado |
+|---|--------|--------|
+| 0016 | Parallel Test Execution & Fail-Under Progresivo | **ACEPTADO** |
+| 0017 | PaCoRe Async Concurrency Pattern | **PROPUESTO** |
+| 0018 | Token Economics — Cache Shape + Structured Compaction | **PROPUESTO** |
 
 ### Optimizaciones implementadas
 - **pytest-xdist + pytest-split**: Dependencias dev para ejecución paralela
@@ -207,7 +206,7 @@ Auditoría completa del repositorio (4 dimensiones: calidad, ops, deps, tests) r
 
 ### Resultados finales
 - Tests: **1086 passing, 0 failures** (+18 desde anterior)
-- ADRs: **0016** (parallel testing), **0017** (PaCoRe async), **0018** (token economics)
+- Decisiones de arquitectura: **0016** (parallel testing), **0017** (PaCoRe async), **0018** (token economics)
 - Commits: `2ef685f` + `e10caed` + `7e9e8b8` Todas las implementaciones, mejoras y correcciones aplicadas al sistema multi-agente.
 
 ---
@@ -255,8 +254,8 @@ Auditoría completa del repositorio (4 dimensiones: calidad, ops, deps, tests) r
 | evolve/SKILL.md | MetaClaw, MARS, Hyperagents, Memento-Skills, Native Evolution, ERL |
 | base_principles.md | MCL + MKS en N1+N2 + 17 nuevas abreviaturas |
 
-### ADR-0015 creado
-`docs/src/adr/adr0015-frontier-agents-skills-2026.md` documenta:
+### Registro de decisión creado (interno, no publicado)
+el documento de arquitectura de la sesión documenta:
 - Contexto, decisión, 6 áreas de impacto
 - Archivos creados/modificados (1 creado, 7 modificados)
 - Tests (455 passed, 2 pre-existing failures)
@@ -348,7 +347,7 @@ Registro completo con 10 skills documentadas (7 existentes + 3 nuevas).
 
 ---
 
-## [2026-07-07] 📋 ADR-0001 + DebateOrchestrator + Confidence Early Stopping + 82 tests
+## [2026-07-07] 📋 DebateOrchestrator + Confidence Early Stopping + 82 tests
 
 ### Investigación web (6+ fuentes 2026)
 | Fuente | Aporte |
@@ -360,8 +359,8 @@ Registro completo con 10 skills documentadas (7 existentes + 3 nuevas).
 | **Token Budget Contracts (PyPI)** | Confidence-gated spending |
 | **Prompt Caching (Anthropic/OpenAI)** | 50-90% ahorro prefix caching |
 
-### ADR-0001: docs/adr/adr0001-mejoras.md
-Documento de Arquitectura con:
+### Documento de Arquitectura (interno, no publicado)
+el documento de arquitectura inicial con:
 - P0: Unificar schedulers + fusionar health/telemetry ✅
 - P1: Coverage 32% ✅
 - P2: DebateOrchestrator + Confidence Early Stopping ✅ (implementado ahora)
@@ -825,7 +824,7 @@ Cubre `ContextSection`, `ContextWindow`, `ContextWindowManager`:
 | Tests | 463 | **1540** | **+1077 (+232%)** |
 | Fallos | 0 | **0** (4 xfail) | ✅ |
 | Cobertura | 33.66% | **~60%** | **+26%** |
-| ADRs | 15 | **18** | +3 |
+
 | Archivos test | 28 | **52** | +24 |
 | Commits | — | **16** | 2ef685f → 57f5e4c |
 | GPU | CPU only | **RTX 4060 8GB** | 🚀 |

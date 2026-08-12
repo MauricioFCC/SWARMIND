@@ -21,7 +21,7 @@ Todo el código fuente vive dentro de `harness/`, dividido en dominios:
 
 | Módulo | Archivo | Propósito |
 |--------|---------|-----------|
-| GovernanceAgent | `orchestrator/governance_agent.py` | Políticas de gobernanza, compliance, auditoría de decisiones multi-agente (ADR-0027) |
+| GovernanceAgent | `orchestrator/governance_agent.py` | Políticas de gobernanza, compliance, auditoría de decisiones multi-agente |
 | AgentCostController | `orchestrator/agent_cost_controller.py` | Detección de loops infinitos, control de costos de ejecución por agente |
 | BusinessContext | `orchestrator/business_context.py` | Glosario de términos de negocio, contexto semántico compartido entre agentes |
 | AgentBenchmark | `orchestrator/agent_benchmark.py` | Evaluación de agentes: accuracy, latencia, uso de tokens, tasa de éxito |

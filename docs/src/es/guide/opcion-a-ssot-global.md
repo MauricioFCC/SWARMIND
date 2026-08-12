@@ -1,7 +1,6 @@
 # Opcion A — SSOT Global OpenCode + Mirror Local por Proyecto
 
 > **Estado**: Implementado (commit `f08c672`)
-> **ADR relacionados**: [ADR-0035 — Politica de Paths Portables](adr/adr0035-security-policy-portable-paths-2026.md)
 
 ## 1. Que es la Opcion A
 
@@ -38,7 +37,7 @@ versionado) actualiza el mirror de todos los proyectos bajo demanda.
   `run_commands.py`, `compile_agents.py`, `compile_skills.py`) lee
   `.opencode/agents` y `.opencode/skills` del proyecto en runtime → el mirror
   local de `.opencode/` es **obligatorio**.
-- **Portabilidad (ADR-0035)**: todas las rutas via `Path.home()` o env vars
+- **Portabilidad**: todas las rutas via `Path.home()` o env vars
   (`DEV_SPACE_ROOT`, `MEMORY_ROOT`, `OPENCODE_GLOBAL_DIR`). Nunca `$HOME`
   literal ni rutas personales hardcodeadas.
 
@@ -98,7 +97,6 @@ uv run python scripts/deploy_all.py --sync-harness-global  # Solo sync harness -
 
 > **Memoria central (v3.x)**: la memoria ahora vive UNA vez en
 > `<Documents>/Memory_Proyects` (portable via `MEMORY_ROOT`). Ver
-> [ADR-0038](../adr/adr0038-memoria-central-backup-2026.md) y
 > `scripts/setup_memory_central.py`.
 
 ### Hermes Memory (caso especial)
@@ -157,7 +155,7 @@ uv run python scripts/deploy_all.py             # Ejecutar deploy completo
 ### 4.5 Verificar
 
 ```powershell
-# 1. Scanner de seguridad (ADR-0035): 0 violaciones
+# 1. Scanner de seguridad: 0 violaciones
 uv run python harness/qa/security_policy.py
 
 # 2. Tests: 3674 passed
@@ -179,7 +177,7 @@ uv run python scripts/sync_opencode_global.py
 | `OPENCODE_GLOBAL_DIR` | `<home>/.config/opencode` | SSOT global opencode |
 
 Todas las rutas usan `Path.home()` con override por env var — portables entre
-maquinas y usuarios (ADR-0035).
+maquinas y usuarios.
 
 ## 6. Flujo de trabajo diario
 
@@ -194,7 +192,7 @@ maquinas y usuarios (ADR-0035).
 ## 7. Seguridad
 
 - **Nunca** versionar `.env` (esta en `.gitignore`).
-- **Nunca** hardcodear rutas personales en codigo o docs (scanner ADR-0035 lo
+- **Nunca** hardcodear rutas personales en codigo o docs (el scanner de seguridad lo
   bloquea en CI y pre-commit).
 - **Nunca** escribir `$HOME` literal en Python: usar `Path.home()`.
 - Los scripts de propagacion (`deploy_all.py` y similares) estan en

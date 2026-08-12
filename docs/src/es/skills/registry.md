@@ -7,7 +7,7 @@
 ### Tecnología y Desarrollo
 | Skill | Dominio | Propósito |
 |-------|---------|-----------|
-| **architecture** | software | Patrones GoF, Clean/Hexagonal, DDD, C4, ADRs, decisión arquitectónica |
+| **architecture** | software | Patrones GoF, Clean/Hexagonal, DDD, C4, decisión arquitectónica |
 | **rust-lang** | systems | Rust: ownership, async, FFI con Python, crates, optimización systems-level |
 | **frontend-uiux** | frontend | Generative UI 2026, design tokens, A2UI/OpenUI, WCAG 2.2, StyleSeed |
 | **responsive-ui** | frontend | UI responsive, mobile-first, Core Web Vitals, accesibilidad axe-core |

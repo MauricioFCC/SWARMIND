@@ -11,5 +11,3 @@
 ## Tests
 `harness/tests/test_speculative_decoder`
 
-## ADRs Relacionados
-- Ver ADRs en [SUMMARY.md](../SUMMARY.md#adr---architecture-decision-records-32-activos)

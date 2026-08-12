@@ -157,7 +157,7 @@ python harness/run.py --simplified "migrar base de datos"
 | @quality-gate | QA, tests, cobertura | `@qa` |
 | @documentation-specialist | Documentacion tecnica | `@docs` |
 | @requirements-analyst | Analisis de requerimientos | `@ra` |
-| @enterprise-architect | Arquitectura de sistemas, ADR | `@architect` |
+| @enterprise-architect | Arquitectura de sistemas, decisiones de arquitectura | `@architect` |
 | @quant-developer | Estrategias cuantitativas, brokers | `@quant` |
 | @quant-scientist | Validacion estadistica, experimentos | `@scientist` |
 | @risk-manager | Gestion de riesgo, position sizing | `@risk` |
@@ -681,4 +681,4 @@ python harness/run.py "!db stats"
 - **Hibrido:** Enrutamiento inteligente local/cloud para optimizar costos.
 - **Seguro:** HITL Guard intercepta acciones destructivas antes de ejecutarlas.
 - **Extensible:** Cliente MCP universal para conectar cualquier herramienta del ecosistema.
-- **Documentacion viva:** Toda decision tecnica se documenta en ADR.
+- **Documentacion viva:** Toda decision tecnica se documenta en el registro interno de arquitectura.

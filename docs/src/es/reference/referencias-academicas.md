@@ -1,6 +1,6 @@
 # Referencias Académicas — Swarmind
 
-> Documento generado tras inspección de 32 ADRs. Cada paper fue verificado directamente en arXiv para confirmar autores, título y año.
+> Documento generado tras inspección del registro interno de arquitectura. Cada paper fue verificado directamente en arXiv para confirmar autores, título y año.
 
 ---
 

@@ -28,7 +28,7 @@ Closes #(issue)
 
 ### Documentation
 - [ ] Docstrings updated (Google-style, English)
-- [ ] Relevant ADR updated or created (if architectural change)
+- [ ] Relevant architecture decision documented internally (if architectural change)
 - [ ] CHANGELOG updated
 - [ ] mdbook docs updated (if user-facing or architectural change)
 

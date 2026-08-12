@@ -118,57 +118,5 @@
 
 # Roadmap
 
-- [Estado del Proyecto](roadmap/estado.md) â€” **SSOT** estado y roadmap
-
-# ADR - Architecture Decision Records (40 activos)
-
-### Fundacion
-- [ADR-0001: Sistema Multi-Agente Evolutivo](adr/adr0001-mejoras.md)
-- [ADR-0002: Memoria de Estandares](adr/adr0002-memoria-estandares.md)
-- [ADR-0003: Token Economy & Speed Optimization](adr/adr0003-token-economy-speed.md)
-- [ADR-0004: Competitive Programming 2026](adr/adr0004-competitive-programming-2026.md)
-- [ADR-0005: Text Analysis 2026](adr/adr0005-text-analysis-2026.md)
-
-### Calidad y Testing
-- [ADR-0006: Idempotencia](adr/adr0006-idempotencia-principle.md)
-- [ADR-0007: DocStrings Obligatorios](adr/adr0007-docstrings-error-readability.md)
-- [ADR-0008: Workflow Patterns](adr/adr0008-six-new-techniques.md)
-- [ADR-0009: Lazy Loading](adr/adr0009-lazy-loading.md)
-- [ADR-0010: Frontier Agents & Skills 2026](adr/adr0010-frontier-agents-skills-2026.md)
-- [ADR-0011: Parallel Test Execution](adr/adr0011-parallel-testing-fail-under.md)
-- [ADR-0012: PaCoRe Async Concurrency](adr/adr0012-pacore-async-concurrency.md)
-- [ADR-0013: Token Economics](adr/adr0013-token-economics-cache-shape.md)
-- [ADR-0014: Agent & Skill Optimization](adr/adr0014-agent-skill-optimization-2026.md)
-
-### Frontier Research
-- [ADR-0015: MCP + A2A Architecture](adr/adr0015-mcp-a2a-architecture-2026.md)
-- [ADR-0016: Frontier Optimization](adr/adr0016-frontier-optimization-2026.md)
-- [ADR-0017: Creative AI Frameworks](adr/adr0017-creative-ai-frameworks-2026.md)
-- [ADR-0018: Comparative Analysis](adr/adr0018-comparative-analysis-asdt-traycer-2026.md)
-- [ADR-0019: Swarmind Governance](adr/adr0019-swarmind-governance-cx-2026.md)
-- [ADR-0020: Frontier Gaps 2026](adr/adr0020-frontier-gaps-2026-v2.md)
-- [ADR-0021: DOFA Analysis](adr/adr0021-dofa-analysis-2026.md)
-
-### Arquitectura Moderna
-- [ADR-0022: Multi-Harness Adapter Layer](adr/adr0022-multi-harness-2026.md)
-- [ADR-0023: Hook System](adr/adr0023-hooks-system-2026.md)
-- [ADR-0024: Zero Trust Architecture](adr/adr0024-zero-trust-2026.md)
-- [ADR-0025: Federated Vector Search](adr/adr0025-federated-vector-sqlite-2026.md)
-- [ADR-0026: Performance Optimization](adr/adr0026-performance-optimization-2026.md)
-- [ADR-0027: Maximum Parallelism](adr/adr0027-maximum-parallelism-2026.md)
-- [ADR-0028: Swarmind QA Pipeline 5-Capas](adr/adr0028-swarmind-qa-pipeline-2026.md)
-- [ADR-0029: AI Factory Stack](adr/adr0029-ai-factory-stack-2026.md)
-- [ADR-0030: Comprehensive Audit](adr/adr0030-comprehensive-audit-2026.md)
-
-### Improvements
-- [ADR-0031: Frontier Improvements 2026](adr/adr0031-frontier-improvements-2026.md)
-- [ADR-0032: Remaining Improvements](adr/adr0032-remaining-improvements-2026.md)
-- [ADR-0033: TDD + Agentes como Fuente Unica de Verdad](adr/adr0033-tdd-agentes-ssot-2026.md)
-- [ADR-0034: Frontier Operations 2026](adr/adr0034-frontier-operations-2026.md)
-- [ADR-0035: Politica de Seguridad — Paths Portables](adr/adr0035-security-policy-portable-paths-2026.md)
-- [ADR-0036: Opcion A — SSOT Global OpenCode](adr/adr0036-opcion-a-ssot-global-2026.md)
-- [ADR-0037: Reglas Universales + Auto-Mejora](adr/adr0037-reglas-universales-auto-mejora-2026.md)
-- [ADR-0038: Memoria Central Portable + Backup](adr/adr0038-memoria-central-backup-2026.md)
-- [ADR-0039: Frontier Optimization 2026 v2](adr/adr0039-frontier-optimization-2026-v2.md)
-- [ADR-0040: Auditoria Token-Economics (H1-H8)](adr/adr0040-token-audit-plan-2026.md)
+- [Estado del Proyecto](roadmap/estado.md) — **SSOT** estado y roadmap
 

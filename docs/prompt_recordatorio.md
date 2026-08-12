@@ -2,7 +2,7 @@
 
 MAND:RSF(wSearch2026)+IDP(noReimpl)+CMT(convCmt type:msg#ID)+FDE(deltaMsnGluValDplRes)+EVO(lrn→dsgn→exp→anlz cog+db)
 COD:clean+dry+kiss+yagni+ssot+TH+<900lc|hex+DI|GoF|OWASP|pathlib|!eval+exec+pickle
-DOC:docstrES(Args/Rets/Raises)obl|ADR|changelog|readme|fn<60ln
+DOC:docstrES(Args/Rets/Raises)obl|changelog|readme|fn<60ln
 ERR:what+why+where+cls(V/Op/Bug)|NO ex:pass
 TST:≥80%|PBT(holes)+guardrails+mutacion
 TKN:cacheShape+structCompact+scopedCtx+obsMask+failSpendGov

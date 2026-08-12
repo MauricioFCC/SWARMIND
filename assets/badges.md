@@ -35,7 +35,6 @@ Direct URLs:
 ```markdown
 ![Agents](https://img.shields.io/badge/agents-20-06B6D4?style=for-the-badge&logo=robot-framework&logoColor=white)
 ![Skills](https://img.shields.io/badge/skills-31-22D3EE?style=for-the-badge&logo=openstreetmap&logoColor=white)
-![ADRs](https://img.shields.io/badge/ADRs-32-F59E0B?style=for-the-badge&logo=archlinux&logoColor=white)
 ![Runtimes](https://img.shields.io/badge/runtimes-5-0F172A?style=for-the-badge&logo=electron&logoColor=06B6D4)
 ![Hooks](https://img.shields.io/badge/hooks-PRE%2FPOST-06B6D4?style=for-the-badge&logo=hook&logoColor=white)
 ![Runtimes](https://img.shields.io/badge/swiss--watch-pattern-0F172A?style=for-the-badge&logo=royalcanin&logoColor=22D3EE)
@@ -45,7 +44,6 @@ Direct URLs:
 
 - Agents: `https://img.shields.io/badge/agents-20-06B6D4?style=for-the-badge&logo=robot-framework&logoColor=white`
 - Skills: `https://img.shields.io/badge/skills-31-22D3EE?style=for-the-badge&logo=openstreetmap&logoColor=white`
-- ADRs: `https://img.shields.io/badge/ADRs-32-F59E0B?style=for-the-badge&logo=archlinux&logoColor=white`
 - Runtimes: `https://img.shields.io/badge/runtimes-5-0F172A?style=for-the-badge&logo=electron&logoColor=06B6D4`
 
 ---
@@ -83,7 +81,6 @@ Direct URLs:
 ![License](https://img.shields.io/badge/license-Apache_2.0-F59E0B?style=flat-square)
 ![Agents](https://img.shields.io/badge/agents-20-06B6D4?style=flat-square)
 ![Skills](https://img.shields.io/badge/skills-31-22D3EE?style=flat-square)
-![ADRs](https://img.shields.io/badge/ADRs-32-F59E0B?style=flat-square)
 ![Runtimes](https://img.shields.io/badge/runtimes-5-0F172A?style=flat-square)
 ![Tests](https://img.shields.io/badge/tests-passing-06B6D4?style=flat-square)
 ```

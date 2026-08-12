@@ -24,7 +24,7 @@ El sistema Swarmind opera con **20 perfiles de agente** organizados en 4 categor
 
 | Nombre | Rol | Descripcion |
 |--------|-----|-------------|
-| **architect** | Diseno | Arquitecto de software especializado en diseno de sistemas, C4 modeling, ADRs y decisiones arquitectonicas con fitness functions. |
+| **architect** | Diseno | Arquitecto de software especializado en diseno de sistemas, C4 modeling y decisiones arquitectonicas con fitness functions. |
 | **backend-engineer** | Backend | Backend engineer especializado en APIs (REST/GraphQL/gRPC), servidores, bases de datos y microservicios con calidad institucional. |
 | **frontend-engineer** | Frontend | Frontend engineer especializado en UI/UX, React 19, componentes responsive, accesibilidad WCAG 2.2 AA y Generative UI 2026. |
 | **data-engineer** | Datos | Ingeniero de datos especializado en pipelines ETL/ELT, data warehouses (Snowflake, BigQuery), streaming y orquestacion. |
@@ -148,7 +148,6 @@ Sincronizacion automatica de conocimiento entre proyectos. Cada proyecto mantien
 |------|-------------|
 | `PATTERN` | Patrones de exito/fracaso por tipo de tarea |
 | `PROMPT` | Prompts optimizados por agente |
-| `ADR` | Decisiones arquitectonicas |
 | `METRIC` | Metricas de rendimiento por skill |
 | `EMBEDDING` | Vectores de conocimiento (search sharing) |
 | `SKILL` | Skills y su efectividad medida |
@@ -195,7 +194,7 @@ Backend vectorial **portable** basado en sqlite-vec (extension vectorial para SQ
 
 ### Async TaskOrchestrator
 
-TaskOrchestrator refactorizado a **asyncio completo** con 4.8x speedup (ADR-0017). Integracion con `AsyncAgentBus` y debate async.
+TaskOrchestrator refactorizado a **asyncio completo** con 4.8x speedup. Integracion con `AsyncAgentBus` y debate async.
 
 ### 15 Papers 2026 Implementados (Gap Analysis)
 

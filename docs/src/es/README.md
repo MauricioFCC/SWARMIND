@@ -10,7 +10,6 @@
 |---------|-------|
 | Tests | 3420 passing (29 QA + AIFactory verificados) |
 | Cobertura | ~65% (real 71.56%, objetivo: 80%) |
-| ADRs | 35 (todos implementados, secuenciales 0001-0036) |
 | Agentes | 20 especializados (100% perfiles + .min.md) |
 | Skills | 31 contextuales (100% SKILL.md + SKILL.min.md) |
 | Modulos Orchestrator | 48 |
@@ -62,7 +61,6 @@ Los modulos nuevos (Multi-Harness Adapter Layer, Hook System, Zero Trust, Federa
 - [Dynamic Scaling](architecture/dynamic-scaling.md) — Estrategias de planificacion
 - [Tecnicas Frontier](architecture/composicion.md) — Tecnicas 2026 por agente/skill
 - [Manual Tecnico](technical/manual-tecnico.md) — Documentacion tecnica del harness
-- [ADR](adr/README.md) — Architecture Decision Records (35 documentos)
 - [Testing Guide](development/testing-guide.md) — Como escribir y ejecutar tests
 - [Glosario](reference/glosario.md) — Terminos y abreviaturas
 - [Roadmap](roadmap/estado.md) — Estado del proyecto y proximos pasos

@@ -29,7 +29,6 @@ All detailed documentation is currently available in **Spanish** and is being pr
 - [Usage Guide](../es/guide/como-usar.md) — How to delegate tasks to agents
 - [Agents & Skills](../es/guide/agentes-y-skills.md) — Detailed system documentation
 - [Technical Manual](../es/technical/manual-tecnico.md) — Complete harness technical documentation
-- [ADR](../es/adr/README.md) — Architecture Decision Records (32 documents)
 - [Skills Registry](../es/skills/registry.md) — Complete skill registry (31)
 - [Testing Guide](../es/development/testing-guide.md) — How to write and run tests
 - [Glossary](../es/reference/glosario.md) — Terms and abbreviations
