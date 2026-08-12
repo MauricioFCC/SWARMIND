@@ -4,28 +4,27 @@
 
 **Swarmind** is a multi-agent system for orchestration, execution, and continuous self-improvement with 31 contextual skills, multi-level orchestration, GPU acceleration, and token economics.
 
-## Current Status (July 2026)
+## Current Status (August 2026)
 
 | Metric | Value |
 |--------|-------|
-| Tests | 3420 passing (29 QA + AIFactory verified) |
-| Coverage | ~65% (actual 71.56%, target: 80%) |
-| Agents | 20 specialized (100% profiles + .min.md) |
-| Skills | 31 contextual (100% SKILL.md + SKILL.min.md) |
-| Orchestrator Modules | 48 |
-| Memory/RAG Modules | 30 |
+| Tests | 4414 passing (37 skipped, 4 xfailed) |
+| Coverage | 71.56% |
+| Agents | 22 specialized (100% profiles) |
+| Skills | 32 contextual (100% SKILL.md + SKILL.min.md) |
+| Orchestrator Modules | 19 packages / 56 modules |
+| Memory/RAG Modules | 15 packages / 34 modules |
 | Hook Modules | 4 (security_validator, permission_checker, audit_logger, metrics) |
 | Security Modules | Zero Trust (TokenManager, PolicyEngine, verify_agent_identity) |
-| Multi-Harness Modules | 12 (runtime_detector, converter_base, 5 adapters, CLI) |
-| GPU | RTX 4060 8GB (6x search speedup, 3.2x embedding) |
+| Multi-Harness Modules | 5 adapters (opencode, claude, codex, cursor, gemini) |
+| GPU | RTX 4060 8GB, CUDA 12.6, torch 2.13.0+cu126 (search x10.9, embeddings 41us/msg) |
+| Architecture debt (AGR) | 0 files >500 lines in non-test code (32 modules refactored to packages) |
 | Token savings | -51% capsules, -40% structured output, -38% cache-shape |
-| Projects | 6 active |
-| Vector stores | LanceDB, Chroma, Qdrant + SQLite-vec (edge) |
-| Federated Search | Parallel 3 backends + MMR re-ranking |
+| Vector stores | LanceDB (central) + SQLite-vec (edge) + federated search |
 | Observability | OpenTelemetry (traces, metrics, OTLP export) |
-| Benchmarks | AgentBenchmark (accuracy, latency, tokens, success) |
-| Commits | 200+ |
-| Papers implemented | 15 (Gap Analysis 2026) |
+| Parallel orchestration | ParallelExecutor native fan-out + governed voting |
+| Commits | 281 |
+| Lint / dead code | ruff 0 errors, vulture 0 dead code |
 
 Per-module coverage, milestones, and roadmap are documented in [Project Status](../es/roadmap/estado.md).
 
@@ -84,4 +83,12 @@ For detailed structure, see [Agents & Skills — File System](../es/guide/agente
 
 Swarmind competes with **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (46.2k) and **CodeWhale** (40.2k). The full capability comparison table is in [Harness Comparison 2026](../es/reference/comparativa-harness-2026.md).
 
-**Key differentiators:** GPU Acceleration (6x), Token Economics (-51%), Full Governance, Zero Trust, Deterministic Hook System, Multi-Harness (5 runtimes), 15 papers 2026 implemented, 3420 tests.
+**Key differentiators:** GPU Acceleration (search x10.9), Token Economics (-51%), Full Governance, Zero Trust, Deterministic Hook System, Multi-Harness (5 runtimes), 4414 tests.
+
+### August 2026 changes
+
+- Full refactor: **32 modules >500 lines into packages** (architecture debt AGR = 0), SOLID corrected in 9 classes.
+- **ParallelExecutor**: native parallel fan-out (ThreadPoolExecutor `max_workers=3`) + governed voting.
+- **CUDA 12.6 GPU** enabled (torch 2.13.0+cu126): search x10.9, embeddings 41us/msg.
+- **Central portable memory SSOT** (`Memory_Proyects` via `MEMORY_ROOT`), 7.5 GB reclaimed, automatic backup.
+- Public documentation updated and cleaned up.

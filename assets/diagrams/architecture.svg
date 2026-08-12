@@ -128,13 +128,13 @@
         </g>
         <g transform="translate(300,42)">
           <rect width="260" height="46" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="1.5"/>
-          <text x="130" y="22" text-anchor="middle" fill="#F1F5F9">Chroma</text>
+          <text x="130" y="22" text-anchor="middle" fill="#F1F5F9">Semantic Cache</text>
           <text x="130" y="40" text-anchor="middle" font-size="10" fill="#94A3B8">embeddings · short-term</text>
         </g>
         <g transform="translate(580,42)">
           <rect width="260" height="46" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="1.5"/>
-          <text x="130" y="22" text-anchor="middle" fill="#F1F5F9">Qdrant</text>
-          <text x="130" y="40" text-anchor="middle" font-size="10" fill="#94A3B8">long-term · high-perf</text>
+          <text x="130" y="22" text-anchor="middle" fill="#F1F5F9">Federated Search</text>
+          <text x="130" y="40" text-anchor="middle" font-size="10" fill="#94A3B8">multi-source · MMR</text>
         </g>
         <g transform="translate(860,42)">
           <rect width="240" height="46" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="1.5"/>
@@ -168,13 +168,13 @@
         </g>
         <g transform="translate(680,42)">
           <rect width="200" height="74" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
-          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">GPU / Rust</text>
-          <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">CQE core</text>
-          <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">CUDA · Metal</text>
+          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">GPU / CUDA</text>
+          <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">torch 2.13</text>
+          <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">CUDA 12.6 · RTX</text>
         </g>
         <g transform="translate(900,42)">
           <rect width="200" height="74" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
-          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">31 Skills</text>
+          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">32 Skills</text>
           <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">domain experts</text>
           <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">composable</text>
         </g>
@@ -183,7 +183,7 @@
   </g>
 
   <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748B">
-    <text x="40" y="770">v1.0 · ADR-001 to ADR-032 · 20 agents · 31 skills · 5 runtimes</text>
-    <text x="1160" y="770" text-anchor="end">CC-BY-SA-4.0</text>
+    <text x="40" y="770">v0.1 · 22 agents · 32 skills · 5 runtimes</text>
+    <text x="1160" y="770" text-anchor="end">MIT</text>
   </g>
 </svg>

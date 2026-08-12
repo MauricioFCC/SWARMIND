@@ -1,5 +1,7 @@
 # Swarmind Multi-Agent Harness
 
+![Swarmind banner](assets/banner.svg)
+
 [![Tests: TDD](https://img.shields.io/badge/TDD-100%25-brightgreen.svg)](harness/tests/)
 [![Adversarial](https://img.shields.io/badge/Adversarial-enabled-blueviolet.svg)](harness/validation/)
 [![Evolutionary](https://img.shields.io/badge/Evolutionary-enabled-blue.svg)](docs/src/es/roadmap/estado.md)

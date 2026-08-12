@@ -26,10 +26,13 @@ while read -r local_ref local_sha remote_ref remote_sha; do
         range="${remote_sha}..${local_sha}"
     fi
 
-    if git diff --name-only "$range" 2>/dev/null | grep -q "^${ADR_PATH}"; then
+    # Bloquea si el push CREA o MODIFICA archivos en docs/src/es/adr/ (A/M/R/C).
+    # Los borrados (D) se PERMITEN: es la forma de limpiar los ADR del remoto.
+    if git diff --name-status "$range" 2>/dev/null | awk '{print $1"\t"$2}' | grep -v '^D' | awk '{print $2}' | grep -q "^${ADR_PATH}"; then
         echo "ERROR: push bloqueado por .githooks/pre-push"
         echo "Los ADR (${ADR_PATH}) se versionan localmente pero NO se publican al remoto."
-        echo "Los commits de este push contienen cambios en esa ruta. Excluye los ADR antes de pushear."
+        echo "Este push contiene cambios que CREAN/MODIFICAN archivos en esa ruta."
+        echo "Los BORRADOS de ADR (para limpiarlos del remoto) si estan permitidos."
         echo "Si realmente quieres publicarlos, desinstala el hook: git config core.hooksPath ''"
         exit 1
     fi
