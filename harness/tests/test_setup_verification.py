@@ -77,10 +77,16 @@ def test_harness_files_incluyen_archivos_de_paquete() -> None:
 
 
 def test_harness_files_corresponden_a_archivos_reales() -> None:
-    """Cada entrada de _HARNESS_FILES debe existir en harness/ (sin entradas muertas)."""
+    """Cada entrada de _HARNESS_FILES debe existir en harness/ (sin entradas muertas).
+
+    Acepta archivos y paquetes (directorios con __init__.py): los modulos
+    refactorizados a paquete (scheduler/, run_commands/, etc.) son directorios.
+    """
     src = ROOT / "harness"
     for fname in sync_opencode_global._HARNESS_FILES:
-        assert (src / fname).is_file(), f"Entrada muerta en _HARNESS_FILES: {fname}"
+        path = src / fname
+        is_pkg_dir = path.is_dir() and (path / "__init__.py").is_file()
+        assert path.is_file() or is_pkg_dir, f"Entrada muerta en _HARNESS_FILES: {fname}"
 
 
 # ---------------------------------------------------------------------------

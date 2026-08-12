@@ -2,6 +2,37 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-08-11] Eliminacion total de deuda tecnica AGR (archivos > 500 lineas)
+
+### Refactor masivo a paquetes (< 500 lineas/archivo) — 32 modulos
+- **19 archivos > 500 lineas convertidos a paquetes** con re-export
+  backward-compatible (`__init__.py` re-exporta TODOS los simbolos publicos):
+  - orchestrator: mars_scheduler, scheduler, worktable, agent_bus,
+    task_planner, task_orchestrator, debate_orchestrator, metaclaw,
+    adaptive_planner, natural_language_tools, tool_guardian,
+    multi_user_governance, organizational_layer
+  - memory_rag: lance_vector_store, semantic_cache, sqlite_vec_adapter,
+    federated_search, agent_kpi_tracker, vector_store_adapter,
+    context_window_manager, compression_strategies, shapley_flow,
+    optimization_pipeline, context_assembler
+  - aifactory: factory, agent_factory | guardrails: guardrail_engine
+  - evals: eval_factory | scripts: end_of_iteration (init reducido)
+  - run.py (445) + run_support.py | run_commands -> paquete
+- **Clases grandes divididas en mixins** (patron del repo): _MessagingMixin,
+  _ReadingMixin, _LayerExecutorMixin, _ChecksMixin, _RetrievalMixin, etc.
+- **SOL: herencia > 2 mixins eliminada** en 9 clases (AIFactory,
+  GuardrailEngine, ContextAssembler, FederatedVectorSearch, SQLiteVecAdapter,
+  AgentBus, MultiUserGovernance, OrganizationalLayer, ToolGuardian) —
+  mixins fusionados por cohesion; test_universal_rules verde.
+- **Backward-compat verificado**: imports desde rutas originales identicos;
+  patches de tests sobre harness.run_commands.* funcionan via lookup dinamico
+  `_rc.` (patron scheduler).
+- **Ruff: All checks passed** (0 errores en todo harness).
+- **Vulture: 0 codigo muerto**. TODO real de builtin_rules convertido a NOTA.
+- Suite: **4414 passed, 37 skipped, 4 xfailed** (sin regresiones).
+- Pendiente documentado: funciones > 30 lineas (guideline FSZ, no gate) —
+  refactor diferido para no arriesgar oraculos de validacion.
+
 ## [2026-08-11] Memoria central SSOT (Memory_Proyects) + portabilidad Linux/Mac
 
 ### Memoria central: una sola DB (Memory_Proyects), sin duplicados

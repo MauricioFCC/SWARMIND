@@ -66,12 +66,13 @@ _REGISTRY_FILE = "skills/skills_registry.yaml"
 _HARNESS_INCLUDE = ["orchestrator", "memory_rag", "tools_sandbox", "model_router",
                     "evolve_loop", "qa", "security", "guardrails", "hooks",
                     "evals", "aifactory", "observability", "parallel", "plugins",
-                    "gateway", "db", "benchmarks"]
+                    "gateway", "db", "benchmarks", "scheduler"]
 # Archivos raiz del paquete harness (fix ADR-0042: incluye __init__.py y
 # __main__.py para que el global sea un paquete importable; security_policy.py
-# vive en harness/qa/ y se copia via el directorio qa).
+# vive en harness/qa/ y se copia via el directorio qa; scheduler.py paso a ser
+# el paquete harness/scheduler/ y se copia via _HARNESS_INCLUDE).
 _HARNESS_FILES = ["__init__.py", "__main__.py", "common.py", "delegate.py",
-                  "run.py", "run_commands.py", "scheduler.py", "reset_state.py",
+                  "run.py", "run_commands", "reset_state.py",
                   "cli_common.py", "gpu_accel.py", "gpu_optimize.py",
                   "vulture_whitelist.py"]
 
