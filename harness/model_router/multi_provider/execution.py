@@ -1,192 +1,32 @@
-﻿import logging
+"""Ejecucion con failover (mixin ``_ExecutionMixin``).
+
+Extraccion mecanica de los metodos de ejecucion/failover y delegados de
+``MultiAPIProvider`` del modulo original (sin cambios de logica ni firmas).
+
+Classes:
+    _ExecutionMixin: Mixin con execute, execute_with_fallback,
+        _execute_with_chain, _execute_on_provider y los delegados a
+        provider_executors/provider_health usados por ``MultiAPIProvider``.
+"""
+
+from __future__ import annotations
+
+import logging
 import os
-import threading
 import time
-from collections import defaultdict, deque
 from typing import Any
 
 from harness.model_router.multi_provider_types import (
-    LATENCY_WINDOW_SIZE,
     MAX_TOKENS_BY_AGENT,
-    BudgetLimit,
     ExecutionResult,
     ProviderConfig,
-    ProviderHealth,
-    ProviderTier,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("harness.model_router.multi_provider")
 
-class MultiAPIProvider:
-    """AbstracciÃ³n multi-provider con failover automÃ¡tico y balanceo de carga.
 
-    Gestiona mÃºltiples proveedores LLM (OpenAI, Anthropic, Google, Mistral,
-    DeepSeek) con registro dinÃ¡mico, health checks periÃ³dicos, round-robin
-    por tier, tracking de costos y mÃ©tricas de latencia P50/P95/P99.
-
-    Ejemplo:
-        mcp = MultiAPIProvider()
-        mcp.register_provider(ProviderConfig(
-            name="openai", api_key_env="OPENAI_API_KEY",
-            base_url="https://api.openai.com/v1",
-            models=["gpt-4o", "gpt-4o-mini"],
-            tier="premium", cost_per_1k_input=2.5, cost_per_1k_output=10.0,
-        ))
-        result = mcp.execute("gpt-4o", "Hello world")
-        stats = mcp.get_stats()
-    """
-
-    def __init__(self) -> None:
-        """Inicializa el gestor multi-provider.
-
-        WHY: Se requiere un estado compartido para proveedores, mÃ©tricas y
-        controles de costo a nivel de instancia.
-        WHERE: Constructor de MultiAPIProvider.
-        """
-        # name -> {config, client}
-        self._providers: dict[str, dict[str, Any]] = {}
-
-        # tier -> list of provider names (for round-robin)
-        self._tier_providers: dict[str, list[str]] = defaultdict(list)
-
-        # tier -> current round-robin index
-        self._rr_indices: dict[str, int] = defaultdict(int)
-
-        # provider health cache
-        self._health: dict[str, ProviderHealth] = {}
-
-        # latency history per provider (rolling window)
-        self._latency_history: dict[str, deque] = defaultdict(
-            lambda: deque(maxlen=LATENCY_WINDOW_SIZE)
-        )
-
-        # cost tracking per provider (USD total)
-        self._costs: dict[str, float] = defaultdict(float)
-
-        # cost tracking per model (USD total)
-        self._model_costs: dict[str, float] = defaultdict(float)
-
-        # request counts
-        self._request_counts: dict[str, int] = defaultdict(int)
-        self._error_counts: dict[str, int] = defaultdict(int)
-
-        # budget limits per project
-        self._budgets: dict[str, BudgetLimit] = {}
-
-        # health check thread control
-        self._health_thread: threading.Thread | None = None
-        self._health_stop = threading.Event()
-
-        # lock for thread safety
-        self._lock = threading.RLock()
-
-        # iniciar health checks en background
-        self._start_health_checks()
-
-    # ------------------------------------------------------------------
-    # Registro y configuraciÃ³n de proveedores
-    # ------------------------------------------------------------------
-
-    def register_provider(self, config: ProviderConfig) -> None:
-        """Registra un nuevo proveedor de modelos LLM.
-
-        Args:
-            config: ConfiguraciÃ³n completa del proveedor.
-
-        Raises:
-            ValueError: Si el nombre del proveedor ya estÃ¡ registrado
-                o la configuraciÃ³n es invÃ¡lida.
-
-        WHY: Cada proveedor necesita configuraciÃ³n individual (API key,
-        modelos, costos) para ser invocado correctamente.
-        WHERE: register_provider en MultiAPIProvider.
-        """
-        if not config.name:
-            raise ValueError(
-                "Provider name cannot be empty. "
-                "WHY: Se necesita un nombre Ãºnico para identificar el proveedor. "
-                "WHERE: register_provider"
-            )
-        if not config.models:
-            raise ValueError(
-                f"Provider '{config.name}' must have at least one model. "
-                "WHY: Sin modelos no hay ejecuciÃ³n posible. "
-                "WHERE: register_provider"
-            )
-        if config.tier not in (t.value for t in ProviderTier):
-            logger.warning(
-                "Provider '%s' tier '%s' no es estÃ¡ndar, usando 'standard'. "
-                "WHY: Se esperaba uno de %s. "
-                "WHERE: register_provider",
-                config.name, config.tier, [t.value for t in ProviderTier],
-            )
-            config.tier = ProviderTier.STANDARD.value
-
-        with self._lock:
-            if config.name in self._providers:
-                raise ValueError(
-                    f"Provider '{config.name}' already registered. "
-                    "WHY: No se permite duplicados. "
-                    "WHERE: register_provider"
-                )
-
-            self._providers[config.name] = {"config": config}
-            self._tier_providers[config.tier].append(config.name)
-            self._health[config.name] = ProviderHealth()
-
-            logger.info(
-                "Provider '%s' registrado con %d modelos en tier '%s'. "
-                "WHERE: register_provider",
-                config.name, len(config.models), config.tier,
-            )
-
-    def unregister_provider(self, name: str) -> None:
-        """Elimina un proveedor registrado.
-
-        Args:
-            name: Nombre del proveedor a eliminar.
-
-        WHY: Permite remover proveedores en runtime sin reiniciar la instancia.
-        WHERE: unregister_provider en MultiAPIProvider.
-        """
-        with self._lock:
-            if name not in self._providers:
-                logger.warning(
-                    "Provider '%s' no encontrado para eliminar. "
-                    "WHY: El proveedor no estaba registrado. "
-                    "WHERE: unregister_provider",
-                    name,
-                )
-                return
-
-            config = self._providers[name]["config"]
-            tier = config.tier
-            if name in self._tier_providers.get(tier, []):
-                self._tier_providers[tier].remove(name)
-
-            del self._providers[name]
-            self._health.pop(name, None)
-            self._latency_history.pop(name, None)
-            self._costs.pop(name, None)
-            self._request_counts.pop(name, None)
-            self._error_counts.pop(name, None)
-
-            logger.info(
-                "Provider '%s' eliminado. WHERE: unregister_provider", name,
-            )
-
-    def get_providers(self) -> list[str]:
-        """Retorna la lista de nombres de proveedores registrados.
-
-        Returns:
-            Lista de nombres de proveedores activos.
-        """
-        with self._lock:
-            return list(self._providers.keys())
-
-    # ------------------------------------------------------------------
-    # EjecuciÃ³n con failover
-    # ------------------------------------------------------------------
+class _ExecutionMixin:
+    """Mixin con la ejecucion multi-proveedor y el failover."""
 
     def execute(
         self,
@@ -450,10 +290,6 @@ class MultiAPIProvider:
         result.provider = provider_name
         return result
 
-    # ------------------------------------------------------------------
-    # Handlers especÃ­ficos por proveedor (delegados a provider_executors)
-    # ------------------------------------------------------------------
-
     def _execute_openai_compat(self, config, api_key, prompt, max_tokens, temperature):
         from harness.model_router.provider_executors import execute_openai_compat
         return execute_openai_compat(self, config, api_key, prompt, max_tokens, temperature)
@@ -497,15 +333,3 @@ class MultiAPIProvider:
         """Retorna estadisticas completas (delegado)."""
         from harness.model_router.provider_health import get_stats as _gs
         return _gs(self)
-
-    def __del__(self) -> None:
-        """Cleanup: detiene health checks al destruir la instancia."""
-        try:
-            self.stop_health_checks()
-        except Exception:  # noqa: S110, BLE001
-            pass
-
-
-# ===================================================================
-# ModelRouter (MEJORADO) â€” mantiene compatibilidad total hacia atrÃ¡s
-# ===================================================================

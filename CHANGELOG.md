@@ -5,19 +5,23 @@
 ## [2026-08-11] Eliminacion total de deuda tecnica AGR (archivos > 500 lineas)
 
 ### Refactor masivo a paquetes (< 500 lineas/archivo) — 32 modulos
-- **19 archivos > 500 lineas convertidos a paquetes** con re-export
+- **32 archivos > 500 lineas convertidos a paquetes** con re-export
   backward-compatible (`__init__.py` re-exporta TODOS los simbolos publicos):
   - orchestrator: mars_scheduler, scheduler, worktable, agent_bus,
     task_planner, task_orchestrator, debate_orchestrator, metaclaw,
     adaptive_planner, natural_language_tools, tool_guardian,
-    multi_user_governance, organizational_layer
+    multi_user_governance, organizational_layer, health, federated_memory,
+    agent_discovery
   - memory_rag: lance_vector_store, semantic_cache, sqlite_vec_adapter,
     federated_search, agent_kpi_tracker, vector_store_adapter,
     context_window_manager, compression_strategies, shapley_flow,
-    optimization_pipeline, context_assembler
+    optimization_pipeline, context_assembler, token_budget,
+    token_budget_manager, skill_loader
+  - model_router: complexity_router, multi_provider, provider_health
+  - tools_sandbox: mcp_client | db: migrate_engine
   - aifactory: factory, agent_factory | guardrails: guardrail_engine
-  - evals: eval_factory | scripts: end_of_iteration (init reducido)
-  - run.py (445) + run_support.py | run_commands -> paquete
+  - evals: eval_factory | scripts: end_of_iteration, auto_fix_all
+  - run.py (445) + run_support.py | run_commands -> paquete (4 submódulos)
 - **Clases grandes divididas en mixins** (patron del repo): _MessagingMixin,
   _ReadingMixin, _LayerExecutorMixin, _ChecksMixin, _RetrievalMixin, etc.
 - **SOL: herencia > 2 mixins eliminada** en 9 clases (AIFactory,

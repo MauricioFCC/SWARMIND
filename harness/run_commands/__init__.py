@@ -19,6 +19,7 @@ from .colors import (
     _safe_print,
     _warn,
 )
+from .handlers_extra import *
 from .handlers_iteration import *
 from .handlers_other import *
 
