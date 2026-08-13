@@ -5,7 +5,7 @@
 
 name: frontend-uiux
 domain: frontend
-description: "Skill profesional de UI/UX con Generative UI 2026: design systems tokenizados (Geeklego, 7onic, useVyre), semantic guidance (Product→DesignSystem→Feature→Component), validacion UX (WiserUI-Bench, WCAG 2.2 AA), interfaces LLM-native (A2UI/OpenUI), StyleSeed | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

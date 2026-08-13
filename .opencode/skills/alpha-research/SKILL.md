@@ -5,7 +5,9 @@
 
 name: alpha-research
 domain: research
-description: "Investigación de alpha — factores, ML avanzado, feature engineering y validación estadística con motores cuantitativos (ej. CQE Rust) | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario busca investigar/validar factores de alpha o features cuantitativos. alpha, factores, ML, feature engineering, validacion estadistica, backtesting, motores cuantitativos. | UPG·NAM·FRS (reglas en base_principles.md)"
+version: 1.0.0
+project_agnostic: true
 ---
 
 # Alpha Research — Motor de Investigación Cuantitativa

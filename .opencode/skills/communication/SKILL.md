@@ -5,7 +5,7 @@
 
 name: communication
 domain: communication
-description: "Habilidades de comunicacion profesional: escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural, y liderazgo | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario necesita comunicacion profesional o persuasiva. escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural, liderazgo. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

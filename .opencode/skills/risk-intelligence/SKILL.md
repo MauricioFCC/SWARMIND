@@ -5,7 +5,7 @@
 
 name: risk-intelligence
 domain: risk
-description: "Identificacion y analisis de riesgos emergentes basado en el framework CRO Forum 2026: riesgos tecnologicos, geopoliticos, climaticos, de salud y financieros | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario analiza riesgos emergentes. CRO Forum, riesgos tecnologicos, geopoliticos, climaticos, salud, financieros. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

@@ -1,7 +1,7 @@
 ---
 name: frontend-uiux
 domain: frontend
-description: "UI/UX professional frontend engineering with Generative UI 2026 — Design systems AI-native (Geeklego 3-tier, 7onic, useVyre, StyleSeed), Semantic Guidance, A2UI/OpenUI, Bayesian preference learning, WCAG 2.2 AA"
+description: "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

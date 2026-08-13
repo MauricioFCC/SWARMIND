@@ -1,7 +1,7 @@
 ---
 name: ads-optimizer
 domain: marketing
-description: "Optimizacion de campanas Meta Ads con 12 sub-skills frontier 2026"
+description: "Usar cuando el usuario quiere optimizar campanas publicas digitales. Meta Ads, Google Ads, BOAD, ShapleyFlow, MetaClaw, RL bidding, ROI publicitario, conversion, targeting. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

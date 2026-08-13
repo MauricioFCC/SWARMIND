@@ -4,7 +4,7 @@
 
 
 name: responsive-ui
-description: "Experto en interfaces responsivas, accesibilidad WCAG 2.2 AA/AAA, design systems tokenizados, component libraries y optimizacion de experiencia de usuario | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario construye interfaces responsivas accesibles. responsive, accesibilidad, WCAG, design systems, component libraries, UX, movil, desktop. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:
@@ -354,6 +354,8 @@ design-system/
 | Tamano de target < 24x24 CSS px | 🟡 WARN | "Targets pequenos no cumplen WCAG 2.2 AA."
 
 ---
+
+> **REQUIRED SUB-SKILL:** Use `frontend-uiux` for advanced UI/UX design and Generative UI 2026 systems. This skill covers responsive + accessibility; compose with frontend-uiux for full design-system work.
 
 > 💡 **Nota**: Este skill integra con frontend-uiux para diseno avanzado de UI/UX. La accesibilidad no es opcional — es un requisito de calidad. Todo componente debe pasar auditoria axe-core antes de considerar completo.
 

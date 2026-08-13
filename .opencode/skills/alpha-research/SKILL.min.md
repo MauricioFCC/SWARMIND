@@ -1,6 +1,6 @@
 ---
 name: alpha-research
-description: "Investigación de alpha — factores, ML avanzado, feature engineering y validación estadística con motores cuantitativos (ej. CQE Rust) | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario busca investigar/validar factores de alpha o features cuantitativos. alpha, factores, ML, feature engineering, validacion estadistica, backtesting, motores cuantitativos. | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 ## 🧪 Factor Zoo (`domain::models::factor_zoo`)

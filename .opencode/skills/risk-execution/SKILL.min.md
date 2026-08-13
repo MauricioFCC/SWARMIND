@@ -1,6 +1,6 @@
 ---
 name: risk-execution
-description: "Gestión de riesgo institucional y ejecución algorítmica con motores cuantitativos de alto rendimiento (ej. CQE Rust) — position sizing, market making, TCA | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica. | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 ## 📐 Risk Management (`domain::risk_management`)

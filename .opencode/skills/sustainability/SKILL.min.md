@@ -1,7 +1,7 @@
 ---
 name: sustainability
 domain: environment
-description: "Sostenibilidad y ESG: huella de carbono, economia circular, reportes GRI/SASB/TCFD, impacto ambiental."
+description: "Usar cuando el usuario trabaja sostenibilidad o ESG. ESG, impacto ambiental, economia circular, cambio climatico, reportes sostenibilidad. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

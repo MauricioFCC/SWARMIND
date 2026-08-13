@@ -5,7 +5,7 @@
 
 name: sustainability
 domain: environment
-description: "Sostenibilidad, ESG, impacto ambiental, economia circular, cambio climatico, y reportes de sostenibilidad corporativa | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario trabaja sostenibilidad o ESG. ESG, impacto ambiental, economia circular, cambio climatico, reportes sostenibilidad. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

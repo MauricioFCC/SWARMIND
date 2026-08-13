@@ -1,180 +1,198 @@
 skills:
   - name: alpha-research
     domain: quantitative
-    description: "Factor research, ML, feature engineering, statistical validation | PaCoRe parallel exploration, LTS shared memory, Harness Effect token optimization"
+    description: "Usar cuando el usuario busca investigar/validar factores de alpha o features cuantitativos. alpha, factores, ML, feature engineering, validacion estadistica, backtesting, motores cuantitativos. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: evolve
     domain: meta
-    description: "Self-improvement loop ASI-Evolve | Token Economics, Swarmind RL Scaling (KAT-Coder, PaCoRe Train, LTS Control), Spec Evolution (TDAD), Role Evolution (AOSE Hybrid), FDE, Autobuilder"
+    description: "Usar cuando el usuario quiere mejorar el sistema o sus skills. auto-mejora, evolucion, ASI-Evolve, aprendizaje continuo, mejora de skills, FDE, meta-aprendizaje. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: healthtech
     domain: healthtech
-    description: "Healthtech, clinical systems, HIPAA, interoperability | Adversarial testing (PROBE), Property-based testing, mutation testing (SMART), FuzzAgent fuzzing"
+    description: "Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: hedgefund
     domain: financial
-    description: "Institutional hedge fund doctrine, risk/reward | Harness Effect token economics, circuit breaker patterns, failure-spend governance"
+    description: "Usar cuando se opera el proyecto como fondo de inversion institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, data-driven, riesgo institucional. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: legal-doc
     domain: legal
-    description: "Legal document analysis, Colombian law (multi-especialidad), RTF+C methodology, comparative law, Corte Constitucional | AOSE Hybrid Roles, structured output contracts, discourse parsing, argument mining"
+    description: "Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: math-doc
     domain: academic
-    description: "Mathematical document processing, LaTeX, proofs, statistics | PaCoRe parallel reasoning, REPOREASON diagnostic metrics, 38-metric catalogue"
+    description: "Usar cuando el usuario necesita analisis matematico o formulas. papers matematicos, LaTeX, demostraciones, estadistica, algebra, calculo, modelado matematico. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: pos-retail
     domain: retail
-    description: "Point of sale, retail operations, inventory management | TDAD test-driven compilation, SpecOps automated testing, FuzzAgent fuzzing, TDFlow iterative fix"
+    description: "Usar cuando el dominio es punto de venta o retail. POS, retail, e-commerce, inventario, facturacion, pagos, logistica. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: quant-trading
     domain: quantitative
-    description: "Quantitative trading strategies with CQE Rust | PaCoRe parallel exploration, Helium workflow scheduling, Agentix program-level optimization, LTS shared memory"
+    description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: risk-execution
     domain: quantitative
-    description: "Risk management, position sizing, market making, TCA | Circuit breaker patterns, failure classification (6 tipos), Token Budget Governance, structured compaction, WAL"
+    description: "Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: science-doc
     domain: academic
-    description: "Scientific document analysis, peer review, systematic reviews | 38-metric catalogue, LTS shared memory, Token Maxing analysis, Doc-Researcher multimodal parsing, Arg-LLaDA sufficiency-aware summarization, Multi-Granularity Discourse Parsing"
+    description: "Usar cuando el usuario analiza papers o documentacion cientifica. papers academicos, tesis, informes tecnicos, revisiones sistematicas, investigacion. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: frontend-uiux
     domain: frontend
-    description: "UI/UX professional frontend engineering with Generative UI 2026 | Design systems AI-native (Geeklego 3-tier, 7onic, useVyre, StyleSeed), Semantic Guidance hierarchical generation, A2UI/OpenUI declarative rendering, Bayesian preference learning, WCAG 2.2 AA compliance, WiserUI-Bench validation, 7 PBT templates, Core Web Vitals optimization, visual regression testing"
+    description: "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: rust-lang
     domain: systems
-    description: "Rust systems engineering — ownership, borrowing, lifetimes, async runtimes (tokio, smol, async-std), web frameworks (axum, actix, rocket), FFI with Python via PyO3/maturin, performance optimization, cargo tooling"
+    description: "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: architecture
     domain: architecture
-    description: "Software architecture — GoF patterns, SOLID, Clean Architecture, Hexagonal, DDD, C4 model, ADRs, architectural decision records, fitness functions, domain-driven design"
+    description: "Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: responsive-ui
     domain: frontend
-    description: "Responsive UI/UX — WCAG 2.2 AA/AAA, mobile-first design, design tokens, component libraries, CSS Grid/Flexbox/Container Queries, Core Web Vitals, accessibility auditing with axe-core"
+    description: "Usar cuando el usuario construye interfaces responsivas accesibles. responsive, accesibilidad, WCAG, design systems, component libraries, UX, movil, desktop. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: data-science
     domain: data
-    description: "Data Science & ML — pandas, numpy, polars, scikit-learn, PyTorch, feature engineering, model evaluation protocols, GPU acceleration (AMP, DDP, torch.compile), reproducible pipelines"
+    description: "Usar cuando el usuario trabaja con datos, ML o pipelines. pandas, numpy, scikit-learn, pytorch, feature engineering, model evaluation, GPU, analisis de datos. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: security-audit
     domain: security
-    description: "Experto en seguridad de aplicaciones: SAST, DAST, threat modeling, SBOM, compliance OWASP/STRIDE/SOC2"
+    description: "Usar cuando el usuario audita seguridad o cumple estandares. OWASP, STRIDE, SOC2, ISO27001, SAST, DAST, threat modeling, SBOM, pentesting. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: business-strategy
     domain: business
-    description: "Analisis estrategico de negocios, modelos de negocio, DOFA, Porter, Canvas, OKRs, ROI, planes de negocio y toma de decisiones estrategicas."
+    description: "Usar cuando el usuario pide analisis estrategico o modelo de negocio. DOFA, SWOT, Porter, canvas, plan de negocio, ROI, KPIs, OKRs, posicionamiento. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: communication
     domain: communication
-    description: "Comunicacion profesional: escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural y liderazgo."
+    description: "Usar cuando el usuario necesita comunicacion profesional o persuasiva. escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural, liderazgo. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: project-management
     domain: management
-    description: "Gestion de proyectos: metodologias agiles (Scrum, Kanban), planificacion, seguimiento, riesgos, estimaciones y comunicacion con stakeholders."
+    description: "Usar cuando el usuario gestiona proyectos o metodologias. Scrum, Kanban, planificacion, seguimiento, riesgos, estimaciones, stakeholders. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: creative-design
     domain: design
-    description: "Pensamiento creativo y diseno: design thinking, ideacion, prototipado, branding, identidad visual y experiencia de usuario (no-code)."
+    description: "Usar cuando el usuario busca ideacion o diseno creativo. design thinking, ideacion, prototipado, branding, identidad visual, UX, brainstorming. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: psychology
     domain: psychology
-    description: "Psicologia aplicada a sistemas multi-agente: psicologia cognitiva, organizacional, del aprendizaje y positiva para mejorar la interaccion, motivacion y efectividad de agentes y equipos multi-agente."
+    description: "Usar cuando el problema involucra comportamiento o psicologia. psicologia cognitiva, organizacional, del aprendizaje, positiva, sistemas multi-agente. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: education
     domain: education
-    description: "Ciencias de la educacion: diseno instruccional (ADDIE, SAM, Agile), taxonomia de Bloom, andragogia, microlearning, spaced repetition y evaluacion educativa."
+    description: "Usar cuando el usuario diseña material educativo o formacion. diseno instruccional, pedagogia, andragogia, Bloom, microlearning, evaluacion educativa. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: ethics
     domain: philosophy
-    description: "Etica de IA y filosofia aplicada: marcos eticos para agentes (deontologia, utilitarismo, virtud, cuidado, justicia), alineamiento de valores, auditoria etica y filosofia de la mente."
+    description: "Usar cuando la decision involucra etica de IA o valores. alineamiento, marcos eticos, agentes autonomos, decisiones automaticas, filosofia de la mente, sesgo etico. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: behavioral-economics
     domain: economics
-    description: "Economia del comportamiento: teoria de juegos (cooperativos/no-cooperativos), sesgos cognitivos, heurísticas, diseno de incentivos/mechanismos, y toma de decisiones bajo incertidumbre."
+    description: "Usar cuando el problema involucra decisiones humanas bajo incertidumbre. teoria de juegos, sesgos cognitivos, heuristicas, incentivos, economia del comportamiento, nudges. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: linguistics
     domain: linguistics
-    description: "Linguistica aplicada: linguistica cognitiva, semiotica, pragmatica (Grice, Searle), analisis del discurso (RST, Toulmin), y argumentacion."
+    description: "Usar cuando el problema involucra lenguaje, semiotica o NLP. linguistica cognitiva, semiotica, pragmatica, analisis del discurso, procesamiento de lenguaje natural. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: sociology
     domain: sociology
-    description: "Sociologia y antropologia para sistemas multi-agente: dinamicas de grupos (Tuckman, Belbin), teoria de redes (SNA), sociologia del conocimiento (SECI) y antropologia de la tecnologia."
+    description: "Usar cuando el problema involucra dinamicas sociales o de grupos. sociologia, antropologia, redes, cultura digital, grupos, sistemas multi-agente. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: devops-infra
     domain: devops
-    description: "DevOps, infraestructura como codigo, CI/CD, Docker, Kubernetes, Terraform, monitoreo, observabilidad, y plataforma como servicio."
+    description: "Usar cuando el usuario opera infraestructura o CI/CD. Docker, Kubernetes, Terraform, CI/CD, monitoreo, observabilidad, plataforma, despliegue. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: sustainability
     domain: environment
-    description: "Sostenibilidad, ESG, impacto ambiental, economia circular, cambio climatico, y reportes de sostenibilidad corporativa."
+    description: "Usar cuando el usuario trabaja sostenibilidad o ESG. ESG, impacto ambiental, economia circular, cambio climatico, reportes sostenibilidad. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: physical-sciences
     domain: science
-    description: "Ciencias naturales experimentales: fisica, quimica, biologia, metodos cientificos, diseno experimental, y analisis de datos cientificos."
+    description: "Usar cuando el dominio son ciencias naturales experimentales. fisica, quimica, biologia, metodos cientificos, diseno experimental, analisis de datos cientificos. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: risk-intelligence
     domain: risk
-    description: "Identificacion de riesgos emergentes (CRO Forum 2026): tecnologicos, geopoliticos, climaticos, salud, financieros"
+    description: "Usar cuando el usuario analiza riesgos emergentes. CRO Forum, riesgos tecnologicos, geopoliticos, climaticos, salud, financieros. | UPG·NAM·FRS (reglas en base_principles.md)"
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: diagram-design
+    domain: frontend
+    description: "Usar cuando el usuario pide un diagrama visual editorial. arquitectura, flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar, org chart, mermaid, drawio, SVG, diagrama. | UPG·NAM·FRS (reglas en base_principles.md)"
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: ads-optimizer
+    domain: advertising
+    description: "Usar cuando el usuario quiere optimizar campanas publicas digitales. Meta Ads, Google Ads, BOAD, ShapleyFlow, MetaClaw, RL bidding, ROI publicitario, conversion, targeting. | UPG·NAM·FRS (reglas en base_principles.md)"
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: swarm-release-ops
+    domain: swarm-release-ops
+    description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true

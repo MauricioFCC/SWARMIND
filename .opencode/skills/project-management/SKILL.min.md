@@ -1,7 +1,7 @@
 ---
 name: project-management
 domain: management
-description: "Gestion de proyectos: Scrum, Kanban, WBS, riesgos, estimaciones, stakeholders."
+description: "Usar cuando el usuario gestiona proyectos o metodologias. Scrum, Kanban, planificacion, seguimiento, riesgos, estimaciones, stakeholders. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

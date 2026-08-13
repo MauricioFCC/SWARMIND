@@ -5,7 +5,7 @@
 
 name: linguistics
 domain: linguistics
-description: "Linguistica aplicada: linguistica cognitiva, semiotica, pragmatica, analisis del discurso, y procesamiento de lenguaje natural teorico | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el problema involucra lenguaje, semiotica o NLP. linguistica cognitiva, semiotica, pragmatica, analisis del discurso, procesamiento de lenguaje natural. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

@@ -1,7 +1,7 @@
 ---
 name: physical-sciences
 domain: science
-description: "Ciencias naturales: fisica, quimica, biologia, metodo cientifico, diseno experimental."
+description: "Usar cuando el dominio son ciencias naturales experimentales. fisica, quimica, biologia, metodos cientificos, diseno experimental, analisis de datos cientificos. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

@@ -1,7 +1,7 @@
 ---
 name: security-audit
 domain: security
-description: "Experto en seguridad de aplicaciones: SAST, DAST, threat modeling, SBOM, compliance OWASP/STRIDE/SOC2"
+description: "Usar cuando el usuario audita seguridad o cumple estandares. OWASP, STRIDE, SOC2, ISO27001, SAST, DAST, threat modeling, SBOM, pentesting. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

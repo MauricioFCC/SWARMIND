@@ -2,10 +2,13 @@
 name: swarm-release-ops
 domain: swarm-release-ops
 version: 1.0.0
-description: "Release engineering y CI/CD de SWARMIND: GitHub Actions, uv, safety, bandit, auto-merge, branch protection. Usar con release, CI, workflow, pipeline, deploy, checks rojos | UPG·NAM·FRS (reglas en base_principles.md)"
+project_agnostic: true
+description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # Swarm Release Ops | Release Engineering y CI/CD de SWARMIND
+
+> **REQUIRED SUB-SKILL:** Use `devops-infra` for generic DevOps/CI-CD knowledge. This skill adds SWARMIND-specific release ops on top; compose both when the task touches CI/CD.
 
 Skill contextual muy especializado en la operacion de releases del repo
 `MauricioFCC/SWARMIND`. Complementa a `devops-infra` con el conocimiento

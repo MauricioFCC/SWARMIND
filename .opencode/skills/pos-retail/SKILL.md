@@ -5,7 +5,7 @@
 
 name: pos-retail
 domain: pos-retail
-description: "Skill contextual para el dominio Pos-Retail — punto de venta, retail, e-commerce, inventario, facturación, pagos y logística | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el dominio es punto de venta o retail. POS, retail, e-commerce, inventario, facturacion, pagos, logistica. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

@@ -1,7 +1,7 @@
 ---
 name: rust-lang
 domain: systems
-description: "Rust systems engineering — ownership, borrowing, lifetimes, async runtimes (tokio, smol, async-std), web frameworks (axum, actix, rocket), FFI with Python via PyO3/maturin, performance optimization, cargo tooling"
+description: "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

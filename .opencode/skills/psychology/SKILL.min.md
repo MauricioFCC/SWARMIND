@@ -1,7 +1,7 @@
 ---
 name: psychology
 domain: psychology
-description: "Psicologia aplicada: cognitiva, organizacional, del aprendizaje, positiva para sistemas multi-agente."
+description: "Usar cuando el problema involucra comportamiento o psicologia. psicologia cognitiva, organizacional, del aprendizaje, positiva, sistemas multi-agente. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

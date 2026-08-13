@@ -4,7 +4,7 @@
 
 
 name: architecture
-description: "Arquitecto de software: patrones GoF, clean architecture, hexagonal, DDD, C4 model, decisiones arquitectonicas, principios SOLID y diseno de sistemas escalables | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 inherit:

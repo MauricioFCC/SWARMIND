@@ -1,6 +1,6 @@
 ---
 name: quant-trading
-description: "Estrategias cuantitativas de trading con motores cuantitativos de alto rendimiento (ej. quant-engine en Rust) — prioriza rendimiento, baja latencia y generación de alpha | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 ## 📡 Data Processing (`domain::data_processing`)

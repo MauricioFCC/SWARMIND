@@ -5,7 +5,7 @@
 
 name: science-doc
 domain: science
-description: "Skill contextual para el dominio científico multidisciplina — análisis de papers académicos, tesis, informes técnicos, revisiones sistemáticas y documentación de investigación | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario analiza papers o documentacion cientifica. papers academicos, tesis, informes tecnicos, revisiones sistematicas, investigacion. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---

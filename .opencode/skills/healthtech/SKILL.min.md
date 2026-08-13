@@ -1,7 +1,7 @@
 ---
 name: healthtech
 domain: healthtech
-description: "Skill contextual para el dominio HealthTech — salud digital, sistemas clínicos, HIPAA, interoperabilidad, cumplimiento regulatorio y arquitectura de datos clínicos"
+description: "Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.0.0
 project_agnostic: true
 ---
