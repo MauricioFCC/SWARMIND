@@ -60,9 +60,7 @@ from datetime import UTC, datetime, timedelta
 
 # Fechas relativas a "ahora" para que los tests nunca envejezcan
 _NOW = datetime.now(UTC)
-NOW_ISO = _NOW.isoformat()
 _RECENT = (_NOW - timedelta(hours=1)).isoformat()
-_OLD = (_NOW - timedelta(days=30)).isoformat()
 
 
 def _make_lesson(

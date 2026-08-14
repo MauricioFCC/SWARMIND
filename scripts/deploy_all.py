@@ -56,7 +56,6 @@ logger = logging.getLogger(__name__)
 
 _HERE = Path(__file__).resolve().parent            # Swarmind/scripts/
 _ROOT = _HERE.parent                                # Swarmind/
-_HARNESS = _ROOT / "harness"                        # Swarmind/harness/
 
 _DEV_SPACE = Path(os.environ.get(
     "DEV_SPACE_ROOT", str(Path.home() / "Documents" / "DEV-SPACE"),

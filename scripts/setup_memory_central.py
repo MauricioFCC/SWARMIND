@@ -60,9 +60,6 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
-_HERE = Path(__file__).resolve().parent        # Swarmind/scripts/
-_ROOT = _HERE.parent                           # Swarmind/
-
 # Ruta central portable (cualquier SO): $MEMORY_ROOT o <home>/Documents/Memory_Proyects
 _MEMORY_ROOT = Path(os.environ.get(
     "MEMORY_ROOT",
