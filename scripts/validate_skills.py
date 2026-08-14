@@ -53,7 +53,7 @@ def _parse_frontmatter(text: str) -> tuple[dict[str, str], str | None]:
     Returns:
         Tupla (dict de campos, error o None).
     """
-    m = re.match(r"^---\n(.*?)\n---", text, re.S)
+    m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
     if not m:
         return {}, "frontmatter faltante (debe iniciar con ---)"
     fm = {}
@@ -156,7 +156,7 @@ def _validate_registry(quiet: bool) -> list[str]:
     if not _REGISTRY.exists():
         return ["skills_registry.yaml faltante"]
     reg_text = _REGISTRY.read_text(encoding="utf-8", errors="replace")
-    registered = set(re.findall(r"^  - name:\s*(\S+)", reg_text, re.M))
+    registered = set(re.findall(r"^  - name:\s*(\S+)", reg_text, re.MULTILINE))
     on_disk = {d.name for d in _SKILLS_DIR.iterdir()
                if d.is_dir() and (d / "SKILL.md").exists()}
     errors = []
@@ -184,7 +184,7 @@ def main() -> None:
 
     errors.extend(_validate_registry(args.quiet))
 
-    print("")
+    print()
     if errors:
         print(f"❌ {len(errors)} error(es):")
         for e in errors:
