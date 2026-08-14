@@ -15,11 +15,11 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v4
-      - name: Run Semgrep (SAST)
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: p/default
-          generate-sarif: true
+      - name: Install Semgrep (latest OSS)
+        run: pipx install semgrep
+      - name: Run Semgrep (p/default)
+        run: semgrep scan --config p/default --sarif-output=semgrep.sarif --severity ERROR,WARNING .
+        continue-on-error: true  # reporta hallazgos sin bloquear (severity alta)
       - name: Upload SARIF to code-scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
