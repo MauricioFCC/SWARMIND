@@ -2,6 +2,54 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-08-13] Skills frontier 2026: diagram-design + SDO + validador + deploy dinamico
+
+### Nuevo skill diagram-design (upstream cathrynlavery/diagram-design v2.3)
+- **27 tipos de diagramas editoriales autocontenidos HTML+SVG** (architecture,
+  flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar,
+  loop, nested, org chart, layers, Venn, pyramid, bar, line, Gantt, scatter,
+  medallion, data flow, DP integration, DP security matrix).
+- 146 archivos: SKILL.md (573 lineas) + references/ (39) + scripts/
+  (self_check, drawio_extract, mermaid_extract) + assets/ (100+ ejemplos).
+- `self_check.py --json`: salida JSON parseable para validacion automatica.
+
+### Refactor SDO (Skill Discovery Optimization, patron obra/superpowers 272k stars)
+- **33 descripciones reescritas** con el patron "Usar cuando <condicion>" +
+  keywords de sintoma (antes resumian el workflow — el agente saltaba el body).
+- Aplicado en SKILL.md + SKILL.min.md + skills_registry.yaml (99 archivos).
+
+### Infraestructura de skills
+- **AGENTS.md** (session-start hook): doctrina RSF/IDP/ERR/ARQ/SEG/DOC/TST/CMT/
+  TKN/AGR/UPG/FRS + **VER** (verificacion autonoma obligatoria).
+- **scripts/validate_skills.py**: validador CLI — frontmatter spec LF, SDO,
+  version/project_agnostic, SKILL.min.md, references muertas, registry sync,
+  license/compatibility. Modo `--strict` para CI.
+- **skill_frontmatter.py**: regla SDO como warning L1.
+- Frontmatter completo en los 33 skills: license MIT + compatibility.
+- REQUIRED SUB-SKILL: responsive-ui->frontend-uiux, swarm-release-ops->devops-infra.
+
+### deploy_all.py: descubrimiento dinamico (fix bug critico)
+- **Fix: skills nuevas (diagram-design, swarm-release-ops) ya no se borran**
+  del mirror de proyectos (antes _ALL_SKILLS hardcode 31 las eliminaba como
+  "obsoletas").
+- `_discover_skills()` / `_discover_agents()`: SSOT dinamico desde el disco
+  (33 skills, 22 agentes) — sin listas hardcode.
+- README generado con conteos dinamicos (antes "Agentes (20)" hardcode).
+
+### Tests (TDD)
+- **test_deploy_all.py** (NUEVO, 23 tests): discover dinamico, deploy_skills
+  (incluye fix no-borrar-nuevas), generate_readme dinamico, detect_type,
+  resolve_project, discover_projects, _sync_tree preservador.
+- **test_validate_skills.py** (NUEVO, 20 tests): validador CLI completo.
+- **test_self_check_diagram.py** (NUEVO, 7 tests): self_check --json.
+- **test_skill_frontmatter.py**: +5 tests SDO.
+- Suite skills: 182+ tests verdes, ruff 0 errores.
+
+### Documentacion actualizada
+- Conteos reales en docs (33 skills, 22 agentes, Agosto 2026).
+- ADR-0045 (modelos helpdesk + diagram-design), ADR-0046 (skill engineering),
+  ADR-0047 (refactor SDO).
+
 ## [2026-08-11] Eliminacion total de deuda tecnica AGR (archivos > 500 lineas)
 
 ### Refactor masivo a paquetes (< 500 lineas/archivo) — 32 modulos

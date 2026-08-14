@@ -9,7 +9,7 @@ SWARMIND los sincroniza AUTOMÁTICAMENTE en cada commit (pre-commit hook →
 
 CADA PROYECTO conserva solo:
   - .opencode/          : mirror del cerebro (agents, skills, core, config)
-  - skills/             : 31 skills + registry completo
+  - skills/             : todas las skills (descubiertas dinamicamente) + registry completo
   - config propia       : project_config, routing_rules, token_budgets, .env
 
 EL MOTOR (harness/) NO se copia a los proyectos: una sola copia vive en
@@ -21,7 +21,7 @@ Si un script de un proyecto necesita harness, importa desde el global
 
 Este script despliega/limpia el mirror de todos los proyectos de
 DEV-SPACE: actualiza cerebro, elimina skills obsoletas, deja
-skills_registry.yaml completo (31 skills) y preserva la configuración
+skills_registry.yaml completo (skills descubiertas dinamicamente) y preserva la configuración
 propia (project_config, routing_rules, token_budgets, federated/, db/,
 .env).
 
@@ -87,16 +87,50 @@ _ALIASES = {
     "SECURITY": "sugurityOs",
 }
 
-# Skills disponibles (31) — potencia total Swarmind en TODOS los proyectos
-_ALL_SKILLS = [
-    "evolve", "hedgefund", "quant-trading", "alpha-research", "risk-execution",
-    "frontend-uiux", "responsive-ui", "rust-lang", "architecture", "data-science",
-    "security-audit", "devops-infra", "business-strategy", "communication",
-    "project-management", "behavioral-economics", "math-doc", "science-doc",
-    "physical-sciences", "psychology", "education", "ethics", "linguistics",
-    "sociology", "creative-design", "healthtech", "legal-doc", "pos-retail",
-    "sustainability", "ads-optimizer", "risk-intelligence",
-]
+# ---------------------------------------------------------------------------
+# Skills (SSOT: se descubren desde .opencode/skills/ — sin hardcode)
+# ---------------------------------------------------------------------------
+
+
+def _discover_skills() -> list[str]:
+    """Descubre las skills de la fuente (SSOT: .opencode/skills/).
+
+    Lee los directorios con SKILL.md de ``_ROOT/.opencode/skills/``.
+    Excluye ``auto/`` (skills auto-generadas por proyecto) y no-skills.
+    Así el deploy SIEMPRE despliega las skills reales, sin lista hardcode
+    que se quede obsoleta (fix: diagram-design/swarm-release-ops se borraban
+    del mirror por no estar en la lista vieja de 31).
+
+    Returns:
+        Lista ordenada de nombres de skills en la fuente.
+    """
+    src = _ROOT / ".opencode" / "skills"
+    if not src.is_dir():
+        return []
+    return sorted(
+        d.name for d in src.iterdir()
+        if d.is_dir() and d.name != "auto" and (d / "SKILL.md").is_file()
+    )
+
+
+def _discover_agents() -> list[str]:
+    """Descubre los agentes de la fuente (SSOT: .opencode/agents/).
+
+    Lee los ``*.md`` de ``_ROOT/.opencode/agents/`` excluyendo los
+    ``*.min.md`` (versión compacta del mismo agente). Devuelve nombres
+    ordenados para el README generado.
+
+    Returns:
+        Lista ordenada de nombres de agentes en la fuente.
+    """
+    src = _ROOT / ".opencode" / "agents"
+    if not src.is_dir():
+        return []
+    return sorted(
+        p.name[:-3] for p in src.glob("*.md")
+        if not p.name.endswith(".min.md")
+    )
+
 
 # ---------------------------------------------------------------------------
 # Modelo de proyecto
@@ -317,15 +351,16 @@ def _sync_tree(src: Path, dst: Path, dry_run: bool = False) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Skills (mirror local: 31 skills + registry completo)
+# Skills (mirror local: todas las skills + registry completo, descubrimiento dinamico)
 # ---------------------------------------------------------------------------
 
 
 def deploy_skills(project: Project, dry_run: bool) -> int:
     """Despliega TODAS las skills de la fuente + skills_registry completo.
 
-    Todos los proyectos reciben las 31 skills (potencia total). Limpia
-    skills obsoletas no presentes en la fuente (excepto auto/).
+    Todos los proyectos reciben las skills reales de la fuente (SSOT,
+    descubiertas dinámicamente de .opencode/skills/ — sin lista hardcode).
+    Limpia skills obsoletas no presentes en la fuente (excepto auto/).
 
     Args:
         project: Proyecto destino.
@@ -334,7 +369,7 @@ def deploy_skills(project: Project, dry_run: bool) -> int:
     Returns:
         Número de skills desplegados.
     """
-    allowed = set(_ALL_SKILLS)
+    allowed = set(_discover_skills())
     target = project.path / ".opencode" / "skills"
     src_skills = _ROOT / ".opencode" / "skills"
 
@@ -352,7 +387,7 @@ def deploy_skills(project: Project, dry_run: bool) -> int:
             cleaned += 1
             logger.info("    🗑️  removed skill obsoleta: %s", skill_dir.name)
 
-    # Copiar las 31 skills desde la fuente
+    # Copiar las skills desde la fuente
     copied = 0
     for skill_name in sorted(allowed):
         src = src_skills / skill_name
@@ -381,6 +416,9 @@ def deploy_skills(project: Project, dry_run: bool) -> int:
 def generate_readme(project: Project, dry_run: bool) -> bool:
     """Genera/actualiza README.md del proyecto.
 
+    Usa agentes y skills descubiertos dinámicamente de la fuente (SSOT),
+    sin listas hardcode que queden obsoletas.
+
     Args:
         project: Proyecto destino.
         dry_run: Si True, solo simula.
@@ -388,15 +426,11 @@ def generate_readme(project: Project, dry_run: bool) -> bool:
     Returns:
         True si el README fue (o sería) actualizado.
     """
-    skills_list = "\n".join(f"  - `{s}`" for s in _ALL_SKILLS)
-    agents_list = """  - `coordinator` — Entry point, analiza y delega
-  - `builder` — Toda implementación (Rust, Go, Python, Web, Mobile)
-  - `scientist` — Investigación, papers, AI/ML, patrones
-  - `guardian` — Calidad, seguridad, riesgo, documentación
-  - `evolve` — Auto-mejora del sistema
-  - `evolve-researcher` — Investigación para el loop de evolución
-  - `evolve-engineer` — Ingeniería para el loop de evolución
-  - `evolve-analyzer` — Análisis para el loop de evolución"""
+    skills = _discover_skills()
+    agents = _discover_agents()
+
+    skills_list = "\n".join(f"  - `{s}`" for s in skills)
+    agents_list = "\n".join(f"  - `{a}`" for a in agents)
 
     content = f"""# ⚙️ {project.name} — Sistema Multi-Agente Evolutivo
 
@@ -409,13 +443,13 @@ def generate_readme(project: Project, dry_run: bool) -> bool:
 
 ---
 
-## 🤖 Agentes (20)
+## 🤖 Agentes ({len(agents)})
 
 {agents_list}
 
 ---
 
-## 🧠 Skills ({len(_ALL_SKILLS)} — potencia total)
+## 🧠 Skills ({len(skills)} — potencia total)
 
 {skills_list}
 
@@ -496,7 +530,7 @@ def deploy_project(
     logger.info("📁 harness/ — SKIPPED (una sola copia en opencode global, estandar v2.5)")
     harness_count = 0
 
-    # 4. Skills: 31 + registry completo (limpia obsoletas)
+    # 4. Skills: todas (descubrimiento dinamico) + registry completo (limpia obsoletas)
     logger.info("🧠 skills — potencia total...")
     skills_count = deploy_skills(project, dry_run)
     logger.info("  ✅ skills: %d %s", skills_count, "(simulado)" if dry_run else "")

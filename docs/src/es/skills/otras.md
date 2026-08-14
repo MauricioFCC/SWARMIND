@@ -1,3 +1,3 @@
 ﻿# Otras Skills
 
-La lista completa de los 31 skills está en el [Skills Registry](registry.md).
+La lista completa de los 33 skills está en el [Skills Registry](registry.md).

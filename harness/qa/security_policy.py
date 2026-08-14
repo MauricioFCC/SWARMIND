@@ -56,7 +56,7 @@ _HOME_LITERAL_RE = re.compile(r"\$HOME[/\\\\]")
 _HOME_STRUCTURE_RE = re.compile(
     r"\$HOME[/\\\\](?:Documents|Documentos|Mi unidad|Desktop|Escritorio|"
     r"AppData|Downloads|Descargas|DEV-SPACE|SIDEPROYECT|shared_memory|"
-    r"Hermes_Memory_Proyects)[/\\\\]?",
+    r"Hermes_Memory_Proyects|Memory_Proyects)[/\\\\]?",
     re.IGNORECASE,
 )
 

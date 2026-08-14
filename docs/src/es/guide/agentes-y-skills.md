@@ -1,6 +1,6 @@
 # Agentes y Skills — Sistema Multi-Agente Swarmind
 
-> **Version:** Julio 2026 | **20 agentes** | **31 skills** | **5 modulos nuevos** | **15 papers 2026**
+> **Version:** Agosto 2026 | **22 agentes** | **33 skills** | **5 modulos nuevos** | **15 papers 2026**
 
 Este documento es la **fuente unica de verdad (SSOT)** para la composicion del sistema: lista completa de agentes, skills, modulos nuevos, papers 2026, asignaciones y ejemplos. Otros documentos referencian aqui en lugar de duplicar contenido.
 
@@ -8,7 +8,7 @@ Este documento es la **fuente unica de verdad (SSOT)** para la composicion del s
 
 ## Agentes (20)
 
-El sistema Swarmind opera con **20 perfiles de agente** organizados en 4 categorias. Los agentes principales (coordinator, builder, scientist, guardian, evolve) son el nucleo; los agentes especializados complementan areas especificas.
+El sistema Swarmind opera con **22 perfiles de agente** organizados en 4 categorias. Los agentes principales (coordinator, builder, scientist, guardian, evolve) son el nucleo; los agentes especializados complementan areas especificas.
 
 ### Agentes Principales (5)
 
@@ -52,9 +52,9 @@ El sistema Swarmind opera con **20 perfiles de agente** organizados en 4 categor
 
 ---
 
-## Skills (31)
+## Skills (33)
 
-El sistema cuenta con **31 skills** organizados en 12 categorias funcionales. La lista completa con descripciones esta en [Skills Registry](../skills/registry.md).
+El sistema cuenta con **33 skills** organizados en 12 categorias funcionales. La lista completa con descripciones esta en [Skills Registry](../skills/registry.md).
 
 **Categorias:** Desarrollo y Tecnologia (6), Seguridad (1), Negocio y Estrategia (4), Finanzas y Trading (3), Ciencia e Investigacion (4), Humanidades y Ciencias Sociales (6), Salud (1), Legal (1), Retail (1), Marketing (1), Riesgo (1), Sostenibilidad (1), Meta (1).
 
@@ -371,7 +371,7 @@ bundle = bundler.compose("Desarrollar API REST en Rust con PostgreSQL")
 
 ```
 .opencode/
-├── agents/              # 20 perfiles de agente (.md + .agent.min.md)
+├── agents/              # 22 perfiles de agente (.md + .agent.min.md)
 │   ├── coordinator.md
 │   ├── builder.md
 │   ├── scientist.md
@@ -393,7 +393,7 @@ bundle = bundler.compose("Desarrollar API REST en Rust con PostgreSQL")
 │   ├── evolve-engineer.md
 │   ├── evolve-analyzer.md
 │   └── auto/              # (agentes generados por evolve)
-├── skills/              # 31 skills (SKILL.md + SKILL.min.md)
+├── skills/              # 33 skills (SKILL.md + SKILL.min.md)
 │   ├── skills_registry.yaml
 │   ├── architecture/
 │   ├── rust-lang/
@@ -585,4 +585,4 @@ harness debate <topic> --creative           # Ejecutar debate creativo
 
 ---
 
-*Documentacion generada el 29 Julio 2026. Sistema Swarmind v4.0 — 20 agentes, 31 skills, 5 modulos nuevos, 15 papers 2026.*
+*Documentacion generada el 29 Julio 2026. Sistema Swarmind v4.0 — 22 agentes, 33 skills, 5 modulos nuevos, 15 papers 2026.*

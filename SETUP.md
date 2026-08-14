@@ -191,12 +191,12 @@ uv run python scripts/backup_memory.py --schedule
 
 ```
 Swarmind/
-├── .opencode/             # CEREBRO SSOT (20 agents, 31 skills, core, registry)
+├── .opencode/             # CEREBRO SSOT (22 agents, 33 skills, core, registry)
 │   ├── agents/            # coordinator, builder, scientist, guardian, evolve, ...
 │   ├── config/            # project_config, routing_rules, token_budgets (config propia del proyecto)
 │   ├── core/              # router, guardrails, registry, base_principles, prompt_optimizer
 │   ├── federated/         # memoria federada entre proyectos
-│   └── skills/            # 31 skills (SKILL.md + SKILL.min.md + skills_registry.yaml)
+│   └── skills/            # 33 skills (SKILL.md + SKILL.min.md + skills_registry.yaml)
 ├── harness/               # Motor de orquestacion Python (VIVE EN OPENCODE GLOBAL, v2.5)
 │   ├── orchestrator/      # Planificador, health, telemetria, self-healing
 │   ├── memory_rag/        # Memoria vectorial LanceDB + Token Economics

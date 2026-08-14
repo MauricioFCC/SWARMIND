@@ -2,7 +2,7 @@
 
 ![Swarmind](/assets/logo.svg)
 
-**Swarmind** is a multi-agent system for orchestration, execution, and continuous self-improvement with 31 contextual skills, multi-level orchestration, GPU acceleration, and token economics.
+**Swarmind** is a multi-agent system for orchestration, execution, and continuous self-improvement with 33 contextual skills, multi-level orchestration, GPU acceleration, and token economics.
 
 ## Current Status (August 2026)
 

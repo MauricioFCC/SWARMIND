@@ -82,7 +82,7 @@ Las metricas principales del sistema (tests, cobertura, agentes, skills, modulos
 | **MultiUserGovernance** | 2026-07-29 | arXiv:2606.21856 — gobierno multi-usuario con aislamiento de sesiones |
 | **OrganizationalLayer** | 2026-07-29 | arXiv:2607.25446 — ciencia organizacional aplicada a colectivos de agentes |
 | **Learned Adaptive Memory** | 2026-07-29 | arXiv:2607.13591 — memoria adaptativa con retencion aprendida |
-| **Expansion agentes** | 2026-07-29 | 8 → 20 agentes especializados (100% perfiles) |
+| **Expansion agentes** | 2026-07-29 | 8 → 22 agentes especializados (100% perfiles) |
 | **32 Decisiones de Arquitectura** | 2026-07-29 | De 28 a 32 decisiones de arquitectura documentadas e implementadas |
 | **Seguridad Paths Portables** | 2026-07-30 | Scanner de secretos + paths portables en CI y pre-commit |
 | **Opción A — SSOT Global** | 2026-07-31 | Cerebro `.opencode/` → `~/.config/opencode/` (sync automático en cada commit) + mirror local en 7 proyectos DEV-SPACE |
@@ -179,7 +179,7 @@ Objetivo: 80%    (proximo hito)
 | Cobertura de tests | 74.95% | 80% | Subiendo |
 | Tests totales | 4414 | ~4500 | Subiendo |
 | Agentes | 20 | 30+ | Subiendo |
-| Skills | 31 | 50+ | Subiendo |
+| Skills | 33 | 50+ | Subiendo |
 | Modulos Orchestrator | 48 | 55+ | Subiendo |
 | Modulos Memory/RAG | 30 | 35+ | Subiendo |
 | Archivos <500LC (deuda AGR) | 100% | 100% | Mantenido |

@@ -2,7 +2,7 @@
 
 ![Swarmind](/assets/logo.svg)
 
-**Swarmind** es un sistema multi-agente de orquestacion, ejecucion y auto-mejora continua con 31 skills contextuales, orquestacion multi-nivel, GPU acceleration y token economics.
+**Swarmind** es un sistema multi-agente de orquestacion, ejecucion y auto-mejora continua con 33 skills contextuales, orquestacion multi-nivel, GPU acceleration y token economics.
 
 ## Estado Actual (Agosto 2026)
 

@@ -64,7 +64,7 @@
 - [Scientist](agents/scientist.md)
 - [Security Engineer](agents/security-engineer.md)
 
-# Skills (31)
+# Skills (33)
 
 - [Ads Optimizer](skills/ads-optimizer.md)
 - [Alpha Research](skills/alpha-research.md)

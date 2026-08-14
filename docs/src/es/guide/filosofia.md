@@ -4,7 +4,7 @@ Swarmind es un **sistema multi-agente evolutivo** disenido para operar como un r
 
 ## 1. Multi-Agente Evolutivo
 
-El sistema opera con **20 agentes** organizados en una jerarquia funcional donde el coordinator planifica, delega a especialistas (builder, scientist, guardian) y el meta-agente evolve orquesta la auto-mejora continua. Para la jerarquia detallada, ver [Agentes y Skills](agentes-y-skills.md#agentes-20).
+El sistema opera con **22 agentes** organizados en una jerarquia funcional donde el coordinator planifica, delega a especialistas (builder, scientist, guardian) y el meta-agente evolve orquesta la auto-mejora continua. Para la jerarquia detallada, ver [Agentes y Skills](agentes-y-skills.md#agentes-20).
 
 **Principio**: ningun agente es isla. Cuando uno escribe, otro investiga y un tercero verifica. El resultado es siempre auditado por al menos dos agentes.
 

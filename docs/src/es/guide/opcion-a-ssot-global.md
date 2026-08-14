@@ -10,8 +10,8 @@ DEV-SPACE mediante un esquema **SSOT (Single Source of Truth)**:
 
 ```
 ~/.config/opencode/          ← CONFIG GLOBAL opencode (SSOT del cerebro)
-  ├── agents/                ← 20 agentes (40 archivos con .min.md)
-  ├── skills/                ← 31 skills contextuales
+  ├── agents/                ← 22 agentes (44 archivos con .min.md)
+  ├── skills/                ← 33 skills contextuales
   ├── core/                  ← 13 modulos core (registry, base_principles, ...)
   └── skills_registry.yaml   ← Registro completo de skills
 
@@ -63,7 +63,7 @@ uv run python scripts/sync_opencode_global.py --quiet  # Modo silencioso (hook)
 ### Deploy a proyectos (`deploy_all.py`)
 
 Actualiza el mirror de todos los proyectos de DEV-SPACE. **Estándar v2.5**:
-los proyectos reciben solo `.opencode/` (125 archivos) + las **31 skills** +
+los proyectos reciben solo `.opencode/` (125 archivos) + las **33 skills** +
 `skills_registry.yaml`. El motor (`harness/`) **NO se copia** — vive una sola
 vez en opencode global (elimina ~5.3 GB de duplicación). **Preserva siempre
 la config propia** del proyecto:
