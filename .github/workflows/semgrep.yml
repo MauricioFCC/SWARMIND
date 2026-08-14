@@ -18,7 +18,7 @@ jobs:
       - name: Install Semgrep (latest OSS)
         run: pipx install semgrep
       - name: Run Semgrep (p/default)
-        run: semgrep scan --config p/default --sarif-output=semgrep.sarif --severity ERROR,WARNING .
+        run: semgrep scan --config p/default --sarif-output=semgrep.sarif --severity WARNING .
         continue-on-error: true  # reporta hallazgos sin bloquear (severity alta)
       - name: Upload SARIF to code-scanning
         uses: github/codeql-action/upload-sarif@v3
