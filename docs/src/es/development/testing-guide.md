@@ -1,6 +1,6 @@
 # Guía de Testing — Swarmind Harness
 
-> **Última actualización:** Julio 2026  
+> **Última actualización:** Agosto 2026  
 > **Framework:** pytest 8+ con plugins oficiales  
 > **Total:** 2900+ tests · 92 archivos de test · 96 archivos en suite
 

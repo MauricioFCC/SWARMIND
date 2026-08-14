@@ -29,7 +29,7 @@ run_commands, baseline de tests identico tras el refactor.
 
 Las metricas principales del sistema (tests, cobertura, agentes, skills, modulos) estan en la [pagina principal](../README.md#estado-actual-julio-2026).
 
-**Resumen ejecutivo:** 4414 tests, 22 agentes, 32 skills, 48 modulos orchestrator, 30 modulos memory/rag, RTX 4060 CUDA 12.6 (x10.9 search), 15 papers 2026 implementados, **Opción A SSOT global implementada + memoria central portable (v3.x)**.
+**Resumen ejecutivo:** 4414 tests, 22 agentes, 33 skills, 19 paquetes orchestrator, 15 paquetes memory/rag, RTX 4060 CUDA 12.6 (x10.9 search), 15 papers 2026 implementados, **Opción A SSOT global implementada + memoria central portable (v3.x)**.
 
 **Actualización 2026-08-04 :** IMPLEMENTADO — plugin compaction-context.js (hook experimental.session.compacting), steps:8 en release-ops/token-budget-auditor, Σ-Mem MVP (reliability_memory.py + 22 tests), memoria gobernada MVP (memory_guard.py + 22 tests), abstention_policy en token_budgets.yaml (stop rules CONVOLVE), regla subagentes condensados en coordinator.md; diferidos justificados: setCacheKey/small_model/provider options. Implementados H1-H8 completos — H1 (10 SKILL.min.md con YAML roto reparados + test TestSkillMinFiles), H2 (5 mins API densos recompactados con compile_skills.py: 58-88% → 35-54%), H3 (routing 45 rutas, universal 10→2 agentes), H4 (release-ops deduplicado), H5 (triada evolve -59.9%), H6 (token_budgets.yaml conectado al runtime, 23 tests nuevos), H7 (base_principles N3 bajo demanda, -6.2K tokens/agente), H8 (opencode.json: compaction.prune + tool_output + mcp_timeout). 22/22 agentes con role_budget. PR #7 mergado: CI con checks requeridos lint/test/security, python 3.12, auto-merge funcional.
 
@@ -178,7 +178,7 @@ Objetivo: 80%    (proximo hito)
 |---------|--------|----------|-----------|
 | Cobertura de tests | 74.95% | 80% | Subiendo |
 | Tests totales | 4414 | ~4500 | Subiendo |
-| Agentes | 20 | 30+ | Subiendo |
+| Agentes | 22 | 30+ | Subiendo |
 | Skills | 33 | 50+ | Subiendo |
 | Modulos Orchestrator | 48 | 55+ | Subiendo |
 | Modulos Memory/RAG | 30 | 35+ | Subiendo |

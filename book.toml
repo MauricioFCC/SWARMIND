@@ -4,7 +4,6 @@ authors = ["Swarmind Team"]
 description = "Complete documentation of the Swarmind multi-agent system"
 language = "en"
 src = "docs/src/en"
-multilingual = false
 
 # To build in Spanish, change `src` and `language`:
 #   src = "docs/src/es", language = "es"
@@ -15,10 +14,9 @@ default-theme = "ayu"
 preferred-dark-theme = "ayu"
 mathjax-support = false
 additional-css = ["docs/theme/custom.css"]
-favicon = "assets/favicon.svg"
 no-section-label = false
 git-repository-url = "https://github.com/MauricioFCC/SWARMIND"
-git-repository-icon = "fa-github"
+git-repository-icon = "fab-github"
 edit-url-template = "https://github.com/MauricioFCC/SWARMIND/edit/main/{path}"
 site-url = "/SWARMIND/"
 

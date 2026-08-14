@@ -46,7 +46,7 @@ Comandos del sistema: `!health`, `!metrics`, `!skill list`, `!session`, `!reset`
 
 Tutorial completo en [Como Usar Swarmind](guide/como-usar.md).
 
-## Novedades Julio 2026
+## Novedades Agosto 2026
 
 Los modulos nuevos (Multi-Harness Adapter Layer, Hook System, Zero Trust, Federated Vector Search, SQLite-vec Backend, Async TaskOrchestrator) y los **15 papers 2026 implementados** se documentan en detalle en [Agentes y Skills](guide/agentes-y-skills.md#novedades-julio-2026).
 

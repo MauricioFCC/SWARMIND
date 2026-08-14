@@ -46,7 +46,7 @@ System commands: `!health`, `!metrics`, `!skill list`, `!session`, `!reset`, `!h
 
 Full tutorial in [How to Use Swarmind](../es/guide/como-usar.md).
 
-## What's New in July 2026
+## What's New in August 2026
 
 The new modules (Multi-Harness Adapter Layer, Hook System, Zero Trust, Federated Vector Search, SQLite-vec Backend, Async TaskOrchestrator) and the **15 papers 2026 implemented** are documented in detail in [Agents & Skills](../es/guide/agentes-y-skills.md#novedades-julio-2026).
 

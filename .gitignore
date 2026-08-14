@@ -133,3 +133,6 @@ __editable__*
 
 # artefactos temporales de tests (recreados por test_deploy_all)
 harness/tests/_tmp_bad_skills/
+
+# output de builds mdBook (ES temporal o alternativos)
+docs/es/

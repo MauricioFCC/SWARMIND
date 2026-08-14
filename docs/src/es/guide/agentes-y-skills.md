@@ -62,7 +62,7 @@ Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificad
 
 ---
 
-## Novedades Julio 2026
+## Novedades Agosto 2026
 
 ### Multi-Harness Adapter Layer
 
@@ -585,4 +585,4 @@ harness debate <topic> --creative           # Ejecutar debate creativo
 
 ---
 
-*Documentacion generada el 29 Julio 2026. Sistema Swarmind v4.0 — 22 agentes, 33 skills, 5 modulos nuevos, 15 papers 2026.*
+*Documentacion generada el 13 Agosto 2026. Sistema Swarmind v0.1.0 — 22 agentes, 33 skills, 5 modulos nuevos, 15 papers 2026.*

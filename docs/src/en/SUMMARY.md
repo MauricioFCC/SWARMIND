@@ -24,12 +24,10 @@ All detailed documentation is currently available in **Spanish** and is being pr
 - [Automatic Standards](../es/guide/estandares.md)
 - [Architecture Analysis](../es/guide/analisis-arquitectura.md) — Python vs Rust, Monolith vs Microservices
 
-# Quick Links
+# Technical Reference
 
-- [Usage Guide](../es/guide/como-usar.md) — How to delegate tasks to agents
-- [Agents & Skills](../es/guide/agentes-y-skills.md) — Detailed system documentation
 - [Technical Manual](../es/technical/manual-tecnico.md) — Complete harness technical documentation
-- [Skills Registry](../es/skills/registry.md) — Complete skill registry (31)
+- [Skills Registry](../es/skills/registry.md) — Complete skill registry (33)
 - [Testing Guide](../es/development/testing-guide.md) — How to write and run tests
 - [Glossary](../es/reference/glosario.md) — Terms and abbreviations
 - [Project Status](../es/roadmap/estado.md) — Roadmap and status
