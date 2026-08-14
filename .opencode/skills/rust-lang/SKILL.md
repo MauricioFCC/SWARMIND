@@ -5,6 +5,8 @@
 
 name: rust-lang
 description: "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
+compatibility: 'Requiere toolchain Rust (cargo/rustc)'
 version: 1.0.0
 project_agnostic: true
 inherit:

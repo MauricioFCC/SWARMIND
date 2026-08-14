@@ -1,6 +1,7 @@
 ---
 name: risk-execution
 description: "Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
 ---
 
 ## 📐 Risk Management (`domain::risk_management`)

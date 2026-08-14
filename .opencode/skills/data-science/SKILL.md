@@ -5,6 +5,8 @@
 
 name: data-science
 description: "Usar cuando el usuario trabaja con datos, ML o pipelines. pandas, numpy, scikit-learn, pytorch, feature engineering, model evaluation, GPU, analisis de datos. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
+compatibility: 'Python 3.12+; pandas/numpy/scikit-learn/pytorch en el venv'
 version: 1.0.0
 project_agnostic: true
 inherit:

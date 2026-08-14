@@ -186,6 +186,94 @@ def test_skill_nombre_invalido_error(tmp_path: Path) -> None:
 
 
 # ===========================================================================
+# References muertas (progressive disclosure, ADR-0047)
+# ===========================================================================
+
+
+def test_references_muertas_warning(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """references/ con archivo nunca enlazado en SKILL.md -> warning (no error)."""
+    skill_md = _write_skill(tmp_path, "test-dead", _valid_fm("test-dead"))
+    (skill_md.parent / "references").mkdir()
+    (skill_md.parent / "references" / "type-foo.md").write_text("# Foo\n", encoding="utf-8")
+    (skill_md.parent / "references" / "type-bar.md").write_text("# Bar\n", encoding="utf-8")
+    body = skill_md.read_text(encoding="utf-8") + "\nVer references/type-foo.md\n"
+    skill_md.write_text(body, encoding="utf-8")
+
+    errors = vs._validate_skill(skill_md.parent, quiet=False)
+    out = capsys.readouterr().out
+
+    assert errors == []  # no es error, es warning
+    assert "type-bar.md" in out  # la no referenciada aparece
+    assert "type-foo.md" not in out  # la referenciada NO es dead
+
+
+def test_references_todas_enlazadas_sin_warning(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Todas las references/ enlazadas -> sin warning de muertas."""
+    skill_md = _write_skill(tmp_path, "test-nod", _valid_fm("test-nod"))
+    (skill_md.parent / "references").mkdir()
+    (skill_md.parent / "references" / "type-foo.md").write_text("# Foo\n", encoding="utf-8")
+    body = skill_md.read_text(encoding="utf-8") + "\nVer references/type-foo.md\n"
+    skill_md.write_text(body, encoding="utf-8")
+
+    vs._validate_skill(skill_md.parent, quiet=False)
+    out = capsys.readouterr().out
+
+    assert "no referenciadas" not in out
+
+
+# ===========================================================================
+# Frontmatter spec completo (agentskills.io: license/compatibility)
+# ===========================================================================
+
+
+def test_license_ausente_warning(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Falta license -> warning (spec: opcional recomendado), no error."""
+    skill_md = _write_skill(
+        tmp_path,
+        "test-lic",
+        "name: test-lic\n"
+        "description: Usar cuando el usuario necesite validar documentos del test.\n"
+        "version: 1.0.0\n"
+        "project_agnostic: true\n",
+    )
+
+    errors = vs._validate_skill(skill_md.parent, quiet=False)
+    out = capsys.readouterr().out
+
+    assert errors == []
+    assert "license" in out
+
+
+def test_compatibility_requerido_con_scripts_warning(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Skill con scripts/ pero sin compatibility -> warning (spec: requisitos de entorno)."""
+    skill_md = _write_skill(tmp_path, "test-compat", _valid_fm("test-compat"))
+    (skill_md.parent / "scripts").mkdir()
+    (skill_md.parent / "scripts" / "run.py").write_text("# script\n", encoding="utf-8")
+
+    vs._validate_skill(skill_md.parent, quiet=False)
+    out = capsys.readouterr().out
+
+    assert "compatibility" in out
+
+
+def test_compatibility_presente_sin_warning(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Skill con scripts/ Y compatibility -> sin warning."""
+    skill_md = _write_skill(tmp_path, "test-compat-ok", _valid_fm("test-compat-ok"))
+    (skill_md.parent / "scripts").mkdir()
+    (skill_md.parent / "scripts" / "run.py").write_text("# script\n", encoding="utf-8")
+    t = skill_md.read_text(encoding="utf-8")
+    t = t.replace("project_agnostic: true\n", "project_agnostic: true\ncompatibility: Python 3.12+\n", 1)
+    skill_md.write_text(t, encoding="utf-8")
+
+    vs._validate_skill(skill_md.parent, quiet=False)
+    out = capsys.readouterr().out
+
+    assert "compatibility" not in out
+
+
+# ===========================================================================
 # _validate_registry
 # ===========================================================================
 

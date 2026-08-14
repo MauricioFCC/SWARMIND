@@ -141,6 +141,24 @@ def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
         if not (skill_dir / "references" / ref).exists():
             errors.append(f"{name}: referencia rota references/{ref}")
 
+    # 8b. References muertas: archivos en references/ que el SKILL.md NUNCA referencia
+    # (progressive disclosure: material no enlazado nunca se carga -> warning).
+    refs_dir = skill_dir / "references"
+    if refs_dir.is_dir():
+        referenced = set(re.findall(r"references/([a-z0-9_-]+\.md)", text))
+        dead = sorted(p.name for p in refs_dir.glob("*.md") if p.name not in referenced)
+        if dead and not quiet:
+            print(f"  ⚠  {name}: references/ no referenciadas en SKILL.md: {', '.join(dead)}")
+
+    # 9. Frontmatter spec completo (agentskills.io): license/compatibility
+    # opcionales recomendados. Warning si el skill tiene scripts/ y no declara
+    # compatibility (los scripts suelen tener prerequisitos de entorno).
+    has_scripts = (skill_dir / "scripts").is_dir()
+    if "license" not in fm and not quiet:
+        print(f"  ⚠  {name}: campo 'license' ausente (spec: opcional recomendado)")
+    if has_scripts and "compatibility" not in fm and not quiet:
+        print(f"  ⚠  {name}: tiene scripts/ pero sin campo 'compatibility' (spec: requisitos de entorno)")
+
     return errors
 
 

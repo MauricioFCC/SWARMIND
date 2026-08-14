@@ -6,6 +6,8 @@
 name: psychology
 domain: psychology
 description: "Usar cuando el problema involucra comportamiento o psicologia. psicologia cognitiva, organizacional, del aprendizaje, positiva, sistemas multi-agente. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
+compatibility: 'Python 3.12+'
 version: 1.0.0
 project_agnostic: true
 inherit:

@@ -7,6 +7,7 @@ project_agnostic: true
 inherit:
   - core/base_principles.md
 license: MIT
+compatibility: 'Python 3.12+ (scripts/); import Mermaid/DrawIO opcional; export PNG requiere navegador'
 metadata:
   upstream: "cathrynlavery/diagram-design v2.3 (14.3k stars)"
 ---

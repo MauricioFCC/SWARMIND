@@ -25,7 +25,24 @@ TKN: Cache-Shape | Structured Compact | Failure-Spend
 AGR: Guardrails | layers | type hints | tamano | imports prohibidos
 UPG: Upgrade Continuo | ultimas versiones estables | investigar antes
 FRS: Frontier Research | web research SIEMPRE antes de resolver
+VER: Verificacion autonoma | SIEMPRE ejecuta el check y muestra evidencia
 ```
+
+## Verificación autónoma obligatoria (VER)
+
+Doctrina frontier 2026 (Anthropic, "Building Effective Agents"): **un agente
+nunca afirma, verifica**. Al completar cualquier cambio:
+
+1. **Da al agente un check que pueda ejecutar**: tests, build, lint, o exit
+   code — no pedir "revísalo", pedir "ejecuta `pytest` y muéstrame el output".
+2. **Exige evidencia, no afirmación**: cita el output real del check (pass
+   rate, exit code, líneas de error) en la respuesta final.
+3. **Itera hasta pasar**: si el check falla, corrige y re-ejecuta; no entregar
+   con check rojo ni parchear el test para "pintar verde" (anti-patrón).
+4. **Checks de skills**: tras editar `.opencode/skills/*`, ejecuta
+   `python scripts/validate_skills.py --strict` y muestra el resultado.
+5. **Checks de código**: tras tocar `harness/`, ejecuta los tests del módulo
+   afectado (p. ej. `pytest harness/tests/test_<modulo>.py -q`) + ruff.
 
 ## Cómo trabajar aquí
 

@@ -4,6 +4,8 @@ domain: swarm-release-ops
 version: 1.0.0
 project_agnostic: true
 description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
+compatibility: 'Requiere gh (GitHub CLI) y uv; repo MauricioFCC/SWARMIND'
 ---
 
 # Swarm Release Ops | Release Engineering y CI/CD de SWARMIND

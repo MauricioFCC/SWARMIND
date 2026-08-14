@@ -6,6 +6,8 @@
 name: security-audit
 domain: security
 description: "Usar cuando el usuario audita seguridad o cumple estandares. OWASP, STRIDE, SOC2, ISO27001, SAST, DAST, threat modeling, SBOM, pentesting. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
+compatibility: 'Requiere herramientas SAST/DAST (bandit, semgrep) y red'
 version: 1.0.0
 project_agnostic: true
 inherit:

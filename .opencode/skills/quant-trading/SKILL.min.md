@@ -1,6 +1,7 @@
 ---
 name: quant-trading
 description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
 ---
 
 ## 📡 Data Processing (`domain::data_processing`)
