@@ -1,6 +1,6 @@
 # Registro de Skills — Swarmind Harness
 
-**33 skills** disponibles en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado). Cobertura: 100% con ambos formatos.
+**35 skills** disponibles en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado). Cobertura: 100% con ambos formatos.
 
 ## Tabla Completa de Skills
 
@@ -13,6 +13,9 @@
 | **responsive-ui** | frontend | UI responsive, mobile-first, Core Web Vitals, accesibilidad axe-core |
 | **data-science** | data | ML pipelines, PyTorch/JAX, GPU acceleration, feature engineering, validación estadística |
 | **devops-infra** | devops | CI/CD, Docker, Kubernetes, Terraform, monitoreo, OpenTelemetry, observabilidad |
+| **atdd-spec** | testing | Ciclo Spec→Test→Code (OpenSpec-ATDD), tests como prompt+verificación, TDD prompting paradox |
+| **diagram-design** | design | 27 tipos de diagramas editoriales autocontenidos HTML+SVG (upstream cathrynlavery/diagram-design v2.3) |
+| **swarm-release-ops** | devops | GitHub Actions, uv, safety, bandit, auto-merge, branch protection, checks rojos del repo SWARMIND |
 
 ### Seguridad
 | Skill | Dominio | Propósito |
@@ -74,12 +77,13 @@
 |-------|---------|-----------|
 | **ads-optimizer** | marketing | Optimización end-to-end de campañas Meta Ads con BOAD, ShapleyFlow, MetaClaw, RL Bidding |
 | **evolve** | meta | Auto-mejora continua, ciclo ASI-Evolve (Learn → Design → Experiment → Analyze → Deploy) |
+| **process-over-tools** | meta | Principio POC: todo tool/modelo/agente nuevo se adopta como proceso orquestado o se descarta (skill #35, 2026-08-13) |
 
 ## Carga de Skills por Proyecto
 
 > **NUEVO (2026-07-31):** desde la [Opción A — SSOT Global
 > OpenCode](../guide/opcion-a-ssot-global.md), **todos** los proyectos de
-> DEV-SPACE reciben las **33 skills completas** (potencia total) vía
+> DEV-SPACE reciben las **35 skills completas** (potencia total) vía
 > `scripts/deploy_all.py` + `skills_registry.yaml`. El mirror local ya no se
 > limita por tipo. La matriz siguiente queda como referencia del enrutamiento
 > recomendado por dominio (histórico).

@@ -84,7 +84,7 @@
     <text x="320" y="150" font-size="92" font-weight="800" letter-spacing="4" fill="#F1F5F9">SWARMIND</text>
     <text x="324" y="190" font-size="22" font-weight="500" letter-spacing="6" fill="#22D3EE">EVOLUTIVE MULTI-AGENT SYSTEM</text>
     <g font-size="16" font-weight="500" letter-spacing="2" fill="#94A3B8">
-      <text x="324" y="232">23 AGENTS  ·  34 SKILLS  ·  4465 TESTS  ·  5 RUNTIMES</text>
+      <text x="324" y="232">23 AGENTS  ·  35 SKILLS  ·  4465 TESTS  ·  5 RUNTIMES</text>
     </g>
   </g>
 

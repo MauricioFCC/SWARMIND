@@ -73,8 +73,8 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 - Token budget SSOT (`token_budgets.yaml`), cache-shape (-38%), structured compaction (-41%), governed voting, and budget enforcement via `TokenBudgetManager`.
 
 ### Local Ollama Delegation
-- The harness can delegate tasks to local models through Ollama (`harness/model_router/ollama_client.py` + `harness/model_router/ollama_tiers.py`), with four capability tiers — fast (`llama3.2:3b`), quality (`qwen2.5:14b`), embedding/RAG (`nomic-embed-text`) and vision (`llava:7b`) — fully configurable (no hardcode) in `.opencode/config/ollama_models.yaml` (base_url, timeout, warm_on_start, per-tier keep_alive/auto_pull).
-- Hot models are kept resident with `keep_alive` (warm/unload via `/api/ps`) and are auto-installed with `ollama pull` when missing, so simple tasks run fully local: **0 cloud tokens** (TKN).
+- The harness can delegate tasks to local models through Ollama (`harness/model_router/ollama_client.py` + `harness/model_router/ollama_tiers.py`), with four capability tiers plus a coding tier, all running current 2026 models installed locally: fast (`qwen3:4b`), quality (`deepseek-r1:8b`), coding (`qwen2.5-coder:7b`), embedding/RAG (`qwen3-embedding:0.6b`) and vision (`qwen3-vl:4b`) — fully configurable (no hardcode) in `.opencode/config/ollama_models.yaml` (base_url, timeout, warm_on_start, per-tier keep_alive/auto_pull).
+- Hot models are kept resident with `keep_alive: "5m"` (warm/unload via `/api/ps`) and are auto-installed with `ollama pull` when missing (`auto_pull: true`), so simple tasks run fully local: **0 cloud tokens** (TKN).
 - If Ollama is unavailable or a tier's model is missing, the router degrades to the existing cloud `ModelRouter`/`SlmRouter` fallback.
 
 ### Memory & RAG

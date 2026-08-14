@@ -9,15 +9,31 @@
   contra la API local de Ollama — generate/chat/embed + keep_alive (warm/precarga y
   unload) + `/api/ps` + `pull` (instalacion automatica) + deteccion de capacidades.
 - **OllamaTierRouter** (NUEVO `harness/model_router/ollama_tiers.py`): 4 tiers por
-  capacidad — FAST (`llama3.2:3b`), QUALITY (`qwen2.5:14b`), EMBEDDING
-  (`nomic-embed-text`) y VISION (`llava:7b`) — con heuristica sin LLM (TKN) +
+  capacidad — FAST (`qwen3:4b`), QUALITY (`deepseek-r1:8b`), EMBEDDING
+  (`qwen3-embedding:0.6b`) y VISION (`qwen3-vl:4b`) + tier CODING
+  (`qwen2.5-coder:7b`) — con heuristica sin LLM (TKN) +
   `auto_pull` + `warm_on_start`. Modelos 100% configurables en
-  `.opencode/config/ollama_models.yaml` (base_url, timeout, warm_on_start, 4 tiers),
+  `.opencode/config/ollama_models.yaml` (base_url, timeout, warm_on_start, tiers),
   sin hardcode.
 - **Integracion**: delegacion local conectada a ModelRouter/SlmRouter existentes
   (small-first), con degradacion a cloud si Ollama no esta disponible o falta el modelo.
 - Base de arranque: `harness/scripts/check_ollama.py` existente (deteccion +
   list_local_models).
+
+### Detalles finales (verificados, commit 3164be4)
+- **Modelos 2026 instalados en el PC** (verificado con `/api/tags`): `qwen3:4b`,
+  `deepseek-r1:8b`, `qwen2.5-coder:7b`, `qwen3-embedding:0.6b`, `qwen3-vl:4b` —
+  los 5 instalados con `ollama pull` (FRS: reemplazan a `nomic-embed-text` y
+  `llava:7b`, 2 anos obsoletos).
+- **2 bugs latentes corregidos** en `_apply_model_routing()`
+  (`harness/run_commands/handlers_extra.py`): `decision.provider` →
+  `decision.suggested_provider` y `decision.reason` →
+  `decision.model_route.reason` — el routing local NUNCA habia funcionado antes.
+- **38 tests nuevos** (21 `test_ollama_client` + 17 `test_ollama_tiers`), todos
+  mock sin red. Coverage: ollama_client 92%, ollama_tiers 69% (total 77.38%).
+- **Verificacion real** (Ollama local): embed `qwen3-embedding` → 1024 dims,
+  generate `qwen3:4b` → "OK", warm → True, has_capability vision
+  (`qwen3-vl:4b`) → True.
 
 ## [2026-08-14] Auditoria TDD + herramientas universales: mutation testing, TDAD, atdd-spec, test-writer
 

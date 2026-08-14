@@ -1,6 +1,6 @@
 ﻿# Cómo Modificar el Proyecto — Swarmind Harness
 
-> **Última actualización:** Agosto 2026 · Python 3.12+ · 96 archivos test · 3937 tests · cobertura ~72%
+> **Última actualización:** Agosto 2026 · Python 3.12+ · 167 archivos test · 4465 tests · cobertura 75.70%
 
 ---
 
@@ -35,14 +35,14 @@ Todo el código fuente vive dentro de `harness/`, dividido en dominios:
 ## 1b. Estructura `.opencode/` — CEREBRO SSOT (Opción A)
 
 > **NUEVO (2026-08):** `.opencode/` es el cerebro del sistema (23 agents,
-> 34 skills, core, registry). Se sincroniza automáticamente al global
+> 35 skills, core, registry). Se sincroniza automáticamente al global
 > `~/.config/opencode/` en cada commit (pre-commit hook) y se propaga como
 > mirror local a todos los proyectos de DEV-SPACE.
 
 | Ruta | Contenido | Sync |
 |------|-----------|------|
 | `.opencode/agents/` | 23 perfiles (`*.md` + `*.agent.min.md`) + `auto/` | Global + mirrors |
-| `.opencode/skills/` | 34 skills (`SKILL.md` + `SKILL.min.md`) + `skills_registry.yaml` | Global + mirrors |
+| `.opencode/skills/` | 35 skills (`SKILL.md` + `SKILL.min.md`) + `skills_registry.yaml` | Global + mirrors |
 | `.opencode/core/` | base_principles, registry, prompt_optimizer, base_skill_template | Global + mirrors |
 | `.opencode/config/` | **Config propia del proyecto** (NO se sobrescribe en deploy) | Solo local |
 | `.opencode/federated/` | Memoria federada entre proyectos | Solo local (preservada) |
@@ -57,6 +57,18 @@ Scripts clave:
 | `harness/scripts/install_hooks.py` | Instala pre-commit (QA rápido + sync global automático) |
 
 Guía completa: [docs/src/es/guide/opcion-a-ssot-global.md](../guide/opcion-a-ssot-global.md).
+
+---
+
+## 1c. Delegación local Ollama (4-tier, TKN)
+
+Tareas simples/RAG/visión se delegan a **modelos locales** vía Ollama
+(`harness/model_router/ollama_client.py` — cliente HTTP real + `ollama_tiers.py`
+— router por capacidad): fast `qwen3:4b`, quality `deepseek-r1:8b`, coding
+`qwen2.5-coder:7b`, embedding `qwen3-embedding:0.6b` (RAG, 1024 dims), vision
+`qwen3-vl:4b`. Config sin hardcode en `.opencode/config/ollama_models.yaml`
+(`keep_alive` "5m", `auto_pull` true, `warm_on_start`). Degrada a cloud
+(ModelRouter/SlmRouter) si Ollama no está disponible.
 
 ---
 
@@ -95,9 +107,9 @@ pre-commit run --all-files  # Hooks: compile-check, secret-scan, ruff-lint
 
 ---
 
-## 4. Skills del Sistema (31)
+## 4. Skills del Sistema (35)
 
-`.opencode/skills/` contiene 34 skills en formato `SKILL.md` + `SKILL.min.md` (cobertura 100%):
+`.opencode/skills/` contiene 35 skills en formato `SKILL.md` + `SKILL.min.md` (cobertura 100%):
 
 **Core:** evolve, hedgefund, architecture, rust-lang  
 **Cuantitativo:** quant-trading, alpha-research, risk-execution, risk-intelligence, math-doc  

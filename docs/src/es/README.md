@@ -2,16 +2,16 @@
 
 ![Swarmind](/assets/logo.svg)
 
-**Swarmind** es un sistema multi-agente de orquestacion, ejecucion y auto-mejora continua con 34 skills contextuales, orquestacion multi-nivel, GPU acceleration y token economics.
+**Swarmind** es un sistema multi-agente de orquestacion, ejecucion y auto-mejora continua con 35 skills contextuales, orquestacion multi-nivel, GPU acceleration y token economics.
 
 ## Estado Actual (Agosto 2026)
 
 | Metrica | Valor |
 |---------|-------|
 | Tests | 4465 passing (37 skipped, 4 xfailed) · 75.70% coverage · mutation testing ≥70% |
-| Cobertura | 71.56% |
-| Agentes | 22 especializados (100% perfiles) |
-| Skills | 32 contextuales (100% SKILL.md + SKILL.min.md) |
+| Cobertura | 75.70% |
+| Agentes | 23 especializados (100% perfiles) |
+| Skills | 35 contextuales (100% SKILL.md + SKILL.min.md) |
 | Modulos Orchestrator | 19 paquetes / 56 modulos |
 | Modulos Memory/RAG | 15 paquetes / 34 modulos |
 | Modulos Hooks | 4 (security_validator, permission_checker, audit_logger, metrics) |
@@ -92,4 +92,5 @@ Swarmind compite con **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (4
 - **ParallelExecutor**: fan-out paralelo nativo (ThreadPoolExecutor `max_workers=3`) + voting gobernado.
 - **GPU CUDA 12.6** habilitada (torch 2.13.0+cu126): search x10.9, embeddings 41us/msg.
 - **Memoria central SSOT** portable (`Memory_Proyects` via `MEMORY_ROOT`), 7.5 GB liberados, backup automatico.
+- **Delegación local Ollama 4-tier**: tareas simples/RAG/visión con modelos locales 2026 (`qwen3:4b`, `deepseek-r1:8b`, `qwen2.5-coder:7b`, `qwen3-embedding:0.6b`, `qwen3-vl:4b`) — 0 tokens cloud (TKN), degradación a cloud automática.
 - Documentacion publica actualizada y depurada.

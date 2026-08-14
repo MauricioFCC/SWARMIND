@@ -690,6 +690,46 @@ Los agentes **intercambian información en tiempo real** via AgentBus:
 
 ---
 
+## 🤖 Delegación Local Ollama
+
+Swarmind resuelve tareas simples con **modelos locales** a través de Ollama,
+minimizando el consumo de tokens cloud (TKN): `OllamaClient`
+(`harness/model_router/ollama_client.py`) es un cliente HTTP real contra la API
+local, y `OllamaTierRouter` (`harness/model_router/ollama_tiers.py`) elige el
+modelo por **capacidad** según la tarea, con heurística sin LLM.
+
+### Tiers por capacidad (modelos 2026 instalados)
+
+| Tier | Modelo | Uso típico |
+|------|--------|------------|
+| ⚡ **fast** | `qwen3:4b` | Borradores, tareas simples |
+| 🧠 **quality** | `deepseek-r1:8b` | Razonamiento, calidad de texto |
+| 💻 **coding** | `qwen2.5-coder:7b` | Generación de código |
+| 🔎 **embedding** | `qwen3-embedding:0.6b` | RAG / búsqueda semántica (1024 dims) |
+| 👁️ **vision** | `qwen3-vl:4b` | Imágenes, alt-text |
+
+### Cómo configurar
+
+Todo es configurable (sin hardcode) en `.opencode/config/ollama_models.yaml`:
+`base_url`, `timeout`, `warm_on_start` (precarga fast + embedding al arrancar)
+y por tier: `model`, `keep_alive` ("5m") y `auto_pull` (true).
+
+### Comandos
+
+```bash
+# Instalar un modelo manualmente (el harness tambien auto-instala con auto_pull)
+ollama pull qwen3:4b
+ollama pull qwen3-embedding:0.6b
+
+# Ver modelos cargados en memoria (keep_alive "5m": warm/unload)
+ollama ps
+```
+
+Si Ollama no está disponible o falta un modelo, el sistema **degrada
+automáticamente a cloud** (ModelRouter/SlmRouter) — nunca falla.
+
+---
+
 ## 📦 Exportación y Backup
 
 ### Script Universal

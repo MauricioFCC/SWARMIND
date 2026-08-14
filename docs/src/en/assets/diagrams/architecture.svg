@@ -174,7 +174,7 @@
         </g>
         <g transform="translate(900,42)">
           <rect width="200" height="74" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
-          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">34 Skills</text>
+          <text x="100" y="26" text-anchor="middle" fill="#22D3EE">35 Skills</text>
           <text x="100" y="46" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">domain experts</text>
           <text x="100" y="62" text-anchor="middle" font-size="10" font-weight="500" fill="#94A3B8">composable</text>
         </g>
@@ -183,7 +183,7 @@
   </g>
 
   <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#64748B">
-    <text x="40" y="770">v0.1 · 23 agents · 34 skills · 5 runtimes</text>
+    <text x="40" y="770">v0.1 · 23 agents · 35 skills · 5 runtimes</text>
     <text x="1160" y="770" text-anchor="end">MIT</text>
   </g>
 </svg>

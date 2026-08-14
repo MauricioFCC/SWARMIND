@@ -92,6 +92,7 @@ Las metricas principales del sistema (tests, cobertura, agentes, skills, modulos
 | **Memoria central SSOT** | 2026-08-11 | `Memory_Proyects` única DB + backups, 7.5GB de DBs duplicadas eliminadas, portabilidad Linux/Mac/Windows |
 | **Deuda AGR 0** | 2026-08-11 | 32 módulos >500 líneas → paquetes con `__init__.py` re-export, SOL corregido en 9 clases, mixins ≤2 bases, baseline de tests idéntico |
 | **Delegacion local Ollama 4-tier** | 2026-08-14 | delegación local Ollama 4-tier (fast/quality/embedding/vision) + keep_alive → minimiza tokens cloud |
+| **Delegacion local Ollama — final** | 2026-08-14 | modelos 2026 instalados (qwen3:4b, deepseek-r1:8b, qwen2.5-coder:7b, qwen3-embedding:0.6b, qwen3-vl:4b), 38 tests nuevos (21+17), 2 bugs latentes corregidos en _apply_model_routing |
 
 ### Evolucion de Cobertura
 

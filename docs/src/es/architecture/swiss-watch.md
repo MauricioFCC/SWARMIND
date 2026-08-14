@@ -4,7 +4,7 @@ El patron **Swiss Watch** es el modelo arquitectonico central de Swarmind. Toma 
 
 ## Capas del Sistema
 
-1. **`.opencode/`** — Cerebro: agentes, skills y configuracion como SSOT (23 perfiles de agente, 34 skills, principios base).
+1. **`.opencode/`** — Cerebro: agentes, skills y configuracion como SSOT (23 perfiles de agente, 35 skills, principios base).
 2. **`harness/`** — Motor de ejecucion: orquestacion (19 paquetes/56 modulos), memoria/RAG (15 paquetes/34 modulos), hooks, seguridad Zero Trust, tests (4465).
 3. **`scripts/`** — Herramientas auxiliares: deploy, export, sync.
 4. **`knowledge/`** — Documentos de referencia y conocimiento compartido.
@@ -75,6 +75,10 @@ Las **estrategias de planificacion** disponibles estan documentadas en [Dynamic 
 - **Resiliencia**: Si un agente falla, los demas continuan
 - **Paralelismo**: Niveles independientes se ejecutan simultaneamente
 - **Trazabilidad**: Cada decision queda registrada en el SessionContext
+- **Delegacion local (Ollama 4-tier)**: tareas simples/RAG/vision se resuelven con
+  modelos locales 2026 (`qwen3:4b`, `deepseek-r1:8b`, `qwen2.5-coder:7b`,
+  `qwen3-embedding:0.6b`, `qwen3-vl:4b`) — 0 tokens cloud (TKN), con degradacion
+  automatica a cloud si Ollama no esta disponible
 
 ## Ver tambien
 
