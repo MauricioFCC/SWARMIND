@@ -2,6 +2,32 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-08-14] Auditoria TDD + herramientas universales: mutation testing, TDAD, atdd-spec, test-writer
+
+### Calidad (gap TST cerrado)
+- **Mutation testing con mutmut** (NUEVO `.github/workflows/mutation.yml`):
+  workflow_dispatch + semanal, subconjunto core acotado (cache_geometry,
+  compaction, reversible_compaction, shaped_cache), gate **mutation score ≥ 70%**
+  via `mutmut export-cicd-stats` + paso Python, artifact JSON + evidencia
+  `mutmut results`. Baseline verificado: cache_geometry 88.9% (48/54 killed).
+- **Coverage real verificado: 75.70%** (4465 passed, 37 skipped, 4 xfailed) —
+  fix comentario stale en pyproject.toml (59.69% → 75.70%).
+
+### TDAD (Test-Driven Agentic Development, arXiv:2603.17973)
+- **scripts/tdad_select.py** (NUEVO, 479 lineas): seleccion de tests impactados
+  por cambios via grafo de dependencias de imports (ast, stdlib puro).
+  Transitividad A→B→C, dedup, `--dry-run`/`--run`/`--exit-code`/`--base`.
+- **test_tdad_select.py** (NUEVO, 37 tests, 99% cov del script, ruff 0).
+
+### Skills y agentes (34 skills, 23 agentes)
+- **Skill atdd-spec v1.0.0** (NUEVO): ciclo Spec→Test→Code basado en
+  OpenSpec-ATDD + "tests como prompt+verificacion" (Cui 2025, arXiv:2505.09027)
+  + TDD prompting paradox (prompts cortos/progresivos).
+- **Agente test-writer** (NUEVO): subagente aislado que escribe tests ANTES de
+  ver la implementacion (patron Superpowers 2026) — model small (TKN),
+  prohibiciones explicitas, workflow Red→Green→Refactor con evidencia RED.
+- 33 → **34 skills** (registry + project_config sincronizados, 16 tests sync verdes).
+
 ## [2026-08-13] Skills frontier 2026: diagram-design + SDO + validador + deploy dinamico
 
 ### Nuevo skill diagram-design (upstream cathrynlavery/diagram-design v2.3)

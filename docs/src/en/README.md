@@ -8,7 +8,7 @@
 
 | Metric | Value |
 |--------|-------|
-| Tests | 4414 passing (37 skipped, 4 xfailed) |
+| Tests | 4465 passing (37 skipped, 4 xfailed) · 75.70% coverage · mutation testing ≥70% |
 | Coverage | 71.56% |
 | Agents | 22 specialized (100% profiles) |
 | Skills | 32 contextual (100% SKILL.md + SKILL.min.md) |
@@ -83,7 +83,7 @@ For detailed structure, see [Agents & Skills — File System](../es/guide/agente
 
 Swarmind competes with **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (46.2k) and **CodeWhale** (40.2k). The full capability comparison table is in [Harness Comparison 2026](../es/reference/comparativa-harness-2026.md).
 
-**Key differentiators:** GPU Acceleration (search x10.9), Token Economics (-51%), Full Governance, Zero Trust, Deterministic Hook System, Multi-Harness (5 runtimes), 4414 tests.
+**Key differentiators:** GPU Acceleration (search x10.9), Token Economics (-51%), Full Governance, Zero Trust, Deterministic Hook System, Multi-Harness (5 runtimes), 4465 tests.
 
 ### August 2026 changes
 

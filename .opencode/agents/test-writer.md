@@ -12,7 +12,10 @@ description: "Test Writer - subagente aislado que escribe tests ANTES de ver la 
 quality: {docstrings_es: true, error_actionable: true, clean_code: true, coverage: 80, tdd: true, red_green_refactor: true, isolated_from_implementation: true}
 model: small
 temperature: 0.1
-tools: [read, write, bash]
+tools:
+  read: true
+  write: true
+  bash: true
 prohibitions: [leer el cuerpo de la implementacion, modificar codigo fuente, escribir en src/, modificar tests existentes, mockear el sistema bajo prueba, ejecutar la suite completa del repo]
 ---
 

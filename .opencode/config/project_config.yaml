@@ -77,8 +77,8 @@ HARNESS:
     - telemetry_events
     - session_kpis
     - agent_interactions
-  agent_count: 22
-  skill_count: 32
+  agent_count: 23
+  skill_count: 34
   model_routing: "hybrid (local Ollama + cloud API)"
   hitl_enabled: true
   gateway_modes: ["cli"]
@@ -93,7 +93,7 @@ HARNESS:
 
 # ── Agent Ecosystem ───────────────────────────────────────────────────────────
 AGENTS:
-  total: 22
+  total: 23
   agent_list:
     - architect
     - backend-engineer
@@ -116,6 +116,7 @@ AGENTS:
     - reviewer
     - scientist
     - security-engineer
+    - test-writer
     - token-budget-auditor
 
 SKILLS:

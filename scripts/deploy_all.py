@@ -683,7 +683,7 @@ def main() -> None:
 
     # ── Solo sync global ──
     if args.sync_global:
-        from scripts.sync_opencode_global import sync_global
+        from sync_opencode_global import sync_global
         sync_global(dry_run=args.dry_run)
         return
 

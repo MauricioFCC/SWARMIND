@@ -2,13 +2,13 @@
 
 ![Swarmind](/assets/logo.svg)
 
-**Swarmind** es un sistema multi-agente de orquestacion, ejecucion y auto-mejora continua con 33 skills contextuales, orquestacion multi-nivel, GPU acceleration y token economics.
+**Swarmind** es un sistema multi-agente de orquestacion, ejecucion y auto-mejora continua con 34 skills contextuales, orquestacion multi-nivel, GPU acceleration y token economics.
 
 ## Estado Actual (Agosto 2026)
 
 | Metrica | Valor |
 |---------|-------|
-| Tests | 4414 passing (37 skipped, 4 xfailed) |
+| Tests | 4465 passing (37 skipped, 4 xfailed) · 75.70% coverage · mutation testing ≥70% |
 | Cobertura | 71.56% |
 | Agentes | 22 especializados (100% perfiles) |
 | Skills | 32 contextuales (100% SKILL.md + SKILL.min.md) |
@@ -84,7 +84,7 @@ Para la estructura detallada, ver [Agentes y Skills — Sistema de Archivos](gui
 
 Swarmind compite con **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (46.2k) y **CodeWhale** (40.2k). La comparativa completa con tabla de capacidades esta en [Comparativa Harness 2026](reference/comparativa-harness-2026.md).
 
-**Diferenciación clave:** GPU Acceleration (search x10.9), Token Economics (-51%), Governance completo, Zero Trust, Hook System determinista, Multi-Harness (5 runtimes), 4414 tests.
+**Diferenciación clave:** GPU Acceleration (search x10.9), Token Economics (-51%), Governance completo, Zero Trust, Hook System determinista, Multi-Harness (5 runtimes), 4465 tests.
 
 ### Cambios Agosto 2026
 

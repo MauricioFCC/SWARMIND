@@ -4,8 +4,8 @@ El patron **Swiss Watch** es el modelo arquitectonico central de Swarmind. Toma 
 
 ## Capas del Sistema
 
-1. **`.opencode/`** — Cerebro: agentes, skills y configuracion como SSOT (22 perfiles de agente, 33 skills, principios base).
-2. **`harness/`** — Motor de ejecucion: orquestacion (19 paquetes/56 modulos), memoria/RAG (15 paquetes/34 modulos), hooks, seguridad Zero Trust, tests (4414).
+1. **`.opencode/`** — Cerebro: agentes, skills y configuracion como SSOT (23 perfiles de agente, 34 skills, principios base).
+2. **`harness/`** — Motor de ejecucion: orquestacion (19 paquetes/56 modulos), memoria/RAG (15 paquetes/34 modulos), hooks, seguridad Zero Trust, tests (4465).
 3. **`scripts/`** — Herramientas auxiliares: deploy, export, sync.
 4. **`knowledge/`** — Documentos de referencia y conocimiento compartido.
 

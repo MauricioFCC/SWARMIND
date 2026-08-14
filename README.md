@@ -9,7 +9,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](pyproject.toml)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
-[![Tests](https://img.shields.io/badge/tests-4414_passing-brightgreen.svg)](harness/tests/)
+[![Tests](https://img.shields.io/badge/tests-4465_passing-brightgreen.svg)](harness/tests/)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **Spanish (es)** is the primary documentation language; this README is in English for GitHub.
@@ -235,7 +235,7 @@ python scripts/enable_gpu.py
 
 Quality is enforced continuously, not at the end:
 
-- **Test suite**: 4414 passed, 37 skipped, 4 xfailed.
+- **Test suite**: 4465 passed, 37 skipped, 4 xfailed (75.70% coverage, mutation testing mutmut gate ≥70%).
 - **Lint**: ruff — all checks passed.
 - **Dead code**: vulture — 0 dead code.
 - **Architecture debt (AGR)**: 0 files over 500 lines in non-test code; 32 flat modules refactored into packages with re-exporting `__init__.py`; mixins limited to ≤ 2 bases; SOLID corrected in 9 classes.

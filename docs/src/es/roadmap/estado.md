@@ -24,12 +24,12 @@ run_commands, baseline de tests identico tras el refactor.
 - **Memoria central SSOT** (Memory_Proyects, memory_config.py 3 niveles
   LANCEDB_PATH > .swarmind_config.json > legacy, `_safe_home()` resiliente):
   7.5GB de DBs duplicadas eliminadas, portabilidad Linux/Mac/Windows.
-- Suite: **4414 passed, 37 skipped, 4 xfailed**, Ruff all checks passed,
+- Suite: **4465 passed, 37 skipped, 4 xfailed**, Ruff all checks passed,
   Vulture 0 muerto.
 
 Las metricas principales del sistema (tests, cobertura, agentes, skills, modulos) estan en la [pagina principal](../README.md#estado-actual-julio-2026).
 
-**Resumen ejecutivo:** 4414 tests, 22 agentes, 33 skills, 19 paquetes orchestrator, 15 paquetes memory/rag, RTX 4060 CUDA 12.6 (x10.9 search), 15 papers 2026 implementados, **Opción A SSOT global implementada + memoria central portable (v3.x)**.
+**Resumen ejecutivo:** 4465 tests, 23 agentes, 34 skills, 19 paquetes orchestrator, 15 paquetes memory/rag, RTX 4060 CUDA 12.6 (x10.9 search), 15 papers 2026 implementados, **Opción A SSOT global implementada + memoria central portable (v3.x)**.
 
 **Actualización 2026-08-04 :** IMPLEMENTADO — plugin compaction-context.js (hook experimental.session.compacting), steps:8 en release-ops/token-budget-auditor, Σ-Mem MVP (reliability_memory.py + 22 tests), memoria gobernada MVP (memory_guard.py + 22 tests), abstention_policy en token_budgets.yaml (stop rules CONVOLVE), regla subagentes condensados en coordinator.md; diferidos justificados: setCacheKey/small_model/provider options. Implementados H1-H8 completos — H1 (10 SKILL.min.md con YAML roto reparados + test TestSkillMinFiles), H2 (5 mins API densos recompactados con compile_skills.py: 58-88% → 35-54%), H3 (routing 45 rutas, universal 10→2 agentes), H4 (release-ops deduplicado), H5 (triada evolve -59.9%), H6 (token_budgets.yaml conectado al runtime, 23 tests nuevos), H7 (base_principles N3 bajo demanda, -6.2K tokens/agente), H8 (opencode.json: compaction.prune + tool_output + mcp_timeout). 22/22 agentes con role_budget. PR #7 mergado: CI con checks requeridos lint/test/security, python 3.12, auto-merge funcional.
 
@@ -176,10 +176,10 @@ Objetivo: 80%    (proximo hito)
 
 | Metrica | Actual | Objetivo | Tendencia |
 |---------|--------|----------|-----------|
-| Cobertura de tests | 74.95% | 80% | Subiendo |
-| Tests totales | 4414 | ~4500 | Subiendo |
-| Agentes | 22 | 30+ | Subiendo |
-| Skills | 33 | 50+ | Subiendo |
+| Cobertura de tests | 75.70% | 80% | Subiendo |
+| Tests totales | 4465 | ~4500 | Subiendo |
+| Agentes | 23 | 30+ | Subiendo |
+| Skills | 34 | 50+ | Subiendo |
 | Modulos Orchestrator | 48 | 55+ | Subiendo |
 | Modulos Memory/RAG | 30 | 35+ | Subiendo |
 | Archivos <500LC (deuda AGR) | 100% | 100% | Mantenido |
@@ -197,7 +197,7 @@ Objetivo: 80%    (proximo hito)
 
 ## Notas de la Version
 
-- **2026-08-11**: Deuda AGR 0 — 32 modulos >500 lineas convertidos a paquetes con `__init__.py` re-export backward-compatible (commits e409982 + 545e591, verificado baseline identico). GPU CUDA 12.6 activa (torch 2.13.0+cu126, RTX 4060 8GB): vector search x10.9 (10k) / x9.2 (100k), embeddings batch 41us/msg, `enable_gpu.py` portable, health hardware info (e246998, 826aeda). Fase 1 TDD: oraculos reales PBT/mutation en subprocess, orchestrator DynamicDAG + WAL, test_router 25 tests + fix `_to_model_route()` (407c36d). ParallelExecutor fan-out + voting gobernado (ORCA 2026 evaluado/descartado, 4408944). Memoria central SSOT Memory_Proyects sin DBs paralelas + portabilidad Linux/Mac/Windows, 7.5GB liberados (4e5583e). **4414 passed, 37 skipped, 4 xfailed**, Ruff all checks passed, Vulture 0.
+- **2026-08-11**: Deuda AGR 0 — 32 modulos >500 lineas convertidos a paquetes con `__init__.py` re-export backward-compatible (commits e409982 + 545e591, verificado baseline identico). GPU CUDA 12.6 activa (torch 2.13.0+cu126, RTX 4060 8GB): vector search x10.9 (10k) / x9.2 (100k), embeddings batch 41us/msg, `enable_gpu.py` portable, health hardware info (e246998, 826aeda). Fase 1 TDD: oraculos reales PBT/mutation en subprocess, orchestrator DynamicDAG + WAL, test_router 25 tests + fix `_to_model_route()` (407c36d). ParallelExecutor fan-out + voting gobernado (ORCA 2026 evaluado/descartado, 4408944). Memoria central SSOT Memory_Proyects sin DBs paralelas + portabilidad Linux/Mac/Windows, 7.5GB liberados (4e5583e). **4465 passed, 37 skipped, 4 xfailed**, Ruff all checks passed, Vulture 0.
 - **2026-08-08**: TDD always-on (engine authority + test-first real + anti-gaming, `test_dependency_map.py` TDAD src↔tests, `test_reinforcement.py` Tester→mutation→Critic; 74 tests nuevos; contrato TDD 2026 en builder/guardian/coordinator). Fase 3 ahorro de tokens: `complexity_router.py` (RouteLLM-style, 26 tests, ahorro ~2x con fallback) + `token_usage_tracker.py` (medición por agente, 39 tests, thread-safe). Documentación concisa (progressive disclosure: resumen en notas, detalle en módulos). **4277+ tests**.
 - **2026-08-08**: Fase 1+2 — MCP stateless 2026-07-28 (`connect_stateless` + `server/discover` + catálogos cacheables + headers Mcp-Method/Mcp-Name, 22 tests), OTel GenAI semconv estables (`start_genai_span`, `gen_ai.*`, 15 tests), DeltaChannel durable exec (`delta_channel.py`, 9 tests), Agent Factory on-demand (`agent_factory.py` + `agent_templates.yaml` 8 plantillas + recommender + render Markdown opencode, 29 tests), validador agentskills.io (`skill_frontmatter.py`, 20 tests, 32/32 skills válidos), skills de dominio 2026 (reviewer adversarial + science citas/reproducibilidad + legal vigencia/citas). Fix test-order: TestGenAISemconv con parcheo por `trace_agent.__globals__` (robusto ante `test_lazy_loading`). **4068+ tests**.
 - **2026-08-03**: Memoria central portable (v3.x) en `<Documents>/Memory_Proyects` (MEMORY_ROOT) + backup automático con rotación (`backup_memory.py` + tarea programada) + menú de configuración al instalar (`config_swarmind.py`). TDD: 58 tests nuevos en 5 módulos a 0% cobertura. Optimización de tokens: descripciones de agents/skills -57% (3875→1684 tokens). Deuda técnica: test_agent_builder fechas hardcodeadas corregidas. **3937 tests**.
