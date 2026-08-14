@@ -29,6 +29,7 @@ import pytest
 
 from harness.memory_rag.skill_frontmatter import (
     MAX_DESCRIPTION_LEN,
+    SDO_PREFIX,
     SKILL_NAME_RE,
     SkillFrontmatterValidator,
     SkillReport,
@@ -49,11 +50,11 @@ def _write_skill(root: Path, dirname: str, frontmatter: str) -> Path:
 
 
 def _valid_frontmatter(name: str) -> str:
-    """Frontmatter de un skill valido completo (name == dirname)."""
+    """Frontmatter de un skill valido completo (name == dirname, SDO)."""
     return (
         f"name: {name}\n"
-        "description: Analiza y valida documentos de ejemplo generando resumenes. "
-        "Usar cuando se necesite revisar o extraer informacion de textos.\n"
+        "description: Usar cuando se necesite revisar o extraer informacion de textos legales. "
+        "documentos, resumenes, contratos.\n"
         "license: MIT\n"
         "compatibility: Python 3.12+\n"
         "metadata:\n"
@@ -373,6 +374,76 @@ def test_summary_no_vacio_contiene_valid(
 
     assert summary.strip() != ""
     assert ("valid" in summary) or ("invalid" in summary)
+
+
+# ===========================================================================
+# SDO — Skill Discovery Optimization (ADR-0047)
+# ===========================================================================
+
+
+def test_description_sin_sdo_warning(tmp_path: Path, validator: SkillFrontmatterValidator) -> None:
+    """description que NO empieza con 'Usar cuando' -> warning description_sin_sdo."""
+    skill_md = _write_skill(
+        tmp_path,
+        "nosdo-skill",
+        "name: nosdo-skill\n"
+        "description: Analiza documentos y genera resumenes legales del test.\n",
+    )
+
+    report = validator.validate_file(skill_md)
+
+    assert report.valid is True
+    assert report.errors == ()
+    assert any("description_sin_sdo" in warning for warning in report.warnings)
+
+
+def test_description_con_sdo_no_warning(tmp_path: Path, validator: SkillFrontmatterValidator) -> None:
+    """description que empieza con 'Usar cuando' -> sin warning SDO."""
+    skill_md = _write_skill(tmp_path, "sdo-skill", _valid_frontmatter("sdo-skill"))
+
+    report = validator.validate_file(skill_md)
+
+    assert report.valid is True
+    assert report.errors == ()
+    assert not any("description_sin_sdo" in warning for warning in report.warnings)
+
+
+def test_description_con_sdo_case_insensitive(tmp_path: Path, validator: SkillFrontmatterValidator) -> None:
+    """El prefijo SDO se detecta case-insensitive ('USAR CUANDO...' tambien vale)."""
+    skill_md = _write_skill(
+        tmp_path,
+        "sdomay-skill",
+        "name: sdomay-skill\n"
+        "description: USAR CUANDO el usuario necesite analizar datos de ejemplo.\n",
+    )
+
+    report = validator.validate_file(skill_md)
+
+    assert report.valid is True
+    assert not any("description_sin_sdo" in warning for warning in report.warnings)
+
+
+def test_sdo_prefix_constante() -> None:
+    """SDO_PREFIX es 'usar cuando' (patron superpowers 2026)."""
+    assert SDO_PREFIX == "usar cuando"
+
+
+def test_validar_todos_los_skills_reales_sdo() -> None:
+    """Los 33 skills reales del repo cumplen SDO (integracion con validate_skills.py)."""
+    from pathlib import Path
+
+    import scripts.validate_skills  # noqa: F401  # importable
+
+    skills_dir = Path(__file__).resolve().parents[2] / ".opencode" / "skills"
+    if not skills_dir.is_dir():
+        pytest.skip("directorio de skills no disponible")
+    validator = SkillFrontmatterValidator()
+    reports = validator.validate_all(skills_dir)
+    assert len(reports) >= 30
+    for report in reports:
+        assert not any("description_sin_sdo" in w for w in report.warnings), (
+            f"{report.skill_name}: description sin prefijo SDO"
+        )
 
 
 # ===========================================================================

@@ -37,6 +37,12 @@ logger = logging.getLogger(__name__)
 # Regex del nombre valido: letra/digito inicial, luego lowercase-hyphen.
 SKILL_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 
+# Prefijo SDO (Skill Discovery Optimization, patron obra/superpowers 2026):
+# la description debe empezar con la condicion de disparo ("Usar cuando") y
+# NO resumir el workflow del skill (el agente sigue la description y salta
+# el cuerpo). Warning L1: mejora recomendada, no invalida (la spec no exige).
+SDO_PREFIX = "usar cuando"
+
 # Verbos accionables en espanol que deben aparecer en la description.
 ACTION_VERBS: frozenset[str] = frozenset(
     {
@@ -342,6 +348,10 @@ class SkillFrontmatterValidator:
         elif len(desc) < MIN_DESCRIPTION_LEN:
             warnings.append(self._error_msg("description_corta", f"len={len(desc)}_min={MIN_DESCRIPTION_LEN}", path))
 
+        if not self._has_sdo_prefix(desc):
+            warnings.append(
+                self._error_msg("description_sin_sdo", f"debe_empezar_con_{SDO_PREFIX!r}", path)
+            )
         if not self._has_action_verb(desc):
             warnings.append(self._error_msg("description_sin_verbo", "sin_verbo_accionable", path))
         return errors, warnings
@@ -380,6 +390,18 @@ class SkillFrontmatterValidator:
     # ------------------------------------------------------------------
     # Helpers estaticos
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _has_sdo_prefix(text: str) -> bool:
+        """True si la description empieza con el prefijo SDO "usar cuando".
+
+        Args:
+            text: Texto de la descripcion.
+
+        Returns:
+            True si la descripcion empieza (case-insensitive) con SDO_PREFIX.
+        """
+        return text.strip().lower().startswith(SDO_PREFIX)
 
     @staticmethod
     def _has_action_verb(text: str) -> bool:
