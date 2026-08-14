@@ -91,6 +91,7 @@ Las metricas principales del sistema (tests, cobertura, agentes, skills, modulos
 | **ParallelExecutor** | 2026-08-11 | Fan-out paralelo nativo + voting gobernado (gate score>=70 ∧ confidence<0.7, N=3) — aportación ORCA 2026 |
 | **Memoria central SSOT** | 2026-08-11 | `Memory_Proyects` única DB + backups, 7.5GB de DBs duplicadas eliminadas, portabilidad Linux/Mac/Windows |
 | **Deuda AGR 0** | 2026-08-11 | 32 módulos >500 líneas → paquetes con `__init__.py` re-export, SOL corregido en 9 clases, mixins ≤2 bases, baseline de tests idéntico |
+| **Delegacion local Ollama 4-tier** | 2026-08-14 | delegación local Ollama 4-tier (fast/quality/embedding/vision) + keep_alive → minimiza tokens cloud |
 
 ### Evolucion de Cobertura
 

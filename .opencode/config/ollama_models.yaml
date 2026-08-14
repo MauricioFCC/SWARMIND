@@ -1,0 +1,17 @@
+# Ollama local delegation — tiers por capacidad (minimiza tokens cloud)
+# Modelos 2026 verificados (FRS 2026-08-14): los instalados tienen prioridad.
+#   fast:      qwen3:4b (instalado) — borradores, tareas simples
+#   quality:   deepseek-r1:8b (instalado) — razonamiento, calidad de texto
+#   coding:    qwen2.5-coder:7b (instalado) — código (tier opcional)
+#   embedding: qwen3-embedding:0.6b — RAG (reemplaza nomic-embed-text, 2 años obsoleto)
+#   vision:    qwen3-vl:4b — imágenes/alt-text (RTX 4060 8GB OK); alt: gemma4:e4b
+ollama:
+  base_url: "http://localhost:11434"
+  timeout: 60
+  warm_on_start: [fast, embedding]   # precargar al arrancar
+  tiers:
+    fast:      {model: "qwen3:4b",             keep_alive: "5m", auto_pull: true}
+    quality:   {model: "deepseek-r1:8b",       keep_alive: "5m", auto_pull: true}
+    coding:    {model: "qwen2.5-coder:7b",     keep_alive: "5m", auto_pull: true}
+    embedding: {model: "qwen3-embedding:0.6b", keep_alive: "5m", auto_pull: true}
+    vision:    {model: "qwen3-vl:4b",          keep_alive: "5m", auto_pull: true}

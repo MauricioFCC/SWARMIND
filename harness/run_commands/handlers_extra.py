@@ -132,21 +132,40 @@ def _apply_model_routing(task: str, target_agent: str, force_cloud: bool = False
 
     Returns the routing source ("local" or "cloud") for logging.
     """
+    from harness.model_router.ollama_client import OllamaClient
+    from harness.model_router.ollama_tiers import OllamaTierRouter
     from harness.model_router.router import ModelRouter
+
     router = ModelRouter()
     if force_cloud:
-        _rc.logger.info(f"[ROUTER] @{target_agent} â†’ cloud (--force-cloud override)")
+        _rc.logger.info(f"[ROUTER] @{target_agent} → cloud (--force-cloud override)")
         return "cloud"
     decision = router.route(task, target_agent)
     source = decision.source
-    _rc.logger.info(f"[ROUTER] @{target_agent} â†’ {source} ({decision.provider}/{decision.model}) [{decision.reason}]")
-    if source == "local" and not router._is_ollama_available():
-        _rc.logger.info(f"[ROUTER] âš ï¸  Ollama no detectado. Modelo local '{decision.model}' no disponible.")
+    _rc.logger.info(
+        f"[ROUTER] @{target_agent} → {source} "
+        f"({decision.suggested_provider or 'n/a'}/{decision.model}) "
+        f"[{decision.model_route.reason}]"
+    )
+    if source == "local":
+        # Delegación local 4-tier por capacidad (fast/quality/embedding/vision).
+        # Degrada a cloud si Ollama no está disponible (no crashea).
+        client = OllamaClient()
+        if client.is_available():
+            tiers = OllamaTierRouter(client)
+            tier = tiers.tier_for_task(task)
+            model = tiers.model_for(tier)
+            _rc.logger.info(
+                f"[ROUTER] @{target_agent} → local tier={tier.value} model={model} "
+                f"(keep_alive {tiers.model_for(tier)})"
+            )
+            return "local"
+        _rc.logger.info("[ROUTER] ⚠️  Ollama no detectado. Modelo local no disponible.")
         if router.config.get("local", {}).get("fallback_to_cloud", True):
-            _rc.logger.info("[ROUTER] âš ï¸  Fallback a cloud automatico activado.")
+            _rc.logger.info("[ROUTER] ⚠️  Fallback a cloud automatico activado.")
         else:
-            _rc.logger.info("[ROUTER] ðŸ’¡ Instala Ollama: https://ollama.com")
-            _rc.logger.info("[ROUTER] ðŸ’¡ O usa --force-cloud para modo cloud")
+            _rc.logger.info("[ROUTER] 💡 Instala Ollama: https://ollama.com")
+            _rc.logger.info("[ROUTER] 💡 O usa --force-cloud para modo cloud")
     return source
 
 

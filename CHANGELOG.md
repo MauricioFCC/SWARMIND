@@ -2,6 +2,23 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-08-14] Delegacion local Ollama: 4 tiers por capacidad + keep_alive (minimo tokens cloud)
+
+### Delegacion local (TKN — minimizar tokens cloud)
+- **OllamaClient** (NUEVO `harness/model_router/ollama_client.py`): cliente HTTP real
+  contra la API local de Ollama — generate/chat/embed + keep_alive (warm/precarga y
+  unload) + `/api/ps` + `pull` (instalacion automatica) + deteccion de capacidades.
+- **OllamaTierRouter** (NUEVO `harness/model_router/ollama_tiers.py`): 4 tiers por
+  capacidad — FAST (`llama3.2:3b`), QUALITY (`qwen2.5:14b`), EMBEDDING
+  (`nomic-embed-text`) y VISION (`llava:7b`) — con heuristica sin LLM (TKN) +
+  `auto_pull` + `warm_on_start`. Modelos 100% configurables en
+  `.opencode/config/ollama_models.yaml` (base_url, timeout, warm_on_start, 4 tiers),
+  sin hardcode.
+- **Integracion**: delegacion local conectada a ModelRouter/SlmRouter existentes
+  (small-first), con degradacion a cloud si Ollama no esta disponible o falta el modelo.
+- Base de arranque: `harness/scripts/check_ollama.py` existente (deteccion +
+  list_local_models).
+
 ## [2026-08-14] Auditoria TDD + herramientas universales: mutation testing, TDAD, atdd-spec, test-writer
 
 ### Calidad (gap TST cerrado)

@@ -72,6 +72,11 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 - `MultiAPIProvider` with failover and health-checks (`harness/model_router/multi_provider/`, `harness/model_router/provider_health/`).
 - Token budget SSOT (`token_budgets.yaml`), cache-shape (-38%), structured compaction (-41%), governed voting, and budget enforcement via `TokenBudgetManager`.
 
+### Local Ollama Delegation
+- The harness can delegate tasks to local models through Ollama (`harness/model_router/ollama_client.py` + `harness/model_router/ollama_tiers.py`), with four capability tiers — fast (`llama3.2:3b`), quality (`qwen2.5:14b`), embedding/RAG (`nomic-embed-text`) and vision (`llava:7b`) — fully configurable (no hardcode) in `.opencode/config/ollama_models.yaml` (base_url, timeout, warm_on_start, per-tier keep_alive/auto_pull).
+- Hot models are kept resident with `keep_alive` (warm/unload via `/api/ps`) and are auto-installed with `ollama pull` when missing, so simple tasks run fully local: **0 cloud tokens** (TKN).
+- If Ollama is unavailable or a tier's model is missing, the router degrades to the existing cloud `ModelRouter`/`SlmRouter` fallback.
+
 ### Memory & RAG
 - Central portable memory with LanceDB vector store (`harness/memory_rag/lance_vector_store.py`), semantic cache, SQLite-vec adapter (edge/offline backend), federated search, context window management, and `shapley_flow` optimization.
 - `AgentKPITracker`, compression strategies, context assembler, token budget managers, and skill loader.
