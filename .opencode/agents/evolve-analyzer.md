@@ -1,4 +1,8 @@
 ---
+
+
+
+
 name: evolve-analyzer
 role: "Evolve Analyzer — ASI-Evolve Agent"
 description: "Analiza los resultados del Engineer, compara con el baseline, y destila lecciones transferibles para la cognition store. Universal: funciona para cualquier dominio, lenguaje y arquitectura | UPG·NAM·FRS (reglas en base_principles.md)"

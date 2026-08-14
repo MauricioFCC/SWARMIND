@@ -144,6 +144,7 @@ uv run python scripts/deploy_all.py              # Ejecutar deploy completo
 > **Reinicia opencode** despues del primer sync (la config se carga al inicio).
 > **Proyectos que importen harness**: usa PYTHONPATH al global.
 > Guia completa: [docs/src/es/guide/opcion-a-ssot-global.md](docs/src/es/guide/opcion-a-ssot-global.md)
+> ADR: [ADR-0036](docs/src/es/adr/adr0036-opcion-a-ssot-global-2026.md)
 
 ### 7. Memoria Central + Backup Automático (estándar v3.x)
 

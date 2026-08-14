@@ -97,6 +97,223 @@ FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | ele
 > IMM, SOL, MAG, FSZ, NAM, CMP, DEM, FRS + MAPA DE ROLES->CATEGORIAS + ABREVIACIONES.
 > Cargar SOLO si el agente necesita detalles de implementacion, tabla de roles o abreviaciones.
 
+### UPG - Upgrade Continuo (regla universal para TODO stack)
+- [ ] **Aplicar a TODO cambio de stack** (no solo upgrades completos):
+  - [ ] Lenguajes: Python, Rust, TypeScript, Go, etc. — ultima estable
+  - [ ] Librerias/frameworks: Django, FastAPI, React, numpy, torch — ultima estable
+  - [ ] Runtimes: uv, npm, cargo, pip — ultima estable
+  - [ ] Build deps: setuptools, hatchling, maturin — ultima estable
+  - [ ] Deps transitivas (incluidas via lockfile) — todas en latest
+- [ ] **Protocolo obligatorio antes de cambiar versiones**:
+  1. **Investigacion web exhaustiva** (PyPI, GitHub releases, endoflife.date, blogs oficiales)
+  2. **Mesa de trabajo** con la siguiente estructura minima:
+     - Inventario actual vs. ultima estable (tabla con todas las deps)
+     - Analisis de incompatibilidades (breaking changes, EOL, deprecation)
+     - Alternativas mas eficientes evaluadas (e.g., `lancedb` vs `duckdb-vss`)
+     - **Consenso**: voto unanime, mayoria cualificada, o decision justificada del coordinator
+  3. **Implementacion incremental**: lockfile regenerado, tests, lint, scanner
+  4. **Validacion**: suite de tests + bandit + scanner + cross-platform (Win/Linux)
+  5. **Propagacion local** (sync opencode + deploy_all) — NUNCA push automatico
+  6. **PR al usuario** con mesa de trabajo adjunta para revision y aprobacion
+- [ ] **Criterios de exclusion** (no upgrade automatico):
+  - Paquete en EOL con deprecation > 6 meses y sin LTS
+  - Alpha/beta/RC inestable en produccion
+  - Breaking change sin ruta de migracion posible (deferred a ADR)
+  - Incompatibilidad con hardware/OS objetivo (e.g., Python 3.13 en Win7)
+- [ ] **Metricas de exito**:
+  - Cobertura de tests no disminuye
+  - Latencia P95 no aumenta > 10%
+  - 0 vulnerabilidades nuevas de severidad HIGH/CRITICAL
+  - Lockfile sin duplicados (un solo version por paquete)
+- [ ] **Frecuencia sugerida**: investigacion trimestral + upgrade inmediato cuando hay EOL < 6 meses
+- [ ] **Skills que aplican esta regla por defecto**: builder, scientist, guardian, evolve
+
+### TYP - Type Hints (PEP 484/604/585)
+- [ ] **TODAS las funciones publicas** deben tener type hints en signature + return type
+- [ ] **PEP 604** (`X \| Y`) preferido sobre `Union[X, Y]` (Python 3.10+)
+- [ ] **PEP 585** (`list[int]`, `dict[str, Any]`) preferido sobre `List`, `Dict` (Python 3.9+)
+- [ ] **TypeVar** para generics: `T = TypeVar("T")`
+- [ ] **Type aliases** con `type X = ...` o `TypeAlias`
+- [ ] **NewType** para tipos distinctos: `UserId = NewType("UserId", int)`
+- [ ] **Evitar `Any`** — preferir `object`, generics, o `Unknown`
+- [ ] **mypy --strict** en CI (zero errors policy)
+- [ ] **Return type** explicito:
+  - `-> None` si no retorna
+  - `-> T` o `-> T \| None` segun contrato
+- [ ] **Dataclasses y NamedTuple**: tipos explicitos en fields
+- [ ] **Funciones complejas**: `from __future__ import annotations` para PEP 604 en Python <3.10
+- [ ] **Protocols** para interfaces estructurales: `class Renderable(Protocol): def render(self) -> str: ...`
+- [ ] **Generics**: `class Repository(Generic[T]): def get(self, id: str) -> T | None: ...`
+- [ ] **Validacion en CI**:
+  - `mypy harness/ --strict --ignore-missing-imports`
+  - `pyright harness/` como segunda opinion
+  - 0 disallow_untyped_defs, 0 disallow_incomplete_defs
+- [ ] **Ejemplos**:
+  - `X def get(id): return db.query(id)` -> `OK def get(self, id: str) -> User | None: return self._db.query(id)`
+  - `X items = []` -> `OK items: list[Item] = []`
+  - `X def calc(x, y): return x + y` -> `OK def add(self, x: float, y: float) -> float: return x + y`
+
+### IMM - Inmutabilidad por defecto
+- [ ] **`frozen=True` en TODAS las dataclasses** que no muten
+- [ ] **`NamedTuple` para records inmutables** simples (3-5 campos, sin metodos)
+- [ ] **`tuple` en lugar de `list`** cuando la coleccion no se muta
+- [ ] **`frozenset` para sets inmutables**
+- [ ] **`MappingProxyType`** para views read-only de dicts
+- [ ] **NO mutar parametros de entrada** (copiar si se necesita modificar)
+- [ ] **`dataclasses.replace()`** para "mutar" inmutables (crea nueva instancia)
+- [ ] **Inmutabilidad permite**:
+  - Hashable (usable en set/dict keys)
+  - Cache (hash estable)
+  - Reasoning funcional (sin side effects)
+  - Thread-safety (sin locks)
+  - Eliminacion de bugs de aliasing
+- [ ] **Excepciones justificadas** (mutabilidad necesaria):
+  - Buffers de I/O (numpy arrays, file handles)
+  - Builders/fluent APIs
+  - State machines (donde mutar es el proposito)
+- [ ] **Ejemplos**:
+  - `X @dataclass class User: name: str` -> `OK @dataclass(frozen=True) class User: name: str`
+  - `X result = (); result += (1,)` -> `OK result: tuple[int, ...] = (1,)`
+  - `X def update(d, k, v): d[k] = v` -> `OK def with_value(d, k, v) -> dict: return {**d, k: v}`
+
+### SOL - SOLID Principles
+- [ ] **SRP** (Single Responsibility): cada clase/funcion hace UNA sola cosa
+  - `X class UserManager: def create(): ...; def send_email(): ...; def generate_report(): ...` (3 razones para cambiar)
+  - `OK class UserManager: ...; class EmailService: ...; class ReportGenerator: ...`
+- [ ] **OCP** (Open-Closed): abierto a extension, cerrado a modificacion
+  - Usar Protocols/ABC para permitir nuevas implementaciones sin modificar el cliente
+  - Strategy pattern, plugin architecture
+  - `X if shape == "circle": ... elif shape == "square": ...` (modificar para cada nuevo shape)
+  - `OK shapes: list[Shape] = [Circle(...), Square(...)]; for s in shapes: s.area()` (extender con nuevas clases)
+- [ ] **LSP** (Liskov Substitution): subtipos deben ser sustituibles por tipos base
+  - Pre-condiciones no mas fuertes, post-condiciones no mas debiles
+  - Invariantes del tipo base deben mantenerse en subtipos
+  - `X class Square(Rectangle): def set_width(self, w): self._width = self._height = w` (rompe LSP)
+  - `OK class Square(Rectangle): usa composicion o jerarquia separada`
+- [ ] **ISP** (Interface Segregation): interfaces pequenas y especificas
+  - `X interface Worker: def work(); def eat(); def sleep()` (cliente solo usa work)
+  - `OK interface Workable: def work(); interface Feedable: def eat(); interface Sleepable: def sleep()`
+- [ ] **DIP** (Dependency Inversion): depender de abstracciones
+  - Inyectar dependencias via `__init__` (no instanciar dentro)
+  - Usar Protocol/ABC para tipos
+  - `X class UserService: def __init__(self): self.db = PostgresDB()` (acoplado a concrecion)
+  - `OK class UserService: def __init__(self, db: DatabaseInterface): self._db = db` (depende de abstraccion)
+
+### MAG - Magic Numbers / Constantes
+- [ ] **Cero literales magicos** en codigo de produccion
+- [ ] **Constantes a nivel de modulo** (no dentro de funciones, salvo que sean realmente locales)
+- [ ] **Tablas de lookup** en lugar de if-elif-else chains
+  - `X if status == 1: ... elif status == 2: ... elif status == 3: ...`
+  - `OK STATUS_HANDLER = {1: handle_active, 2: handle_pending, 3: handle_done}; STATUS_HANDLER[status]()`
+- [ ] **`Enum` para valores discretos** (no usar int/str magicos)
+  - `X if role == "admin"` -> `OK if role == Role.ADMIN`
+- [ ] **Constantes con unidades en el nombre**:
+  - `X TIMEOUT = 30` -> `OK TIMEOUT_SECONDS = 30`
+  - `X SIZE = 1024` -> `OK SIZE_BYTES = 1024`
+- [ ] **Constantes agrupadas** en un modulo dedicado (`constants.py`, `config.py`)
+- [ ] **Excepciones validas** (literales OK sin nombrar):
+  - `0`, `1`, `-1`, `""`, `[]`, `{}` (obvios en contexto)
+  - `math.pi`, `math.e` (constantes matematicas ya nombradas)
+  - Indices: `arr[0]`, `arr[-1]`
+- [ ] **Validacion en CI**: ruff `RUF` con reglas de magic numbers (custom rule)
+- [ ] **Ejemplos**:
+  - `X if user.age >= 18:` -> `OK LEGAL_AGE = 18; if user.age >= LEGAL_AGE:`
+  - `X time.sleep(0.5)` -> `OK RETRY_BACKOFF_SECONDS = 0.5; time.sleep(RETRY_BACKOFF_SECONDS)`
+  - `X return x * 1024 * 1024` -> `OK BYTES_PER_MB = 1024 * 1024; return x * BYTES_PER_MB`
+
+### FSZ - Function Size
+- [ ] **MAX 30 lineas por funcion** (excluyendo docstring)
+- [ ] **Una funcion = una responsabilidad** (single level of abstraction)
+- [ ] **Guard clauses tempranas** (return antes que if-else anidados)
+  - `X if user: if user.active: if user.has_perm: do_thing()` (3 niveles)
+  - `OK if not user: return; if not user.active: return; if not user.has_perm: return; do_thing()` (3 lineas planas)
+- [ ] **Extraer helpers** cuando la funcion crece:
+  - Helpers privados (`_helper_*` con prefijo `_`)
+  - Funciones puras (mismo input = mismo output)
+- [ ] **Parametros**: max 4-5. Si mas, usar dataclass de input:
+  - `X def create_user(name, email, age, role, team, manager)` (6 params)
+  - `OK @dataclass class UserInput: name: str; email: str; ...; def create_user(inp: UserInput)`
+- [ ] **Cyclomatic complexity < 10** (medible con `radon` o `mccabe`)
+- [ ] **Return temprano** (early return) sobre else anidados
+- [ ] **Si el nombre tiene "and" u "or"**: dividir
+  - `X def validate_and_save(data)` -> `OK def validate(data); def save(data)`
+- [ ] **Validacion automatica**:
+  - ruff: max 30 lineas por funcion (configurable)
+  - radon: cyclomatic complexity < 10
+  - Code review: si >30 lineas, refactorizar antes de merge
+- [ ] **Excepciones validas** (funciones largas permitidas):
+  - Switch statements con muchos casos (usar lookup table en su lugar)
+  - Funciones main con CLI parsing (aceptable)
+  - Funciones con tablas de datos hardcoded (raro, preferir data files)
+- [ ] **Ejemplo de refactorizacion**:
+  - `X def process(data): if data.valid: result = compute(data); if result > 0: save(result); log(result); return result; return None` (8 lineas, 4 responsabilidades)
+  - `OK def process(data: Data) -> Result | None: if not data.valid: return None; result = _compute(data); _save(result); _log(result); return result`
+
+---
+
+### NAM - Naming Convention (Clean Code)
+- [ ] **Codigo en INGLES** (variables, funciones, clases) + **documentacion en ESPANOL** (docstrings, comentarios, README)
+- [ ] **Archivos Python**:
+  - Modulos/scripts: `snake_case.py` (`user_manager.py`, `vector_store_adapter.py`)
+  - Paquetes (directorios): `PascalCase/` (`memory_rag/`, `orchestrator/`)
+  - Tests: `test_<modulo>.py` refleja archivo fuente (`test_user_manager.py`)
+  - Documentacion: `kebab-case.md` (`api-design.md`, `getting-started.md`)
+  - Config/data: `kebab-case.yaml` o `snake_case.json`
+- [ ] **Funciones y metodos**: `snake_case` con verbo + accion:
+  - `get_user_by_id()`, `set_cache_size()`, `compute_score()`, `validate_input()`
+  - `is_empty()`, `has_children()`, `can_proceed()` (retornan bool)
+  - `parse_query()`, `transform_result()`, `build_index()`
+  - Prefijos utiles: `get_`, `set_`, `add_`, `remove_`, `update_`, `find_`, `parse_`, `format_`, `compute_`, `validate_`, `is_`, `has_`, `can_`, `should_`
+- [ ] **Variables**: `snake_case` descriptivo:
+  - `user_count`, `max_retries`, `default_timeout`, `api_key` (no `n`, `cnt`, `t`, `k`)
+  - Booleanos: prefijo `is_`, `has_`, `can_`, `should_` (`is_active`, `has_errors`, `can_retry`)
+  - Constantes: `UPPER_SNAKE_CASE` (`MAX_RETRIES = 3`, `DEFAULT_TIMEOUT = 30.0`)
+  - **NO magic numbers**: si un valor es literal, nombrar constante con significado
+  - **NO single letters** (excepto `i`, `j`, `k` para indices de loop; `e`, `ex` para exceptions; `T` para TypeVar; `f` para file handle; `df` para DataFrame)
+- [ ] **Clases**: `PascalCase`, **sustantivos** (NO verbos):
+  - `UserManager`, `VectorStoreAdapter`, `HedgeFund` (no `DoHedgeFund`)
+  - Dataclasses: `UserProfile`, `TaskSpec`, `KnowledgeRecord`
+  - Exceptions: `ValueError`, `UserNotFoundError` (terminan en `Error`/`Exception`)
+  - Mixins/abstract: `Serializable` (sin sufijo `Base` o `Abstract` salvo necesario)
+  - **Interfaces** (ABC): prefijo `I` es opcional; preferir nombre descriptivo (`Cache` sobre `ICache`)
+- [ ] **Modulos/paquetes**: cortos, lowercase, sin separadores:
+  - `user.py` (no `user_manager_module.py`)
+  - Evitar prefijo `mod_` o sufijo `_module`
+  - Un solo concepto por modulo
+- [ ] **Tests**: `test_<funcionalidad>_<escenario>_<esperado>`:
+  - `test_validate_email_with_invalid_format_returns_false`
+  - `test_user_creation_with_duplicate_id_raises_conflict`
+- [ ] **Privado (Python)**: prefijo `_`:
+  - `_internal_cache`, `_compute_helper()`
+  - **NO `__dunder__`** salvo metodos magicos reales (`__init__`, `__repr__`)
+- [ ] **Constantes vs variables**:
+  - Si cambia runtime, es variable (`max_retries` configurable)
+  - Si nunca cambia, es constante (`DEFAULT_PORT = 8080`)
+  - Magic numbers SIEMPRE con nombre: `if timeout > DEFAULT_TIMEOUT:` (no `if timeout > 30:`)
+- [ ] **NO usar**:
+  - Hungarian notation: `str_name`, `i_count`, `b_is_active` (obsoleto desde 1990s)
+  - Single letters excepto casos canonicos
+  - Abreviaciones no-standard: `mgr` (usar `manager`), `tmp` (usar `temp` o nombre completo)
+  - Prefijos redundantes: `class CUser` (redundante)
+  - Nombres con numero: `data1`, `data2` (usar nombre semantico)
+- [ ] **Refactorizacion** (cuando el nombre necesita comentario):
+  - `X user_data = ...  # parsed user` -> `OK parsed_user = ...`
+  - `X process(data, flag=False)` -> `OK process(data, validate_schema=True)`
+  - `X calc(x, y, mode)` -> `OK compute_distance(x, y, metric="euclidean")`
+- [ ] **Bilinguismo** (proyecto SWARMIND):
+  - Identificadores de codigo: INGLES (`compute_score`, `user_count`)
+  - Mensajes de error para developers: INGLES (`logger.error("Failed to load user")`)
+  - Mensajes para usuario final / docs: ESPANOL (`"No se pudo cargar el usuario"`)
+  - Comments inline: ESPANOL (`# Incrementar contador de reintentos`)
+  - Docstrings: ESPANOL con secciones Args/Returns/Raises
+- [ ] **Validacion automatica** (post-generacion):
+  - ruff reglas `N` (pep8-naming) activadas en CI
+  - Linter rechaza: single letters fuera de loops, magic numbers en tests, Hungarian notation
+  - Code review: si el nombre del modulo/funcion necesita explicacion, se rechaza
+
+---
+- [ ] **Skills que aplican esta regla por defecto**: builder, scientist, guardian, evolve
+
 ---
 
 > Fuente unica: `.opencode/core/base_principles.md` (N1+N2) + `.opencode/core/base_principles_full.md` (N3 bajo demanda).

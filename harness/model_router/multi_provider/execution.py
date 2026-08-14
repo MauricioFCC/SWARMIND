@@ -17,6 +17,7 @@ import time
 from typing import Any
 
 from harness.model_router.multi_provider_types import (
+    LATENCY_WINDOW_SIZE,
     MAX_TOKENS_BY_AGENT,
     ExecutionResult,
     ProviderConfig,
