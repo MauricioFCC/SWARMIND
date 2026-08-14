@@ -22,6 +22,17 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# Semantic conventions GenAI estables 2026 (ADR-0041 H2)
+# ---------------------------------------------------------------------------
+GENAI_SPAN_NAMES = frozenset({"invoke_agent", "chat", "execute_tool"})
+GENAI_PROVIDER = "swarmind"
+ATTR_PROVIDER = "gen_ai.provider.name"
+ATTR_SYSTEM = "gen_ai.system"
+ATTR_MODEL = "gen_ai.request.model"
+ATTR_INPUT_TOKENS = "gen_ai.usage.input_tokens"
+ATTR_OUTPUT_TOKENS = "gen_ai.usage.output_tokens"
+
 try:
     from opentelemetry import trace
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
@@ -108,10 +119,79 @@ class AgentTracer:
             return None
         return self._tracer.start_as_current_span(name, attributes=attributes)
 
+    def start_genai_span(
+        self,
+        operation: str = "invoke_agent",
+        model: str | None = None,
+        provider: str = GENAI_PROVIDER,
+        attributes: dict[str, Any] | None = None,
+    ):
+        """
+        Iniciar un span con semantic conventions GenAI estables 2026.
+
+        Emite los atributos gen_ai.provider.name, gen_ai.system y
+        gen_ai.request.model (fallback "unknown" si no hay modelo).
+
+        Args:
+            operation: Nombre de operacion estandar (invoke_agent, chat, execute_tool).
+            model: Modelo LLM usado; se emite "unknown" si es None.
+            provider: Proveedor, usado en gen_ai.provider.name y gen_ai.system.
+            attributes: Atributos adicionales del span (ej. agent.*, negocio).
+
+        Returns:
+            Context manager del span si OTel habilitado, None en caso contrario.
+        """
+        if not self._enabled:
+            return None
+        span_attributes: dict[str, Any] = {
+            ATTR_PROVIDER: provider,
+            ATTR_SYSTEM: provider,
+            ATTR_MODEL: model if model is not None else "unknown",
+        }
+        if attributes:
+            span_attributes.update(attributes)
+        return self._tracer.start_as_current_span(operation, attributes=span_attributes)
+
+
+def _extract_token_usage(result: Any) -> dict[str, Any]:
+    """
+    Extraer metricas de tokens del resultado de una llamada GenAI.
+
+    Busca en orden: dict de retorno, atributo .tokens (dict) o atributos
+    de clase input_tokens/output_tokens.
+
+    Args:
+        result: Valor de retorno de la funcion decorada.
+
+    Returns:
+        Dict con input_tokens/output_tokens solo si estan disponibles.
+    """
+    candidates: list[dict[str, Any]] = []
+    if isinstance(result, dict):
+        candidates.append(result)
+    tokens_attr = getattr(result, "tokens", None)
+    if isinstance(tokens_attr, dict):
+        candidates.append(tokens_attr)
+    candidates.append(
+        {
+            "input_tokens": getattr(result, "input_tokens", None),
+            "output_tokens": getattr(result, "output_tokens", None),
+        }
+    )
+    for candidate in candidates:
+        usage = {key: value for key, value in candidate.items() if value is not None}
+        if usage:
+            return usage
+    return {}
+
 
 def trace_agent(agent_type: str, action: str = "execute"):
     """
     Decorador para trazar automaticamente llamadas de agentes.
+
+    Crea un span GenAI estandar llamado "invoke_agent" con atributos
+    gen_ai.* y legacy agent.*. Emite gen_ai.usage.* si el resultado
+    expone metricas de tokens.
 
     Args:
         agent_type: Tipo de agente (builder, scientist, etc.).
@@ -130,16 +210,25 @@ def trace_agent(agent_type: str, action: str = "execute"):
             if not tracer.enabled:
                 return func(*args, **kwargs)
 
-            span_name = f"{agent_type}.{action}"
             attrs = {
                 "agent.id": agent_type,
                 "agent.type": agent_type,
                 "agent.delegation_depth": 1,
             }
-            with tracer.start_span(span_name, attributes=attrs) as span:
+            with tracer.start_genai_span(
+                operation="invoke_agent",
+                model=kwargs.get("model"),
+                provider=GENAI_PROVIDER,
+                attributes=attrs,
+            ) as span:
                 try:
                     result = func(*args, **kwargs)
                     span.set_attribute("agent.success", True)
+                    usage = _extract_token_usage(result)
+                    if "input_tokens" in usage:
+                        span.set_attribute(ATTR_INPUT_TOKENS, usage["input_tokens"])
+                    if "output_tokens" in usage:
+                        span.set_attribute(ATTR_OUTPUT_TOKENS, usage["output_tokens"])
                     return result
                 except Exception as e:
                     span.set_attribute("agent.success", False)

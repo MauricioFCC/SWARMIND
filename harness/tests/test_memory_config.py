@@ -416,3 +416,83 @@ class TestMemoryConfigEdgeCases:
         d = config.to_dict()
         assert isinstance(d["kpi_collections"], list)
         assert set(d["kpi_collections"]) == {"a", "b"}
+
+
+# ===========================================================================
+# Tests: Memoria central (Memory_Proyects / .swarmind_config.json)
+# ===========================================================================
+
+
+class TestMemoryRootResolution:
+    """El default de lancedb_path resuelve a la memoria central cuando
+    existe .swarmind_config.json (SSOT de backup_memory.py)."""
+
+    def _write_swarmind_config(self, root: Path) -> None:
+        """Crea .swarmind_config.json + data/lancedb en el root temporal."""
+        import json
+        (root / "data" / "lancedb").mkdir(parents=True, exist_ok=True)
+        (root / ".swarmind_config.json").write_text(
+            json.dumps({"memory_root": str(root)}),
+            encoding="utf-8",
+        )
+
+    @patch.dict(os.environ, {"MEMORY_ROOT": ""}, clear=True)
+    def test_default_apunta_memory_root_cuando_existe_config(self, tmp_path: Path):
+        """Con MEMORY_ROOT + .swarmind_config.json, el default usa <root>/data/lancedb."""
+        self._write_swarmind_config(tmp_path)
+        with patch.dict(os.environ, {"MEMORY_ROOT": str(tmp_path)}):
+            config = MemoryConfig()
+        expected = str(tmp_path / "data" / "lancedb")
+        assert config.lancedb_path == expected
+
+    @patch.dict(os.environ, {"MEMORY_ROOT": ""}, clear=True)
+    def test_default_legacy_sin_memory_root(self, tmp_path: Path):
+        """Sin config -> legacy harness/db/lancedb (no usa Memory_Proyects)."""
+        config = MemoryConfig()
+        assert "db" in config.lancedb_path and "lancedb" in config.lancedb_path
+        assert "Memory_Proyects" not in config.lancedb_path
+
+    @patch.dict(os.environ, {"MEMORY_ROOT": ""}, clear=True)
+    def test_env_lancedb_path_prioridad_sobre_memory_root(self, tmp_path: Path):
+        """LANCEDB_PATH env tiene prioridad sobre .swarmind_config.json."""
+        self._write_swarmind_config(tmp_path)
+        with patch.dict(os.environ, {"MEMORY_ROOT": str(tmp_path), "LANCEDB_PATH": "/custom/lancedb"}):
+            config = MemoryConfig.from_env()
+        assert config.lancedb_path == "/custom/lancedb"
+
+    @patch.dict(os.environ, {"MEMORY_ROOT": ""}, clear=True)
+    def test_hermes_path_desde_memory_root(self, tmp_path: Path):
+        """Si memory_root tiene 99_Hermes_Brain, se usa como hermes_path."""
+        self._write_swarmind_config(tmp_path)
+        (tmp_path / "99_Hermes_Brain").mkdir(exist_ok=True)
+        with patch.dict(os.environ, {"MEMORY_ROOT": str(tmp_path)}):
+            config = MemoryConfig()
+        assert config.hermes_path == str(tmp_path)
+        assert config.hermes_brain_path == str(tmp_path / "99_Hermes_Brain" / "lancedb_data")
+
+    @patch.dict(os.environ, {"MEMORY_ROOT": ""}, clear=True)
+    def test_memory_root_sin_data_lancedb_usa_legacy(self, tmp_path: Path):
+        """MEMORY_ROOT valido pero sin data/lancedb -> legacy (no rompe)."""
+        import json
+        (tmp_path / ".swarmind_config.json").write_text(
+            json.dumps({"memory_root": str(tmp_path)}),
+            encoding="utf-8",
+        )
+        with patch.dict(os.environ, {"MEMORY_ROOT": str(tmp_path)}):
+            config = MemoryConfig()
+        assert "db" in config.lancedb_path and "lancedb" in config.lancedb_path
+
+    @patch.dict(os.environ, {}, clear=True)
+    @patch("harness.memory_rag.memory_config._safe_home")
+    def test_resiliente_sin_home_no_crashea(self, mock_home, tmp_path: Path):
+        """Sin HOME y sin env vars, MemoryConfig no crashea (resiliencia CI).
+
+        WHY: entornos headless/CI sin HOME/USERPROFILE; el harness degrada
+        a la ruta legacy relativa sin lanzar RuntimeError.
+        WHERE: memory_config.__post_init__
+        """
+        mock_home.return_value = None
+        config = MemoryConfig()
+        assert config.lancedb_path != ""
+        assert "lancedb" in config.lancedb_path
+        assert config.hermes_path == ""

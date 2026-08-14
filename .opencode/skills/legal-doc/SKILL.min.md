@@ -1,3 +1,12 @@
+---
+name: legal-doc
+domain: legal
+description: "Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
+version: 1.0.0
+project_agnostic: true
+---
+
 # Legal-Doc Colombia: Analisis juridico colombiano multi-especialidad
 
 Metodologia RTF+C + Role Stacking (8 roles): Analista Senior, Teorico Interpretacion, Litigante Estrategico, Academico Constitucional, Comparatista, Procesalista, Gestor Riesgo, Comunicador.

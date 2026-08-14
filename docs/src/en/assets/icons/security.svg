@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Security icon">
+  <title>Security — shield, check, lock</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="28" fill="url(#bg)"/>
+  <circle cx="100" cy="100" r="80" fill="#06B6D4" fill-opacity="0.08"/>
+
+  <path d="M 100 28
+           L 162 50
+           L 162 108
+           C 162 142, 134 168, 100 178
+           C 66 168, 38 142, 38 108
+           L 38 50 Z"
+        fill="url(#shield)" stroke="#0F172A" stroke-width="3"/>
+
+  <path d="M 100 28
+           L 162 50
+           L 162 108
+           C 162 142, 134 168, 100 178
+           C 66 168, 38 142, 38 108
+           L 38 50 Z"
+        fill="none" stroke="#F1F5F9" stroke-width="2" stroke-opacity="0.4"/>
+
+  <path d="M 70 102 L 92 124 L 132 80"
+        fill="none" stroke="#0F172A" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 70 102 L 92 124 L 132 80"
+        fill="none" stroke="#F1F5F9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g transform="translate(100,148)">
+    <rect x="-14" y="-2" width="28" height="20" rx="3" fill="#F59E0B" stroke="#0F172A" stroke-width="2"/>
+    <path d="M -9 -2 L -9 -10 A 9 9 0 0 1 9 -10 L 9 -2" fill="none" stroke="#F59E0B" stroke-width="4"/>
+    <circle cx="0" cy="8" r="2.5" fill="#0F172A"/>
+    <line x1="0" y1="8" x2="0" y2="14" stroke="#0F172A" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+</svg>

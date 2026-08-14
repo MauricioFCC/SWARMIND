@@ -1,0 +1,41 @@
+#!/bin/sh
+# pre-push: bloquea el push si se intentan publicar ADR (docs/src/es/adr/).
+# Los ADR se versionan localmente (importantes para el historial) pero NO se
+# pushean al remoto (son internos del proyecto).
+#
+# Instalacion: git config core.hooksPath .githooks  (o copiar a .git/hooks/pre-push)
+#
+# Uso: es invocado automaticamente por `git push`. Si los commits del push
+# tocan docs/src/es/adr/, el push se ABORTA con un mensaje claro.
+
+set -u
+
+ADR_PATH="docs/src/es/adr/"
+
+# stdin de git push: <local_ref> <local_sha> <remote_ref> <remote_sha>
+while read -r local_ref local_sha remote_ref remote_sha; do
+    if [ "$local_sha" = "0000000000000000000000000000000000000000" ]; then
+        # Eliminacion de rama remota: no hay nada que validar
+        continue
+    fi
+
+    if [ -z "$remote_sha" ] || [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+        # Rama nueva en remoto: validar todo el rango local
+        range="$local_sha"
+    else
+        range="${remote_sha}..${local_sha}"
+    fi
+
+    # Bloquea si el push CREA o MODIFICA archivos en docs/src/es/adr/ (A/M/R/C).
+    # Los borrados (D) se PERMITEN: es la forma de limpiar los ADR del remoto.
+    if git diff --name-status "$range" 2>/dev/null | awk '{print $1"\t"$2}' | grep -v '^D' | awk '{print $2}' | grep -q "^${ADR_PATH}"; then
+        echo "ERROR: push bloqueado por .githooks/pre-push"
+        echo "Los ADR (${ADR_PATH}) se versionan localmente pero NO se publican al remoto."
+        echo "Este push contiene cambios que CREAN/MODIFICAN archivos en esa ruta."
+        echo "Los BORRADOS de ADR (para limpiarlos del remoto) si estan permitidos."
+        echo "Si realmente quieres publicarlos, desinstala el hook: git config core.hooksPath ''"
+        exit 1
+    fi
+done
+
+exit 0

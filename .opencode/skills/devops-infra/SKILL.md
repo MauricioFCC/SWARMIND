@@ -5,7 +5,9 @@
 
 name: devops-infra
 domain: devops
-description: "DevOps, infraestructura como codigo, CI/CD, Docker, Kubernetes, Terraform, monitoreo, observabilidad, y plataforma como servicio | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario opera infraestructura o CI/CD. Docker, Kubernetes, Terraform, CI/CD, monitoreo, observabilidad, plataforma, despliegue. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
+compatibility: 'Requiere Docker, kubectl, terraform segun tarea; Python 3.12+'
 version: 1.0.0
 project_agnostic: true
 inherit:

@@ -88,15 +88,15 @@
     <g transform="translate(640,420)" font-size="22" font-weight="700" letter-spacing="2" fill="#0F172A">
       <g transform="translate(0,0)">
         <rect width="130" height="56" rx="10" fill="#22D3EE"/>
-        <text x="65" y="36" text-anchor="middle">20 Agents</text>
+        <text x="65" y="36" text-anchor="middle">22 Agents</text>
       </g>
       <g transform="translate(150,0)">
         <rect width="130" height="56" rx="10" fill="#06B6D4"/>
-        <text x="65" y="36" text-anchor="middle">31 Skills</text>
+        <text x="65" y="36" text-anchor="middle">32 Skills</text>
       </g>
       <g transform="translate(300,0)">
-        <rect width="130" height="56" rx="10" fill="#F59E0B"/>
-        <text x="65" y="36" text-anchor="middle">32 ADRs</text>
+        <rect width="140" height="56" rx="10" fill="#F59E0B"/>
+        <text x="70" y="36" text-anchor="middle">4414 Tests</text>
       </g>
       <g transform="translate(450,0)">
         <rect width="160" height="56" rx="10" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
@@ -105,7 +105,7 @@
     </g>
 
     <g transform="translate(640,530)" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#64748B">
-      <text>pip install swarmind-harness   ·   github.com/MauricioFCC/SWARMIND   ·   MIT</text>
+      <text>github.com/MauricioFCC/SWARMIND   ·   Python 3.12+   ·   MIT</text>
     </g>
   </g>
 </svg>

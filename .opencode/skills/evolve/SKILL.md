@@ -4,7 +4,9 @@
 
 
 name: evolve
-description: "Meta-skill de auto-mejora continua. Orquesta el loop ASI-Evolve (Learn → Design → Experiment → Analyze) para mejorar todos los skills del sistema. Integra Forward Deployment Engineering (FDE) para asegurar que cada mejora resuelva un delta real | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario quiere mejorar el sistema o sus skills. auto-mejora, evolucion, ASI-Evolve, aprendizaje continuo, mejora de skills, FDE, meta-aprendizaje. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
+compatibility: 'Python 3.12+'
 version: 3.0.0
 project_agnostic: true
 inherit:

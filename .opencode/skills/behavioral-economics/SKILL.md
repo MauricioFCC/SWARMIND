@@ -5,7 +5,9 @@
 
 name: behavioral-economics
 domain: economics
-description: "Economia del comportamiento: teoria de juegos, sesgos cognitivos, heurísticas, toma de decisiones bajo incertidumbre, y diseno de incentivos | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el problema involucra decisiones humanas bajo incertidumbre. teoria de juegos, sesgos cognitivos, heuristicas, incentivos, economia del comportamiento, nudges. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
+compatibility: 'Python 3.12+'
 version: 1.0.0
 project_agnostic: true
 inherit:

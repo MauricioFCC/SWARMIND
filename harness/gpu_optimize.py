@@ -17,9 +17,11 @@ Uso:
 from __future__ import annotations
 
 import logging
+import time
 
 import numpy as np
 
+from harness.common import fallback_embedding
 from harness.gpu_accel import DEVICE, HAVE_CUDA
 
 logger = logging.getLogger(__name__)
@@ -39,6 +41,11 @@ def gpu_embedding(
     Si se pasa `texts` (batch), procesa todos en paralelo en GPU.
     Si solo `text`, procesa uno.
 
+    El embedding base (hashing Knuth de frecuencias) es DRY con
+    `harness.common.fallback_embedding` (estándar del harness): los vectores
+    son idénticos en CPU y GPU, garantizando consistencia con los datos
+    históricos de LanceDB.
+
     Args:
         text: Texto único a embedder.
         texts: Lista opcional de textos para batch processing.
@@ -51,35 +58,42 @@ def gpu_embedding(
         # Batch mode: procesar todos los textos en GPU
         if HAVE_CUDA:
             return _gpu_batch_embedding(texts, dim)
-        return np.array([_cpu_embedding(t, dim) for t in texts])
+        return np.array([fallback_embedding(t, dim) for t in texts])
 
     # Single mode
     if HAVE_CUDA:
         return _gpu_single_embedding(text, dim)
-    return _cpu_embedding(text, dim)
+    return fallback_embedding(text, dim)
 
 
 def _cpu_embedding(text: str, dim: int = 384) -> np.ndarray:
-    """CPU embedding (character frequency, deterministic)."""
+    """CPU embedding (character frequency, deterministic, vectorizado).
+
+    Delega en common.fallback_embedding (DRY): mismo algoritmo Knuth hash
+    que el resto del harness — vectores consistentes con LanceDB.
+    """
+    return fallback_embedding(text, dim)
+
+
+def _hash_indices(text: str, dim: int) -> np.ndarray:
+    """Indices Knuth hash de los caracteres del texto (vectorizado)."""
     if not text:
-        return np.zeros(dim, dtype=np.float32)
-    vec = np.zeros(dim, dtype=np.float32)
-    for i, ch in enumerate(text):
-        idx = (ord(ch) * 2654435761) % dim
-        vec[idx] += 1.0 + (i % 3) * 0.1
-    norm = np.linalg.norm(vec)
-    return vec / norm if norm > 0 else vec
+        return np.zeros(0, dtype=np.int64)
+    chars = np.frombuffer(text.encode("utf-8", errors="replace"), dtype=np.uint8)
+    return (chars.astype(np.int64) * 2654435761) % dim
 
 
 def _gpu_single_embedding(text: str, dim: int = 384) -> np.ndarray:
-    """Single embedding on GPU (via torch)."""
+    """Single embedding on GPU (via torch index_add_, hashing en GPU)."""
     import torch
     if not text:
         return np.zeros(dim, dtype=np.float32)
+    indices = torch.from_numpy(_hash_indices(text, dim)).to(DEVICE)
     vec = torch.zeros(dim, dtype=torch.float32, device=DEVICE)
-    for i, ch in enumerate(text):
-        idx = (ord(ch) * 2654435761) % dim
-        vec[idx] += 1.0 + (i % 3) * 0.1
+    ones = torch.ones(indices.numel(), dtype=torch.float32, device=DEVICE)
+    vec.index_add_(0, indices, ones)
+    positions = torch.arange(indices.numel(), device=DEVICE) % 3
+    vec.index_add_(0, indices, positions.to(torch.float32) * 0.1)
     norm = torch.norm(vec)
     if norm > 0:
         vec = vec / norm
@@ -88,34 +102,34 @@ def _gpu_single_embedding(text: str, dim: int = 384) -> np.ndarray:
 
 def _gpu_batch_embedding(texts: list[str], dim: int = 384) -> np.ndarray:
     """
-    Batch embedding en GPU: procesa N textos simultáneamente.
+    Batch embedding en GPU: hashing y normalización por filas en GPU.
 
-    Construye una matriz de frecuencias de caracteres en CPU, luego
-    normaliza por filas en GPU en paralelo.
+    Usa torch.index_add_ (suma atómica en GPU) con indices Knuth por texto.
+    Resultado numéricamente idéntico a fallback_embedding (atol 1e-5).
 
     Args:
         texts: Lista de textos.
         dim: Dimensión del embedding.
 
     Returns:
-        Matriz (N, dim) de embeddings.
+        Matriz (N, dim) de embeddings normalizados.
     """
     import torch
     N = len(texts)
-    batch = np.zeros((N, dim), dtype=np.float32)
-
+    batch = torch.zeros((N, dim), dtype=torch.float32, device=DEVICE)
     for j, text in enumerate(texts):
         if not text:
             continue
-        for i, ch in enumerate(text):
-            idx = (ord(ch) * 2654435761) % dim
-            batch[j, idx] += 1.0 + (i % 3) * 0.1
+        indices = torch.from_numpy(_hash_indices(text, dim)).to(DEVICE)
+        ones = torch.ones(indices.numel(), dtype=torch.float32, device=DEVICE)
+        batch[j].index_add_(0, indices, ones)
+        positions = torch.arange(indices.numel(), device=DEVICE) % 3
+        batch[j].index_add_(0, indices, positions.to(torch.float32) * 0.1)
 
     # Normalizar en GPU en paralelo
-    t_batch = torch.from_numpy(batch).to(DEVICE)
-    norms = torch.norm(t_batch, dim=1, keepdim=True)
-    t_batch = torch.where(norms > 0, t_batch / norms, t_batch)
-    return t_batch.cpu().numpy()
+    norms = torch.norm(batch, dim=1, keepdim=True)
+    batch = torch.where(norms > 0, batch / norms, batch)
+    return batch.cpu().numpy()
 
 
 # ---------------------------------------------------------------------------
@@ -208,12 +222,10 @@ def gpu_self_test() -> dict:
     Returns:
         Dict con métricas: device, vector_ops_ms, embedding_ms, speedup.
     """
-    import time
-
     DIM = 384
     N = 1000
 
-    # Test 1: Cosine similarity batch
+    # Test 1: Cosine similarity batch (GPU vs CPU)
     q = np.random.randn(DIM).astype(np.float32)
     batch = np.random.randn(N, DIM).astype(np.float32)
 
@@ -222,7 +234,14 @@ def gpu_self_test() -> dict:
         _ = gpu_similarity_search(q, batch, top_k=5)
     t_cos = (time.perf_counter() - t0) / 100 * 1000
 
-    # Test 2: Batch embedding
+    # CPU baseline para el mismo search
+    q_norm = q / (np.linalg.norm(q) + 1e-12)
+    t0 = time.perf_counter()
+    for _ in range(100):
+        _ = np.argsort(-(batch @ q_norm))[:5]
+    t_cpu = (time.perf_counter() - t0) / 100 * 1000
+
+    # Test 2: Batch embedding (vectorizado)
     texts = ["test message " + str(i) for i in range(N)]
 
     t0 = time.perf_counter()
@@ -233,5 +252,7 @@ def gpu_self_test() -> dict:
         "gpu_available": HAVE_CUDA,
         "device": "cuda:0" if HAVE_CUDA else "cpu",
         "cosine_similarity_1000x_ms": round(t_cos, 2),
+        "cpu_baseline_search_ms": round(t_cpu, 2),
+        "search_speedup_x": round(t_cpu / t_cos, 2) if t_cos > 0 else 1.0,
         "batch_embed_1000_ms": round(t_emb, 2),
     }

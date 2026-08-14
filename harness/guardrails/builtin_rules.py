@@ -97,7 +97,7 @@ _TOXIC_KEYWORDS: set[str] = {
     "i will destroy", "die", "shut your mouth", "you are garbage",
 }
 
-# TODO: tool_allowlist se maneja con ToolGuardian en el engine.
+# NOTA: tool_allowlist se maneja con ToolGuardian en el engine.
 # La funcion tool_allowlist aqui es un wrapper que verifica contra
 # una lista de tools permitidas pasada como estado externo.
 

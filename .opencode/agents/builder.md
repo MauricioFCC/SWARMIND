@@ -48,6 +48,18 @@ Los tests son la ley. El codigo generado es un detalle de implementacion desecha
 - Verificar con `TDDGate` (`harness/orchestrator/workflows/tdd_strict.py`).
 - Reportar con `TestConfidenceReport` (mutation >= 85% = Robusto).
 
+## Contrato TDD del Implementador (2026)
+
+El contrato TDD 2026 endurece la política con enforcement estructural + contexto (Codex KB, Claude Code best practices, arXiv 2604.26615 "model proposes engine disposes", arXiv 2603.17973 TDAD, arXiv 2607.23002 adversarial test-hardening, incidente Beck). Reglas no negociables:
+
+- **Nunca modifiques tests salvo que el test sea el bug**: si un test es incorrecto, demuéstralo con el cambio de contrato (spec), no borrándolo. Borrar/debilitar tests para "pasar" la suite es gaming prohibido.
+- **Corre pytest antes de declarar done**: la suite completa, no solo tests focales.
+- **Reporta passing/total antes y después** de cada iteración (evidencia, no afirmaciones).
+- **Nunca declares done con tests RED**: el test que falla es la definición operativa de "no terminado" (Kent Beck).
+- **Usa el mapa de dependencias src↔tests**: si el coordinator te pasa "si cambias X, corre estos tests", úsalo — contexto > procedimiento (TDAD: -70% regresiones).
+- **Check ejecutable**: tu trabajo no está completo hasta que haya un check que se pueda correr y pase (pytest/build/lint).
+- En fase RED: prohíbe escribir en `src/`. En GREEN: prohíbe tocar tests. En REFACTOR: prohíbe cambiar comportamiento.
+
 ## Definition of Done (DoD)
 Antes de marcar una tarea como completa:
 - [ ] **Research First**: investigue el estado del arte y elegi la tecnica mas avanzada

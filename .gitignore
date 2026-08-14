@@ -19,8 +19,12 @@ scripts/deploy_routing_fix.py
 #
 # === Drive / archive exports (IGNORE) ===
 # Suben ZIPs a "Mi unidad/DEV/SIDEPROYECT/exports" (Google Drive) o
-# crean archivos para distribucion. Paths hardcoded al entorno del autor.
-scripts/export_all_projects.py
+# crean archivos para distribucion.
+# export_all_projects.py ya NO se ignora (2026-08-08): es portable via
+# Path.home() + env vars (SWARMIND_EXPORT_BASE/DEV_SPACE_ROOT) sin rutas
+# hardcodeadas del autor, y protege ZIPs externos por regla universal
+# (solo toca {tag}_YYYY-MM-DD.zip de proyectos detectados). Los demas
+# scripts de export mantienen paths del autor y se quedan ignorados.
 scripts/export_archive.py
 scripts/export_to_drive.py
 # push.bat: wrapper de export_to_drive.py (Push to Drive) — path del autor
@@ -126,3 +130,9 @@ harness/evolve_loop/prompt_archive/
 *.hook_status.json
 direct_url.json
 __editable__*
+
+# artefactos temporales de tests (recreados por test_deploy_all)
+harness/tests/_tmp_bad_skills/
+
+# output de builds mdBook (ES temporal o alternativos)
+docs/es/

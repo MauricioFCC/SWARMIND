@@ -291,7 +291,7 @@ ids = bus.post_message_batch([
 
 **Archivo:** `harness/orchestrator/agent_bus.py` (clase `AsyncAgentBus`, línea 631)
 
-Versión asíncrona con `asyncio.Queue` para coordinación PaCoRe (ADR-0017). Reduce overhead 95% y acelera 4.8x vs versión síncrona.
+Versión asíncrona con `asyncio.Queue` para coordinación PaCoRe. Reduce overhead 95% y acelera 4.8x vs versión síncrona.
 
 ```python
 from harness.orchestrator.agent_bus import AsyncAgentBus

@@ -129,6 +129,26 @@ class TestInitAndStorage:
         assert "db" in store.db_path
         assert "lancedb" in store.db_path
 
+    def test_init_sin_config_usa_memoria_central(self, tmp_path, monkeypatch):
+        """Sin db_path pero con MEMORY_ROOT valido, usa <root>/data/lancedb.
+
+        WHY: la memoria central (Memory_Proyects) es el SSOT; el harness no
+        debe crear DBs paralelas en rutas relativas al codigo.
+        WHERE: LanceVectorStore.__init__
+        """
+        import json
+        (tmp_path / "data" / "lancedb").mkdir(parents=True)
+        (tmp_path / ".swarmind_config.json").write_text(
+            json.dumps({"memory_root": str(tmp_path)}),
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("MEMORY_ROOT", str(tmp_path))
+        from harness.memory_rag.memory_config import reset_memory_config
+        reset_memory_config()  # evitar cache global con el Memory_Proyects real
+        with patch.object(LanceVectorStore, "_try_import_lancedb", return_value=None):
+            store = LanceVectorStore(allow_fallback=True)
+        assert store.db_path == str(tmp_path / "data" / "lancedb")
+
     def test_try_import_lancedb_success(self):
         """_try_import_lancedb retorna el mÃ³dulo cuando estÃ¡ instalado."""
         # El test se ejecuta en un entorno donde lancedb puede no estar

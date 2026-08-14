@@ -37,6 +37,8 @@ import os
 import shutil
 from pathlib import Path
 
+from setup_memory_central import ensure_memory_structure
+
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
@@ -64,10 +66,15 @@ _REGISTRY_FILE = "skills/skills_registry.yaml"
 _HARNESS_INCLUDE = ["orchestrator", "memory_rag", "tools_sandbox", "model_router",
                     "evolve_loop", "qa", "security", "guardrails", "hooks",
                     "evals", "aifactory", "observability", "parallel", "plugins",
-                    "gateway", "db", "benchmarks"]
-_HARNESS_FILES = ["common.py", "delegate.py", "run.py", "run_commands.py",
-                  "scheduler.py", "reset_state.py", "cli_common.py", "gpu_accel.py",
-                  "gpu_optimize.py", "security_policy.py"]
+                    "gateway", "db", "benchmarks", "scheduler"]
+# Archivos raiz del paquete harness (fix ADR-0042: incluye __init__.py y
+# __main__.py para que el global sea un paquete importable; security_policy.py
+# vive en harness/qa/ y se copia via el directorio qa; scheduler.py paso a ser
+# el paquete harness/scheduler/ y se copia via _HARNESS_INCLUDE).
+_HARNESS_FILES = ["__init__.py", "__main__.py", "common.py", "delegate.py",
+                  "run.py", "run_commands", "reset_state.py",
+                  "cli_common.py", "gpu_accel.py", "gpu_optimize.py",
+                  "vulture_whitelist.py"]
 
 
 # ---------------------------------------------------------------------------
@@ -149,6 +156,28 @@ def _sync_harness_to_global(dry_run: bool = False) -> int:
     return count
 
 
+def _ensure_memory_central(dry_run: bool = False) -> dict:
+    """Verifica/crea la memoria central (ADR-0038/0042) automaticamente.
+
+    Si ``<Documents>/Memory_Proyects`` no existe, la crea con toda la
+    estructura LanceDB (idempotente, no destructivo: preserva db existente).
+    Antes del fix ADR-0042 dependia de un paso manual del menu
+    (``config_swarmind.py`` opcion 7) que en modo no-interactivo se omitia.
+
+    Args:
+        dry_run: Si True, solo simula.
+
+    Returns:
+        Dict de ``ensure_memory_structure`` con root/created/existing/dry_run.
+    """
+    result = ensure_memory_structure(dry_run=dry_run)
+    logger.info("  🧠 %-10s %s", "memoria", result["root"])
+    logger.info("      %d dirs nuevos, %d existentes %s",
+                result["created"], result["existing"],
+                "(simulado)" if dry_run else "")
+    return result
+
+
 def sync_global(dry_run: bool = False, quiet: bool = False,
                 cerebro: bool = False, motor: bool = False) -> dict:
     """Sincroniza el cerebro Swarmind a la config global de opencode.
@@ -200,6 +229,10 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
         stats["harness"] = count
         if not quiet:
             logger.info("  ✅ %-10s %d archivos %s", "harness", count, "(simulado)" if dry_run else "")
+
+        # Memoria central: crear automaticamente si falta (ADR-0042, Causa 1)
+        memory_stats = _ensure_memory_central(dry_run=dry_run)
+        stats["memory_dirs_created"] = memory_stats["created"]
 
     total = sum(stats.values())
     if not quiet:

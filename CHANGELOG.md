@@ -2,6 +2,186 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-08-13] Skills frontier 2026: diagram-design + SDO + validador + deploy dinamico
+
+### Nuevo skill diagram-design (upstream cathrynlavery/diagram-design v2.3)
+- **27 tipos de diagramas editoriales autocontenidos HTML+SVG** (architecture,
+  flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar,
+  loop, nested, org chart, layers, Venn, pyramid, bar, line, Gantt, scatter,
+  medallion, data flow, DP integration, DP security matrix).
+- 146 archivos: SKILL.md (573 lineas) + references/ (39) + scripts/
+  (self_check, drawio_extract, mermaid_extract) + assets/ (100+ ejemplos).
+- `self_check.py --json`: salida JSON parseable para validacion automatica.
+
+### Refactor SDO (Skill Discovery Optimization, patron obra/superpowers 272k stars)
+- **33 descripciones reescritas** con el patron "Usar cuando <condicion>" +
+  keywords de sintoma (antes resumian el workflow — el agente saltaba el body).
+- Aplicado en SKILL.md + SKILL.min.md + skills_registry.yaml (99 archivos).
+
+### Infraestructura de skills
+- **AGENTS.md** (session-start hook): doctrina RSF/IDP/ERR/ARQ/SEG/DOC/TST/CMT/
+  TKN/AGR/UPG/FRS + **VER** (verificacion autonoma obligatoria).
+- **scripts/validate_skills.py**: validador CLI — frontmatter spec LF, SDO,
+  version/project_agnostic, SKILL.min.md, references muertas, registry sync,
+  license/compatibility. Modo `--strict` para CI.
+- **skill_frontmatter.py**: regla SDO como warning L1.
+- Frontmatter completo en los 33 skills: license MIT + compatibility.
+- REQUIRED SUB-SKILL: responsive-ui->frontend-uiux, swarm-release-ops->devops-infra.
+
+### deploy_all.py: descubrimiento dinamico (fix bug critico)
+- **Fix: skills nuevas (diagram-design, swarm-release-ops) ya no se borran**
+  del mirror de proyectos (antes _ALL_SKILLS hardcode 31 las eliminaba como
+  "obsoletas").
+- `_discover_skills()` / `_discover_agents()`: SSOT dinamico desde el disco
+  (33 skills, 22 agentes) — sin listas hardcode.
+- README generado con conteos dinamicos (antes "Agentes (20)" hardcode).
+
+### Tests (TDD)
+- **test_deploy_all.py** (NUEVO, 23 tests): discover dinamico, deploy_skills
+  (incluye fix no-borrar-nuevas), generate_readme dinamico, detect_type,
+  resolve_project, discover_projects, _sync_tree preservador.
+- **test_validate_skills.py** (NUEVO, 20 tests): validador CLI completo.
+- **test_self_check_diagram.py** (NUEVO, 7 tests): self_check --json.
+- **test_skill_frontmatter.py**: +5 tests SDO.
+- Suite skills: 182+ tests verdes, ruff 0 errores.
+
+### Documentacion actualizada
+- Conteos reales en docs (33 skills, 22 agentes, Agosto 2026).
+- ADR-0045 (modelos helpdesk + diagram-design), ADR-0046 (skill engineering),
+  ADR-0047 (refactor SDO).
+
+## [2026-08-11] Eliminacion total de deuda tecnica AGR (archivos > 500 lineas)
+
+### Refactor masivo a paquetes (< 500 lineas/archivo) — 32 modulos
+- **32 archivos > 500 lineas convertidos a paquetes** con re-export
+  backward-compatible (`__init__.py` re-exporta TODOS los simbolos publicos):
+  - orchestrator: mars_scheduler, scheduler, worktable, agent_bus,
+    task_planner, task_orchestrator, debate_orchestrator, metaclaw,
+    adaptive_planner, natural_language_tools, tool_guardian,
+    multi_user_governance, organizational_layer, health, federated_memory,
+    agent_discovery
+  - memory_rag: lance_vector_store, semantic_cache, sqlite_vec_adapter,
+    federated_search, agent_kpi_tracker, vector_store_adapter,
+    context_window_manager, compression_strategies, shapley_flow,
+    optimization_pipeline, context_assembler, token_budget,
+    token_budget_manager, skill_loader
+  - model_router: complexity_router, multi_provider, provider_health
+  - tools_sandbox: mcp_client | db: migrate_engine
+  - aifactory: factory, agent_factory | guardrails: guardrail_engine
+  - evals: eval_factory | scripts: end_of_iteration, auto_fix_all
+  - run.py (445) + run_support.py | run_commands -> paquete (4 submódulos)
+- **Clases grandes divididas en mixins** (patron del repo): _MessagingMixin,
+  _ReadingMixin, _LayerExecutorMixin, _ChecksMixin, _RetrievalMixin, etc.
+- **SOL: herencia > 2 mixins eliminada** en 9 clases (AIFactory,
+  GuardrailEngine, ContextAssembler, FederatedVectorSearch, SQLiteVecAdapter,
+  AgentBus, MultiUserGovernance, OrganizationalLayer, ToolGuardian) —
+  mixins fusionados por cohesion; test_universal_rules verde.
+- **Backward-compat verificado**: imports desde rutas originales identicos;
+  patches de tests sobre harness.run_commands.* funcionan via lookup dinamico
+  `_rc.` (patron scheduler).
+- **Ruff: All checks passed** (0 errores en todo harness).
+- **Vulture: 0 codigo muerto**. TODO real de builtin_rules convertido a NOTA.
+- Suite: **4414 passed, 37 skipped, 4 xfailed** (sin regresiones).
+- Pendiente documentado: funciones > 30 lineas (guideline FSZ, no gate) —
+  refactor diferido para no arriesgar oraculos de validacion.
+
+## [2026-08-11] Memoria central SSOT (Memory_Proyects) + portabilidad Linux/Mac
+
+### Memoria central: una sola DB (Memory_Proyects), sin duplicados
+- **Problema**: el harness global creaba DB paralela en ``harness/db/lancedb``
+  (ruta relativa al codigo) ademas de la central ``Memory_Proyects/data/lancedb``.
+- **memory_config.py**: el default de ``lancedb_path`` resuelve ahora a la
+  memoria central via ``.swarmind_config.json`` (SSOT de backup_memory.py):
+  prioridad env ``LANCEDB_PATH`` > ``MEMORY_ROOT``/.swarmind_config.json >
+  legacy ``harness/db/lancedb``. ``hermes_path`` usa Memory_Proyects si tiene
+  ``99_Hermes_Brain``. Rutas centralizadas en constantes (nada hardcode).
+- **lance_vector_store.py**: sin config, el default delega en
+  ``get_memory_config().lancedb_path`` (antes usaba LANCEDB_ROOT relativo).
+- **Resiliencia**: ``_safe_home()`` — no crashea en entornos sin HOME
+  (CI/headless); degrada a env/defaults. Tests: 51 memory_config + 66
+  lance_vector_store.
+- **Limpieza**: borradas DBs duplicadas (7.5GB) en repo y global
+  ``.config/opencode/harness/db`` (clones identicos de Memory_Proyects);
+  conservado el paquete de codigo de migracion ``harness/db/*.py``.
+- Verificado: ``LanceVectorStore()`` → ``Memory_Proyects/data/lancedb`` y NO
+  regenera ``harness/db/lancedb``.
+
+### Portabilidad multiplataforma (Linux/Mac)
+- **enable_gpu.py**: ``_venv_python()`` portable (``.venv/Scripts/python.exe``
+  en Windows, ``.venv/bin/python`` en Unix; ``sys.executable`` si ya se esta
+  dentro del venv). Antes era Windows-only.
+- **setup_memory_central.py**: mensaje de config portable (export para
+  cualquier SO + nota PowerShell).
+- Verificada la cadena de primera generacion:
+  ``setup_swarmind → config_swarmind → setup_memory_central`` +
+  ``ensure_memory_structure`` (crea 11 carpetas + data/lancedb + backups,
+  idempotente, portable via Path/MEMORY_ROOT).
+- ``verify_swarmind_setup.py`` ya era portable (winreg solo con ``os.name=="nt"``,
+  Unix via ~/.bashrc).
+- Suite: **4414 passed, 37 skipped, 4 xfailed**.
+
+## [2026-08-11] ParallelExecutor — fan-out paralelo + voting gobernado (aportacion ORCA)
+
+### Mesa de trabajo ORCA (5 especialistas en paralelo)
+- Evaluacion minuciosa de stablyai/orca (ADE 2026, 42.7k stars, MIT): NO es
+  embebible (app Electron, sin SDK Python), NO aporta ahorro de tokens
+  (worktrees aislados multiplican contexto por N), CLI inestable (5 meses,
+  ship diario). Sus unicas ganancias reales — paralelismo wall-clock 1.5-4x
+  y calidad por votacion — son replicables nativamente.
+- **Decision**: anexar la aportacion de ORCA (paralelismo + voting) como
+  modulo nativo; descartar la integracion de la herramienta.
+
+### `harness/orchestrator/parallel_executor.py` (nuevo, 21 tests)
+- `ParallelExecutor.run_parallel()`: N tasks independientes en paralelo
+  (ThreadPoolExecutor, max_workers=3) sobre MultiAPIProvider.execute
+  (thread-safe, failover), ruta small/frontier via ModelRouter.
+- `vote_on_task()`: voting gobernado — solo paga costo N=3 cuando el router
+  marca la tarea compleja Y ambigua (score>=70 y confidence<0.7). Tope de
+  presupuesto: MAX_TOKENS_BY_AGENT[rol] * budget_factor (SSOT token_budgets.yaml).
+- `vote()`: mayoria por similitud coseno de embeddings (GPU acelerado);
+  sin mayoria gana el mas rapido; empate por duracion.
+- `get_stats()`: fan_out_factor, tokens_per_parallel_agent, voting_events.
+- Aislamiento de fallos: una task que falla no impide completar las demas.
+- Expuesto via lazy import en `harness/__init__.py` (PEP 562).
+- SSOT token_budgets.yaml: metricas `fan_out_factor`, `tokens_per_parallel_agent`,
+  `provider_cache_hit_rate` en monitoring.metrics.
+- Suite: **4407 passed, 37 skipped, 4 xfailed**.
+
+## [2026-08-11] GPU enablement (RTX 4060 CUDA 12.6) + Fase 1 TDD
+
+### GPU enablement (mejoras pertinentes con aceleracion de hardware)
+- **torch 2.13.0+cu126** instalado con wheels CUDA (antes CPU-only: la GPU estaba
+  fisicamente presente pero inutilizada). Activada NVIDIA RTX 4060 8GB CUDA 12.6.
+- **gpu_accel.py**: nueva API `get_device_info()` (health-checks hardware),
+  `zeros(on_gpu=True)` para pipelines GPU puros, `to_cpu()`/`to_gpu()` con
+  semantica corregida (to_cpu detach+cpu+numpy; to_gpu documenta tensor).
+- **gpu_optimize.py**: embeddings vectorizados DRY con `common.fallback_embedding`
+  (Knuth hash numpy, elimina loops Python por caracter); hashing y normalizacion
+  en GPU via `torch.index_add_`; `gpu_self_test` con speedup GPU vs CPU.
+- **health.py**: `AgentHealthChecker.get_hardware_info()` + liveness details
+  incluyen hardware (available/device/device_name/memory_gb/cuda_version).
+- **pyproject.toml**: perfil opcional `gpu` con instrucciones de instalacion
+  (uv pip install --index-url https://download.pytorch.org/whl/cu126).
+- **Benchmark RTX 4060**: vector search GPU **x10.9 (10k)** y **x9.2 (100k)**;
+  embeddings batch 41us/mensaje; cache semantico x1.3.
+- 156 tests nuevos/actualizados en areas GPU (gpu_accel 26, gpu_optimize 14,
+  health 3, comunes).
+
+### Fase 1 TDD (oraculos reales + modulos huerfanos)
+- `pbt_stage.py` reescrito: oraculo Hypothesis REAL en subprocess (5 invariantes
+  incl. conmutativa), sin exec() en proceso principal. 18 tests.
+- `mutation_stage.py`: mutacion AST real + subprocess aislado + check=False. 19 tests.
+- `orchestrator_patterns.py` (nuevo): DynamicDAG + Conductor YAML + DurableExecutionWAL
+  con fix de bugs (shadowing de metodo, os.replace en Windows, dependencies=predecesores,
+  dag_id hashlib determinista). 22 tests.
+- `test_router.py` (nuevo): 25 tests que destaparon bug real de tipos en ModelRouter
+  (ComplexityDecision sin confidence) -> fix `_to_model_route()`.
+- `router.py`/`complexity_router.py`: PEP 585, Optional/Dict legacy eliminados,
+  imports limpios (ruff 0 errores).
+- UPG: check-web PyPI actualizado (hypothesis 6.165.3, lancedb 0.37.1, numpy 2.5.2,
+  ruff 0.16.2).
+- Suite: **4386 passed, 37 skipped, 4 xfailed** (antes 4146).
+
 ## [2026-07-31] 🛡️ Seguridad endurecida + Mesa de Trabajo + Limpieza de código
 
 ### Mesa de Trabajo (Auditoría integral)
@@ -9,12 +189,12 @@ Auditoría completa del repositorio (4 dimensiones: calidad, ops, deps, tests) r
 - **40 archivos >500 líneas** (objetivo <900LC): mars_scheduler 1141, factory 905, federated_search 865, adaptive_planner 859, debate_orchestrator 856, sqlite_vec_adapter 837, metaclaw 833, worktable 829, scheduler 811, agent_kpi_tracker 804, lance_vector_store 784, semantic_cache 773, natural_language_tools 771, router 752, tool_guardian 722, vector_store_adapter 721, context_window_manager 719, agent_bus 715, compression_strategies 712, shapley_flow 707, guardrail_engine 685, organizational_layer 676, run_commands 672, optimization_pipeline 662, multi_user_governance 661, eval_factory 655, task_orchestrator 644, task_planner 638, run.py 635, context_assembler 635.
 - **11 archivos de producción a 0% cobertura** (1669 stmts sin testear): mars_scheduler 339, sqlite_vec_adapter 337, federated_search 249, metaclaw 217, nudge_system 109, gpu_optimize 87, token_budget_manager 75, sqlite_vec_utils 54, hermes_adapter 52, __main__ 2, + 5 archivos de benchmarks (174 stmts).
 - **Cobertura real 74.95%** (no 71.56% como decía el roadmap — 3.39pp por encima).
-- **92 errores de mypy** en 32 archivos (deuda oculta por `|| true` en CI; queda en `|| true` con TODO ADR-0037).
+- **92 errores de mypy** en 32 archivos (deuda oculta por `|| true` en CI; queda en `|| true` con TODO tipado progresivo).
 
 ### Calidad
 - **ruff `--fix`**: 7 errores triviales eliminados (5× F401 unused-import `field` de dataclass, 1× F841 unused-variable, 1× F821 undefined-name resuelto con `TYPE_CHECKING` import en `telemetry.py`).
 - **bandit**: 0 hallazgos (exit 0). pip-audit: 0 vulnerabilidades.
-- **pre-commit + scanner**: 0 violaciones (ADR-0035).
+- **pre-commit + scanner**: 0 violaciones (política de paths portables).
 
 ### Métricas
 | Métrica | Antes | Ahora | Delta |
@@ -26,26 +206,25 @@ Auditoría completa del repositorio (4 dimensiones: calidad, ops, deps, tests) r
 | Cobertura | 74.95% | 74.95% | = |
 | Archivos >500ln | 40 | 40 | = |
 | Cobertura 0% | 11 archivos | 11 archivos | = |
-| ADRs | 36 | 36 | = |
 
 ### Pendiente (próximos loops)
 1. Tests para mars_scheduler, metaclaw, federated_search (top deuda 0%)
 2. Refactor mars_scheduler 1141 → <900ln
 3. Tests para sqlite_vec_adapter (337stmts 0%)
 4. Tests para 5 archivos de benchmarks
-5. Tipado progresivo mypy (ADR-0037, 92 errores)
+5. Tipado progresivo mypy (92 errores)
 6. Optimizar 4 tests >4s en test_mcp_manager y test_orchestrator
 7. Mejorar Dockerfile (multi-stage + HEALTHCHECK)
 8. Tag `v0.2.0` (Opción A + Frontier 2026 + 3674 tests)
 
-## [2026-07-20] ⚡ Optimización Speed + Token Economics + ADRs 0016-0018
+## [2026-07-20] ⚡ Optimización Speed + Token Economics
 
-### ADRs creados
-| ADR | Título | Estado |
-|-----|--------|--------|
-| **ADR-0016** | Parallel Test Execution & Fail-Under Progresivo | **ACEPTADO** |
-| **ADR-0017** | PaCoRe Async Concurrency Pattern | **PROPUESTO** |
-| **ADR-0018** | Token Economics — Cache Shape + Structured Compaction | **PROPUESTO** |
+### Decisiones de arquitectura registradas (internas, no publicadas)
+| # | Título | Estado |
+|---|--------|--------|
+| 0016 | Parallel Test Execution & Fail-Under Progresivo | **ACEPTADO** |
+| 0017 | PaCoRe Async Concurrency Pattern | **PROPUESTO** |
+| 0018 | Token Economics — Cache Shape + Structured Compaction | **PROPUESTO** |
 
 ### Optimizaciones implementadas
 - **pytest-xdist + pytest-split**: Dependencias dev para ejecución paralela
@@ -75,7 +254,7 @@ Auditoría completa del repositorio (4 dimensiones: calidad, ops, deps, tests) r
 
 ### Resultados finales
 - Tests: **1086 passing, 0 failures** (+18 desde anterior)
-- ADRs: **0016** (parallel testing), **0017** (PaCoRe async), **0018** (token economics)
+- Decisiones de arquitectura: **0016** (parallel testing), **0017** (PaCoRe async), **0018** (token economics)
 - Commits: `2ef685f` + `e10caed` + `7e9e8b8` Todas las implementaciones, mejoras y correcciones aplicadas al sistema multi-agente.
 
 ---
@@ -123,8 +302,8 @@ Auditoría completa del repositorio (4 dimensiones: calidad, ops, deps, tests) r
 | evolve/SKILL.md | MetaClaw, MARS, Hyperagents, Memento-Skills, Native Evolution, ERL |
 | base_principles.md | MCL + MKS en N1+N2 + 17 nuevas abreviaturas |
 
-### ADR-0015 creado
-`docs/src/adr/adr0015-frontier-agents-skills-2026.md` documenta:
+### Registro de decisión creado (interno, no publicado)
+el documento de arquitectura de la sesión documenta:
 - Contexto, decisión, 6 áreas de impacto
 - Archivos creados/modificados (1 creado, 7 modificados)
 - Tests (455 passed, 2 pre-existing failures)
@@ -216,7 +395,7 @@ Registro completo con 10 skills documentadas (7 existentes + 3 nuevas).
 
 ---
 
-## [2026-07-07] 📋 ADR-0001 + DebateOrchestrator + Confidence Early Stopping + 82 tests
+## [2026-07-07] 📋 DebateOrchestrator + Confidence Early Stopping + 82 tests
 
 ### Investigación web (6+ fuentes 2026)
 | Fuente | Aporte |
@@ -228,8 +407,8 @@ Registro completo con 10 skills documentadas (7 existentes + 3 nuevas).
 | **Token Budget Contracts (PyPI)** | Confidence-gated spending |
 | **Prompt Caching (Anthropic/OpenAI)** | 50-90% ahorro prefix caching |
 
-### ADR-0001: docs/adr/adr0001-mejoras.md
-Documento de Arquitectura con:
+### Documento de Arquitectura (interno, no publicado)
+el documento de arquitectura inicial con:
 - P0: Unificar schedulers + fusionar health/telemetry ✅
 - P1: Coverage 32% ✅
 - P2: DebateOrchestrator + Confidence Early Stopping ✅ (implementado ahora)
@@ -693,7 +872,7 @@ Cubre `ContextSection`, `ContextWindow`, `ContextWindowManager`:
 | Tests | 463 | **1540** | **+1077 (+232%)** |
 | Fallos | 0 | **0** (4 xfail) | ✅ |
 | Cobertura | 33.66% | **~60%** | **+26%** |
-| ADRs | 15 | **18** | +3 |
+
 | Archivos test | 28 | **52** | +24 |
 | Commits | — | **16** | 2ef685f → 57f5e4c |
 | GPU | CPU only | **RTX 4060 8GB** | 🚀 |

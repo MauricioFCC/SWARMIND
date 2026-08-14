@@ -60,9 +60,6 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
-_HERE = Path(__file__).resolve().parent        # Swarmind/scripts/
-_ROOT = _HERE.parent                           # Swarmind/
-
 # Ruta central portable (cualquier SO): $MEMORY_ROOT o <home>/Documents/Memory_Proyects
 _MEMORY_ROOT = Path(os.environ.get(
     "MEMORY_ROOT",
@@ -149,18 +146,52 @@ def _restore_db(backup_dir: Path, dry_run: bool = False) -> bool:
     return True
 
 
+def ensure_memory_structure(memory_root: Path | None = None,
+                            dry_run: bool = False) -> dict:
+    """Verifica/crea la memoria central completa (idempotente, no destructivo).
+
+    Crea SOLO la estructura de directorios (con ``.gitkeep``) si falta:
+    nunca borra ni sobreescribe contenido existente (preserva db LanceDB).
+    Funcion publica reutilizable por ``sync_opencode_global.py`` y por el
+    health-check del setup (ADR-0042: la memoria debe crearse automaticamente).
+
+    Args:
+        memory_root: Raiz de la memoria (default: ``$MEMORY_ROOT`` o
+            ``<home>/Documents/Memory_Proyects``).
+        dry_run: Si True, solo simula (no escribe nada).
+
+    Returns:
+        Dict con ``root`` (Path), ``created`` (int dirs nuevos),
+        ``existing`` (int dirs ya presentes) y ``dry_run`` (bool).
+
+    Raises:
+        OSError: Si falla la creacion de algun directorio.
+    """
+    root = memory_root or _MEMORY_ROOT
+    created = 0
+    existing = 0
+    for rel in _MEMORY_DIRS:
+        path = root / rel
+        if path.exists():
+            existing += 1
+            continue
+        if not dry_run:
+            path.mkdir(parents=True, exist_ok=True)
+            (path / ".gitkeep").write_text("", encoding="utf-8")
+        created += 1
+    return {"root": root, "created": created,
+            "existing": existing, "dry_run": dry_run}
+
+
 def _build_structure(dry_run: bool) -> None:
     """Crea la estructura de memoria (idempotente)."""
     logger.info("")
     logger.info("📁 Construyendo estructura de memoria central...")
+    result = ensure_memory_structure(dry_run=dry_run)
     for rel in _MEMORY_DIRS:
-        path = _MEMORY_ROOT / rel
-        if path.exists():
+        if (result["root"] / rel).exists():
             logger.info("  ✅ existe: %s", rel)
         else:
-            if not dry_run:
-                path.mkdir(parents=True, exist_ok=True)
-                (path / ".gitkeep").write_text("", encoding="utf-8")
             logger.info("  ➕ creado: %s %s", rel, "(simulado)" if dry_run else "")
 
 
@@ -279,7 +310,8 @@ def main() -> None:
     if ok:
         logger.info("")
         logger.info("🎉 MEMORIA CENTRAL LISTA. Ruta portable via MEMORY_ROOT.")
-        logger.info("   Configurar: $env:MEMORY_ROOT = '<tu>/Documents/Memory_Proyects'")
+        logger.info("   Configurar (cualquier SO): export MEMORY_ROOT=<tu>/Memory_Proyects")
+        logger.info("   Windows PowerShell:        $env:MEMORY_ROOT = '<tu>/Memory_Proyects'")
         sys_exit = 0
     else:
         logger.error("  ❌ Hay directorios faltantes (ejecuta sin --dry-run).")

@@ -1,13 +1,13 @@
 # Registro de Skills — Swarmind Harness
 
-**31 skills** disponibles en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado). Cobertura: 100% con ambos formatos.
+**33 skills** disponibles en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado). Cobertura: 100% con ambos formatos.
 
 ## Tabla Completa de Skills
 
 ### Tecnología y Desarrollo
 | Skill | Dominio | Propósito |
 |-------|---------|-----------|
-| **architecture** | software | Patrones GoF, Clean/Hexagonal, DDD, C4, ADRs, decisión arquitectónica |
+| **architecture** | software | Patrones GoF, Clean/Hexagonal, DDD, C4, decisión arquitectónica |
 | **rust-lang** | systems | Rust: ownership, async, FFI con Python, crates, optimización systems-level |
 | **frontend-uiux** | frontend | Generative UI 2026, design tokens, A2UI/OpenUI, WCAG 2.2, StyleSeed |
 | **responsive-ui** | frontend | UI responsive, mobile-first, Core Web Vitals, accesibilidad axe-core |
@@ -79,7 +79,7 @@
 
 > **NUEVO (2026-07-31):** desde la [Opción A — SSOT Global
 > OpenCode](../guide/opcion-a-ssot-global.md), **todos** los proyectos de
-> DEV-SPACE reciben las **31 skills completas** (potencia total) vía
+> DEV-SPACE reciben las **33 skills completas** (potencia total) vía
 > `scripts/deploy_all.py` + `skills_registry.yaml`. El mirror local ya no se
 > limita por tipo. La matriz siguiente queda como referencia del enrutamiento
 > recomendado por dominio (histórico).

@@ -1,7 +1,7 @@
 ---
 name: base-principles
-description: Principios universales de programacion + ASI-Evolve + FDE - multi-nivel
-version: 2.5.0
+description: Principios universales de programacion + ASI-Evolve + FDE - N1+N2 siempre, N3 bajo demanda (H7 ADR-0040)
+version: 2.6.0
 project_agnostic: true
 inherit:
   - core/base_principles.md
@@ -11,6 +11,7 @@ inherit:
 # PRINCIPIOS UNIVERSALES | Multi-nivel
 
 Fuente unica de verdad para todos los skills, gates y agentes.
+N1+N2 siempre inyectados; N3 bajo demanda (ver seccion final).
 
 ---
 
@@ -88,111 +89,13 @@ FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | ele
 
 ---
 
-## NIVEL 3 -- COMPLETO (referencia detallada para expandir)
+## NIVEL 3 (bajo demanda)
 
-### ARQ - Arquitectura
-- [ ] Hexagonal: puertos (interfaces) en domain/ -> adapters en infrastructure/
-- [ ] DI: inyectar dependencias en __init__, nunca instanciar dentro
-- [ ] KISS: cada modulo <500 lineas, una responsabilidad
-- [ ] DRY: logica repetida -> utils o base class
-- [ ] Type hints en toda interfaz publica
-- `X class Service: self.db = Database()` -> `OK class Service: def __init__(self, db: DBInterface)`
-
-### SEG - Seguridad
-- [ ] Secrets: `os.getenv("VAR")`, NUNCA literales. `.env` en `.gitignore`
-- [ ] Logs: mask PII/secrets. `logger.info(mask(email))`, no raw
-- [ ] Input: sanear todo input externo (Pydantic schema)
-- [ ] SQL: siempre parametrizada, jamas f-strings
-- [ ] No `eval()/exec()` en produccion
-- `X f"SELECT * FROM t WHERE id={uid}"` -> `OK session.execute(text("..."), {"id": uid})`
-
-### DOC - Documentacion (OBLIGATORIO — sin docstring = FAIL)
-- [ ] **TODA funcion/clase/metodo publico DEBE tener docstring en ESPANOL UTF-8**
-- [ ] Formato: Args/Returns/Raises (NumPy style o Google style)
-- [ ] Codigo EN: variables, funciones, clases, types, archivos
-- [ ] Comentarios inline ES
-- [ ] README, CHANGELOG, manuales ES
-- [ ] Docs 1:1: si cambia API/interfaz -> docs obligatorio
-- `X def calcular_media(precios)` -> `OK def calculate_mean(prices)`
-- `X """Calculate the moving average."""` -> `OK """Calcula el promedio movil."""`
-- Template obligatorio:
-  ```python
-  def mi_funcion(param1: str, param2: int) -> bool:
-      """Descripcion breve en espanol.
-      
-      Args:
-          param1: Descripcion del primer parametro.
-          param2: Descripcion del segundo parametro.
-      
-      Returns:
-          Descripcion del valor de retorno.
-      
-      Raises:
-          ValueError: Si param2 es negativo.
-      """
-  ```
-- ⚠️ CERO funciones sin docstring. Si el agente genera codigo sin docstring, se rechaza en revision.
-
-### TST - Testing
-- [ ] pytest framework. New feature -> test unitario + integracion
-- [ ] Cobertura: core >=80%, global >=30% incremental
-- [ ] Gates pre-commit: tests -> lint -> typecheck -> coverage -> security
-- [ ] Lint + typecheck en CI. Secrets scan en pre-commit hook
-- [ ] Mocks/stubs para I/O externo, no llamadas reales
-
-### OPS - Operaciones y Resiliencia
-- [ ] Timeout: `requests.get(url, timeout=30)`, nunca sin timeout
-- [ ] Retry: 3 intentos max, exponential backoff + jitter
-- [ ] Circuit breaker: en llamadas a API externas, half-open recovery
-- [ ] Logging: JSON estructurado con `trace_id`, nivel segun contexto
-- [ ] Fallback: siempre tener plan B si servicio externo falla
-- `X response = requests.get(url)` -> `OK response = requests.get(url, timeout=30)`
-
-### ERR - Error Handling & Readability (OBLIGATORIO)
-- [ ] **TODO `except` debe registrar causa**: `logger.warning("Fallo X: %s", e)` — jamas `except: pass`
-- [ ] **Formato de error accionable**: Mensaje que incluya:
-  - `WHAT` = Que operacion fallo (ej: "Fallo al conectar a BD")
-  - `WHY` = Causa raiz (ej: "Timeout de conexion: 30s")
-  - `WHERE` = Archivo:linea:funcion (incluir en log)
-  - `HOW` = Como resolver (ej: "Verificar que el servicio BD este corriendo")
-- [ ] **Stack trace estructurado**: Usar `logging.exception()` o formatear con `traceback.format_exc()` — nunca `print(e)`
-- [ ] **Errores en ES** para usuarios finales, **tecnicos en EN** con contexto completo
-- [ ] **Error classification**: Distinguir entre:
-  - `VALIDATION`: input invalido → mensaje claro al usuario
-  - `OPERATIONAL`: red/DB/timeout → retry + alert
-  - `BUG`: assertion/codigo → stack trace completo
-- [ ] **Nunca exponer internals** en errores al usuario (sanitizar antes de mostrar)
-- `X except: pass` -> `OK except TimeoutError as e: logger.warning("Timeout en %s: %s", op, e); raise`
-- `X print(e)` -> `OK logger.exception("Fallo al procesar %s", request_id)`
-- `X raise Exception("error")` -> `OK raise ConnectionError("No se pudo conectar a %s: %s", host, reason)`
-
-### CMT - Commits Seguros
-- [ ] Formato: `type(scope): descripcion #ISSUE`
-- [ ] Types: feat/fix/docs/refactor/perf/test/build/ci/chore/security
-- [ ] Asunto <=72 chars. Issue # obligatorio
-- [ ] Pre-commit hook: secrets scan + file size check + lint + test
-- [ ] Sin `--no-verify` excepto emergencia documentada
-- [ ] 0 secrets en historial. Si hay leak: rotar + bfg filter-branch
-
-### QLT - Metricas de Calidad (DEPRECATED v2.4.0)
-- [ ] **DELETED v2.4.0**: las metricas de calidad ahora viven en NAM, TYP, IMM, SOL, MAG, FSZ, CMP, DEM.
-- [ ] Esta seccion queda como referencia historica unicamente.
-
-### FDE - Forward Deployment Engineering
-- [ ] DELTA: Identificar gap entre producto ideal y realidad del cliente
-- [ ] MISSION: Stakeholder definido + metrica de exito + Day 2 plan
-- [ ] GLUE: Contratos API primero, implementacion despues
-- [ ] VALUE: MVA en <30 dias. 80/20 scope. Quick win identificado
-- [ ] DIPLOMACY: Champion + Blocker identificados. Plan de adopcion
-- [ ] RESILIENCE: Timeouts + retry + circuit breaker + zero-trust
-
-### EVO - ASI-Evolve Loop
-- [ ] LEARN: Cognition store consultado antes de disenar
-- [ ] DESIGN: Hipotesis formulada con parent nodes como base
-- [ ] EXPERIMENT: Evaluador ejecutado con metricas estructuradas
-- [ ] ANALYZE: Resultado analizado y leccion distillada a cognition
-- [ ] REGISTER: Experimento guardado en DB con score y analysis
-- [ ] SNAPSHOT: Best snapshot actualizado si mejora
+> N3 completo (referencia detallada) movido a `.opencode/core/base_principles_full.md`
+> (Progressive Disclosure / Scoped Context: N1+N2 siempre, N3 solo cuando se necesita).
+> Contiene: checklists ARQ, SEG, DOC, TST, OPS, ERR, CMT, QLT, FDE, EVO, UPG, TYP,
+> IMM, SOL, MAG, FSZ, NAM, CMP, DEM, FRS + MAPA DE ROLES->CATEGORIAS + ABREVIACIONES.
+> Cargar SOLO si el agente necesita detalles de implementacion, tabla de roles o abreviaciones.
 
 ### UPG - Upgrade Continuo (regla universal para TODO stack)
 - [ ] **Aplicar a TODO cambio de stack** (no solo upgrades completos):
@@ -413,125 +316,5 @@ FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | ele
 
 ---
 
-## MAPA DE ROLES -> CATEGORIAS
-
-| Rol | Categorias |
-|-----|-----------|
-| quant-developer | ARQ, SEG, TST, DOC, OPS, FDE, EVO |
-| quant-scientist | ARQ, TST, DOC, EVO, FDE |
-| risk-manager | ARQ, SEG, TST, OPS, FDE |
-| software-engineer | ARQ, SEG, OPS, CMT, TST, FDE |
-| frontend-engineer | ARQ, DOC, NAM, TYP, FDE |
-| data-architect | ARQ, TST, SEG, NAM, FDE |
-| devops-sre | OPS, CMT, SEG, FDE |
-| security-engineer | SEG, CMT, DOC, ARQ, FDE |
-| trading-operations | OPS, CMT, FDE, EVO |
-| documentation-specialist | DOC, NAM, FDE |
-| project-manager | CMT, FDE, EVO |
-| mobile-engineer | ARQ, SEG, NAM, FDE |
-| quality-gate | TST, CMT, SEG, DOC, NAM, FDE, EVO |
-| enterprise-architect | ARQ, FDE, CMT, DOC |
-| ai-engineer | ARQ, TST, EVO, FDE, OPS |
-| evolve | EVO, FDE, CMT, UPG, NAM, TYP, IMM, SOL, MAG, FSZ, CMP, DEM, FRS |
-
----
-
-## ABREVIACIONES (para compresion automatica de tokens)
-
-| Completo | Abrev. |
-|----------|--------|
-| out-of-sample | OOS |
-| walk-forward validation | WFV |
-| deflated sharpe ratio | DSR |
-| combinatorially symmetric cross-validation | CSCV |
-| mixture of experts | MoE |
-| stop loss | SL |
-| take profit | TP |
-| risk-reward ratio | RR |
-| position sizing | pos_size |
-| dependency injection | DI |
-| infrastructure as code | IaC |
-| continuous integration / continuous deployment | CI/CD |
-| application programming interface | API |
-| static application security testing | SAST |
-| software composition analysis | SCA |
-| pull request | PR |
-| Forward Deployment Engineering | FDE |
-| ASI-Evolve | EVO |
-| Minimum Viable Architecture | MVA |
-| Statement of Work | SOW |
-| User Acceptance Testing | UAT |
-| cognition store | COG |
-| experiment database | EXDB |
-| Agent-to-Agent | A2A |
-| cognition | COG |
-| evolve loop | EVLP |
-| MetaClaw continual meta-learning | MCL |
-| Memento-Skills skill-as-memory | MKS |
-| Metacognitive Agent Reflective Self-improvement | MARS |
-| Hyperagents DGM-H | HYP |
-| Experiential Reflective Learning | ERL |
-| Native Self-Evolution | NSE |
-| ShapleyFlow workflow attribution | SHF |
-| AdaptOrch topology-aware orchestration | AOR |
-| Neural Finite-State Machine | NFSM |
-| Multi-Principal Agent Coordination | MPAC |
-| Symphony-Coord bandit routing | SYM |
-| LLM-as-Scheduler | LAS |
-| StructAgent state-centered framework | SAG |
-| Bandit Optimization for Agent Design | BOAD |
-| MuTON language-agnostic mutation testing | MUT |
-| Upgrade Continuo (regla universal) | UPG |
-| Mesa de Trabajo (consenso para upgrades) | MT |
-| Naming Convention (Clean Code) | NAM |
-| Type Hints (PEP 484/604) | TYP |
-| Immutability (frozen dataclasses) | IMM |
-| SOLID Principles | SOL |
-| Magic Numbers / Constantes | MAG |
-| Function Size (max 30 lineas) | FSZ |
-| Composition over Inheritance | CMP |
-| Law of Demeter (Tell, Don't Ask) | DEM |
-| Frontier Research & Solution (regla universal) | FRS |
-
----
-
-### FRS - Frontier Research & Solution (regla universal obligatoria)
-
-> **SE CUMPLE SIEMPRE**: para CUALQUIER requerimiento del usuario, sin excepcion.
-
-- [ ] **1. Web research ANTES de resolver**: todo requerimiento inicia con
-      busqueda web exhaustiva (papers arXiv, frameworks, tools, repos, blogs).
-      Buscar: "<problema> 2026 best solution", "<problema> state of the art",
-      "<problema> frontier".
-- [ ] **2. Criterios de eleccion** (elegir la solucion que mejor cumpla):
-  - **Frontera**: la mas avanzada disponible (2026+), no soluciones obsoletas
-  - **Calidad**: adoptada, mantenida, documentada, con comunidad
-  - **Eficiencia**: menor costo computacional, memoria, latencia, tokens
-  - **Confiabilidad**: estable, testada, con fallback y recovery
-- [ ] **3. NO resolver desde memoria o habito**: si la tarea ya se hizo antes,
-      aun asi verificar que la solucion usada sigue siendo la frontier
-      (RSF + UPG aplicados: la vanguardia se renueva sola).
-- [ ] **4. Documentar la decision**: brevemente anotar en el commit/PR la fuente
-      investigada y por que se eligio esa solucion sobre las alternativas.
-- [ ] **5. AL FINALIZAR toda tarea**:
-  - [ ] **Actualizar documentacion**: README/CHANGELOG/ADRs si la tarea cambio
-        comportamiento, API, dependencias o arquitectura.
-  - [ ] **Crear commit**: conventional commit `type(scope): descripcion #ISSUE`.
-- [ ] **Ejemplos de busquedas obligatorias**:
-  - `X "implementa un cache"` → `OK buscar "cache python 2026 best practice" → elegir
-    ShapedCache/LRU+TTL frontier → implementar → docs + commit`
-  - `X "arregla este error"` → `OK buscar el error exacto + "2026 fix" → entender
-    causa raiz → aplicar fix frontier → docs + commit`
-  - `X "agrega una API"` → `OK buscar "fastapi vs litestar 2026" → elegir el mas
-    eficiente/confiable → implementar → docs + commit`
-- [ ] **Excepciones validas** (NO requieren web research):
-  - Cambios triviales de formato/typo sin impacto (aun asi, commit).
-  - Operaciones urgentes de rollback/revert (despues se investiga).
-  - La tarea es SOLO actualizar documentacion (la investigacion ya se hizo).
-
----
-
-> Fuente unica: `.opencode/core/base_principles.md` - Skills, gates, hooks y optimizer referencian este archivo.
-> Para extender: agregar categoria en los 3 niveles + MAPA DE ROLES + ABREVIACIONES si aplica.
->
+> Fuente unica: `.opencode/core/base_principles.md` (N1+N2) + `.opencode/core/base_principles_full.md` (N3 bajo demanda).
 > FDE + EVO integrados: `.opencode/core/fde_principles.md` para FDE completo, `.opencode/core/evolve_loop.py` para el loop autonomo.

@@ -5,7 +5,11 @@
 
 name: quant-trading
 domain: trading
-description: "Estrategias cuantitativas de trading con motores cuantitativos de alto rendimiento (ej. quant-engine en Rust) — prioriza rendimiento, baja latencia y generación de alpha | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
+compatibility: 'Python 3.12+; motores cuantitativos de alto rendimiento'
+version: 1.0.0
+project_agnostic: true
 ---
 
 # Quant Trading — Motor Cuantitativo de Alto Rendimiento

@@ -1,7 +1,8 @@
 ---
 name: sociology
 domain: sociology
-description: "Sociologia y antropologia para sistemas multi-agente: dinamicas de grupos, teoria de redes, cultura digital."
+description: "Usar cuando el problema involucra dinamicas sociales o de grupos. sociologia, antropologia, redes, cultura digital, grupos, sistemas multi-agente. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
 version: 1.0.0
 project_agnostic: true
 ---

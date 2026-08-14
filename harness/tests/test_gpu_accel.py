@@ -7,10 +7,12 @@ from __future__ import annotations
 import numpy as np
 
 from harness.gpu_accel import (
+    DEVICE,
     HAVE_CUDA,
     GPUContext,
     cosine_similarity,
     cosine_similarity_batch,
+    get_device_info,
     normalize,
     to_cpu,
     to_gpu,
@@ -179,3 +181,38 @@ class TestToFromGPU:
         gpu_v = to_gpu(v)
         back = to_cpu(gpu_v)
         assert np.allclose(back, v)
+
+
+class TestDeviceInfo:
+    """API de informacion de dispositivo (health-check ADR-0042)."""
+
+    def test_get_device_info_structure(self) -> None:
+        """get_device_info retorna dict con claves estandar."""
+        info = get_device_info()
+        for key in ("available", "device", "device_name", "memory_gb"):
+            assert key in info
+
+    def test_get_device_info_available_consistency(self) -> None:
+        """available en info coincide con HAVE_CUDA."""
+        info = get_device_info()
+        assert info["available"] is HAVE_CUDA
+
+
+class TestZerosOnGpu:
+    """zeros con opcion on_gpu para pipelines GPU puros."""
+
+    def test_zeros_on_gpu_returns_tensor(self) -> None:
+        """on_gpu=True retorna tensor en DEVICE (solo si GPU activa)."""
+        z = zeros(384, on_gpu=True)
+        if HAVE_CUDA:
+            assert hasattr(z, "device")
+            assert str(z.device) == DEVICE
+        else:
+            assert z.shape == (384,)
+
+    def test_zeros_on_gpu_cpu_values(self) -> None:
+        """Tensor GPU convertido a CPU es todo ceros."""
+        z = zeros(64, on_gpu=True)
+        back = z.cpu().numpy() if HAVE_CUDA else z
+        assert np.all(back == 0.0)
+

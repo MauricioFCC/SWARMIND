@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 import re
 import sys
-from datetime import UTC
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -198,8 +198,6 @@ def load_vector_store(db_path: str | None = None) -> Any:
 
 def check_first_run(harness_root: Path) -> bool:
     """Detecta si es primera ejecuciÃ³n y guÃ­a al usuario en la configuraciÃ³n."""
-    from datetime import datetime
-
     marker_file = harness_root / ".harness_initialized"
     if marker_file.exists():
         return False

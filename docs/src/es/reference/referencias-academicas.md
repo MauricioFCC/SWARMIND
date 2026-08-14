@@ -1,6 +1,6 @@
 # Referencias Académicas — Swarmind
 
-> Documento generado tras inspección de 32 ADRs. Cada paper fue verificado directamente en arXiv para confirmar autores, título y año.
+> Documento generado tras inspección del registro interno de arquitectura. Cada paper fue verificado directamente en arXiv para confirmar autores, título y año.
 
 ---
 
@@ -52,7 +52,7 @@
 | [LanceDB](https://lancedb.github.io/) | Apache 2.0 | Vector store principal (embeddings persistentes) |
 | [Chroma](https://www.trychroma.com/) | Apache 2.0 | Vector store secundario (benchmarking y federación) |
 | [Hypothesis](https://hypothesis.works/) | MPL 2.0 | Property-based testing (PBT Core, Swarmind PBT) |
-| [pytest](https://pytest.org/) | MIT | Framework de testing (3420 tests) |
+| [pytest](https://pytest.org/) | MIT | Framework de testing (4414 tests) |
 | [PyTorch](https://pytorch.org/) | BSD-3 | GPU acceleration, embeddings |
 | [Qdrant](https://qdrant.tech/) | Apache 2.0 | Vector store terciario (federated search) |
 | [SQLite-vec](https://github.com/asg017/sqlite-vec) | Apache 2.0 | Vector store edge/offline (sin dependencias) |

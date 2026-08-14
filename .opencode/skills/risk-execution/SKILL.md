@@ -5,7 +5,11 @@
 
 name: risk-execution
 domain: trading
-description: "Gestión de riesgo institucional y ejecución algorítmica con motores cuantitativos de alto rendimiento (ej. CQE Rust) — position sizing, market making, TCA | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
+compatibility: 'Python 3.12+'
+version: 1.0.0
+project_agnostic: true
 ---
 
 # Risk & Execution — Gestión de Riesgo Institucional

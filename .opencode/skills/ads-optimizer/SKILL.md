@@ -5,7 +5,9 @@
 
 name: ads-optimizer
 domain: marketing
-description: "Optimizacion end-to-end de campanas publicitarias digitales (ej. Meta Ads, Google Ads) con tecnicas frontier 2026: BOAD, ShapleyFlow, MetaClaw, RL Bidding | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario quiere optimizar campanas publicas digitales. Meta Ads, Google Ads, BOAD, ShapleyFlow, MetaClaw, RL bidding, ROI publicitario, conversion, targeting. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
+compatibility: 'Python 3.12+'
 version: 1.0.0
 project_agnostic: true
 inherit:

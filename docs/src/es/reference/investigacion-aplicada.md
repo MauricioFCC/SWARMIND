@@ -40,7 +40,7 @@ Construye grafo de dependencias y ejecuta tareas independientes en paralelo.
 **Paper:** arXiv:2605.27864 (FundaPod)
 **Implementación:** `harness/memory_rag/knowledge_graph.py`
 
-Grafo local-first (NetworkX + JSON) que conecta: skills con agentes, ADRs con skills, decisiones con conceptos. Seed automático desde skills_registry.yaml y ADRs.
+Grafo local-first (NetworkX + JSON) que conecta: skills con agentes, decisiones de arquitectura con skills, decisiones con conceptos. Seed automático desde skills_registry.yaml y el registro de arquitectura.
 
 ## SecurityGuard
 **Fuente:** OWASP Top 10 for LLMs 2025, OWASP Swarmind AI Top 10
@@ -111,7 +111,7 @@ Keywords largas tienen más peso que cortas (evita falsos positivos). Dos nivele
 | Auto-Reinforcement | Refuerza politicas debiles antes de que ocurra una violacion |
 | Audit Trail | Traza la linea de tiempo de decaimiento de gobernanza por agente |
 
-## GovernanceAgent (ADR-0027)
+## GovernanceAgent
 **Implementacion:** `harness/orchestrator/governance_agent.py`
 
 | Capacidad | Descripcion |
@@ -222,7 +222,6 @@ Keywords largas tienen más peso que cortas (evita falsos positivos). Dos nivele
 |-----------|------|--------|
 | Tests totales | 3,350+ | ✅ |
 | Skills | 30 (100% SKILL.md + SKILL.min.md) | ✅ |
-| ADRs | 28 | ✅ |
 | Agentes | 20 (100% perfiles) | ✅ |
 | Proyectos | 6 activos | ✅ |
 | Modulos Orchestrator | 48 | ✅ |

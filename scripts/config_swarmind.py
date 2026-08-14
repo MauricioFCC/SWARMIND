@@ -34,7 +34,6 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 _HERE = Path(__file__).resolve().parent
-_ROOT = _HERE.parent
 
 # Ruta central portable
 _MEMORY_ROOT = Path(os.environ.get(

@@ -22,7 +22,7 @@ type(scope): descripcion en espanol
 |------|-----|-------------|
 | `feat` | Nueva funcionalidad | `feat: Knowledge Graph local-first (NetworkX+JSON, 16 tests)` |
 | `fix` | Correccion de bug | `fix: routing_rules.yaml no se restaura con agentes obsoletos` |
-| `docs` | Documentacion | `docs: ADR-0022 Frontier Optimization 2026 - investigacion + implementacion` |
+| `docs` | Documentacion | `docs: Frontier Optimization 2026 - investigacion + implementacion` |
 | `refactor` | Cambio interno | `refactor: auditoria COD+TST+TKN con especialistas paralelos` |
 | `test` | Tests | `feat(tests): +245 tests para archivos 0% (delegate, adaptive, fts, embedding)` |
 | `chore` | Mantenimiento | `chore: commit final sesion - limpieza, docs, fixes menores` |
@@ -36,7 +36,7 @@ feat: export_all_projects.py + push local completo (6 proyectos)
 feat(tests): +245 tests para archivos 0%
 feat(skills): 13 SKILL.min.md creados - cobertura 100% (29/29)
 feat(legal-nlp): LegalAnalyzer con SaulLM/Arg-LLaDA + 13 tests
-feat: Agent Capsules -51% tokens + ADR-0021 frontier gaps
+feat: Agent Capsules -51% tokens + frontier gaps
 fix: safety check on export for non-Swarmind files
 fix: dynamic cache threshold type-safe para tests con mock
 docs(mdbook): configuracion actualizada con src=docs/src

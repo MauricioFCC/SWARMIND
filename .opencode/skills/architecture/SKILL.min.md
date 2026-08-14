@@ -1,7 +1,8 @@
 ---
 name: architecture
 domain: architecture
-description: "Software architecture — GoF patterns, SOLID, Clean Architecture, Hexagonal, DDD, C4 model, ADRs, architectural decision records, fitness functions, domain-driven design"
+description: "Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
 version: 1.0.0
 project_agnostic: true
 ---

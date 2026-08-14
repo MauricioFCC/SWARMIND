@@ -1,7 +1,8 @@
 ---
 name: communication
 domain: communication
-description: "Comunicacion profesional: escritura ejecutiva, presentaciones, storytelling, negociacion, liderazgo."
+description: "Usar cuando el usuario necesita comunicacion profesional o persuasiva. escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural, liderazgo. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
 version: 1.0.0
 project_agnostic: true
 ---

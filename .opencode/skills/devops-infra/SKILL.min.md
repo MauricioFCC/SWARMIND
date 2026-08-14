@@ -1,7 +1,8 @@
 ---
 name: devops-infra
 domain: devops
-description: "DevOps e infraestructura: CI/CD, Docker, Kubernetes, Terraform, monitoreo, observabilidad."
+description: "Usar cuando el usuario opera infraestructura o CI/CD. Docker, Kubernetes, Terraform, CI/CD, monitoreo, observabilidad, plataforma, despliegue. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
 version: 1.0.0
 project_agnostic: true
 ---

@@ -5,6 +5,7 @@ triggers: [token, tokens, budget, budgets, contexto, context, compact, compactio
 capabilities: [token_audit, context_optimization, structured_compaction, cache_shape, budget_tracking, failure_spend]
 aliases: [token-auditor, token-budget-auditor, budget-auditor, token-economist]
 description: "Auditor especializado en Token Economics del harness SWARMIND: cache-shape discipline, structured compaction, failure-spend governance, budgets por rol y costo de contexto | UPG·NAM·FRS (reglas en base_principles.md)"
+steps: 8
 mode: subagent
 permission:
   edit: deny

@@ -22,7 +22,7 @@ cada tarea comienza con investigacion actual.
 ### Idempotencia (Regla #2)
 ```
 SI YA ESTA IMPLEMENTADO, NO REIMPLEMENTAR:
-1. Verificar si la funcionalidad ya existe (git log, ADRs, cognition store)
+1. Verificar si la funcionalidad ya existe (git log, registro de arquitectura, cognition store)
 2. Si existe y funciona → pasar a la siguiente tarea
 3. Solo reimplementar si hay una MEJORA demostrable (delta > 0)
 4. Documentar el delta: que mejora, en cuanto, por que es superior
@@ -107,7 +107,7 @@ python -c "import harness; print(f'✅ Harness OK')"
 # Ejecutar tests
 uv run python -m pytest harness/tests/ -x -q
 
-# Reglas universales + auto-mejora (ADR-0037)
+# Reglas universales + auto-mejora
 uv run pytest harness/tests/test_universal_rules.py -q
 uv run pytest harness/tests/test_opencode_config_sync.py -q
 
@@ -166,7 +166,7 @@ uv run python scripts/backup_memory.py --list      # listar backups
 uv run python scripts/backup_memory.py --schedule
 ```
 
-**Seguridad de datos (ADR-0038)**:
+**Seguridad de datos**:
 - NUNCA se borra la db sin backup previo.
 - Backup automático cada N horas/días/commit (configurable en el menú).
 - Rotación automática: conserva los N backups más recientes.
@@ -192,12 +192,12 @@ uv run python scripts/backup_memory.py --schedule
 
 ```
 Swarmind/
-├── .opencode/             # CEREBRO SSOT (20 agents, 31 skills, core, registry)
+├── .opencode/             # CEREBRO SSOT (22 agents, 33 skills, core, registry)
 │   ├── agents/            # coordinator, builder, scientist, guardian, evolve, ...
 │   ├── config/            # project_config, routing_rules, token_budgets (config propia del proyecto)
 │   ├── core/              # router, guardrails, registry, base_principles, prompt_optimizer
 │   ├── federated/         # memoria federada entre proyectos
-│   └── skills/            # 31 skills (SKILL.md + SKILL.min.md + skills_registry.yaml)
+│   └── skills/            # 33 skills (SKILL.md + SKILL.min.md + skills_registry.yaml)
 ├── harness/               # Motor de orquestacion Python (VIVE EN OPENCODE GLOBAL, v2.5)
 │   ├── orchestrator/      # Planificador, health, telemetria, self-healing
 │   ├── memory_rag/        # Memoria vectorial LanceDB + Token Economics
@@ -206,10 +206,10 @@ Swarmind/
 │   ├── tools_sandbox/     # MCP tools
 │   ├── tests/             # 3937 tests + TDD + universal_rules + config_sync
 │   ├── scripts/           # install_hooks.py (pre-commit), end_of_iteration, ...
-│   └── qa/                # security_policy.py (scanner ADR-0035)
+│   └── qa/                # security_policy.py (scanner de secretos)
 ├── scripts/               # setup_swarmind.py, sync_opencode_global.py, setup_memory_central.py,
 │                          # backup_memory.py, config_swarmind.py, deploy_all.py
-├── docs/                  # ADRs (0001-0037) + guias + manuales
+├── docs/                  # guias + manuales + registro interno de arquitectura
 ├── SETUP.md               # Este archivo
 ├── ~/.config/opencode/    # SSOT GLOBAL: cerebro (.opencode/) + motor (harness/)
 └── <Documents>/Memory_Proyects/  # MEMORIA CENTRAL portable (MEMORY_ROOT)
@@ -223,10 +223,9 @@ Swarmind/
 > **Opción A v2.5**: opencode global (`~/.config/opencode/`) es la fuente de
 > verdad TOTAL. Cerebro (.opencode/) y motor (harness/) viven UNA vez ahí.
 > Los proyectos reciben solo `.opencode/` + skills. Ver
-> [docs/src/es/guide/opcion-a-ssot-global.md](docs/src/es/guide/opcion-a-ssot-global.md)
-> y [ADR-0036](docs/src/es/adr/adr0036-opcion-a-ssot-global-2026.md).
+> [docs/src/es/guide/opcion-a-ssot-global.md](docs/src/es/guide/opcion-a-ssot-global.md).
 
-### Reglas Universales (ADR-0037)
+### Reglas Universales
 
 El sistema aplica 10 reglas universales de código, validadas por tests con
 auto-mejora:
@@ -344,12 +343,11 @@ python harness/run.py "@builder: implementa un segment tree"
 
 ## 📚 Referencias
 
-- `docs/src/adr/` — Architecture Decision Records (0001-0037)
 - `.opencode/core/base_principles.md` — 9+ categorias universales (v2.4.0)
 - `.opencode/core/fde_principles.md` — Forward Deployment Engineering
 - `harness/common.py` — SSOT: embedding, tokens, compression
-- `harness/tests/test_universal_rules.py` — Reglas universales + auto-mejora (ADR-0037)
-- `harness/tests/test_opencode_config_sync.py` — Config YAML sync (ADR-0037)
+- `harness/tests/test_universal_rules.py` — Reglas universales + auto-mejora
+- `harness/tests/test_opencode_config_sync.py` — Config YAML sync
 - `.env.example` — Variables de entorno documentadas
 
 ---

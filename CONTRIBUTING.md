@@ -86,7 +86,7 @@ Write tests for all new functionality. Aim for at least 50% project coverage.
 ## Documentation
 
 - **Code documentation**: Use Google-style docstrings for public modules, classes, and functions.
-- **Architecture Decision Records (ADRs)**: Create a new ADR in `docs/src/adr/` for significant architectural decisions.
+- **Architecture**: Document significant architectural decisions with rationale and consequences.
 - **mdbook**: User-facing and architectural documentation is built with [mdbook](https://rust-lang.github.io/mdBook/). To build locally:
   ```bash
   mdbook build
@@ -108,7 +108,7 @@ Types: `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `ci`, `chore`, `securi
 Examples:
 - `feat(orchestrator): add adaptive pool resizing`
 - `fix(guardian): handle timeout in agent response`
-- `docs(adr): add ADR-0033 for cache eviction strategy`
+- `docs: document cache eviction strategy`
 
 ## Pull Request Process
 

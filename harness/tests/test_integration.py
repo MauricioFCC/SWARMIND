@@ -232,6 +232,20 @@ class TestHealthCheck:
         assert result["readiness"].healthy
         assert result["cognitive"].healthy
 
+    def test_hardware_info_structure(self, health_checker):
+        """3h. get_hardware_info reporta dispositivo de aceleracion."""
+        info = health_checker.get_hardware_info()
+        assert "available" in info
+        assert "device" in info
+        assert "device_name" in info
+        assert isinstance(info["available"], bool)
+
+    def test_liveness_includes_hardware(self, health_checker):
+        """3i. Liveness details incluyen info de hardware."""
+        status = health_checker.check_liveness()
+        assert "hardware" in status.details
+        assert "available" in status.details["hardware"]
+
 
 # ===================================================================
 # 4. Telemetría

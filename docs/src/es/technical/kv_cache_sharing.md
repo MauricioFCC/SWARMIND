@@ -11,5 +11,3 @@
 ## Tests
 `harness/tests/test_kv_cache_sharing`
 
-## ADRs Relacionados
-- Ver ADRs en [SUMMARY.md](../SUMMARY.md#adr---architecture-decision-records-32-activos)

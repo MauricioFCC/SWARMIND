@@ -1,0 +1,30 @@
+name: Semgrep
+on:
+  push:
+    branches: [main, public]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 4 * * 1"  # semanal (lunes)
+
+jobs:
+  semgrep:
+    name: semgrep
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Semgrep (SAST)
+        uses: returntocorp/semgrep-action@v3
+        with:
+          config: p/python, p/owasp-top-ten, p/security-audit
+          publish-token: ${{ secrets.SEMGREP_APP_TOKEN }}
+          audit-on: push
+          audit-on-merge: true
+          generate-sarif: true
+      - name: Upload SARIF to code-scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
+        if: always()

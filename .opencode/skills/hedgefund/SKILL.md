@@ -4,7 +4,9 @@
 
 
 name: hedgefund
-description: "Doctrina fundacional: Todo proyecto se opera como un Hedge Fund Institucional. Los LLMs son los gestores del fondo (Fund Managers). Cada tarea es una asignación de capital con riesgo/reward, mandato y stop-loss. Data-driven, institutional risk, operational efficiency | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se opera el proyecto como fondo de inversion institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, data-driven, riesgo institucional. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
+compatibility: 'Python 3.12+'
 version: 1.0.0
 project_agnostic: true
 inherit:

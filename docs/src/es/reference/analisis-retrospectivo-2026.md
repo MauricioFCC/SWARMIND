@@ -3,11 +3,11 @@
 ## Resumen Ejecutivo
 
 Swarmind ha evolucionado de un proyecto experimental multi-agente a un sistema
-completo de orquestacion AI con 7 capas, 32 ADRs documentados, 218 commits,
+completo de orquestacion AI con 7 capas, registro interno de arquitectura, 218 commits,
 y ~92,000 lines de Python. Este analisis compara Swarmind con los 4 proyectos
 benchmark del ecosistema 2026.
 
-## Swarmind — Estado Actual (Julio 2026)
+## Swarmind — Estado Actual (Agosto 2026)
 
 | Metrica | Valor |
 |---------|-------|
@@ -18,7 +18,6 @@ benchmark del ecosistema 2026.
 | Commits | 218 |
 | Skills | 31 |
 | Agents | 20 |
-| ADRs | 32 |
 | Modulos Core | 78 |
 | Modulos Infrastructure | 74 |
 | Tecnicas Frontier | 8 implementadas |
@@ -31,7 +30,6 @@ benchmark del ecosistema 2026.
 |---------|:-------:|:-----------:|:---------------:|:----------------:|:-----------------:|
 | **AI Factory Stack** (7 capas) | ✅ Completo | Parcial | Parcial | Parcial | Parcial |
 | **Hexagonal Architecture** | ✅ Puertos + adaptadores | Monolitico | Modular | Monolitico | Monolitico |
-| **ADRs documentados** | **32** | ❌ | ❌ | ❌ | ❌ |
 | **Arquitectura limpia** | ✅ Core/Infra/Test separados | ❌ | Parcial | ❌ | ✅ |
 | **Token Economics** | **✅ CacheShape, StructCompact, scopedCtx, obsMask** | ❌ | ❌ | ❌ | ❌ |
 
@@ -81,7 +79,7 @@ benchmark del ecosistema 2026.
 
 1. **Token Economics unico**: Ningun proyecto implementa cacheShape, structuredCompact, obsMask, scopedCtx y failSpendGov como Swarmind.
 
-2. **Calidad institucional**: 32 ADRs documentados, ~34,000 lines de tests, QA Pipeline 5-capas, Eval 7-dimensiones. Ningun competidor tiene esto.
+2. **Calidad institucional**: registro interno de arquitectura, ~34,000 lines de tests, QA Pipeline 5-capas, Eval 7-dimensiones. Ningun competidor tiene esto.
 
 3. **Arquitectura Hexagonal**: Swarmind es el unico con separacion clara Core/Infrastructure/Testing y puertos/adaptadores.
 
@@ -100,7 +98,7 @@ benchmark del ecosistema 2026.
 
 Swarmind compite en **calidad y funcionalidad** con proyectos que tienen 40k-235k stars.
 Su ventaja no esta en la comunidad sino en la **excelencia tecnica**: documentacion
-exhaustiva (32 ADRs), testing masivo (~34,000 lines), token economics avanzado,
+exhaustiva (registro interno de arquitectura), testing masivo (~34,000 lines), token economics avanzado,
 y stack completo de 7 capas. Es un producto institucional construido por un
 equipo individual, lo que demuestra la efectividad del sistema multi-agente en
 si mismo.

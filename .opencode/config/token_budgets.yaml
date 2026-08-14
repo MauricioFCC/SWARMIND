@@ -51,6 +51,96 @@ role_budgets:
     include_principles: space_available
     reason: "Auditoria de tokens: reglas concisas, compresion agresiva por diseno"
 
+  architect:
+    budget: 3072
+    compression_level: medium
+    include_principles: space_available
+    reason: "Diseno de sistemas: contexto de decisiones y trade-offs"
+
+  backend-engineer:
+    budget: 3072
+    compression_level: medium
+    include_principles: space_available
+    reason: "APIs y servidores: contexto de contratos y esquemas"
+
+  data-engineer:
+    budget: 3072
+    compression_level: medium
+    include_principles: space_available
+    reason: "Pipelines ETL: contexto de esquemas y transformaciones"
+
+  database-administrator:
+    budget: 2048
+    compression_level: high
+    include_principles: space_available
+    reason: "Modelado SQL: reglas concisas, compresion alta"
+
+  devops:
+    budget: 3072
+    compression_level: medium
+    include_principles: space_available
+    reason: "CI/CD e infraestructura: contexto de workflows"
+
+  evolve-analyzer:
+    budget: 2048
+    compression_level: high
+    include_principles: space_available
+    reason: "Analisis de experimentos: salidas concisas por diseno"
+
+  evolve-engineer:
+    budget: 3072
+    compression_level: medium
+    include_principles: space_available
+    reason: "Ingenieria de mejoras: contexto de implementacion"
+
+  evolve-researcher:
+    budget: 3072
+    compression_level: low
+    include_principles: space_available
+    reason: "Investigacion para evolve: preservar detalles de hallazgos"
+
+  frontend-engineer:
+    budget: 2048
+    compression_level: high
+    include_principles: space_available
+    reason: "UI/UX: componentes y estilos, compresion alta"
+
+  mobile-engineer:
+    budget: 2048
+    compression_level: high
+    include_principles: space_available
+    reason: "Apps moviles: snippets de plataforma, compresion alta"
+
+  product-manager:
+    budget: 2048
+    compression_level: high
+    include_principles: space_available
+    reason: "Requerimientos y roadmap: resumenes ejecutivos"
+
+  qa-engineer:
+    budget: 2048
+    compression_level: high
+    include_principles: space_available
+    reason: "Testing: planes de prueba concisos"
+
+  researcher:
+    budget: 4096
+    compression_level: low
+    include_principles: always
+    reason: "Investigacion + papers: contexto completo como scientist"
+
+  reviewer:
+    budget: 2048
+    compression_level: high
+    include_principles: space_available
+    reason: "Code review: diffs y criterios, compresion alta"
+
+  security-engineer:
+    budget: 3072
+    compression_level: medium
+    include_principles: always
+    reason: "Auditorias OWASP: contexto de controles y estandares"
+
 # Tecnicas de compresion por nivel
 compression_levels:
   low:
@@ -107,3 +197,16 @@ monitoring:
     - cache_hit_rate
     - failure_spend_ratio
     - phase_activation_count
+    - fan_out_factor
+    - tokens_per_parallel_agent
+    - provider_cache_hit_rate
+
+# Stop rules / abstencion (ADR-0039 #8, CONVOLVE 2606.28733)
+# Politica declarativa: el runtime (Failure-Spend Governance + Circuit Breaker
+# del coordinator) aplica la mecanica; estos umbrales son la config SSOT.
+abstention_policy:
+  enabled: true
+  max_failure_spend_ratio: 0.30      # >30% del presupuesto en fallos -> abstener/re-planificar
+  max_steps_without_progress: 5      # 5 pasos sin progreso medible -> parar y reportar
+  abstain_message: "Sin progreso medible; se abstiene y reporta estado actual + siguiente accion"
+  re_plan_after_abstain: true        # tras abstener, re-planificar con contexto reducido

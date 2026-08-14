@@ -2,31 +2,29 @@
 
 ![Swarmind](/assets/logo.svg)
 
-**Swarmind** es un sistema multi-agente de orquestacion, ejecucion y auto-mejora continua con 31 skills contextuales, orquestacion multi-nivel, GPU acceleration y token economics.
+**Swarmind** es un sistema multi-agente de orquestacion, ejecucion y auto-mejora continua con 33 skills contextuales, orquestacion multi-nivel, GPU acceleration y token economics.
 
-## Estado Actual (Julio 2026)
+## Estado Actual (Agosto 2026)
 
 | Metrica | Valor |
 |---------|-------|
-| Tests | 3420 passing (29 QA + AIFactory verificados) |
-| Cobertura | ~65% (real 71.56%, objetivo: 80%) |
-| ADRs | 35 (todos implementados, secuenciales 0001-0036) |
-| Agentes | 20 especializados (100% perfiles + .min.md) |
-| Skills | 31 contextuales (100% SKILL.md + SKILL.min.md) |
-| Modulos Orchestrator | 48 |
-| Modulos Memory/RAG | 30 |
+| Tests | 4414 passing (37 skipped, 4 xfailed) |
+| Cobertura | 71.56% |
+| Agentes | 22 especializados (100% perfiles) |
+| Skills | 32 contextuales (100% SKILL.md + SKILL.min.md) |
+| Modulos Orchestrator | 19 paquetes / 56 modulos |
+| Modulos Memory/RAG | 15 paquetes / 34 modulos |
 | Modulos Hooks | 4 (security_validator, permission_checker, audit_logger, metrics) |
 | Modulos Security | Zero Trust (TokenManager, PolicyEngine, verify_agent_identity) |
-| Modulos Multi-Harness | 12 (runtime_detector, converter_base, 5 adapters, CLI) |
-| GPU | RTX 4060 8GB (6x search speedup, 3.2x embedding) |
+| Modulos Multi-Harness | 5 adapters (opencode, claude, codex, cursor, gemini) |
+| GPU | RTX 4060 8GB, CUDA 12.6, torch 2.13.0+cu126 (search x10.9, embeddings 41us/msg) |
+| Deuda arquitectura (AGR) | 0 archivos >500 lineas en codigo no-test (32 modulos refactor a paquetes) |
 | Token savings | -51% capsulas, -40% structured output, -38% cache-shape |
-| Proyectos | 6 activos |
-| Vector stores | LanceDB, Chroma, Qdrant + SQLite-vec (edge) |
-| Federated Search | Paralelo 3 backends + MMR re-ranking |
+| Vector stores | LanceDB (central) + SQLite-vec (edge) + federated search |
 | Observabilidad | OpenTelemetry (trazas, metricas, exportacion OTLP) |
-| Benchmarks | AgentBenchmark (accuracy, latencia, tokens, exito) |
-| Commits | 200+ |
-| Papers implementados | 15 (Gap Analysis 2026) |
+| Orquestacion paralela | ParallelExecutor fan-out nativo + voting gobernado |
+| Commits | 281 |
+| Lint / dead code | ruff 0 errores, vulture 0 dead code |
 
 El detalle de cobertura por modulo, hitos y roadmap esta en [Estado del Proyecto](roadmap/estado.md).
 
@@ -48,7 +46,7 @@ Comandos del sistema: `!health`, `!metrics`, `!skill list`, `!session`, `!reset`
 
 Tutorial completo en [Como Usar Swarmind](guide/como-usar.md).
 
-## Novedades Julio 2026
+## Novedades Agosto 2026
 
 Los modulos nuevos (Multi-Harness Adapter Layer, Hook System, Zero Trust, Federated Vector Search, SQLite-vec Backend, Async TaskOrchestrator) y los **15 papers 2026 implementados** se documentan en detalle en [Agentes y Skills](guide/agentes-y-skills.md#novedades-julio-2026).
 
@@ -62,7 +60,6 @@ Los modulos nuevos (Multi-Harness Adapter Layer, Hook System, Zero Trust, Federa
 - [Dynamic Scaling](architecture/dynamic-scaling.md) — Estrategias de planificacion
 - [Tecnicas Frontier](architecture/composicion.md) — Tecnicas 2026 por agente/skill
 - [Manual Tecnico](technical/manual-tecnico.md) — Documentacion tecnica del harness
-- [ADR](adr/README.md) — Architecture Decision Records (35 documentos)
 - [Testing Guide](development/testing-guide.md) — Como escribir y ejecutar tests
 - [Glosario](reference/glosario.md) — Terminos y abreviaturas
 - [Roadmap](roadmap/estado.md) — Estado del proyecto y proximos pasos
@@ -87,4 +84,12 @@ Para la estructura detallada, ver [Agentes y Skills — Sistema de Archivos](gui
 
 Swarmind compite con **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (46.2k) y **CodeWhale** (40.2k). La comparativa completa con tabla de capacidades esta en [Comparativa Harness 2026](reference/comparativa-harness-2026.md).
 
-**Diferenciación clave:** GPU Acceleration (6x), Token Economics (-51%), Governance completo, Zero Trust, Hook System determinista, Multi-Harness (5 runtimes), 15 papers 2026 implementados, 3420 tests.
+**Diferenciación clave:** GPU Acceleration (search x10.9), Token Economics (-51%), Governance completo, Zero Trust, Hook System determinista, Multi-Harness (5 runtimes), 4414 tests.
+
+### Cambios Agosto 2026
+
+- Refactor total: **32 modulos >500 lineas a paquetes** (deuda arquitectura AGR = 0), SOLID corregido en 9 clases.
+- **ParallelExecutor**: fan-out paralelo nativo (ThreadPoolExecutor `max_workers=3`) + voting gobernado.
+- **GPU CUDA 12.6** habilitada (torch 2.13.0+cu126): search x10.9, embeddings 41us/msg.
+- **Memoria central SSOT** portable (`Memory_Proyects` via `MEMORY_ROOT`), 7.5 GB liberados, backup automatico.
+- Documentacion publica actualizada y depurada.

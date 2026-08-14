@@ -1,7 +1,8 @@
 ---
 name: education
 domain: education
-description: "Ciencias de la educacion: diseno instruccional, pedagogia, andragogia, taxonomia de Bloom, microlearning."
+description: "Usar cuando el usuario diseña material educativo o formacion. diseno instruccional, pedagogia, andragogia, Bloom, microlearning, evaluacion educativa. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
 version: 1.0.0
 project_agnostic: true
 ---

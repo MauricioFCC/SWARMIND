@@ -1,7 +1,8 @@
 ---
 name: responsive-ui
 domain: frontend
-description: "Responsive UI/UX — WCAG 2.2 AA/AAA, mobile-first design, design tokens, component libraries, CSS Grid/Flexbox/Container Queries, Core Web Vitals, accessibility auditing with axe-core"
+description: "Usar cuando el usuario construye interfaces responsivas accesibles. responsive, accesibilidad, WCAG, design systems, component libraries, UX, movil, desktop. | UPG·NAM·FRS (reglas en base_principles.md)"
+license: MIT
 version: 1.0.0
 project_agnostic: true
 ---
