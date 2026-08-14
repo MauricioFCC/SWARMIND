@@ -30,6 +30,27 @@ Swarmind es un **sistema multi-agente evolutivo** diseñado para operar como un 
 | **Quality by Default** | Clean Code, DRY, KISS, SSOT, <900LC, patrones, DocStrings ES-UTF8, tests >80% |
 | **Speed at Scale** | Paralelismo máximo, fan-out, consolidación al final |
 
+### Principio: proceso > herramienta
+
+**La diferencia no es el modelo. Es el harness.** Un agente sin harness es un departamento aislado: duplica esfuerzo, no comparte memoria, no escala y no es medible. Toda capacidad nueva (tool, MCP, modelo) se incorpora como **proceso orquestado** — fan-out, votación gobernada gate≥70, memoria SSOT, oráculos PBT/mutation, KPIs — o se descarta. Caso real: stablyai/orca fue descartada como herramienta en 2026 y se adoptó su proceso (paralelismo + votación gobernada).
+
+```
+   SIN HARNESS: cada agente hace lo suyo        CON SWARMIND: dirección común
+ ┌───────────────────────────────────┐     ┌─────────────────────────────────────┐
+ │ opencode      Claude Code  Codex  │     │ 🎯 Objetivo claro → task_planner    │
+ │ (su ctx)      (su ctx)    (su ctx)│     │              │                      │
+ │                                   │     │ Proceso definido → orchestrator     │
+ │ ✗ Contexto y esfuerzo duplicados  │ ──▶ │ (fan-out N=3 + votación gobernada)  │
+ │ ✗ Memoria no compartida           │     │   ¿Problema? → planner  ¿Resp.? →   │
+ │ ✗ Sin validación cruzada          │     │   governance  ¿Datos? → !rag/LanceDB│
+ │ ✗ Tokens sin gobierno             │     │   ¿Medición? → PBT+KPIs ¿Escalar? → │
+ │                                   │     │   evolve/GPU                        │
+ │                                   │     │ ✓ Alineado ✓ Compartido ✓ Escala    │
+ │                                   │     │ ✓ Medible ✓ Visible                 │
+ └───────────────────────────────────┘     └─────────────────────────────────────┘
+        La diferencia no es el modelo. Es el harness.
+```
+
 ---
 
 ## 🚀 Cómo Usar Swarmind Correctamente

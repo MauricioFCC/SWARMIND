@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" role="img" aria-label="Swarmind process over tools — without orchestration agents are siloed; with SWARMIND one process aligns, shares memory and scales">
+  <title>Swarmind — Process over Tools</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FCA5A5"/>
+      <stop offset="100%" stop-color="#EF4444"/>
+    </linearGradient>
+    <pattern id="grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#06B6D4" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1000" height="560" fill="url(#bg)"/>
+  <rect width="1000" height="560" fill="url(#grid)"/>
+
+  <g font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif">
+
+    <!-- ================= LEFT PANEL : WITHOUT SWARMIND ================= -->
+    <g>
+      <rect x="20" y="40" width="415" height="460" rx="16" fill="#0F172A" fill-opacity="0.55" stroke="#F87171" stroke-opacity="0.5" stroke-width="1.5"/>
+      <text x="40" y="76" font-size="20" font-weight="800" fill="#F87171">Without SWARMIND</text>
+      <text x="40" y="96" font-size="10.5" font-weight="600" letter-spacing="2" fill="#94A3B8">SILOED AGENTS · NO SHARED STATE</text>
+
+      <rect x="35" y="112" width="380" height="52" rx="10" fill="#1E293B" stroke="#F87171" stroke-opacity="0.35"/>
+      <text x="52" y="136" font-size="14" font-weight="800" fill="#F1F5F9">opencode</text>
+      <text x="52" y="152" font-size="9.5" fill="#94A3B8">own context · own scripts</text>
+      <text x="397" y="134" text-anchor="end" font-size="10" font-weight="700" fill="#F87171">✗ duplicated ctx</text>
+
+      <rect x="35" y="174" width="380" height="52" rx="10" fill="#1E293B" stroke="#F87171" stroke-opacity="0.35"/>
+      <text x="52" y="198" font-size="14" font-weight="800" fill="#F1F5F9">Claude Code</text>
+      <text x="52" y="214" font-size="9.5" fill="#94A3B8">own context · own scripts</text>
+      <text x="397" y="196" text-anchor="end" font-size="10" font-weight="700" fill="#F87171">✗ duplicated ctx</text>
+
+      <rect x="35" y="236" width="380" height="52" rx="10" fill="#1E293B" stroke="#F87171" stroke-opacity="0.35"/>
+      <text x="52" y="260" font-size="14" font-weight="800" fill="#F1F5F9">Codex</text>
+      <text x="52" y="276" font-size="9.5" fill="#94A3B8">own context · own scripts</text>
+      <text x="397" y="258" text-anchor="end" font-size="10" font-weight="700" fill="#F87171">✗ duplicated ctx</text>
+
+      <line x1="35" y1="300" x2="415" y2="300" stroke="#F87171" stroke-opacity="0.25"/>
+      <g font-size="13.5" font-weight="600" fill="#F87171">
+        <text x="52" y="322">✗ Efforts duplicated</text>
+        <text x="52" y="350">✗ Data not shared</text>
+        <text x="52" y="378">✗ No visibility</text>
+        <text x="52" y="406">✗ Doesn't scale</text>
+      </g>
+
+      <rect x="35" y="448" width="380" height="36" rx="8" fill="#1E293B" stroke="#F87171" stroke-opacity="0.35"/>
+      <text x="225" y="470" text-anchor="middle" font-size="10" font-weight="700" fill="#F87171">each agent re-learns the repo alone</text>
+    </g>
+
+    <!-- ================= CENTER : GOLD THESIS BOX ================= -->
+    <g>
+      <rect x="440" y="205" width="120" height="96" rx="12" fill="url(#gold)"/>
+      <text x="500" y="233" text-anchor="middle" font-size="24" font-weight="700" fill="#0F172A">→</text>
+      <g font-size="10" font-weight="800" fill="#0F172A" text-anchor="middle">
+        <text x="500" y="258">The difference</text>
+        <text x="500" y="274">isn't the tool.</text>
+        <text x="500" y="290">It's the process.</text>
+      </g>
+    </g>
+
+    <!-- ================= RIGHT PANEL : WITH SWARMIND ================= -->
+    <g>
+      <rect x="565" y="40" width="415" height="460" rx="16" fill="#0F172A" fill-opacity="0.55" stroke="#22D3EE" stroke-opacity="0.55" stroke-width="1.5"/>
+      <text x="585" y="76" font-size="20" font-weight="800" fill="#22D3EE">With SWARMIND</text>
+      <text x="585" y="96" font-size="10.5" font-weight="600" letter-spacing="2" fill="#94A3B8">ONE PROCESS · SHARED MEMORY · MEASURED</text>
+
+      <g font-size="12" font-weight="700">
+        <rect x="585" y="118" width="150" height="32" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-opacity="0.55"/>
+        <text x="660" y="139" text-anchor="middle" fill="#F1F5F9">Problem?</text>
+        <text x="750" y="139.5" text-anchor="middle" font-size="16" fill="#22D3EE" opacity="0.85">→</text>
+        <rect x="765" y="118" width="205" height="32" rx="8" fill="#1E293B" stroke="#22D3EE" stroke-opacity="0.8"/>
+        <text x="867.5" y="139" text-anchor="middle" fill="#22D3EE">task_planner</text>
+
+        <rect x="585" y="160" width="150" height="32" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-opacity="0.55"/>
+        <text x="660" y="181" text-anchor="middle" fill="#F1F5F9">Owner?</text>
+        <text x="750" y="181.5" text-anchor="middle" font-size="16" fill="#22D3EE" opacity="0.85">→</text>
+        <rect x="765" y="160" width="205" height="32" rx="8" fill="#1E293B" stroke="#22D3EE" stroke-opacity="0.8"/>
+        <text x="867.5" y="181" text-anchor="middle" fill="#22D3EE">governance</text>
+
+        <rect x="585" y="202" width="150" height="32" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-opacity="0.55"/>
+        <text x="660" y="223" text-anchor="middle" fill="#F1F5F9">Data?</text>
+        <text x="750" y="223.5" text-anchor="middle" font-size="16" fill="#22D3EE" opacity="0.85">→</text>
+        <rect x="765" y="202" width="205" height="32" rx="8" fill="#1E293B" stroke="#22D3EE" stroke-opacity="0.8"/>
+        <text x="867.5" y="223" text-anchor="middle" fill="#22D3EE">!rag · LanceDB</text>
+
+        <rect x="585" y="244" width="150" height="32" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-opacity="0.55"/>
+        <text x="660" y="265" text-anchor="middle" fill="#F1F5F9">Metrics?</text>
+        <text x="750" y="265.5" text-anchor="middle" font-size="16" fill="#22D3EE" opacity="0.85">→</text>
+        <rect x="765" y="244" width="205" height="32" rx="8" fill="#1E293B" stroke="#22D3EE" stroke-opacity="0.8"/>
+        <text x="867.5" y="265" text-anchor="middle" fill="#22D3EE">PBT · KPIs · voting</text>
+
+        <rect x="585" y="286" width="150" height="32" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-opacity="0.55"/>
+        <text x="660" y="307" text-anchor="middle" fill="#F1F5F9">Scale?</text>
+        <text x="750" y="307.5" text-anchor="middle" font-size="16" fill="#22D3EE" opacity="0.85">→</text>
+        <rect x="765" y="286" width="205" height="32" rx="8" fill="#1E293B" stroke="#22D3EE" stroke-opacity="0.8"/>
+        <text x="867.5" y="307" text-anchor="middle" fill="#22D3EE">evolve · GPU</text>
+      </g>
+
+      <line x1="585" y1="338" x2="960" y2="338" stroke="#22D3EE" stroke-opacity="0.25"/>
+      <g font-size="13.5" font-weight="600" fill="#4ADE80">
+        <text x="585" y="358">✓ Aligned</text>
+        <text x="585" y="386">✓ Shared memory</text>
+        <text x="585" y="414">✓ Measurable</text>
+        <text x="585" y="442">✓ Scales</text>
+      </g>
+
+      <rect x="585" y="452" width="375" height="36" rx="8" fill="#1E293B" stroke="#22D3EE" stroke-opacity="0.55"/>
+      <text x="772.5" y="474" text-anchor="middle" font-size="10" font-weight="700" fill="#22D3EE">fan-out N=3 · voting gate ≥70% · PBT validated</text>
+    </g>
+
+    <!-- ================= FOOTER ================= -->
+    <text x="500" y="536" text-anchor="middle" font-size="22" font-weight="800" fill="#22D3EE">The difference isn't the model. It's the harness.</text>
+  </g>
+</svg>

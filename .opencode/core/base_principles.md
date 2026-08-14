@@ -28,6 +28,7 @@ TST: core >=80% | pre-commit gates | 0 except silenciosos | logger.warning()
 CMT: conventional commit type(scope): descripcion
 FDE: bridge product↔reality | delta = gap to close | mission > persona
 EVO: learn→design→experiment→analyze | cognition persists | loop repeats
+POC: Proceso > herramienta | sin harness = departamento aislado | 5 preguntas antes de adoptar
 TKN: Cache-Shape | Structured Compact | Failure-Spend | Observation Masking
 WFP: Workflow Patterns | Evaluator-Optimizer | Voting | Critique-Revise | Parallel-Transform
 PBT: Property-Based Testing Templates | holes rellenables | invariantes | -59% alucinaciones
@@ -74,6 +75,7 @@ FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | ele
 | **SVE** | Semantic Versioning MAJOR.MINOR.PATCH para skills y agent prompts. CHANGELOG automatico. Trazabilidad de regresiones por scaffolding. **2026**: usar `release-please` o `commitizen` para automatizar versionado. Conventional commits + automerge en CI. |
 | **FDE** | Bridge product↔reality. Delta = gap a cerrar. Mission > persona. Glue 50% integracion. Speed-to-value primero. Diplomacia tecnica. Zero-trust. |
 | **EVO** | Loop learn→design→experiment→analyze. Cognition store persiste lecciones. Experiment DB registra todo. Best snapshot automatico. SURS >= 90% en cada deploy. |
+| **POC** | Proceso sobre herramienta: toda tool/modelo/agente nuevo se adopta como proceso orquestado (fan-out + votación gate≥70, memoria SSOT, oráculos PBT/mutation, KPIs) o se descarta. 5 preguntas: problema, responsable, datos, medición, escalado. Caso ORCA 2026. |
 | **MCL** | MetaClaw continual meta-learning: skill-driven fast adaptation + RL process reward optimization. Skills como behavioral instructions que evolucionan. MARS reflection single-cycle. |
 | **MKS** | Memento-Skills: skill-as-memory en cognition store. Router contrastivo recupera lecciones relevantes. ERL heuristics > raw trajectories para transferencia entre skills. |
 | **UPG** | **Upgrade Continuo (regla universal)**: TODO stack tecnologico debe estar en la ultima version estable viable. Investigar ANTES de actuar (web research exhaustiva + mesa de trabajo). Lenguajes, librerias, frameworks, runtimes, dependencias build, deps transitivas: TODAS. Si una version mas reciente es incompatible con el codigo actual, se documenta el delta y se migra. Si existe alternativa mas eficiente (mismo problema, menor costo/memoria/latencia), se evalua via mesa de trabajo y se migra. Excluye: paquetes en EOL (deprecation > 6 meses) sin LTS, alphas/betas/RCs inestable, versiones que rompen contratos publicos sin migracion posible. |

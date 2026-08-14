@@ -61,6 +61,12 @@ launcher.bat   # Windows
 - Task planning and orchestration, agent bus, MARS scheduler, MetaClaw, adaptive planning, debate orchestration, worktable, and workflows.
 - `harness/run_commands/` package for interactive commands (`!rag`, `!db`, `!iteration`) and a multi-harness layer with adapters + CLI.
 
+### Process over Tools
+
+The difference isn't the model. It's the harness. An agent without a harness is an isolated department: duplicated effort, no shared memory, no scaling, no measurement. Every new tool/MCP/model is adopted as an orchestrated process (fan-out, governed voting ≥70, SSOT memory, PBT/mutation oracles) or discarded — see the ORCA 2026 case (stablyai/orca dropped as a tool, its parallel/voting process adopted natively).
+
+![Process over Tools](assets/diagrams/process_over_tools.svg)
+
 ### Model Routing & Token Economics
 - Heuristic `ModelRouter` (`harness/model_router/complexity_router/`) with small/frontier signals and `route_with_fallback` (confidence < 0.7 falls back to the frontier model).
 - `MultiAPIProvider` with failover and health-checks (`harness/model_router/multi_provider/`, `harness/model_router/provider_health/`).

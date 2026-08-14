@@ -78,7 +78,7 @@ HARNESS:
     - session_kpis
     - agent_interactions
   agent_count: 23
-  skill_count: 34
+  skill_count: 35
   model_routing: "hybrid (local Ollama + cloud API)"
   hitl_enabled: true
   gateway_modes: ["cli"]
@@ -120,7 +120,7 @@ AGENTS:
     - token-budget-auditor
 
 SKILLS:
-  total: 34
+  total: 35
   skill_list:
     - ads-optimizer
     - alpha-research
@@ -144,6 +144,7 @@ SKILLS:
     - math-doc
     - physical-sciences
     - pos-retail
+    - process-over-tools
     - project-management
     - psychology
     - quant-trading
