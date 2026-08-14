@@ -101,6 +101,9 @@ docs/book/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+# Mutation testing (mutmut): cache v2 legacy + estado v3 (mutants/)
+.mutmut-cache/
+mutants/
 
 # Proptest
 proptest-regressions/

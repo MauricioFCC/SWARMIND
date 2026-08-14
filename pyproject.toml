@@ -91,11 +91,10 @@ source = ["harness"]
 omit = ["harness/tests/*", "harness/scripts/*"]
 
 [tool.coverage.report]
-# Jul 2026: coverage actual 59.69%
+# Ago 2026: coverage real 75.70% (4465 passed, verificado con pytest --cov)
 fail_under = 62
-# Proximo PR: fail_under = 55
-# Siguiente:   fail_under = 70
-# Objetivo:    fail_under = 80
+# Siguiente: fail_under = 70
+# Objetivo:  fail_under = 80
 
 # ---------------------------------------------------------------------------
 # Ruff (linter)
