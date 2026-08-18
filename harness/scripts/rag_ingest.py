@@ -60,8 +60,10 @@ def _ingest(
     directory: str,
     dry_run: bool = False,
     verbose: bool = False,
+    include_docs: bool = False,
 ) -> None:
     """Ingiere archivos fuente desde *directory* en la BD RAG."""
+    from harness.memory_rag.doc_converter import DOC_EXTENSIONS
     from harness.memory_rag.doc_ingester import ingest_project_directory
 
     target = Path(directory).resolve()
@@ -75,16 +77,18 @@ def _ingest(
     logger.info("  Directorio: %s", target)
     logger.info("  Dry-run:    %s", dry_run)
     logger.info("  Verbose:    %s", verbose)
+    logger.info("  Docs:       %s", include_docs)
     logger.info("")
 
     if dry_run:
         # Solo contar archivos, sin ingerir
         from harness.memory_rag.doc_ingester import RAG_EXCLUDE, RAG_EXTENSIONS
+        exts = RAG_EXTENSIONS if include_docs else RAG_EXTENSIONS - set(DOC_EXTENSIONS)
         count = 0
         for fpath in sorted(target.rglob("*")):
             if not fpath.is_file():
                 continue
-            if fpath.suffix.lower() not in RAG_EXTENSIONS:
+            if fpath.suffix.lower() not in exts:
                 continue
             if any(part in RAG_EXCLUDE for part in fpath.parts):
                 continue
@@ -104,6 +108,7 @@ def _ingest(
         stats = ingest_project_directory(
             str(target),
             show_progress=verbose,
+            include_docs=include_docs,
         )
         elapsed = time.time() - start
 
@@ -152,6 +157,11 @@ def main() -> None:
         action="store_true",
         help="Muestra progreso detallado por archivo",
     )
+    parser.add_argument(
+        "--include-docs",
+        action="store_true",
+        help="Incluye documentos binarios (PDF/DOCX/PPTX/XLSX...) convertidos a Markdown",
+    )
 
     args = parser.parse_args()
 
@@ -160,7 +170,12 @@ def main() -> None:
         return
 
     directory = args.dir or str(_PROJECT_ROOT)
-    _ingest(directory, dry_run=args.dry_run, verbose=args.verbose)
+    _ingest(
+        directory,
+        dry_run=args.dry_run,
+        verbose=args.verbose,
+        include_docs=args.include_docs,
+    )
 
 
 if __name__ == "__main__":

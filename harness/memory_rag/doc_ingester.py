@@ -15,6 +15,12 @@ from typing import Any
 import numpy as np
 
 from harness.common import fallback_embedding
+from harness.memory_rag.doc_converter import (
+    DOC_EXTENSIONS,
+    AnyDocConverter,
+    DocumentConversionError,
+    DocumentConverter,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +62,28 @@ _EXTENSION_TIPO: dict[str, str] = {
     ".yml": "configuracion",
     ".yaml": "configuracion",
     ".json": "configuracion",
+    # Documentos binarios convertidos a Markdown (firecrawl-anydoc)
+    ".pdf": "documento",
+    ".doc": "documento",
+    ".docx": "documento",
+    ".docm": "documento",
+    ".odt": "documento",
+    ".rtf": "documento",
+    ".epub": "documento",
+    ".ppt": "presentacion",
+    ".pps": "presentacion",
+    ".pot": "presentacion",
+    ".pptx": "presentacion",
+    ".pptm": "presentacion",
+    ".ppsx": "presentacion",
+    ".ppsm": "presentacion",
+    ".odp": "presentacion",
+    ".xls": "hoja_calculo",
+    ".xlsx": "hoja_calculo",
+    ".xlsm": "hoja_calculo",
+    ".xlsb": "hoja_calculo",
+    ".ods": "hoja_calculo",
+    ".csv": "datos_tabulares",
 }
 
 
@@ -97,16 +125,38 @@ class DocumentChunker:
         chunk_size: int = 25,
         overlap: int = 3,
         embedding_fn=None,
+        converter: DocumentConverter | None = None,
     ) -> None:
-        """Inicializa el chunker con tamano de chunk y solapamiento."""
+        """
+        Inicializa el chunker con tamano de chunk y solapamiento.
+
+        Args:
+            chunk_size: Lineas por chunk (default 25).
+            overlap: Solapamiento de lineas entre chunks (default 3).
+            embedding_fn: Funcion de embedding para chunk_and_vectorize.
+            converter: Convertidor binario->Markdown (DIP). Si None, se usa
+                AnyDocConverter solo si firecrawl-anydoc esta instalado.
+        """
         self.chunk_size = chunk_size
         self.overlap = overlap
         self._embedding_fn = embedding_fn or self._default_embedding
+        self.converter: DocumentConverter | None = converter
+        if self.converter is None:
+            candidate = AnyDocConverter()
+            if candidate.is_available():
+                self.converter = candidate
 
     def chunk_file(self, filepath: str) -> list[Chunk]:
         """
         Read a file and split it into chunks.
         Returns list of Chunk objects with auto-detected metadata.
+
+        Args:
+            filepath: Ruta del archivo a trocear (texto o documento binario).
+
+        Returns:
+            Lista de Chunk; vacia si el archivo no existe, no se puede leer,
+            o es binario sin converter disponible / conversion fallida.
         """
         path = Path(filepath)
         if not path.is_file():
@@ -118,16 +168,85 @@ class DocumentChunker:
         domain = self._detect_domain(str(path))
         tags = [domain, tipo_doc]
 
-        try:
-            with open(filepath, encoding="utf-8") as f:
-                lines = f.readlines()
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("Cannot read %s: %s", filepath, exc)
-            return []
-
+        lines = self._read_lines(path, ext)
         if not lines:
             return []
+        return self._chunk_lines(lines, str(path), tipo_doc, domain, tags)
 
+    def _read_lines(self, path: Path, ext: str) -> list[str]:
+        """Lee lineas del archivo, convirtiendo binarios a Markdown si aplica.
+
+        Args:
+            path: Ruta del archivo.
+            ext: Extension en minusculas (ej. ``.pdf``).
+
+        Returns:
+            Lista de lineas (con saltos conservados); vacia si la lectura o
+            la conversion fallan, o si es binario sin converter disponible.
+        """
+        if ext in DOC_EXTENSIONS:
+            converter = self.converter
+            if converter is None:
+                logger.warning(
+                    "Documento binario sin converter disponible, skip: %s", path
+                )
+                return []
+            text = self._convert_binary(path, converter)
+            if text is None:
+                return []
+            return text.splitlines(keepends=True)
+
+        try:
+            with open(path, encoding="utf-8") as f:
+                return f.readlines()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Cannot read %s: %s", path, exc)
+            return []
+
+    @staticmethod
+    def _convert_binary(path: Path, converter: DocumentConverter) -> str | None:
+        """Convierte un documento binario a Markdown, logueando fallos.
+
+        Args:
+            path: Ruta del documento binario.
+            converter: Convertidor inyectado (AnyDocConverter o mock).
+
+        Returns:
+            Texto Markdown convertido, o None si la conversion fallo.
+        """
+        try:
+            text = converter.convert(path)
+        except DocumentConversionError as exc:
+            logger.warning("Conversion fallida: %s", exc)
+            return None
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Conversion inesperada de %s: %s", path, exc)
+            return None
+        if not isinstance(text, str):
+            logger.warning("Conversion devolvio tipo invalido para %s", path)
+            return None
+        return text
+
+    def _chunk_lines(
+        self,
+        lines: list[str],
+        source_file: str,
+        tipo_doc: str,
+        domain: str,
+        tags: list[str],
+    ) -> list[Chunk]:
+        """Trocea lineas en chunks solapados con metadatos auto-detectados.
+
+        Args:
+            lines: Lineas del documento (texto o Markdown convertido).
+            source_file: Ruta original del archivo.
+            tipo_doc: Tipo de documento por extension.
+            domain: Dominio detectado por ruta.
+            tags: Tags base (domain + tipo_doc).
+
+        Returns:
+            Lista de Chunk resultantes.
+        """
         chunks: list[Chunk] = []
         num_lines = len(lines)
         i = 0
@@ -142,16 +261,17 @@ class DocumentChunker:
             content_tipo = self._detect_tipo_doc(chunk_text)
             effective_tipo = content_tipo if content_tipo != DEFAULT_TIPO_DOC else tipo_doc
 
-            chunk = Chunk(
-                text=chunk_text,
-                source_file=str(path),
-                start_line=i + 1,
-                end_line=end,
-                domain=domain,
-                tipo_doc=effective_tipo,
-                tags=list(set(tags + [effective_tipo])),
+            chunks.append(
+                Chunk(
+                    text=chunk_text,
+                    source_file=source_file,
+                    start_line=i + 1,
+                    end_line=end,
+                    domain=domain,
+                    tipo_doc=effective_tipo,
+                    tags=list(set(tags + [effective_tipo])),
+                )
             )
-            chunks.append(chunk)
             i += self.chunk_size - self.overlap
 
         return chunks
@@ -264,11 +384,13 @@ def ingest_directory(
 # High-level convenience: scan a directory tree and ingest everything
 # ---------------------------------------------------------------------------
 
-# Source file extensions recognised for RAG ingestion
+# Source file extensions recognised for RAG ingestion.
+# DOC_EXTENSIONS se incluyen: sin converter el chunker las omite con warning
+# (no rompe el pipeline); con firecrawl-anydoc se convierten a Markdown.
 RAG_EXTENSIONS: set = {
     ".py", ".rs", ".go", ".ts", ".tsx", ".js", ".jsx",
     ".md", ".yaml", ".yml", ".toml", ".json", ".sql",
-}
+} | set(DOC_EXTENSIONS)
 
 # Directories always excluded from ingestion
 # (harness/ y .opencode/ se ingieren por separado; el scan automatico los omite)
@@ -286,6 +408,7 @@ def ingest_project_directory(
     chunk_size: int = 25,
     overlap: int = 3,
     show_progress: bool = True,
+    include_docs: bool = False,
 ) -> dict[str, Any]:
     """
     High-level convenience: scan *directory* recursively, chunk every
@@ -302,13 +425,16 @@ def ingest_project_directory(
         chunk_size: Lines per chunk (default 25).
         overlap: Line overlap between consecutive chunks (default 3).
         show_progress: Log per-file progress (default True).
+        include_docs: Anade DOC_EXTENSIONS (binarios -> Markdown) al scan.
 
     Returns:
         Dict with keys: files_processed, chunks_inserted, errors, elapsed_s.
     """
     _ensure_lancedb()
 
-    exts = extensions or RAG_EXTENSIONS
+    exts = set(extensions or RAG_EXTENSIONS)
+    if include_docs:
+        exts |= set(DOC_EXTENSIONS)
     skip_dirs = exclude_dirs or RAG_EXCLUDE
 
     root = Path(directory).resolve()
