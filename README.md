@@ -9,7 +9,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](pyproject.toml)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
-[![Tests](https://img.shields.io/badge/tests-4465_passing-brightgreen.svg)](harness/tests/)
+[![Tests](https://img.shields.io/badge/tests-4662_passing-brightgreen.svg)](harness/tests/)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **Spanish (es)** is the primary documentation language; this README is in English for GitHub.
@@ -77,6 +77,10 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 - Hot models are kept resident with `keep_alive: "5m"` (warm/unload via `/api/ps`) and are auto-installed with `ollama pull` when missing (`auto_pull: true`), so simple tasks run fully local: **0 cloud tokens** (TKN).
 - If Ollama is unavailable or a tier's model is missing, the router degrades to the existing cloud `ModelRouter`/`SlmRouter` fallback.
 
+### Integrations
+- **anydoc — document ingestion for RAG** (`harness/memory_rag/doc_converter.py`): a `DocumentConverter` protocol plus `AnyDocConverter` (lazy, backed by `firecrawl-anydoc>=0.1.9`) converts **21 binary/text extensions** (pdf, docx, doc, pptx, ppt, xlsx, xls, odt, odp, ods, rtf, epub, csv, tsv, html, htm, md, txt, json, yaml, yml) to Markdown before chunking. `DocumentChunker` accepts an injected converter (DI, default `AnyDocConverter`) and raises `DocumentConversionError(path, reason)` when conversion fails — errors are never swallowed. Enable it with `harness/scripts/rag_ingest.py --include-docs` or the interactive `!rag ingest --docs`.
+- **deepseek-harness patterns — plugin lifecycle + session replay**: `harness/plugins/registry.py` extends `PluginBase` with `on_load()`/`on_unload()`/`events` (no-op defaults), `ToolRegistry` accepts an optional `event_bus` (DI) and auto-subscribes plugins to `on_{event}` handlers; `load_all()`/`unload_all()` are idempotent. `harness/observability/session_replay.py` provides `SessionReplay` to replay recorded sessions (Markdown/JSON export) with `SessionNotFoundError`. Demo: `harness/plugins/tools/example_tool.py` (`GreeterTool`).
+
 ### Memory & RAG
 - Central portable memory with LanceDB vector store (`harness/memory_rag/lance_vector_store.py`), semantic cache, SQLite-vec adapter (edge/offline backend), federated search, context window management, and `shapley_flow` optimization.
 - `AgentKPITracker`, compression strategies, context assembler, token budget managers, and skill loader.
@@ -124,6 +128,7 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 │  harness/memory_rag/                                         │
 │   lance_vector_store · semantic_cache · sqlite_vec_adapter   │
 │   federated_search · shapley_flow · context_window_manager   │
+│   doc_converter · doc_ingester (binaries → Markdown → RAG)   │
 │   token_budget · token_budget_manager                        │
 └───────────────────────────┬─────────────────────────────────┘
                             │
@@ -246,7 +251,7 @@ python scripts/enable_gpu.py
 
 Quality is enforced continuously, not at the end:
 
-- **Test suite**: 4465 passed, 37 skipped, 4 xfailed (75.70% coverage, mutation testing mutmut gate ≥70%).
+- **Test suite**: 4662 tests collected (TDD suite), coverage 75.70%, mutation testing mutmut gate ≥70%.
 - **Lint**: ruff — all checks passed.
 - **Dead code**: vulture — 0 dead code.
 - **Architecture debt (AGR)**: 0 files over 500 lines in non-test code; 32 flat modules refactored into packages with re-exporting `__init__.py`; mixins limited to ≤ 2 bases; SOLID corrected in 9 classes.
@@ -267,10 +272,13 @@ SWARMIND/
 │   ├── memory_rag/             # lance_vector_store, semantic_cache, sqlite_vec_adapter, federated_search,
 │   │                           # agent_kpi_tracker, vector_store_adapter, context_window_manager,
 │   │                           # compression_strategies, shapley_flow, optimization_pipeline,
-│   │                           # context_assembler, token_budget, token_budget_manager, skill_loader
+│   │                           # context_assembler, token_budget, token_budget_manager, skill_loader,
+│   │                           # doc_converter, doc_ingester (anydoc: binaries → Markdown → RAG)
 │   ├── validation/             # pbt_stage.py, mutation_stage.py
 │   ├── gpu_accel.py            # CUDA detection + gpu_optimize.py
 │   ├── gpu_optimize.py
+│   ├── plugins/                # plugin lifecycle (on_load/on_unload/events) + tools (GreeterTool)
+│   ├── observability/          # OpenTelemetry, structured logging, session_replay
 │   ├── run_commands/           # interactive commands (!rag, !db, !iteration)
 │   ├── scheduler/              # scheduled runs
 │   ├── db/migrate_engine/      # database migration engine

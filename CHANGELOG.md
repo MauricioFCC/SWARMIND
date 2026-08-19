@@ -2,6 +2,39 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-08-18] Integraciones: anydoc (binarios → RAG) + patrones deepseek-harness (plugin lifecycle + session replay)
+
+### anydoc — documentos binarios a Markdown en RAG (feat, commit 983f93c)
+- **doc_converter** (NUEVO `harness/memory_rag/doc_converter.py`): Protocol
+  `DocumentConverter` + `AnyDocConverter` (lazy, basado en
+  `firecrawl-anydoc>=0.1.9`), `DocumentConversionError(path, reason)` con path y
+  causa, `DOC_EXTENSIONS` con **21 extensiones** (pdf, docx, doc, pptx, ppt, xlsx,
+  xls, odt, odp, ods, rtf, epub, csv, tsv, html, htm, md, txt, json, yaml, yml).
+- **doc_ingester** (`harness/memory_rag/doc_ingester.py`): `DocumentChunker` acepta
+  `converter` inyectado (DI, default `AnyDocConverter`); mapeo `_EXTENSION_TIPO`
+  ampliado (documento/presentacion/hoja_calculo/datos_tabulares); `chunk_file()`
+  convierte binarios a Markdown antes de chunkear y propaga
+  `DocumentConversionError` (no traga el error).
+- **Ingesta**: flag `--include-docs` en `harness/scripts/rag_ingest.py` y comando
+  `!rag ingest --docs` (`harness/run_commands/handlers_other.py`).
+- Dependencia `firecrawl-anydoc>=0.1.9` en `pyproject.toml` + `uv.lock`.
+- Verificado: CSV → tabla Markdown real, PDF inexistente → `DocumentConversionError`,
+  31+ tests nuevos.
+
+### Patrones deepseek-harness — plugin lifecycle + session replay (feat, commit 983f93c)
+- **Plugin lifecycle** (`harness/plugins/registry.py`): `PluginBase` con `on_load()`,
+  `on_unload()` y `events` (defaults no-op); `ToolRegistry.__init__(event_bus=None)`
+  (DI); `load_all()`/`unload_all()` idempotentes; suscripcion automatica de plugins
+  a eventos `on_{event}` del EventBus.
+- **Demo** (`harness/plugins/tools/example_tool.py`): `GreeterTool` con ciclo de vida
+  (on_load/on_unload).
+- **Session replay** (NUEVO `harness/observability/session_replay.py`):
+  `SessionReplay` para reproducir sesiones (export markdown/json) +
+  `SessionNotFoundError`.
+- Tests: `test_plugin_lifecycle.py` (30) + `test_session_replay.py` (29); coverage:
+  registry 94%, session_replay 100%.
+- Suite: **4662 tests** collected; 35 skills validos (`validate_skills.py --strict`).
+
 ## [2026-08-14] Delegacion local Ollama: 4 tiers por capacidad + keep_alive (minimo tokens cloud)
 
 ### Delegacion local (TKN — minimizar tokens cloud)

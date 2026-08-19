@@ -8,7 +8,7 @@
 
 | Metrica | Valor |
 |---------|-------|
-| Tests | 4465 passing (37 skipped, 4 xfailed) · 75.70% coverage · mutation testing ≥70% |
+| Tests | 4662 collected (TDD suite) · 75.70% coverage · mutation testing ≥70% |
 | Cobertura | 75.70% |
 | Agentes | 23 especializados (100% perfiles) |
 | Skills | 35 contextuales (100% SKILL.md + SKILL.min.md) |
@@ -23,7 +23,7 @@
 | Vector stores | LanceDB (central) + SQLite-vec (edge) + federated search |
 | Observabilidad | OpenTelemetry (trazas, metricas, exportacion OTLP) |
 | Orquestacion paralela | ParallelExecutor fan-out nativo + voting gobernado |
-| Commits | 281 |
+| Commits | 304 |
 | Lint / dead code | ruff 0 errores, vulture 0 dead code |
 
 El detalle de cobertura por modulo, hitos y roadmap esta en [Estado del Proyecto](roadmap/estado.md).
@@ -84,7 +84,7 @@ Para la estructura detallada, ver [Agentes y Skills — Sistema de Archivos](gui
 
 Swarmind compite con **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (46.2k) y **CodeWhale** (40.2k). La comparativa completa con tabla de capacidades esta en [Comparativa Harness 2026](reference/comparativa-harness-2026.md).
 
-**Diferenciación clave:** GPU Acceleration (search x10.9), Token Economics (-51%), Governance completo, Zero Trust, Hook System determinista, Multi-Harness (5 runtimes), 4465 tests.
+**Diferenciación clave:** GPU Acceleration (search x10.9), Token Economics (-51%), Governance completo, Zero Trust, Hook System determinista, Multi-Harness (5 runtimes), 4662 tests.
 
 ### Cambios Agosto 2026
 
@@ -93,4 +93,6 @@ Swarmind compite con **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (4
 - **GPU CUDA 12.6** habilitada (torch 2.13.0+cu126): search x10.9, embeddings 41us/msg.
 - **Memoria central SSOT** portable (`Memory_Proyects` via `MEMORY_ROOT`), 7.5 GB liberados, backup automatico.
 - **Delegación local Ollama 4-tier**: tareas simples/RAG/visión con modelos locales 2026 (`qwen3:4b`, `deepseek-r1:8b`, `qwen2.5-coder:7b`, `qwen3-embedding:0.6b`, `qwen3-vl:4b`) — 0 tokens cloud (TKN), degradación a cloud automática.
+- **Integración anydoc** (`harness/memory_rag/doc_converter.py` + `doc_ingester.py`): binarios → Markdown → RAG con **21 extensiones** (pdf/docx/pptx/xlsx/odt/epub/rtf/csv…), `AnyDocConverter` lazy (firecrawl-anydoc>=0.1.9), `DocumentConversionError(path, reason)` sin tragar errores; ingesta con `rag_ingest.py --include-docs` o `!rag ingest --docs`.
+- **Patrones deepseek-harness**: plugin lifecycle (`PluginBase` con `on_load`/`on_unload`/`events`, `ToolRegistry` con `event_bus` DI + suscripción automática `on_{event}`, `load_all`/`unload_all` idempotentes) + session replay (`SessionReplay` export markdown/json, `SessionNotFoundError`) — 59 tests nuevos (30 plugin + 29 replay), registry 94%, session_replay 100%.
 - Documentacion publica actualizada y depurada.

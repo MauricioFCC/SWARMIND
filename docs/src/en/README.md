@@ -8,7 +8,7 @@
 
 | Metric | Value |
 |--------|-------|
-| Tests | 4465 passing (37 skipped, 4 xfailed) · 75.70% coverage · mutation testing ≥70% |
+| Tests | 4662 collected (TDD suite) · 75.70% coverage · mutation testing ≥70% |
 | Coverage | 75.70% |
 | Agents | 23 specialized (100% profiles) |
 | Skills | 35 contextual (100% SKILL.md + SKILL.min.md) |
@@ -23,7 +23,7 @@
 | Vector stores | LanceDB (central) + SQLite-vec (edge) + federated search |
 | Observability | OpenTelemetry (traces, metrics, OTLP export) |
 | Parallel orchestration | ParallelExecutor native fan-out + governed voting |
-| Commits | 281 |
+| Commits | 304 |
 | Lint / dead code | ruff 0 errors, vulture 0 dead code |
 
 Per-module coverage, milestones, and roadmap are documented in [Project Status](../es/roadmap/estado.md).
@@ -83,7 +83,7 @@ For detailed structure, see [Agents & Skills — File System](../es/guide/agente
 
 Swarmind competes with **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (46.2k) and **CodeWhale** (40.2k). The full capability comparison table is in [Harness Comparison 2026](../es/reference/comparativa-harness-2026.md).
 
-**Key differentiators:** GPU Acceleration (search x10.9), Token Economics (-51%), Full Governance, Zero Trust, Deterministic Hook System, Multi-Harness (5 runtimes), 4465 tests.
+**Key differentiators:** GPU Acceleration (search x10.9), Token Economics (-51%), Full Governance, Zero Trust, Deterministic Hook System, Multi-Harness (5 runtimes), 4662 tests.
 
 ### August 2026 changes
 
@@ -92,4 +92,6 @@ Swarmind competes with **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** 
 - **CUDA 12.6 GPU** enabled (torch 2.13.0+cu126): search x10.9, embeddings 41us/msg.
 - **Central portable memory SSOT** (`Memory_Proyects` via `MEMORY_ROOT`), 7.5 GB reclaimed, automatic backup.
 - **Local Ollama delegation (4-tier)**: simple/RAG/vision tasks with current local models (`qwen3:4b`, `deepseek-r1:8b`, `qwen2.5-coder:7b`, `qwen3-embedding:0.6b`, `qwen3-vl:4b`) — 0 cloud tokens (TKN), automatic cloud fallback.
+- **anydoc integration** (`harness/memory_rag/doc_converter.py` + `doc_ingester.py`): binaries → Markdown → RAG with **21 extensions** (pdf/docx/pptx/xlsx/odt/epub/rtf/csv…), lazy `AnyDocConverter` (firecrawl-anydoc>=0.1.9), `DocumentConversionError(path, reason)` without swallowing errors; ingest via `rag_ingest.py --include-docs` or `!rag ingest --docs`.
+- **deepseek-harness patterns**: plugin lifecycle (`PluginBase` with `on_load`/`on_unload`/`events`, `ToolRegistry` with injected `event_bus` + automatic `on_{event}` subscription, idempotent `load_all`/`unload_all`) + session replay (`SessionReplay` markdown/json export, `SessionNotFoundError`) — 59 new tests (30 plugin + 29 replay), registry 94%, session_replay 100%.
 - Public documentation updated and cleaned up.

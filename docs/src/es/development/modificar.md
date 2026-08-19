@@ -1,6 +1,6 @@
 ﻿# Cómo Modificar el Proyecto — Swarmind Harness
 
-> **Última actualización:** Agosto 2026 · Python 3.12+ · 167 archivos test · 4465 tests · cobertura 75.70%
+> **Última actualización:** Agosto 2026 · Python 3.12+ · 171 archivos test · 4662 tests · cobertura 75.70%
 
 ---
 
@@ -70,6 +70,36 @@ Tareas simples/RAG/visión se delegan a **modelos locales** vía Ollama
 (`keep_alive` "5m", `auto_pull` true, `warm_on_start`). Degrada a cloud
 (ModelRouter/SlmRouter) si Ollama no está disponible.
 
+## 1d. Integraciones: anydoc + patrones deepseek-harness
+
+### anydoc — documentos binarios a Markdown en RAG
+
+| Componente | Archivo | Rol |
+|------------|---------|-----|
+| `DocumentConverter` (Protocol) | `memory_rag/doc_converter.py` | Contrato de conversion binario → Markdown |
+| `AnyDocConverter` | `memory_rag/doc_converter.py` | Implementacion lazy basada en `firecrawl-anydoc>=0.1.9` |
+| `DocumentConversionError` | `memory_rag/doc_converter.py` | Error con `path` + `reason` (WHAT+WHY+WHERE) |
+| `DOC_EXTENSIONS` | `memory_rag/doc_converter.py` | 21 extensiones soportadas |
+| `DocumentChunker` | `memory_rag/doc_ingester.py` | Acepta `converter` inyectado (DI, default `AnyDocConverter`) |
+
+Ingesta de binarios:
+
+```bash
+python harness/scripts/rag_ingest.py --dir <ruta> --include-docs   # CLI
+!rag ingest --dir <ruta> --docs                                    # consola interactiva
+```
+
+### deepseek-harness — plugin lifecycle + session replay
+
+- **Plugin lifecycle** (`plugins/registry.py`): `PluginBase` expone `on_load(ctx)`,
+  `on_unload(ctx)` y `events` (defaults no-op). `ToolRegistry.__init__(event_bus=None)`
+  inyecta el EventBus (DI) y suscribe automaticamente cada plugin a sus handlers
+  `on_{event}`. `load_all()` / `unload_all()` son **idempotentes** (no re-cargan ni
+  re-descargan plugins ya gestionados).
+- **Session replay** (`observability/session_replay.py`): `SessionReplay` reproduce
+  una sesion grabada y la exporta a Markdown o JSON; lanza `SessionNotFoundError`
+  si el `session_id` no existe.
+
 ---
 
 ## 2. Ejecutar Tests
@@ -121,3 +151,73 @@ pre-commit run --all-files  # Hooks: compile-check, secret-scan, ruff-lint
 **Infra/Seguridad:** devops-infra, security-audit  
 **Retail/Física:** pos-retail, physical-sciences  
 **Marketing:** ads-optimizer
+
+---
+
+## 5. Añadir un Nuevo Formato de Documento (anydoc)
+
+Para que el RAG ingeste un formato adicional (p. ej. `doc`, `rtf` ya cubiertos, o
+uno nuevo como `mdx`):
+
+1. **Extender `DOC_EXTENSIONS`** en `harness/memory_rag/doc_converter.py`
+   (frozenset de extensiones sin punto, en minusculas). `firecrawl-anydoc` debe
+   soportar el formato; si no, implementa un converter propio del Protocol
+   `DocumentConverter` e inyectalo en `DocumentChunker` (DIP).
+2. **Ampliar el mapeo `_EXTENSION_TIPO`** en `harness/memory_rag/doc_ingester.py`
+   para clasificar el documento en una categoria semantica:
+   `documento` / `presentacion` / `hoja_calculo` / `datos_tabulares` (p. ej.
+   `"docx": "documento"`, `"xlsx": "hoja_calculo"`, `"csv": "datos_tabulares"`).
+3. **Verificar**: el chunker convierte el binario a Markdown antes de chunkear y
+   propaga `DocumentConversionError(path, reason)` si falla — nunca lo traga.
+4. **Tests**: anade un test en `harness/tests/` que ingeste un fixture del nuevo
+   formato y que verifique el error para un archivo inexistente.
+
+---
+
+## 6. Plugin Lifecycle + Session Replay (deepseek-harness)
+
+### Ciclo de vida de un plugin
+
+```python
+from harness.plugins.registry import PluginBase
+
+class MiTool(PluginBase):
+    """Tool demo con ciclo de vida completo."""
+
+    def execute(self, **kwargs) -> Any:
+        return "ok"
+
+    def on_load(self, ctx: Any) -> None:
+        # Hook al cargar: inicializar recursos, registrar en ctx
+        ...
+
+    def on_unload(self, ctx: Any) -> None:
+        # Hook al descargar: liberar recursos, limpiar
+        ...
+
+    def events(self) -> tuple[str, ...]:
+        # Eventos del EventBus a los que suscribirse (handlers on_{event})
+        return ("tool_loaded",)
+```
+
+- `ToolRegistry(event_bus=bus)` inyecta el EventBus (DI); el registro suscribe
+  automaticamente cada plugin a sus `on_{event}` y los desuscribe al descargar.
+- `load_all(ctx)` / `unload_all(ctx)` son idempotentes: ejecutarlos dos veces no
+  dispara doble carga/descarga.
+- Demo de referencia: `harness/plugins/tools/example_tool.py` (`GreeterTool`).
+
+### Session Replay
+
+```python
+from harness.observability.session_replay import SessionReplay, SessionNotFoundError
+
+replay = SessionReplay()          # log_source por defecto: session log
+try:
+    md = replay.replay("sesion-123", format="markdown")   # o format="json"
+except SessionNotFoundError as exc:
+    print(f"Sesion no encontrada: {exc}")
+```
+
+- `export_markdown(session_id)` / `export_json(session_id)`: salida reproducible
+  de una sesion grabada para auditoria o depuracion.
+- `SessionNotFoundError(session_id)`: WHAT+WHY+WHERE — incluye el id de la sesion.

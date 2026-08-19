@@ -213,11 +213,11 @@ Para tareas largas o complejas, incluir un **brief recordatorio** al inicio:
 
 ```
 Contexto actual del proyecto Swarmind:
-- .opencode/agents/ → perfiles de 5 agentes
-- harness/ → motor de ejecución con 327 tests
-- skills disponibles: 10 skills en .opencode/skills/
+- .opencode/agents/ → perfiles de 23 agentes
+- harness/ → motor de ejecución con 4662 tests
+- skills disponibles: 35 skills en .opencode/skills/
 - export: scripts/export_archive.py
-- commit reciente: d102c2f (optimización tokens + Swiss Watch)
+- commit reciente: 983f93c (integraciones anydoc + deepseek-harness)
 ```
 
 ### 📌 Estrategia 3: Usar el sistema de skills como memoria externa
@@ -476,7 +476,7 @@ Usuario -> Coordinator -> SWARM (Nivel 0) --------------------------------
 ```
 Swarmind/
 ├── .opencode/                          # CEREBRO DEL SISTEMA (memoria del LLM)
-│   ├── agents/                         # Perfiles de agentes (5)
+│   ├── agents/                         # Perfiles de agentes (23)
 │   │   ├── coordinator.md              # Orquestador Swiss Watch
 │   │   ├── coordinator.agent.min.md    # Versión minificada (<300 chars)
 │   │   ├── builder.md                  # Implementador calidad automática
@@ -484,7 +484,7 @@ Swarmind/
 │   │   ├── scientist.md                # Investigador técnico
 │   │   ├── guardian.md                 # Calidad, seguridad, docs
 │   │   └── evolve.md                   # Auto-mejora del sistema
-│   ├── skills/                         # MEMORIA ESPECIALIZADA (10 skills)
+│   ├── skills/                         # MEMORIA ESPECIALIZADA (35 skills)
 │   │   ├── alpha-research/             # Factor research, ML, feature engineering
 │   │   ├── evolve/                     # Self-improvement loop
 │   │   ├── healthtech/                 # Salud, HIPAA, interoperabilidad
@@ -521,6 +521,8 @@ Swarmind/
 │   │   └── ... (adaptive_planner, debate, confidence, etc.)
 │   ├── memory_rag/                     # MEMORIA VECTORIAL (LanceDB)
 │   │   ├── lance_vector_store.py       # Vector store principal
+│   │   ├── doc_converter.py            # anydoc: binarios → Markdown (21 extensiones)
+│   │   ├── doc_ingester.py             # DocumentChunker con converter DI + --include-docs
 │   │   ├── prompt_compressor.py        # Compresor ligero (19% ahorro)
 │   │   ├── semantic_cache.py           # Cache semántico (evita LLM calls)
 │   │   ├── token_budget.py             # Presupuesto de tokens por pool
@@ -530,13 +532,15 @@ Swarmind/
 │   │   ├── skill_loader.py             # Carga skills desde .opencode
 │   │   └── trajectory_compressor.py    # Compresión de trayectorias
 │   ├── model_router/                   # Enrutamiento local/cloud
+│   ├── plugins/                        # Plugin lifecycle (on_load/on_unload/events) + GreeterTool
+│   ├── observability/                  # OpenTelemetry + session_replay (export markdown/json)
 │   ├── evolve_loop/                    # Auto-mejora ASI-Evolve
 │   ├── gateway/                        # CLIs, Slack, Telegram
 │   ├── db/                             # Migración y persistencia
 │   │   ├── migrate_engine.py           # Motor de migración
 │   │   ├── migrate_discovery.py        # Descubrimiento de colecciones
 │   │   └── migrate_cli.py              # CLI de migración
-│   └── tests/                          # 327 tests de integración
+│   └── tests/                          # 4662 tests (171 test_*.py)
 ├── scripts/
 │   ├── export_archive.py               # Script universal de exportación
 │   ├── hermes_bridge.py                # Puente con shared_memory
@@ -727,6 +731,41 @@ ollama ps
 
 Si Ollama no está disponible o falta un modelo, el sistema **degrada
 automáticamente a cloud** (ModelRouter/SlmRouter) — nunca falla.
+
+---
+
+## 🔌 Integraciones: anydoc + patrones deepseek-harness
+
+### anydoc — documentos binarios a Markdown en RAG
+
+El RAG ahora ingesta **documentos binarios** (PDF, DOCX, PPTX, XLSX, ODT, EPUB,
+RTF, CSV… — **21 extensiones**) convirtiéndolos a Markdown antes de chunkear:
+
+- `harness/memory_rag/doc_converter.py`: Protocol `DocumentConverter` +
+  `AnyDocConverter` (lazy, basado en `firecrawl-anydoc>=0.1.9`) +
+  `DocumentConversionError(path, reason)` (qué falló, por qué, en qué archivo).
+- `harness/memory_rag/doc_ingester.py`: `DocumentChunker` acepta el converter
+  inyectado (DI, default `AnyDocConverter`); si la conversión falla se lanza
+  `DocumentConversionError` — nunca se traga el error.
+
+```bash
+# Ingesta con documentos binarios (CLI)
+python harness/scripts/rag_ingest.py --dir <ruta> --include-docs
+
+# Igual desde la consola interactiva
+!rag ingest --dir <ruta> --docs
+```
+
+### deepseek-harness — plugin lifecycle + session replay
+
+- **Plugin lifecycle** (`harness/plugins/registry.py`): `PluginBase` con
+  `on_load()` / `on_unload()` / `events` (defaults no-op). `ToolRegistry`
+  acepta `event_bus` inyectado (DI) y suscribe automáticamente cada plugin a
+  sus eventos `on_{event}`. `load_all()` / `unload_all()` son idempotentes.
+  Demo: `harness/plugins/tools/example_tool.py` (`GreeterTool`).
+- **Session replay** (`harness/observability/session_replay.py`):
+  `SessionReplay` reproduce sesiones grabadas y exporta a **Markdown o JSON**;
+  `SessionNotFoundError` si la sesión no existe.
 
 ---
 

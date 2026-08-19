@@ -1,6 +1,6 @@
 # Registro de Skills — Swarmind Harness
 
-**35 skills** disponibles en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado). Cobertura: 100% con ambos formatos.
+**35 skills** disponibles en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado). Cobertura: 100% con ambos formatos. **23 agentes** especializados los consumen vía `SkillRouter` (ver [Agentes y Skills](../guide/agentes-y-skills.md)).
 
 ## Tabla Completa de Skills
 

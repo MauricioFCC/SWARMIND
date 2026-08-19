@@ -5,7 +5,7 @@ El patron **Swiss Watch** es el modelo arquitectonico central de Swarmind. Toma 
 ## Capas del Sistema
 
 1. **`.opencode/`** — Cerebro: agentes, skills y configuracion como SSOT (23 perfiles de agente, 35 skills, principios base).
-2. **`harness/`** — Motor de ejecucion: orquestacion (19 paquetes/56 modulos), memoria/RAG (15 paquetes/34 modulos), hooks, seguridad Zero Trust, tests (4465).
+2. **`harness/`** — Motor de ejecucion: orquestacion (19 paquetes/56 modulos), memoria/RAG (15 paquetes/34 modulos), hooks, seguridad Zero Trust, tests (4662).
 3. **`scripts/`** — Herramientas auxiliares: deploy, export, sync.
 4. **`knowledge/`** — Documentos de referencia y conocimiento compartido.
 
@@ -80,7 +80,16 @@ Las **estrategias de planificacion** disponibles estan documentadas en [Dynamic 
   `qwen3-embedding:0.6b`, `qwen3-vl:4b`) — 0 tokens cloud (TKN), con degradacion
   automatica a cloud si Ollama no esta disponible
 
-## Ver tambien
+## Modulos recientes (2026-08-18)
+
+| Modulo | Ruta | Proposito |
+|--------|------|-----------|
+| **doc_converter** | `harness/memory_rag/doc_converter.py` | anydoc: Protocol `DocumentConverter` + `AnyDocConverter` (lazy, `firecrawl-anydoc>=0.1.9`), `DOC_EXTENSIONS` (21 extensiones), `DocumentConversionError(path, reason)` |
+| **doc_ingester** | `harness/memory_rag/doc_ingester.py` | `DocumentChunker` con `converter` inyectado (DI, default `AnyDocConverter`), `_EXTENSION_TIPO` ampliado (documento/presentacion/hoja_calculo/datos_tabulares), conversion binarios → Markdown antes de chunkear |
+| **session_replay** | `harness/observability/session_replay.py` | `SessionReplay` reproduce sesiones grabadas (export markdown/json) + `SessionNotFoundError` |
+| **registry (plugins)** | `harness/plugins/registry.py` | Plugin lifecycle: `PluginBase` con `on_load()`/`on_unload()`/`events`, `ToolRegistry.__init__(event_bus=None)` (DI), suscripcion automatica `on_{event}`, `load_all()`/`unload_all()` idempotentes |
+
+**Ver tambien**
 
 - [Composicion del Sistema](composicion.md) — Tecnicas frontier por agente y skill
 - [Dynamic Scaling — Estrategias](dynamic-scaling.md) — Estrategias de planificacion

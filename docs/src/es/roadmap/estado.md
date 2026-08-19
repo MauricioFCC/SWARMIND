@@ -5,6 +5,25 @@
 
 ## Estado Actual (2026-08-04)
 
+### Estado 2026-08-18 (integraciones anydoc + patrones deepseek-harness)
+
+- **Integración anydoc — binarios → Markdown → RAG** (commit 983f93c):
+  `harness/memory_rag/doc_converter.py` con Protocol `DocumentConverter` +
+  `AnyDocConverter` (lazy, `firecrawl-anydoc>=0.1.9`) y `DOC_EXTENSIONS` con
+  **21 extensiones** (pdf, docx, doc, pptx, ppt, xlsx, xls, odt, odp, ods, rtf,
+  epub, csv, tsv, html, htm, md, txt, json, yaml, yml). `DocumentChunker` acepta
+  converter inyectado (DI) y propaga `DocumentConversionError(path, reason)`.
+  Ingesta con `rag_ingest.py --include-docs` o `!rag ingest --docs`.
+- **Patrones deepseek-harness — plugin lifecycle + session replay**:
+  `PluginBase` con `on_load()`/`on_unload()`/`events` (no-op), `ToolRegistry`
+  con `event_bus` DI y suscripción automática `on_{event}`,
+  `load_all()`/`unload_all()` idempotentes; `SessionReplay`
+  (`harness/observability/session_replay.py`) export markdown/json +
+  `SessionNotFoundError`. Demo: `GreeterTool`.
+- Suite: **4662 tests** collected; **35 skills** validos
+  (`validate_skills.py --strict`); 59 tests nuevos (30 plugin + 29 replay);
+  coverage registry 94%, session_replay 100%.
+
 ### Estado 2026-08-11 (deuda AGR 0 + GPU CUDA 12.6 + oraculos reales)
 
 Sesion de cierre de deuda estructural. Deuda AGR a 0: 32 modulos >500 lineas
@@ -29,7 +48,7 @@ run_commands, baseline de tests identico tras el refactor.
 
 Las metricas principales del sistema (tests, cobertura, agentes, skills, modulos) estan en la [pagina principal](../README.md#estado-actual-julio-2026).
 
-**Resumen ejecutivo:** 4465 tests, 23 agentes, 34 skills, 19 paquetes orchestrator, 15 paquetes memory/rag, RTX 4060 CUDA 12.6 (x10.9 search), 15 papers 2026 implementados, **Opción A SSOT global implementada + memoria central portable (v3.x)**.
+**Resumen ejecutivo:** 4662 tests, 23 agentes, 35 skills, 19 paquetes orchestrator, 15 paquetes memory/rag, RTX 4060 CUDA 12.6 (x10.9 search), 15 papers 2026 implementados, **Opción A SSOT global implementada + memoria central portable (v3.x)**.
 
 **Actualización 2026-08-04 :** IMPLEMENTADO — plugin compaction-context.js (hook experimental.session.compacting), steps:8 en release-ops/token-budget-auditor, Σ-Mem MVP (reliability_memory.py + 22 tests), memoria gobernada MVP (memory_guard.py + 22 tests), abstention_policy en token_budgets.yaml (stop rules CONVOLVE), regla subagentes condensados en coordinator.md; diferidos justificados: setCacheKey/small_model/provider options. Implementados H1-H8 completos — H1 (10 SKILL.min.md con YAML roto reparados + test TestSkillMinFiles), H2 (5 mins API densos recompactados con compile_skills.py: 58-88% → 35-54%), H3 (routing 45 rutas, universal 10→2 agentes), H4 (release-ops deduplicado), H5 (triada evolve -59.9%), H6 (token_budgets.yaml conectado al runtime, 23 tests nuevos), H7 (base_principles N3 bajo demanda, -6.2K tokens/agente), H8 (opencode.json: compaction.prune + tool_output + mcp_timeout). 22/22 agentes con role_budget. PR #7 mergado: CI con checks requeridos lint/test/security, python 3.12, auto-merge funcional.
 
@@ -93,6 +112,8 @@ Las metricas principales del sistema (tests, cobertura, agentes, skills, modulos
 | **Deuda AGR 0** | 2026-08-11 | 32 módulos >500 líneas → paquetes con `__init__.py` re-export, SOL corregido en 9 clases, mixins ≤2 bases, baseline de tests idéntico |
 | **Delegacion local Ollama 4-tier** | 2026-08-14 | delegación local Ollama 4-tier (fast/quality/embedding/vision) + keep_alive → minimiza tokens cloud |
 | **Delegacion local Ollama — final** | 2026-08-14 | modelos 2026 instalados (qwen3:4b, deepseek-r1:8b, qwen2.5-coder:7b, qwen3-embedding:0.6b, qwen3-vl:4b), 38 tests nuevos (21+17), 2 bugs latentes corregidos en _apply_model_routing |
+| **Integracion anydoc** | 2026-08-18 | binarios → Markdown → RAG: `DocumentConverter`/`AnyDocConverter` (21 extensiones, `firecrawl-anydoc`), `DocumentChunker` DI + `DocumentConversionError`, `--include-docs` / `!rag ingest --docs` |
+| **Plugin lifecycle + session replay** | 2026-08-18 | patrones deepseek-harness: `PluginBase` on_load/on_unload/events, `ToolRegistry` DI + EventBus, `SessionReplay` (markdown/json) — 59 tests, registry 94%, session_replay 100% |
 
 ### Evolucion de Cobertura
 
@@ -179,9 +200,9 @@ Objetivo: 80%    (proximo hito)
 | Metrica | Actual | Objetivo | Tendencia |
 |---------|--------|----------|-----------|
 | Cobertura de tests | 75.70% | 80% | Subiendo |
-| Tests totales | 4465 | ~4500 | Subiendo |
+| Tests totales | 4662 | ~5000 | Subiendo |
 | Agentes | 23 | 30+ | Subiendo |
-| Skills | 34 | 50+ | Subiendo |
+| Skills | 35 | 50+ | Subiendo |
 | Modulos Orchestrator | 48 | 55+ | Subiendo |
 | Modulos Memory/RAG | 30 | 35+ | Subiendo |
 | Archivos <500LC (deuda AGR) | 100% | 100% | Mantenido |
@@ -199,6 +220,7 @@ Objetivo: 80%    (proximo hito)
 
 ## Notas de la Version
 
+- **2026-08-18**: Integraciones (commit 983f93c): **anydoc** — binarios → Markdown → RAG (`DocumentConverter`/`AnyDocConverter` lazy con `firecrawl-anydoc>=0.1.9`, `DOC_EXTENSIONS` 21 extensiones, `DocumentChunker` con converter DI, `DocumentConversionError(path, reason)` sin tragar errores, `rag_ingest.py --include-docs` + `!rag ingest --docs`); **deepseek-harness** — plugin lifecycle (`PluginBase` on_load/on_unload/events, `ToolRegistry` con event_bus DI, suscripción automática `on_{event}`, load_all/unload_all idempotentes, `GreeterTool` demo) + session replay (`SessionReplay` export markdown/json, `SessionNotFoundError`). 59 tests nuevos (30 plugin + 29 replay); coverage registry 94%, session_replay 100%. **4662 tests** collected, **35 skills** validos.
 - **2026-08-11**: Deuda AGR 0 — 32 modulos >500 lineas convertidos a paquetes con `__init__.py` re-export backward-compatible (commits e409982 + 545e591, verificado baseline identico). GPU CUDA 12.6 activa (torch 2.13.0+cu126, RTX 4060 8GB): vector search x10.9 (10k) / x9.2 (100k), embeddings batch 41us/msg, `enable_gpu.py` portable, health hardware info (e246998, 826aeda). Fase 1 TDD: oraculos reales PBT/mutation en subprocess, orchestrator DynamicDAG + WAL, test_router 25 tests + fix `_to_model_route()` (407c36d). ParallelExecutor fan-out + voting gobernado (ORCA 2026 evaluado/descartado, 4408944). Memoria central SSOT Memory_Proyects sin DBs paralelas + portabilidad Linux/Mac/Windows, 7.5GB liberados (4e5583e). **4465 passed, 37 skipped, 4 xfailed**, Ruff all checks passed, Vulture 0.
 - **2026-08-08**: TDD always-on (engine authority + test-first real + anti-gaming, `test_dependency_map.py` TDAD src↔tests, `test_reinforcement.py` Tester→mutation→Critic; 74 tests nuevos; contrato TDD 2026 en builder/guardian/coordinator). Fase 3 ahorro de tokens: `complexity_router.py` (RouteLLM-style, 26 tests, ahorro ~2x con fallback) + `token_usage_tracker.py` (medición por agente, 39 tests, thread-safe). Documentación concisa (progressive disclosure: resumen en notas, detalle en módulos). **4277+ tests**.
 - **2026-08-08**: Fase 1+2 — MCP stateless 2026-07-28 (`connect_stateless` + `server/discover` + catálogos cacheables + headers Mcp-Method/Mcp-Name, 22 tests), OTel GenAI semconv estables (`start_genai_span`, `gen_ai.*`, 15 tests), DeltaChannel durable exec (`delta_channel.py`, 9 tests), Agent Factory on-demand (`agent_factory.py` + `agent_templates.yaml` 8 plantillas + recommender + render Markdown opencode, 29 tests), validador agentskills.io (`skill_frontmatter.py`, 20 tests, 32/32 skills válidos), skills de dominio 2026 (reviewer adversarial + science citas/reproducibilidad + legal vigencia/citas). Fix test-order: TestGenAISemconv con parcheo por `trace_agent.__globals__` (robusto ante `test_lazy_loading`). **4068+ tests**.
