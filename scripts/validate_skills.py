@@ -18,12 +18,18 @@ import re
 import sys
 from pathlib import Path
 
+from harness.common import estimate_tokens
+from harness.context.skill_contract import load_skill_contract, validate_contract
+
 # ---------------------------------------------------------------------------
 # Constantes (MAG)
 # ---------------------------------------------------------------------------
 _ROOT = Path(__file__).resolve().parent.parent
 _SKILLS_DIR = _ROOT / ".opencode" / "skills"
 _REGISTRY = _SKILLS_DIR / "skills_registry.yaml"
+
+# Hard cap ADR-0048: tokens maximos por skill individual
+_MAX_SKILL_TOKENS = 5000
 
 # Spec Anthropic: name <=64 chars, minusculas/digitos/hifens
 _NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -131,6 +137,27 @@ def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
     if not smin.exists():
         errors.append(f"{name}: SKILL.min.md faltante (convencion SWARMIND)")
 
+    # 6b. Contrato SDD (ADR-0048): SKILL.spec.json valido si existe;
+    # warning de transicion si aun no migra a contrato formal.
+    spec = load_skill_contract(skill_dir)
+    if spec is not None:
+        errors.extend(validate_contract(spec, skill_dir))
+    elif not quiet:
+        print(
+            f"  ⚠  {name}: sin SKILL.spec.json (ADR-0048 SDD: migrar a "
+            f"contrato formal con pre/postcondiciones y failing_test)"
+        )
+
+    # 6c. Hard cap de tokens por skill (ADR-0048, leccion Claude Code)
+    skill_tokens = estimate_tokens(text)
+    if skill_tokens > _MAX_SKILL_TOKENS:
+        errors.append(
+            f"{name}: {skill_tokens} tokens estimados > cap {_MAX_SKILL_TOKENS} "
+            f"(ADR-0048: dividir en core.md/advanced.md con progressive disclosure)"
+        )
+    elif not quiet:
+        print(f"  ℹ  {name}: ~{skill_tokens} tokens (cap {_MAX_SKILL_TOKENS})")
+
     # 7. Tamano (warning spec)
     n_lines = len(text.splitlines())
     if n_lines > _WARN_LINES and not quiet:
@@ -149,6 +176,14 @@ def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
         dead = sorted(p.name for p in refs_dir.glob("*.md") if p.name not in referenced)
         if dead and not quiet:
             print(f"  ⚠  {name}: references/ no referenciadas en SKILL.md: {', '.join(dead)}")
+
+    # 8c. Progressive disclosure (ADR-0048): si SKILL.md enlaza core.md/advanced.md
+    # (split de skill monolítico), ambos archivos deben existir.
+    disclosure_links = set(re.findall(r"\[[^\]]+\]\((core|advanced)\.md\)", text))
+    for part in sorted(disclosure_links):
+        part_path = skill_dir / f"{part}.md"
+        if not part_path.exists():
+            errors.append(f"{name}: enlace de progressive disclosure a {part}.md roto (archivo faltante)")
 
     # 9. Frontmatter spec completo (agentskills.io): license/compatibility
     # opcionales recomendados. Warning si el skill tiene scripts/ y no declara
@@ -187,6 +222,8 @@ def _validate_registry(quiet: bool) -> list[str]:
 
 def main() -> None:
     """CLI principal del validador."""
+    # Hardening Windows: consolas cp1252 no codifican emojis/avisos unicode.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(description="Valida skills segun spec Agent Skills 2026")
     parser.add_argument("--strict", action="store_true", help="Exit code != 0 si hay errores")
     parser.add_argument("--quiet", action="store_true", help="Solo errores, sin warnings")

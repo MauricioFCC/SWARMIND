@@ -1,0 +1,40 @@
+{
+  "name": "atdd-spec",
+  "version": "1.1.0",
+  "description": "Contrato SDD del skill atdd-spec: ciclo Spec->Test->Code->Refactor guiado por IA.",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": ["requirement"],
+      "properties": {
+        "requirement": {"type": "string", "description": "Requerimiento de la feature en lenguaje natural"},
+        "language": {"type": "string", "description": "Lenguaje objetivo (default: Python)"}
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["spec", "tests", "code"],
+      "properties": {
+        "spec": {"type": "string", "description": "Acceptance criteria en lenguaje natural + ejemplos"},
+        "tests": {"type": "array", "items": {"type": "string"}, "description": "Tests escritos ANTES del codigo"},
+        "code": {"type": "string", "description": "Implementacion minima que pasa los tests"}
+      }
+    }
+  },
+  "preconditions": [
+    "El requerimiento es no vacio y comprensible",
+    "Se dispone de un test runner (pytest en Python)",
+    "El agente puede ejecutar tests y ver el fallo (RED) antes de implementar"
+  ],
+  "postconditions": [
+    "Existe al menos un test por criterio de aceptacion",
+    "El test falla inicialmente con el motivo correcto (assertion, no import)",
+    "La implementacion es minima (KISS) y pasa todos los tests (GREEN)",
+    "Docstrings ES en toda funcion publica"
+  ],
+  "invariants": [
+    "Ningun test se parchea para 'pintar verde'",
+    "El ciclo siempre es RED -> GREEN -> REFACTOR"
+  ],
+  "failing_test": "tests/test_atdd_spec_example.py"
+}
