@@ -1,14 +1,14 @@
 ﻿"""
-Hermes Bridge â€” puente de integraciÃ³n con shared_memory.
+Hermes Bridge — puente de integración con shared_memory.
 
 Permite que Swarmind use Hermes como backend de memoria alternativo,
 sincronizando conocimiento entre ambos sistemas.
 
 Arquitectura:
-  Swarmind Harness â†â†’ MemoryConfig â†â†’ shared_memory
-       â†•                           â†•
+  Swarmind Harness ←→ MemoryConfig ←→ shared_memory
+       ↓                           ↓
   LanceVectorStore          Hermes MemoryService
-       â†•
+       ↓
   AgentKpiTracker
 """
 
@@ -30,11 +30,11 @@ logger = logging.getLogger(__name__)
 
 class HermesBridge:
     """
-    Puente de integraciÃ³n con shared_memory.
+    Puente de integración con shared_memory.
 
     Proporciona:
-      - DetecciÃ³n automÃ¡tica de shared_memory
-      - SincronizaciÃ³n de conocimiento (bidireccional)
+      - Detección automática de shared_memory
+      - Sincronización de conocimiento (bidireccional)
       - Acceso a servicios de Hermes (MemoryService, QualityService)
       - Compatibilidad de schemas entre ambos sistemas
 
@@ -54,7 +54,7 @@ class HermesBridge:
         Args:
             hermes_path: Ruta a shared_memory.
                          Si es None, busca en ubicaciones por defecto.
-            auto_import: Si True, intenta importar mÃ³dulos de Hermes al iniciar.
+            auto_import: Si True, intenta importar módulos de Hermes al iniciar.
         """
         self._hermes_path = self._resolve_hermes_path(hermes_path)
         self._available = False
@@ -95,7 +95,7 @@ class HermesBridge:
         return None
 
     def _try_import_hermes_modules(self) -> None:
-        """Intenta importar mÃ³dulos de Hermes."""
+        """Intenta importar módulos de Hermes."""
         if not self._hermes_path:
             return
 
@@ -123,7 +123,7 @@ class HermesBridge:
 
     @property
     def available(self) -> bool:
-        """Indica si shared_memory estÃ¡ disponible."""
+        """Indica si shared_memory está disponible."""
         return self._available
 
     @property
@@ -141,7 +141,7 @@ class HermesBridge:
 
     @property
     def has_memory_service(self) -> bool:
-        """Indica si MemoryService de Hermes estÃ¡ disponible."""
+        """Indica si MemoryService de Hermes está disponible."""
         return "MemoryService" in self._hermes_modules
 
     # ------------------------------------------------------------------
@@ -194,7 +194,7 @@ class HermesBridge:
             pattern: Glob pattern para filtrar archivos.
 
         Returns:
-            Lista de registros leÃ­dos.
+            Lista de registros leídos.
         """
         if not self._available or not self._hermes_path:
             return []
@@ -260,7 +260,7 @@ class HermesBridge:
         Obtiene una instancia de MemoryService de Hermes.
 
         Returns:
-            MemoryService instance o None si no estÃ¡ disponible.
+            MemoryService instance o None si no está disponible.
         """
         if not self.has_memory_service:
             logger.warning("Hermes MemoryService not available")

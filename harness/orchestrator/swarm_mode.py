@@ -1,5 +1,5 @@
 ﻿"""
-SwarmMode â€” Ejecucion paralela de agentes en flota (inspirado en CodeWhale fleet).
+SwarmMode — Ejecucion paralela de agentes en flota (inspirado en CodeWhale fleet).
 
 Permite lanzar multiples agentes en paralelo para tareas complejas.
 Cada agente ejecuta su subtarea independientemente y los resultados
@@ -119,7 +119,7 @@ class SwarmMode:
                     task = futures[future]
                     logger.error(
                         "WHAT=FutureError | "
-                        f"WHY=El future para agent={task.agent} lanzÃ³ excepciÃ³n | "
+                        f"WHY=El future para agent={task.agent} lanzó excepción | "
                         f"WHERE=SwarmMode.run | error={exc}"
                     )
                     results.append(

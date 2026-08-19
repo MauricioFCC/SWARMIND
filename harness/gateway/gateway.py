@@ -1,5 +1,5 @@
 ﻿"""
-Message Gateway â€” Abstract multi-channel messaging layer.
+Message Gateway — Abstract multi-channel messaging layer.
 
 Supports CLI (stdin/stdout), Slack (optional), and Telegram (optional)
 gateways. If a gateway is missing its token, it gracefully deactivates
@@ -88,7 +88,7 @@ class MessageGateway(abc.ABC):
 
 class CliGateway(MessageGateway):
     """
-    CLI message gateway â€” reads from stdin, writes to stdout.
+    CLI message gateway — reads from stdin, writes to stdout.
 
     This gateway is always active (no token required).
     """
@@ -111,7 +111,7 @@ class CliGateway(MessageGateway):
         """Read a single line from stdin (if available) and return as message."""
         try:
             if sys.stdin.isatty():
-                return []  # interactive â€” no auto-read
+                return []  # interactive — no auto-read
             line = sys.stdin.readline()
             if line:
                 msg = Message(

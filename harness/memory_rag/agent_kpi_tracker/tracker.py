@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class AgentKpiTracker(_RecordingMixin, _ReportingMixin):
     """
-    Tracker de KPIs que persiste mÃ©tricas de rendimiento en LanceDB.
+    Tracker de KPIs que persiste métricas de rendimiento en LanceDB.
 
     Uso:
         tracker = AgentKpiTracker(store=vector_store)
@@ -40,7 +40,7 @@ class AgentKpiTracker(_RecordingMixin, _ReportingMixin):
             total_duration_ms=12000.0,
         )
         
-        # Registrar evento de telemetrÃ­a
+        # Registrar evento de telemetría
         tracker.record_telemetry_event(
             event_type="plan_created",
             session_id="ses-001",
@@ -48,7 +48,7 @@ class AgentKpiTracker(_RecordingMixin, _ReportingMixin):
             duration_ms=450.0,
         )
         
-        # Finalizar sesiÃ³n â†’ genera KPIs agregados
+        # Finalizar sesión → genera KPIs agregados
         tracker.finalize_session_kpi(
             session_id="ses-001",
             task="implementar API",
@@ -103,7 +103,7 @@ class AgentKpiTracker(_RecordingMixin, _ReportingMixin):
                     logger.warning("Could not create collection '%s': %s", coll, e)
 
     def _insert(self, collection: str, row: dict) -> str | None:
-        """Inserta una fila en LanceDB como vector de ceros (bÃºsqueda por metadata)."""
+        """Inserta una fila en LanceDB como vector de ceros (búsqueda por metadata)."""
         try:
             # Use zero vector for metadata-only records
             vec = np.zeros(self._config.embedding_dim, dtype=np.float32)

@@ -1,6 +1,6 @@
 ﻿"""
-Agent KPI Tracker â€” registra mÃ©tricas de rendimiento de agentes y skills
-directamente en LanceDB para anÃ¡lisis y mejora continua.
+Agent KPI Tracker — registra métricas de rendimiento de agentes y skills
+directamente en LanceDB para análisis y mejora continua.
 
 Integra con:
   - TelemetryTracker (harness/orchestrator/telemetry.py)
@@ -8,10 +8,10 @@ Integra con:
   - MemoryConfig (harness/memory_rag/memory_config.py)
 
 Colecciones LanceDB utilizadas:
-  - agent_performance: mÃ©tricas por agente por sesiÃ³n
+  - agent_performance: métricas por agente por sesión
   - skill_effectiveness: efectividad de skills
-  - telemetry_events: eventos de telemetrÃ­a
-  - session_kpis: KPIs agregados por sesiÃ³n
+  - telemetry_events: eventos de telemetría
+  - session_kpis: KPIs agregados por sesión
   - agent_interactions: interacciones entre agentes
 """
 
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Constants â€” nombres de colecciones KPI
+# Constants — nombres de colecciones KPI
 # ---------------------------------------------------------------------------
 
 COLL_AGENT_PERFORMANCE = "agent_performance"
@@ -60,7 +60,7 @@ ALL_KPI_COLLECTIONS = [
 
 @dataclass
 class AgentPerformanceRecord:
-    """Registro de rendimiento de un agente en una sesiÃ³n."""
+    """Registro de rendimiento de un agente en una sesión."""
     session_id: str
     agent_name: str
     task: str = ""
@@ -129,7 +129,7 @@ class SkillEffectivenessRecord:
 
 @dataclass
 class TelemetryEventRecord:
-    """Registro de un evento de telemetrÃ­a."""
+    """Registro de un evento de telemetría."""
     event_type: str
     session_id: str = ""
     agent: str = ""
@@ -158,7 +158,7 @@ class TelemetryEventRecord:
 
 @dataclass
 class SessionKPIRecord:
-    """KPIs agregados de una sesiÃ³n completa."""
+    """KPIs agregados de una sesión completa."""
     session_id: str
     task: str = ""
     project: str = ""
@@ -203,7 +203,7 @@ class SessionKPIRecord:
 
 class AgentKpiTracker:
     """
-    Tracker de KPIs que persiste mÃ©tricas de rendimiento en LanceDB.
+    Tracker de KPIs que persiste métricas de rendimiento en LanceDB.
 
     Uso:
         tracker = AgentKpiTracker(store=vector_store)
@@ -218,7 +218,7 @@ class AgentKpiTracker:
             total_duration_ms=12000.0,
         )
         
-        # Registrar evento de telemetrÃ­a
+        # Registrar evento de telemetría
         tracker.record_telemetry_event(
             event_type="plan_created",
             session_id="ses-001",
@@ -226,7 +226,7 @@ class AgentKpiTracker:
             duration_ms=450.0,
         )
         
-        # Finalizar sesiÃ³n â†’ genera KPIs agregados
+        # Finalizar sesión → genera KPIs agregados
         tracker.finalize_session_kpi(
             session_id="ses-001",
             task="implementar API",
@@ -302,10 +302,10 @@ class AgentKpiTracker:
         metadata: dict | None = None,
     ) -> str | None:
         """
-        Registra mÃ©tricas de rendimiento de un agente.
+        Registra métricas de rendimiento de un agente.
 
         Returns:
-            ID del registro creado, o None si telemetrÃ­a estÃ¡ off.
+            ID del registro creado, o None si telemetría está off.
         """
         if not self._enabled:
             return None
@@ -351,9 +351,9 @@ class AgentKpiTracker:
         metadata: dict | None = None,
     ) -> str | None:
         """
-        Registra o actualiza mÃ©tricas de efectividad de un skill.
+        Registra o actualiza métricas de efectividad de un skill.
 
-        Si el skill ya existe, actualiza sus mÃ©tricas acumuladas.
+        Si el skill ya existe, actualiza sus métricas acumuladas.
 
         Returns:
             ID del registro.
@@ -365,7 +365,7 @@ class AgentKpiTracker:
         existing = self._find_skill_record(skill_name, domain, agent)
 
         if existing:
-            # Actualizar mÃ©tricas acumuladas
+            # Actualizar métricas acumuladas
             existing_id = existing.get("id", "")
             meta = existing.get("metadata", {})
             if isinstance(meta, str):
@@ -459,7 +459,7 @@ class AgentKpiTracker:
         metadata: dict | None = None,
     ) -> str | None:
         """
-        Registra un evento de telemetrÃ­a.
+        Registra un evento de telemetría.
 
         Con telemetry_level=BASIC, solo guarda eventos importantes
         (error, warning, plan_created, plan_complete).
@@ -468,7 +468,7 @@ class AgentKpiTracker:
         if not self._enabled:
             return None
 
-        # Filtrar eventos bÃ¡sicos vs full
+        # Filtrar eventos básicos vs full
         if not self._full_telemetry:
             important_events = {
                 "error", "warning", "plan_created", "plan_complete",
@@ -514,7 +514,7 @@ class AgentKpiTracker:
         metadata: dict | None = None,
     ) -> str | None:
         """
-        Registra KPIs agregados de una sesiÃ³n completa.
+        Registra KPIs agregados de una sesión completa.
 
         Si ya existe un KPI para esta session_id, lo actualiza.
         """
@@ -556,7 +556,7 @@ class AgentKpiTracker:
             return self._insert(COLL_SESSION_KPIS, record.to_lancedb_row())
 
     def _find_session_kpi(self, session_id: str) -> dict | None:
-        """Busca un KPI de sesiÃ³n existente."""
+        """Busca un KPI de sesión existente."""
         try:
             results = self._store.search(
                 COLL_SESSION_KPIS,
@@ -592,7 +592,7 @@ class AgentKpiTracker:
         metadata: dict | None = None,
     ) -> str | None:
         """
-        Registra una interacciÃ³n entre agentes (para grafos de colaboraciÃ³n).
+        Registra una interacción entre agentes (para grafos de colaboración).
         """
         if not self._enabled or not self._full_telemetry:
             return None
@@ -727,11 +727,11 @@ class AgentKpiTracker:
         Obtiene historial de sesiones con sus KPIs.
 
         Args:
-            limit: MÃ¡ximo de sesiones a retornar.
+            limit: Máximo de sesiones a retornar.
             status: Filtrar por estado ("completed", "failed", etc.).
 
         Returns:
-            Lista de dicts con KPIs de sesiÃ³n.
+            Lista de dicts con KPIs de sesión.
         """
         try:
             results = self._store.search(
@@ -774,7 +774,7 @@ class AgentKpiTracker:
         Obtiene un resumen ejecutivo para dashboard.
 
         Returns:
-            Dict con mÃ©tricas globales del sistema.
+            Dict con métricas globales del sistema.
         """
         agent_rankings = self.get_agent_rankings(top_n=5)
         skill_rankings = self.get_skill_rankings(top_n=5)
@@ -793,7 +793,7 @@ class AgentKpiTracker:
     # ------------------------------------------------------------------
 
     def _insert(self, collection: str, row: dict) -> str | None:
-        """Inserta una fila en LanceDB como vector de ceros (bÃºsqueda por metadata)."""
+        """Inserta una fila en LanceDB como vector de ceros (búsqueda por metadata)."""
         try:
             # Use zero vector for metadata-only records
             vec = np.zeros(self._config.embedding_dim, dtype=np.float32)

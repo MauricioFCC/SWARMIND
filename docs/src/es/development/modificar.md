@@ -1,6 +1,6 @@
 ﻿# Cómo Modificar el Proyecto — Swarmind Harness
 
-> **Última actualización:** Agosto 2026 · Python 3.12+ · 171 archivos test · 4662 tests · cobertura 75.70%
+> **Última actualización:** Agosto 2026 · Python 3.12+ · 176 archivos test · 4722 tests · cobertura 75.70%
 
 ---
 
@@ -71,6 +71,36 @@ Tareas simples/RAG/visión se delegan a **modelos locales** vía Ollama
 (ModelRouter/SlmRouter) si Ollama no está disponible.
 
 ## 1d. Integraciones: anydoc + patrones deepseek-harness
+
+### Arquitecturas RAG frontier (2026-08-18): hibrido RRF + correctivo CRAG
+
+Evaluacion de las 5 arquitecturas RAG 2026: **hibrido** y **correctivo**
+implementados; **GraphRAG** y **agentic** cubiertos por modulos existentes;
+**multimodal** parcial via anydoc (binarios → Markdown).
+
+| Componente | Archivo | Rol |
+|------------|---------|-----|
+| `HybridRetriever` | `memory_rag/hybrid_retriever.py` | Fusion RRF (k=60) de vector denso (LanceDB) + BM25 disperso (FTS5); `HybridResult` frozen (doc_id, score, dense_rank, sparse_rank, metadata); DI sobre `FTSSearch.search(query, top_k, domain_filter)` + `LanceVectorStore.search(collection, query_vector, top_k, filters)` |
+| `CorrectiveRetriever` | `memory_rag/corrective_retriever.py` | CRAG: evalua calidad de recuperacion pre-generacion (umbral 0.30, score medio + cobertura de terminos); si pobre → query rewrite (expansion de keywords) o fallback a fuente alternativa; expone `CorrectiveResult` (items, action, quality_score, corrected_query) |
+| `RetrievalSource` (Protocol) | `memory_rag/corrective_retriever.py` | Contrato de fuente recuperable: `retrieve(query, top_k) -> list[dict]` |
+
+Uso:
+
+```python
+from harness.memory_rag.hybrid_retriever import HybridRetriever
+from harness.memory_rag.corrective_retriever import CorrectiveRetriever
+
+hybrid = HybridRetriever(vector_store=vector, fts_search=fts, embed_fn=embed)
+results = hybrid.retrieve("query", top_k=5)          # fusion RRF
+
+crag = CorrectiveRetriever(primary=hybrid, fallback=fts)
+out = crag.retrieve("query", top_k=5)                 # validacion + correccion
+out.action          # "none" | "rewrite" | "fallback"
+out.quality_score   # [0, 1]
+```
+
+Para cambiar el umbral de calidad o la funcion de reescritura, inyectar
+`evaluator`/`rewrite_fn` en el constructor de `CorrectiveRetriever` (DI).
 
 ### anydoc — documentos binarios a Markdown en RAG
 

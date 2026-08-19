@@ -63,6 +63,7 @@ test = ["pytest>=8", "pytest-cov>=5", "pytest-mock>=3", "pytest-xdist>=3", "pyte
 [dependency-groups]
 # Compatibilidad con `uv sync --group <name>` en CI (PEP 735)
 dev = [
+    "griffe>=1.13.0",
     "pytest-asyncio>=1.4.0",
 ]
 test = [
@@ -110,6 +111,29 @@ target-version = "py312"
 # shebang pero se invocan via `uv run`/`python -m`. Ignorada globalmente
 # para que CI (Ubuntu) no falle por archivos que Windows no puede marcar +x.
 ignore = ["EXE001"]
+
+# ---------------------------------------------------------------------------
+# Per-file ignores justificados (patrones intencionales, NO deuda):
+#   - E402 en scripts/run.py/tests: sys.path.insert(1, ROOT) DEBE preceder a
+#     los imports de harness.* para ejecucion standalone desde cualquier CWD
+#     (regla SEG: sys.path.insert(1,) nunca insert(0,)). Moverlos arriba
+#     romperia la importabilidad fuera del repo.
+#   - E402 en __init__.py de paquetes: re-export backward-compat de submódulos
+#     tras constantes de modulo (patron estandar de empaquetado Python).
+#   - F403 en run_commands/__init__.py: re-export intencional via star-import
+#     de handlers_* con __all__ explicito (punto de entrada CLI unico).
+# ---------------------------------------------------------------------------
+[tool.ruff.lint.per-file-ignores]
+"harness/run.py" = ["E402"]
+"harness/scripts/*.py" = ["E402"]
+"harness/tests/test_deploy_all.py" = ["E402"]
+"harness/tests/test_export_all_projects.py" = ["E402"]
+"harness/tests/test_integration.py" = ["E402"]
+"harness/tests/test_setup_verification.py" = ["E402"]
+"harness/tests/test_tdad_select.py" = ["E402"]
+"harness/tests/test_validate_skills.py" = ["E402"]
+"harness/**/__init__.py" = ["E402"]
+"harness/run_commands/__init__.py" = ["F403"]
 
 # ---------------------------------------------------------------------------
 # Vulture (detección de código muerto)

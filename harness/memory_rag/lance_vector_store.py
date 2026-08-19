@@ -4,7 +4,7 @@ LanceDB es OBLIGATORIO. Si no esta disponible, se lanza un error claro.
 El fallback in-memory solo se activa con allow_fallback=True (emergencias/test).
 
 REFACTOR: Usa _infer_schema_recursive() desde lance_migration.py para
-inferir schemas recursivamente, eliminando ~100 lÃ­neas de if/elif anidados
+inferir schemas recursivamente, eliminando ~100 líneas de if/elif anidados
 en _sample_row_for_collection().
 """
 from __future__ import annotations
@@ -104,7 +104,7 @@ class LanceVectorStore:
                      la ruta por defecto o la del MemoryConfig.
             allow_fallback: Permitir fallback a memoria en RAM si LanceDB falla.
             config: MemoryConfig opcional. Si se provee, db_path y allow_fallback
-                    se toman del config si no se especifican explÃ­citamente.
+                    se toman del config si no se especifican explícitamente.
         """
         if config:
             self.db_path = db_path or config.lancedb_path
@@ -705,7 +705,7 @@ class LanceVectorStore:
         last_up = ""
         if item_count > 0:
             try:
-                # Obtener solo la Ãºltima fila para timestamp
+                # Obtener solo la última fila para timestamp
                 arrow_table = tbl.to_arrow()
                 if arrow_table.num_rows > 0:
                     last_row = arrow_table.slice(arrow_table.num_rows - 1, 1)

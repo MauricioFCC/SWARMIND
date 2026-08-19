@@ -1,4 +1,4 @@
-﻿"""EventBus â€” Sistema Pub/Sub para comunicacion asincrona entre agentes.
+﻿"""EventBus — Sistema Pub/Sub para comunicacion asincrona entre agentes.
 
 Permite que los agentes se comuniquen mediante eventos en lugar de
 llamadas directas, desacoplando emisores de receptores.

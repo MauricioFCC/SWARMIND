@@ -1,4 +1,4 @@
-﻿"""HookManager â€” Orquestador central de hooks.
+﻿"""HookManager — Orquestador central de hooks.
 
 Ejecuta los hooks registrados en el orden correcto y gestiona los resultados.
 Los hooks CRITICAL pueden detener la operacion (fail-fast).

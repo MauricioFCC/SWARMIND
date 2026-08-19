@@ -1,4 +1,4 @@
-﻿"""L5 â€” QAOrchestrator: Orquestacion de calidad extremo a extremo.
+﻿"""L5 — QAOrchestrator: Orquestacion de calidad extremo a extremo.
 
 Capa superior del pipeline QA 5-capas que coordina la ejecucion
 completa del ciclo de calidad swarmind:
@@ -42,7 +42,7 @@ from harness.qa.predictor import FailurePredictor, RiskScore
 
 logger = logging.getLogger(__name__)
 
-# â”€â”€ Pesos para calculo de calidad global â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Pesos para calculo de calidad global ──────────────────────────────────────
 
 _PESO_PREDICCION = 0.15
 _PESO_ANOMALIAS = 0.20
@@ -262,7 +262,7 @@ class QAOrchestrator:
         test_suite: TestSuite | None = None
         agent_result: AgentResult | None = None
 
-        # â”€â”€ L1: FailurePredictor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── L1: FailurePredictor ──────────────────────────────────────────
         res_l1 = self._ejecutar_capa(
             QALayer.L1_PREDICTOR,
             self._predictor.predict,
@@ -272,7 +272,7 @@ class QAOrchestrator:
         if res_l1.exitoso and isinstance(res_l1.datos, RiskScore):
             risk_score = res_l1.datos
 
-        # â”€â”€ L2: VisualAnomalyDetector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── L2: VisualAnomalyDetector ─────────────────────────────────────
         if resultados_previos:
             res_l2 = self._ejecutar_capa(
                 QALayer.L2_DETECTOR,
@@ -291,7 +291,7 @@ class QAOrchestrator:
         if res_l2.exitoso and isinstance(res_l2.datos, AnomalyReport):
             anomaly_report = res_l2.datos
 
-        # â”€â”€ L3: TestCaseGenerator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── L3: TestCaseGenerator ─────────────────────────────────────────
         espec = especificacion or f"Tests para componente: {componente}"
         res_l3 = self._ejecutar_capa(
             QALayer.L3_GENERATOR,
@@ -307,7 +307,7 @@ class QAOrchestrator:
         if res_l3.exitoso and isinstance(res_l3.datos, TestSuite):
             test_suite = res_l3.datos
 
-        # â”€â”€ L4: AutonomousTestAgent â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── L4: AutonomousTestAgent ───────────────────────────────────────
         files = test_files or (list(test_suite.casos_validos) if test_suite else [])
         if files:
             res_l4 = self._ejecutar_capa(
@@ -325,7 +325,7 @@ class QAOrchestrator:
         if res_l4.exitoso and isinstance(res_l4.datos, AgentResult):
             agent_result = res_l4.datos
 
-        # â”€â”€ Calculo de calidad global â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── Calculo de calidad global ─────────────────────────────────────
         calidad_global = self._calcular_calidad_global(
             risk_score=risk_score,
             anomaly_report=anomaly_report,
@@ -334,7 +334,7 @@ class QAOrchestrator:
             layers=layers,
         )
 
-        # â”€â”€ Determinacion de estado final â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # ── Determinacion de estado final ─────────────────────────────────
         exitosas = sum(1 for layer in layers if layer.exitoso)
         total_capas = len(layers)
 

@@ -48,7 +48,7 @@ def _handle_rag_ingest(store, cmd: str) -> None:
 
 
 def _handle_rag_stats(store) -> None:
-    """Handle ``!rag stats`` â€” muestra estadisticas de la BD RAG."""
+    """Handle ``!rag stats`` — muestra estadisticas de la BD RAG."""
     colls = store.list_collections()
     _rc.logger.info("")
     _rc.logger.info("[RAG] Colecciones disponibles: %s", colls)
@@ -66,7 +66,7 @@ def _handle_rag_stats(store) -> None:
     _rc.logger.info("")
 
 
-# â”€â”€ DB Commands â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── DB Commands ──────────────────────────────────────────────────────
 
 def _handle_db_migrate(store, cmd: str) -> None:
     """Handle ``!db migrate [--path <ruta>]``."""
@@ -153,7 +153,7 @@ def _handle_db_rollback(cmd: str) -> None:
         _rc.logger.info(f"[DB] Error al restaurar desde: {backup_path}")
 
 
-# â”€â”€ Iteration End â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Iteration End ───────────────────────────────────────────────────
 
 
 
@@ -169,17 +169,17 @@ def _handle_db_rollback(cmd: str) -> None:
 
 
 
-# â”€â”€ Hooks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Hooks ────────────────────────────────────────────────────────────
 
 def _handle_hooks_install() -> None:
-    """Handle ``!hooks install`` â€” installs the pre-commit hook."""
+    """Handle ``!hooks install`` — installs the pre-commit hook."""
     from harness.scripts.install_hooks import install_hook
     _rc.logger.info("[Harness] Instalando hook pre-commit...")
     install_hook()
 
 
 def _handle_hooks_uninstall() -> None:
-    """Handle ``!hooks uninstall`` â€” uninstalls the pre-commit hook."""
+    """Handle ``!hooks uninstall`` — uninstalls the pre-commit hook."""
     from harness.scripts.install_hooks import uninstall_hook
     _rc.logger.info("[Harness] Desinstalando hook pre-commit...")
     uninstall_hook()

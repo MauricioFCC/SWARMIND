@@ -228,7 +228,7 @@ class DebateOrchestrator(_StrategiesMixin, _AggregationMixin):
                 from_agent="@coordinator",
                 to_agent="@all",
                 message=(
-                    f"âœ… **DEBATE COMPLETADO**\n"
+                    f"✅ **DEBATE COMPLETADO**\n"
                     f"Estrategia: {result.strategy.value}\n"
                     f"Rondas: {len(result.rounds)}\n"
                     f"Confianza: {result.confidence:.2f}\n"

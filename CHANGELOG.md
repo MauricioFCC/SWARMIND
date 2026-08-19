@@ -2,6 +2,34 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-08-18] Arquitecturas RAG frontier: Hibrido (RRF) + Correctivo (CRAG)
+
+### Evaluacion de las 5 arquitecturas RAG 2026 (FRS)
+- **Hibrido (dense + sparse)** → **IMPLEMENTADO**: `harness/memory_rag/hybrid_retriever.py`
+  (NUEVO): `HybridRetriever` fusiona vector denso (LanceDB embeddings) y BM25 disperso
+  (SQLite FTS5) con **Reciprocal Rank Fusion** (k=60, Cormack 2009). `HybridResult`
+  (dataclass frozen: doc_id, score, dense_rank, sparse_rank, metadata); DI sobre
+  `FTSSearch` + `LanceVectorStore`; `DENSE_WEIGHT`/`SPARSE_WEIGHT` exportados. Cierra
+  el gap: `LanceVectorStore.hybrid_search` era vector + filtro keyword en metadata,
+  NO fusion BM25 real.
+- **Correctivo (CRAG)** → **IMPLEMENTADO**: `harness/memory_rag/corrective_retriever.py`
+  (NUEVO): `CorrectiveRetriever` valida la calidad de la recuperacion ANTES de
+  generacion (Yan et al., arXiv:2401.15884). Evaluador heuristico cero-LLM
+  (score medio normalizado + cobertura de terminos de la query); si calidad < 0.30 →
+  query rewrite por expansion de keywords o fallback a fuente alternativa;
+  reporta `corrective_action` (none/rewrite/fallback) + `quality_score`.
+- **GraphRAG** → CUBIERTO (documentado): `knowledge_graph.py` (grafo de metadatos
+  skills/agentes/ADRs con NetworkX) + `TokenBudgetRouter` (PageRank + TF-IDF) ya
+  cubren la navegacion por grafo a nivel sistema; pipeline LLM de extraccion de
+  entidades = YAGNI.
+- **Agentic RAG** → CUBIERTO (documentado): el orchestrator multi-agente con
+  fan-out + votacion gobernada + tools ya es la capa agentica; no requiere modulo nuevo.
+- **Multimodal** → PARCIAL (documentado): `anydoc` (doc_converter + doc_ingester)
+  convierte binarios (21 extensiones) a Markdown antes del chunking; embeddings
+  multimodales nativos = YAGNI.
+- Tests: `test_hybrid_retriever.py` (12) + `test_corrective_retriever.py` (10);
+  regresion memory_rag **191 passed**; ruff 0 errores.
+
 ## [2026-08-18] Integraciones: anydoc (binarios → RAG) + patrones deepseek-harness (plugin lifecycle + session replay)
 
 ### anydoc — documentos binarios a Markdown en RAG (feat, commit 983f93c)
@@ -33,7 +61,7 @@
   `SessionNotFoundError`.
 - Tests: `test_plugin_lifecycle.py` (30) + `test_session_replay.py` (29); coverage:
   registry 94%, session_replay 100%.
-- Suite: **4662 tests** collected; 35 skills validos (`validate_skills.py --strict`).
+- Suite: **4722 tests** collected; 35 skills validos (`validate_skills.py --strict`).
 
 ## [2026-08-14] Delegacion local Ollama: 4 tiers por capacidad + keep_alive (minimo tokens cloud)
 

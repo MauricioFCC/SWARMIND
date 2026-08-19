@@ -1,4 +1,4 @@
-﻿"""Async I/O Fusion â€” BatchAccumulator para operaciones I/O batch.
+﻿"""Async I/O Fusion — BatchAccumulator para operaciones I/O batch.
 
 Fusiona operaciones I/O individuales en batches para reducir round-trips
 a backends (LanceDB, Chroma, Qdrant, disco).
@@ -11,7 +11,7 @@ Arquitectura:
 - Backpressure si el buffer excede 2x max_batch_size.
 - Thread-safe via asyncio.Queue o threading.Lock.
 
-Referencia: arXiv:2606.01533 (MACU) â€” async I/O fusion.
+Referencia: arXiv:2606.01533 (MACU) — async I/O fusion.
 """
 
 from __future__ import annotations

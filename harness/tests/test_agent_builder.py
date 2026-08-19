@@ -1,9 +1,10 @@
 ﻿"""
-Tests para agent_builder â€” AgentBuilder, AgentPruner, run_agent_evolution.
+Tests para agent_builder — AgentBuilder, AgentPruner, run_agent_evolution.
 """
 from __future__ import annotations
 
 import tempfile
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -56,7 +57,6 @@ def pruner(mock_store):
 # Helpers
 # ---------------------------------------------------------------------------
 
-from datetime import UTC, datetime, timedelta
 
 # Fechas relativas a "ahora" para que los tests nunca envejezcan
 _NOW = datetime.now(UTC)
@@ -234,7 +234,7 @@ class TestAgentBuilderBuildAgents:
 
     def test_build_with_sufficient_lessons_via_mock(self, builder):
         """Test build_agents_from_cognition funciona con dominio que tiene menos de MIN_SUCCESSFUL_TASKS."""
-        # Solo 1 lesson por dominio â†’ salta avg_score (evita typo bug) y retorna []
+        # Solo 1 lesson por dominio → salta avg_score (evita typo bug) y retorna []
         lessons = [_make_lesson("trading", score=0.85)]
         groups = {"trading": lessons}
         with patch.object(builder, "_fetch_lessons", return_value=lessons):  # noqa: SIM117
@@ -299,7 +299,7 @@ class TestAgentPrunerInit:
     def test_pruner_protected_roles(self):
         """Test PROTECTED_ROLES contiene los 5 roles universales."""
         p = AgentPruner(vector_store=MockVectorStore())
-        assert p.PROTECTED_ROLES == {"coordinator", "builder", "scientist", "guardian", "evolve"}
+        assert {"coordinator", "builder", "scientist", "guardian", "evolve"} == p.PROTECTED_ROLES
 
 
 class TestAgentPrunerPrune:

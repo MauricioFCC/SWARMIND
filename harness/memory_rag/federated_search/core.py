@@ -1,8 +1,8 @@
-"""FederatedVectorSearch â€” nÃºcleo del buscador federado (extraccion mecanica).
+"""FederatedVectorSearch — núcleo del buscador federado (extraccion mecanica).
 
 Clase publica FederatedVectorSearch: inicializacion de backends,
 deteccion de colapso single-harness y creacion de backends por defecto.
-La busqueda y el re-ranking se heredan de mixins en submÃ³dulos contiguos.
+La busqueda y el re-ranking se heredan de mixins en submódulos contiguos.
 """
 from __future__ import annotations
 

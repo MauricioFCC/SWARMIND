@@ -1,5 +1,5 @@
 ﻿"""
-Agent Dispatcher â€” Skill-aware task routing.
+Agent Dispatcher — Skill-aware task routing.
 
 Finds relevant procedural skills for a task description and includes them
 in the dispatch context if the match is strong enough (>70% similarity).
@@ -61,8 +61,8 @@ class AgentDispatcher:
         Find the best-matching skill for a task description.
 
         Search order:
-          1. YAML registry (``skills_registry.yaml``) â€” keyword match.
-          2. LanceDB ``procedural_skills`` â€” vector similarity.
+          1. YAML registry (``skills_registry.yaml``) — keyword match.
+          2. LanceDB ``procedural_skills`` — vector similarity.
 
         Returns:
             The best-matching skill dict with keys (name, path, domain, agent,
@@ -256,7 +256,7 @@ class AgentDispatcher:
         1. Busqueda de skill en LanceDB
         2. Contexto RAG
         3. Mensajes recientes del agent_bus
-        4. Plan de ejecuciÃ³n (si existe)
+        4. Plan de ejecución (si existe)
 
         Args:
             plan_context: Optional dict with plan info (from TaskOrchestrator).

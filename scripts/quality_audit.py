@@ -24,8 +24,8 @@ for root, dirs, files in os.walk("harness"):
             big_files.append((rel, lines))
 
 if big_files:
-    for f, l in sorted(big_files, key=lambda x: -x[1]):
-        print(f"  [FAIL] {f} ({l} lines)")
+    for f, line_count in sorted(big_files, key=lambda x: -x[1]):
+        print(f"  [FAIL] {f} ({line_count} lines)")
     print(f"\n  Total: {len(big_files)} archivos violan <900LC")
 else:
     print("  [OK] 0 archivos > 900 lines")

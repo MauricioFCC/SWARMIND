@@ -1,5 +1,5 @@
 ﻿"""
-Session Context â€” Preserves execution state across iterations.
+Session Context — Preserves execution state across iterations.
 
 Tracks the current plan, which subtasks are completed, what's pending,
 and maintains a history of all results. This ensures the coordinator
@@ -139,7 +139,7 @@ class SessionContext:
             logger.info("Session %s resumed.", last_session.session_id)
             return last_session
 
-        # No session exists â€” create one without a plan
+        # No session exists — create one without a plan
         sid = str(uuid.uuid4())[:8]
         empty_plan = TaskPlan(session_id=sid, original_message=message)
         session = SessionState(
@@ -262,9 +262,9 @@ class SessionContext:
         if next_level:
             is_parallel = len(next_level) > 1
             mode = "PARALELO" if is_parallel else "SECUENCIAL"
-            lines.append(f"\nâ³ Siguiente nivel ({mode}):")
+            lines.append(f"\n⏳ Siguiente nivel ({mode}):")
             for s in next_level:
-                lines.append(f"   â³ [{s.agent}] {s.description}")
+                lines.append(f"   ⏳ [{s.agent}] {s.description}")
 
         # Show future levels
         all_levels = plan.get_levels()
@@ -275,14 +275,14 @@ class SessionContext:
             if all(s.id in {st.id for st in next_level} for s in level):
                 continue
             if not future_found:
-                lines.append("\nâ¸ï¸  PrÃ³ximos pasos:")
+                lines.append("\n⏸️  Próximos pasos:")
                 future_found = True
             for s in level:
                 if not s.completed and s not in next_level:
-                    lines.append(f"   â¸ï¸  [{s.agent}] {s.description}")
+                    lines.append(f"   ⏸️  [{s.agent}] {s.description}")
 
         if session.completed:
-            lines.append("\nðŸŽ‰ Â¡SesiÃ³n COMPLETA!")
+            lines.append("\nðŸŽ‰ ¡Sesión COMPLETA!")
 
         return "\n".join(lines)
 

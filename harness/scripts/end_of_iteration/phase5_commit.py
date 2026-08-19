@@ -1,5 +1,5 @@
 ﻿"""
-Phase 5: Commit Preparation â€” classify changes, suggest message, interactive commit.
+Phase 5: Commit Preparation — classify changes, suggest message, interactive commit.
 """
 from __future__ import annotations
 
@@ -236,7 +236,7 @@ def _do_git_commit(commit_msg: str) -> bool:
 
 
 def interactive_commit(commit_msg: str) -> None:
-    """Phase 5: Commit Seguro â€” interactive commit flow."""
+    """Phase 5: Commit Seguro — interactive commit flow."""
     _print_banner("FASE 5: Commit Seguro", "\U0001F4DD")
 
     if not _check_env_not_staged():
@@ -251,7 +251,7 @@ def interactive_commit(commit_msg: str) -> None:
 
     while True:
         try:
-            response = input(f"  {_bold('?')} {_cyan('Â¿Commit?')} [Y/n/--edit] ").strip().lower()
+            response = input(f"  {_bold('?')} {_cyan('¿Commit?')} [Y/n/--edit] ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             _safe_print(f"\n  {_warn('[SKIP]')} Commit cancelado.")
             return

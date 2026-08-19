@@ -28,31 +28,31 @@ class _RegistryMixin:
         """Registra un nuevo proveedor de modelos LLM.
 
         Args:
-            config: ConfiguraciÃ³n completa del proveedor.
+            config: Configuración completa del proveedor.
 
         Raises:
-            ValueError: Si el nombre del proveedor ya estÃ¡ registrado
-                o la configuraciÃ³n es invÃ¡lida.
+            ValueError: Si el nombre del proveedor ya está registrado
+                o la configuración es inválida.
 
-        WHY: Cada proveedor necesita configuraciÃ³n individual (API key,
+        WHY: Cada proveedor necesita configuración individual (API key,
         modelos, costos) para ser invocado correctamente.
         WHERE: register_provider en MultiAPIProvider.
         """
         if not config.name:
             raise ValueError(
                 "Provider name cannot be empty. "
-                "WHY: Se necesita un nombre Ãºnico para identificar el proveedor. "
+                "WHY: Se necesita un nombre único para identificar el proveedor. "
                 "WHERE: register_provider"
             )
         if not config.models:
             raise ValueError(
                 f"Provider '{config.name}' must have at least one model. "
-                "WHY: Sin modelos no hay ejecuciÃ³n posible. "
+                "WHY: Sin modelos no hay ejecución posible. "
                 "WHERE: register_provider"
             )
         if config.tier not in (t.value for t in ProviderTier):
             logger.warning(
-                "Provider '%s' tier '%s' no es estÃ¡ndar, usando 'standard'. "
+                "Provider '%s' tier '%s' no es estándar, usando 'standard'. "
                 "WHY: Se esperaba uno de %s. "
                 "WHERE: register_provider",
                 config.name, config.tier, [t.value for t in ProviderTier],

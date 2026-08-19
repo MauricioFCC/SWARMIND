@@ -9,7 +9,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](pyproject.toml)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
-[![Tests](https://img.shields.io/badge/tests-4662_passing-brightgreen.svg)](harness/tests/)
+[![Tests](https://img.shields.io/badge/tests-4722_passing-brightgreen.svg)](harness/tests/)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **Spanish (es)** is the primary documentation language; this README is in English for GitHub.
@@ -83,6 +83,8 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 
 ### Memory & RAG
 - Central portable memory with LanceDB vector store (`harness/memory_rag/lance_vector_store.py`), semantic cache, SQLite-vec adapter (edge/offline backend), federated search, context window management, and `shapley_flow` optimization.
+- **Hybrid RAG (RRF)** (`harness/memory_rag/hybrid_retriever.py`): `HybridRetriever` fuses dense vector (LanceDB embeddings) and sparse BM25 (SQLite FTS5) rankings with **Reciprocal Rank Fusion** (k=60) — documents present in both rankings rank higher; DI over `FTSSearch` + `LanceVectorStore`.
+- **Corrective RAG (CRAG)** (`harness/memory_rag/corrective_retriever.py`): `CorrectiveRetriever` validates retrieval quality *before* generation (arXiv:2401.15884) — if poor, applies query rewrite or falls back to an alternative source, reporting the `corrective_action` taken (`none`/`rewrite`/`fallback`).
 - `AgentKPITracker`, compression strategies, context assembler, token budget managers, and skill loader.
 
 ### Validation (PBT & Mutation Oracles)
@@ -129,6 +131,7 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 │   lance_vector_store · semantic_cache · sqlite_vec_adapter   │
 │   federated_search · shapley_flow · context_window_manager   │
 │   doc_converter · doc_ingester (binaries → Markdown → RAG)   │
+│   hybrid_retriever (RRF dense+sparse) · corrective_retriever │
 │   token_budget · token_budget_manager                        │
 └───────────────────────────┬─────────────────────────────────┘
                             │
@@ -251,7 +254,7 @@ python scripts/enable_gpu.py
 
 Quality is enforced continuously, not at the end:
 
-- **Test suite**: 4662 tests collected (TDD suite), coverage 75.70%, mutation testing mutmut gate ≥70%.
+- **Test suite**: 4722 tests collected (TDD suite), coverage 75.70%, mutation testing mutmut gate ≥70%.
 - **Lint**: ruff — all checks passed.
 - **Dead code**: vulture — 0 dead code.
 - **Architecture debt (AGR)**: 0 files over 500 lines in non-test code; 32 flat modules refactored into packages with re-exporting `__init__.py`; mixins limited to ≤ 2 bases; SOLID corrected in 9 classes.
@@ -273,7 +276,8 @@ SWARMIND/
 │   │                           # agent_kpi_tracker, vector_store_adapter, context_window_manager,
 │   │                           # compression_strategies, shapley_flow, optimization_pipeline,
 │   │                           # context_assembler, token_budget, token_budget_manager, skill_loader,
-│   │                           # doc_converter, doc_ingester (anydoc: binaries → Markdown → RAG)
+│   │                           # doc_converter, doc_ingester (anydoc: binaries → Markdown → RAG),
+│   │                           # hybrid_retriever (RRF dense+sparse), corrective_retriever (CRAG)
 │   ├── validation/             # pbt_stage.py, mutation_stage.py
 │   ├── gpu_accel.py            # CUDA detection + gpu_optimize.py
 │   ├── gpu_optimize.py

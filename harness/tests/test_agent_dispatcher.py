@@ -1,7 +1,7 @@
 ﻿"""
-Tests para AgentDispatcher â€” skill-aware task routing.
+Tests para AgentDispatcher — skill-aware task routing.
 
-Cubre: dispatch sÃ­ncrono, bÃºsqueda en YAML registry, bÃºsqueda LanceDB,
+Cubre: dispatch síncrono, búsqueda en YAML registry, búsqueda LanceDB,
 lectura de skill .md, stats, dispatch_async y dispatch_batch.
 """
 
@@ -123,7 +123,7 @@ class TestFindSkillForTask:
         assert result is sample_skill
 
     def test_lancedb_match_below_threshold(self, dispatcher, mock_vector_store):
-        """Debe retornar None si el match de LanceDB estÃ¡ por debajo del threshold."""
+        """Debe retornar None si el match de LanceDB está por debajo del threshold."""
         low_skill = {"name": "low", "similarity": SIMILARITY_THRESHOLD - 0.05}
         with patch("harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",  # noqa: SIM117
                    return_value=None):
@@ -161,7 +161,7 @@ class TestFindSkillForTask:
 
 
 class TestDispatch:
-    """Tests para dispatch sÃ­ncrono."""
+    """Tests para dispatch síncrono."""
 
     def test_dispatch_with_skill(self, dispatcher, sample_skill):
         """Debe incluir skill context cuando hay match."""
@@ -192,7 +192,7 @@ class TestDispatch:
         assert "skill_name" not in result
 
     def test_dispatch_skill_below_threshold(self, dispatcher):
-        """Debe ignorar skill si su similitud estÃ¡ por debajo del threshold."""
+        """Debe ignorar skill si su similitud está por debajo del threshold."""
         low_skill = {"name": "low", "content": "x", "similarity": SIMILARITY_THRESHOLD - 0.01}
         with patch.object(dispatcher, 'find_skill_for_task',
                           return_value=low_skill):
@@ -203,7 +203,7 @@ class TestDispatch:
         assert dispatcher._stats["no_skill_matches"] == 1
 
     def test_dispatch_multiple_updates_stats(self, dispatcher, sample_skill):
-        """Las estadÃ­sticas deben acumularse correctamente."""
+        """Las estadísticas deben acumularse correctamente."""
         with patch.object(dispatcher, 'find_skill_for_task') as mock_find:
             mock_find.side_effect = [sample_skill, None, sample_skill, None]
 
@@ -231,7 +231,7 @@ class TestSearchLanceDBSkills:
         assert d._search_lancedb_skills("test") is None
 
     def test_exception_during_search(self, dispatcher, mock_vector_store):
-        """Debe manejar excepciÃ³n en vector_store.search."""
+        """Debe manejar excepción en vector_store.search."""
         mock_vector_store.search.side_effect = RuntimeError("DB down")
         result = dispatcher._search_lancedb_skills("test query")
         assert result is None
@@ -243,7 +243,7 @@ class TestSearchLanceDBSkills:
         assert result is None
 
     def test_score_below_threshold(self, dispatcher, mock_vector_store):
-        """Debe retornar None si el score estÃ¡ por debajo del threshold."""
+        """Debe retornar None si el score está por debajo del threshold."""
         mock_vector_store.search.return_value = [
             {"metadata": {"name": "x"}, "score": SIMILARITY_THRESHOLD - 0.1}
         ]
@@ -341,7 +341,7 @@ class TestReadSkillMd:
         assert content == ""
 
     def test_exception_handling(self):
-        """Debe retornar string vacio si hay una excepciÃ³n."""
+        """Debe retornar string vacio si hay una excepción."""
         mock_path, mock_min_path = self._setup_path_mocks("/fake/d.md")
         mock_min_path.exists.side_effect = OSError("permission denied")
         with patch("harness.orchestrator.agent_dispatcher.Path",
@@ -359,7 +359,7 @@ class TestStats:
     """Tests para get_stats y reset_stats."""
 
     def test_get_stats(self, dispatcher):
-        """Debe retornar copia del dict de estadÃ­sticas."""
+        """Debe retornar copia del dict de estadísticas."""
         dispatcher._stats["skill_matches"] = 5
         stats = dispatcher.get_stats()
         assert stats["skill_matches"] == 5

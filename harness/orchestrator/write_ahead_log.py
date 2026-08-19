@@ -1,5 +1,5 @@
 ﻿"""
-Write-Ahead Log â€” Resiliencia ante fallos con retry/cancelacion.
+Write-Ahead Log — Resiliencia ante fallos con retry/cancelacion.
 
 Basado en patron Write-Ahead Log de sistemas de bases de datos.
 Adaptado para sistemas multi-agente segun ADR-0018 Token Economics.
@@ -180,7 +180,7 @@ class WriteAheadLog:
                 entry.status = WALStatus.FAILED
                 self._persist()
                 logger.warning(
-                    "WAL retry %d/%d: %s â€” %s",
+                    "WAL retry %d/%d: %s — %s",
                     attempt + 1, entry.max_retries + 1,
                     entry.operation_id, exc,
                 )

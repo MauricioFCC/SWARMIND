@@ -386,7 +386,7 @@ class TestGenAISemconv:
         """Las constantes GenAI estables 2026 estan definidas en el modulo."""
         import harness.observability.opentelemetry_agent as otel_mod
 
-        assert otel_mod.GENAI_SPAN_NAMES == frozenset({"invoke_agent", "chat", "execute_tool"})
+        assert frozenset({"invoke_agent", "chat", "execute_tool"}) == otel_mod.GENAI_SPAN_NAMES
         assert otel_mod.GENAI_PROVIDER == "swarmind"
         assert otel_mod.ATTR_PROVIDER == "gen_ai.provider.name"
         assert otel_mod.ATTR_SYSTEM == "gen_ai.system"

@@ -1,4 +1,4 @@
-﻿"""AdaptivePool â€” Worker pool con auto-escalado por carga del sistema.
+﻿"""AdaptivePool — Worker pool con auto-escalado por carga del sistema.
 
 Ajusta dinamicamente max_workers segun CPU disponible, memoria libre
 y longitud de la cola de tareas pendientes.
@@ -11,7 +11,7 @@ Estrategia:
 - Aplica histeresis para evitar bouncing (cambia solo si diff > 20%).
 - Escala hacia arriba inmediatamente, hacia abajo gradualmente.
 
-Referencia: arXiv:2604.15186 (Scepsy) â€” GPU allocation via aggregate profiles.
+Referencia: arXiv:2604.15186 (Scepsy) — GPU allocation via aggregate profiles.
 """
 
 from __future__ import annotations
@@ -119,7 +119,7 @@ class AdaptivePool:
         )
 
     def submit(self, fn: Callable, *args: Any, **kwargs: Any) -> Future:
-        """EnvÃ­a una tarea al pool.
+        """Envía una tarea al pool.
 
         Args:
             fn: Funcion a ejecutar.

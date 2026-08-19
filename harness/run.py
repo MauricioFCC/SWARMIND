@@ -221,39 +221,39 @@ def _display_plan(orch_result: Any, task: str) -> None:
         return
 
     _safe_print()
-    _safe_print(f"  {_cyan('ðŸ“‹ PLAN DE EJECUCIÃ“N')}")
-    _safe_print(f"  {'â”€' * 50}")
-    _safe_print(f"  SesiÃ³n: {orch_result.session_id}")
+    _safe_print(f"  {_cyan('ðŸ“‹ PLAN DE EJECUCIÓN')}")
+    _safe_print(f"  {'─' * 50}")
+    _safe_print(f"  Sesión: {orch_result.session_id}")
     _safe_print(f"  Tarea: {task[:100]}")
     _safe_print()
 
     for level_idx, level in enumerate(orch_result.plan.get_levels()):
         is_parallel = len(level) > 1
-        mode = "âš¡ PARALELO" if is_parallel else "â†’ SECUENCIAL"
+        mode = "⚡ PARALELO" if is_parallel else "→ SECUENCIAL"
         _safe_print(f"  Nivel {level_idx} ({mode}):")
         for s in level:
             deps = f" [espera: {', '.join(s.dependencies)}]" if s.dependencies else ""
-            _safe_print(f"    â–¸ [{s.agent}] {s.description}{deps}")
+            _safe_print(f"    ▸ [{s.agent}] {s.description}{deps}")
         _safe_print()
-    _safe_print(f"  {'â”€' * 50}")
+    _safe_print(f"  {'─' * 50}")
     _safe_print()
 
     # Current level
     if orch_result.current_level:
         if len(orch_result.current_level) == 1:
             st = orch_result.current_level[0]
-            _safe_print(f"  {_cyan('â–¶ Ejecutando:')} [{st['agent']}] {st['description']}")
+            _safe_print(f"  {_cyan('▶ Ejecutando:')} [{st['agent']}] {st['description']}")
         else:
-            _safe_print(f"  {_cyan(f'â–¶ Ejecutando {len(orch_result.current_level)} subtareas en PARALELO:')}")
+            _safe_print(f"  {_cyan(f'▶ Ejecutando {len(orch_result.current_level)} subtareas en PARALELO:')}")
             for st in orch_result.current_level:
-                _safe_print(f"    â–¸ [{st['agent']}] {st['description']}")
+                _safe_print(f"    ▸ [{st['agent']}] {st['description']}")
         _safe_print()
 
     # Previous results
     if orch_result.previous_results:
-        _safe_print(f"  {_cyan('âœ… Subtareas completadas:')}")
+        _safe_print(f"  {_cyan('✅ Subtareas completadas:')}")
         for prev in orch_result.previous_results:
-            _safe_print(f"    âœ“ [{prev['agent']}] {prev['description']}")
+            _safe_print(f"    ✓ [{prev['agent']}] {prev['description']}")
         _safe_print()
 
 
@@ -297,7 +297,7 @@ def _create_task_and_lesson(
                 f"Tarea enrutada a @{target_agent}.\n"
                 f"Descripcion: {task}\n"
                 f"Routing: {routing_source}\n"
-                f"SesiÃ³n: {orch_result.session_id}\n"
+                f"Sesión: {orch_result.session_id}\n"
                 f"Subtasks en plan: {len(orch_result.plan.subtasks)}\n"
                 f"Chunks RAG recuperados: {len(ctx.relevant_docs)}\n"
                 f"Tokens de contexto: {ctx.metadata.get('total_tokens_used', 0)}"
@@ -321,21 +321,21 @@ def _create_task_and_lesson(
 def _display_final_output(orch_result: Any, target_agent: str, routing_source: str) -> None:
     """Display final output and status."""
     if orch_result.is_complete:
-        _safe_print(f"\n  {_ok('ðŸŽ‰ Â¡PLAN COMPLETO!')} Todas las subtareas han sido ejecutadas.")
+        _safe_print(f"\n  {_ok('ðŸŽ‰ ¡PLAN COMPLETO!')} Todas las subtareas han sido ejecutadas.")
         _safe_print(f"  El plan '{orch_result.session_id}' ha finalizado.")
     else:
         pending = len(orch_result.plan.subtasks) - sum(1 for s in orch_result.plan.subtasks if s.completed)
         if pending > 0:
-            _safe_print(f"\n  {_warn(f'â³ Quedan {pending} subtareas pendientes.')}")
+            _safe_print(f"\n  {_warn(f'⏳ Quedan {pending} subtareas pendientes.')}")
             _safe_print("  Para continuar, escribe 'continuar' o el siguiente paso.")
         else:
-            _safe_print(f"\n  {_cyan('â„¹ï¸  Usa este plan como guÃ­a para la implementaciÃ³n.')}")
+            _safe_print(f"\n  {_cyan('ℹ️  Usa este plan como guía para la implementación.')}")
 
     if orch_result.current_level:
         for st in orch_result.current_level:
-            _safe_print(f"  â–¶ [{st['agent']}] {st['description']}")
+            _safe_print(f"  ▶ [{st['agent']}] {st['description']}")
 
-    logger.info("[Harness] Tarea enrutada a @%s (%s) â€” sesiÃ³n %s",
+    logger.info("[Harness] Tarea enrutada a @%s (%s) — sesión %s",
                 target_agent, routing_source, orch_result.session_id)
 
 

@@ -1,5 +1,5 @@
 ﻿"""
-SkillBundler â€” Dynamic Agent Composition from Skill Registry.
+SkillBundler — Dynamic Agent Composition from Skill Registry.
 
 Implementacion del patron SIGMA (Skill-Incidence Graphs, arXiv:2606.19758):
 Agentes como bundles de skills reusables, compuestos dinamicamente segun la tarea.
@@ -8,7 +8,7 @@ Agentes como bundles de skills reusables, compuestos dinamicamente segun la tare
 Usage:
     bundler = SkillBundler()
     agents = bundler.compose("Desarrollar API REST en Rust con autenticacion JWT")
-    # â†’ [AgentConfig(name="builder", skills=["rust-lang", "architecture", "security-audit"]), ...]
+    # → [AgentConfig(name="builder", skills=["rust-lang", "architecture", "security-audit"]), ...]
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ _SKILL_REGISTRY_PATH = Path(__file__).resolve().parent.parent.parent / ".opencod
 # Skill to Agent Mapping (SIGMA incidence matrix)
 # ---------------------------------------------------------------------------
 
-# Mapa de skills â†’ agente primario que deberia ejecutarlos
+# Mapa de skills → agente primario que deberia ejecutarlos
 SKILL_TO_AGENT: dict[str, str] = {
     "alpha-research": "scientist",
     "evolve": "evolve",
@@ -50,7 +50,7 @@ SKILL_TO_AGENT: dict[str, str] = {
     "security-audit": "guardian",
 }
 
-# Mapa de dominios â†’ skills relevantes
+# Mapa de dominios → skills relevantes
 DOMAIN_SKILLS: dict[str, list[str]] = {
     "web": ["frontend-uiux", "responsive-ui", "security-audit", "rust-lang"],
     "api": ["architecture", "rust-lang", "security-audit", "data-science"],
@@ -210,7 +210,7 @@ class SkillBundler:
         domain = self.detect_domain(task)
         selected_skills = self.select_skills(domain, task)
 
-        # Construir matriz de incidencia skills â†’ agentes
+        # Construir matriz de incidencia skills → agentes
         agent_bundles: dict[str, list[str]] = {a: [] for a in available_agents}
         for skill in selected_skills:
             primary_agent = SKILL_TO_AGENT.get(skill)

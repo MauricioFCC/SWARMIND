@@ -1,7 +1,7 @@
 ﻿"""
 Cognition store synchronisation.
 
-Manages the ``asi_cognition_store`` collection â€” a persistent knowledge base
+Manages the ``asi_cognition_store`` collection — a persistent knowledge base
 of lessons, insights, and cognition artefacts produced by the evolve loop.
 """
 from __future__ import annotations
@@ -160,7 +160,7 @@ class CognitionSync:
                 _COGNITION_COLLECTION, vector, [metadata]
             )
             logger.info(
-                "Lesson added â€” id=%s domain=%s title=%s",
+                "Lesson added — id=%s domain=%s title=%s",
                 lesson.id, domain, title,
             )
         except Exception:

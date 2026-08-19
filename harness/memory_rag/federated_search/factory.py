@@ -26,7 +26,7 @@ def create_federated_search(
     Args:
         backends: Dict nombre -> adaptador. Si None, usa defaults.
         mmr_lambda: Factor de balance MMR (0-1).
-        cache_max_size: TamaÃ±o maximo del cache.
+        cache_max_size: Tamaño maximo del cache.
         cache_ttl: TTL en segundos del cache.
 
     Returns:

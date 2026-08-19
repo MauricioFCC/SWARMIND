@@ -1,5 +1,5 @@
 ﻿"""
-Knowledge Graph â€” Grafo de conocimiento local-first para Swarmind.
+Knowledge Graph — Grafo de conocimiento local-first para Swarmind.
 
 Implementa un grafo de conocimiento local-first (similar a LanceDB) que conecta:
 - Skills con agentes (que agente usa cada skill)

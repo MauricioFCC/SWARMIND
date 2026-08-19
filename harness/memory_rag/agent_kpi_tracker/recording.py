@@ -50,10 +50,10 @@ class _RecordingMixin:
         metadata: dict | None = None,
     ) -> str | None:
         """
-        Registra mÃ©tricas de rendimiento de un agente.
+        Registra métricas de rendimiento de un agente.
 
         Returns:
-            ID del registro creado, o None si telemetrÃ­a estÃ¡ off.
+            ID del registro creado, o None si telemetría está off.
         """
         if not self._enabled:
             return None
@@ -95,9 +95,9 @@ class _RecordingMixin:
         metadata: dict | None = None,
     ) -> str | None:
         """
-        Registra o actualiza mÃ©tricas de efectividad de un skill.
+        Registra o actualiza métricas de efectividad de un skill.
 
-        Si el skill ya existe, actualiza sus mÃ©tricas acumuladas.
+        Si el skill ya existe, actualiza sus métricas acumuladas.
 
         Returns:
             ID del registro.
@@ -109,7 +109,7 @@ class _RecordingMixin:
         existing = self._find_skill_record(skill_name, domain, agent)
 
         if existing:
-            # Actualizar mÃ©tricas acumuladas
+            # Actualizar métricas acumuladas
             existing_id = existing.get("id", "")
             meta = existing.get("metadata", {})
             if isinstance(meta, str):
@@ -199,7 +199,7 @@ class _RecordingMixin:
         metadata: dict | None = None,
     ) -> str | None:
         """
-        Registra un evento de telemetrÃ­a.
+        Registra un evento de telemetría.
 
         Con telemetry_level=BASIC, solo guarda eventos importantes
         (error, warning, plan_created, plan_complete).
@@ -208,7 +208,7 @@ class _RecordingMixin:
         if not self._enabled:
             return None
 
-        # Filtrar eventos bÃ¡sicos vs full
+        # Filtrar eventos básicos vs full
         if not self._full_telemetry:
             important_events = {
                 "error", "warning", "plan_created", "plan_complete",
@@ -250,7 +250,7 @@ class _RecordingMixin:
         metadata: dict | None = None,
     ) -> str | None:
         """
-        Registra KPIs agregados de una sesiÃ³n completa.
+        Registra KPIs agregados de una sesión completa.
 
         Si ya existe un KPI para esta session_id, lo actualiza.
         """
@@ -292,7 +292,7 @@ class _RecordingMixin:
             return self._insert(COLL_SESSION_KPIS, record.to_lancedb_row())
 
     def _find_session_kpi(self, session_id: str) -> dict | None:
-        """Busca un KPI de sesiÃ³n existente."""
+        """Busca un KPI de sesión existente."""
         try:
             results = self._store.search(
                 COLL_SESSION_KPIS,
@@ -324,7 +324,7 @@ class _RecordingMixin:
         metadata: dict | None = None,
     ) -> str | None:
         """
-        Registra una interacciÃ³n entre agentes (para grafos de colaboraciÃ³n).
+        Registra una interacción entre agentes (para grafos de colaboración).
         """
         if not self._enabled or not self._full_telemetry:
             return None

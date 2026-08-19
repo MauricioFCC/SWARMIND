@@ -115,10 +115,10 @@ class MCPExecutor:
 
         Built-in tool mappings:
 
-        - ``"pytest"``  â†’ ``pytest <test_path> [args]``
-        - ``"python"``  â†’ ``python <script> [args]``
-        - ``"shell"``   â†’ ``<command>``  (use with extreme caution)
-        - ``"echo"``   â†’ echo the params (safe testing)
+        - ``"pytest"``  → ``pytest <test_path> [args]``
+        - ``"python"``  → ``python <script> [args]``
+        - ``"shell"``   → ``<command>``  (use with extreme caution)
+        - ``"echo"``   → echo the params (safe testing)
 
         Args:
             tool_name: Name / identifier of the tool.

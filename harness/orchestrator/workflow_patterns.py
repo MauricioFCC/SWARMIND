@@ -1,11 +1,11 @@
 ﻿"""
-workflow_patterns.py â€” Patrones de flujo reutilizables para orquestacion de agentes.
+workflow_patterns.py — Patrones de flujo reutilizables para orquestacion de agentes.
 
 4 patrones atomicos simples, intemporales y efectivos:
-  1. EVALUATOR_OPTIMIZER: Genera â†’ Evalua â†’ Loop hasta threshold
-  2. VOTING: N variantes â†’ Ranking â†’ Mejor
-  3. CRITIQUE_REVISE: Genera â†’ Critica â†’ Revisa â†’ Loop
-  4. PARALLEL_TRANSFORM: Fan-out â†’ Transforma â†’ Fan-in merge
+  1. EVALUATOR_OPTIMIZER: Genera → Evalua → Loop hasta threshold
+  2. VOTING: N variantes → Ranking → Mejor
+  3. CRITIQUE_REVISE: Genera → Critica → Revisa → Loop
+  4. PARALLEL_TRANSFORM: Fan-out → Transforma → Fan-in merge
 
 Uso:
     from harness.orchestrator.workflow_patterns import (
@@ -63,7 +63,7 @@ def evaluator_optimizer(
     quality_threshold: float = 0.8,
     task_id: str = "",
 ) -> PatternResult:
-    """Genera â†’ Evalua â†’ Loop hasta threshold o max_iterations.
+    """Genera → Evalua → Loop hasta threshold o max_iterations.
 
     Args:
         generator_fn: Funcion que genera una solucion.
@@ -127,7 +127,7 @@ def voting(
     task: str,
     task_id: str = "",
 ) -> PatternResult:
-    """N agentes generan variantes â†’ Se rankean â†’ Mejor se entrega.
+    """N agentes generan variantes → Se rankean → Mejor se entrega.
 
     Args:
         generator_fns: Lista de funciones generadoras (3-5 ideal).
@@ -176,7 +176,7 @@ def critique_revise(
     max_iterations: int = 3,
     task_id: str = "",
 ) -> PatternResult:
-    """Genera â†’ Critica â†’ Revisa â†’ Loop hasta sin critica o max_iterations.
+    """Genera → Critica → Revisa → Loop hasta sin critica o max_iterations.
 
     Args:
         generator_fn: Funcion que genera/refina una solucion.
@@ -230,7 +230,7 @@ def parallel_transform(
     task: str,
     task_id: str = "",
 ) -> PatternResult:
-    """Fan-out a N transformadores â†’ Cada uno transforma â†’ Fan-in merge.
+    """Fan-out a N transformadores → Cada uno transforma → Fan-in merge.
 
     Args:
         transform_fns: Lista de funciones transformadoras (ejecutadas en paralelo).

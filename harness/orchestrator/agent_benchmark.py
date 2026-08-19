@@ -1,5 +1,5 @@
 ﻿"""
-AgentBenchmark â€” Evaluacion de agentes con metricas estandarizadas.
+AgentBenchmark — Evaluacion de agentes con metricas estandarizadas.
 
 Implementa:
 - GAIA-style multi-step reasoning tasks

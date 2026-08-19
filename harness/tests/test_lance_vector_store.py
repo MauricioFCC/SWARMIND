@@ -3,19 +3,19 @@
 
 Los tests se han organizado en varios archivos para mejor mantenibilidad:
 
-  - test_lance_vector_store_init.py   â†’ TestInitAndStorage
-  - test_lance_vector_store_crud.py   â†’ TestCollectionManagement,
+  - test_lance_vector_store_init.py   → TestInitAndStorage
+  - test_lance_vector_store_crud.py   → TestCollectionManagement,
                                         TestInsert, TestUpdate,
                                         TestClearEdgeCases
-  - test_lance_vector_store_search.py â†’ TestSearch, TestHybridSearch,
+  - test_lance_vector_store_search.py → TestSearch, TestHybridSearch,
                                         TestStats, TestHybridSearchLanceDB
 
 Estrategia general:
   - Modo memoria (allow_fallback=True): se parcha _try_import_lancedb para que
-    retorne None. Cubre ~40% del cÃ³digo (fallback in-memory).
+    retorne None. Cubre ~40% del código (fallback in-memory).
   - Modo LanceDB mockeado: se parcha _try_import_lancedb, os.makedirs y
-    lancedb.connect. Cubre el resto (conexiÃ³n real, ensure_collections, etc.).
-  - Cada metodo pÃºblico (insert, search, update, delete, etc.) se prueba en
+    lancedb.connect. Cubre el resto (conexión real, ensure_collections, etc.).
+  - Cada metodo público (insert, search, update, delete, etc.) se prueba en
     ambos modos cuando aplica, incluyendo edge cases y errores.
 """
 from __future__ import annotations
@@ -37,7 +37,7 @@ from harness.memory_rag.lance_vector_store import (
 from harness.memory_rag.memory_config import MemoryConfig
 
 # ===========================================================================
-# TESTS â€” Errores y hardening
+# TESTS — Errores y hardening
 # ===========================================================================
 
 
@@ -73,7 +73,7 @@ class TestErrorHandling:
         assert "access denied" in msg
 
     def test_insert_lancedb_open_fails_propagates(self, lancedb_store, mock_lancedb):
-        """Si open_table falla en insert, la excepciÃ³n se propaga."""
+        """Si open_table falla en insert, la excepción se propaga."""
         mock_lancedb["db_conn"].open_table.side_effect = RuntimeError(
             "table missing"
         )
@@ -105,7 +105,7 @@ class TestErrorHandling:
         assert store._allow_fallback is True
 
     def test_from_config_with_config(self):
-        """from_config con MemoryConfig explÃ­cito."""
+        """from_config con MemoryConfig explícito."""
         cfg = MemoryConfig(
             lancedb_path="/custom/lancedb",
             allow_fallback=True,
@@ -130,14 +130,14 @@ class TestErrorHandling:
     def test_all_methods_collection_not_found_memory(
         self, mem_store, method_name, args, kwargs
     ):
-        """Todos los mÃ©todos lanzan CollectionNotFoundError en memoria."""
+        """Todos los métodos lanzan CollectionNotFoundError en memoria."""
         method = getattr(mem_store, method_name)
         with pytest.raises(CollectionNotFoundError):
             method(*args, **kwargs)
 
 
 # ===========================================================================
-# TESTS â€” Constantes de colecciÃ³n
+# TESTS — Constantes de colección
 # ===========================================================================
 
 

@@ -214,7 +214,7 @@ Para tareas largas o complejas, incluir un **brief recordatorio** al inicio:
 ```
 Contexto actual del proyecto Swarmind:
 - .opencode/agents/ → perfiles de 23 agentes
-- harness/ → motor de ejecución con 4662 tests
+- harness/ → motor de ejecución con 4722 tests
 - skills disponibles: 35 skills en .opencode/skills/
 - export: scripts/export_archive.py
 - commit reciente: 983f93c (integraciones anydoc + deepseek-harness)
@@ -540,7 +540,7 @@ Swarmind/
 │   │   ├── migrate_engine.py           # Motor de migración
 │   │   ├── migrate_discovery.py        # Descubrimiento de colecciones
 │   │   └── migrate_cli.py              # CLI de migración
-│   └── tests/                          # 4662 tests (171 test_*.py)
+│   └── tests/                          # 4722 tests (176 test_*.py)
 ├── scripts/
 │   ├── export_archive.py               # Script universal de exportación
 │   ├── hermes_bridge.py                # Puente con shared_memory
@@ -766,6 +766,42 @@ python harness/scripts/rag_ingest.py --dir <ruta> --include-docs
 - **Session replay** (`harness/observability/session_replay.py`):
   `SessionReplay` reproduce sesiones grabadas y exporta a **Markdown o JSON**;
   `SessionNotFoundError` si la sesión no existe.
+
+### Arquitecturas RAG frontier — híbrido (RRF) + correctivo (CRAG)
+
+Evaluación de las 5 arquitecturas RAG 2026 (FRS). **2 implementadas**, 2 ya
+cubiertas por módulos existentes, 1 parcial:
+
+- **Híbrido RRF** (`harness/memory_rag/hybrid_retriever.py`): `HybridRetriever`
+  fusiona vector denso (LanceDB embeddings) + BM25 disperso (SQLite FTS5) con
+  **Reciprocal Rank Fusion** (k=60) — los docs presentes en AMBOS rankings
+  puntúan más alto que los que aparecen en uno solo. DI sobre `FTSSearch` +
+  `LanceVectorStore`; `DENSE_WEIGHT`/`SPARSE_WEIGHT` exportados.
+- **Correctivo CRAG** (`harness/memory_rag/corrective_retriever.py`):
+  `CorrectiveRetriever` valida la calidad de la recuperación ANTES de generar
+  (arXiv:2401.15884). Si es pobre (< umbral 0.30) reescribe la query o cae a
+  una fuente alternativa, reportando `corrective_action` (`none`/`rewrite`/
+  `fallback`) + `quality_score`. Evaluador heurístico cero-LLM (TKN) —
+  inyectable por DI.
+- **GraphRAG**: cubierto por `knowledge_graph.py` (grafo de metadatos) +
+  TokenBudgetRouter (PageRank + TF-IDF) — pipeline LLM de entidades = YAGNI.
+- **Agentic RAG**: cubierto por el orchestrator multi-agente (fan-out + votación
+  gobernada + tools).
+- **Multimodal**: parcial — anydoc convierte binarios (21 extensiones) a
+  Markdown antes del chunking; embeddings multimodales nativos = YAGNI.
+
+```python
+from harness.memory_rag.hybrid_retriever import HybridRetriever
+from harness.memory_rag.corrective_retriever import CorrectiveRetriever
+
+hybrid = HybridRetriever(vector_store=vector, fts_search=fts, embed_fn=embed)
+results = hybrid.retrieve("query", top_k=5)   # fusión RRF
+
+crag = CorrectiveRetriever(primary=hybrid, fallback=fts)
+out = crag.retrieve("query", top_k=5)         # validación + corrección
+out.action          # "none" | "rewrite" | "fallback"
+out.quality_score   # [0, 1]
+```
 
 ---
 

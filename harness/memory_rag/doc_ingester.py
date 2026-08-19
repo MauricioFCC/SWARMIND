@@ -495,7 +495,7 @@ def ingest_project_directory(
 
             if show_progress:
                 logger.info(
-                    "  [%d/%d] %s â†’ chunk %d",
+                    "  [%d/%d] %s → chunk %d",
                     idx, total,
                     _relpath(fpath, root),
                     stats["chunks_inserted"],

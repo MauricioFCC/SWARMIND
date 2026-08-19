@@ -1,4 +1,4 @@
-﻿"""PipelineMACU â€” DAG vivo con replanning continuo.
+﻿"""PipelineMACU — DAG vivo con replanning continuo.
 
 Implementa el patron del paper MACU (arXiv:2606.01533):
 - Manager descompone tarea en DAG
@@ -10,7 +10,7 @@ Diferencias con TaskOrchestrator actual:
 - Ready frontier dispatch: nodos individuales ejecutan tan pronto esten listos
 - Information passing: resultados parciales se propagan a downstream
 
-Referencia: arXiv:2606.01533 â€” Multi-Agent Computer Use (MACU)
+Referencia: arXiv:2606.01533 — Multi-Agent Computer Use (MACU)
 """
 
 from __future__ import annotations
@@ -352,7 +352,7 @@ class PipelineMACU:
         )
 
         logger.info(
-            "[MACU] Pipeline completado: %s â€” %d/%d ok, %d failed, %d cancelled (%.1fs)",
+            "[MACU] Pipeline completado: %s — %d/%d ok, %d failed, %d cancelled (%.1fs)",
             pipeline_id, completed, len(self._tasks), failed, cancelled, total_time,
         )
 

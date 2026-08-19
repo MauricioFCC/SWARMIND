@@ -8,12 +8,12 @@
 
 | Metric | Value |
 |--------|-------|
-| Tests | 4662 collected (TDD suite) · 75.70% coverage · mutation testing ≥70% |
+| Tests | 4722 collected (TDD suite) · 75.70% coverage · mutation testing ≥70% |
 | Coverage | 75.70% |
 | Agents | 23 specialized (100% profiles) |
 | Skills | 35 contextual (100% SKILL.md + SKILL.min.md) |
-| Orchestrator Modules | 19 packages / 56 modules |
-| Memory/RAG Modules | 15 packages / 34 modules |
+| Orchestrator Modules | 19 packages / 142 modules |
+| Memory/RAG Modules | 14 packages / 109 modules |
 | Hook Modules | 4 (security_validator, permission_checker, audit_logger, metrics) |
 | Security Modules | Zero Trust (TokenManager, PolicyEngine, verify_agent_identity) |
 | Multi-Harness Modules | 5 adapters (opencode, claude, codex, cursor, gemini) |
@@ -83,7 +83,7 @@ For detailed structure, see [Agents & Skills — File System](../es/guide/agente
 
 Swarmind competes with **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (46.2k) and **CodeWhale** (40.2k). The full capability comparison table is in [Harness Comparison 2026](../es/reference/comparativa-harness-2026.md).
 
-**Key differentiators:** GPU Acceleration (search x10.9), Token Economics (-51%), Full Governance, Zero Trust, Deterministic Hook System, Multi-Harness (5 runtimes), 4662 tests.
+**Key differentiators:** GPU Acceleration (search x10.9), Token Economics (-51%), Full Governance, Zero Trust, Deterministic Hook System, Multi-Harness (5 runtimes), 4722 tests.
 
 ### August 2026 changes
 
@@ -94,4 +94,5 @@ Swarmind competes with **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** 
 - **Local Ollama delegation (4-tier)**: simple/RAG/vision tasks with current local models (`qwen3:4b`, `deepseek-r1:8b`, `qwen2.5-coder:7b`, `qwen3-embedding:0.6b`, `qwen3-vl:4b`) — 0 cloud tokens (TKN), automatic cloud fallback.
 - **anydoc integration** (`harness/memory_rag/doc_converter.py` + `doc_ingester.py`): binaries → Markdown → RAG with **21 extensions** (pdf/docx/pptx/xlsx/odt/epub/rtf/csv…), lazy `AnyDocConverter` (firecrawl-anydoc>=0.1.9), `DocumentConversionError(path, reason)` without swallowing errors; ingest via `rag_ingest.py --include-docs` or `!rag ingest --docs`.
 - **deepseek-harness patterns**: plugin lifecycle (`PluginBase` with `on_load`/`on_unload`/`events`, `ToolRegistry` with injected `event_bus` + automatic `on_{event}` subscription, idempotent `load_all`/`unload_all`) + session replay (`SessionReplay` markdown/json export, `SessionNotFoundError`) — 59 new tests (30 plugin + 29 replay), registry 94%, session_replay 100%.
+- **Frontier RAG architectures (5 evaluated)**: **Hybrid RRF** (`hybrid_retriever.py` — dense vector + sparse BM25 fusion via Reciprocal Rank Fusion k=60) and **Corrective CRAG** (`corrective_retriever.py` — pre-generation quality validation with query rewrite/fallback, arXiv:2401.15884) IMPLEMENTED; **GraphRAG** (knowledge_graph + TokenBudgetRouter PageRank) and **Agentic RAG** (multi-agent orchestrator) COVERED; **Multimodal** PARTIAL via anydoc. 22 new tests.
 - Public documentation updated and cleaned up.

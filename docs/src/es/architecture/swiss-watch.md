@@ -5,7 +5,7 @@ El patron **Swiss Watch** es el modelo arquitectonico central de Swarmind. Toma 
 ## Capas del Sistema
 
 1. **`.opencode/`** — Cerebro: agentes, skills y configuracion como SSOT (23 perfiles de agente, 35 skills, principios base).
-2. **`harness/`** — Motor de ejecucion: orquestacion (19 paquetes/56 modulos), memoria/RAG (15 paquetes/34 modulos), hooks, seguridad Zero Trust, tests (4662).
+2. **`harness/`** — Motor de ejecucion: orquestacion (19 paquetes/142 modulos), memoria/RAG (14 paquetes/109 modulos), hooks, seguridad Zero Trust, tests (4722).
 3. **`scripts/`** — Herramientas auxiliares: deploy, export, sync.
 4. **`knowledge/`** — Documentos de referencia y conocimiento compartido.
 
@@ -88,6 +88,8 @@ Las **estrategias de planificacion** disponibles estan documentadas en [Dynamic 
 | **doc_ingester** | `harness/memory_rag/doc_ingester.py` | `DocumentChunker` con `converter` inyectado (DI, default `AnyDocConverter`), `_EXTENSION_TIPO` ampliado (documento/presentacion/hoja_calculo/datos_tabulares), conversion binarios → Markdown antes de chunkear |
 | **session_replay** | `harness/observability/session_replay.py` | `SessionReplay` reproduce sesiones grabadas (export markdown/json) + `SessionNotFoundError` |
 | **registry (plugins)** | `harness/plugins/registry.py` | Plugin lifecycle: `PluginBase` con `on_load()`/`on_unload()`/`events`, `ToolRegistry.__init__(event_bus=None)` (DI), suscripcion automatica `on_{event}`, `load_all()`/`unload_all()` idempotentes |
+| **hybrid_retriever** | `harness/memory_rag/hybrid_retriever.py` | RAG hibrido: fusion RRF (k=60) de vector denso (LanceDB) + BM25 disperso (FTS5); DI sobre `FTSSearch` + `LanceVectorStore`; `HybridResult` frozen |
+| **corrective_retriever** | `harness/memory_rag/corrective_retriever.py` | CRAG (arXiv:2401.15884): valida calidad de recuperacion pre-generacion; query rewrite o fallback si pobre; evaluador heuristico cero-LLM; reporta `corrective_action` (none/rewrite/fallback) |
 
 **Ver tambien**
 

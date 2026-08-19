@@ -1,32 +1,32 @@
 ﻿"""
-Federated Memory â€” sincronizaciÃ³n automÃ¡tica de conocimiento entre proyectos.
+Federated Memory — sincronización automática de conocimiento entre proyectos.
 
 Cada proyecto mantiene su propia base LanceDB local, pero puede:
   1. Exportar conocimiento a un formato federado (JSON)
   2. Importar conocimiento desde otros proyectos federados
-  3. Sincronizar automÃ¡ticamente en segundo plano
+  3. Sincronizar automáticamente en segundo plano
 
 El conocimiento federado incluye:
-  - Patrones de Ã©xito/fracaso por tipo de tarea
+  - Patrones de éxito/fracaso por tipo de tarea
   - Prompts optimizados por agente
-  - Decisiones arquitectÃ³nicas (ADRs)
-  - MÃ©tricas de rendimiento por skill
+  - Decisiones arquitectónicas (ADRs)
+  - Métricas de rendimiento por skill
   - Embeddings de chunks relevantes
 
 Arquitectura:
-  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”     â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”     â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-  â”‚  Proyecto A  â”‚     â”‚  Proyecto B  â”‚     â”‚  Proyecto C  â”‚
-  â”‚  (Harness)   â”‚     â”‚  (Harness)   â”‚     â”‚  (Harness)   â”‚
-  â”‚  LanceDB_A   â”‚     â”‚  LanceDB_B   â”‚     â”‚  LanceDB_C   â”‚
-  â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜     â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜     â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜
-         â”‚                   â”‚                   â”‚
-         â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                             â”‚
-                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”
-                    â”‚ Federated Store  â”‚
-                    â”‚ (shared dir /   â”‚
-                    â”‚  S3 / network)  â”‚
-                    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+  │  Proyecto A  │     │  Proyecto B  │     │  Proyecto C  │
+  │  (Harness)   │     │  (Harness)   │     │  (Harness)   │
+  │  LanceDB_A   │     │  LanceDB_B   │     │  LanceDB_C   │
+  └──────┬──────┘     └──────┬──────┘     └──────┬──────┘
+         │                   │                   │
+         └───────────────────┼───────────────────┘
+                             │
+                    ┌────────┴────────┐
+                    │ Federated Store  │
+                    │ (shared dir /   │
+                    │  S3 / network)  │
+                    └─────────────────┘
 """
 
 from __future__ import annotations
@@ -48,10 +48,10 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 class KnowledgeType(str, Enum):
-    PATTERN = "pattern"           # Patrones de Ã©xito/fracaso
+    PATTERN = "pattern"           # Patrones de éxito/fracaso
     PROMPT = "prompt"             # Prompts optimizados
-    ADR = "adr"                   # Decisiones arquitectÃ³nicas
-    METRIC = "metric"             # MÃ©tricas de rendimiento
+    ADR = "adr"                   # Decisiones arquitectónicas
+    METRIC = "metric"             # Métricas de rendimiento
     EMBEDDING = "embedding"       # Vectores de conocimiento
     SKILL = "skill"               # Skills y su efectividad
 
@@ -66,14 +66,14 @@ class KnowledgeRecord:
     Un registro de conocimiento federado.
 
     Attributes:
-        id: Identificador Ãºnico (ej. "pattern:task_planner:subtask_count")
+        id: Identificador único (ej. "pattern:task_planner:subtask_count")
         type: Tipo de conocimiento (KnowledgeType)
         source_project: Proyecto de origen
-        source_agent: Agente que generÃ³ el conocimiento
-        key: Clave semÃ¡ntica del conocimiento
+        source_agent: Agente que generó el conocimiento
+        key: Clave semántica del conocimiento
         value: Valor (serializable)
-        tags: Tags para bÃºsqueda
-        version: VersiÃ³n del registro
+        tags: Tags para búsqueda
+        version: Versión del registro
         created_at: Timestamp ISO
         updated_at: Timestamp ISO
         ttl_seconds: TTL opcional (0 = forever)
@@ -131,7 +131,7 @@ class KnowledgeRecord:
 
 class FederatedMemoryStore:
     """
-    AlmacÃ©n de memoria federada con capacidad de sync entre proyectos.
+    Almacén de memoria federada con capacidad de sync entre proyectos.
 
     Almacena conocimiento en archivos JSON dentro de un directorio compartido.
     Cada proyecto escribe y lee del mismo directorio, permitiendo
@@ -170,7 +170,7 @@ class FederatedMemoryStore:
             project_name: Nombre de este proyecto (para identificar origen).
             federated_dir: Directorio compartido para archivos federados.
                            Default: {workspace}/.opencode/federated/
-            auto_sync: Si True, inicia sync periÃ³dico en background.
+            auto_sync: Si True, inicia sync periódico en background.
             sync_interval_sec: Intervalo de sync en segundos (default 5min).
         """
         self._project_name = project_name
@@ -226,11 +226,11 @@ class FederatedMemoryStore:
         Almacena un registro de conocimiento.
 
         Args:
-            key: Clave semÃ¡ntica (ej. "task_planner:optimal_subtask_count").
+            key: Clave semántica (ej. "task_planner:optimal_subtask_count").
             value: Valor serializable.
             ktype: Tipo de conocimiento.
-            source_agent: Agente que generÃ³ el conocimiento.
-            tags: Tags para bÃºsqueda.
+            source_agent: Agente que generó el conocimiento.
+            tags: Tags para búsqueda.
             confidence: Confianza 0.0-1.0.
             ttl_seconds: TTL en segundos (0 = forever).
 
@@ -297,9 +297,9 @@ class FederatedMemoryStore:
             key_prefix: Filtro por prefijo de key.
             ktype: Filtro por tipo de conocimiento.
             tags: Filtro por tags (AND).
-            min_confidence: Confianza mÃ­nima.
+            min_confidence: Confianza mínima.
             include_expired: Incluir registros expirados.
-            limit: MÃ¡ximo de resultados.
+            limit: Máximo de resultados.
 
         Returns:
             Lista de KnowledgeRecord matching.
@@ -338,7 +338,7 @@ class FederatedMemoryStore:
     def get_knowledge(
         self, key: str, ktype: KnowledgeType,
     ) -> KnowledgeRecord | None:
-        """Obtiene un registro especÃ­fico por key + type."""
+        """Obtiene un registro específico por key + type."""
         results = self.query_knowledge(
             key_prefix=key, ktype=ktype, include_expired=False, limit=1,
         )
@@ -353,7 +353,7 @@ class FederatedMemoryStore:
         return projects
 
     def get_stats(self) -> dict:
-        """EstadÃ­sticas del store federado."""
+        """Estadísticas del store federado."""
         with self._lock:
             total = len(self._local_store)
             by_type: dict = {}
@@ -484,7 +484,7 @@ class FederatedMemoryStore:
             logger.warning("Federated load: error reading %s: %s", filepath, e)
 
     def _start_sync_thread(self) -> None:
-        """Inicia thread de sync periÃ³dico."""
+        """Inicia thread de sync periódico."""
         def sync_loop():
             while not self._sync_event.is_set():
                 self.sync()
@@ -502,7 +502,7 @@ class FederatedMemoryStore:
         )
 
     def stop_sync(self) -> None:
-        """Detiene el sync periÃ³dico."""
+        """Detiene el sync periódico."""
         if self._sync_thread and self._sync_thread.is_alive():
             self._sync_event.set()
             self._sync_thread.join(timeout=5)

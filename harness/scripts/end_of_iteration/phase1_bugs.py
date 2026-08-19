@@ -1,5 +1,5 @@
 ﻿"""
-Phase 1: Bug Hunting â€” scan code for common bugs.
+Phase 1: Bug Hunting — scan code for common bugs.
 """
 from __future__ import annotations
 

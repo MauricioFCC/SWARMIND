@@ -1,4 +1,4 @@
-﻿"""IDEAdapter â€” Fachada de compatibilidad multi-harness.
+﻿"""IDEAdapter — Fachada de compatibilidad multi-harness.
 
 Refactorizado para delegar en Multi-Harness Adapter Layer manteniendo
 compatibilidad hacia atras. Todos los metodos originales se conservan.
@@ -54,7 +54,7 @@ SUPPORTED_IDES: list[IDESupport] = [
 
 
 class IDEAdapter:
-    """Adaptador multi-harness â€” Fachada que delega en Multi-Harness Layer.
+    """Adaptador multi-harness — Fachada que delega en Multi-Harness Layer.
 
     Mantiene compatibilidad hacia atras con el codigo existente mientras
     utiliza la nueva arquitectura de Multi-Harness Adapter Layer.

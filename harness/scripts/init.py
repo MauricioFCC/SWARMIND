@@ -1,12 +1,12 @@
 ﻿"""
-Harness bootstrap â€” cross-platform project initializer.
+Harness bootstrap — cross-platform project initializer.
 Creates the directory structure and initializes LanceDB storage.
 Runs on Windows, macOS, and Linux (pure Python, no shell dependencies).
 
 Now with:
   - Ollama detection (for local model routing)
   - MCP server setup wizard
-  - Renamed DB: lancedb_store â†’ lancedb
+  - Renamed DB: lancedb_store → lancedb
 """
 import logging
 import shutil
@@ -116,7 +116,7 @@ def check_dependencies() -> None:
         banner("ModelRouter podra usar modo LOCAL con Ollama.")
     else:
         banner("ModelRouter usara solo modo CLOUD (Ollama no disponible).")
-        if _ask_yes_no("Â¿Queres instalar Ollama ahora? (se abrira el sitio web)"):
+        if _ask_yes_no("¿Queres instalar Ollama ahora? (se abrira el sitio web)"):
             import webbrowser
             webbrowser.open("https://ollama.com")
 
@@ -185,15 +185,15 @@ def setup_mcp_servers(base: Path) -> None:
     banner("   Ver: https://github.com/modelcontextprotocol/servers")
     logger.info("")
 
-    if _ask_yes_no("Â¿QuerÃ©s habilitar algÃºn servidor MCP ahora?"):
+    if _ask_yes_no("¿Querés habilitar algún servidor MCP ahora?"):
         logger.info("")
         logger.info("  Servidores disponibles:")
-        logger.info("    1. filesystem â€” Acceso a archivos (read/write/list)")
-        logger.info("    2. github     â€” API de GitHub (issues, PRs, repos)")
-        logger.info("    3. postgres   â€” Consultas PostgreSQL")
-        logger.info("    4. memory     â€” Memoria persistente / grafo de conocimiento")
-        logger.info("    5. brave_search â€” Busqueda web")
-        logger.info("    6. none       â€” No habilitar ninguno ahora")
+        logger.info("    1. filesystem — Acceso a archivos (read/write/list)")
+        logger.info("    2. github     — API de GitHub (issues, PRs, repos)")
+        logger.info("    3. postgres   — Consultas PostgreSQL")
+        logger.info("    4. memory     — Memoria persistente / grafo de conocimiento")
+        logger.info("    5. brave_search — Busqueda web")
+        logger.info("    6. none       — No habilitar ninguno ahora")
         logger.info("")
 
         try:
@@ -229,7 +229,7 @@ def init_project(project_path: str = "") -> str:
     legacy_db = base / "harness" / "db" / "lancedb_store"
     new_db = base / "harness" / "db" / "lancedb"
     if legacy_db.exists() and not new_db.exists():
-        banner("Migrando lancedb_store â†’ lancedb...")
+        banner("Migrando lancedb_store → lancedb...")
         legacy_db.rename(new_db)
         banner("Migracion completada.")
 
@@ -243,7 +243,7 @@ def init_project(project_path: str = "") -> str:
     check_dependencies()
     init_lancedb(base)
 
-    # â”€â”€ MigraciÃ³n automÃ¡tica de BD legacy â”€â”€
+    # ── Migración automática de BD legacy ──
     _auto_migrate(base)
 
     setup_mcp_servers(base)
@@ -383,7 +383,7 @@ def _auto_ingest_project() -> None:
 
 
 def _load_domain_skills() -> None:
-    """Carga skills especÃ­ficos del dominio segÃºn TECH_STACK en project_config.yaml.
+    """Carga skills específicos del dominio según TECH_STACK en project_config.yaml.
 
     Escanea ``.opencode/config/project_config.yaml``, determina el skill de
     dominio que corresponde al ``TECH_STACK`` y lo copia a
@@ -396,7 +396,7 @@ def _load_domain_skills() -> None:
         / ".opencode" / "config" / "project_config.yaml"
     )
     if not config_path.exists():
-        logger.info("  No se encontro project_config.yaml â€” saltando skills de dominio.")
+        logger.info("  No se encontro project_config.yaml — saltando skills de dominio.")
         return
 
     with open(config_path, encoding="utf-8") as f:
@@ -405,7 +405,7 @@ def _load_domain_skills() -> None:
     tech_stack = config.get("TECH_STACK", "") or ""
     domain = config.get("DOMAIN", "") or ""
 
-    # Mapeo tech-stack â†’ nombre de skill (ordenado por especificidad)
+    # Mapeo tech-stack → nombre de skill (ordenado por especificidad)
     skill_map: list[tuple[str, str]] = [
         ("Rust", "rust-leptos"),
         ("Go", "go-web"),
@@ -443,7 +443,7 @@ def _load_domain_skills() -> None:
     target_dir.mkdir(parents=True, exist_ok=True)
     target = target_dir / f"{skill_name}.md"
     shutil.copy2(str(skill_src), str(target))
-    logger.info(f"  âœ… Skill de dominio cargado: {skill_name} ({tech_stack})")
+    logger.info(f"  ✅ Skill de dominio cargado: {skill_name} ({tech_stack})")
 
 
 def main() -> None:
@@ -462,10 +462,10 @@ def main() -> None:
     except Exception as exc:  # noqa: BLE001
         banner(f"No se pudo generar llms.txt: {exc}")
 
-    # RAG ingest automÃ¡tico al primer uso
+    # RAG ingest automático al primer uso
     _auto_ingest_project()
 
-    # Skills de dominio segÃºn TECH_STACK
+    # Skills de dominio según TECH_STACK
     _load_domain_skills()
 
 

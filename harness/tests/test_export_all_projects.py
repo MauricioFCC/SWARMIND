@@ -245,7 +245,7 @@ class TestPortablePaths:
 
     def test_today_is_utc_iso(self) -> None:
         """TODAY es fecha ISO en UTC (sin timezone local)."""
-        assert export_mod.TODAY == datetime.now(UTC).date().isoformat()
+        assert datetime.now(UTC).date().isoformat() == export_mod.TODAY
         # formato YYYY-MM-DD estricto
         parts = export_mod.TODAY.split("-")
         assert len(parts) == 3 and all(p.isdigit() for p in parts)

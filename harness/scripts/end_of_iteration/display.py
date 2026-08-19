@@ -1,14 +1,14 @@
 ﻿"""
-Display â€” Helpers de visualizaciÃ³n para reportes de iteraciÃ³n.
+Display — Helpers de visualización para reportes de iteración.
 
-ExtraÃ­do de __init__.py para reducir el monolito.
+Extraído de __init__.py para reducir el monolito.
 Incluye:
   - print_last_report()
   - show_iteration_history()
   - show_iteration_diff()
   - list_iteration_reports()
 
-PatrÃ³n RECURSIVO: show_iteration_diff usa indexaciÃ³n recursiva
+Patrón RECURSIVO: show_iteration_diff usa indexación recursiva
 para navegar por la lista de reports.
 """
 from __future__ import annotations

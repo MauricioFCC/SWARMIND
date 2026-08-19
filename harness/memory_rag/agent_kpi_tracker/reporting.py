@@ -133,11 +133,11 @@ class _ReportingMixin:
         Obtiene historial de sesiones con sus KPIs.
 
         Args:
-            limit: MÃ¡ximo de sesiones a retornar.
+            limit: Máximo de sesiones a retornar.
             status: Filtrar por estado ("completed", "failed", etc.).
 
         Returns:
-            Lista de dicts con KPIs de sesiÃ³n.
+            Lista de dicts con KPIs de sesión.
         """
         try:
             results = self._store.search(
@@ -180,7 +180,7 @@ class _ReportingMixin:
         Obtiene un resumen ejecutivo para dashboard.
 
         Returns:
-            Dict con mÃ©tricas globales del sistema.
+            Dict con métricas globales del sistema.
         """
         agent_rankings = self.get_agent_rankings(top_n=5)
         skill_rankings = self.get_skill_rankings(top_n=5)

@@ -1,4 +1,4 @@
-﻿"""FederatedVectorSearch â€” Busqueda vectorial federada multi-backend.
+﻿"""FederatedVectorSearch — Busqueda vectorial federada multi-backend.
 
 Realiza busqueda en paralelo sobre LanceDB, ChromaDB y Qdrant,
 fusiona resultados con re-ranking por puntuacion y diversidad.
@@ -846,7 +846,7 @@ def create_federated_search(
     Args:
         backends: Dict nombre -> adaptador. Si None, usa defaults.
         mmr_lambda: Factor de balance MMR (0-1).
-        cache_max_size: TamaÃ±o maximo del cache.
+        cache_max_size: Tamaño maximo del cache.
         cache_ttl: TTL en segundos del cache.
 
     Returns:

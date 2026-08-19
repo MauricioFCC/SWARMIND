@@ -1,5 +1,5 @@
 ﻿"""
-Tests para SandboxLoop â€” bucle autonomo de calidad para codigo generado.
+Tests para SandboxLoop — bucle autonomo de calidad para codigo generado.
 
 Cubre: execute_cycle (exito/fallo/circuit breaker/exception),
 run_autonomous (codigo vacio, exito, iteraciones, escalacion),
@@ -125,7 +125,7 @@ class TestExecuteCycle:
     """Tests para execute_cycle."""
 
     def test_success_notifies_quality_gate(self, sandbox_loop, mock_agent_bus):
-        """Tests pasan â†’ debe notificar a @quality-gate."""
+        """Tests pasan → debe notificar a @quality-gate."""
         exito, resultado = sandbox_loop.execute_cycle(
             task_description="test task",
             code="def test_foo(): pass",
@@ -139,7 +139,7 @@ class TestExecuteCycle:
 
     def test_failure_notifies_engineer(self, sandbox_loop, mock_executor,
                                        mock_agent_bus, fail_result):
-        """Tests fallan â†’ debe notificar a @software-engineer."""
+        """Tests fallan → debe notificar a @software-engineer."""
         mock_executor.run_test.return_value = fail_result
         exito, resultado = sandbox_loop.execute_cycle(
             task_description="test task",
@@ -170,7 +170,7 @@ class TestExecuteCycle:
     def test_circuit_breaker_triggers_escalation(self, sandbox_loop, mock_executor,
                                                   mock_agent_bus, mock_cognition,
                                                   fail_result):
-        """Circuit breaker disparado â†’ debe escalar a humano."""
+        """Circuit breaker disparado → debe escalar a humano."""
         mock_executor.run_test.return_value = fail_result
         mock_agent_bus.check_circuit_breaker.return_value = True
         sandbox_loop.execute_cycle(

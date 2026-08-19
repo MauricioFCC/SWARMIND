@@ -1,5 +1,5 @@
 ﻿"""
-HITL Guard â€” Human-in-the-Loop approval for destructive actions.
+HITL Guard — Human-in-the-Loop approval for destructive actions.
 
 Intercepts dangerous operations (DROP TABLE, rm -rf, terraform destroy, etc.)
 and requires human approval before execution.
@@ -150,7 +150,7 @@ class HITLGuard:
 
         logger.info()
         logger.info("=" * 65)
-        logger.info("  âš ï¸  HUMAN-IN-THE-LOOP â€” Accion Destructiva Detectada")
+        logger.info("  ⚠️  HUMAN-IN-THE-LOOP — Accion Destructiva Detectada")
         logger.info("=" * 65)
         logger.info()
         logger.info(f"  Agente: @{agent_role}")
@@ -161,9 +161,9 @@ class HITLGuard:
         logger.info()
         logger.info("-" * 65)
         logger.info("  Opciones:")
-        logger.info("    [Y] Aprobar â€” Permitir la ejecucion")
-        logger.info("    [N] Rechazar â€” Bloquear + feedback opcional al agente")
-        logger.info("    [S] Saltar â€” No preguntar mas en esta sesion")
+        logger.info("    [Y] Aprobar — Permitir la ejecucion")
+        logger.info("    [N] Rechazar — Bloquear + feedback opcional al agente")
+        logger.info("    [S] Saltar — No preguntar mas en esta sesion")
         logger.info()
         logger.info(f"  Timeout: {effective_timeout}s (denegado automaticamente)")
         logger.info("=" * 65)
@@ -196,22 +196,22 @@ class HITLGuard:
 
         if answer == "y":
             approved = True
-            logger.info("  âœ… Accion APROBADA.")
+            logger.info("  ✅ Accion APROBADA.")
         elif answer == "s":
             self._skip_all = True
             approved = True
-            logger.info("  â­ï¸  Modo 'Saltar sesion' activado. No se preguntara mas.")
+            logger.info("  ⏭️  Modo 'Saltar sesion' activado. No se preguntara mas.")
         elif answer == "n":
             approved = False
-            logger.info("  âŒ Accion RECHAZADA.")
+            logger.info("  ❌ Accion RECHAZADA.")
             try:
                 user_feedback = input("  Feedback opcional para el agente: ").strip()
             except (EOFError, KeyboardInterrupt):
                 pass
         else:
-            # Timeout or invalid input â†’ deny (fail-safe)
+            # Timeout or invalid input → deny (fail-safe)
             approved = False
-            logger.info("  â° Timeout o entrada invalida. Accion DENEGADA (fail-safe).")
+            logger.info("  ⏰ Timeout o entrada invalida. Accion DENEGADA (fail-safe).")
 
         # Log to vector store
         self._log_approval(action, agent_role, approved, user_feedback)

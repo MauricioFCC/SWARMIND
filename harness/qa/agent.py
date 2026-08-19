@@ -1,4 +1,4 @@
-﻿"""L4 â€” AutonomousTestAgent: Ejecucion autonoma de tests con MCP.
+﻿"""L4 — AutonomousTestAgent: Ejecucion autonoma de tests con MCP.
 
 Agente autonomo que ejecuta y supervisa tests usando el protocolo MCP
 (Model Context Protocol). Capaz de:
@@ -37,7 +37,7 @@ from harness.qa import QALayer, QAMetadata
 
 logger = logging.getLogger(__name__)
 
-# â”€â”€ Constantes de operacion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Constantes de operacion ───────────────────────────────────────────────────
 
 _REINTENTOS_MAX = 3
 _BACKOFF_BASE_S = 1.0

@@ -1,4 +1,4 @@
-"""AIFactory layers â€” mixin con los ejecutores de cada capa.
+"""AIFactory layers — mixin con los ejecutores de cada capa.
 
 Extraccion mecanica de los metodos privados ``_execute_*`` de la clase
 ``AIFactory`` del modulo original ``harness/aifactory/factory.py``

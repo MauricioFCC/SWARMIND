@@ -1,19 +1,19 @@
 ﻿"""Delegation engine with UNIVERSAL auto-routing.
 
-CONSOLIDACIÃ“N: 21 agentes especializados â†’ 5 roles universales:
+CONSOLIDACIÓN: 21 agentes especializados → 5 roles universales:
   - @coordinator (entry point, auto-detecta y delega)
-  - @builder     (toda implementaciÃ³n: Rust, Go, Python, Web, Mobile, Trading, Infra)
-  - @scientist   (investigaciÃ³n, papers, AI/ML, arquitectura, patrones)
+  - @builder     (toda implementación: Rust, Go, Python, Web, Mobile, Trading, Infra)
+  - @scientist   (investigación, papers, AI/ML, arquitectura, patrones)
   - @guardian    (calidad, seguridad, riesgo, docs, operaciones)
   - @evolve      (auto-mejora del sistema)
 
 No requiere @: si escribes "implementa una API en Rust", se detecta
-automÃ¡ticamente y se enruta a @builder. El @ solo es necesario si
-quieres forzar un rol especÃ­fico.
+automáticamente y se enruta a @builder. El @ solo es necesario si
+quieres forzar un rol específico.
 
-REFACTOR: Reemplaza ~200 lÃ­neas de mappings hardcodeados con
+REFACTOR: Reemplaza ~200 líneas de mappings hardcodeados con
 descubrimiento recursivo de agentes desde .opencode/agents/*.md.
-Ver agent_discovery.py para el patrÃ³n recursivo aplicado.
+Ver agent_discovery.py para el patrón recursivo aplicado.
 """
 
 from __future__ import annotations
@@ -89,7 +89,7 @@ class DelegationEngine:
         self._task_manager: TaskManager | None = task_manager
         self._routing_rules: dict[str, Any] = {}
 
-        # Descubrimiento recursivo de agentes (reemplaza ~200 lÃ­neas de dicts)
+        # Descubrimiento recursivo de agentes (reemplaza ~200 líneas de dicts)
         self._agents = discover_agents_recursive()
         self._intent_map: dict[str, str] = build_intent_map(self._agents)
         self._capabilities: dict[str, list[str]] = get_all_capabilities(self._agents)
@@ -138,9 +138,9 @@ class DelegationEngine:
                     if head not in self._capabilities:
                         self._capabilities[head] = []
                     for func in funciones:
-                        slug = func.lower().replace(" ", "_").replace("Ã¡", "a").replace(
-                            "Ã©", "e"
-                        ).replace("Ã­", "i").replace("Ã³", "o").replace("Ãº", "u")
+                        slug = func.lower().replace(" ", "_").replace("á", "a").replace(
+                            "é", "e"
+                        ).replace("í", "i").replace("ó", "o").replace("ú", "u")
                         if slug not in self._capabilities[head]:
                             self._capabilities[head].append(slug)
 
@@ -148,9 +148,9 @@ class DelegationEngine:
                 for miembro in miembros:
                     if miembro in self._capabilities:
                         for func in funciones:
-                            slug = func.lower().replace(" ", "_").replace("Ã¡", "a").replace(
-                                "Ã©", "e"
-                            ).replace("Ã­", "i").replace("Ã³", "o").replace("Ãº", "u")
+                            slug = func.lower().replace(" ", "_").replace("á", "a").replace(
+                                "é", "e"
+                            ).replace("í", "i").replace("ó", "o").replace("ú", "u")
                             if slug not in self._capabilities[miembro]:
                                 self._capabilities[miembro].append(slug)
 
@@ -313,18 +313,18 @@ class DelegationEngine:
         Enruta un mensaje al agente apropiado.
         
         Soporta:
-          - @rol: mensaje (ruteo explÃ­cito)
-          - mensaje sin @ (auto-detecciÃ³n por contenido)
+          - @rol: mensaje (ruteo explícito)
+          - mensaje sin @ (auto-detección por contenido)
           - !comandos (comandos del sistema)
         
-        La auto-detecciÃ³n mapea a 5 roles universales:
+        La auto-detección mapea a 5 roles universales:
         coordinator, builder, scientist, guardian, evolve.
         """
         # !comandos van al coordinator (que los procesa directamente)
         if message.startswith("!"):
             return "coordinator"
 
-        # @rol: mensaje â€” ruteo explÃ­cito (backward compatible)
+        # @rol: mensaje — ruteo explícito (backward compatible)
         mentions = re.findall(r"@(\w[\w-]*)", message)
         if mentions:
             for mention in mentions:
@@ -342,14 +342,14 @@ class DelegationEngine:
             except Exception as _exc:  # noqa: BLE001
                 logger.warning("delegation_engine: %s", _exc)
 
-        # Auto-detecciÃ³n por contenido (NO requiere @)
+        # Auto-detección por contenido (NO requiere @)
         return self.auto_route(message)
 
     def _resolve_agent_name(self, name: str) -> str:
-        """Resuelve alias (@pm, @swe) a nombre canÃ³nico usando descubrimiento recursivo.
+        """Resuelve alias (@pm, @swe) a nombre canónico usando descubrimiento recursivo.
 
         Delega en agent_discovery.resolve_agent_name() que construye
-        el mapa de alias dinÃ¡micamente desde los perfiles de agente.
+        el mapa de alias dinámicamente desde los perfiles de agente.
         """
         return discovery_resolve_agent_name(name, self._agents)
 

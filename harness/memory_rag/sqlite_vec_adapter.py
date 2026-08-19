@@ -1,4 +1,4 @@
-﻿"""SQLiteVecAdapter â€” Backend vectorial ligero via sqlite-vec.
+﻿"""SQLiteVecAdapter — Backend vectorial ligero via sqlite-vec.
 
 Proporciona almacenamiento vectorial portable sin dependencias externas.
 Ideal para edge computing, dispositivos sin GPU, y entornos offline.
@@ -341,7 +341,7 @@ class SQLiteVecAdapter:
             raise SQLiteVecError("Adaptador no inicializado. Llame a initialize() primero.")
 
     # ------------------------------------------------------------------
-    # InserciÃ³n de vectores
+    # Inserción de vectores
     # ------------------------------------------------------------------
 
     def add_vector(

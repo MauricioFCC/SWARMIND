@@ -9,12 +9,12 @@ import harness.run_commands as _rc
 
 
 def _handle_hooks_status() -> None:
-    """Handle ``!hooks status`` â€” shows hook installation status."""
+    """Handle ``!hooks status`` — shows hook installation status."""
     from harness.scripts.install_hooks import show_status
     show_status()
 
 
-# â”€â”€ Evolve â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Evolve ──────────────────────────────────────────────────────────
 
 def _handle_evolve_mutate(store, cmd: str) -> None:
     """Handle ``!evolve mutate @<agent> \"<task>\"``."""
@@ -125,7 +125,7 @@ def _handle_schedule_list(store) -> None:
         _rc.logger.info(f"  - {job.name}: {job.trigger} = {job.trigger_value} [{status}] ultimo: {job.last_run or 'nunca'}")
 
 
-# â”€â”€ Model Routing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Model Routing ────────────────────────────────────────────────────
 
 def _apply_model_routing(task: str, target_agent: str, force_cloud: bool = False) -> str:
     """Apply ModelRouter to determine local vs cloud execution.
@@ -169,7 +169,7 @@ def _apply_model_routing(task: str, target_agent: str, force_cloud: bool = False
     return source
 
 
-# â”€â”€ HITL Guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── HITL Guard ─────────────────────────────────────────────────────
 
 def _check_hitl(action: str, agent_role: str, guard) -> bool:
     """Check if an action needs human approval and handle it.
@@ -186,7 +186,7 @@ def _check_hitl(action: str, agent_role: str, guard) -> bool:
     return guard.request_approval(action, agent_role)
 
 
-# â”€â”€ Watch mode helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Watch mode helpers ──────────────────────────────────────────────
 
 def _get_files_to_watch(harness_root: Path) -> dict:
     """Get file modification times for harness/ and .opencode/."""
@@ -213,7 +213,7 @@ def _get_files_to_watch(harness_root: Path) -> dict:
     return snapshots
 
 
-# â”€â”€ Watch-mode handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Watch-mode handler ──────────────────────────────────────────────
 
 
 def _handle_watch_mode(harness_root: Path) -> None:
@@ -304,7 +304,7 @@ def _handle_watch_mode(harness_root: Path) -> None:
         _rc._safe_print(f"\n  {_rc._cyan('[WATCH]')} Watch mode detenido.")
 
 
-# â”€â”€ Hermes commands â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Hermes commands ────────────────────────────────────────────────
 
 
 def _handle_hermes(cmd: str) -> None:
@@ -328,7 +328,7 @@ def _handle_hermes(cmd: str) -> None:
         _rc.logger.info("[Hermes] Unknown subcommand: '%s'. Try '!hermes sync' or '!hermes stats'.", sub)
 
 
-# â”€â”€ Guardrails helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Guardrails helper ──────────────────────────────────────────────
 
 
 def _run_guardrails(task: str, target_agent: str, ctx: Any,
@@ -337,7 +337,7 @@ def _run_guardrails(task: str, target_agent: str, ctx: Any,
     """
     Ejecuta guardrails de seguridad.
     
-    Si run_full_pipeline no estÃ¡ disponible, emite WARNING pero continÃºa
+    Si run_full_pipeline no está disponible, emite WARNING pero continúa
     (comportamiento degradado pero no bloqueante para desarrollo local).
     """
     if run_full_pipeline is None:
@@ -363,7 +363,7 @@ def _run_guardrails(task: str, target_agent: str, ctx: Any,
                  result['summary']['passed'], result['summary']['total_checks'])
 
 
-# â”€â”€ ANSI helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── ANSI helpers ────────────────────────────────────────────────────
 
 __all__ = [
     "_apply_model_routing",

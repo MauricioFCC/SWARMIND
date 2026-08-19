@@ -1,10 +1,10 @@
 ﻿"""
-Agent Health Check â€” 3 niveles de verificaciÃ³n para sistemas multi-agente.
+Agent Health Check — 3 niveles de verificación para sistemas multi-agente.
 
-Basado en investigaciÃ³n 2026 de Zylos Research y StatusCake:
-  - Liveness:   Â¿El proceso/sistema estÃ¡ vivo?
-  - Readiness:  Â¿Puede aceptar y procesar tareas?
-  - Cognitive:  Â¿EstÃ¡ progresando o atascado en loops?
+Basado en investigación 2026 de Zylos Research y StatusCake:
+  - Liveness:   ¿El proceso/sistema está vivo?
+  - Readiness:  ¿Puede aceptar y procesar tareas?
+  - Cognitive:  ¿Está progresando o atascado en loops?
 
 Integra con TaskOrchestrator para detectar:
   - Repeater: misma subtask repetida sin cambio de estado
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-# Umbrales para detecciÃ³n de fallos cognitivos
+# Umbrales para detección de fallos cognitivos
 MAX_REPEATED_SUBTASK = 3       # Misma subtask ejecutada N veces = repeater
 MAX_LEVEL_DURATION_SEC = 300   # 5 minutos por nivel = timeout
 MAX_STALLED_SEC = 120          # 2 minutos sin progreso = wanderer
@@ -77,15 +77,15 @@ class HealthStatus:
 
 class CognitiveState:
     """
-    Estado cognitivo de una sesiÃ³n activa.
+    Estado cognitivo de una sesión activa.
 
-    Trackea el historial de ejecuciÃ³n para detectar:
+    Trackea el historial de ejecución para detectar:
       - Repeater: misma subtask una y otra vez
       - Wanderer: sin progreso en el plan general
       - Looper: alternando entre mismas subtasks
 
     DRY: Los datos de subtasks, errores y warnings se delegan a
-    SessionTelemetry cuando una referencia estÃ¡ disponible. En modo
+    SessionTelemetry cuando una referencia está disponible. En modo
     standalone (sin telemetry) se usa almacenamiento local.
     """
 
@@ -108,12 +108,12 @@ class CognitiveState:
         self.current_level_idx: int = 0
 
     # ------------------------------------------------------------------
-    # Properties: delegan a telemetry cuando estÃ¡ disponible
+    # Properties: delegan a telemetry cuando está disponible
     # ------------------------------------------------------------------
 
     @property
     def subtask_history(self) -> list[dict]:
-        """Historial plano de subtasks (Ãºltimas 20)."""
+        """Historial plano de subtasks (últimas 20)."""
         if self._telemetry is not None:
             return self._telemetry.get_subtask_history()[-20:]
         return self._history[-20:]
@@ -151,14 +151,14 @@ class CognitiveState:
             self._warn_count = value
 
     # ------------------------------------------------------------------
-    # Recording: delega a telemetry cuando estÃ¡ disponible
+    # Recording: delega a telemetry cuando está disponible
     # ------------------------------------------------------------------
 
     def record_subtask(self, subtask_id: str, agent: str, description: str) -> None:
-        """Registra la ejecuciÃ³n de una subtask para anÃ¡lisis.
+        """Registra la ejecución de una subtask para análisis.
 
-        Cuando CognitiveState estÃ¡ vinculado a SessionTelemetry, delega
-        el almacenamiento para evitar duplicaciÃ³n de datos.
+        Cuando CognitiveState está vinculado a SessionTelemetry, delega
+        el almacenamiento para evitar duplicación de datos.
         """
         entry = {
             "subtask_id": subtask_id,
@@ -188,14 +188,14 @@ class CognitiveState:
         self.level_start_time = time.time()
 
     def record_error(self) -> None:
-        """Registra un error (delega a telemetry si estÃ¡ disponible)."""
+        """Registra un error (delega a telemetry si está disponible)."""
         if self._telemetry is not None:
             self._telemetry.record_error()
         else:
             self._err_count += 1
 
     def record_warning(self) -> None:
-        """Registra un warning (delega a telemetry si estÃ¡ disponible)."""
+        """Registra un warning (delega a telemetry si está disponible)."""
         if self._telemetry is not None:
             self._telemetry.record_warning()
         else:
@@ -255,7 +255,7 @@ class CognitiveState:
         return None
 
     def get_health(self) -> dict:
-        """EvalÃºa todos los checkers cognitivos."""
+        """Evalúa todos los checkers cognitivos."""
         issues = []
         for check in [self.check_repeater, self.check_wanderer,
                        self.check_looper, self.check_timeout]:
@@ -285,10 +285,10 @@ class AgentHealthChecker:
         checker = AgentHealthChecker(vector_store=store)
         status = checker.check_all()
         if not status["cognitive"].healthy:
-            # tomar acciÃ³n correctiva
+            # tomar acción correctiva
 
     Opcionalmente acepta un TelemetryTracker para vincular CognitiveState
-    con SessionTelemetry, eliminando la duplicaciÃ³n de datos.
+    con SessionTelemetry, eliminando la duplicación de datos.
     """
 
     def __init__(
@@ -309,13 +309,13 @@ class AgentHealthChecker:
         Nivel 1: Liveness Check.
 
         Verifica que el sistema base responda:
-          - Importaciones bÃ¡sicas funcionan
+          - Importaciones básicas funcionan
           - Directorios esenciales existen
-          - MÃ³dulos core cargan correctamente
+          - Módulos core cargan correctamente
         """
         issues = []
 
-        # Check 1: imports bÃ¡sicos
+        # Check 1: imports básicos
         try:
             from harness.orchestrator.agent_bus import AgentBus  # noqa
             from harness.orchestrator.task_planner import TaskPlanner  # noqa
@@ -354,7 +354,7 @@ class AgentHealthChecker:
         """
         issues = []
 
-        # Check 1: TaskPlanner bÃ¡sico
+        # Check 1: TaskPlanner básico
         try:
             from harness.orchestrator.task_planner import TaskPlanner
             planner = TaskPlanner()
@@ -373,7 +373,7 @@ class AgentHealthChecker:
             issues.append(f"Agent discovery error: {e}")
             agent_count = 0
 
-        # Check 3: LanceDB (si estÃ¡ configurado)
+        # Check 3: LanceDB (si está configurado)
         db_ok = False
         if self._store is not None:
             try:
@@ -404,14 +404,14 @@ class AgentHealthChecker:
         """
         Nivel 3: Cognitive Check.
 
-        Verifica que las sesiones activas estÃ©n progresando:
+        Verifica que las sesiones activas estén progresando:
           - No hay Repeater (misma subtask repetida)
           - No hay Wanderer (sin progreso)
           - No hay Looper (alternancia sin avance)
           - No hay Timeout (nivel muy largo)
 
         Args:
-            session_id: Si se especifica, solo checkea esa sesiÃ³n.
+            session_id: Si se especifica, solo checkea esa sesión.
                         Si es None, checkea todas las sesiones trackeadas.
         """
         issues = []
@@ -422,12 +422,12 @@ class AgentHealthChecker:
             if state:
                 sessions_to_check = [state]
             else:
-                issues.append(f"SesiÃ³n '{session_id}' no encontrada")
+                issues.append(f"Sesión '{session_id}' no encontrada")
         else:
             sessions_to_check = list(self._cognitive_states.values())
 
         if not sessions_to_check:
-            # No hay sesiones activas â€” es normal si estÃ¡ ocioso
+            # No hay sesiones activas — es normal si está ocioso
             return HealthStatus(
                 healthy=True,
                 level="cognitive",
@@ -486,10 +486,10 @@ class AgentHealthChecker:
     # ------------------------------------------------------------------
 
     def get_or_create_cognitive_state(self, session_id: str) -> CognitiveState:
-        """Obtiene o crea el estado cognitivo para una sesiÃ³n.
+        """Obtiene o crea el estado cognitivo para una sesión.
 
         Si hay un TelemetryTracker configurado, vincula el CognitiveState
-        con la SessionTelemetry correspondiente para evitar duplicaciÃ³n.
+        con la SessionTelemetry correspondiente para evitar duplicación.
         """
         if session_id not in self._cognitive_states:
             telemetry = None
@@ -507,25 +507,25 @@ class AgentHealthChecker:
     ) -> None:
         """Registra una subtask ejecutada y verifica salud cognitiva.
 
-        Si hay un TelemetryTracker, tambiÃ©n actualiza la telemetrÃ­a.
+        Si hay un TelemetryTracker, también actualiza la telemetría.
         """
         state = self.get_or_create_cognitive_state(session_id)
         state.record_subtask(subtask_id, agent, description)
 
     def record_progress(self, session_id: str) -> None:
-        """Registra progreso (avance de nivel) en una sesiÃ³n."""
+        """Registra progreso (avance de nivel) en una sesión."""
         state = self._cognitive_states.get(session_id)
         if state:
             state.record_progress()
 
     def record_error(self, session_id: str) -> None:
-        """Registra un error en una sesiÃ³n."""
+        """Registra un error en una sesión."""
         state = self._cognitive_states.get(session_id)
         if state:
             state.record_error()
 
     def get_cognitive_issues(self, session_id: str) -> list[str]:
-        """Obtiene issues cognitivos de una sesiÃ³n."""
+        """Obtiene issues cognitivos de una sesión."""
         state = self._cognitive_states.get(session_id)
         if not state:
             return []

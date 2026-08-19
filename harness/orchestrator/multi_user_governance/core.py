@@ -1,4 +1,4 @@
-"""MultiUserGovernance core â€” clase principal ``MultiUserGovernance``.
+"""MultiUserGovernance core — clase principal ``MultiUserGovernance``.
 
 Extraccion mecanica del modulo original
 ``harness/orchestrator/multi_user_governance.py`` (sin cambios de logica
@@ -28,7 +28,7 @@ class MultiUserGovernance(_UsersMixin, _PermissionsMixin):
     verificacion de permisos con hooks de pre/post ejecucion y manejo
     de denegaciones. Mantiene un registro de auditoria completo.
 
-    Basado en: arXiv:2606.21856 â€” Multi-Principal Permission Governance.
+    Basado en: arXiv:2606.21856 — Multi-Principal Permission Governance.
 
     Examples:
         >>> gov = MultiUserGovernance()

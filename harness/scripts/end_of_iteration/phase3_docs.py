@@ -1,5 +1,5 @@
 ﻿"""
-Phase 3: Documentation Update â€” check staleness and auto-regenerate.
+Phase 3: Documentation Update — check staleness and auto-regenerate.
 """
 from __future__ import annotations
 
@@ -32,13 +32,13 @@ def check_and_update_docs(changed_files: list[str], dry_run: bool = False) -> tu
     py_changed = [f for f in changed_files if f.endswith(".py")]
     agent_changed = [f for f in changed_files if f.startswith(".opencode/agents/") and f.endswith(".md")]
 
-    # â”€â”€ Check memory_rag/ changes â†’ regenerate llms.txt â”€â”€
+    # ── Check memory_rag/ changes → regenerate llms.txt ──
     if _has_changed_files_in_dir(py_changed, "harness/memory_rag/"):
         staleness.append(DocsStaleness(
             module_path="harness/memory_rag/",
             docs_path="harness/docs/llms.txt",
             staleness_type="outdated",
-            message="Archivos .py en memory_rag/ cambiaron â†’ regenerar llms.txt",
+            message="Archivos .py en memory_rag/ cambiaron → regenerar llms.txt",
         ))
         if dry_run:
             _safe_print(f"    {_cyan('[DRY-RUN]')} Regeneraria llms.txt (cambios en memory_rag/)")
@@ -53,38 +53,38 @@ def check_and_update_docs(changed_files: list[str], dry_run: bool = False) -> tu
             except Exception as exc:  # noqa: BLE001
                 _safe_print(f"    {_err('[ERROR]')} No se pudo regenerar llms.txt: {exc}")
 
-    # â”€â”€ Check model_router/ changes â†’ update README.md â”€â”€
+    # ── Check model_router/ changes → update README.md ──
     if _has_changed_files_in_dir(py_changed, "harness/model_router/"):
         staleness.append(DocsStaleness(
             module_path="harness/model_router/",
             docs_path="harness/README.md",
             staleness_type="outdated",
-            message="Archivos .py en model_router/ cambiaron â†’ actualizar README.md",
+            message="Archivos .py en model_router/ cambiaron → actualizar README.md",
         ))
-        _safe_print(f"    {_warn('[REVIEW]')} model_router/ cambio â€” README.md requiere revision manual")
+        _safe_print(f"    {_warn('[REVIEW]')} model_router/ cambio — README.md requiere revision manual")
         updated_count += 1
 
-    # â”€â”€ Check orchestrator/ changes â†’ update README.md â”€â”€
+    # ── Check orchestrator/ changes → update README.md ──
     if _has_changed_files_in_dir(py_changed, "harness/orchestrator/"):
         staleness.append(DocsStaleness(
             module_path="harness/orchestrator/",
             docs_path="harness/README.md",
             staleness_type="outdated",
-            message="Archivos .py en orchestrator/ cambiaron â†’ actualizar README.md",
+            message="Archivos .py en orchestrator/ cambiaron → actualizar README.md",
         ))
-        _safe_print(f"    {_warn('[REVIEW]')} orchestrator/ cambio â€” README.md requiere revision manual")
+        _safe_print(f"    {_warn('[REVIEW]')} orchestrator/ cambio — README.md requiere revision manual")
         updated_count += 1
 
-    # â”€â”€ Check .opencode/agents/ changes â†’ update AGENTS.md â”€â”€
+    # ── Check .opencode/agents/ changes → update AGENTS.md ──
     if agent_changed:
         staleness.append(DocsStaleness(
             module_path=".opencode/agents/",
             docs_path="harness/AGENTS.md",
             staleness_type="outdated",
-            message="Agentes en .opencode/agents/ cambiaron â†’ actualizar AGENTS.md",
+            message="Agentes en .opencode/agents/ cambiaron → actualizar AGENTS.md",
         ))
         names = ", ".join(Path(a).stem for a in agent_changed[:5])
-        _safe_print(f"    {_warn('[REVIEW]')} Agentes modificados: {names} â€” AGENTS.md requiere revision manual")
+        _safe_print(f"    {_warn('[REVIEW]')} Agentes modificados: {names} — AGENTS.md requiere revision manual")
         updated_count += 1
 
     return staleness, updated_count

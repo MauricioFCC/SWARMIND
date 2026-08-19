@@ -224,8 +224,8 @@ Keywords largas tienen más peso que cortas (evita falsos positivos). Dos nivele
 | Skills | 30 (100% SKILL.md + SKILL.min.md) | ✅ |
 | Agentes | 20 (100% perfiles) | ✅ |
 | Proyectos | 6 activos | ✅ |
-| Modulos Orchestrator | 48 | ✅ |
-| Modulos Memory/RAG | 30 | ✅ |
+| Modulos Orchestrator | 142 | ✅ |
+| Modulos Memory/RAG | 109 | ✅ |
 | GPU | RTX 4060 8GB (6x search, 3.2x embedding) | ✅ |
 | Token savings | -51% capsulas, -40% structured output | ✅ |
 | Vector stores | 3 (LanceDB, Chroma, Qdrant) | ✅ |

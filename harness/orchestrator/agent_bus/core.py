@@ -1,4 +1,4 @@
-"""AgentBus core â€” clase base ``AgentBus``.
+"""AgentBus core — clase base ``AgentBus``.
 
 Contiene el estado, payload builder y helpers estaticos. Los metodos de
 envio viven en ``_MessagingMixin`` (messaging.py), lectura en

@@ -106,7 +106,7 @@ else:
     _TaskModel = Task
 
     class PydanticTask:
-        """Placeholder when pydantic is not installed â€” never instantiated."""
+        """Placeholder when pydantic is not installed — never instantiated."""
         @classmethod
         def from_dict(cls, data: dict[str, Any]) -> Task:
             """From dict."""

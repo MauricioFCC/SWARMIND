@@ -1,5 +1,5 @@
 ﻿"""
-Agent Message Bus â€” "Slack para Agentes"
+Agent Message Bus — "Slack para Agentes"
 
 Implementa un bus de mensajes asincrono entre agentes usando LanceVectorStore
 como backend. Cada mensaje se almacena en la coleccion ``agent_workspace_logs``
@@ -635,7 +635,7 @@ class AgentBus:
 
 
 # ---------------------------------------------------------------------------
-# AsyncAgentBus â€” version asincrona para PaCoRe (ADR-0017)
+# AsyncAgentBus — version asincrona para PaCoRe (ADR-0017)
 # ---------------------------------------------------------------------------
 
 
@@ -647,7 +647,7 @@ class AsyncAgentBus:
     Cada canal tiene su propia cola asincrona.
 
     Reference:
-        PaCoRe (Parallel Coordination + RL message-passing) â€” ADR-0017
+        PaCoRe (Parallel Coordination + RL message-passing) — ADR-0017
         MPAC95: 95% overhead reduction, 4.8x speedup
     """
 

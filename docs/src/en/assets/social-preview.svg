@@ -96,7 +96,7 @@
       </g>
       <g transform="translate(300,0)">
         <rect width="140" height="56" rx="10" fill="#F59E0B"/>
-        <text x="70" y="36" text-anchor="middle">4465 Tests</text>
+        <text x="70" y="36" text-anchor="middle">4722 Tests</text>
       </g>
       <g transform="translate(450,0)">
         <rect width="160" height="56" rx="10" fill="#0F172A" stroke="#06B6D4" stroke-width="2"/>
