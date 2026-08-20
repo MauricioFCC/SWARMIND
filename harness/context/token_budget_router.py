@@ -147,10 +147,10 @@ class SkillGraph:
             SkillGraph reconstruido (sin textos, solo estructura).
 
         Raises:
-            ValueError: Si el formato no es el esperado.
+            TypeError: Si el formato no es el esperado (faltan listas nodes/edges).
         """
         if not isinstance(raw.get("nodes"), list) or not isinstance(raw.get("edges"), list):
-            raise ValueError(
+            raise TypeError(
                 "WHAT: formato de grafo invalido"
                 "WHY: faltan listas 'nodes'/'edges'"
                 "WHERE: SkillGraph.from_dict()"
@@ -356,7 +356,7 @@ def _pagerank(adjacency: dict[str, list[str]]) -> dict[str, float]:
                        if not targets)
         for node_id in nodes:
             incoming = sum(
-                ranks[source] / max(1, len(adjacency[source]))
+                ranks[source] / max(1, len(targets))
                 for source, targets in adjacency.items()
                 if node_id in targets
             )

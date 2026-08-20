@@ -65,9 +65,9 @@ def load_skill_contract(skill_dir: Path) -> SkillContract | None:
         existe el spec (el skill usa el modelo legacy sin contrato).
 
     Raises:
-        ValueError: Si el JSON es invalido, no es un objeto, o faltan
-            campos obligatorios (name, preconditions, postconditions,
-            failing_test).
+        ValueError: Si el JSON es invalido o faltan campos obligatorios
+            (name, preconditions, postconditions, failing_test).
+        TypeError: Si el JSON no es un objeto (tipo invalido).
     """
     spec_path = skill_dir / _SPEC_FILENAME
     if not spec_path.exists():
@@ -81,7 +81,7 @@ def load_skill_contract(skill_dir: Path) -> SkillContract | None:
             f"WHERE: load_skill_contract() <- {spec_path}"
         ) from exc
     if not isinstance(raw, dict):
-        raise ValueError(
+        raise TypeError(
             f"WHAT: SKILL.spec.json debe ser un objeto JSON"
             f"WHY: se recibio {type(raw).__name__}"
             f"WHERE: load_skill_contract() <- {spec_path}"

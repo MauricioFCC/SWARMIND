@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -44,7 +44,7 @@ ROLE_LABELS = {
     ROLE_SYSTEM: "SYSTEM",
 }
 
-_EPOCH = datetime.min
+_EPOCH = datetime.min.replace(tzinfo=UTC)
 
 
 class SessionNotFoundError(Exception):

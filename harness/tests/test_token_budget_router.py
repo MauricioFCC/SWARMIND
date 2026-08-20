@@ -170,8 +170,8 @@ def test_graph_to_dict_roundtrip(mini_graph: SkillGraph) -> None:
 
 
 def test_graph_from_dict_invalid_raises() -> None:
-    """Formato invalido -> ValueError."""
-    with pytest.raises(ValueError, match="WHAT:"):
+    """Formato invalido -> TypeError (tipo invalido, regla TRY004)."""
+    with pytest.raises(TypeError, match="WHAT:"):
         SkillGraph.from_dict({"version": 1})
 
 

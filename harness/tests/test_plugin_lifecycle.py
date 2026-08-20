@@ -17,7 +17,6 @@ from harness.orchestrator.event_bus import Event, EventBus, EventPriority
 from harness.plugins.registry import PluginBase, ToolRegistry
 from harness.plugins.tools.example_tool import GreeterTool
 
-
 # ===========================================================================
 # Plugins de prueba
 # ===========================================================================
@@ -25,10 +24,15 @@ from harness.plugins.tools.example_tool import GreeterTool
 
 class LoadSpyPlugin(PluginBase):
     """Plugin que registra invocaciones de on_load/on_unload."""
+
     name = "load_spy"
     description = "Espia el ciclo de vida"
-    loads: list[Any] = []
-    unloads: list[Any] = []
+
+    def __init__(self) -> None:
+        """Inicializa los espias por instancia (sin estado de clase compartido)."""
+        super().__init__()
+        self.loads: list[Any] = []
+        self.unloads: list[Any] = []
 
     def execute(self, **kwargs: Any) -> str:
         return "spy"
@@ -42,9 +46,14 @@ class LoadSpyPlugin(PluginBase):
 
 class EventConsumerPlugin(PluginBase):
     """Plugin que se suscribe al evento tool/run con handler on_tool_run."""
+
     name = "event_consumer"
     description = "Consume eventos tool/run"
-    received: list[Event] = []
+
+    def __init__(self) -> None:
+        """Inicializa el espia por instancia (sin estado de clase compartido)."""
+        super().__init__()
+        self.received: list[Event] = []
 
     def execute(self, **kwargs: Any) -> str:
         return "consumer"
@@ -109,6 +118,28 @@ def _make_event(channel: str = "tool/run", **data: Any) -> Event:
     )
 
 
+def _spy(registry: ToolRegistry, name: str, plugin_cls: type[PluginBase]) -> PluginBase:
+    """Devuelve la instancia del plugin espia registrada en el registry.
+
+    Registra la clase en ``_tools`` y la instancia en ``_instances`` para
+    que ``load_all`` la reutilice (evita estado de clase compartido).
+
+    Args:
+        registry: ToolRegistry de prueba.
+        name: Nombre de registro del plugin.
+        plugin_cls: Clase del plugin espia.
+
+    Returns:
+        Instancia del plugin, cacheada en ``registry._instances``.
+    """
+    registry._tools[name] = plugin_cls
+    inst = registry._instances.get(name)
+    if inst is None:
+        inst = plugin_cls()
+        registry._instances[name] = inst
+    return inst
+
+
 # ===========================================================================
 # PluginBase: hooks default no-op
 # ===========================================================================
@@ -155,11 +186,11 @@ class TestLoadAll:
 
     def test_load_all_calls_on_load(self, registry: ToolRegistry) -> None:
         """load_all invoca on_load(ctx) para cada plugin."""
-        registry._tools["spy"] = LoadSpyPlugin
-        LoadSpyPlugin.loads.clear()
+        spy = _spy(registry, "spy", LoadSpyPlugin)
+        spy.loads.clear()
         count = registry.load_all(ctx="ctx-1")
         assert count == 1
-        assert LoadSpyPlugin.loads == ["ctx-1"]
+        assert spy.loads == ["ctx-1"]
 
     def test_load_all_returns_count(self, registry: ToolRegistry) -> None:
         """load_all retorna el numero de plugins cargados."""
@@ -169,13 +200,13 @@ class TestLoadAll:
 
     def test_load_all_idempotent(self, registry: ToolRegistry) -> None:
         """Segunda llamada a load_all no recarga ni re-invoca on_load."""
-        registry._tools["spy"] = LoadSpyPlugin
-        LoadSpyPlugin.loads.clear()
+        spy = _spy(registry, "spy", LoadSpyPlugin)
+        spy.loads.clear()
         first = registry.load_all(ctx=None)
         second = registry.load_all(ctx=None)
         assert first == 1
         assert second == 0
-        assert len(LoadSpyPlugin.loads) == 1
+        assert len(spy.loads) == 1
 
     def test_load_all_without_event_bus(self) -> None:
         """load_all sin EventBus inyectado no falla y no suscribe."""
@@ -225,12 +256,12 @@ class TestAutoSubscribe:
 
     def test_handler_receives_event(self, registry: ToolRegistry, event_bus: EventBus) -> None:
         """Publicar tool/run entrega el evento al handler del plugin."""
-        registry._tools["consumer"] = EventConsumerPlugin
-        EventConsumerPlugin.received.clear()
+        consumer = _spy(registry, "consumer", EventConsumerPlugin)
+        consumer.received.clear()
         registry.load_all(ctx=None)
         event = _make_event(channel="tool/run", task="x")
         event_bus.publish(event)
-        assert EventConsumerPlugin.received == [event]
+        assert consumer.received == [event]
 
     def test_new_event_channel_registered(self, registry: ToolRegistry, event_bus: EventBus) -> None:
         """Suscribirse a un canal nuevo no falla (EventBus implicito)."""
@@ -248,12 +279,12 @@ class TestAutoSubscribe:
 
     def test_unsubscribe_on_unload(self, registry: ToolRegistry, event_bus: EventBus) -> None:
         """Tras unload_all el handler ya no recibe eventos."""
-        registry._tools["consumer"] = EventConsumerPlugin
-        EventConsumerPlugin.received.clear()
+        consumer = _spy(registry, "consumer", EventConsumerPlugin)
+        consumer.received.clear()
         registry.load_all(ctx=None)
         registry.unload_all(ctx=None)
         event_bus.publish(_make_event(channel="tool/run"))
-        assert EventConsumerPlugin.received == []
+        assert consumer.received == []
 
 
 # ===========================================================================
@@ -266,12 +297,12 @@ class TestUnloadAll:
 
     def test_unload_all_calls_on_unload(self, registry: ToolRegistry) -> None:
         """unload_all invoca on_unload(ctx) por plugin cargado."""
-        registry._tools["spy"] = LoadSpyPlugin
-        LoadSpyPlugin.unloads.clear()
+        spy = _spy(registry, "spy", LoadSpyPlugin)
+        spy.unloads.clear()
         registry.load_all(ctx="load")
         count = registry.unload_all(ctx="unload")
         assert count == 1
-        assert LoadSpyPlugin.unloads == ["unload"]
+        assert spy.unloads == ["unload"]
 
     def test_unload_all_idempotent(self, registry: ToolRegistry) -> None:
         """Segunda llamada a unload_all retorna 0 sin romper."""
@@ -291,14 +322,14 @@ class TestUnloadAll:
 
     def test_reload_after_unload(self, registry: ToolRegistry) -> None:
         """Cargar, descargar y recargar funciona (ciclo completo)."""
-        registry._tools["spy"] = LoadSpyPlugin
-        LoadSpyPlugin.loads.clear()
-        LoadSpyPlugin.unloads.clear()
+        spy = _spy(registry, "spy", LoadSpyPlugin)
+        spy.loads.clear()
+        spy.unloads.clear()
         assert registry.load_all(ctx="c1") == 1
         assert registry.unload_all(ctx="c2") == 1
         assert registry.load_all(ctx="c3") == 1
-        assert LoadSpyPlugin.loads == ["c1", "c3"]
-        assert LoadSpyPlugin.unloads == ["c2"]
+        assert spy.loads == ["c1", "c3"]
+        assert spy.unloads == ["c2"]
 
 
 # ===========================================================================

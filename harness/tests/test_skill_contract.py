@@ -75,9 +75,9 @@ def test_load_skill_contract_missing_fields_raises(tmp_path: Path) -> None:
 
 
 def test_load_skill_contract_non_object_raises(tmp_path: Path) -> None:
-    """JSON que no es objeto -> ValueError."""
+    """JSON que no es objeto -> TypeError (regla TRY004, tipo invalido)."""
     (tmp_path / "SKILL.spec.json").write_text("[1, 2]", encoding="utf-8")
-    with pytest.raises(ValueError, match="objeto JSON"):
+    with pytest.raises(TypeError, match="objeto JSON"):
         load_skill_contract(tmp_path)
 
 

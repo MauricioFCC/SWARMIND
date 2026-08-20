@@ -35,7 +35,7 @@ class PluginBase:
         Returns:
             None. No-op por defecto para compatibilidad con plugins existentes.
         """
-        return None
+        return
 
     def on_unload(self, ctx: Any) -> None:
         """Hook de ciclo de vida invocado al descargar el plugin.
@@ -46,7 +46,7 @@ class PluginBase:
         Returns:
             None. No-op por defecto para compatibilidad con plugins existentes.
         """
-        return None
+        return
 
     def events(self) -> tuple[str, ...]:
         """Eventos del EventBus a los que el plugin desea suscribirse.

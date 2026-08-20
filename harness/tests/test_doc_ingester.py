@@ -16,9 +16,9 @@ import pytest
 
 from harness.memory_rag.doc_converter import DOC_EXTENSIONS, DocumentConversionError
 from harness.memory_rag.doc_ingester import (
+    _EXTENSION_TIPO,
     RAG_EXTENSIONS,
     DocumentChunker,
-    _EXTENSION_TIPO,
 )
 
 
