@@ -265,43 +265,67 @@ Quality is enforced continuously, not at the end:
 
 ```
 SWARMIND/
-├── harness/
-│   ├── orchestrator/           # agent_bus, task_planner, task_orchestrator, mars_scheduler,
-│   │                           # metaclaw, adaptive_planner, natural_language_tools, tool_guardian,
-│   │                           # multi_user_governance, organizational_layer, health, federated_memory,
-│   │                           # agent_discovery, debate_orchestrator, worktable, workflows,
-│   │                           # multi_harness (adapters+cli), parallel_executor.py
-│   ├── model_router/           # complexity_router, multi_provider, provider_health
-│   ├── memory_rag/             # lance_vector_store, semantic_cache, sqlite_vec_adapter, federated_search,
-│   │                           # agent_kpi_tracker, vector_store_adapter, context_window_manager,
-│   │                           # compression_strategies, shapley_flow, optimization_pipeline,
-│   │                           # context_assembler, token_budget, token_budget_manager, skill_loader,
-│   │                           # doc_converter, doc_ingester (anydoc: binaries → Markdown → RAG),
-│   │                           # hybrid_retriever (RRF dense+sparse), corrective_retriever (CRAG)
-│   ├── validation/             # pbt_stage.py, mutation_stage.py
-│   ├── gpu_accel.py            # CUDA detection + gpu_optimize.py
-│   ├── gpu_optimize.py
-│   ├── plugins/                # plugin lifecycle (on_load/on_unload/events) + tools (GreeterTool)
-│   ├── observability/          # OpenTelemetry, structured logging, session_replay
-│   ├── run_commands/           # interactive commands (!rag, !db, !iteration)
-│   ├── scheduler/              # scheduled runs
-│   ├── db/migrate_engine/      # database migration engine
-│   ├── tools_sandbox/mcp_client/
-│   ├── aifactory/              # factory, agent_factory
-│   ├── guardrails/guardrail_engine/
-│   └── evals/eval_factory/
-├── scripts/
-│   ├── setup_swarmind.py       # one-command setup (Python 3.12+, uv, uv sync, sync global, central memory)
-│   ├── enable_gpu.py           # reinstall torch CUDA wheel after uv sync
-│   ├── backup_memory.py        # central memory backups (--list / --schedule)
-│   ├── config_swarmind.py      # interactive config menu
-│   └── sync_opencode_global.py # sync to opencode global
+├── harness/                       # Core engine (Python 3.12+, packages per domain)
+│   ├── orchestrator/              # agent_bus, task_planner, task_orchestrator,
+│   │                              # mars_scheduler, metaclaw, adaptive_planner,
+│   │                              # natural_language_tools, tool_guardian, hitl,
+│   │                              # multi_user_governance, organizational_layer,
+│   │                              # health, federated_memory, agent_discovery,
+│   │                              # debate_orchestrator, worktable, workflows,
+│   │                              # multi_harness (adapters+cli), parallel_executor.py
+│   ├── model_router/              # complexity_router, multi_provider,
+│   │                              # provider_health, ollama_client, ollama_tiers
+│   ├── memory_rag/                # lance_vector_store, semantic_cache,
+│   │                              # sqlite_vec_adapter, federated_search,
+│   │                              # agent_kpi_tracker, vector_store_adapter,
+│   │                              # context_window_manager, compression_strategies,
+│   │                              # shapley_flow, optimization_pipeline,
+│   │                              # context_assembler, token_budget,
+│   │                              # token_budget_manager, skill_loader,
+│   │                              # doc_converter, doc_ingester (anydoc),
+│   │                              # hybrid_retriever (RRF), corrective_retriever (CRAG)
+│   ├── evolve_loop/               # agent_builder, skill_generator, prompt_evolver,
+│   │                              # gepa_mutator, nudge_system, evaluator,
+│   │                              # self_improver, procedural_memory, cognition_sync
+│   ├── validation/                # pbt_stage.py, mutation_stage.py (oracles reales)
+│   ├── security/                  # zero_trust.py
+│   ├── hooks/                     # hook_manager, hook_registry, builtin_hooks
+│   ├── observability/             # OpenTelemetry, logging, session_replay
+│   ├── qa/                        # detector, generator, orchestrator, predictor
+│   ├── gateway/                   # Slack/Telegram/CLI gateways
+│   ├── parallel/                  # adaptive_pool, io_fusion, pipeline_macu
+│   ├── benchmarks/                # bench_memory, bench_routing, bench_cache, ...
+│   ├── plugins/                   # plugin lifecycle (on_load/on_unload/events) + tools
+│   ├── run_commands/              # interactive commands (!rag, !db, !iteration)
+│   ├── scheduler/                 # scheduled runs (Simple/Lance schedulers)
+│   ├── db/                        # migrate_engine, iteration_reports
+│   ├── tools_sandbox/             # MCP client, mcp_executor, mcp_manager
+│   ├── aifactory/                 # factory, agent_factory
+│   ├── guardrails/                # guardrail_engine
+│   ├── evals/                     # eval_factory
+│   ├── context/                   # token_budget_router, skill_contract
+│   ├── scripts/                   # init, rag_ingest, end_of_iteration, ...
+│   └── tests/                     # 176 test files (4722 tests)
+├── scripts/                       # Repo-level tooling
+│   ├── setup_swarmind.py          # one-command setup (Python 3.12+, uv, uv sync, sync global, central memory)
+│   ├── enable_gpu.py              # reinstall torch CUDA wheel after uv sync
+│   ├── backup_memory.py           # central memory backups (--list / --schedule)
+│   ├── config_swarmind.py         # interactive config menu
+│   ├── sync_opencode_global.py    # sync to opencode global
+│   ├── deploy_all.py              # propagate .opencode to 10 projects
+│   ├── gen_docs_api.py            # API reference Markdown via Griffe (AST)
+│   ├── audit_docstrings.py        # DOC gate: 0 functions without docstring
+│   ├── quality_audit.py           # AGR audit (<900LC, except:pass, docstrings)
+│   ├── tdad_select.py             # test dependency graph (AST)
+│   └── validate_skills.py         # skills spec validation (--strict)
 ├── docs/
-│   ├── src/es/                 # Documentation (Spanish, primary language)
+│   ├── src/es/                    # Documentation (Spanish, primary language)
+│   │   ├── api/                   # API reference generated by gen_docs_api.py
 │   │   ├── roadmap/estado.md
 │   │   └── guide/, technical/, reference/, skills/
 │   ├── src/en/SUMMARY.md
 │   └── .MEJORAS_SWARMIND.md
+├── .opencode/                     # agents (23), skills (35), config — SSOT
 ├── CHANGELOG.md
 ├── pyproject.toml
 └── README.md
