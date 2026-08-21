@@ -19,6 +19,7 @@ from harness.observability.session_replay import (
     ROLE_USER,
     SessionNotFoundError,
     SessionReplay,
+    dedupe_keep_last,
 )
 
 # ===========================================================================
@@ -274,3 +275,60 @@ class TestExportMarkdown:
         path.write_text(json.dumps(record), encoding="utf-8")
         md = SessionReplay(log_source=path).export_markdown("s1")
         assert "- sin tiempo" in md
+
+
+# ===========================================================================
+# dedupe_keep_last — keep-last-per-prompt (ADR-0056, Agent Lightning §3.2)
+# ===========================================================================
+
+
+class TestDedupeKeepLast:
+    """dedupe_keep_last: conserva solo la ultima llamada por (role, content)."""
+
+    def _event(self, role: str, content: str, ts: str) -> dict:
+        return {"role": role, "content": content, "timestamp": ts}
+
+    def test_keeps_last_of_repeated_prompts(self) -> None:
+        events = [
+            self._event("assistant", "reintento", "t1"),
+            self._event("assistant", "reintento", "t2"),
+            self._event("assistant", "reintento", "t3"),
+        ]
+        result = dedupe_keep_last(events)
+        assert len(result) == 1
+        assert result[0]["timestamp"] == "t3"
+
+    def test_preserves_chronological_order_of_rest(self) -> None:
+        events = [
+            self._event("user", "pregunta", "t1"),
+            self._event("assistant", "respuesta", "t2"),
+            self._event("user", "pregunta", "t3"),  # reintento del user
+            self._event("tool", "salida", "t4"),
+        ]
+        result = dedupe_keep_last(events)
+        assert [e["timestamp"] for e in result] == ["t2", "t3", "t4"]
+
+    def test_distinct_contents_all_kept(self) -> None:
+        events = [
+            self._event("assistant", "a", "t1"),
+            self._event("assistant", "b", "t2"),
+        ]
+        assert len(dedupe_keep_last(events)) == 2
+
+    def test_empty_input_returns_empty(self) -> None:
+        assert dedupe_keep_last([]) == []
+
+    def test_does_not_mutate_input(self) -> None:
+        events = [
+            self._event("assistant", "x", "t1"),
+            self._event("assistant", "x", "t2"),
+        ]
+        snapshot = [dict(e) for e in events]
+        dedupe_keep_last(events)
+        assert events == snapshot
+
+    def test_integration_with_replay(self, log_file: Path) -> None:
+        replay = SessionReplay(log_source=log_file)
+        events = replay.replay("s1")
+        deduped = dedupe_keep_last(events)
+        assert len(deduped) <= len(events)

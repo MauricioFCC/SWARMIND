@@ -47,6 +47,37 @@ ROLE_LABELS = {
 _EPOCH = datetime.min.replace(tzinfo=UTC)
 
 
+def dedupe_keep_last(
+    events: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Elimina reintentos duplicados conservando la ultima llamada por prompt.
+
+    Patron keep-last-per-prompt de Agent Lightning v1.0 (arXiv 2608.17528,
+    §3.2): cuando una llamada LLM se reintenta, los registros intermedios
+    con prompt identico inflan metricas y ensucian el contexto exportado.
+    Esta funcion pura agrupa por (role, content) y conserva solo la ultima
+    ocurrencia de cada grupo, preservando el orden cronologico del resto.
+
+    Args:
+        events: Eventos normalizados producidos por SessionReplay.replay().
+
+    Returns:
+        Nueva lista sin duplicados (no muta la entrada).
+    """
+    last_index: dict[tuple[str, str], int] = {}
+    for index, event in enumerate(events):
+        key = (str(event.get("role", "")), str(event.get("content", "")))
+        last_index[key] = index
+    return [
+        event
+        for index, event in enumerate(events)
+        if last_index[
+            (str(event.get("role", "")), str(event.get("content", "")))
+        ]
+        == index
+    ]
+
+
 class SessionNotFoundError(Exception):
     """Error por session_id invalido (vacio/None).
 
