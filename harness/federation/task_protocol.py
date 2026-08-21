@@ -7,9 +7,9 @@ transiciones crean una nueva instancia con dataclasses.replace.
 Ejemplo::
 
     store = TaskStore(base_dir)
-    task = FederatedTask.create(origin="onyx", target="cqe",
-                                skill_id="quant-lib-extension",
-                                prompt="implementa sharpe_ratio en metrics.py")
+    task = FederatedTask.create(origin="client-app", target="provider-lib",
+                                skill_id="library-extension",
+                                prompt="implementa la funcion faltante")
     store.save(task)
     store.update(task.task_id, TaskState.WORKING)
 """
@@ -57,8 +57,8 @@ class FederatedTask:
 
     Args:
         task_id: UUID único (idempotencia).
-        origin_project: Proyecto que solicita (p. ej. onyx).
-        target_project: Proyecto que ejecuta (p. ej. cqe).
+        origin_project: Proyecto que solicita (p. ej. client-app).
+        target_project: Proyecto que ejecuta (p. ej. provider-lib).
         skill_id: Skill de la card destino que se invoca.
         prompt: Instrucción concreta para el agente destino.
         state: Estado actual en el lifecycle.

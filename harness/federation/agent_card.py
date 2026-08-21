@@ -8,7 +8,7 @@ breaking y exigen bump de versión.
 
 Ejemplo::
 
-    card = load_agent_card(Path("C:/DEV-SPACE/core-quant-engine"))
+    card = load_agent_card(Path("/workspace/provider-lib"))
     print(card.name, [s.id for s in card.skills])
 """
 from __future__ import annotations
@@ -242,8 +242,8 @@ def discover_cards(projects_root: Path) -> list[AgentCard]:
     """Descubre las cards de todos los proyectos hermanos que publiquen una.
 
     Args:
-        projects_root: Directorio que contiene los proyectos (p. ej.
-            DEV-SPACE). Los proyectos sin card se ignoran silenciosamente
+        projects_root: Directorio raiz que contiene los proyectos
+            hermanos. Los proyectos sin card se ignoran silenciosamente
             (no publican = no participan; decisión explícita, no error).
 
     Returns:

@@ -1,4 +1,4 @@
-"""Tests de agent_card — identidad y descubrimiento A2A local (ADR-0058)."""
+﻿"""Tests de agent_card — identidad y descubrimiento A2A local (ADR-0058)."""
 from __future__ import annotations
 
 import json
@@ -17,18 +17,18 @@ from harness.federation.agent_card import (
 )
 
 
-def _card(name: str = "cqe", **overrides: object) -> AgentCard:
+def _card(name: str = "provider-lib", **overrides: object) -> AgentCard:
     """Card de prueba con defaults válidos."""
     defaults: dict[str, object] = {
-        "description": "Librería cuantitativa",
+        "description": "Libreria compartida",
         "version": "1.0.0",
-        "project_root": Path("C:/DEV-SPACE/core-quant-engine"),
+        "project_root": Path("/workspace/provider-lib"),
         "skills": (
             AgentSkill(
-                id="quant-lib-extension",
+                id="library-extension",
                 name="Extensión de librería",
                 description="Implementa funciones en la librería",
-                tags=("quant", "library"),
+                tags=("library", "shared"),
             ),
         ),
     }
@@ -41,13 +41,13 @@ class TestAgentCard:
 
     def test_has_skill_true_and_false(self) -> None:
         card = _card()
-        assert card.has_skill("quant-lib-extension")
+        assert card.has_skill("library-extension")
         assert not card.has_skill("no-existe")
 
     def test_to_dict_roundtrip_fields(self) -> None:
         data = _card().to_dict()
-        assert data["name"] == "cqe"
-        assert data["skills"][0]["id"] == "quant-lib-extension"  # type: ignore[index]
+        assert data["name"] == "provider-lib"
+        assert data["skills"][0]["id"] == "library-extension"  # type: ignore[index]
 
     def test_card_is_frozen(self) -> None:
         with pytest.raises(AttributeError):
@@ -64,8 +64,8 @@ class TestWriteLoad:
     def test_write_then_load_roundtrip(self, tmp_path: Path) -> None:
         write_agent_card(_card(), tmp_path)
         loaded = load_agent_card(tmp_path)
-        assert loaded.name == "cqe"
-        assert loaded.has_skill("quant-lib-extension")
+        assert loaded.name == "provider-lib"
+        assert loaded.has_skill("library-extension")
 
     def test_load_missing_raises_file_not_found(self, tmp_path: Path) -> None:
         with pytest.raises(FileNotFoundError, match="agent-card"):

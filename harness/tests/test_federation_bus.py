@@ -1,4 +1,4 @@
-"""Tests de federation_bus — gobernanza deny-by-default y activación (ADR-0058)."""
+﻿"""Tests de federation_bus — gobernanza deny-by-default y activación (ADR-0058)."""
 from __future__ import annotations
 
 import subprocess
@@ -17,49 +17,49 @@ from harness.federation.task_protocol import FederatedTask, TaskState
 
 
 def _make_projects(tmp_path: Path) -> Path:
-    """Crea onyx y cqe con cards válidas."""
+    """Crea client-app y provider-lib con cards válidas."""
     write_agent_card(
         AgentCard(
-            name="onyx",
-            description="Bot de trading",
+            name="client-app",
+            description="App cliente",
             version="1.0.0",
-            project_root=tmp_path / "onyx",
+            project_root=tmp_path / "client-app",
             skills=(),
         ),
-        tmp_path / "onyx",
+        tmp_path / "client-app",
     )
     write_agent_card(
         AgentCard(
-            name="cqe",
-            description="Librería cuantitativa",
+            name="provider-lib",
+            description="Libreria compartida",
             version="1.0.0",
-            project_root=tmp_path / "cqe",
+            project_root=tmp_path / "provider-lib",
             skills=(
                 AgentSkill(
-                    id="quant-lib-extension",
+                    id="library-extension",
                     name="Extensión",
                     description="Implementa funciones",
-                    tags=("quant",),
+                    tags=("library",),
                 ),
             ),
         ),
-        tmp_path / "cqe",
+        tmp_path / "provider-lib",
     )
     return tmp_path
 
 
 def _policy() -> GovernancePolicy:
-    """Allowlist: solo onyx→cqe."""
-    return GovernancePolicy(allowlist={"onyx": frozenset({"cqe"})})
+    """Allowlist: solo client-app→provider-lib."""
+    return GovernancePolicy(allowlist={"client-app": frozenset({"provider-lib"})})
 
 
 def _task() -> FederatedTask:
-    """Tarea onyx→cqe válida."""
+    """Tarea client-app→provider-lib válida."""
     return FederatedTask.create(
-        origin_project="onyx",
-        target_project="cqe",
-        skill_id="quant-lib-extension",
-        prompt="implementa sharpe_ratio en metrics.py",
+        origin_project="client-app",
+        target_project="provider-lib",
+        skill_id="library-extension",
+        prompt="implementa la funcion faltante del modulo",
     )
 
 
@@ -67,13 +67,13 @@ class TestGovernancePolicy:
     """Matriz deny-by-default."""
 
     def test_explicit_pair_allowed(self) -> None:
-        assert _policy().can_delegate("onyx", "cqe")
+        assert _policy().can_delegate("client-app", "provider-lib")
 
     def test_missing_origin_denied(self) -> None:
-        assert not _policy().can_delegate("desconocido", "cqe")
+        assert not _policy().can_delegate("desconocido", "provider-lib")
 
     def test_reverse_pair_denied(self) -> None:
-        assert not _policy().can_delegate("cqe", "onyx")
+        assert not _policy().can_delegate("provider-lib", "client-app")
 
 
 class TestSendTask:
@@ -82,7 +82,7 @@ class TestSendTask:
     def test_denied_pair_raises_permission_error(self, tmp_path: Path) -> None:
         root = _make_projects(tmp_path)
         bus = FederationBus(root, policy=_policy(), store_dir=tmp_path)
-        rogue = FederatedTask.create("cqe", "onyx", "s", "p")
+        rogue = FederatedTask.create("provider-lib", "client-app", "s", "p")
         with pytest.raises(PermissionError, match="denegada"):
             bus.send_task(rogue)
         assert bus.audit_trail[-1].action == "authorize-deny"
@@ -97,15 +97,15 @@ class TestSendTask:
     def test_unknown_skill_raises_value_error(self, tmp_path: Path) -> None:
         root = _make_projects(tmp_path)
         bus = FederationBus(root, policy=_policy(), store_dir=tmp_path)
-        bad = FederatedTask.create("onyx", "cqe", "skill-fantasma", "p")
+        bad = FederatedTask.create("client-app", "provider-lib", "skill-fantasma", "p")
         with pytest.raises(ValueError, match="no declara"):
             bus.send_task(bad)
 
     def test_unknown_target_raises_file_not_found(self, tmp_path: Path) -> None:
         root = _make_projects(tmp_path)
-        policy = GovernancePolicy(allowlist={"onyx": frozenset({"fantasma"})})
+        policy = GovernancePolicy(allowlist={"client-app": frozenset({"fantasma"})})
         bus = FederationBus(root, policy=policy, store_dir=tmp_path)
-        ghost = FederatedTask.create("onyx", "fantasma", "s", "p")
+        ghost = FederatedTask.create("client-app", "fantasma", "s", "p")
         with pytest.raises(FileNotFoundError, match="no existe"):
             bus.send_task(ghost)
 

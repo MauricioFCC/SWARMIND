@@ -7,8 +7,8 @@ trail con parámetros enmascarados (mismo patrón que MCPGovernor ADR-0049).
 
 Ejemplo::
 
-    policy = GovernancePolicy(allowlist={"onyx-quan-aibot": {"core-quant-engine"}})
-    bus = FederationBus(projects_root=Path("C:/DEV-SPACE"), policy=policy)
+    policy = GovernancePolicy(allowlist={"client-app": {"provider-lib"}})
+    bus = FederationBus(projects_root=Path("/workspace"), policy=policy)
     result = bus.send_task(task)
     print(result.state)  # completed | failed
 """

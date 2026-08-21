@@ -1,4 +1,4 @@
-"""Tests de task_protocol — lifecycle A2A y store idempotente (ADR-0058)."""
+﻿"""Tests de task_protocol — lifecycle A2A y store idempotente (ADR-0058)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -31,10 +31,10 @@ class TestFederatedTask:
 
     def test_create_valid_task(self) -> None:
         task = FederatedTask.create(
-            origin_project="onyx",
-            target_project="cqe",
-            skill_id="quant-lib-extension",
-            prompt="implementa sharpe_ratio",
+            origin_project="client-app",
+            target_project="provider-lib",
+            skill_id="library-extension",
+            prompt="implementa la funcion faltante",
         )
         assert task.state is TaskState.SUBMITTED
         assert len(task.task_id) == 12
@@ -42,13 +42,13 @@ class TestFederatedTask:
     @pytest.mark.parametrize(
         "kwargs",
         [
-            {"origin_project": "", "target_project": "cqe",
+            {"origin_project": "", "target_project": "provider-lib",
              "skill_id": "s", "prompt": "p"},
-            {"origin_project": "onyx", "target_project": " ",
+            {"origin_project": "client-app", "target_project": " ",
              "skill_id": "s", "prompt": "p"},
-            {"origin_project": "onyx", "target_project": "cqe",
+            {"origin_project": "client-app", "target_project": "provider-lib",
              "skill_id": "", "prompt": "p"},
-            {"origin_project": "onyx", "target_project": "cqe",
+            {"origin_project": "client-app", "target_project": "provider-lib",
              "skill_id": "s", "prompt": ""},
         ],
     )
@@ -82,7 +82,7 @@ class TestTaskStore:
 
     def test_save_and_load_roundtrip(self, tmp_path: Path) -> None:
         store = TaskStore(tmp_path)
-        task = FederatedTask.create("onyx", "cqe", "s", "p")
+        task = FederatedTask.create("client-app", "provider-lib", "s", "p")
         store.save(task)
         loaded = store.load(task.task_id)
         assert loaded == task
@@ -111,12 +111,12 @@ class TestTaskStore:
 
     def test_list_tasks_filter_by_target(self, tmp_path: Path) -> None:
         store = TaskStore(tmp_path)
-        t1 = FederatedTask.create("a", "cqe", "s", "p1")
-        t2 = FederatedTask.create("b", "onyx", "s", "p2")
+        t1 = FederatedTask.create("a", "provider-lib", "s", "p1")
+        t2 = FederatedTask.create("b", "client-app", "s", "p2")
         store.save(t1)
         store.save(t2)
-        targets = [t.target_project for t in store.list_tasks(target_project="cqe")]
-        assert targets == ["cqe"]
+        targets = [t.target_project for t in store.list_tasks(target_project="provider-lib")]
+        assert targets == ["provider-lib"]
 
     def test_deserialize_unknown_state_raises(self, tmp_path: Path) -> None:
         store = TaskStore(tmp_path)
