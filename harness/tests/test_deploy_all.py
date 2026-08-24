@@ -1,7 +1,7 @@
 """
 Tests TDD para scripts/deploy_all.py — deploy & sync (Opción A SSOT global).
 
-Cubre el deploy dinámico de skills/agentes a proyectos de DEV-SPACE:
+Cubre el deploy dinámico de skills/agentes a proyectos del workspace:
   - _discover_skills: descubre desde .opencode/skills/ (SSOT, sin hardcode)
   - _discover_agents: descubre desde .opencode/agents/ (excluye .min.md)
   - deploy_skills: copia TODAS las skills + registry, limpia obsoletas
@@ -24,7 +24,7 @@ sys.path.insert(1, str(_SCRIPTS))
 import deploy_all as da
 
 # ===========================================================================
-# Fixtures — árboles aislados (no tocan DEV-SPACE real)
+# Fixtures — árboles aislados (no tocan el workspace real)
 # ===========================================================================
 
 
@@ -209,11 +209,11 @@ def test_generate_readme_dry_run_no_escribe(fake_root: Path, fake_project: da.Pr
 @pytest.mark.parametrize(
     ("name", "expected"),
     [
-        ("core-quant-engine", "trading"),
-        ("Onyx-Quan-AIBot", "trading"),
-        ("Historia Clinica", "healthtech"),
-        ("PDV Basic", "retail"),
-        ("sugurityOs", "security"),
+        ("quant-alpha-engine", "trading"),
+        ("bot-runner-x", "trading"),
+        ("health-tracker", "healthtech"),
+        ("store-pos-app", "retail"),
+        ("hardened-os", "security"),
         ("proyecto-aleatorio", "general"),
     ],
 )
@@ -222,21 +222,22 @@ def test_detect_type(name: str, expected: str) -> None:
     assert da._detect_type(name) == expected
 
 
-def test_resolve_project_por_alias() -> None:
-    """Alias CLI (CQE, PDV...) resuelve al proyecto real."""
+def test_resolve_project_por_alias(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Alias CLI (definidos en deploy_local.json) resuelven al proyecto real."""
+    monkeypatch.setattr(da, "_ALIASES", {"LIB": "provider-lib", "SHOP": "shop-app"})
     projects = [
-        da.Project(name="core-quant-engine", path=Path("x"), ptype="trading", description=""),
-        da.Project(name="PDV Basic", path=Path("y"), ptype="retail", description=""),
+        da.Project(name="provider-lib", path=Path("x"), ptype="general", description=""),
+        da.Project(name="shop-app", path=Path("y"), ptype="general", description=""),
     ]
 
-    assert da.resolve_project("CQE", projects).name == "core-quant-engine"  # type: ignore[union-attr]
-    assert da.resolve_project("PDV", projects).name == "PDV Basic"  # type: ignore[union-attr]
-    assert da.resolve_project("core-quant-engine", projects).name == "core-quant-engine"  # type: ignore[union-attr]
+    assert da.resolve_project("LIB", projects).name == "provider-lib"  # type: ignore[union-attr]
+    assert da.resolve_project("SHOP", projects).name == "shop-app"  # type: ignore[union-attr]
+    assert da.resolve_project("shop-app", projects).name == "shop-app"  # type: ignore[union-attr]
 
 
 def test_resolve_project_no_encontrado() -> None:
     """Selector invalido -> None (sin crash)."""
-    projects = [da.Project(name="core-quant-engine", path=Path("x"), ptype="trading", description="")]
+    projects = [da.Project(name="provider-lib", path=Path("x"), ptype="general", description="")]
 
     assert da.resolve_project("NO-EXISTE", projects) is None
     assert da.resolve_project("", projects) is None
@@ -244,7 +245,7 @@ def test_resolve_project_no_encontrado() -> None:
 
 def test_discover_projects_solo_con_opencode(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Solo proyectos con .opencode/ se descubren (estándar v2.5)."""
-    dev = tmp_path / "DEV-SPACE"
+    dev = tmp_path / "projects-root"
     (dev / "proj-a" / ".opencode").mkdir(parents=True)
     (dev / "proj-b").mkdir()  # sin .opencode -> ignorado
     (dev / "SWARMIND").mkdir()  # skip dir -> ignorado

@@ -1,5 +1,5 @@
-"""
-skill_router.py — Router semantico de skills via LanceDB.
+﻿"""
+skill_router.py â€” Router semantico de skills via LanceDB.
 
 Selecciona SOLO los skills relevantes para una tarea usando similitud
 vectorial en LanceDB. Reduce tokens de contexto 60-80% vs cargar todos.
@@ -7,7 +7,7 @@ vectorial en LanceDB. Reduce tokens de contexto 60-80% vs cargar todos.
 Uso:
     router = SkillRouter(store)
     skills = router.route("implementa API REST en Rust")
-    # → ["quant-trading"] (no carga los 10 skills)
+    # â†’ ["quant-trading"] (no carga los 10 skills)
     context = router.build_context(skills)
 """
 
@@ -34,7 +34,7 @@ SKILL_REGISTRY: list[dict[str, Any]] = [
     {"name": "legal-doc",          "domain": "legal",        "keywords": "legal contract compliance law jurisprudence documento juridico"},
     {"name": "math-doc",           "domain": "academic",     "keywords": "math latex theorem proof equation estadistica algebra calculo"},
     {"name": "pos-retail",         "domain": "retail",       "keywords": "pos retail punto venta inventory stock checkout payment"},
-    {"name": "quant-trading",      "domain": "quantitative", "keywords": "trading strategy quantitative cqe rust alpha execution broker"},
+    {"name": "quant-trading",      "domain": "quantitative", "keywords": "trading strategy quantitative quant alpha execution broker"},
     {"name": "risk-execution",     "domain": "quantitative", "keywords": "risk management position sizing market making tca execution"},
     {"name": "science-doc",        "domain": "academic",     "keywords": "science paper research thesis systematic review peer review"},
 ]

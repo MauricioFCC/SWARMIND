@@ -13,25 +13,27 @@ CADA PROYECTO conserva solo:
   - config propia       : project_config, routing_rules, token_budgets, .env
 
 EL MOTOR (harness/) NO se copia a los proyectos: una sola copia vive en
-opencode global (~/.config/opencode/harness). Esto elimina ~5.3 GB de
-duplicación (Hermes: 3.3 GB/88k archivos, sugurityOs: 1.7 GB/43k).
+opencode global (~/.config/opencode/harness). Esto elimina gigas de
+duplicacion en proyectos grandes.
 
 Si un script de un proyecto necesita harness, importa desde el global
 (symlink o PYTHONPATH), no copia local.
 
-Este script despliega/limpia el mirror de todos los proyectos de
-DEV-SPACE: actualiza cerebro, elimina skills obsoletas, deja
-skills_registry.yaml completo (skills descubiertas dinamicamente) y preserva la configuración
-propia (project_config, routing_rules, token_budgets, federated/, db/,
-.env).
+Este script despliega/limpia el mirror de todos los proyectos del
+directorio raiz configurado: actualiza cerebro, elimina skills obsoletas,
+deja skills_registry.yaml completo (skills descubiertas dinamicamente) y
+preserva la configuración propia (project_config, routing_rules,
+token_budgets, federated/, db/, .env).
 
 Seguridad (ADR-0035): rutas portables via env vars (DEV_SPACE_ROOT, ...)
-con fallback a ``Path.home()``. Nunca ``$HOME`` literal.
+con fallback a ``Path.home()``. Nunca ``$HOME`` literal. Los nombres de
+proyectos privados y alias CLI viven SOLO en ``deploy_local.json``
+(gitignoreado); el codigo fuente es project-agnostic.
 
 Uso:
     python scripts/deploy_all.py                   # Deploy completo a todos
     python scripts/deploy_all.py --dry-run         # Simular sin escribir
-    python scripts/deploy_all.py --project CQE     # Solo un proyecto (alias o nombre)
+    python scripts/deploy_all.py --project ALIAS   # Solo un proyecto (alias o nombre)
     python scripts/deploy_all.py --sync-only       # Solo sync, sin regenerar README
     python scripts/deploy_all.py --sync-global     # Solo sync del global opencode
     python scripts/deploy_all.py --sync-harness-global  # Sync harness al global opencode
@@ -39,6 +41,7 @@ Uso:
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import shutil
@@ -57,13 +60,41 @@ logger = logging.getLogger(__name__)
 _HERE = Path(__file__).resolve().parent            # Swarmind/scripts/
 _ROOT = _HERE.parent                                # Swarmind/
 
+# Config local PRIVADA (gitignoreada): nombres de proyectos reales y rutas
+# del operador. El codigo fuente permanece project-agnostic (privacidad).
+_LOCAL_CONFIG_PATH = _HERE / "deploy_local.json"
+
+
+def _load_local_config() -> dict[str, object]:
+    """Carga la config local privada si existe (si no, dict vacio).
+
+    Returns:
+        Dict con claves opcionales: dev_space_root, aliases.
+    """
+    if not _LOCAL_CONFIG_PATH.is_file():
+        return {}
+    try:
+        data = json.loads(_LOCAL_CONFIG_PATH.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning(
+            "deploy_all: config local ilegible %s: %s (WHERE: _load_local_config)",
+            _LOCAL_CONFIG_PATH, exc,
+        )
+        return {}
+
+
+_LOCAL_CONFIG = _load_local_config()
+
 _DEV_SPACE = Path(os.environ.get(
-    "DEV_SPACE_ROOT", str(Path.home() / "Documents" / "DEV-SPACE"),
+    "DEV_SPACE_ROOT",
+    str(_LOCAL_CONFIG.get("dev_space_root") or (Path.home() / "projects")),
 ))
-_HERMES_PATH = Path(os.environ.get(
-    "MEMORY_ROOT",
-    str(Path.home() / "Documents" / "Memory_Proyects"),
-))
+_HERMES_PATH = Path(
+    os.environ.get("MEMORY_ROOT")
+    or str(_LOCAL_CONFIG.get("hermes_path") or "")
+    or str(Path.home() / "Memory_Proyects")
+)
 _GLOBAL = Path(os.environ.get(
     "OPENCODE_GLOBAL_DIR",
     str(Path.home() / ".config" / "opencode"),
@@ -75,15 +106,11 @@ _SKIP_DIRS = {
     ".git", ".venv", "venv", "__pycache__", ".idea", ".vscode",
 }
 
-# Alias CLI -> nombre real de carpeta
-_ALIASES = {
-    "CQE": "core-quant-engine",
-    "HC": "Historia Clinica",
-    "ONYX": "Onyx-Quan-AIBot",
-    "PDV": "PDV Basic",
-    "HERMES": "Hermes_Memory_Proyects",
-    "ALFA": "de_0_a_Alfa",
-    "SECURITY": "sugurityOs",
+# Alias CLI -> nombre real de carpeta (SOLO desde deploy_local.json;
+# el codigo fuente no contiene nombres de proyectos privados).
+_ALIASES: dict[str, str] = {
+    str(k).upper(): str(v)
+    for k, v in (_LOCAL_CONFIG.get("aliases") or {}).items()
 }
 
 # ---------------------------------------------------------------------------
@@ -138,10 +165,10 @@ def _discover_agents() -> list[str]:
 
 @dataclass
 class Project:
-    """Proyecto destino detectado en DEV-SPACE.
+    """Proyecto destino detectado en la raiz de proyectos.
 
     Args:
-        name: Nombre real de la carpeta (ej. "core-quant-engine").
+        name: Nombre real de la carpeta del proyecto.
         path: Ruta absoluta del proyecto.
         ptype: Tipo inferido (trading, healthtech, retail, security, general).
         description: Descripción usada en el README generado.
@@ -168,19 +195,19 @@ def _detect_type(name: str) -> str:
         Tipo: trading, healthtech, retail, security o general (default).
     """
     lower = name.lower()
-    if any(k in lower for k in ("quant", "alpha", "trading", "bot", "onyx")):
+    if any(k in lower for k in ("quant", "alpha", "trading", "bot")):
         return "trading"
     if any(k in lower for k in ("clinica", "health", "historia", "salud")):
         return "healthtech"
     if any(k in lower for k in ("pdv", "pos", "venta", "retail", "store")):
         return "retail"
-    if any(k in lower for k in ("security", "seguridad", "harden", "sugurity")):
+    if any(k in lower for k in ("security", "seguridad", "harden")):
         return "security"
     return "general"
 
 
 def discover_projects() -> list[Project]:
-    """Auto-descubre proyectos en DEV-SPACE (los que tienen .opencode).
+    """Auto-descubre proyectos en la raiz (los que tienen .opencode).
 
     Estándar v2.5: solo requiere .opencode/ (el motor harness vive en
     opencode global). Proyectos sin harness también se despliegan.
@@ -190,7 +217,7 @@ def discover_projects() -> list[Project]:
     """
     projects: list[Project] = []
     if not _DEV_SPACE.exists():
-        logger.warning("  ⚠️  DEV-SPACE no existe: %s", _DEV_SPACE)
+        logger.warning("  ⚠️  Raiz de proyectos no existe: %s", _DEV_SPACE)
         return projects
 
     for entry in sorted(_DEV_SPACE.iterdir()):
@@ -212,7 +239,7 @@ def resolve_project(selector: str, projects: list[Project]) -> Project | None:
     """Resuelve un selector CLI (alias o nombre) a un Project.
 
     Args:
-        selector: Alias (CQE, HC...) o nombre real de carpeta.
+        selector: Alias definido en deploy_local.json o nombre real de carpeta.
         projects: Lista de proyectos descubiertos.
 
     Returns:
@@ -696,7 +723,7 @@ def main() -> None:
     logger.info("🚀 Swarmind DEPLOY & SYNC (Opción A — SSOT global + mirror local)")
     logger.info("   Source:     %s", _ROOT)
     logger.info("   Global:     %s", _GLOBAL)
-    logger.info("   DEV-SPACE:  %s", _DEV_SPACE)
+    logger.info("   Raiz proyectos:  %s", _DEV_SPACE)
     logger.info("   Dry run:    %s", args.dry_run)
     logger.info("=" * 60)
 

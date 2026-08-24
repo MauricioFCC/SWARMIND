@@ -1,21 +1,22 @@
-"""
-sync_opencode_global.py — Sincroniza el CEREBRO y el MOTOR de Swarmind a la
-config GLOBAL de opencode (estándar v2.5: opencode global = fuente de verdad).
+﻿"""
+sync_opencode_global.py â€” Sincroniza el CEREBRO y el MOTOR de Swarmind a la
+config GLOBAL de opencode (estÃ¡ndar v2.5: opencode global = fuente de verdad).
 
-Opción A (SSOT global): agentes, skills, core y registry viven UNA vez en
+OpciÃ³n A (SSOT global): agentes, skills, core y registry viven UNA vez en
 ``~/.config/opencode/`` (config global de opencode) y opencode los toma para
 TODOS los proyectos. Cada commit de SWARMIND invoca este script via
 pre-commit hook, manteniendo el global siempre al dia sin duplicar archivos
 por proyecto.
 
-Estándar v2.5 (2026-08): EL MOTOR (harness/) TAMBIÉN vive en el global.
+EstÃ¡ndar v2.5 (2026-08): EL MOTOR (harness/) TAMBIÃ‰N vive en el global.
 Los proyectos solo tienen .opencode/ + skills (sin copia de harness).
-Esto elimina ~5.3 GB de duplicación (Hermes 3.3 GB, sugurityOs 1.7 GB).
+Esto elimina la duplicación de harness/skills/agentes entre proyectos
+(el ahorro de disco depende del tamaño de cada proyecto).
 
 Lo que NO se copia (queda en cada proyecto como config propia):
   - .opencode/config/           (project_config, routing_rules, token_budgets)
   - .opencode/federated/        (memoria federada por proyecto)
-  - harness/db/                 (datos runtime LanceDB — en el global se copia db/schema, no datos)
+  - harness/db/                 (datos runtime LanceDB â€” en el global se copia db/schema, no datos)
   - .env                        (credenciales locales)
 
 Seguridad (ADR-0035): rutas portables via env vars con fallback a
@@ -94,10 +95,10 @@ def _sync_dir(src: Path, dst: Path, dry_run: bool = False) -> int:
         dry_run: Si True, solo simula.
 
     Returns:
-        Número de archivos sincronizados.
+        NÃºmero de archivos sincronizados.
     """
     if not src.is_dir():
-        logger.warning("  ⚠️  fuente no existe: %s", src)
+        logger.warning("  âš ï¸  fuente no existe: %s", src)
         return 0
     dst.mkdir(parents=True, exist_ok=True)
     count = 0
@@ -117,23 +118,23 @@ def _sync_dir(src: Path, dst: Path, dry_run: bool = False) -> int:
 def _sync_harness_to_global(dry_run: bool = False) -> int:
     """Sincroniza el motor (harness/) a ~/.config/opencode/harness.
 
-    Estándar v2.5: el motor vive UNA vez en el global. Copia solo módulos
-    de código (no datos runtime, no tests, no caches).
+    EstÃ¡ndar v2.5: el motor vive UNA vez en el global. Copia solo mÃ³dulos
+    de cÃ³digo (no datos runtime, no tests, no caches).
 
     Args:
         dry_run: Si True, solo simula.
 
     Returns:
-        Número de archivos sincronizados.
+        NÃºmero de archivos sincronizados.
     """
     if not _SRC_HARNESS.is_dir():
-        logger.warning("  ⚠️  harness fuente no existe: %s", _SRC_HARNESS)
+        logger.warning("  âš ï¸  harness fuente no existe: %s", _SRC_HARNESS)
         return 0
     dst = _GLOBAL / "harness"
     dst.mkdir(parents=True, exist_ok=True)
     count = 0
 
-    # Copiar directorios de módulos
+    # Copiar directorios de mÃ³dulos
     for subdir in _HARNESS_INCLUDE:
         src = _SRC_HARNESS / subdir
         if not src.is_dir():
@@ -145,7 +146,7 @@ def _sync_harness_to_global(dry_run: bool = False) -> int:
                                                            "*.so", "*.pyd", ".DS_Store"))
         count += sum(1 for _ in src.rglob("*.py") if _.is_file())
 
-    # Copiar archivos raíz de harness
+    # Copiar archivos raÃ­z de harness
     for fname in _HARNESS_FILES:
         src = _SRC_HARNESS / fname
         if src.is_file():
@@ -171,7 +172,7 @@ def _ensure_memory_central(dry_run: bool = False) -> dict:
         Dict de ``ensure_memory_structure`` con root/created/existing/dry_run.
     """
     result = ensure_memory_structure(dry_run=dry_run)
-    logger.info("  🧠 %-10s %s", "memoria", result["root"])
+    logger.info("  ðŸ§  %-10s %s", "memoria", result["root"])
     logger.info("      %d dirs nuevos, %d existentes %s",
                 result["created"], result["existing"],
                 "(simulado)" if dry_run else "")
@@ -189,18 +190,18 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
         motor: Si True, solo sincroniza motor (harness/).
 
     Returns:
-        Dict con estadísticas por parte del cerebro.
+        Dict con estadÃ­sticas por parte del cerebro.
     """
     stats: dict[str, int] = {}
     if not quiet:
         logger.info("=" * 60)
-        logger.info("🌐 SYNC OPENCODE GLOBAL (Opción A — SSOT, estándar v2.5)")
+        logger.info("ðŸŒ SYNC OPENCODE GLOBAL (OpciÃ³n A â€” SSOT, estÃ¡ndar v2.5)")
         logger.info("   Source: %s", _ROOT)
         logger.info("   Global: %s", _GLOBAL)
         logger.info("   Dry run: %s", dry_run)
         logger.info("=" * 60)
 
-    # Por defecto sync completo (cerebro + motor) salvo flag explícito
+    # Por defecto sync completo (cerebro + motor) salvo flag explÃ­cito
     do_cerebro = cerebro or (not cerebro and not motor)
     do_motor = motor or (not cerebro and not motor)
 
@@ -211,7 +212,7 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
             count = _sync_dir(src, dst, dry_run=dry_run)
             stats[part] = count
             if not quiet:
-                logger.info("  ✅ %-10s %d archivos %s", part, count, "(simulado)" if dry_run else "")
+                logger.info("  âœ… %-10s %d archivos %s", part, count, "(simulado)" if dry_run else "")
 
         # skills_registry.yaml (referencia desde skills/)
         registry_src = _SRC_OPENCODE / _REGISTRY_FILE
@@ -222,13 +223,13 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
                 shutil.copy2(registry_src, registry_dst)
             stats["skills_registry"] = 1
             if not quiet:
-                logger.info("  ✅ skills_registry.yaml %s", "(simulado)" if dry_run else "actualizado")
+                logger.info("  âœ… skills_registry.yaml %s", "(simulado)" if dry_run else "actualizado")
 
     if do_motor:
         count = _sync_harness_to_global(dry_run=dry_run)
         stats["harness"] = count
         if not quiet:
-            logger.info("  ✅ %-10s %d archivos %s", "harness", count, "(simulado)" if dry_run else "")
+            logger.info("  âœ… %-10s %d archivos %s", "harness", count, "(simulado)" if dry_run else "")
 
         # Memoria central: crear automaticamente si falta (ADR-0042, Causa 1)
         memory_stats = _ensure_memory_central(dry_run=dry_run)
@@ -237,9 +238,9 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
     total = sum(stats.values())
     if not quiet:
         logger.info("")
-        logger.info("  📊 Total: %d archivos sincronizados al global", total)
+        logger.info("  ðŸ“Š Total: %d archivos sincronizados al global", total)
         logger.info("")
-        logger.info("  ℹ️  Reinicia opencode para que tome los cambios (config se carga al inicio).")
+        logger.info("  â„¹ï¸  Reinicia opencode para que tome los cambios (config se carga al inicio).")
         logger.info("=" * 60)
     return stats
 

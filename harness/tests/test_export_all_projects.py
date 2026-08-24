@@ -211,11 +211,11 @@ class TestCleanupOldZips:
     def test_legacy_tag_zips_not_touched(self, env_isolated: tuple[Path, Path]) -> None:
         """ZIPs de tags que ya no existen (proyectos viejos) no se borran."""
         _, export_base = env_isolated
-        self._create_zip(export_base, "CQE_2026-07-24.zip")
+        self._create_zip(export_base, "PROJ_A_2026-07-24.zip")
         self._create_zip(export_base, "SWARMIND_2026-08-09.zip")
 
         export_mod.cleanup_old_zips("SWARMIND")
-        assert (export_base / "CQE_2026-07-24.zip").exists()
+        assert (export_base / "PROJ_A_2026-07-24.zip").exists()
         assert (export_base / "SWARMIND_2026-08-09.zip").exists()
 
     def test_no_matching_returns_zero(self, env_isolated: tuple[Path, Path]) -> None:

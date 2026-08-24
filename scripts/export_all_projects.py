@@ -1,8 +1,7 @@
-"""Export all DEV-SPACE projects to Google Drive with dated ZIPs (solo lo commiteado).
+"""Export all workspace projects to Google Drive with dated ZIPs (solo lo commiteado).
 
-Corregido 2026-08-08: el script anterior hardcodeaba rutas inexistentes
-(quant-engine, health-record, trading-bot-AIBot, pos-system, from_zero) que
-no coinciden con los proyectos reales de DEV-SPACE, dejando el export a
+Corregido 2026-08-08: el script anterior hardcodeaba rutas inexistentes que
+no coincidian con los proyectos reales del workspace, dejando el export a
 mitad de camino. Ahora descubre los proyectos dinámicamente.
 
 Comportamiento:
@@ -12,11 +11,11 @@ Comportamiento:
                       node_modules, .git, caches) y lo documenta en el log.
 
 Seguridad (ADR-0035): rutas portables via env vars con fallback a
-``Path.home()``; nunca rutas literales de usuario ni subcarpetas personales
-hardcodeadas en el código commiteado. Variables:
-  - ``SWARMIND_EXPORT_BASE``: destino de los ZIPs (default
-    ``~/Mi unidad/DEV/SIDEPROYECT/exports``).
-  - ``DEV_SPACE_ROOT``: raíz de proyectos (default ``~/Documents/DEV-SPACE``).
+``scripts/deploy_local.json`` (privado, gitignoreado) y a ``Path.home()``;
+nunca rutas literales de usuario ni subcarpetas personales hardcodeadas en
+el código commiteado. Variables:
+  - ``SWARMIND_EXPORT_BASE``: destino de los ZIPs (default ``~/exports``).
+  - ``DEV_SPACE_ROOT``: raíz de proyectos (default ``~/projects``).
 Sin ``except Exception: pass`` silencioso (regla ERR) — se loguea cada fallo
 con contexto WHAT+WHY+WHERE.
 
@@ -26,6 +25,7 @@ Usage:
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
 import shutil
@@ -37,14 +37,47 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
-#: Destino de los ZIPs (portable, ADR-0035: env var con fallback a Path.home()).
+
+def _load_local_config() -> dict[str, object]:
+    """Lee ``scripts/deploy_local.json`` (config privada, gitignoreada).
+
+    Returns:
+        Dict con claves opcionales: dev_space_root, export_base, aliases.
+        Dict vacio si el archivo no existe o es ilegible (se loguea).
+    """
+    path = Path(__file__).resolve().parent / "deploy_local.json"
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError) as exc:
+        logger.warning(
+            "deploy_local.json ilegible: %s | WHY: corrupto o sin permisos | "
+            "WHERE: export_all_projects._load_local_config",
+            exc,
+        )
+        return {}
+
+
+_LOCAL_CONFIG = _load_local_config()
+
+#: Destino de los ZIPs (portable, ADR-0035: env var -> config local -> home).
 EXPORT_BASE = Path(
-    os.environ.get("SWARMIND_EXPORT_BASE", str(Path.home() / "Mi unidad" / "DEV" / "SIDEPROYECT" / "exports"))
+    os.environ.get(
+        "SWARMIND_EXPORT_BASE",
+        str(_LOCAL_CONFIG.get("export_base") or (Path.home() / "exports")),
+    )
 )
 TODAY = datetime.now(UTC).date().isoformat()
 
-#: Raíz de proyectos (portable, ADR-0035: env var con fallback a Path.home()).
-DEV_SPACE = Path(os.environ.get("DEV_SPACE_ROOT", str(Path.home() / "Documents" / "DEV-SPACE")))
+#: Raíz de proyectos (portable, ADR-0035: env var -> config local -> home).
+DEV_SPACE = Path(
+    os.environ.get(
+        "DEV_SPACE_ROOT",
+        str(_LOCAL_CONFIG.get("dev_space_root") or (Path.home() / "projects")),
+    )
+)
 
 #: Directorios ignorados en proyectos NO-GIT (equivalente a .gitignore base).
 _EXCLUDED_DIRS = {
@@ -84,7 +117,7 @@ def _is_project_dir(entry: Path) -> bool:
     lista de nombres.
 
     Args:
-        entry: Directorio de primer nivel de DEV-SPACE.
+        entry: Directorio de primer nivel de la raiz de proyectos.
 
     Returns:
         True si debe tratarse como proyecto.
@@ -100,10 +133,10 @@ def _is_project_dir(entry: Path) -> bool:
 
 
 def discover_projects() -> list[tuple[str, Path]]:
-    """Descubre los proyectos reales de DEV-SPACE (directorios de primer nivel).
+    """Descubre los proyectos reales de la raiz (directorios de primer nivel).
 
     UNIVERSAL (sin hardcode): se toma TODO directorio de primer nivel de
-    DEV-SPACE que supere ``_is_project_dir`` — así, si se añade un proyecto
+    raiz que supere ``_is_project_dir`` — así, si se añade un proyecto
     nuevo (git o con estructura), se detecta y exporta automáticamente sin
     tocar el script.
 
@@ -111,7 +144,7 @@ def discover_projects() -> list[tuple[str, Path]]:
         Lista de tuplas (tag, ruta). El tag es el nombre del directorio.
     """
     if not DEV_SPACE.exists():
-        logger.warning(f"  Skipping: DEV-SPACE not found at {DEV_SPACE}")
+        logger.warning(f"  Skipping: raiz de proyectos no encontrada en {DEV_SPACE}")
         return []
     projects: list[tuple[str, Path]] = []
     for entry in sorted(DEV_SPACE.iterdir()):
@@ -262,7 +295,7 @@ def cleanup_old_zips(tag: str, keep: Path | None = None) -> int:
 
     UNIVERSAL (sin hardcode de nombres protegidos): solo se consideran los ZIPs
     cuyo nombre matchea ``{tag}_YYYY-MM-DD.zip``, donde ``tag`` es un proyecto
-    REAL detectado en DEV-SPACE. Todo ZIP que NO matchee ese patrón (copias de
+    REAL detectado en la raiz de proyectos. Todo ZIP que NO matchee ese patrón (copias de
     proyectos ajenos a DEV, respaldos manuales, nombres sin fecha, tags de
     proyectos que ya no existen) queda SIEMPRE intacto por construcción.
 
@@ -312,14 +345,14 @@ def cleanup_old_zips(tag: str, keep: Path | None = None) -> int:
 
 
 def main() -> None:
-    """Punto de entrada: exporta todos los proyectos de DEV-SPACE a Drive."""
+    """Punto de entrada: exporta todos los proyectos de la raiz a Drive."""
     logger.info("=" * 50)
-    logger.info("EXPORT ALL DEV-SPACE PROJECTS TO GOOGLE DRIVE (solo lo commiteado)")
+    logger.info("EXPORT ALL WORKSPACE PROJECTS TO GOOGLE DRIVE (solo lo commiteado)")
     logger.info("=" * 50)
 
     projects = discover_projects()
     if not projects:
-        logger.warning("  No projects found in DEV-SPACE")
+        logger.warning("  No projects found in project root")
         return
 
     logger.info(f"  Proyectos detectados: {', '.join(tag for tag, _ in projects)}")

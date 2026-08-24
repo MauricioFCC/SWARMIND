@@ -7,7 +7,7 @@ Cubre:
 - Agentes y skills correctos
 
 Seguridad (ADR-0035): las rutas de proyectos externos se resuelven por
-variables de entorno (CQE_ROOT, HC_ROOT, ...) con fallback portable a
+variables de entorno (QUANTAPP_ROOT, HEALTHAPP_ROOT, ...) con fallback portable a
 ``Path.home()``. Nunca se hardcodean rutas absolutas ni nombres de usuario.
 """
 
@@ -23,7 +23,7 @@ def _project_root(env_var: str, *parts: str) -> Path:
     """Resuelve la raíz de un proyecto externo sin exponer rutas personales.
 
     Args:
-        env_var: variable de entorno con la ruta (ej. CQE_ROOT).
+        env_var: variable de entorno con la ruta (ej. QUANTAPP_ROOT).
         *parts: subdirectorios relativos al home (fallback portable).
 
     Returns:
@@ -36,14 +36,15 @@ def _project_root(env_var: str, *parts: str) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Config
+# Config (fixtures genericos: los nombres reales viven fuera del repo,
+# configurables via env vars <PROYECTO>_ROOT)
 # ---------------------------------------------------------------------------
 
 PROJECTS: dict[str, Path] = {
-    "CQE": _project_root("CQE_ROOT", "Documents", "DEV-SPACE", "quant-engine"),
-    "HC": _project_root("HC_ROOT", "Documents", "DEV-SPACE", "health-record"),
-    "Onyx": _project_root("ONYX_ROOT", "Documents", "DEV-SPACE", "trading-bot-AIBot"),
-    "PDV": _project_root("PDV_ROOT", "Documents", "DEV-SPACE", "pos-system"),
+    "QuantApp": _project_root("QUANTAPP_ROOT", "Documents", "projects", "quant-app"),
+    "HealthApp": _project_root("HEALTHAPP_ROOT", "Documents", "projects", "health-app"),
+    "TradeBot": _project_root("TRADEBOT_ROOT", "Documents", "projects", "trade-bot"),
+    "RetailApp": _project_root("RETAILAPP_ROOT", "Documents", "projects", "retail-app"),
     "Hermes": _project_root("HERMES_ROOT", "Documents", "shared_memory"),
 }
 
@@ -71,10 +72,10 @@ KEY_FILES = [
 
 # Skills esperados por proyecto
 EXPECTED_SKILLS: dict[str, list[str]] = {
-    "CQE": ["alpha-research", "evolve", "hedgefund", "math-doc", "quant-trading", "risk-execution", "science-doc"],
-    "HC": ["evolve", "healthtech", "hedgefund", "legal-doc", "science-doc"],
-    "Onyx": ["alpha-research", "evolve", "hedgefund", "math-doc", "quant-trading", "risk-execution", "science-doc"],
-    "PDV": ["evolve", "hedgefund", "legal-doc", "pos-retail"],
+    "QuantApp": ["alpha-research", "evolve", "hedgefund", "math-doc", "quant-trading", "risk-execution", "science-doc"],
+    "HealthApp": ["evolve", "healthtech", "hedgefund", "legal-doc", "science-doc"],
+    "TradeBot": ["alpha-research", "evolve", "hedgefund", "math-doc", "quant-trading", "risk-execution", "science-doc"],
+    "RetailApp": ["evolve", "hedgefund", "legal-doc", "pos-retail"],
     "Hermes": ["evolve", "healthtech", "hedgefund", "legal-doc", "math-doc", "pos-retail", "quant-trading", "risk-execution", "science-doc"],
 }
 
@@ -84,7 +85,7 @@ EXPECTED_SKILLS: dict[str, list[str]] = {
 # ===========================================================================
 
 
-@pytest.mark.skip(reason="Requiere proyectos externos: CQE, HC, Onyx, PDV, Hermes")
+@pytest.mark.skip(reason="Requiere proyectos externos desplegados en el workspace")
 class TestRoutingRules:
     """routing_rules.yaml no debe contener agentes fantasma."""
 
@@ -110,7 +111,7 @@ class TestRoutingRules:
         assert "evolve" in content
 
 
-@pytest.mark.skip(reason="Requiere proyectos externos: CQE, HC, Onyx, PDV, Hermes")
+@pytest.mark.skip(reason="Requiere proyectos externos desplegados en el workspace")
 class TestKeyFiles:
     """Archivos clave del sistema deben estar presentes."""
 
@@ -125,7 +126,7 @@ class TestKeyFiles:
         assert not missing, f"{name} faltan: {missing}"
 
 
-@pytest.mark.skip(reason="Requiere proyectos externos: CQE, HC, Onyx, PDV, Hermes")
+@pytest.mark.skip(reason="Requiere proyectos externos desplegados en el workspace")
 class TestAgentFiles:
     """Agentes correctamente desplegados."""
 
@@ -146,7 +147,7 @@ class TestAgentFiles:
         assert not missing, f"{name} faltan agentes: {missing}"
 
 
-@pytest.mark.skip(reason="Requiere proyectos externos: CQE, HC, Onyx, PDV, Hermes")
+@pytest.mark.skip(reason="Requiere proyectos externos desplegados en el workspace")
 class TestSkills:
     """Skills correctamente desplegados por proyecto."""
 
@@ -160,7 +161,7 @@ class TestSkills:
         assert not missing, f"{name} faltan skills: {missing}"
 
 
-@pytest.mark.skip(reason="Requiere proyectos externos: CQE, HC, Onyx, PDV, Hermes")
+@pytest.mark.skip(reason="Requiere proyectos externos desplegados en el workspace")
 class TestTestFiles:
     """Tests correctamente desplegados."""
 
@@ -172,7 +173,7 @@ class TestTestFiles:
         assert len(test_files) >= 40, f"{name} tiene solo {len(test_files)} tests"
 
 
-@pytest.mark.skip(reason="Requiere proyecto externo: Hermes")
+@pytest.mark.skip(reason="Requiere el proyecto Hermes desplegado")
 class TestHermesSpecific:
     """Tests especificos para Hermes (memoria central)."""
 

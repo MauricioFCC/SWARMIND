@@ -84,7 +84,6 @@ class HermesBridge:
         candidates = [
             os.environ.get("HERMES_PATH", ""),
             str(Path.home() / "Documents" / "Hermes_Memory_Proyects"),
-            str(Path.home() / "Documents" / "DEV-SPACE" / "Hermes_Memory_Proyects"),
             str(Path.cwd() / "Hermes_Memory_Proyects"),
         ]
 

@@ -13,11 +13,12 @@ Uso:
     # Default: usa LanceDB en harness/db/lancedb/
     config = MemoryConfig()
     
-    # Custom: apunta a shared_memory (rutas portables via Path.home())
+    # Custom: apunta a shared_memory (rutas portables via MEMORY_ROOT/
+    # LANCEDB_PATH/HERMES_PATH o el .swarmind_config.json de la memoria central)
     config = MemoryConfig(
         backend="lancedb",
-        lancedb_path=str(Path.home() / "Documents" / "DEV-SPACE" / "shared_memory" / "99_Hermes_Brain" / "lancedb_data"),
-        hermes_path=str(Path.home() / "Documents" / "DEV-SPACE" / "shared_memory"),
+        lancedb_path="<ruta-a-lancedb>",
+        hermes_path="<ruta-a-shared-memory>",
     )
     
     # Modo memoria (sin persistencia)
@@ -48,7 +49,6 @@ _LANCEDB_PATH_ENV = "LANCEDB_PATH"
 _HERMES_PATH_ENV = "HERMES_PATH"
 _DOCUMENTS_DIR = "Documents"
 _DEFAULT_MEMORY_ROOT = "Memory_Proyects"
-_LEGACY_SHARED_MEMORY = "DEV-SPACE" / Path("shared_memory")
 
 
 def _safe_home() -> Path | None:
@@ -70,7 +70,6 @@ def _discover_swarmind_config() -> Path | None:
     Prioridad de busqueda (nada hardcode en produccion; todo configurable):
       1. Variable MEMORY_ROOT (SSOT del root de la memoria central).
       2. ~/Documents/Memory_Proyects (canonica, fallback documentado).
-      3. ~/Documents/DEV-SPACE/Memory_Proyects (alternativa, fallback).
 
     Returns:
         Ruta al .swarmind_config.json, o None si no existe.
@@ -83,9 +82,6 @@ def _discover_swarmind_config() -> Path | None:
     if home is not None:
         candidates.append(
             home / _DOCUMENTS_DIR / _DEFAULT_MEMORY_ROOT / ".swarmind_config.json"
-        )
-        candidates.append(
-            home / _DOCUMENTS_DIR / "DEV-SPACE" / _DEFAULT_MEMORY_ROOT / ".swarmind_config.json"
         )
     for candidate in candidates:
         if candidate.is_file():
@@ -203,12 +199,6 @@ class MemoryConfig:
                 candidate = Path(os.environ.get(_HERMES_PATH_ENV, ""))
                 if candidate.exists():
                     self.hermes_path = str(candidate)
-            else:
-                home = _safe_home()
-                if home is not None:
-                    legacy = home / _LEGACY_SHARED_MEMORY
-                    if legacy.exists():
-                        self.hermes_path = str(legacy)
 
     @property
     def hermes_brain_path(self) -> str:

@@ -139,3 +139,6 @@ harness/tests/_tmp_bad_skills/
 
 # output de builds mdBook (ES temporal o alternativos)
 docs/es/
+
+# Config local privada del operador (nombres de proyectos reales) - NUNCA pushear
+scripts/deploy_local.json
