@@ -1,7 +1,7 @@
 ---
 name: base-principles
 description: Principios universales de programacion + ASI-Evolve + FDE - N1+N2 siempre, N3 bajo demanda (H7 ADR-0040)
-version: 2.6.0
+version: 2.7.0
 project_agnostic: true
 inherit:
   - core/base_principles.md
@@ -48,6 +48,10 @@ FSZ: Function Size | max 30 lineas | una responsabilidad | extraer helpers | gua
 CMP: Composition over Inheritance | preferir composicion sobre herencia | estrategia + interfaces | evitar jerarquias profundas | HAS-A sobre IS-A
 DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un punto por linea | tell dont ask
 FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | elegir la solucion mas avanzada/frontera/eficiente/confiable | al finalizar: actualizar docs + commit
+SPE: Spec-First (Proof-or-Stop) | spec ANTES de ejecutar | outcome medible | exit criteria definidos | sin spec = sin start
+GATE: Evidence-Gated Lifecycle | claim→evidence→gate | 0 false-DONE | T1 deterministic + T2 LLM-judge + T3 regression
+FAIL: Failure Registry | registrar fallos en JSONL | distillar en skills | Socratic-SWE traces→tasks | aprender de errores
+SBX: Sandboxing | aislamiento de fallos | per-task environment | rollback plan | contenedor o timeout como minimo
 ```
 
 ---
@@ -88,6 +92,10 @@ FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | ele
 | **CMP** | **Composition over Inheritance** (GoF 1994): preferir COMPOSICION (HAS-A: "tiene un") sobre HERENCIA (IS-A: "es un"). Usar protocolos/ABC pequenos inyectados como componentes. Evitar jerarquias de herencia >2 niveles. Strategy pattern, State pattern, Decorator pattern son composicion. Herencia solo para tipos claramente relacionados (ej. Exception -> ValueError). Mixing composicion+herencia: subclase para especializar, composicion para variar comportamiento. |
 | **DEM** | **Law of Demeter** (Principle of Least Knowledge, 1987): un objeto solo habla con sus "amigos directos" (sus propios metodos, sus atributos, los metodos de los objetos que recibe como parametro, los objetos que crea). NO chains: `customer.wallet.money.total()` (3 puntos = 2 violaciones). Max 1 punto por linea: `total = customer.total_money()` (delegar). Favorece Tell-Dont-Ask: en vez de pedirle datos a un objeto y decidir por el, pedirle que el mismo decida (command/query separation). Reduce acoplamiento y facilita testing. |
 | **FRS** | **Frontier Research & Solution (regla universal obligatoria)**: TODO requerimiento del usuario — sea cual sea — debe iniciar con **busqueda web exhaustiva** para identificar la solucion MAS avanzada (frontera), de mejor calidad, mas eficiente y mas confiable disponible en el momento. NO resolver desde memoria o habitos: investigar primero. Criterios de eleccion: (1) frontier 2026 (papers, frameworks, tools), (2) calidad (adoptada, mantenida, documentada), (3) eficiencia (menor costo/memoria/latencia), (4) confiabilidad (estable, testada, comunidad). AL FINALIZAR toda tarea: **actualizar documentacion** (README/CHANGELOG/ADRs si aplica) y **crear commit** (conventional commit). |
+| **SPE** | **Spec-First (Proof-or-Stop, Huang 2026)**: TODO output de agente es un CLAIM, no estado. Lifecycle transitions solo avanzan cuando evidencia fresca satisface un gate predicate. Plantilla `specs/<task>.md` obligatoria ANTES de ejecutar: outcome medible, FR/NF, exit criteria, sandbox scope, rollback plan. Sin spec = sin start. Reduced false-DONE de 31/1800 a 2/1800 en ablation. |
+| **GATE** | **Evidence-Gated Lifecycle (Pondero CI-for-Agents 2026)**: 3-tier gates: **T1** deterministic (<90s, blocks merge): schema validation, lint, test, security scan. **T2** LLM-judge (<10min, blocks merge): behavioral spec, rubric scoring, majority voting repeat:3, judge temp=0. **T3** regression (<60min, alert-only): nightly full suite, cross-model comparison. Spec y evals cambian juntos (SVE). Cost-arithmetic para judge models. |
+| **FAIL** | **Failure Registry (Socratic-SWE, Qu 2026)**: Cada fallo se registra en `harness/db/failures.jsonl` con: failure_type, error_msg, root_cause, resolution, skill_derived, severity. Evolve loop lee el registry → distilla en skills → genera tareas dirigidas que address capability gaps. Skills deduplicated por similaridad semántica. Solver-gradient alignment reward para task quality. +7.80 SWE-bench después de 3 iteraciones. |
+| **SBX** | **Sandboxing (Docker Sandboxes + Cloudflare Dynamic Workers 2026)**: Aislamiento de fallos: cada fan-out task puede correr en entorno aislado. Docker microVM para coding agents (Claude Code, Codex, OpenCode) con `--dangerously-skip-permissions`. Cloudflare V8 isolates: 100x más rápido que containers (ms startup, MB memory). Python-native: Pyodide/WASM para tool execution. Governance layer: network policies, filesystem controls. Rollback plan obligatorio antes de ejecutar. |
 
 ---
 

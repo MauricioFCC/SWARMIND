@@ -1,29 +1,35 @@
 ﻿"""
-sync_opencode_global.py â€” Sincroniza el CEREBRO y el MOTOR de Swarmind a la
-config GLOBAL de opencode (estÃ¡ndar v2.5: opencode global = fuente de verdad).
+sync_opencode_global.py — Sincroniza el CEREBRO y el MOTOR de Swarmind a la
+config GLOBAL de opencode (estándar v2.5: opencode global = fuente de verdad).
 
-OpciÃ³n A (SSOT global): agentes, skills, core y registry viven UNA vez en
+Opción A (SSOT global): agentes, skills, core y registry viven UNA vez en
 ``~/.config/opencode/`` (config global de opencode) y opencode los toma para
 TODOS los proyectos. Cada commit de SWARMIND invoca este script via
-pre-commit hook, manteniendo el global siempre al dia sin duplicar archivos
+pre-commit hook, manteniendo el global siempre al día sin duplicar archivos
 por proyecto.
 
-EstÃ¡ndar v2.5 (2026-08): EL MOTOR (harness/) TAMBIÃ‰N vive en el global.
+Estándar v2.5 (2026-08): EL MOTOR (harness/) TAMBIÉN vive en el global.
 Los proyectos solo tienen .opencode/ + skills (sin copia de harness).
 Esto elimina la duplicación de harness/skills/agentes entre proyectos
 (el ahorro de disco depende del tamaño de cada proyecto).
 
+Modos de sincronización (--mode):
+  - copy (default): shutil.copytree/copy2. Funciona siempre, portable.
+  - symlink: os.symlink. Refleja cambios al instante, ahorra disco.
+    Requiere Developer Mode en Windows o permisos de admin.
+
 Lo que NO se copia (queda en cada proyecto como config propia):
   - .opencode/config/           (project_config, routing_rules, token_budgets)
   - .opencode/federated/        (memoria federada por proyecto)
-  - harness/db/                 (datos runtime LanceDB â€” en el global se copia db/schema, no datos)
+  - harness/db/                 (datos runtime LanceDB — en el global se copia db/schema, no datos)
   - .env                        (credenciales locales)
 
 Seguridad (ADR-0035): rutas portables via env vars con fallback a
 ``Path.home()``. Nunca ``$HOME`` literal.
 
 Uso:
-    python scripts/sync_opencode_global.py              # Sync completo (cerebro + motor)
+    python scripts/sync_opencode_global.py              # Sync completo (cerebro + motor, copy mode)
+    python scripts/sync_opencode_global.py --mode symlink  # Sync con symlinks (reflejo instantáneo)
     python scripts/sync_opencode_global.py --dry-run    # Simular
     python scripts/sync_opencode_global.py --quiet      # Sin log (hook)
     python scripts/sync_opencode_global.py --cerebro    # Solo cerebro (agents/skills/core)
@@ -82,24 +88,82 @@ _HARNESS_FILES = ["__init__.py", "__main__.py", "common.py", "delegate.py",
 # Sync
 # ---------------------------------------------------------------------------
 
+# Modo de sincronización: copy (default) o symlink
+_SYNC_MODE = "copy"
 
-def _sync_dir(src: Path, dst: Path, dry_run: bool = False) -> int:
-    """Copia un directorio del cerebro al destino global (merge preservador).
 
-    Solo copia/sobreescribe; nunca borra archivos ajenos del global (ej.
-    plugins, configs del usuario).
+def _create_symlink(src: Path, dst: Path, dry_run: bool = False) -> bool:
+    """Crea un symlink de dst → src (dst apunta a src).
+
+    Patrón: ai-dotfiles/std-agent (2026) — symlink en vez de copy para
+    reflejo instantáneo de cambios. En Windows requiere Developer Mode
+    o permisos de admin; si falla, retorna False para fallback a copy.
+
+    Args:
+        src: Directorio/archivo fuente (el real en el repo).
+        dst: Directorio/archivo destino (en ~/.config/opencode/).
+        dry_run: Si True, solo simula.
+
+    Returns:
+        True si el symlink se creó correctamente, False si falló.
+    """
+    if dst.is_symlink():
+        # Ya existe un symlink — verificar si apunta al mismo sitio
+        if dst.resolve() == src.resolve():
+            return True  # Ya correcto
+        if not dry_run:
+            dst.unlink()  # Quitar symlink viejo
+
+    if dst.exists() and not dst.is_symlink():
+        # Existe un directorio/archivo real — no lo pisamos
+        logger.warning(
+            "  ⚠️  destino existe (no symlink): %s → se conserva",
+            dst,
+        )
+        return False
+
+    if not dry_run:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            os.symlink(str(src), str(dst), target_is_directory=src.is_dir())
+        except (OSError, NotImplementedError) as exc:
+            logger.warning(
+                "  ⚠️  symlink falló (%s): %s → %s | "
+                "WHY: Windows sin Developer Mode o OS no soporta symlinks | "
+                "WHERE: _create_symlink",
+                exc, src, dst,
+            )
+            return False
+    return True
+
+
+def _sync_dir(src: Path, dst: Path, dry_run: bool = False, mode: str = "copy") -> int:
+    """Sincroniza un directorio del cerebro al destino global.
+
+    Modos:
+      - copy: shutil.copytree (default, funciona siempre).
+      - symlink: os.symlink por directorio (reflejo instantáneo).
 
     Args:
         src: Directorio fuente (SWARMIND/.opencode/<parte>).
         dst: Directorio destino (~/.config/opencode/<parte>).
         dry_run: Si True, solo simula.
+        mode: "copy" o "symlink".
 
     Returns:
-        NÃºmero de archivos sincronizados.
+        Número de archivos sincronizados.
     """
     if not src.is_dir():
-        logger.warning("  âš ï¸  fuente no existe: %s", src)
+        logger.warning("  ⚠️  fuente no existe: %s", src)
         return 0
+
+    # Modo symlink: symlink del directorio completo
+    if mode == "symlink":
+        if not dry_run:
+            _create_symlink(src, dst, dry_run=False)
+        return sum(1 for _ in src.rglob("*") if _.is_file()) if src.is_dir() else 0
+
+    # Modo copy: copia merge-preservadora
     dst.mkdir(parents=True, exist_ok=True)
     count = 0
     for item in src.iterdir():
@@ -180,7 +244,8 @@ def _ensure_memory_central(dry_run: bool = False) -> dict:
 
 
 def sync_global(dry_run: bool = False, quiet: bool = False,
-                cerebro: bool = False, motor: bool = False) -> dict:
+                cerebro: bool = False, motor: bool = False,
+                mode: str = "copy") -> dict:
     """Sincroniza el cerebro Swarmind a la config global de opencode.
 
     Args:
@@ -188,20 +253,22 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
         quiet: Si True, suprime logs (para hooks).
         cerebro: Si True, solo sincroniza cerebro (agents/skills/core/registry).
         motor: Si True, solo sincroniza motor (harness/).
+        mode: "copy" (default) o "symlink" (reflejo instantáneo).
 
     Returns:
-        Dict con estadÃ­sticas por parte del cerebro.
+        Dict con estadísticas por parte del cerebro.
     """
-    stats: dict[str, int] = {}
+    stats: dict[str, int | str] = {}
     if not quiet:
         logger.info("=" * 60)
-        logger.info("ðŸŒ SYNC OPENCODE GLOBAL (OpciÃ³n A â€” SSOT, estÃ¡ndar v2.5)")
+        logger.info("SYNC OPENCODE GLOBAL (Opción A — SSOT, estándar v2.5)")
         logger.info("   Source: %s", _ROOT)
         logger.info("   Global: %s", _GLOBAL)
+        logger.info("   Mode:   %s", mode)
         logger.info("   Dry run: %s", dry_run)
         logger.info("=" * 60)
 
-    # Por defecto sync completo (cerebro + motor) salvo flag explÃ­cito
+    # Por defecto sync completo (cerebro + motor) salvo flag explícito
     do_cerebro = cerebro or (not cerebro and not motor)
     do_motor = motor or (not cerebro and not motor)
 
@@ -209,10 +276,10 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
         for part in _BRAIN_DIRS:
             src = _SRC_OPENCODE / part
             dst = _GLOBAL / part
-            count = _sync_dir(src, dst, dry_run=dry_run)
+            count = _sync_dir(src, dst, dry_run=dry_run, mode=mode)
             stats[part] = count
             if not quiet:
-                logger.info("  âœ… %-10s %d archivos %s", part, count, "(simulado)" if dry_run else "")
+                logger.info("  ✓ %-10s %d archivos %s", part, count, "(simulado)" if dry_run else "")
 
         # skills_registry.yaml (referencia desde skills/)
         registry_src = _SRC_OPENCODE / _REGISTRY_FILE
@@ -252,9 +319,12 @@ def main() -> None:
     parser.add_argument("--quiet", action="store_true", help="Sin log (para hooks)")
     parser.add_argument("--cerebro", action="store_true", help="Solo cerebro (agents/skills/core)")
     parser.add_argument("--motor", action="store_true", help="Solo motor (harness)")
+    parser.add_argument("--mode", choices=["copy", "symlink"], default="copy",
+                        help="Modo sync: copy (default) o symlink (reflejo instantáneo)")
     args = parser.parse_args()
 
-    sync_global(dry_run=args.dry_run, quiet=args.quiet, cerebro=args.cerebro, motor=args.motor)
+    sync_global(dry_run=args.dry_run, quiet=args.quiet,
+                cerebro=args.cerebro, motor=args.motor, mode=args.mode)
 
 
 if __name__ == "__main__":

@@ -48,6 +48,7 @@ harness/db/lancedb/**
 harness/db/_archived/
 harness/db/import/
 harness/db/iteration_reports/
+harness/db/failures.jsonl
 99_Hermes_Brain/lancedb_data/
 memory_rag/*.db
 
