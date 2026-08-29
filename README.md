@@ -10,6 +10,7 @@
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
 [![Tests](https://img.shields.io/badge/tests-4722_passing-brightgreen.svg)](harness/tests/)
+[![CI](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml/badge.svg)](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **Spanish (es)** is the primary documentation language; this README is in English for GitHub.
@@ -40,8 +41,10 @@ Clone, set up, and verify the harness in a few steps:
 git clone https://github.com/MauricioFCC/SWARMIND.git
 cd SWARMIND
 
-# 2. Auto-setup (verifies Python 3.12+, installs uv, runs uv sync, syncs to opencode global, creates central memory)
-python scripts/setup_swarmind.py
+# 2. One-command cross-platform setup (verifies Python 3.12+, installs uv, uv sync,
+#    symlinks config to opencode global, installs hooks, verifies import)
+./scripts/install.sh        # Linux / macOS
+#  .\scripts\install.ps1     # Windows (PowerShell, symlink fallback to copy)
 
 # 3. Run the test suite
 uv run python -m pytest harness/tests/ -q
@@ -53,6 +56,10 @@ python scripts/enable_gpu.py
 launcher.bat   # Windows
 # or: python -m harness
 ```
+
+> **Alternative:** `python scripts/setup_swarmind.py` performs the same auto-setup
+> (Windows-oriented, uses copy instead of symlinks). Use `install.sh` / `install.ps1`
+> for idempotent, symlink-based setup on any OS.
 
 ## Features
 
@@ -161,13 +168,30 @@ Each layer is a dedicated package under `harness/`: the orchestration layer coor
 
 ### Setup
 
+**One command, any OS** (idempotent, symlink-based, fallback to copy on Windows
+without Developer Mode):
+
 ```bash
 git clone https://github.com/MauricioFCC/SWARMIND.git
 cd SWARMIND
+./scripts/install.sh        # Linux / macOS
+#  .\scripts\install.ps1     # Windows (PowerShell)
+```
+
+The installer verifies Python 3.12+, installs [uv](https://github.com/astral-sh/uv)
+if missing, runs `uv sync`, creates symlinks from `~/.config/opencode/` to the repo
+(config, agents, skills), installs the pre-commit hooks (`git config core.hooksPath
+.githooks`), and verifies the harness imports. Re-running it is safe.
+
+**Alternative** (Windows-oriented, copy-based):
+
+```bash
 python scripts/setup_swarmind.py
 ```
 
-`setup_swarmind.py` verifies Python 3.12+, installs uv if missing, runs `uv sync`, syncs the configuration to the opencode global directory, and creates the central memory store. An interactive config menu is available via `config_swarmind.py`.
+`setup_swarmind.py` verifies Python 3.12+, installs uv if missing, runs `uv sync`,
+syncs the configuration to the opencode global directory, and creates the central
+memory store. An interactive config menu is available via `config_swarmind.py`.
 
 ### GPU (optional)
 
