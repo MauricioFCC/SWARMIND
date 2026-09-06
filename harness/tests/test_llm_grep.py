@@ -154,6 +154,18 @@ def test_noop_structural_empty() -> None:
     assert NoopStructuralBackend().search("class X", Path("."), 5) == []
 
 
+def test_preview_capped_at_max_chars() -> None:
+    """Previews largos se recortan a MAX_PREVIEW_CHARS (compaction)."""
+    from harness.memory_rag.llm_grep import MAX_PREVIEW_CHARS
+
+    long_preview = "z" * (MAX_PREVIEW_CHARS + 500)
+    backend = hybrid_to_hits_adapter(
+        lambda q, k: [{"id": "doc1", "metadata": {"path": "m.py", "preview": long_preview}}]
+    )
+    hits = backend.search("q", 5)
+    assert len(hits[0].preview) == MAX_PREVIEW_CHARS
+
+
 def test_hybrid_adapter_normalizes() -> None:
     """Adaptador convierte items hibridos a GrepHit."""
     backend = hybrid_to_hits_adapter(
