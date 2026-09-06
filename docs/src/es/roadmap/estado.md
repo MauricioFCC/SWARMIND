@@ -12,6 +12,7 @@
 - **ADR-0067 LLM-grep frontera (APLICADO)** — `harness/memory_rag/llm_grep.py`: ripgrep-first → ast-grep condicional → `HybridRetriever` último recurso; salida `ruta:linea` + 2 líneas, dedup `(path,line)`, `GrepBudget`, `RouteReport` con alerta `semantic_ratio>20%`. Tests `test_llm_grep.py` **12 passed**; regresión hybrid **22 passed**; ruff 0.
 - **.gitignore**: `docs/src/es/adr/` local-only (segunda capa junto a `.githooks/pre-push`); versionado local explícito con `git add -f`.
 - **Deuda doc detectada**: `docs/src/es/adr/README.md` indexa hasta 0041, existen 0042-0067 (26 ADRs sin índice); `docs/src/en/adr/` vacío; `estado.md` cabecera anclada a 2026-08-11.
+- **ADR-0068 Cascada STEER + salud cache (APLICADO)** — `harness/model_router/cascade_router.py` (small→frontier si confianza<0.7, escape_hatch, costo por intento) + `TokenUsageTracker.cache_health` (flag bug estructural si hit<60% con volumen≥10K). TDD: `test_cascade_router.py` 10 + tracker 44; mutante M-gate verificado muerto; ruff 0. Personal auditado: `deploy_local.json` ignorado, 0 secretos/paths en `harness/`.
 
 ### Estado 2026-08-18 (arquitecturas RAG frontier + integraciones anydoc + deepseek-harness)
 
