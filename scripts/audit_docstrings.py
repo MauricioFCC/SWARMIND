@@ -53,9 +53,8 @@ def _collect_missing(obj: griffe.Object, missing: list[tuple[str, str]]) -> None
     for name, member in obj.members.items():
         if name.startswith("_") or _is_import(member):
             continue
-        if isinstance(member, (griffe.Function, griffe.Class)):
-            if member.docstring is None:
-                missing.append((str(member.lineno), member.path))
+        if isinstance(member, (griffe.Function, griffe.Class)) and member.docstring is None:
+            missing.append((str(member.lineno), member.path))
         if isinstance(member, griffe.Class):
             _collect_missing(member, missing)
 
