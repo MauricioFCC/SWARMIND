@@ -41,7 +41,7 @@ El **guardian** es el agente de verificación y calidad del sistema. Aplica **Ve
 | Skill | Propósito |
 |-------|-----------|
 | `security-audit` | Auditorías SAST/DAST, threat modeling, SBOM, OWASP Top 10, compliance SOC2/ISO27001 |
-| `responsive-ui` | Validación de interfaces responsivas, accesibilidad WCAG 2.2 AA/AAA, design tokens |
+| `frontend-uiux` | Validación de interfaces responsivas, accesibilidad WCAG 2.2 AA/AAA, design tokens |
 | `data-science` | Validación de pipelines de datos, modelos ML, experimentos |
 | `risk-execution` | Evaluación de riesgo institucional, position sizing, market making, TCA |
 

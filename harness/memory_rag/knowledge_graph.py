@@ -400,7 +400,6 @@ class KnowledgeGraph:
             "project-management": "coordinator",
             "psychology": "scientist",
             "quant-trading": "scientist",
-            "responsive-ui": "builder",
             "risk-execution": "guardian",
             "rust-lang": "builder",
             "science-doc": "scientist",
@@ -451,7 +450,7 @@ class KnowledgeGraph:
         known_skills = [
             "alpha-research", "architecture", "data-science", "evolve",
             "frontend-uiux", "healthtech", "hedgefund", "legal-doc",
-            "math-doc", "pos-retail", "quant-trading", "responsive-ui",
+            "math-doc", "pos-retail", "quant-trading",
             "risk-execution", "rust-lang", "science-doc", "security-audit",
             "business-strategy", "communication", "creative-design",
             "devops-infra", "education", "ethics", "linguistics",

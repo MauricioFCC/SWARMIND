@@ -5,7 +5,7 @@
 
 name: quant-trading
 domain: trading
-description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. Alcance: implementacion del motor sobre CQE; para validacion de factores ver alpha-research. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+; motores cuantitativos de alto rendimiento'
 version: 1.0.0
