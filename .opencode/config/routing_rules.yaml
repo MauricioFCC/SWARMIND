@@ -107,9 +107,6 @@ routing_rules:
     - domain: "frontend-uiux"
       agents: ["builder", "frontend-engineer"]
       priority: 8
-    - domain: "responsive-ui"
-      agents: ["builder", "frontend-engineer"]
-      priority: 7
     - domain: "creative-design"
       agents: ["frontend-engineer", "builder"]
       priority: 7

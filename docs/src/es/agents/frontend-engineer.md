@@ -16,4 +16,3 @@ Se activa con los triggers: frontend, ui, ux, react, component, css, html, respo
 
 ## Skills que carga
 - frontend-uiux
-- responsive-ui

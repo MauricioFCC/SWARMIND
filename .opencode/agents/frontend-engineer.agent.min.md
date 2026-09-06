@@ -6,5 +6,5 @@ triggers: [frontend, ui, ux, react, component, css, html, responsive, design-sys
 ---
 # Frontend Engineer (min)
 Rol: Construye interfaces UI/UX con React, responsive design y accesibilidad WCAG.
-Skills: frontend-uiux, responsive-ui
+Skills: frontend-uiux
 Triggers: UI/UX, componentes React, responsive, accesibilidad, design system

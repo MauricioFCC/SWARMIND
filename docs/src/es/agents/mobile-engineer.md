@@ -16,4 +16,3 @@ Se activa con los triggers: mobile, ios, android, app, react-native, flutter, sw
 
 ## Skills que carga
 - frontend-uiux
-- responsive-ui

@@ -132,11 +132,6 @@
       "tokens": 786
     },
     {
-      "id": "responsive-ui",
-      "domain": "general",
-      "tokens": 250
-    },
-    {
       "id": "risk-execution",
       "domain": "trading",
       "tokens": 1025
@@ -556,31 +551,6 @@
     {
       "source": "quant-trading",
       "target": "quant-engine",
-      "type": "ENHANCES"
-    },
-    {
-      "source": "responsive-ui",
-      "target": "axe-core",
-      "type": "ENHANCES"
-    },
-    {
-      "source": "responsive-ui",
-      "target": "axe-playwright",
-      "type": "ENHANCES"
-    },
-    {
-      "source": "responsive-ui",
-      "target": "esponsive-ui",
-      "type": "ENHANCES"
-    },
-    {
-      "source": "responsive-ui",
-      "target": "mobile-first",
-      "type": "ENHANCES"
-    },
-    {
-      "source": "responsive-ui",
-      "target": "pa11y-ci",
       "type": "ENHANCES"
     },
     {

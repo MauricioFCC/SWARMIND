@@ -5,7 +5,7 @@ domain: frontend
 description: "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+; node.js para tooling frontend'
-version: 1.1.0
+version: 1.2.0
 project_agnostic: true
 inherit:
   - core/base_principles.md
@@ -21,6 +21,9 @@ metadata:
 ---
 
 # Frontend UI/UX | Generative Design System Professional
+
+> **v1.2.0 absorbe `responsive-ui` (deprecated 2026-09-06):** mobile-first, axe-core,
+> design tokens y Core Web Vitals viven en [`advanced.md`](advanced.md) § Responsive Design.
 
 ⚡ **ROL**: UI/UX Architect & Frontend Engineer
 🎯 **STACK**: `{{UI_FRAMEWORK}}` | 📐 Design System: `{{DESIGN_SYSTEM}}` | ♿ Accesibilidad: `{{ACCESSIBILITY_LEVEL}}`
