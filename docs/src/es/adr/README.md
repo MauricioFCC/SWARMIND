@@ -45,6 +45,10 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0039 | [Frontier Optimization 2026 v2 — Tokens, Agentes y Configuración](adr0039-frontier-optimization-2026-v2.md) | IMPLEMENTADO | — |
 | 0040 | [Auditoría Token-Economics — Plan de Acción H1-H8](adr0040-token-audit-plan-2026.md) | IMPLEMENTADO (H1-H8) | — |
 | 0041 | [Frontier Adaptation 2026 — MCP Stateless, OTel GenAI, DeltaChannel, Agent Factory, Skills y Tokens](adr0041-frontier-adaptation-2026.md) | IMPLEMENTADO (H1-H8) | — |
+| 0042-0064 | (índice pendiente — ver archivos `adr0042-*` … `adr-0064-*.md` en este directorio) | — | — |
+| 0065 | [Segundo Cerebro — Overlay Grafo SurrealDB + Captura Híbrida Local/Nube](adr-0065-segundo-cerebro-surrealdb-overlay.md) | PROPUESTO (spike) | — |
+| 0066 | [Prompt-Cache TTL Engineering — Prefijo Estable + Sin Cambio de Modelo](adr-0066-prompt-cache-ttl-engineering.md) | PROPUESTO | — |
+| 0067 | [LLM-Grep Frontera — Ripgrep-First 3 Capas, Budget-Aware, Compaction-Friendly](adr-0067-llm-grep-frontera.md) | APLICADO (`llm_grep.py` + 12 tests) | — |
 
 ## Resumen por Categoria
 
