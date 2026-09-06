@@ -102,6 +102,9 @@ docs/book/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+# Mutation testing (mutmut): cache v2 legacy + estado v3 (mutants/)
+.mutmut-cache/
+mutants/
 
 # Proptest
 proptest-regressions/
@@ -137,3 +140,12 @@ harness/tests/_tmp_bad_skills/
 
 # output de builds mdBook (ES temporal o alternativos)
 docs/es/
+
+# ADRs internos (local-only): se versionan en local, NO se publican.
+# Segunda capa junto a .githooks/pre-push (que aborta el push si crea/modifica esta ruta).
+# Nota: gitignore solo afecta a archivos untracked; los ADR ya trackeados en local
+# se protegen via pre-push (solo borrados D permitidos).
+docs/src/es/adr/
+
+# Config local privada del operador (nombres de proyectos reales) - NUNCA pushear
+scripts/deploy_local.json
