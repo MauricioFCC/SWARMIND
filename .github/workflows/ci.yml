@@ -87,7 +87,7 @@ jobs:
         run: uv sync --extra dev
 
       - name: Ruff lint
-        run: uv run ruff check harness/ scripts/ --output-format=github-actions
+        run: uv run ruff check harness/ scripts/ --output-format=github
 
       - name: Vulture (codigo muerto)
         run: >
