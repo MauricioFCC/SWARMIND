@@ -5,6 +5,14 @@
 
 ## Estado Actual (2026-08-04)
 
+### Estado 2026-09-06 (ADRs frontera 0065-0067 + llm-grep + gitignore ADRs)
+
+- **ADR-0065 Segundo Cerebro (PROPUESTO)** — overlay `graph_overlay.py` SurrealDB solo aristas, LanceDB sigue SSOT; router local-first → nube solo `is_heavy()`.
+- **ADR-0066 Prompt-cache TTL (PROPUESTO)** — prefijo estable + prohibido cambio modelo mid-sesión + `time_to_live_s` (chat 3600 / API-subagente 300) + métrica Effective-Input-Price.
+- **ADR-0067 LLM-grep frontera (APLICADO)** — `harness/memory_rag/llm_grep.py`: ripgrep-first → ast-grep condicional → `HybridRetriever` último recurso; salida `ruta:linea` + 2 líneas, dedup `(path,line)`, `GrepBudget`, `RouteReport` con alerta `semantic_ratio>20%`. Tests `test_llm_grep.py` **12 passed**; regresión hybrid **22 passed**; ruff 0.
+- **.gitignore**: `docs/src/es/adr/` local-only (segunda capa junto a `.githooks/pre-push`); versionado local explícito con `git add -f`.
+- **Deuda doc detectada**: `docs/src/es/adr/README.md` indexa hasta 0041, existen 0042-0067 (26 ADRs sin índice); `docs/src/en/adr/` vacío; `estado.md` cabecera anclada a 2026-08-11.
+
 ### Estado 2026-08-18 (arquitecturas RAG frontier + integraciones anydoc + deepseek-harness)
 
 - **Arquitecturas RAG 2026 (5 evaluadas, FRS)**:
