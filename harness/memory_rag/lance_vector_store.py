@@ -397,7 +397,8 @@ class LanceVectorStore:
         # Leer registros existentes para actualizar metadata JSON
         try:
             existing = tbl.search().where(where_clause).to_list()
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("lance_vector_store: lectura previa fallo, sigo sin base: %s", exc)
             existing = []
 
         for record in existing:

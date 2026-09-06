@@ -281,7 +281,8 @@ class CognitionSync:
             results = self.store.search(
                 _COGNITION_COLLECTION, dummy, top_k=100
             )
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("cognition_sync: search de tags fallo, retorno vacio: %s", exc)
             return []
 
         seen: set = set()
