@@ -21,6 +21,7 @@ from harness.memory_rag.token_usage_tracker import (
     ALERT_THRESHOLD,
     MAX_RECORDS,
     AgentUsageSummary,
+    CacheHealth,
     TokenUsageTracker,
     UsageRecord,
 )
@@ -493,3 +494,59 @@ class TestTokenUsageTrackerThreadSafety:
         r.join()
 
         assert tracker.total_tokens() == 50
+
+
+# ===========================================================================
+# Tests: cache_health (frontera 2026: hit<60% con volumen = bug estructural)
+# ===========================================================================
+
+
+class TestCacheHealth:
+    """Salud de cache de prompt por agente."""
+
+    def _tracker_with(
+        self, agent: str, inputs: int, reads: int, calls: int = 10
+    ) -> TokenUsageTracker:
+        """Tracker con N llamadas repartiendo inputs/reads."""
+        tracker = TokenUsageTracker()
+        for i in range(calls):
+            tracker.record(UsageRecord(
+                agent, "m",
+                inputs // calls, 0,
+                cache_read_tokens=reads // calls,
+                timestamp=float(i),
+            ))
+        return tracker
+
+    def test_healthy_high_hit_ratio(self) -> None:
+        """Hit ratio alto no levanta alerta."""
+        tracker = self._tracker_with("a", 20000, 32000)
+        (health,) = tracker.cache_health(min_input_tokens=10000)
+        assert health.agent == "a"
+        assert health.hit_ratio == pytest.approx(32000 / 52000)
+        assert health.needs_attention is False
+
+    def test_low_hit_ratio_with_volume_flags_structural_bug(self) -> None:
+        """Hit <60% con volumen suficiente marca bug estructural."""
+        tracker = self._tracker_with("b", 20000, 1000)
+        (health,) = tracker.cache_health(min_input_tokens=10000)
+        assert health.needs_attention is True
+        assert "cache-buster" in health.reason
+
+    def test_low_volume_no_flag(self) -> None:
+        """Poco volumen no marca aunque el ratio sea bajo."""
+        tracker = self._tracker_with("c", 500, 10)
+        (health,) = tracker.cache_health(min_input_tokens=10000)
+        assert health.needs_attention is False
+
+    def test_empty_tracker_empty(self) -> None:
+        """Sin registros retorna tupla vacia."""
+        assert TokenUsageTracker().cache_health() == ()
+
+    def test_health_is_frozen(self) -> None:
+        """CacheHealth es inmutable."""
+        tracker = self._tracker_with("d", 20000, 32000)
+        (health,) = tracker.cache_health(min_input_tokens=10000)
+        assert isinstance(health, CacheHealth)
+        with pytest.raises(FrozenInstanceError):
+            health.hit_ratio = 0.5  # type: ignore[misc]

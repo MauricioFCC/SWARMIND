@@ -41,6 +41,14 @@ MAX_RECORDS = 10000
 # Umbral de alerta: si uso > ALERT_THRESHOLD * budget, se genera alerta.
 ALERT_THRESHOLD = 0.8
 
+# Salud de cache: hit_ratio < CACHE_HEALTH_MIN_RATIO con volumen
+# >= min_input_tokens indica bug estructural (cache-buster).
+# Frontera 2026: ProjectDiscovery 7% -> 84% hit = -59-70% spend.
+CACHE_HEALTH_MIN_RATIO = 0.60
+
+# Volumen minimo de input para que el diagnostico sea significativo.
+CACHE_HEALTH_MIN_INPUT = 10000
+
 # Mapeo de claves comunes de provider (OpenAI/Anthropic style) -> campos
 # de UsageRecord. Se suma si varias claves mapean al mismo campo.
 _PROVIDER_KEY_MAP: MappingProxyType[str, str] = MappingProxyType({
@@ -123,6 +131,33 @@ class UsageRecord:
             f"cache_read={self.cache_read_tokens} cache_write={self.cache_write_tokens} "
             f"total={self.total()} ts={self.timestamp:.1f}"
         )
+
+
+@dataclass(frozen=True)
+class CacheHealth:
+    """Salud de cache de prompt de un agente.
+
+    WHAT: Diagnostico de hit-ratio (cache_read / (input + cache_read)).
+    WHY: Un hit bajo con volumen alto casi siempre es un bug estructural
+        (cache-buster: timestamps en system, few-shots reordenados, tool
+        list dinamica) y no mala suerte — detectarlo ahorra hasta -70%.
+    WHERE: ``TokenUsageTracker.cache_health``.
+
+    Attributes:
+        agent: Identificador del agente.
+        hit_ratio: Ratio en [0.0, 1.0].
+        total_input: Input + cache_read acumulados.
+        cache_read: Tokens leidos de cache acumulados.
+        needs_attention: True si hay volumen y ratio < minimo.
+        reason: Explicacion legible del diagnostico.
+    """
+
+    agent: str
+    hit_ratio: float
+    total_input: int
+    cache_read: int
+    needs_attention: bool
+    reason: str
 
 
 @dataclass(frozen=True)
@@ -305,6 +340,55 @@ class TokenUsageTracker:
             if denominator <= 0:
                 return 0.0
             return min(1.0, max(0.0, cache_read / denominator))
+
+    def cache_health(
+        self, min_input_tokens: int = CACHE_HEALTH_MIN_INPUT
+    ) -> tuple[CacheHealth, ...]:
+        """Diagnostica la salud de cache de prompt por agente.
+
+        WHAT: Calcula hit_ratio por agente y marca bug estructural cuando
+        hay volumen suficiente y el ratio esta bajo el minimo.
+        WHY: Frontera 2026 — hit <60% con volumen = cache-buster casi
+        seguro (timestamps, few-shots reordenados, tools dinamicas);
+        arreglarlo recorta hasta -70% del spend.
+        WHERE: Monitoreo periodico junto a ``alerts``.
+
+        Args:
+            min_input_tokens: Volumen minimo para diagnosticar.
+
+        Returns:
+            Tuple de CacheHealth (uno por agente con registros).
+        """
+        with self._lock:
+            grouped: dict[str, list[UsageRecord]] = {}
+            for rec in self._records:
+                grouped.setdefault(rec.agent, []).append(rec)
+            health: list[CacheHealth] = []
+            for agent, records in grouped.items():
+                cache_read = sum(r.cache_read_tokens for r in records)
+                input_tokens = sum(r.input_tokens for r in records)
+                total = input_tokens + cache_read
+                ratio = min(1.0, max(0.0, cache_read / total)) if total > 0 else 0.0
+                needs = total >= min_input_tokens and ratio < CACHE_HEALTH_MIN_RATIO
+                if needs:
+                    reason = (
+                        f"hit_ratio={ratio:.2f} < {CACHE_HEALTH_MIN_RATIO:.2f} con "
+                        f"volumen={total}: probable cache-buster (timestamps en "
+                        f"system, few-shots reordenados o tool list dinamica)."
+                    )
+                elif total < min_input_tokens:
+                    reason = f"volumen insuficiente ({total} < {min_input_tokens})."
+                else:
+                    reason = f"hit_ratio={ratio:.2f} saludable."
+                health.append(CacheHealth(
+                    agent=agent,
+                    hit_ratio=ratio,
+                    total_input=total,
+                    cache_read=cache_read,
+                    needs_attention=needs,
+                    reason=reason,
+                ))
+            return tuple(health)
 
     def alerts(self, budgets: dict[str, int]) -> tuple[str, ...]:
         """Genera alertas para agentes que superan el umbral de su budget.
