@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Trivy — filesystem scan (HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -26,7 +26,7 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"  # falla el CI si hay HIGH/CRITICAL
       - name: Trivy — Dockerfile scan
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: Dockerfile
