@@ -90,9 +90,9 @@ jobs:
         run: uv run ruff check harness/ scripts/ --output-format=github
 
       - name: Vulture (codigo muerto)
+        # v2.16: sin --whitelist-file; el whitelist va como PATH posicional
         run: >
-          uv run vulture harness/
-          --whitelist-file harness/vulture_whitelist.py
+          uv run vulture harness/ harness/vulture_whitelist.py
           --exclude harness/tests
           --min-confidence 80
 
