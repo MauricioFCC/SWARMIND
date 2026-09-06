@@ -15,14 +15,17 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v4
+      - name: Install Semgrep
+        run: pipx install semgrep
       - name: Run Semgrep (SAST)
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: p/python, p/owasp-top-ten, p/security-audit
-          publish-token: ${{ secrets.SEMGREP_APP_TOKEN }}
-          audit-on: push
-          audit-on-merge: true
-          generate-sarif: true
+        run: >
+          semgrep scan
+          --config p/python
+          --config p/owasp-top-ten
+          --config p/security-audit
+          --sarif
+          --output semgrep.sarif
+          --error
       - name: Upload SARIF to code-scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
