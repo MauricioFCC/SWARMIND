@@ -83,7 +83,8 @@ jobs:
             uv-${{ runner.os }}-
 
       - name: Instalar dependencias
-        run: uv sync
+        # --extra dev: ruff/mypy/vulture viven en optional-dependencies (no en sync base)
+        run: uv sync --extra dev
 
       - name: Ruff lint
         run: uv run ruff check harness/ scripts/ --output-format=github-actions
@@ -123,7 +124,7 @@ jobs:
             uv-${{ runner.os }}-
 
       - name: Instalar dependencias
-        run: uv sync
+        run: uv sync --extra dev
 
       - name: MyPy type check
         # TODO(ADR-0037): 92 errores de tipo en 32 archivos detectados 2026-07-31
@@ -249,7 +250,7 @@ jobs:
             uv-${{ runner.os }}-
 
       - name: Instalar dependencias
-        run: uv sync
+        run: uv sync --extra dev
 
       - name: Vulture dead code
         run: >
