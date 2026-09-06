@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run Semgrep (SAST)
-        uses: returntocorp/semgrep-action@v3
+        uses: semgrep/semgrep-action@v1
         with:
           config: p/python, p/owasp-top-ten, p/security-audit
           publish-token: ${{ secrets.SEMGREP_APP_TOKEN }}

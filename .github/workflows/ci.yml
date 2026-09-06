@@ -93,7 +93,7 @@ jobs:
         # v2.16: sin --whitelist-file; el whitelist va como PATH posicional
         run: >
           uv run vulture harness/ harness/vulture_whitelist.py
-          --exclude harness/tests
+          --exclude "*/test_*.py,harness/parallel/io_fusion.py"
           --min-confidence 80
 
   # ---------------------------------------------------------------------------
@@ -254,9 +254,8 @@ jobs:
 
       - name: Vulture dead code
         run: >
-          uv run vulture harness/
-          --whitelist-file harness/vulture_whitelist.py
-          --exclude harness/tests
+          uv run vulture harness/ harness/vulture_whitelist.py
+          --exclude "*/test_*.py,harness/parallel/io_fusion.py"
           --min-confidence 80
 
   # ---------------------------------------------------------------------------

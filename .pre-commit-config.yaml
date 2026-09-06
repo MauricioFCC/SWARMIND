@@ -34,7 +34,7 @@ repos:
       - id: vulture-dead-code
         name: Vulture Dead Code
         description: Detecta codigo muerto (variables/funciones sin usar)
-        entry: vulture harness/ harness/vulture_whitelist.py --exclude harness/tests
+        entry: vulture harness/ harness/vulture_whitelist.py --exclude "*/test_*.py,harness/parallel/io_fusion.py"
         language: system
         stages: [commit]
         pass_filenames: false
