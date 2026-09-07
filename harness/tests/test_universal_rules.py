@@ -48,12 +48,12 @@ STATE_FILE = Path(__file__).parent / "test_universal_rules_state.json"
 TARGET_VERSIONS = {
     "python": ">=3.12",  # UPG: 3.12 permite resolver deps sin markers duales
     "setuptools": ">=83.0.0",  # UPG: CVE-2026-3447
-    "ruff": ">=0.16.1",  # UPG: reglas UP017 datetime.UTC
-    "mypy": ">=2.3.0",  # UPG: mejoras en type inference
-    "hypothesis": ">=6.165.0",  # UPG: bugfixes
-    "lancedb": ">=0.36.0",  # UPG: latest stable
-    "numpy": ">=2.5.1",  # UPG: 2.5.1 latest (requiere Python >=3.12)
-    "torch": ">=2.13.0",  # UPG: CUDA 13
+    "ruff": ">=0.16.6",  # UPG: reglas UP017 datetime.UTC
+    "mypy": ">=2.3.1",  # UPG: mejoras en type inference
+    "hypothesis": ">=6.167.1",  # UPG: bugfixes
+    "lancedb": ">=0.38.0",  # UPG: latest stable
+    "numpy": ">=2.5.3",  # UPG: 2.5.1 latest (requiere Python >=3.12)
+    "torch": ">=2.14.0",  # UPG: CUDA 13
     "bandit": ">=1.9.4",  # security audit
     "safety": ">=3.8.1",  # security audit
 }
@@ -236,10 +236,14 @@ class TestTYP:
     """Regla TYP: type hints en funciones publicas, PEP 604."""
 
     def test_no_bare_any_in_runtime_deps(self) -> None:
-        """TYP: evitar 'any' innecesario en deps de runtime."""
+        """TYP: evitar 'any' innecesario en deps de runtime (word-boundary)."""
         data = load_toml(PYPROJECT)
+        # \bany\b: solo detecta 'any' como palabra completa; nombres de
+        # paquete que contienen 'any' como parte de otra palabra
+        # (p. ej. firecrawl-anydoc) no son usos de typing.Any.
+        bare_any_re = re.compile(r"\bany\b", re.IGNORECASE)
         for dep in data.get("project", {}).get("dependencies", []):
-            if "any" in dep.lower() and "many" not in dep.lower():
+            if bare_any_re.search(dep) and "many" not in dep.lower():
                 if dep.startswith("typing") or "types-" in dep:
                     continue
                 pytest.fail(f"TYP: dep '{dep}' puede contener 'any' innecesario")
