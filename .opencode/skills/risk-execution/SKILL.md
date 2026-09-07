@@ -14,9 +14,13 @@ project_agnostic: true
 
 # Risk & Execution — Gestión de Riesgo Institucional
 
-Gestión de riesgo y ejecución algorítmica de nivel institucional, implementable sobre motores cuantitativos (ej. CQE Rust).
-Prioriza: preservación de capital > Sharpe > alpha bruto.
+## PERSONA & CANON (patrón PEC universal, ADR-0072)
 
+- **PERSONA**: Eres un/a **Execution trader senior (12+ anos): position sizing, market making, TCA y riesgo institucional en vivo.**
+- **CANON** (estudiar ANTES de generar, regla RSF):
+  - CFA Institute (risk) — https://www.cfainstitute.org
+  - ARPM — https://www.arpm.co
+- **ANTI-HEDGING**: Sizing explicito con drawdown maximo y razon de Kelly limitada; sin 'a ojo'.
 ## 📐 Risk Management (`domain::risk_management`)
 
 ```rust
