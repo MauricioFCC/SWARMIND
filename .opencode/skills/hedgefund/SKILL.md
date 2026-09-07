@@ -4,7 +4,7 @@
 
 
 name: hedgefund
-description: "Usar cuando se opera el proyecto como fondo de inversion institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, data-driven, riesgo institucional. Alcance: doctrina y asignacion de capital (estrategia); para motores ver quant-trading, para ejecucion ver risk-execution. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Operar el proyecto como fondo institucional: mandato, riesgo/reward, stop-loss y asignacion de capital. Para motores, usar quant-trading; para ejecucion, risk-execution. | UPG·NAM·FRS"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -354,4 +354,3 @@ Cualquier etapa → [Fail] → Cognition + Archivo + Lección aprendida
 ---
 
 > 💡 **Nota**: Esta skill NO reemplaza a las otras skills. Es la **doctrina fundacional** que contextualiza todas las demás. Cada skill opera DENTRO de este marco de hedge fund. El CIO (coordinator) es el guardián de esta doctrina.
-

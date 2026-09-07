@@ -213,7 +213,7 @@ jobs:
 
       - name: Bandit (SAST)
         # -ll: solo HIGH+CRITICAL, -q: quiet
-        run: uv run bandit -r harness/ -x harness/tests -ll -q --format=github
+        run: uv run bandit -r harness/ -x harness/tests -ll -q --format=screen
 
       - name: Safety audit (dependencias)
         # Audita lockfile exportado (NO el Python del sistema, que tiene
