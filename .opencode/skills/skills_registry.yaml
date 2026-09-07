@@ -1,7 +1,7 @@
 skills:
   - name: alpha-research
     domain: quantitative
-    description: "Usar cuando el usuario busca investigar/validar factores de alpha o features cuantitativos. alpha, factores, ML, feature engineering, validacion estadistica, backtesting, motores cuantitativos. Alcance: investigacion y validacion (falsacion, walk-forward); para motor de datos ver quant-trading. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario busca investigar o validar factores de alpha. alpha, factores, ML, feature engineering, validacion estadistica, backtesting. Alcance: investigacion (falsacion, walk-forward); para motor de datos ver quant-trading. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
@@ -19,7 +19,7 @@ skills:
 
   - name: hedgefund
     domain: financial
-    description: "Usar cuando se opera el proyecto como fondo de inversion institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, data-driven, riesgo institucional. Alcance: doctrina y asignacion de capital (estrategia); para motores ver quant-trading, para ejecucion ver risk-execution. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, riesgo institucional. Alcance: doctrina y estrategia; para motores ver quant-trading, para ejecucion ver risk-execution. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
@@ -133,7 +133,7 @@ skills:
 
   - name: behavioral-economics
     domain: economics
-    description: "Usar cuando el problema involucra decisiones humanas bajo incertidumbre. teoria de juegos, sesgos cognitivos, heuristicas, incentivos, economia del comportamiento, nudges. Alcance: decisiones economicas, juegos e incentivos; para aprendizaje y dinamica de equipo ver psychology. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el problema involucra decisiones humanas bajo incertidumbre. teoria de juegos, sesgos cognitivos, heuristicas, incentivos, nudges. Alcance: decisiones economicas; para aprendizaje y equipo ver psychology. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
