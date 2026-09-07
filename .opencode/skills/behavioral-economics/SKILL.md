@@ -5,7 +5,7 @@
 
 name: behavioral-economics
 domain: economics
-description: "Resolver decisiones humanas bajo incertidumbre con teoria de juegos, sesgos, heuristicas, incentivos y nudges. Para dinamica de equipo, usar psychology. | UPG·NAM·FRS"
+description: "Usar cuando el problema involucra decisiones humanas bajo incertidumbre. teoria de juegos, sesgos cognitivos, heuristicas, incentivos, economia del comportamiento, nudges. Alcance: decisiones economicas, juegos e incentivos; para aprendizaje y dinamica de equipo ver psychology. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0

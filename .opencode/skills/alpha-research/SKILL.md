@@ -5,7 +5,7 @@
 
 name: alpha-research
 domain: research
-description: "Investigar y validar alpha o features cuantitativos mediante falsacion, estadistica y walk-forward. Para motores de datos, usar quant-trading. | UPG·NAM·FRS"
+description: "Usar cuando el usuario busca investigar/validar factores de alpha o features cuantitativos. alpha, factores, ML, feature engineering, validacion estadistica, backtesting, motores cuantitativos. Alcance: investigacion y validacion (falsacion, walk-forward); para motor de datos ver quant-trading. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -204,3 +204,4 @@ let portfolio = PIKANPortfolio::new()
 - [ ] Benchmark: buy & hold + igual-ponderado + risk-parity
 - [ ] Feature importance: SHAP values + permutation importance
 - [ ] Código en Rust para hot path, Python para prototipado
+
