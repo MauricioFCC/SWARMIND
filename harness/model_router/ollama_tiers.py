@@ -1,19 +1,20 @@
 """
-OllamaTierRouter — Delegación por capacidad a modelos locales (4 tiers).
+OllamaTierRouter — Delegación por capacidad a modelos locales (4 tiers + coding).
 
 Enruta tareas a modelos Ollama locales según capacidad, minimizando tokens
 cloud (TKN): solo se paga frontier/cloud cuando la tarea lo requiere
 (FRONTIER_ONLY_TASKS de harness.orchestrator.slm_router).
 
-Tiers (patrón del usuario):
+Tiers (patrón del usuario, SSOT .opencode/config/ollama_models.yaml):
 - 🟢 FAST      (fast):      borradores, tareas simples, extracción, formateo
 - 🔵 QUALITY   (quality):   calidad de texto, resúmenes, redacción
 - 🟣 EMBEDDING (embedding): RAG, búsqueda semántica (nomic-embed-text)
 - 🟡 VISION    (vision):    leer imágenes, alt-text (llava)
+- 🟠 CODING    (coding):    implementar, refactorizar, debuggear, tests
 
 Diseño (integra con el repo sin romper):
 - Heurística por keywords sin LLM, igual que ModelRouter (router.py).
-- Clasificación por keywords en orden EMBEDDING -> VISION -> QUALITY -> FAST.
+- Clasificación por keywords en orden EMBEDDING -> VISION -> CODING -> QUALITY -> FAST.
 - Degradación controlada a cloud: si client.is_available() es False, los
   métodos de red devuelven dicts con todo False (nunca lanzan excepción).
 - __init__/load_from_yaml NO tocan la red (los tests usan mocks).
@@ -80,6 +81,7 @@ class CapabilityTier(str, Enum):
     QUALITY = "quality"  # 🔵 calidad de texto, resúmenes, redacción
     EMBEDDING = "embedding"  # 🟣 RAG, búsqueda semántica
     VISION = "vision"  # 🟡 leer imágenes, alt-text
+    CODING = "coding"  # 🟠 implementar, refactorizar, debuggear, tests
 
 
 @dataclass(frozen=True)
@@ -93,7 +95,9 @@ class OllamaTierSpec:
 
 
 # Keywords por tier (heurística sin LLM, case-insensitive). Orden de evaluación
-# fijo: EMBEDDING -> VISION -> QUALITY -> FAST (FAST es el default).
+# fijo: EMBEDDING -> VISION -> CODING -> QUALITY -> FAST (FAST es el default).
+# CODING va antes que QUALITY: "write a pytest test" contiene "write"
+# (quality) pero es codigo — gana la keyword especifica de codigo.
 _EMBEDDING_KEYWORDS: frozenset[str] = frozenset({
     "rag", "search", "retriev", "embed", "busc", "index",
 })
@@ -103,10 +107,21 @@ _VISION_KEYWORDS: frozenset[str] = frozenset({
 _QUALITY_KEYWORDS: frozenset[str] = frozenset({
     "draft", "redact", "write", "summary", "resum", "essay", "prose", "copy", "quality",
 })
+# NOTA: matching por substring (keyword in task.lower()). Las keywords de
+# CODING evitan fragmentos ambiguos: sin "test"/"script"/"api" sueltos
+# (colisionan con "latest", "description", "rapid"); se usan formas con
+# espacio ("class "), compuestos ("pytest", "unittest") o verbos de código.
+_CODING_KEYWORDS: frozenset[str] = frozenset({
+    "codigo", "código", "implement", "refactor", "debug", "function",
+    "funcion", "función", "class ", "clase", "method", "metodo", "método",
+    "bug", "fix", "pytest", "unittest", "tdd", "endpoint", "sql", "query",
+    "commit", "python",
+})
 
 _TIER_KEYWORDS: dict[CapabilityTier, frozenset[str]] = {
     CapabilityTier.EMBEDDING: _EMBEDDING_KEYWORDS,
     CapabilityTier.VISION: _VISION_KEYWORDS,
+    CapabilityTier.CODING: _CODING_KEYWORDS,
     CapabilityTier.QUALITY: _QUALITY_KEYWORDS,
 }
 
@@ -117,6 +132,7 @@ _DEFAULT_TIER_MODELS: dict[CapabilityTier, str] = {
     CapabilityTier.QUALITY: "deepseek-r1:8b",
     CapabilityTier.EMBEDDING: "qwen3-embedding:0.6b",
     CapabilityTier.VISION: "qwen3-vl:4b",
+    CapabilityTier.CODING: "qwen2.5-coder:7b",
 }
 
 
@@ -327,8 +343,8 @@ class OllamaTierRouter:
     def tier_for_task(self, task: str) -> CapabilityTier:
         """Clasifica una tarea por capacidad usando keywords (sin LLM).
 
-        Evalúa en orden EMBEDDING -> VISION -> QUALITY -> FAST; el default es
-        FAST (borradores, extracción, clasificación, formateo).
+        Evalúa en orden EMBEDDING -> VISION -> CODING -> QUALITY -> FAST;
+        el default es FAST (borradores, extracción, clasificación, formateo).
 
         Args:
             task: Descripción de la tarea (case-insensitive).

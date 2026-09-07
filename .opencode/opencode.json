@@ -1,6 +1,32 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": [".opencode/core/base_principles.md"],
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama (local)",
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      },
+      "models": {
+        "qwen3:4b": {
+          "name": "qwen3:4b (local fast)",
+          "reasoning": false,
+          "tools": true
+        },
+        "deepseek-r1:8b": {
+          "name": "deepseek-r1:8b (local quality)",
+          "reasoning": true,
+          "tools": true
+        },
+        "qwen2.5-coder:7b": {
+          "name": "qwen2.5-coder:7b (local coding)",
+          "reasoning": false,
+          "tools": true
+        }
+      }
+    }
+  },
   "skills": {
     "paths": [".opencode/skills"]
   },

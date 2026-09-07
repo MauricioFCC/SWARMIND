@@ -2,8 +2,8 @@
 
 Escritos SOLO contra el contrato público (patrón test-writer): verifica la
 heurística de enrutamiento por keywords (case-insensitive, orden
-EMBEDDING → VISION → QUALITY → FAST), el mapeo de tiers a modelos y las
-operaciones de ciclo de vida (ensure/warm/unload/loaded) con un client
+EMBEDDING → VISION → CODING → QUALITY → FAST), el mapeo de tiers a modelos
+y las operaciones de ciclo de vida (ensure/warm/unload/loaded) con un client
 mockeado — cero llamadas reales a Ollama.
 """
 
@@ -22,6 +22,7 @@ DEFAULT_FAST_MODEL = "qwen3:4b"
 DEFAULT_QUALITY_MODEL = "deepseek-r1:8b"
 DEFAULT_EMBEDDING_MODEL = "qwen3-embedding:0.6b"
 DEFAULT_VISION_MODEL = "qwen3-vl:4b"
+DEFAULT_CODING_MODEL = "qwen2.5-coder:7b"
 
 
 def _client() -> MagicMock:
@@ -46,6 +47,7 @@ def test_model_for_returns_default_specs() -> None:
     assert router.model_for(CapabilityTier.QUALITY) == DEFAULT_QUALITY_MODEL
     assert router.model_for(CapabilityTier.EMBEDDING) == DEFAULT_EMBEDDING_MODEL
     assert router.model_for(CapabilityTier.VISION) == DEFAULT_VISION_MODEL
+    assert router.model_for(CapabilityTier.CODING) == DEFAULT_CODING_MODEL
 
 
 def test_model_for_returns_custom_spec_model() -> None:
@@ -94,6 +96,27 @@ def test_tier_for_task_vision() -> None:
     )
 
 
+def test_tier_for_task_coding() -> None:
+    """Tareas de código (ES/EN) enrutan a CODING."""
+    router = _router()
+    assert router.tier_for_task("implementar funcion de scoring") == CapabilityTier.CODING
+    assert router.tier_for_task("refactorizar modulo con bug") == CapabilityTier.CODING
+    assert (
+        router.tier_for_task("debug the function and fix the endpoint")
+        == CapabilityTier.CODING
+    )
+    assert router.tier_for_task("escribir tests pytest del router") == CapabilityTier.CODING
+
+
+def test_tier_for_task_coding_takes_precedence_over_quality() -> None:
+    """CODING se evalúa antes que QUALITY: 'write' + keyword de código → CODING."""
+    router = _router()
+    # "write" (quality) + "pytest" (coding): gana CODING por precedencia.
+    assert router.tier_for_task("write a pytest test") == CapabilityTier.CODING
+    # Sin keyword de código, "write" sigue siendo QUALITY.
+    assert router.tier_for_task("write an essay") == CapabilityTier.QUALITY
+
+
 def test_tier_for_task_quality() -> None:
     """Tareas de redacción/resumen enrutan a QUALITY."""
     router = _router()
@@ -119,7 +142,7 @@ def test_tier_for_task_is_case_insensitive() -> None:
 
 
 def test_tier_for_task_embedding_takes_precedence_over_vision() -> None:
-    """El orden de evaluación es EMBEDDING → VISION → QUALITY → FAST."""
+    """El orden de evaluación es EMBEDDING → VISION → CODING → QUALITY → FAST."""
     router = _router()
     # "search" (embedding) e "image" (vision): gana EMBEDDING por precedencia.
     assert router.tier_for_task("search the image") == CapabilityTier.EMBEDDING
@@ -176,6 +199,7 @@ def test_warm_all_returns_all_true_when_client_warm_succeeds() -> None:
         DEFAULT_QUALITY_MODEL,
         DEFAULT_EMBEDDING_MODEL,
         DEFAULT_VISION_MODEL,
+        DEFAULT_CODING_MODEL,
     }
 
 
@@ -199,6 +223,7 @@ def test_loaded_tiers_maps_loaded_models_to_tiers() -> None:
     assert result[CapabilityTier.QUALITY] is False
     assert result[CapabilityTier.EMBEDDING] is True
     assert result[CapabilityTier.VISION] is False
+    assert result[CapabilityTier.CODING] is False
 
 
 # ---------------------------------------------------------------------------
@@ -207,7 +232,7 @@ def test_loaded_tiers_maps_loaded_models_to_tiers() -> None:
 
 
 def test_load_from_yaml_reads_specs(tmp_path: Path) -> None:
-    """load_from_yaml carga specs desde un YAML temporal con las 4 claves de tier."""
+    """load_from_yaml carga specs desde un YAML temporal con las 5 claves de tier."""
     yaml_path = tmp_path / "ollama_tiers.yaml"
     yaml_path.write_text(
         """
@@ -220,6 +245,8 @@ embedding:
   model: qwen3-embedding:0.6b
 vision:
   model: qwen3-vl:4b
+coding:
+  model: qwen2.5-coder:7b
 """.strip(),
         encoding="utf-8",
     )
@@ -228,6 +255,7 @@ vision:
     assert router.model_for(CapabilityTier.QUALITY) == "qwen2.5:32b"
     assert router.model_for(CapabilityTier.EMBEDDING) == DEFAULT_EMBEDDING_MODEL
     assert router.model_for(CapabilityTier.VISION) == DEFAULT_VISION_MODEL
+    assert router.model_for(CapabilityTier.CODING) == DEFAULT_CODING_MODEL
 
 
 def test_load_from_yaml_with_missing_file_uses_defaults(tmp_path: Path) -> None:
@@ -238,3 +266,16 @@ def test_load_from_yaml_with_missing_file_uses_defaults(tmp_path: Path) -> None:
     assert router.model_for(CapabilityTier.QUALITY) == DEFAULT_QUALITY_MODEL
     assert router.model_for(CapabilityTier.EMBEDDING) == DEFAULT_EMBEDDING_MODEL
     assert router.model_for(CapabilityTier.VISION) == DEFAULT_VISION_MODEL
+    assert router.model_for(CapabilityTier.CODING) == DEFAULT_CODING_MODEL
+
+
+def test_load_from_yaml_reads_repo_ssot() -> None:
+    """El SSOT real (.opencode/config/ollama_models.yaml) carga los 5 tiers."""
+    repo_root = Path(__file__).resolve().parents[2]
+    ssot = repo_root / ".opencode" / "config" / "ollama_models.yaml"
+    router = OllamaTierRouter.load_from_yaml(ssot)
+    assert router.model_for(CapabilityTier.FAST) == "qwen3:4b"
+    assert router.model_for(CapabilityTier.QUALITY) == "deepseek-r1:8b"
+    assert router.model_for(CapabilityTier.EMBEDDING) == "qwen3-embedding:0.6b"
+    assert router.model_for(CapabilityTier.VISION) == "qwen3-vl:4b"
+    assert router.model_for(CapabilityTier.CODING) == "qwen2.5-coder:7b"
