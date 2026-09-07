@@ -13,6 +13,7 @@
 - **.gitignore**: `docs/src/es/adr/` local-only (segunda capa junto a `.githooks/pre-push`); versionado local explícito con `git add -f`.
 - **Deuda doc detectada**: `docs/src/es/adr/README.md` indexa hasta 0041, existen 0042-0067 (26 ADRs sin índice); `docs/src/en/adr/` vacío; `estado.md` cabecera anclada a 2026-08-11.
 - **ADR-0068 Cascada STEER + salud cache (APLICADO)** — `harness/model_router/cascade_router.py` (small→frontier si confianza<0.7, escape_hatch, costo por intento) + `TokenUsageTracker.cache_health` (flag bug estructural si hit<60% con volumen≥10K). TDD: `test_cascade_router.py` 10 + tracker 44; mutante M-gate verificado muerto; ruff 0. Personal auditado: `deploy_local.json` ignorado, 0 secretos/paths en `harness/`.
+- **ADR-0070 Re-anclaje + taxonomía + competición (APLICADO)** — `harness/memory_rag/reanchor.py` (bloque `<<RE-ANCHOR>>` post-compaction: N1+rol+skills+estado, SC-aware; summary retiene 17%, bloque restaura >90%) + `base_principles.md` v3.0.0 (RPA re-pin post-compaction, CPD checklist competición 28.6%+15.5% design/boundary, taxonomía CHECK/GUIDE 8 categorías con IDs estables). TDD: `test_reanchor.py` 7; research 3 tracks (drift 65% fallos, taxonomy-driven 5/80→46/80, IFEval/DRFR).
 
 ### Estado 2026-08-18 (arquitecturas RAG frontier + integraciones anydoc + deepseek-harness)
 

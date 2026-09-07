@@ -51,6 +51,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0067 | [LLM-Grep Frontera — Ripgrep-First 3 Capas, Budget-Aware, Compaction-Friendly](adr-0067-llm-grep-frontera.md) | APLICADO (`llm_grep.py` + 12 tests) | — |
 | 0068 | [Cascada STEER-lite + Salud de Cache (frontera tokens 2026)](adr-0068-cascade-cache-health-frontera.md) | APLICADO (`cascade_router.py` + `cache_health`) | — |
 | 0069 | [Tier CODING en OllamaTierRouter — Routing Local para Código con Precedencia](adr-0069-ollama-tier-coding.md) | APLICADO (`ollama_tiers.py` + 20 tests) | — |
+| 0070 | [Re-Anclaje Post-Compaction + Taxonomía de Principios + Fundamentos de Competición](adr-0070-reanchor-taxonomia-competicion.md) | APLICADO (`reanchor.py` + `base_principles.md` v3.0.0) | — |
 
 ## Resumen por Categoria
 
