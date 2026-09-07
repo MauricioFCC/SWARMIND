@@ -1,7 +1,7 @@
 # ADR 0071: Patrón PEC — Persona-Expert + Canon en Skills de Dominio Estético
 
 ## Estado
-Aplicado | `frontend-uiux`, `diagram-design`, `creative-design` + `test_skill_pec.py` | Propietario: @coordinator | Fecha: 2026-09-07
+SUPERADO por ADR-0072 (PEC universal) | `frontend-uiux`, `diagram-design`, `creative-design` | Propietario: @coordinator | Fecha: 2026-09-07
 
 ## Contexto
 Las skills actuales definen ROL técnico (ej. "UI/UX Architect") pero sin persona experta rica ni nivel de referencia de calidad. El output estético varía run-to-run porque no hay anclas de qué es "nivel empresarial".

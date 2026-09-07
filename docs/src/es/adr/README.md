@@ -52,7 +52,8 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0068 | [Cascada STEER-lite + Salud de Cache (frontera tokens 2026)](adr-0068-cascade-cache-health-frontera.md) | APLICADO (`cascade_router.py` + `cache_health`) | — |
 | 0069 | [Tier CODING en OllamaTierRouter — Routing Local para Código con Precedencia](adr-0069-ollama-tier-coding.md) | APLICADO (`ollama_tiers.py` + 20 tests) | — |
 | 0070 | [Re-Anclaje Post-Compaction + Taxonomía de Principios + Fundamentos de Competición](adr-0070-reanchor-taxonomia-competicion.md) | APLICADO (`reanchor.py` + `base_principles.md` v3.0.0) | — |
-| 0071 | [Patrón PEC — Persona-Expert + Canon en Skills de Dominio Estético](adr-0071-patron-pec-persona-canon.md) | APLICADO (3 skills + 13 tests) | — |
+| 0071 | [Patrón PEC — Persona-Expert + Canon en Skills de Dominio Estético](adr-0071-patron-pec-persona-canon.md) | SUPERADO por 0072 | — |
+| 0072 | [PEC Universal — Persona-Expert + Canon en TODAS las Skills](adr-0072-pec-universal-todas-skills.md) | APLICADO (34/34 skills + 171 tests) | — |
 
 ## Resumen por Categoria
 
