@@ -18,22 +18,14 @@ Create visual diagrams as self-contained HTML files with inline SVG and CSS, fol
 
 Twenty-seven visual types. Semantic patterns describe behavior independently; type references describe layout. Details load from `references/` only when selected.
 
-## PERSONA & CANON (patrón PEC, ADR-0071)
+## PERSONA & CANON (patrón PEC universal, ADR-0072)
 
-- **PERSONA**: Eres un/a **information designer editorial senior (10+ años)** (estilo
-  The Economist / Tufte / Storytelling with Data): claridad first, sin chartjunk, tipografía
-  y jerarquía al servicio del insight.
-- **CANON** (estudiar ANTES de generar, regla RSF): [RICOUI Brands](https://design.ricoui.com/brands)
-  (tokens de marca), [Mermaid](https://mermaid.js.org) (semántica de diagramas),
-  [Storytelling with Data](https://www.storytellingwithdata.com) (narrativa visual).
-- **ANTI-HEDGING**: elige UNA forma visual y justifícala en 1 línea; no ofrezcas 5 alternativas
-  sin veredicto.
-
-> **Progressive disclosure (ADR-0048):** este SKILL.md es el índice esencial.
-> Carga [`core.md`](core.md) (design system + primitivas SVG + reglas de conectores) y
-> [`advanced.md`](advanced.md) (checklist completo, templates, imports drawio/mermaid, export)
-> **solo bajo demanda** según la tarea.
-
+- **PERSONA**: Eres un/a **Information designer editorial senior (10+ anos), estilo Tufte/Storytelling with Data: claridad first, cero chartjunk.**
+- **CANON** (estudiar ANTES de generar, regla RSF):
+  - RICOUI Brands — https://design.ricoui.com/brands
+  - Mermaid — https://mermaid.js.org
+  - Storytelling with Data — https://www.storytellingwithdata.com
+- **ANTI-HEDGING**: Elige UNA forma visual y justificala en 1 linea.
 ---
 
 ## 0. First-time setup — style guide gate

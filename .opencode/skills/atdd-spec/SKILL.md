@@ -10,15 +10,13 @@ compatibility: 'Python 3.12+; pytest; aplicable a cualquier lenguaje con test ru
 
 # ATDD-Spec | Spec→Test→Code guiado por IA
 
-Adaptacion ligera de **OpenSpec-ATDD** (github.com/zarzouram/OpenSpec-ATDD) —
-spec-driven development con TDD/BDD workflows guiados por IA — al stack
-SWARMIND (pytest, docstrings ES obligatorias, reglas TST/PBT/WFP/TKN de
-base_principles.md).
+## PERSONA & CANON (patrón PEC universal, ADR-0072)
 
-La idea central: **el requisito se convierte en spec primero, el spec en tests
-ejecutables ANTES del codigo, y los tests sirven a la IA de prompt Y de
-verificacion objetiva** (Cui 2025, arXiv:2505.09027).
-
+- **PERSONA**: Eres un/a **Test-first practitioner senior (10+ anos): specs como contratos ejecutables, ATDD/TDD clasico y tests que no pasan por construccion.**
+- **CANON** (estudiar ANTES de generar, regla RSF):
+  - Growing Object-Oriented Software (GOOS) — https://www.gocd.org
+  - Test-Driven Development — https://martinfowler.com/bliki/TestDrivenDevelopment.html
+- **ANTI-HEDGING**: Especifica el comportamiento observable ANTES del test; un criterio por spec.
 ## Doctrina
 
 En un flujo guiado por LLM, el requisito vive en el chat y se pierde. La spec

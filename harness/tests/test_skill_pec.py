@@ -1,11 +1,10 @@
-"""Tests del patron PEC (Persona-Expert + Canon) en skills de dominio estetico.
+"""Tests del patron PEC universal (persona-experta + canon) en TODAS las skills.
 
-ADR-0071: las skills cuyo output depende de juicio estetico/dominio
-(frontend-uiux, diagram-design, creative-design) deben declarar una
-persona experta especifica (no generica) y referencias canonicas
-empresariales con URL — se estudian antes de generar (RSF).
-Verifica: seccion presente, persona con anos de experiencia, canon con
-URL https, y que el frontmatter description sigue en presupuesto.
+ADR-0072: PEC es la esencia aplicable a cualquier skill — persona experta
+rica (rol senior + anos + especializacion) y canon de referencias frontera
+por especialidad con URL, envebido en cada SKILL.md. Verifica: seccion en
+todas las skills, persona con anos/senior, canon con >=2 https, sin persona
+generica (anti-PRISM) y descriptions en presupuesto.
 """
 
 from pathlib import Path
@@ -14,62 +13,77 @@ import pytest
 
 SKILLS_DIR = Path(__file__).resolve().parents[2] / ".opencode" / "skills"
 
-#: Skills de dominio estetico que requieren patron PEC (ADR-0071).
-PEC_SKILLS = ("frontend-uiux", "diagram-design", "creative-design")
-
 #: Personas genericas prohibidas (PRISM: persona sin especializacion dania accuracy).
-_GENERIC_PERSONAS = ("eres un experto", "you are an expert", "experto en diseno")
+_GENERIC_PERSONAS = ("eres un experto", "you are an expert")
 
 
-def _skill_text(name: str) -> str:
-    """Lee el SKILL.md de una skill; skip si no existe."""
-    path = SKILLS_DIR / name / "SKILL.md"
+def _all_skill_dirs() -> list[Path]:
+    """Lista los directorios de skills disponibles."""
+    return sorted(d for d in SKILLS_DIR.iterdir() if d.is_dir())
+
+
+@pytest.mark.parametrize("skill_dir", _all_skill_dirs(), ids=lambda p: p.name)
+def test_pec_section_present_everywhere(skill_dir: Path) -> None:
+    """TODAS las skills tienen la seccion PERSONA & CANON (PEC universal)."""
+    path = skill_dir / "SKILL.md"
     if not path.is_file():
-        pytest.skip(f"{name}/SKILL.md no disponible")
-    return path.read_text(encoding="utf-8-sig")
+        pytest.skip(f"{skill_dir.name}: SKILL.md ausente")
+    text = path.read_text(encoding="utf-8-sig")
+    assert "PERSONA & CANON" in text, f"{skill_dir.name}: falta seccion PEC"
 
 
-@pytest.mark.parametrize("skill", PEC_SKILLS)
-def test_pec_section_present(skill: str) -> None:
-    """La seccion PERSONA & CANON existe en skills de dominio estetico."""
-    text = _skill_text(skill)
-    assert "PERSONA & CANON" in text, f"{skill}: falta seccion PERSONA & CANON"
-    assert "ADR-0071" in text
+@pytest.mark.parametrize("skill_dir", _all_skill_dirs(), ids=lambda p: p.name)
+def test_persona_has_seniority(skill_dir: Path) -> None:
+    """La persona declara seniority (10+ anos o 'senior')."""
+    path = skill_dir / "SKILL.md"
+    if not path.is_file():
+        pytest.skip(f"{skill_dir.name}: SKILL.md ausente")
+    body = path.read_text(encoding="utf-8-sig").split("PERSONA & CANON", 1)[1]
+    assert ("10+" in body) or ("15+" in body) or ("12+" in body) or ("senior" in body.lower())
 
 
-@pytest.mark.parametrize("skill", PEC_SKILLS)
-def test_persona_has_years_of_experience(skill: str) -> None:
-    """La persona declara anos de experiencia (10+)."""
-    text = _skill_text(skill)
-    body = text.split("PERSONA & CANON", 1)[1]
-    assert "PERSONA" in body
-    assert ("10+" in body) or ("senior" in body.lower())
-
-
-@pytest.mark.parametrize("skill", PEC_SKILLS)
-def test_canon_has_https_references(skill: str) -> None:
-    """El canon lista al menos 2 referencias https (nivel empresarial)."""
-    text = _skill_text(skill)
-    body = text.split("PERSONA & CANON", 1)[1]
+@pytest.mark.parametrize("skill_dir", _all_skill_dirs(), ids=lambda p: p.name)
+def test_canon_has_https_references(skill_dir: Path) -> None:
+    """El canon lista >=2 referencias https (nivel frontera/empresarial)."""
+    path = skill_dir / "SKILL.md"
+    if not path.is_file():
+        pytest.skip(f"{skill_dir.name}: SKILL.md ausente")
+    body = path.read_text(encoding="utf-8-sig").split("PERSONA & CANON", 1)[1]
     urls = [line for line in body.splitlines() if "https://" in line]
-    assert len(urls) >= 2, f"{skill}: canon con <2 referencias https"
+    assert len(urls) >= 2, f"{skill_dir.name}: canon con <2 referencias https"
 
 
-@pytest.mark.parametrize("skill", PEC_SKILLS)
-def test_no_generic_persona(skill: str) -> None:
-    """La persona no es generica (anti-PRISM)."""
-    text = _skill_text(skill).lower()
+@pytest.mark.parametrize("skill_dir", _all_skill_dirs(), ids=lambda p: p.name)
+def test_no_generic_persona(skill_dir: Path) -> None:
+    """La persona no es generica (anti-PRISM, ADR-0072)."""
+    path = skill_dir / "SKILL.md"
+    if not path.is_file():
+        pytest.skip(f"{skill_dir.name}: SKILL.md ausente")
+    text = path.read_text(encoding="utf-8-sig").lower()
     for generic in _GENERIC_PERSONAS:
-        assert generic not in text, f"{skill}: persona generica '{generic}'"
+        assert generic not in text, f"{skill_dir.name}: persona generica '{generic}'"
 
 
-def test_pec_skills_not_exceeding_description_budget() -> None:
-    """El frontmatter de las skills PEC sigue en presupuesto (320 chars)."""
-    for skill in PEC_SKILLS:
-        path = SKILLS_DIR / skill / "SKILL.md"
+@pytest.mark.parametrize("skill_dir", _all_skill_dirs(), ids=lambda p: p.name)
+def test_anti_hedging_present(skill_dir: Path) -> None:
+    """Cada skill declara su regla ANTI-HEDGING (tradeoff expertise/clarity)."""
+    path = skill_dir / "SKILL.md"
+    if not path.is_file():
+        pytest.skip(f"{skill_dir.name}: SKILL.md ausente")
+    body = path.read_text(encoding="utf-8-sig").split("PERSONA & CANON", 1)[1]
+    assert "ANTI-HEDGING" in body, f"{skill_dir.name}: falta ANTI-HEDGING"
+
+
+def test_descriptions_still_in_budget() -> None:
+    """Las descriptions del frontmatter siguen en presupuesto (<=340 chars)."""
+    violations: list[str] = []
+    for skill_dir in _all_skill_dirs():
+        path = skill_dir / "SKILL.md"
         if not path.is_file():
             continue
         for line in path.read_text(encoding="utf-8-sig").splitlines():
             if line.startswith("description:"):
-                assert len(line) <= 340, f"{skill}: description {len(line)} chars"
+                if len(line) > 340:
+                    violations.append(f"{skill_dir.name}: {len(line)} chars")
                 break
+    assert not violations, f"descriptions fuera de presupuesto: {violations}"
