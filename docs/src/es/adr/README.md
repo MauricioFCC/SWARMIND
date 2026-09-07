@@ -50,6 +50,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0066 | [Prompt-Cache TTL Engineering — Prefijo Estable + Sin Cambio de Modelo](adr-0066-prompt-cache-ttl-engineering.md) | PROPUESTO | — |
 | 0067 | [LLM-Grep Frontera — Ripgrep-First 3 Capas, Budget-Aware, Compaction-Friendly](adr-0067-llm-grep-frontera.md) | APLICADO (`llm_grep.py` + 12 tests) | — |
 | 0068 | [Cascada STEER-lite + Salud de Cache (frontera tokens 2026)](adr-0068-cascade-cache-health-frontera.md) | APLICADO (`cascade_router.py` + `cache_health`) | — |
+| 0069 | [Tier CODING en OllamaTierRouter — Routing Local para Código con Precedencia](adr-0069-ollama-tier-coding.md) | APLICADO (`ollama_tiers.py` + 20 tests) | — |
 
 ## Resumen por Categoria
 
