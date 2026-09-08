@@ -134,6 +134,27 @@ class UsageRecord:
 
 
 @dataclass(frozen=True)
+class ModelEfficiencyEntry:
+    """Eficiencia de un modelo (tokens/llamada) para re-ponderar routing.
+
+    WHAT: Agregado por modelo: llamadas y tokens promedio totales.
+    WHY: Frontera (Copilot harness 2026) — el mismo harness varia hasta 40%
+    en tokens entre modelos; medir tokens/llamada permite re-ponderar el
+    routing por eficiencia y no solo por precio.
+    WHERE: ``TokenUsageTracker.model_efficiency_report``.
+
+    Attributes:
+        model: Nombre del modelo.
+        calls: Numero de llamadas registradas.
+        avg_total_tokens: Promedio de tokens totales por llamada.
+    """
+
+    model: str
+    calls: int
+    avg_total_tokens: float
+
+
+@dataclass(frozen=True)
 class CacheHealth:
     """Salud de cache de prompt de un agente.
 
@@ -389,6 +410,33 @@ class TokenUsageTracker:
                     reason=reason,
                 ))
             return tuple(health)
+
+    def model_efficiency_report(self) -> tuple[ModelEfficiencyEntry, ...]:
+        """Eficiencia por modelo: tokens promedio por llamada (desc).
+
+        WHAT: Agrupa los registros por modelo y calcula tokens/llamada.
+        WHY: Frontera (Copilot 2026) — hasta 40% de variacion de tokens
+        entre modelos con el mismo harness; la metrica permite re-ponderar
+        el complexity/cascade routing por eficiencia real.
+        WHERE: Monitoreo periodico junto a ``cache_health``.
+
+        Returns:
+            Tuple de ModelEfficiencyEntry ordenado por avg_total_tokens desc.
+        """
+        with self._lock:
+            grouped: dict[str, list[UsageRecord]] = {}
+            for rec in self._records:
+                grouped.setdefault(rec.model, []).append(rec)
+            entries: list[ModelEfficiencyEntry] = []
+            for model, records in grouped.items():
+                totals = [r.total() for r in records]
+                entries.append(ModelEfficiencyEntry(
+                    model=model,
+                    calls=len(records),
+                    avg_total_tokens=sum(totals) / len(totals) if totals else 0.0,
+                ))
+            entries.sort(key=lambda e: (-e.avg_total_tokens, e.model))
+            return tuple(entries)
 
     def alerts(self, budgets: dict[str, int]) -> tuple[str, ...]:
         """Genera alertas para agentes que superan el umbral de su budget.
