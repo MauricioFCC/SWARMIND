@@ -350,6 +350,12 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
    - Documentacion: `kebab-case.md` (`api-design.md`, `getting-started.md`)
    - Config/data: `kebab-case.yaml` o `snake_case.json`
 
+- [ ] **TOOLING - Scripts temporales y herramientas (ADR-0076)**:
+   - Scripts temporales/one-off: **Python** (`uv run -- python -c "..."`) o **bash** (`.sh`) — NUNCA PowerShell: corrompe UTF-8 (mojibake en acentos ES `á→Ã¡`, emojis `🚀→?-*`), y su sintaxis de pipelines es no-portable.
+   - Herramientas Linux-first: `rg` (ripgrep), `bash`, `awk`, `jq` — portables y deterministas; el texto ES/UTF-8 viaja intacto.
+   - Si es inevitable leer/escribir texto con PowerShell: forzar `$OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8` y verificar el resultado (VER).
+   - Wrappers de reduccion de output: `rtk` (Rust Token Killer, -60-90% output bash) y `tgrep` (Microsoft, trigram-indexed) cuando el binario este disponible (opt-in, passthrough si falta).
+
 - [ ] __Funciones y metodos__: `snake_case` con verbo + accion:
    - `get_user_by_id()`, `set_cache_size()`, `compute_score()`, `validate_input()`
    - `is_empty()`, `has_children()`, `can_proceed()` (retornan bool)

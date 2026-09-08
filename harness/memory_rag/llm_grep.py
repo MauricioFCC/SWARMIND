@@ -13,6 +13,7 @@ Uso:
 
 from __future__ import annotations
 
+import logging
 import re
 import shutil
 import subprocess
@@ -21,6 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
+logger = logging.getLogger("harness.memory_rag.llm_grep")
 # ---------------------------------------------------------------------------
 # Constantes (MAG)
 # ---------------------------------------------------------------------------
@@ -268,6 +270,79 @@ class NoopStructuralBackend:
             Lista vacia siempre.
         """
         return []
+
+
+class TgrepBackend:
+    """Backend trigram-indexado opcional (Microsoft tgrep, Rust).
+
+    WHAT: Delega a ``tgrep`` si el binario esta disponible (indice
+    trigram + watcher; Microsoft Copilot CLI lo usa internamente).
+    WHY: Frontera 2026 — busqueda de codigo 50%+ mas rapida que grep
+    en codebases grandes; complementa a rg (indiced una vez).
+    WHERE: Capa structural/lexical alternativa cuando el indice existe.
+
+    Args:
+        timeout_s: Timeout del subproceso.
+    """
+
+    def __init__(self, timeout_s: float = SUBPROCESS_TIMEOUT_S) -> None:
+        self._timeout_s = timeout_s
+
+    def search(self, pattern: str, root: Path, top_k: int) -> list[GrepHit]:
+        """Ejecuta ``tgrep -n`` y parsea hits (max top_k).
+
+        Args:
+            pattern: Patron regex/literal.
+            root: Raiz de busqueda.
+            top_k: Maximo de hits.
+
+        Returns:
+            Hits parseados (vacio si tgrep no esta instalado o no matchea).
+
+        Raises:
+            ValueError: Si el patron esta vacio o top_k no es positivo.
+        """
+        if not pattern.strip():
+            raise ValueError(
+                "WHAT: patron de busqueda vacio"
+                "WHY: tgrep necesita un patron no vacio"
+                "WHERE: TgrepBackend.search()"
+            )
+        if top_k <= 0:
+            raise ValueError(
+                f"WHAT: top_k invalido: {top_k}"
+                f"WHY: debe ser entero positivo"
+                f"WHERE: TgrepBackend.search()"
+            )
+        tgrep_bin = shutil.which("tgrep")
+        if tgrep_bin is None:
+            logger.info(
+                "llm_grep: binario 'tgrep' no disponible; backend no-op "
+                "(instalar desde https://github.com/microsoft/tgrep)"
+            )
+            return []
+        proc = subprocess.run(
+            [tgrep_bin, "-n", "-m", str(top_k), pattern, "."],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            timeout=self._timeout_s,
+            check=False,
+        )
+        hits: list[GrepHit] = []
+        for raw in proc.stdout.splitlines()[:top_k]:
+            hit = _parse_vimgrep_line(raw, root) if ":" in raw else None
+            if hit is None:
+                # Formato path:line:text sin columna -> col=0
+                parts = raw.split(":", 2)
+                if len(parts) == 3 and parts[1].isdigit():
+                    hits.append(GrepHit(
+                        path=parts[0], line=int(parts[1]), col=0,
+                        preview=" ".join(parts[2].split())[:MAX_PREVIEW_CHARS],
+                    ))
+            else:
+                hits.append(hit)
+        return hits
 
 
 def hybrid_to_hits_adapter(
