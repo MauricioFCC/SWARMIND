@@ -54,6 +54,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0070 | [Re-Anclaje Post-Compaction + Taxonomía de Principios + Fundamentos de Competición](adr-0070-reanchor-taxonomia-competicion.md) | APLICADO (`reanchor.py` + `base_principles.md` v3.0.0) | — |
 | 0071 | [Patrón PEC — Persona-Expert + Canon en Skills de Dominio Estético](adr-0071-patron-pec-persona-canon.md) | SUPERADO por 0072 | — |
 | 0072 | [PEC Universal — Persona-Expert + Canon en TODAS las Skills](adr-0072-pec-universal-todas-skills.md) | APLICADO (34/34 skills + 171 tests) | — |
+| 0073 | [Quality/Latency/Tokens — Votación k-en-1, Session-Affinity y Structured Enforcer](adr-0073-quality-latency-tokens-frontera.md) | APLICADO (3 módulos + 21 tests) | — |
 
 ## Resumen por Categoria
 
