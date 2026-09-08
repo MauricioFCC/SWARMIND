@@ -15,6 +15,8 @@ from __future__ import annotations
 import hashlib
 import logging
 
+from harness.orchestrator.fanout_gate import SINGLE_AGENT_THRESHOLD
+
 from .constants import (
     REPLAN_FAILURE_RATE,
     REPLAN_MIN_SUBTASKS,
@@ -323,12 +325,40 @@ class AdaptivePlanner(_PSMASMixin, _PersistenceMixin):
         normalized = " ".join(words)
         return hashlib.md5(normalized.encode(), usedforsecurity=False).hexdigest()[:12]
 
+    def _degrade_if_strong(self, strategy: PlanStrategy) -> PlanStrategy:
+        """Gate anti-sobre-descomposicion (ADR-0075, arXiv:2602.07787).
+
+        Args:
+            strategy: Estrategia seleccionada.
+
+        Returns:
+            SINGLE_AGENT si el baseline single-agent tiene evidencia
+            (>= min_samples) con success rate >= umbral (el multi solo
+            anade ruido x17.2); la estrategia original en cualquier otro
+            caso (incluido cuando single no tiene datos: no hay baseline).
+        """
+        single_stats = self._strategy_stats[PlanStrategy.SINGLE_AGENT.value]
+        if (
+            strategy is not PlanStrategy.SINGLE_AGENT
+            and single_stats.total_uses >= self._min_samples
+            and single_stats.avg_success_rate >= SINGLE_AGENT_THRESHOLD
+        ):
+            logger.info(
+                "adaptive_planner: baseline single-agent %.2f >= %.2f (%d usos); "
+                "degradando %s a SINGLE_AGENT (anti-sobre-descomposicion)",
+                single_stats.avg_success_rate, SINGLE_AGENT_THRESHOLD,
+                single_stats.total_uses, strategy.value,
+            )
+            return PlanStrategy.SINGLE_AGENT
+        return strategy
+
     def _select_by_task_type(self, task: str, task_type: str) -> PlanStrategy:
         """Selecciona estrategia basada en tipo de tarea."""
         # Verificar si tenemos datos para este tipo
         key = f"type:{task_type}"
         if key in self._best_strategies:
-            return self._best_strategies[key][0]
+            learned = self._best_strategies[key]
+            return self._degrade_if_strong(learned[0])
 
         # Reglas heurísticas por tipo
         type_strategy = {
@@ -359,4 +389,4 @@ class AdaptivePlanner(_PSMASMixin, _PersistenceMixin):
                 best_rate = s_stats.avg_success_rate
                 best_strategy = s_stats.strategy
 
-        return best_strategy
+        return self._degrade_if_strong(best_strategy)

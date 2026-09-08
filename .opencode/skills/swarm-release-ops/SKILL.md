@@ -1,5 +1,7 @@
 ---
 name: swarm-release-ops
+invocation: user
+calls: [security-audit]
 domain: swarm-release-ops
 version: 1.0.0
 project_agnostic: true
