@@ -19,7 +19,14 @@ from __future__ import annotations
 import logging
 from enum import Enum
 
+from harness.orchestrator.competence_model import CompetenceModel
+
 logger = logging.getLogger(__name__)
+
+#: Evidencia minima (datos + prior) para que el re-rank compita con keywords.
+MIN_EVIDENCE_FOR_RERANK = 2.0
+#: Peso del bonus de competencia en el re-rank (Thompson sobre keywords).
+COMPETENCE_BONUS_WEIGHT = 1.0
 
 
 class ActivationLevel(str, Enum):
@@ -85,15 +92,29 @@ class AgentSelector:
         # → ["builder", "guardian"]
     """
 
-    def __init__(self, default_level: ActivationLevel = ActivationLevel.STANDARD):
-        self._default_level = default_level
+    def __init__(
+        self,
+        default_level: ActivationLevel = ActivationLevel.STANDARD,
+        competence: CompetenceModel | None = None,
+    ):
+        """Inicializa el selector con opcion de competencia evidenciada.
 
-    def select(self, message: str) -> list[str]:
+        Args:
+            default_level: Nivel de activacion por defecto.
+            competence: Modelo Beta/Thompson (agente x skill) opcional;
+                si hay evidencia, re-rankea con bonus Thompson sobre el
+                score keyword (ADR-0075: evidencia > keywords fijas).
         """
-        Selecciona agentes basado en el mensaje.
+        self._default_level = default_level
+        self._competence = competence
+
+    def select(self, message: str, skill: str = "general") -> list[str]:
+        """
+        Selecciona agentes basado en el mensaje (y evidencia si la hay).
 
         Args:
             message: Tarea del usuario.
+            skill: Skill para el re-rank de competencia (default "general").
 
         Returns:
             Lista de agentes a activar (ordenada por relevancia).
@@ -109,8 +130,46 @@ class AgentSelector:
         # 2. Puntuar relevancia de cada agente
         scores = self._score_agents(msg_lower)
 
-        # 3. Seleccionar segun nivel
+        # 3. Re-rank con competencia evidenciada (anti-collapse Thompson)
+        scores = self._rerank_with_competence(scores, skill)
+
+        # 4. Seleccionar segun nivel
         return self._select_by_level(scores, level)
+
+    def _rerank_with_competence(
+        self, scores: dict[str, float], skill: str
+    ) -> dict[str, float]:
+        """Ajusta los scores keyword con la competencia evidenciada.
+
+        Args:
+            scores: Scores keyword por agente (0.0-1.0).
+            skill: Skill para la posterior (agente x skill).
+
+        Returns:
+            Scores ajustados; identidad si no hay modelo o evidencia minima.
+        """
+        if self._competence is None:
+            return scores
+        adjusted = dict(scores)
+        for agent in list(adjusted):
+            try:
+                posterior = self._competence.posterior(agent, skill)
+            except ValueError:
+                # Par (agente, skill) fuera del modelo: sin evidencia,
+                # estado esperado, no error (se queda el score keyword).
+                logger.debug(
+                    "agent_selector: sin posterior para (%s, %s)", agent, skill
+                )
+                continue
+            if (posterior.successes + posterior.failures) < MIN_EVIDENCE_FOR_RERANK:
+                continue  # sin evidencia: no compite con keywords
+            bonus = posterior.mean * COMPETENCE_BONUS_WEIGHT
+            adjusted[agent] = min(1.0, adjusted[agent] + bonus)
+            logger.debug(
+                "agent_selector: bonus competencia %s=%.2f (mean=%.2f)",
+                agent, bonus, posterior.mean,
+            )
+        return adjusted
 
     def _detect_level(self, msg_lower: str) -> ActivationLevel:
         """Detecta nivel de activacion basado en el mensaje."""

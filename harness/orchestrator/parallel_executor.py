@@ -38,6 +38,11 @@ from harness.model_router.multi_provider_types import (
     MAX_TOKENS_BY_AGENT,
     ExecutionResult,
 )
+from harness.orchestrator.fanout_gate import (
+    SINGLE_AGENT_THRESHOLD,
+    FanoutDecision,
+    should_fanout,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -190,12 +195,17 @@ class ParallelExecutor:
         n: int = DEFAULT_VOTE_N,
         score_threshold: float = VOTE_SCORE_THRESHOLD,
         min_confidence: float = VOTE_MIN_CONFIDENCE,
+        baseline_success: float | None = None,
     ) -> VotingOutcome:
         """Ejecuta con votacion gobernada (solo si el gate lo justifica).
 
         Gate: el ModelRouter marca la tarea como compleja y ambigua
         (score >= score_threshold y confidence < min_confidence). Si no
         pasa el gate, ejecuta UNA sola vez (sin costo extra).
+
+        Gate anti-sobre-descomposicion (ADR-0075): si el caller aporta un
+        probe single-agent con baseline_success >= SINGLE_AGENT_THRESHOLD
+        (>= 0.8), NO se vota (el fan-out anade ruido x17.2; arXiv:2602.07787).
 
         Presupuesto: los tokens totales quedan acotados por
         MAX_TOKENS_BY_AGENT[rol] * budget_factor (defensa contra
@@ -206,6 +216,8 @@ class ParallelExecutor:
             n: Numero de variantes (default 3).
             score_threshold: Score minimo del router para votar.
             min_confidence: Confidence maxima para votar (baja = ambigua).
+            baseline_success: Success rate del probe single-agent (0..1);
+                None = sin probe (solo gate score/confidence).
 
         Returns:
             VotingOutcome con ganador, gate_applied y metricas.
@@ -215,6 +227,15 @@ class ParallelExecutor:
         confidence = float(route.model_route.confidence)
 
         gate_applied = score >= score_threshold and confidence < min_confidence
+        if baseline_success is not None:
+            decision = should_fanout(baseline_success)
+            if decision is FanoutDecision.SINGLE:
+                logger.info(
+                    "vote_on_task: baseline %.0f%% >= %.0f%%; sin voting "
+                    "(anti-sobre-descomposicion ADR-0075)",
+                    baseline_success * 100, SINGLE_AGENT_THRESHOLD * 100,
+                )
+                gate_applied = False
         attempts = n if gate_applied else 1
 
         variants = [
