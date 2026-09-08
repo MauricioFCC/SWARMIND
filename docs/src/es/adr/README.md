@@ -56,6 +56,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0072 | [PEC Universal — Persona-Expert + Canon en TODAS las Skills](adr-0072-pec-universal-todas-skills.md) | APLICADO (34/34 skills + 171 tests) | — |
 | 0073 | [Quality/Latency/Tokens — Votación k-en-1, Session-Affinity y Structured Enforcer](adr-0073-quality-latency-tokens-frontera.md) | APLICADO (3 módulos + 21 tests) | — |
 | 0074 | [Optimización de Contexto — Artifacts, Cue-Ledger, Compaction Calibrada y Eficiencia por Modelo](adr-0074-optimizacion-contexto-frontera.md) | APLICADO (3 módulos + 25 tests) | — |
+| 0075 | [Skills/Agentes Frontera — Composición, Competencia Beta y Gate Anti-Sobre-Descomposición](adr-0075-skills-agentes-frontera.md) | APLICADO (3 módulos + 20 tests) | — |
 
 ## Resumen por Categoria
 
