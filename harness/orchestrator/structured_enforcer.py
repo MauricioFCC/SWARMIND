@@ -42,12 +42,16 @@ def _extract_json(raw: str) -> str:
     return match.group(1) if match else raw
 
 
-def _validate(data: object, schema: dict) -> str | None:
+def _validate(
+    data: object, schema: dict, strict_keys: bool = False
+) -> str | None:
     """Validacion minima de schema (type/required/properties/minimum).
 
     Args:
         data: Objeto parseado del JSON.
         schema: JSON schema simplificado (object con required/properties).
+        strict_keys: True rechaza keys inesperadas (additionalProperties
+            implicito False; frontiera: 200 OK con keys trojan = deadlock).
 
     Returns:
         Descripcion del primer error o None si es valido.
@@ -56,6 +60,11 @@ def _validate(data: object, schema: dict) -> str | None:
         return f"se esperaba objeto JSON, se recibio {type(data).__name__}"
     required = schema.get("required", [])
     properties = schema.get("properties", {})
+    strict = strict_keys or schema.get("additionalProperties") is False
+    if strict:
+        unexpected = [k for k in data if k not in properties]
+        if unexpected:
+            return f"keys inesperadas fuera del schema: {', '.join(sorted(unexpected))}"
     for field in required:
         if field not in data:
             return f"falta el campo requerido '{field}'"
@@ -85,6 +94,7 @@ def enforce_schema(
     schema: dict,
     max_retries: int = 2,
     instruction: str = "Devuelve SOLO JSON valido conforme al schema.",
+    strict_keys: bool = False,
 ) -> dict:
     """Obtiene un dict conforme al schema con retries con feedback.
 
@@ -94,6 +104,8 @@ def enforce_schema(
         schema: JSON schema simplificado (type/required/properties/minimum).
         max_retries: Intentos adicionales tras el primero.
         instruction: Feedback inicial (prompt de formato).
+        strict_keys: True rechaza keys fuera del schema (boundary guard,
+            ADR-0076: 200 OK con keys trojan = deadlock).
 
     Returns:
         Dict validado.
@@ -121,7 +133,7 @@ def enforce_schema(
             feedback = f"{instruction} Error: {last_error}"
             logger.warning("structured_enforcer: intento %d fallo: %s", attempt + 1, last_error)
             continue
-        error = _validate(data, schema)
+        error = _validate(data, schema, strict_keys=strict_keys)
         if error is None:
             return data
         last_error = error
