@@ -218,9 +218,13 @@ jobs:
       - name: Safety audit (dependencias)
         # Audita lockfile exportado (NO el Python del sistema, que tiene
         # setuptools con CVE-2026-3447). setuptools>=83 en pyproject.toml.
+        # --ignore SFTY-20260120-40557: CVE-2025-33228 en "cuda-toolkit 13.0.3.0"
+        # es falso positivo: cuda-toolkit NO es paquete pip (el escaner detecta
+        # el string de version CUDA del ambiente); se remedia actualizando el
+        # toolkit/driver del sistema, no este lockfile.
         run: |
           uv export --format requirements-txt --no-hashes > /tmp/requirements.txt
-          uv run safety check -r /tmp/requirements.txt --output text
+          uv run safety check -r /tmp/requirements.txt --output text --ignore SFTY-20260120-40557
 
   # ---------------------------------------------------------------------------
   # T1.5: Dead code (vulture) — ~5s
