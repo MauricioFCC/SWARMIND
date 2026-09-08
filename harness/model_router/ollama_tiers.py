@@ -32,8 +32,6 @@ from typing import Any
 
 import yaml
 
-from harness.orchestrator.slm_router import FRONTIER_ONLY_TASKS
-
 try:
     from harness.model_router.ollama_client import DEFAULT_KEEP_ALIVE, OllamaClient
 except ImportError as _import_err:
@@ -124,6 +122,38 @@ _TIER_KEYWORDS: dict[CapabilityTier, frozenset[str]] = {
     CapabilityTier.CODING: _CODING_KEYWORDS,
     CapabilityTier.QUALITY: _QUALITY_KEYWORDS,
 }
+
+# Tareas FRONTIER_ONLY (frontera/slm_router, ADR-0070 gobernanza): si la tarea
+# matchea, NO se delega a local (se va cloud). Alineado con FRONTIER_ONLY_TASKS
+# de harness.orchestrator.slm_router (planning/synthesis/reasoning/architecture/
+# security_audit/code_review). NOTA: "debugging" se EXCLUYE a proposito — ADR-0069
+# manda debug→CODING local (modelo coder). Keywords ES/EN sin fragmentos ambiguos.
+_FRONTIER_ONLY_KEYWORDS: frozenset[str] = frozenset({
+    # design/architecture
+    "diseñ", "disen", "architecture", "arquitectura", "hexagonal", "tradeoff",
+    # planning
+    "planning", "planea", "planificar", "roadmap", "estrategia de migracion",
+    "plan the", "migration strategy", "migration plan",
+    # synthesis/reasoning
+    "sintesis", "synthesis", "razonamiento", "reasoning", "deduce",
+    # security_audit / code_review
+    "security audit", "auditoria de seguridad", "code review", "revisar codigo",
+})
+
+
+def is_frontier_only(task: str) -> bool:
+    """Detecta si una tarea requiere modelo frontier (no delegar a local).
+
+    Args:
+        task: Descripcion de la tarea (case-insensitive).
+
+    Returns:
+        True si la tarea matchea FRONTIER_ONLY (diseño/arquitectura/planning/
+        síntesis/razonamiento/security audit/code review). "debugging" NO
+        matchea (ADR-0069: debug va a CODING local).
+    """
+    task_lower = task.lower()
+    return any(kw in task_lower for kw in _FRONTIER_ONLY_KEYWORDS)
 
 # Modelos por defecto por tier (2026, FRS 2026-08-14: qwen3/3-vl/3-embedding;
 # configurables via YAML .opencode/config/ollama_models.yaml).
@@ -340,7 +370,7 @@ class OllamaTierRouter:
             )
         return spec.model
 
-    def tier_for_task(self, task: str) -> CapabilityTier:
+    def tier_for_task(self, task: str) -> CapabilityTier | None:
         """Clasifica una tarea por capacidad usando keywords (sin LLM).
 
         Evalúa en orden EMBEDDING -> VISION -> CODING -> QUALITY -> FAST;
@@ -350,8 +380,12 @@ class OllamaTierRouter:
             task: Descripción de la tarea (case-insensitive).
 
         Returns:
-            CapabilityTier del tier local delegado.
+            CapabilityTier del tier local delegado, o None si la tarea es
+            FRONTIER_ONLY (diseño/arquitectura/planning/síntesis/razonamiento/
+            security audit/code review) y debe ir a cloud.
         """
+        if is_frontier_only(task):
+            return None
         lowered = task.lower()
         for tier, keywords in _TIER_KEYWORDS.items():
             if any(keyword in lowered for keyword in keywords):
@@ -361,9 +395,9 @@ class OllamaTierRouter:
     def task_uses_local(self, task: str) -> bool:
         """Indica si la tarea se puede delegar a un modelo local.
 
-        True si la tarea NO está en FRONTIER_ONLY_TASKS de slm_router
-        (planning, synthesis, reasoning, code_review, architecture,
-        security_audit, debugging) — esas requieren cloud/frontier.
+        False si la tarea matchea FRONTIER_ONLY (diseño/arquitectura/planning/
+        síntesis/razonamiento/security audit/code review); True en cualquier
+        otro caso (incluido debugging: ADR-0069 manda debug -> CODING local).
 
         Args:
             task: Descripción de la tarea.
@@ -371,7 +405,7 @@ class OllamaTierRouter:
         Returns:
             True si el tier local es suficiente; False si requiere frontier.
         """
-        return task.strip().lower() not in FRONTIER_ONLY_TASKS
+        return not is_frontier_only(task)
 
     def ensure_models(self) -> dict[CapabilityTier, bool]:
         """Garantiza que los modelos de cada tier estén disponibles en Ollama.

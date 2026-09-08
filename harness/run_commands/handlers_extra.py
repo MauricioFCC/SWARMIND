@@ -148,12 +148,20 @@ def _apply_model_routing(task: str, target_agent: str, force_cloud: bool = False
         f"[{decision.model_route.reason}]"
     )
     if source == "local":
-        # Delegación local 4-tier por capacidad (fast/quality/embedding/vision).
+        # Delegación local 5-tier por capacidad (fast/quality/coding/embedding/vision).
+        # Tareas FRONTIER_ONLY (diseño/arquitectura/planning/síntesis/razonamiento/
+        # security audit/code review) NO se delegan: tier_for_task retorna None.
         # Degrada a cloud si Ollama no está disponible (no crashea).
         client = OllamaClient()
         if client.is_available():
             tiers = OllamaTierRouter(client)
             tier = tiers.tier_for_task(task)
+            if tier is None:
+                _rc.logger.info(
+                    f"[ROUTER] @{target_agent} → frontier-only (diseño/planning/"
+                    "síntesis/razonamiento/audit): se paga cloud (TKN justificado)"
+                )
+                return "cloud"
             model = tiers.model_for(tier)
             _rc.logger.info(
                 f"[ROUTER] @{target_agent} → local tier={tier.value} model={model} "

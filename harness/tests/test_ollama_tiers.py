@@ -16,6 +16,7 @@ from harness.model_router.ollama_tiers import (
     CapabilityTier,
     OllamaTierRouter,
     OllamaTierSpec,
+    is_frontier_only,
 )
 
 DEFAULT_FAST_MODEL = "qwen3:4b"
@@ -276,6 +277,34 @@ def test_load_from_yaml_reads_repo_ssot() -> None:
     router = OllamaTierRouter.load_from_yaml(ssot)
     assert router.model_for(CapabilityTier.FAST) == "qwen3:4b"
     assert router.model_for(CapabilityTier.QUALITY) == "deepseek-r1:8b"
+
+
+def test_is_frontier_only_detects_design_and_planning() -> None:
+    """Tareas de diseno/arquitectura/planning/sintesis requieren frontier."""
+    assert is_frontier_only("disena la arquitectura hexagonal completa") is True
+    assert is_frontier_only("diseñar el sistema de trading") is True
+    assert is_frontier_only("plan the migration strategy") is True
+    assert is_frontier_only("sintesis de los papers de RL") is True
+    assert is_frontier_only("reasoning sobre tradeoffs de ownership") is True
+    assert is_frontier_only("security audit del endpoint de pagos") is True
+    assert is_frontier_only("code review del PR del router") is True
+
+
+def test_is_frontier_only_allows_simple_and_coding() -> None:
+    """Tareas simples y de codigo NO son frontier-only (ADR-0069: debug local)."""
+    assert is_frontier_only("resume este texto en 3 puntos") is False
+    assert is_frontier_only("implementar funcion de scoring con pytest") is False
+    assert is_frontier_only("debug the function and fix the endpoint") is False
+    assert is_frontier_only("describe la imagen del dashboard") is False
+    assert is_frontier_only("buscar documentos sobre embeddings") is False
+
+
+def test_tier_for_task_returns_none_for_frontier_only() -> None:
+    """Tareas frontier-only retornan None (no delegar a local)."""
+    router = _router()
+    assert router.tier_for_task("disena la arquitectura completa con tradeoffs") is None
+    # Y una tarea normal sigue clasificando:
+    assert router.tier_for_task("implementar modulo con pytest") is CapabilityTier.CODING
     assert router.model_for(CapabilityTier.EMBEDDING) == "qwen3-embedding:0.6b"
     assert router.model_for(CapabilityTier.VISION) == "qwen3-vl:4b"
     assert router.model_for(CapabilityTier.CODING) == "qwen2.5-coder:7b"
