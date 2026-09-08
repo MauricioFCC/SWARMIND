@@ -8,8 +8,9 @@ Frontera/idempotencia: robocopy /E copia solo deltas; exit codes 0-7 OK
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
+
+import pytest
 
 from scripts.backup_to_gdrive import (
     DEFAULT_EXCLUDES,
@@ -114,15 +115,16 @@ def test_run_copy_counts_failures(tmp_path: Path) -> None:
 
 
 def test_real_robocopy_smoke(tmp_path: Path) -> None:
-    """Integracion real con robocopy en tmp (solo Windows)."""
-    if Path(subprocess.list2cmdline(["robocopy"])) :
-        pass  # probe abajo
+    """Integracion real con robocopy en tmp (solo donde exista el binario)."""
+    import shutil
+
+    if shutil.which("robocopy") is None:
+        pytest.skip("robocopy no disponible (Linux/macOS CI)")
     src = tmp_path / "src"
     proj = _mk_project(src, "repo-x", files=2)
     dest = tmp_path / "dest"
-    runner = _robocopy_code
     from scripts import backup_to_gdrive as mod
 
-    summary = mod.run_copy(_plan_copy([proj], dest, DEFAULT_EXCLUDES), runner)
+    summary = mod.run_copy(_plan_copy([proj], dest, DEFAULT_EXCLUDES), _robocopy_code)
     assert summary.failed == 0
     assert (dest / "repo-x" / "file0.txt").is_file()
