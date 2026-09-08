@@ -1,7 +1,13 @@
 # ADR 0075: Skills/Agentes Frontera — Composición, Competencia Beta y Gate Anti-Sobre-Descomposición
 
 ## Estado
-Aplicado | `harness/context/skill_composition.py` + `harness/orchestrator/competence_model.py` + `harness/orchestrator/fanout_gate.py` | Propietario: @coordinator | Fecha: 2026-09-08
+Aplicado + Wiring | `skill_composition.py` + `competence_model.py` + `fanout_gate.py` + wiring en `agent_selector`/`parallel_executor`/`adaptive_planner` | Propietario: @coordinator | Fecha: 2026-09-08
+
+### Wiring (2026-09-08)
+1. **Skills**: piloto real `swarm-release-ops` con `calls: [security-audit]` + `invocation: user`; `security-audit` `invocation: skill`. Auditoría previa: el resto de skills NO duplica contenido (desambiguación `Alcance:` del refactor) — no se fuerza `calls:` sin delegación real (YAGNI). Test end-to-end sobre el SSOT real (`test_all_declared_calls_resolve`).
+2. **AgentSelector**: `competence: CompetenceModel | None` inyectado (DI); `select(message, skill="general")` re-rankea con bonus Thompson si hay evidencia (`>= 2` datos+prior); sin par en el modelo → score keyword se mantiene (estado esperado, no error). Test: guardian con evidencia 6/2 domina "auditar seguridad".
+3. **ParallelExecutor.vote_on_task**: parámetro `baseline_success: float | None` — probe single-agent >= 0.8 → sin voting (1 pasada, sin costo N×); sin probe → gate score/confidence como siempre.
+4. **AdaptivePlanner**: `_degrade_if_strong(strategy)` — baseline SINGLE_AGENT con evidencia (>= min_samples) y rate >= 0.8 → degrada multi a SINGLE; aplicado en el atajo `type:*` Y en el flujo completo. Semántica correcta: compara contra el BASELINE single (no contra el rate del multi). Mutante de frontera (>=/> con threshold autocalibrado) muerto.
 
 ## Contexto
 Research frontera (sep-2026) sobre skills y agentes, 2 tracks. Técnicas evaluadas con delta+alfa alto; IDP check contra el repo (progressive disclosure ADR-0048, PEC universal ADR-0072, tiers ADR-0053, adaptive_planner, failure_registry, session_affinity ADR-0073 ya cubren parte):
