@@ -2,6 +2,73 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-09-07] Frontier harvest ADR-0065..0073 + PEC universal + CI verdes
+
+### Skills
+- **PEC universal (ADR-0072)** — las 34 skills enveben `## PERSONA & CANON`:
+  persona experta (rol senior + años + especialización), canon de referencias
+  frontera por especialidad (RICOUI Brands, OWASP, HL7 FHIR, Rust API Guidelines,
+  DORA, CFA, DIAN...) y regla ANTI-HEDGING (PRISM: persona genérica daña accuracy).
+  Generador idempotente `scripts/apply_pec.py` (SSOT del canon) + gate
+  `test_skill_pec.py` (171 tests parametrizados). Supersede ADR-0071 (3 skills).
+- **Fusión responsive-ui → frontend-uiux v1.2.0** (34 activas, −487 líneas);
+  descripciones con delimitadores `Alcance:` en cluster trading/psico (12 ediciones
+  espejadas SKILL.md+registry); `project_config.yaml` total 34; página
+  [Tiers de residencia](docs/src/es/skills/tiers.md).
+
+### Routing / Tokens
+- **ADR-0067 LLM-grep** — `harness/memory_rag/llm_grep.py`: ripgrep-first 3 capas
+  (lexical `rg` → estructural `ast-grep` condicional → semántica `HybridRetriever`
+  último recurso), salida compaction-friendly (`path:line`+2 ctx, dedup, GrepBudget),
+  `RouteReport` con alerta `semantic_ratio>20%`. 12 tests.
+- **ADR-0068 Cascada STEER + cache health** — `harness/model_router/cascade_router.py`
+  (small→frontier si confianza<0.7, gate estricto, escape_hatch, costo por intento)
+  + `TokenUsageTracker.cache_health` (flag cache-buster si hit<60% con volumen≥10K).
+  Mutantes M-gate/M3 verificados muertos.
+- **ADR-0073 Quality/Latency/Tokens** — `batch_vote.py` (k votos en 1 llamada con el
+  parámetro n: input 1× vs k×, fallback automático, quorum; arXiv 2604.13717) +
+  `session_affinity.py` (tier sticky por sesión con TTL, patrón SAAR −79% switches) +
+  `structured_enforcer.py` (JSON schema con retries con feedback, 99.9% adherencia).
+  21 tests.
+
+### Memoria / Compaction
+- **ADR-0070 Re-anclaje post-compaction** — `harness/memory_rag/reanchor.py`: bloque
+  `<<RE-ANCHOR>>` (N1+rol+skills+estado) reinyectado tras cada compactación
+  (summary retiene ~17%, bloque restaura >90%; 65% de fallos enterprise = drift).
+  7 tests.
+- **base_principles v3.0.0** — 2 principios nuevos (RPA re-pin post-compaction, CPD
+  fundamentos de competición) + taxonomía de adherencia CHECK/GUIDE con 8 categorías
+  (IFEval/DRFR/FollowBench), self-restatement y jerarquía de conflicto.
+
+### Modelos locales
+- **ADR-0069 Ollama tier CODING** — `qwen2.5-coder:7b` con precedencia sobre QUALITY
+  (orden EMBEDDING→VISION→CODING→QUALITY→FAST); keywords ES/EN sin fragmentos
+  ambiguos; fix `logger.info()` en `check_ollama.py`. 20 tests.
+
+### ADRs propuestas (local-only)
+- ADR-0065 Segundo Cerebro (spike SurrealDB overlay, LanceDB sigue SSOT).
+- ADR-0066 Prompt-cache TTL (prefijo estable, sin cambio de modelo mid-sesión,
+  TTL chat 3600/API 300, Effective-Input-Price).
+
+### CI / Calidad
+- Required {lint, test, security} **verdes** en PR #16: `uv sync --extra dev` en
+  lint/type-check/vulture; formato ruff `github` (removido `github-actions` en
+  ruff 0.16); vulture 2.16 sin `--whitelist-file`; SIM102 en `audit_docstrings.py`;
+  skills SDO + presupuesto 320 chars + progressive disclosure restaurado
+  (advanced/core pisados por sync); safety con `--ignore SFTY-20260120-40557`
+  (CVE-2025-33228 cuda-toolkit: falso positivo, no es paquete pip).
+- **UPG check-web**: 6 deps actualizadas (ruff 0.16.6, mypy 2.3.1, hypothesis 6.167.1,
+  lancedb 0.38.0, numpy 2.5.3, torch 2.14.0) + fix falso positivo TYP (`\bany\b`
+  word-boundary vs `firecrawl-anydoc`).
+- Verificación adversarial: 0 `except:pass` silenciosos en `harness/` (AST-scan);
+  2 fallbacks con logger añadidos (`lance_vector_store`, `cognition_sync`); bandit
+  0 High/Medium; 0 secretos.
+
+### Documentación
+- README (EN/ES) alineados: 5160 tests, 34 skills PEC, secciones Frontier 2026
+  (ADR-0065..0073), Cambios Septiembre 2026, métricas CI.
+- Índice ADRs actualizado (0065..0073) + `estado.md` con entrada 2026-09-06/07.
+
 ## [2026-08-18] Arquitecturas RAG frontier: Hibrido (RRF) + Correctivo (CRAG)
 
 ### Evaluacion de las 5 arquitecturas RAG 2026 (FRS)

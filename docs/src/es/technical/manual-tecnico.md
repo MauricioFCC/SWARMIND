@@ -1788,4 +1788,23 @@ fail_under = 62     # Jul 2026: 71.56% (excedido)
 
 ---
 
-*Documentación generada a partir del código fuente de Swarmind Harness. Julio 2026.*
+## 15. Modulos Frontier 2026 (ADR-0065..0073)
+
+Anadidos sep-2026 (detalle en `docs/src/es/adr/`, indice en `docs/src/es/adr/README.md`):
+
+| Modulo | Ruta | ADR | Resumen |
+|--------|------|-----|---------|
+| LLM-grep | `memory_rag/llm_grep.py` | 0067 | ripgrep-first 3 capas (lexical→estructural→semantica), GrepBudget, alerta misrouting `semantic_ratio>20%` |
+| Re-anchor | `memory_rag/reanchor.py` | 0070 | bloque `<<RE-ANCHOR>>` (N1+rol+skills+estado) tras cada compaction; summary retiene ~17%, bloque >90% |
+| Cascade STEER | `model_router/cascade_router.py` | 0068 | small→frontier si confianza<0.7, escape_hatch, costo por intento |
+| Cache health | `memory_rag/token_usage_tracker.py` | 0068 | flag cache-buster estructural si hit<60% con volumen≥10K |
+| Session affinity | `model_router/session_affinity.py` | 0073 | tier sticky por sesion con TTL (SAAR: −79% switches) |
+| Batch vote | `orchestrator/batch_vote.py` | 0073 | k votos en 1 llamada (parametro n, input 1× vs k×) + fallback |
+| Structured enforcer | `orchestrator/structured_enforcer.py` | 0073 | JSON schema + retries con feedback (99.9% adherencia) |
+| Ollama CODING tier | `model_router/ollama_tiers.py` | 0069 | `qwen2.5-coder:7b` con precedencia sobre QUALITY |
+| PEC universal | `scripts/apply_pec.py` | 0072 | persona experta + canon frontera en las 34 skills (171 tests) |
+| Principios v3.0.0 | `.opencode/core/base_principles.md` | 0070 | RPA + CPD + taxonomia CHECK/GUIDE (8 categorias, IDs estables) |
+
+---
+
+*Documentación generada a partir del código fuente de Swarmind Harness. Julio 2026; módulos frontier actualizados sept-2026.*

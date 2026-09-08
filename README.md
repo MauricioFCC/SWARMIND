@@ -9,7 +9,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](pyproject.toml)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
-[![Tests](https://img.shields.io/badge/tests-4722_passing-brightgreen.svg)](harness/tests/)
+[![Tests](https://img.shields.io/badge/tests-5160_passing-brightgreen.svg)](harness/tests/)
 [![CI](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml/badge.svg)](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -83,6 +83,18 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 - The harness can delegate tasks to local models through Ollama (`harness/model_router/ollama_client.py` + `harness/model_router/ollama_tiers.py`), with four capability tiers plus a coding tier, all running current 2026 models installed locally: fast (`qwen3:4b`), quality (`deepseek-r1:8b`), coding (`qwen2.5-coder:7b`), embedding/RAG (`qwen3-embedding:0.6b`) and vision (`qwen3-vl:4b`) — fully configurable (no hardcode) in `.opencode/config/ollama_models.yaml` (base_url, timeout, warm_on_start, per-tier keep_alive/auto_pull).
 - Hot models are kept resident with `keep_alive: "5m"` (warm/unload via `/api/ps`) and are auto-installed with `ollama pull` when missing (`auto_pull: true`), so simple tasks run fully local: **0 cloud tokens** (TKN).
 - If Ollama is unavailable or a tier's model is missing, the router degrades to the existing cloud `ModelRouter`/`SlmRouter` fallback.
+
+### Frontier 2026 Modules (ADR-0065 .. 0073)
+- **LLM-grep for code** (`harness/memory_rag/llm_grep.py`): ripgrep-first 3-layer search (lexical `rg` → structural `ast-grep` → semantic `HybridRetriever` last resort), compaction-friendly output (`path:line` + 2 context lines, dedup, byte budget), auditable routing report (`semantic_ratio` misrouting alert) — ADR-0067.
+- **Post-compaction re-anchor** (`harness/memory_rag/reanchor.py`): condensed `<<RE-ANCHOR>>` block (N1 + active role + skills + task) re-injected after every compaction; summaries retain ~17% of session constraints, the block restores >90% (65% of enterprise agent failures are context drift, not token exhaustion) — ADR-0070.
+- **Cascade routing (STEER-lite)** (`harness/model_router/cascade_router.py`): try small first, escalate to frontier when confidence < 0.7, `force_tier` escape hatch, per-attempt cost accounting for offline threshold calibration — ADR-0068.
+- **Session-affinity routing (SAAR)** (`harness/model_router/session_affinity.py`): sticky model tier per session with TTL; avoids repeated model switches (frontier: −79% switches, −78.7% cost) and keeps prefix caches warm — ADR-0073.
+- **Batch voting k-in-1** (`harness/orchestrator/batch_vote.py`): k votes in one API call via the `n` parameter (input charged once instead of k×), automatic fallback to k sequential calls, quorum-gated majority — ADR-0073 (arXiv 2604.13717).
+- **Structured-output enforcer** (`harness/orchestrator/structured_enforcer.py`): JSON-schema validation with error-feedback retries (99.9% schema adherence vs <70% unconstrained; 30× fewer parse failures) — ADR-0073.
+- **Cache health diagnostics** (`TokenUsageTracker.cache_health`): flags structural cache-busters (hit ratio < 60% with ≥10K volume — timestamps in system, reordered few-shots, dynamic tool lists) — ADR-0068.
+- **PEC universal in skills**: all 34 skills carry an expert persona + canonical frontier references per specialty (OWASP for security, HL7 FHIR for healthtech, Rust API Guidelines, RICOUI Brands for UI...) + anti-hedging rule (`scripts/apply_pec.py`, 171 tests) — ADR-0072.
+- **Universal principles v3.0.0**: 36 numbered principles with an adherence taxonomy (CHECK vs GUIDE, IFEval/DRFR), post-compaction re-pin rule (RPA) and competition-programming fundamentals (CPD: edges+invariants+BigO checklist, 3-phase repair) — ADR-0070.
+- **Ollama CODING tier**: local `qwen2.5-coder:7b` tier with precedence over QUALITY for code tasks — ADR-0069.
 
 ### Integrations
 - **anydoc — document ingestion for RAG** (`harness/memory_rag/doc_converter.py`): a `DocumentConverter` protocol plus `AnyDocConverter` (lazy, backed by `firecrawl-anydoc>=0.1.9`) converts **21 binary/text extensions** (pdf, docx, doc, pptx, ppt, xlsx, xls, odt, odp, ods, rtf, epub, csv, tsv, html, htm, md, txt, json, yaml, yml) to Markdown before chunking. `DocumentChunker` accepts an injected converter (DI, default `AnyDocConverter`) and raises `DocumentConversionError(path, reason)` when conversion fails — errors are never swallowed. Enable it with `harness/scripts/rag_ingest.py --include-docs` or the interactive `!rag ingest --docs`.
@@ -253,8 +265,10 @@ Duplicated databases were eliminated (7.5 GB reclaimed). The memory layout is po
 ## Token Economics
 
 - **Model routing**: `harness/model_router/complexity_router/` emits small/frontier signals; `route_with_fallback` sends low-confidence requests (confidence < 0.7) to the frontier model.
-- **Governed voting**: `ParallelExecutor` fans out to N=3 agents when the gate score is ≥ 70 and confidence < 0.7, with a budget of `MAX_TOKENS_BY_AGENT × 3`.
-- **Token budgets**: budgets are the single source of truth (`token_budgets.yaml`), enforced by `TokenBudgetManager`.
+- **Cascade routing**: `cascade_router` tries small first and escalates on low confidence (STEER-lite), with per-attempt cost accounting; `session_affinity` keeps the tier sticky per session to avoid prefill re-payments.
+- **Governed voting**: `ParallelExecutor` fans out to N=3 agents when the gate score is ≥ 70 and confidence < 0.7, with a budget of `MAX_TOKENS_BY_AGENT × 3`; `batch_vote` charges input once for k votes (the `n` parameter) with fallback.
+- **Structured outputs**: `structured_enforcer` validates every machine-readable verdict against a JSON schema with error-feedback retries (30× fewer parse failures).
+- **Token budgets**: budgets are the single source of truth (`token_budgets.yaml`), enforced by `TokenBudgetManager`; `cache_health` flags structural cache-busters (hit < 60% with volume).
 - **Measured savings**: cache-shape -38%, structured compaction -41%.
 
 ## GPU Acceleration
@@ -278,7 +292,7 @@ python scripts/enable_gpu.py
 
 Quality is enforced continuously, not at the end:
 
-- **Test suite**: 4722 tests collected (TDD suite), coverage 75.70%, mutation testing mutmut gate ≥70%.
+- **Test suite**: 5160 tests collected (TDD suite), mutation testing mutmut gate ≥70%.
 - **Lint**: ruff — all checks passed.
 - **Dead code**: vulture — 0 dead code.
 - **Architecture debt (AGR)**: 0 files over 500 lines in non-test code; 32 flat modules refactored into packages with re-exporting `__init__.py`; mixins limited to ≤ 2 bases; SOLID corrected in 9 classes.
@@ -329,7 +343,7 @@ SWARMIND/
 │   ├── evals/                     # eval_factory
 │   ├── context/                   # token_budget_router, skill_contract
 │   ├── scripts/                   # init, rag_ingest, end_of_iteration, ...
-│   └── tests/                     # 176 test files (4722 tests)
+│   └── tests/                     # 176+ test files (5160 tests)
 ├── scripts/                       # Repo-level tooling
 │   ├── setup_swarmind.py          # one-command setup (Python 3.12+, uv, uv sync, sync global, central memory)
 │   ├── enable_gpu.py              # reinstall torch CUDA wheel after uv sync
@@ -349,7 +363,7 @@ SWARMIND/
 │   │   └── guide/, technical/, reference/, skills/
 │   ├── src/en/SUMMARY.md
 │   └── .MEJORAS_SWARMIND.md
-├── .opencode/                     # agents (23), skills (35), config — SSOT
+├── .opencode/                     # agents (23), skills (34, PEC universal), config — SSOT
 ├── CHANGELOG.md
 ├── pyproject.toml
 └── README.md
@@ -360,6 +374,7 @@ SWARMIND/
 - [Documentation (ES) — primary language](docs/src/es/) — full docs in Spanish, the main documentation language.
 - [English summary](docs/src/en/SUMMARY.md)
 - [Roadmap](docs/src/es/roadmap/estado.md)
+- [Skills registry + residency tiers](docs/src/es/skills/registry.md) — 34 skills, PEC universal, REFERENCE/SAVED/INSTALLED
 - [CHANGELOG](CHANGELOG.md)
 - [Improvements log](docs/.MEJORAS_SWARMIND.md)
 
