@@ -8,8 +8,9 @@ Frontera/idempotencia: robocopy /E copia solo deltas; exit codes 0-7 OK
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
+
+import pytest
 
 from scripts.backup_to_gdrive import (
     DEFAULT_EXCLUDES,
