@@ -2,6 +2,13 @@
 
 **34 skills activas** (+1 fusionada) en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado). Cobertura: 100% con ambos formatos. **23 agentes** especializados los consumen vía `SkillRouter` (ver [Agentes y Skills](../guide/agentes-y-skills.md)).
 
+> **2026-09-07 (PEC universal, ADR-0072):** todas las skills enveben una sección
+> `## PERSONA & CANON` — persona experta (rol senior + años + especialización),
+> canon de referencias frontera por especialidad (se estudian ANTES de generar,
+> regla RSF) y regla ANTI-HEDGING (PRISM: persona genérica daña accuracy).
+> Generadas idempotentemente por `scripts/apply_pec.py`; gate en
+> `harness/tests/test_skill_pec.py` (171 tests).
+
 > **2026-09-06 (fusión UI):** `responsive-ui` se fusionó en `frontend-uiux` v1.2.0 (el contenido ya vivía en `advanced.md` § Responsive Design). 34 activas + 0 alias = 34 directorios. Residencia total si todas fueran INSTALLED: ~5.1K tokens (auditoría `skill_residency`); ver [Tiers de residencia](tiers.md).
 
 ## Tabla Completa de Skills

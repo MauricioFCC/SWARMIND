@@ -52,9 +52,11 @@ El sistema Swarmind opera con **22 perfiles de agente** organizados en 4 categor
 
 ---
 
-## Skills (33)
+## Skills (34)
 
-El sistema cuenta con **33 skills** organizados en 12 categorias funcionales. La lista completa con descripciones esta en [Skills Registry](../skills/registry.md).
+El sistema cuenta con **34 skills** (PEC universal) organizadas en categorias funcionales. La lista completa con descripciones esta en [Skills Registry](../skills/registry.md) y los tiers de residencia en [Tiers](../skills/tiers.md).
+
+**PEC universal (ADR-0072, 2026-09-07):** toda skill envebe una seccion `## PERSONA & CANON` — persona experta (rol senior + años + especializacion), canon de referencias frontera por especialidad (OWASP para security, HL7 FHIR para healthtech, Rust API Guidelines, RICOUI Brands para UI...) y regla ANTI-HEDGING. Generadas por `scripts/apply_pec.py` (SSOT); gate con 171 tests.
 
 **Categorias:** Desarrollo y Tecnologia (6), Seguridad (1), Negocio y Estrategia (4), Finanzas y Trading (3), Ciencia e Investigacion (4), Humanidades y Ciencias Sociales (6), Salud (1), Legal (1), Retail (1), Marketing (1), Riesgo (1), Sostenibilidad (1), Meta (1).
 
