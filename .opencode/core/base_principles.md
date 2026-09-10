@@ -1,11 +1,11 @@
 ---
-description: Principios universales v3.0.0 - N1+N2 siempre, N3 bajo demanda + taxonomia de adherencia (IFEval/DRFR) + RPA re-anclaje post-compaction + CPD fundamentos de competicion (ADR-0070)
+description: Principios universales v3.1.0 - N1+N2 siempre, N3 bajo demanda + taxonomia de adherencia (IFEval/DRFR) + RPA re-anclaje post-compaction + CPD fundamentos de competicion (ADR-0070) + TDD adversarial/mutante/PBT/pairwise/BVA/metamorphic/fuzz (ADR-0077)
 inherit:
   - core/base_principles.md
   - core/fde_principles.md
 name: base-principles
 project_agnostic: true
-version: 3.0.0
+version: 3.1.0
 ---
 
 # PRINCIPIOS UNIVERSALES | Multi-nivel
@@ -24,7 +24,7 @@ ERR: Errores legibles y accionables | WHAT+WHY+WHERE | sin except silencioso
 ARQ: hexagonal + DI | KISS <500 | DRY | type hints | pathlib
 SEG: 0 secrets | validate input | mask logs | parametriza SQL | sys.path.insert(1)
 DOC: docstrings ES OBLIGATORIAS | 0 funciones sin docstring | template Args/Returns/Raises
-TST: core >=80% | pre-commit gates | 0 except silenciosos | logger.warning()
+TST: core >=80% | TDD adversarial (test vs mutante) + mutantes + PBT + pairwise | coverage es piso no techo | pre-commit gates | 0 except silenciosos | logger.warning()
 CMT: conventional commit type(scope): descripcion
 FDE: bridge product↔reality | delta = gap to close | mission > persona
 EVO: learn→design→experiment→analyze | cognition persists | loop repeats
@@ -58,7 +58,7 @@ CPD: Fundamentos Competicion | checklist edges+invariants+BigO ANTES de codear |
 
 ---
 
-## TAXONOMIA DE ADHERENCIA (v3.0.0)
+## TAXONOMIA DE ADHERENCIA (v3.1.0)
 
 Cada codigo N1 pertenece a UNA categoria y un modo de cumplimiento. Los
 CHECK son instrucciones verificables binarias (IFEval/DRFR: 1 regla = 1
@@ -115,14 +115,14 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 | __ARQ__ | Hexagonal ports/adapters + DI. __KISS__ (Keep It Simple): preferir la solucion obvia. __DRY__ (Don't Repeat Yourself): extraer logica repetida a utils. __YAGNI__ (You Aren't Gonna Need It): no anadir configuracion para futuros casos hipoteticos. Type hints publicas. Pathlib siempre. |
 | __SEG__ | Secrets 0 hardcode: `os.getenv()`. Logs mask PII/data. Input sanitize. SQL parametrizada. No `eval()/exec()`. `sys.path.insert(1,)` nunca `insert(0,)`. Bandit + pip-audit en CI. |
 | __DOC__ | Docstrings ES: Args/Returns/Raises (NumPy style). README/CHANGELOG ES. Codigo EN. Docs 1:1 en API/interfaz changes. `Griffe` para autodoc moderno (reemplaza legacy sphinx.ext.autodoc). Validar docs AI-generated con `pytest-examples` o doctest. |
-| __TST__ | pytest framework. Core coverage >=80%. New feature = new test + integration. Pre-commit gates. 0 `except Exception: pass` sin logger. __Mutation testing__ con `mutmut` o `cosmic-ray` (>=70% mutation score). __Property-based__ (ver PBT). __Snapshot__ con `syrupy` para outputs grandes. |
+| __TST__ | pytest framework. Core coverage >=80% (line+branch `--cov-branch`; 100% line con 60% branch = tests decorativos). New feature = new test + integration. Pre-commit gates. 0 `except Exception: pass` sin logger. __Adversarial TDD__ (AdverTest arXiv:2602.08146): loop test-vs-mutante co-evolutivo (M genera mutantes context-aware que hackean blind-spots de T; T los mata; +8.56% fault-detection, +63% vs EvoSuite); supervivientes = senal (no repetir mutantes en zonas ya cubiertas). __Mutation testing__ con `mutmut`/`cosmic-ray`: MS>=70% merge, objetivo >=85% nightly; suite manual dirigida donde mutmut da falsos negativos (imports de paquete). __Pairwise t=2__ (70-98% fallos son 1-2-way, NIST): covering array sobre variables discretizadas; subir a t=4-6 si hay supervivientes (fallos son <=6-way; 36626->1818, -95%). __BVA por variable__: min-1/min/min+1/max-1/max/max+1/0/""/None/NaN/overflow (~15% fallos boundary, 7x densidad). __Snapshot__ con `syrupy` para outputs grandes. |
 | __OPS__ | Timeout >=30s I/O. Retry 3x exponential backoff + jitter. Circuit breaker. __OpenTelemetry__ para tracing distribuido (OTLP exporter). Log JSON estructurado con `trace_id`, `span_id`, `request_id` (structlog). Fallback plan. Health checks: liveness vs readiness. __Prometheus metrics__ para SLO. WAL obligatorio antes de tool-calls costosos. |
 | __CMT__ | Conventional commit `type(scope): msg #ISSUE`. <=72 chars. Pre-commit hook: secrets+size+lint+test. __Conventional Comments__ para comentarios de PR. __Signed commits__ (GPG/SSH) en ramas main. |
 | __QLT__ | __DEPRECATED v2.4.0__: cubierto por NAM, TYP, IMM, SOL, MAG, FSZ. Mantener solo como referencia historica. Codigo listo/sin hardcode. Conciso: 1 responsabilidad por funcion. Sin constantes magicas (siempre con nombre). |
 | __ERR__ | Errores accionables: WHAT (que fallo) + WHY (causa) + WHERE (linea/archivo/funcion). Sin except silencioso. Logger siempre con contexto. Stack trace estructurado. __Sentry__ o similar para captura centralizada. __Error budgets__ (SRE). |
 | __TKN__ | Cache-Shape Discipline (-38% tokens), Structured Compaction (-41% costo), Scoped Context (-44% tiempo), Failure-Spend Governance, Observation Masking, Phase-Scheduled MAS (-27.3% tokens). Effective-Input-Price = inp * miss_ratio * price + out * price. __2026__: usar modelos small para tareas simples (router por complejidad), cache de tool results, batching de invocaciones, prompt caching (Anthropic/OpenAI), speculative decoding para inferencia. |
 | __WFP__ | 4 patrones de flujo reutilizables: Evaluator-Optimizer (genera→evalua→loop), Voting (N variantes→ranking→mejor), Critique-Revise (genera→critica→revisa), Parallel-Transform (fan-out→transforma→fan-in merge). Retry cost -51%. __2026__: añadir MapReduce para tareas grandes (dividir → paralelo → reducir). |
-| __PBT__ | Property-Based Testing con templates de holes rellenables. 7 templates predefinidos (sorting, idempotent, pure, boundary, roundtrip, commutative, associative). Reduce alucinaciones -59%, costo -3.8x. __2026__: `hypothesis` 6.x con `@given` + `assume()`, profiles, health checks, deadlines. |
+| __PBT__ | Property-Based Testing con templates de holes rellenables. 7 templates predefinidos (sorting, idempotent, pure, boundary, roundtrip, commutative, associative). Reduce alucinaciones -59%, costo -3.8x. __2026__: `hypothesis` 6.x con `@given` + `assume()`, profiles, health checks, deadlines. __Adversarial refinement__ (PROBE ACL'26): Validator genera contra-implementaciones que pasan la propiedad debil -> Generator la endurece (+9.79pp MS, 95% vs 65% correctness). __Metamorphic__ como PBT sin oraculo: MR reversibles (`reverse(reverse(x))==x`, `encode(decode(x))==x`, `f(x+k)==f(x)+k`). __Fuzzing dirigido__: parsers/fronteras (JSON/URLs/regex) con oraculo no-crash+roundtrip+timeout. |
 | __CEN__ | Context Engineering: Least-Recent Context First (relevancia al inicio), Structured Chunking (metadatos por bloque), Progressive Disclosure (instruccion→ejemplos→datos). __2026__: usar `cache_control` breakpoints en prompts LLM, incluir timestamps en facts, versioning de system prompts. |
 | __BTR__ | Behavioral Tracing: cada decision registra action+chosen+rationale+confidence. Fingerprint de comportamiento por agente. Reportes de consistencia y auditoria. __2026__: OpenTelemetry spans + GenAI semantic conventions (`gen_ai.*` attrs). Langfuse/LangSmith para observability de agentes. |
 | __AGR__ | Architectural Guardrails: type hints obligatorios, max 60 lineas/funcion, prohibido except:pass, imports prohibidos (eval, exec, pickle). Validacion automatica post-generacion. __2026__: ruff reglas `A` (builtins shadowing), `C4` (comprehensions), `PIE` (misc), `RET` (returns), `SIM` (simplify), `TID` (tidy imports), `ARG` (unused args), `ERA` (commented-out code). Pre-commit enforcement. |
