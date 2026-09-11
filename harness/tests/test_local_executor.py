@@ -12,7 +12,6 @@ import pytest
 
 from harness.model_router.local_executor import (
     CLOSED_TASK_PATTERNS,
-    LocalExecutionResult,
     LocalExecutor,
     is_closed_task,
 )
