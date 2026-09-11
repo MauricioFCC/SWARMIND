@@ -29,6 +29,8 @@ logger = logging.getLogger("harness.memory_rag.artifact_store")
 DEFAULT_THRESHOLD_CHARS = 4000
 #: Lineas que se conservan inline como preview.
 HEAD_LINES = 3
+#: Caracteres maximos por linea del preview (evita previews de 1 linea gigante).
+HEAD_LINE_CHARS = 200
 #: Sufijo del preview cuando se persiste.
 PREVIEW_SUFFIX = "[artifact-persisted: use retrieve]"
 _HASH_LEN = 12
@@ -109,7 +111,9 @@ class ArtifactStore:
             "chars": original,
         }
         path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-        head_lines = "\n".join(content.splitlines()[:HEAD_LINES])
+        head_lines = "\n".join(
+            line[:HEAD_LINE_CHARS] for line in content.splitlines()[:HEAD_LINES]
+        )
         preview = (
             f"{head_lines}\n{PREVIEW_SUFFIX} handle={handle} "
             f"chars={original} (preview: primeras {HEAD_LINES} lineas)"

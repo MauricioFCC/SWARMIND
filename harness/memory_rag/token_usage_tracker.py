@@ -411,6 +411,33 @@ class TokenUsageTracker:
                 ))
             return tuple(health)
 
+    def pressure(self, budget_tokens: int) -> float:
+        """Presion de contexto: tokens usados / presupuesto (determinista).
+
+        WHAT: Proyeccion de presion sin llamadas LLM (deepseek-harness:
+            token-meter determinista).
+        WHY: Decidir prune/summarize/evict ANTES del overflow, no despues.
+        WHERE: Monitoreo del pipeline de contexto junto a cache_health.
+
+        Args:
+            budget_tokens: Presupuesto total de tokens (> 0).
+
+        Returns:
+            Ratio en [0.0, +inf) (puede exceder 1.0 = overflow).
+
+        Raises:
+            ValueError: Si budget_tokens <= 0 (WHAT+WHY+WHERE).
+        """
+        if budget_tokens <= 0:
+            raise ValueError(
+                f"WHAT: budget_tokens invalido: {budget_tokens}. "
+                "WHY: la presion divide por el presupuesto; debe ser > 0. "
+                "WHERE: TokenUsageTracker.pressure"
+            )
+        with self._lock:
+            used = sum(r.total() for r in self._records)
+        return used / budget_tokens
+
     def model_efficiency_report(self) -> tuple[ModelEfficiencyEntry, ...]:
         """Eficiencia por modelo: tokens promedio por llamada (desc).
 
