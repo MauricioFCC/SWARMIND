@@ -96,7 +96,7 @@ class LexicalBackend(Protocol):
 
     def search(self, pattern: str, root: Path, top_k: int) -> list[GrepHit]:
         """Busca patron literal/regex y retorna hits."""
-        ...
+        raise NotImplementedError("interfaz LexicalBackend")
 
 
 class StructuralBackend(Protocol):
@@ -104,7 +104,7 @@ class StructuralBackend(Protocol):
 
     def search(self, pattern: str, root: Path, top_k: int) -> list[GrepHit]:
         """Busca patron estructural y retorna hits."""
-        ...
+        raise NotImplementedError("interfaz StructuralBackend")
 
 
 class SemanticBackend(Protocol):
@@ -112,7 +112,7 @@ class SemanticBackend(Protocol):
 
     def search(self, query: str, top_k: int) -> list[GrepHit]:
         """Busca por concepto y retorna hits."""
-        ...
+        raise NotImplementedError("interfaz SemanticBackend")
 
 
 def is_structural_query(query: str) -> bool:
