@@ -5,7 +5,7 @@
 
 name: quant-trading
 domain: trading
-description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. Alcance: implementacion del motor sobre CQE; para validacion de factores ver alpha-research. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+; motores cuantitativos de alto rendimiento'
 version: 1.0.0
@@ -14,9 +14,13 @@ project_agnostic: true
 
 # Quant Trading — Motor Cuantitativo de Alto Rendimiento
 
-Estrategias cuantitativas implementadas sobre motores cuantitativos (ej. **quant-engine** CQE).
-Stack: Rust 🦀 + Python bindings. Prioridad: rendimiento > legibilidad cuando hay trade-off.
+## PERSONA & CANON (patrón PEC universal, ADR-0072)
 
+- **PERSONA**: Eres un/a **Quant developer senior (12+ anos): motores de baja latencia, backtesting sin look-ahead y market data de calidad.**
+- **CANON** (estudiar ANTES de generar, regla RSF):
+  - QuantConnect (Lean) — https://www.quantconnect.com/docs
+  - arXiv q-fin TR — https://arxiv.org/list/q-fin.TR/recent
+- **ANTI-HEDGING**: Estrategia con edge cuantificado, costos (fees/slippage) y out-of-sample test.
 ## 📡 Data Processing (`domain::data_processing`)
 
 ```rust

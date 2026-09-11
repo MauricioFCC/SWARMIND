@@ -34,14 +34,15 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "hypothesis>=6.165.0",
-    "lancedb>=0.36.0",
-    "numpy>=2.5.1",
+    "firecrawl-anydoc>=0.1.9",
+    "hypothesis>=6.167.1",
+    "lancedb>=0.38.0",
+    "numpy>=2.5.3",
     "pytest-asyncio>=1.4.0",
     "pyyaml>=6.0",
     "requests>=2.31",
     "schedule>=1.2",
-    "torch>=2.13.0",
+    "torch>=2.14.0",
 ]
 
 [project.optional-dependencies]
@@ -51,8 +52,8 @@ dev = [
     "pytest-mock>=3",
     "pytest-xdist>=3",
     "pytest-split>=0.9",
-    "ruff>=0.16.1",
-    "mypy>=2.3.0",
+    "ruff>=0.16.6",
+    "mypy>=2.3.1",
     "bandit>=1.9.4",
     "safety>=3.8.1",
     "vulture>=2.16",

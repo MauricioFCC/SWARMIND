@@ -1,0 +1,712 @@
+{
+  "version": 1,
+  "nodes": [
+    {
+      "id": "ads-optimizer",
+      "domain": "marketing",
+      "tokens": 206
+    },
+    {
+      "id": "alpha-research",
+      "domain": "research",
+      "tokens": 1107
+    },
+    {
+      "id": "architecture",
+      "domain": "general",
+      "tokens": 250
+    },
+    {
+      "id": "atdd-spec",
+      "domain": "testing",
+      "tokens": 370
+    },
+    {
+      "id": "behavioral-economics",
+      "domain": "economics",
+      "tokens": 177
+    },
+    {
+      "id": "business-strategy",
+      "domain": "business",
+      "tokens": 158
+    },
+    {
+      "id": "communication",
+      "domain": "communication",
+      "tokens": 165
+    },
+    {
+      "id": "creative-design",
+      "domain": "design",
+      "tokens": 157
+    },
+    {
+      "id": "data-science",
+      "domain": "general",
+      "tokens": 255
+    },
+    {
+      "id": "devops-infra",
+      "domain": "devops",
+      "tokens": 166
+    },
+    {
+      "id": "diagram-design",
+      "domain": "frontend",
+      "tokens": 415
+    },
+    {
+      "id": "education",
+      "domain": "education",
+      "tokens": 158
+    },
+    {
+      "id": "ethics",
+      "domain": "philosophy",
+      "tokens": 168
+    },
+    {
+      "id": "evolve",
+      "domain": "general",
+      "tokens": 872
+    },
+    {
+      "id": "frontend-uiux",
+      "domain": "frontend",
+      "tokens": 285
+    },
+    {
+      "id": "healthtech",
+      "domain": "healthtech",
+      "tokens": 431
+    },
+    {
+      "id": "hedgefund",
+      "domain": "general",
+      "tokens": 1878
+    },
+    {
+      "id": "legal-doc",
+      "domain": "legal",
+      "tokens": 357
+    },
+    {
+      "id": "linguistics",
+      "domain": "linguistics",
+      "tokens": 162
+    },
+    {
+      "id": "math-doc",
+      "domain": "math",
+      "tokens": 298
+    },
+    {
+      "id": "physical-sciences",
+      "domain": "science",
+      "tokens": 170
+    },
+    {
+      "id": "pos-retail",
+      "domain": "pos-retail",
+      "tokens": 588
+    },
+    {
+      "id": "process-over-tools",
+      "domain": "orchestration",
+      "tokens": 413
+    },
+    {
+      "id": "project-management",
+      "domain": "management",
+      "tokens": 150
+    },
+    {
+      "id": "psychology",
+      "domain": "psychology",
+      "tokens": 176
+    },
+    {
+      "id": "quant-trading",
+      "domain": "trading",
+      "tokens": 786
+    },
+    {
+      "id": "risk-execution",
+      "domain": "trading",
+      "tokens": 1025
+    },
+    {
+      "id": "risk-intelligence",
+      "domain": "risk",
+      "tokens": 176
+    },
+    {
+      "id": "rust-lang",
+      "domain": "general",
+      "tokens": 244
+    },
+    {
+      "id": "science-doc",
+      "domain": "science",
+      "tokens": 280
+    },
+    {
+      "id": "security-audit",
+      "domain": "security",
+      "tokens": 242
+    },
+    {
+      "id": "sociology",
+      "domain": "sociology",
+      "tokens": 171
+    },
+    {
+      "id": "sustainability",
+      "domain": "environment",
+      "tokens": 151
+    },
+    {
+      "id": "swarm-release-ops",
+      "domain": "swarm-release-ops",
+      "tokens": 308
+    }
+  ],
+  "edges": [
+    {
+      "source": "ads-optimizer",
+      "target": "account-safety",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "ads-optimizer",
+      "target": "bid-optimizer",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "ads-optimizer",
+      "target": "budget-allocator",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "ads-optimizer",
+      "target": "campaign-architect",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "ads-optimizer",
+      "target": "creative-analyzer",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "ads-optimizer",
+      "target": "creative-generator",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "ads-optimizer",
+      "target": "ub-skills",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "ads-optimizer",
+      "target": "ulti-arm",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "10-15",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "12-1",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "12-18",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "15-25",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "20-30",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "25-40",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "4-0",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "5-0",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "6-1",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "7-1",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "8-1",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "alf-life",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "alk-forward",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "hort-term",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "igual-ponderado",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "nti-overfitting",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "quant-engine",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "risk-parity",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "alpha-research",
+      "target": "ut-of-sample",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "atdd-spec",
+      "target": "spec-driven",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "behavioral-economics",
+      "target": "multi-agente",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "data-science",
+      "target": "ata-science",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "data-science",
+      "target": "scikit-learn",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "diagram-design",
+      "target": "elf-check",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "diagram-design",
+      "target": "iagram-design",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "diagram-design",
+      "target": "output-spec",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "diagram-design",
+      "target": "semantic-patterns",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "diagram-design",
+      "target": "style-guide",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "ethics",
+      "target": "multi-agente",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "200-5000",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "auto-mejora",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "auto-referencial",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "eta-agent",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "eta-level",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "eward-free",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "kill-as-memory",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "kill-driven",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "meta-aprendizaje",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "meta-loop",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "multi-turn",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "rincipio-based",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "self-accelerating",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "single-cycle",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "evolve",
+      "target": "utcome-based",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "frontend-uiux",
+      "target": "10-15",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "frontend-uiux",
+      "target": "3-tier",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "frontend-uiux",
+      "target": "rontend-uiux",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "frontend-uiux",
+      "target": "sample-efficient",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "healthtech",
+      "target": "health-specific",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "healthtech",
+      "target": "offline-first",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "hedgefund",
+      "target": "auto-mejora",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "hedgefund",
+      "target": "data-driven",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "hedgefund",
+      "target": "no-go",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "hedgefund",
+      "target": "stop-loss",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "hedgefund",
+      "target": "top-loss",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "legal-doc",
+      "target": "multi-especialidad",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "linguistics",
+      "target": "inter-agente",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "math-doc",
+      "target": "valor-p",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "pos-retail",
+      "target": "e-commerce",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "pos-retail",
+      "target": "multi-medio",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "pos-retail",
+      "target": "multi-sucursal",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "pos-retail",
+      "target": "offline-first",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "process-over-tools",
+      "target": "an-out",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "process-over-tools",
+      "target": "fan-out",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "psychology",
+      "target": "multi-agente",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "quant-trading",
+      "target": "cargo-fuzz",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "quant-trading",
+      "target": "ean-reverting",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "quant-trading",
+      "target": "quant-engine",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "risk-execution",
+      "target": "02-0",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "risk-execution",
+      "target": "03-0",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "risk-execution",
+      "target": "05-0",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "risk-execution",
+      "target": "08-0",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "risk-execution",
+      "target": "15-0",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "risk-execution",
+      "target": "2-5",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "risk-execution",
+      "target": "odel-free",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "risk-execution",
+      "target": "post-trade",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "risk-execution",
+      "target": "pre-alloc",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "risk-execution",
+      "target": "quant-engine",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "rust-lang",
+      "target": "async-std",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "rust-lang",
+      "target": "systems-level",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "rust-lang",
+      "target": "ust-lang",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "rust-lang",
+      "target": "wasm-pack",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "science-doc",
+      "target": "caso-control",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "science-doc",
+      "target": "eta-an",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "science-doc",
+      "target": "meta-analysis",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "science-doc",
+      "target": "pre-registro",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "security-audit",
+      "target": "ecurity-audit",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "security-audit",
+      "target": "review-deps",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "security-audit",
+      "target": "threat-model",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "sociology",
+      "target": "multi-agente",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "swarm-release-ops",
+      "target": "auto-merge",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "swarm-release-ops",
+      "target": "case-sensitive",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "swarm-release-ops",
+      "target": "dependency-groups",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "swarm-release-ops",
+      "target": "no-hashes",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "swarm-release-ops",
+      "target": "nti-patrones",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "swarm-release-ops",
+      "target": "pip-audit",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "swarm-release-ops",
+      "target": "requirements-txt",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "swarm-release-ops",
+      "target": "stop-loss",
+      "type": "ENHANCES"
+    },
+    {
+      "source": "swarm-release-ops",
+      "target": "warm-release-ops",
+      "type": "ENHANCES"
+    }
+  ]
+}

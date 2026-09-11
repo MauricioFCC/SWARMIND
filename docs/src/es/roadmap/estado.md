@@ -5,6 +5,61 @@
 
 ## Estado Actual (2026-08-04)
 
+### Estado 2026-09-06 (ADRs frontera 0065-0067 + llm-grep + gitignore ADRs)
+
+- **ADR-0065 Segundo Cerebro (PROPUESTO)** — overlay `graph_overlay.py` SurrealDB solo aristas, LanceDB sigue SSOT; router local-first → nube solo `is_heavy()`.
+- **ADR-0066 Prompt-cache TTL (PROPUESTO)** — prefijo estable + prohibido cambio modelo mid-sesión + `time_to_live_s` (chat 3600 / API-subagente 300) + métrica Effective-Input-Price.
+- **ADR-0067 LLM-grep frontera (APLICADO)** — `harness/memory_rag/llm_grep.py`: ripgrep-first → ast-grep condicional → `HybridRetriever` último recurso; salida `ruta:linea` + 2 líneas, dedup `(path,line)`, `GrepBudget`, `RouteReport` con alerta `semantic_ratio>20%`. Tests `test_llm_grep.py` **12 passed**; regresión hybrid **22 passed**; ruff 0.
+- **.gitignore**: `docs/src/es/adr/` local-only (segunda capa junto a `.githooks/pre-push`); versionado local explícito con `git add -f`.
+- **Deuda doc detectada**: `docs/src/es/adr/README.md` indexa hasta 0041, existen 0042-0067 (26 ADRs sin índice); `docs/src/en/adr/` vacío; `estado.md` cabecera anclada a 2026-08-11.
+- **ADR-0068 Cascada STEER + salud cache (APLICADO)** — `harness/model_router/cascade_router.py` (small→frontier si confianza<0.7, escape_hatch, costo por intento) + `TokenUsageTracker.cache_health` (flag bug estructural si hit<60% con volumen≥10K). TDD: `test_cascade_router.py` 10 + tracker 44; mutante M-gate verificado muerto; ruff 0. Personal auditado: `deploy_local.json` ignorado, 0 secretos/paths en `harness/`.
+- **ADR-0070/0077 Re-anclaje + taxonomía + TDD adversarial (APLICADO)** — `harness/memory_rag/reanchor.py` (bloque `<<RE-ANCHOR>>` post-compaction: N1+rol+skills+estado, SC-aware; summary retiene 17%, bloque restaura >90%) + `base_principles.md` v3.1.0 (RPA re-pin post-compaction, CPD checklist competición 28.6%+15.5% design/boundary, taxonomía CHECK/GUIDE 8 categorías con IDs estables; TST+PBT ampliados: AdverTest, mutantes MS≥70/85, pairwise t=2→6, BVA, PROBE, MR metamórficas, fuzz). TDD: `test_reanchor.py` 7; research 3 tracks + testing frontera (AdverTest +8.56%, PROBE +9.79pp).
+- **ADR-0072 PEC universal (APLICADO)** — las 34 skills con persona-experta + canon frontera por especialidad (`scripts/apply_pec.py` SSOT, 171 tests `test_skill_pec.py`); supersede ADR-0071 (3 skills estéticas).
+- **ADR-0073 Quality/Latency/Tokens (APLICADO)** — `batch_vote.py` (votación k-en-1 con parámetro n: input 1× vs k×, fallback, arXiv 2604.13717) + `session_affinity.py` (sticky por sesión, SAAR −79% switches) + `structured_enforcer.py` (99.9% schema adherence, retries con feedback). 21 tests, mutante verificado muerto.
+- **ADR-0074 Optimización de contexto (APLICADO)** — `artifact_store.py` (tool result >4K chars → disco + handle/offset, acceso preservado) + `cue_ledger.py` (índice cue-anchored con dedup de inyecciones y staleness, arXiv 2607.20972 −42% tokens) + `compaction_calibration.py` (zonas warn 0.75/critical 0.90 AgeMem, dedup de repetidos) + `model_efficiency_report()` (tokens/llamada por modelo, gap 40% Copilot). 25 tests, mutante de frontera muerto.
+- **Delegación Ollama corregida** — `task_uses_local` era no-op (texto vs tipos de tarea); filtro `is_frontier_only()` por keywords en `tier_for_task` (None → cloud justificado). End-to-end: 5/8 tareas a local (0 tokens cloud), 3 frontier-only a cloud.
+- **ADR-0075 Skills/Agentes frontera (APLICADO + WIRING)** — `skill_composition.py` (calls lazy + anti-ciclos + tiers invocation + poda set-compatibility, Pocock −63%) + `competence_model.py` (Beta posterior por agente×skill + Thompson anti-collapse + imp@k) + `fanout_gate.py` (anti-sobre-descomposición: baseline ≥80% → single, evita amplificación ×17.2). **Wiring**: piloto `swarm-release-ops → calls:[security-audit]`; AgentSelector con `competence` DI (re-rank Thompson con evidencia); `vote_on_task(baseline_success=)` (probe ≥0.8 → sin voting); `adaptive_planner._degrade_if_strong` (baseline single ≥0.8 con evidencia → degrada multi, en atajo y flujo). 9 tests wiring (302 passed en suite tocada); 2 mutantes de frontera muertos. Diferidos: SkillRouter-embeddings (YAGNI a 34 skills), GDE sub-goals verificables (refactor planner, ADR futuro).
+- **CI verdes** — required {lint, test, security} PASS en PR #16: fix extras-dev (ruff/mypy/vulture), formato ruff 0.16, vulture 2.16, SDO+presupuesto skills 320 chars, progressive disclosure restaurado, safety con ignore CVE-2025-33228 (falso positivo cuda-toolkit, no es paquete pip). Deps UPG check-web: ruff/mypy/hypothesis/lancedb/numpy/torch.
+
+### Estado 2026-08-18 (arquitecturas RAG frontier + integraciones anydoc + deepseek-harness)
+
+- **Arquitecturas RAG 2026 (5 evaluadas, FRS)**:
+  - **Hibrido (dense + sparse) IMPLEMENTADO** — `harness/memory_rag/hybrid_retriever.py`:
+    `HybridRetriever` fusiona vector denso (LanceDB embeddings) y BM25 disperso
+    (SQLite FTS5) con **Reciprocal Rank Fusion** (k=60, Cormack 2009); DI sobre
+    `FTSSearch` + `LanceVectorStore`; `HybridResult` frozen.
+  - **Correctivo (CRAG) IMPLEMENTADO** — `harness/memory_rag/corrective_retriever.py`:
+    valida calidad de recuperacion pre-generacion (arXiv:2401.15884); evaluador
+    heuristico cero-LLM (score medio + cobertura de terminos); si calidad < 0.30 →
+    query rewrite o fallback; reporta `corrective_action`.
+  - **GraphRAG CUBIERTO** — `knowledge_graph.py` (grafo metadatos) +
+    TokenBudgetRouter (PageRank + TF-IDF); pipeline LLM de entidades = YAGNI.
+  - **Agentic RAG CUBIERTO** — orchestrator multi-agente (fan-out + votacion
+    gobernada + tools) ya es la capa agentica.
+  - **Multimodal PARCIAL** — anydoc convierte binarios (21 extensiones) → Markdown;
+    embeddings multimodales nativos = YAGNI.
+  - Tests: `test_hybrid_retriever.py` (12) + `test_corrective_retriever.py` (10);
+    regresion memory_rag **191 passed**; ruff 0.
+
+### Estado 2026-08-18 (integraciones anydoc + patrones deepseek-harness)
+
+- **Integración anydoc — binarios → Markdown → RAG** (commit 983f93c):
+  `harness/memory_rag/doc_converter.py` con Protocol `DocumentConverter` +
+  `AnyDocConverter` (lazy, `firecrawl-anydoc>=0.1.9`) y `DOC_EXTENSIONS` con
+  **21 extensiones** (pdf, docx, doc, pptx, ppt, xlsx, xls, odt, odp, ods, rtf,
+  epub, csv, tsv, html, htm, md, txt, json, yaml, yml). `DocumentChunker` acepta
+  converter inyectado (DI) y propaga `DocumentConversionError(path, reason)`.
+  Ingesta con `rag_ingest.py --include-docs` o `!rag ingest --docs`.
+- **Patrones deepseek-harness — plugin lifecycle + session replay**:
+  `PluginBase` con `on_load()`/`on_unload()`/`events` (no-op), `ToolRegistry`
+  con `event_bus` DI y suscripción automática `on_{event}`,
+  `load_all()`/`unload_all()` idempotentes; `SessionReplay`
+  (`harness/observability/session_replay.py`) export markdown/json +
+  `SessionNotFoundError`. Demo: `GreeterTool`.
+- Suite: **4722 tests** collected; **35 skills** validos
+  (`validate_skills.py --strict`); 59 tests nuevos (30 plugin + 29 replay);
+  coverage registry 94%, session_replay 100%.
+
 ### Estado 2026-08-11 (deuda AGR 0 + GPU CUDA 12.6 + oraculos reales)
 
 Sesion de cierre de deuda estructural. Deuda AGR a 0: 32 modulos >500 lineas
@@ -24,12 +79,12 @@ run_commands, baseline de tests identico tras el refactor.
 - **Memoria central SSOT** (Memory_Proyects, memory_config.py 3 niveles
   LANCEDB_PATH > .swarmind_config.json > legacy, `_safe_home()` resiliente):
   7.5GB de DBs duplicadas eliminadas, portabilidad Linux/Mac/Windows.
-- Suite: **4414 passed, 37 skipped, 4 xfailed**, Ruff all checks passed,
+- Suite: **4465 passed, 37 skipped, 4 xfailed**, Ruff all checks passed,
   Vulture 0 muerto.
 
 Las metricas principales del sistema (tests, cobertura, agentes, skills, modulos) estan en la [pagina principal](../README.md#estado-actual-julio-2026).
 
-**Resumen ejecutivo:** 4414 tests, 22 agentes, 33 skills, 19 paquetes orchestrator, 15 paquetes memory/rag, RTX 4060 CUDA 12.6 (x10.9 search), 15 papers 2026 implementados, **Opción A SSOT global implementada + memoria central portable (v3.x)**.
+**Resumen ejecutivo:** 4722 tests, 23 agentes, 35 skills, 19 paquetes orchestrator, 14 paquetes memory/rag, RTX 4060 CUDA 12.6 (x10.9 search), 15 papers 2026 implementados, **Opción A SSOT global implementada + memoria central portable (v3.x)**.
 
 **Actualización 2026-08-04 :** IMPLEMENTADO — plugin compaction-context.js (hook experimental.session.compacting), steps:8 en release-ops/token-budget-auditor, Σ-Mem MVP (reliability_memory.py + 22 tests), memoria gobernada MVP (memory_guard.py + 22 tests), abstention_policy en token_budgets.yaml (stop rules CONVOLVE), regla subagentes condensados en coordinator.md; diferidos justificados: setCacheKey/small_model/provider options. Implementados H1-H8 completos — H1 (10 SKILL.min.md con YAML roto reparados + test TestSkillMinFiles), H2 (5 mins API densos recompactados con compile_skills.py: 58-88% → 35-54%), H3 (routing 45 rutas, universal 10→2 agentes), H4 (release-ops deduplicado), H5 (triada evolve -59.9%), H6 (token_budgets.yaml conectado al runtime, 23 tests nuevos), H7 (base_principles N3 bajo demanda, -6.2K tokens/agente), H8 (opencode.json: compaction.prune + tool_output + mcp_timeout). 22/22 agentes con role_budget. PR #7 mergado: CI con checks requeridos lint/test/security, python 3.12, auto-merge funcional.
 
@@ -91,6 +146,11 @@ Las metricas principales del sistema (tests, cobertura, agentes, skills, modulos
 | **ParallelExecutor** | 2026-08-11 | Fan-out paralelo nativo + voting gobernado (gate score>=70 ∧ confidence<0.7, N=3) — aportación ORCA 2026 |
 | **Memoria central SSOT** | 2026-08-11 | `Memory_Proyects` única DB + backups, 7.5GB de DBs duplicadas eliminadas, portabilidad Linux/Mac/Windows |
 | **Deuda AGR 0** | 2026-08-11 | 32 módulos >500 líneas → paquetes con `__init__.py` re-export, SOL corregido en 9 clases, mixins ≤2 bases, baseline de tests idéntico |
+| **Delegacion local Ollama 5-tier (CODING)** | 2026-09-06 | tier CODING (qwen2.5-coder:7b) con precedencia sobre QUALITY; keywords ES/EN (implementar, refactor, debug, pytest, class, funcion) | 
+| **Delegacion local Ollama 4-tier** | 2026-08-14 | delegación local Ollama 4-tier (fast/quality/embedding/vision) + keep_alive → minimiza tokens cloud | 
+| **Delegacion local Ollama — final** | 2026-08-14 | modelos 2026 instalados (qwen3:4b, deepseek-r1:8b, qwen2.5-coder:7b, qwen3-embedding:0.6b, qwen3-vl:4b), 38 tests nuevos (21+17), 2 bugs latentes corregidos en _apply_model_routing |
+| **Integracion anydoc** | 2026-08-18 | binarios → Markdown → RAG: `DocumentConverter`/`AnyDocConverter` (21 extensiones, `firecrawl-anydoc`), `DocumentChunker` DI + `DocumentConversionError`, `--include-docs` / `!rag ingest --docs` |
+| **Plugin lifecycle + session replay** | 2026-08-18 | patrones deepseek-harness: `PluginBase` on_load/on_unload/events, `ToolRegistry` DI + EventBus, `SessionReplay` (markdown/json) — 59 tests, registry 94%, session_replay 100% |
 
 ### Evolucion de Cobertura
 
@@ -176,12 +236,12 @@ Objetivo: 80%    (proximo hito)
 
 | Metrica | Actual | Objetivo | Tendencia |
 |---------|--------|----------|-----------|
-| Cobertura de tests | 74.95% | 80% | Subiendo |
-| Tests totales | 4414 | ~4500 | Subiendo |
-| Agentes | 22 | 30+ | Subiendo |
-| Skills | 33 | 50+ | Subiendo |
-| Modulos Orchestrator | 48 | 55+ | Subiendo |
-| Modulos Memory/RAG | 30 | 35+ | Subiendo |
+| Cobertura de tests | 75.70% | 80% | Subiendo |
+| Tests totales | 4722 | ~5000 | Subiendo |
+| Agentes | 23 | 30+ | Subiendo |
+| Skills | 35 | 50+ | Subiendo |
+| Modulos Orchestrator | 142 | 150+ | Subiendo |
+| Modulos Memory/RAG | 109 | 120+ | Subiendo |
 | Archivos <500LC (deuda AGR) | 100% | 100% | Mantenido |
 | Archivos >500LC (deuda AGR) | 0 | 0 | Completada |
 | DocStrings ES-UTF8 | ~95% | 100% | Subiendo |
@@ -197,7 +257,8 @@ Objetivo: 80%    (proximo hito)
 
 ## Notas de la Version
 
-- **2026-08-11**: Deuda AGR 0 — 32 modulos >500 lineas convertidos a paquetes con `__init__.py` re-export backward-compatible (commits e409982 + 545e591, verificado baseline identico). GPU CUDA 12.6 activa (torch 2.13.0+cu126, RTX 4060 8GB): vector search x10.9 (10k) / x9.2 (100k), embeddings batch 41us/msg, `enable_gpu.py` portable, health hardware info (e246998, 826aeda). Fase 1 TDD: oraculos reales PBT/mutation en subprocess, orchestrator DynamicDAG + WAL, test_router 25 tests + fix `_to_model_route()` (407c36d). ParallelExecutor fan-out + voting gobernado (ORCA 2026 evaluado/descartado, 4408944). Memoria central SSOT Memory_Proyects sin DBs paralelas + portabilidad Linux/Mac/Windows, 7.5GB liberados (4e5583e). **4414 passed, 37 skipped, 4 xfailed**, Ruff all checks passed, Vulture 0.
+- **2026-08-18**: Integraciones (commit 983f93c): **anydoc** — binarios → Markdown → RAG (`DocumentConverter`/`AnyDocConverter` lazy con `firecrawl-anydoc>=0.1.9`, `DOC_EXTENSIONS` 21 extensiones, `DocumentChunker` con converter DI, `DocumentConversionError(path, reason)` sin tragar errores, `rag_ingest.py --include-docs` + `!rag ingest --docs`); **deepseek-harness** — plugin lifecycle (`PluginBase` on_load/on_unload/events, `ToolRegistry` con event_bus DI, suscripción automática `on_{event}`, load_all/unload_all idempotentes, `GreeterTool` demo) + session replay (`SessionReplay` export markdown/json, `SessionNotFoundError`). 59 tests nuevos (30 plugin + 29 replay); coverage registry 94%, session_replay 100%. **4722 tests** collected, **35 skills** validos.
+- **2026-08-11**: Deuda AGR 0 — 32 modulos >500 lineas convertidos a paquetes con `__init__.py` re-export backward-compatible (commits e409982 + 545e591, verificado baseline identico). GPU CUDA 12.6 activa (torch 2.13.0+cu126, RTX 4060 8GB): vector search x10.9 (10k) / x9.2 (100k), embeddings batch 41us/msg, `enable_gpu.py` portable, health hardware info (e246998, 826aeda). Fase 1 TDD: oraculos reales PBT/mutation en subprocess, orchestrator DynamicDAG + WAL, test_router 25 tests + fix `_to_model_route()` (407c36d). ParallelExecutor fan-out + voting gobernado (ORCA 2026 evaluado/descartado, 4408944). Memoria central SSOT Memory_Proyects sin DBs paralelas + portabilidad Linux/Mac/Windows, 7.5GB liberados (4e5583e). **4465 passed, 37 skipped, 4 xfailed**, Ruff all checks passed, Vulture 0.
 - **2026-08-08**: TDD always-on (engine authority + test-first real + anti-gaming, `test_dependency_map.py` TDAD src↔tests, `test_reinforcement.py` Tester→mutation→Critic; 74 tests nuevos; contrato TDD 2026 en builder/guardian/coordinator). Fase 3 ahorro de tokens: `complexity_router.py` (RouteLLM-style, 26 tests, ahorro ~2x con fallback) + `token_usage_tracker.py` (medición por agente, 39 tests, thread-safe). Documentación concisa (progressive disclosure: resumen en notas, detalle en módulos). **4277+ tests**.
 - **2026-08-08**: Fase 1+2 — MCP stateless 2026-07-28 (`connect_stateless` + `server/discover` + catálogos cacheables + headers Mcp-Method/Mcp-Name, 22 tests), OTel GenAI semconv estables (`start_genai_span`, `gen_ai.*`, 15 tests), DeltaChannel durable exec (`delta_channel.py`, 9 tests), Agent Factory on-demand (`agent_factory.py` + `agent_templates.yaml` 8 plantillas + recommender + render Markdown opencode, 29 tests), validador agentskills.io (`skill_frontmatter.py`, 20 tests, 32/32 skills válidos), skills de dominio 2026 (reviewer adversarial + science citas/reproducibilidad + legal vigencia/citas). Fix test-order: TestGenAISemconv con parcheo por `trace_agent.__globals__` (robusto ante `test_lazy_loading`). **4068+ tests**.
 - **2026-08-03**: Memoria central portable (v3.x) en `<Documents>/Memory_Proyects` (MEMORY_ROOT) + backup automático con rotación (`backup_memory.py` + tarea programada) + menú de configuración al instalar (`config_swarmind.py`). TDD: 58 tests nuevos en 5 módulos a 0% cobertura. Optimización de tokens: descripciones de agents/skills -57% (3875→1684 tokens). Deuda técnica: test_agent_builder fechas hardcodeadas corregidas. **3937 tests**.

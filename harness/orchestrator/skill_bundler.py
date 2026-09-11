@@ -45,26 +45,25 @@ SKILL_TO_AGENT: dict[str, str] = {
     "frontend-uiux": "builder",
     "rust-lang": "builder",
     "architecture": "scientist",
-    "responsive-ui": "builder",
     "data-science": "scientist",
     "security-audit": "guardian",
 }
 
 # Mapa de dominios â†’ skills relevantes
 DOMAIN_SKILLS: dict[str, list[str]] = {
-    "web": ["frontend-uiux", "responsive-ui", "security-audit", "rust-lang"],
+    "web": ["frontend-uiux", "security-audit", "rust-lang"],
     "api": ["architecture", "rust-lang", "security-audit", "data-science"],
     "data": ["data-science", "alpha-research", "architecture"],
-    "frontend": ["frontend-uiux", "responsive-ui", "security-audit"],
+    "frontend": ["frontend-uiux", "security-audit"],
     "backend": ["rust-lang", "architecture", "data-science", "security-audit"],
-    "mobile": ["frontend-uiux", "responsive-ui", "security-audit"],
+    "mobile": ["frontend-uiux", "security-audit"],
     "security": ["security-audit", "architecture"],
     "architecture": ["architecture", "rust-lang"],
     "trading": ["quant-trading", "alpha-research", "risk-execution"],
     "research": ["alpha-research", "science-doc", "data-science"],
     "legal": ["legal-doc", "science-doc"],
     "health": ["healthtech", "data-science", "security-audit"],
-    "retail": ["pos-retail", "responsive-ui", "security-audit"],
+    "retail": ["pos-retail", "frontend-uiux", "security-audit"],
     "devops": ["rust-lang", "security-audit"],
     "general": ["architecture", "security-audit", "data-science", "rust-lang"],
 }

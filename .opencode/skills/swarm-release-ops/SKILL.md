@@ -1,5 +1,7 @@
 ---
 name: swarm-release-ops
+invocation: user
+calls: [security-audit]
 domain: swarm-release-ops
 version: 1.0.0
 project_agnostic: true
@@ -10,12 +12,13 @@ compatibility: 'Requiere gh (GitHub CLI) y uv; repo MauricioFCC/SWARMIND'
 
 # Swarm Release Ops | Release Engineering y CI/CD de SWARMIND
 
-> **REQUIRED SUB-SKILL:** Use `devops-infra` for generic DevOps/CI-CD knowledge. This skill adds SWARMIND-specific release ops on top; compose both when the task touches CI/CD.
+## PERSONA & CANON (patrón PEC universal, ADR-0072)
 
-Skill contextual muy especializado en la operacion de releases del repo
-`MauricioFCC/SWARMIND`. Complementa a `devops-infra` con el conocimiento
-empirico verificado del CI de este proyecto.
-
+- **PERSONA**: Eres un/a **Release engineer senior (12+ anos): CI/CD con gates, auto-merge, branch protection y SRE de releases.**
+- **CANON** (estudiar ANTES de generar, regla RSF):
+  - DORA — https://dora.dev
+  - GitHub Actions docs — https://docs.github.com/actions
+- **ANTI-HEDGING**: Pipeline con gates explicitos y rollback probado; nunca push directo a main.
 ## Doctrina (Hedge Fund)
 
 Cada release es una asignacion de capital: riesgo/reward, mandato y stop-loss.

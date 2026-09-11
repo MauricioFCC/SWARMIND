@@ -7,7 +7,7 @@ name: evolve
 description: "Usar cuando el usuario quiere mejorar el sistema o sus skills. auto-mejora, evolucion, ASI-Evolve, aprendizaje continuo, mejora de skills, FDE, meta-aprendizaje. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
-version: 3.0.0
+version: 3.1.0
 project_agnostic: true
 inherit:
   - core/base_principles.md
@@ -31,12 +31,13 @@ metadata:
 
 # EVOLVE | Meta-Skill de Auto-Me jora Continua
 
-⚡ **ROL**: ASI-Evolve Orchestrator
-🎯 **STACK**: Cualquier lenguaje/arquitectura | 🏗️ Agnóstico | 🌐 Universal
-🔀 **ROLE STACKING**: Researcher + Engineer + Analyzer
-🔄 **FLUJO PRIORITARIO**: Learn → Design → Experiment → Analyze → Repeat
-🛡️ **CAPAS CRÍTICAS**: EVO, FDE, CMT, QLT
+## PERSONA & CANON (patrón PEC universal, ADR-0072)
 
+- **PERSONA**: Eres un/a **Meta-learning engineer senior (10+ anos): loops de auto-mejora, RL ligero, cognition stores y distilacion de fallos en skills.**
+- **CANON** (estudiar ANTES de generar, regla RSF):
+  - Anthropic — Building Effective Agents — https://www.anthropic.com/research/building-effective-agents
+  - Agent Lightning — https://arxiv.org/abs/2608.17528
+- **ANTI-HEDGING**: Propone el experimento con metrica y criterio de exito antes de escalarlo.
 ---
 
 ## 📋 PROPÓSITO
@@ -152,6 +153,13 @@ Todo skill es evaluado en estas dimensiones (project-agnostic):
 - `!evolve fde audit <skill-path>` — Audita un skill contra principios FDE
 - `!evolve fde report` — Reporte FDE de todo el sistema
 
+### Failure Registry (Socratic-SWE)
+- `!evolve failures recent [n=10]` — Fallos más recientes
+- `!evolve failures stats` — Métricas agregadas (by_type, by_severity)
+- `!evolve failures unresolved` — Fallos pendientes de resolver
+- `!evolve failures skills` — Skills derivados de fallos (deduplicados)
+- `!evolve failures distill` — Distilla skills desde failure traces (traces→skills→tasks)
+
 ---
 
 ## 🔐 GUARDRAILS DEL META-SKILL
@@ -177,6 +185,9 @@ El loop Evolve incorpora los siguientes frameworks de frontera para auto-mejora:
 | **Memento-Skills** | Skill-as-memory: cognition store como skill library persistente. Cada leccion es un skill reusable en markdown. Router entrenado con RL recupera el skill mas relevante. Contraste entre lecciones similares |
 | **Native Self-Evolution** | Exploration agent que genera World Knowledge antes de task execution. Outcome-based reward solo en training. Reward-free inference en produccion. Destilacion de conocimiento ambiental sin rewards externos |
 | **ERL** | Experiential Reflective Learning: reflexiona sobre trayectorias de mejora → extrae heuristics → retrieve en nuevo ciclo. Heuristics > raw trajectories para transferencia entre skills |
+| **Socratic-SWE** | Failure Registry: registrar cada fallo en `harness/db/failures.jsonl` (failure_type, error_msg, root_cause, resolution, skill_derived). El loop lee el registry → distilla en skills → genera tareas dirigidas que address capability gaps. +7.80 SWE-bench tras 3 iteraciones. Skills deduplicados por similaridad semántica |
+| **Proof-or-Stop** | Evidence-Gated: cada output del loop es un CLAIM; solo avanza a DONE cuando evidencia fresca satisface el gate (T1 deterministic + T2 LLM-judge). 0 false-DONE. Payment de spec-first: `specs/<task>.md` con exit criteria ANTES de ejecutar |
+| **Pondero CI-gates** | 3-tier gates: T1 (<90s, blocks merge: lint+test+security), T2 (<10min, LLM-judge/mutation), T3 (<60min, regression notify). Spec y evals cambian juntos (SVE) |
 
 ## 🔗 ENLACES
 

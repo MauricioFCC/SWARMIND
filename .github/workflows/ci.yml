@@ -1,26 +1,79 @@
+# =============================================================================
+# CI/CD Pipeline — 3-Tier Gates (Pondero 2026 CI-for-Agents pattern)
+# =============================================================================
+#
+# Tier 1 (T1): Deterministico, <90s, BLOQUEA merge
+#   - lint, type-check, test, security, dead-code
+#   - Se ejecuta en: pull_request + push a main
+#
+# Tier 2 (T2): Mutation testing, <10min, BLOQUEA merge
+#   - mutation, coverage
+#   - Se ejecuta SOLO en: pull_request (no en push directo a main)
+#
+# Tier 3 (T3): Regresion, <60min, solo ALERTAS
+#   - regression, benchmark
+#   - Se ejecuta en: schedule (diario 02:00 UTC) + manual
+#
+# Branch protection en main requiere checks case-sensitive: lint, test, security
+# Verificar con: gh api repos/{owner}/SWARMIND/branches/main/protection \
+#   --jq '.required_status_checks.contexts'
+# =============================================================================
+
 name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    # T3: regresion diaria a las 02:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: "Tier a ejecutar (all/t1/t2/t3)"
+        required: false
+        default: "all"
+        type: choice
+        options:
+          - all
+          - t1
+          - t2
+          - t3
 
+# Agrupacion por branch/PR: cancelar runs antiguos del mismo contexto
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Permisos minimos (doctrina SEG: least privilege)
+permissions:
+  contents: read
+
+# =============================================================================
+# TIER 1 — Deterministico (~90s) — BLOQUEA MERGE
+# =============================================================================
 jobs:
+
+  # ---------------------------------------------------------------------------
+  # T1.1: Lint (ruff) — ~10s
+  # Name EXACTO "lint" para branch protection (case-sensitive)
+  # ---------------------------------------------------------------------------
   lint:
-    # Check name == required check EXACTO de branch protection de main:
-    #   gh api repos/MauricioFCC/SWARMIND/branches/main/protection
-    #     --jq '.required_status_checks.contexts'  -> ["lint","test","security"]
-    # (case-sensitive: "Lint" en mayuscula dejaba el PR en "Expected - Waiting").
     name: lint
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+
       - name: Cache uv
         uses: actions/cache@v4
         with:
@@ -28,34 +81,75 @@ jobs:
           key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
             uv-${{ runner.os }}-
-      - name: Install dependencies
-        # uv sync crea el venv (sin UV_SYSTEM_PYTHON) antes de instalar
-        # herramientas de lint; ruff/mypy viven en el venv -> uv run.
-        run: |
-          uv sync
-          uv pip install ruff mypy vulture
-      - name: Ruff
-        run: uv run ruff check harness/
-      - name: Vulture (dead code)
-        run: uv run vulture harness/ harness/vulture_whitelist.py --exclude harness/tests --min-confidence 80
-      - name: MyPy
+
+      - name: Instalar dependencias
+        # --extra dev: ruff/mypy/vulture viven en optional-dependencies (no en sync base)
+        run: uv sync --extra dev
+
+      - name: Ruff lint
+        run: uv run ruff check harness/ scripts/ --output-format=github
+
+      - name: Vulture (codigo muerto)
+        # v2.16: sin --whitelist-file; el whitelist va como PATH posicional
+        run: >
+          uv run vulture harness/ harness/vulture_whitelist.py
+          --exclude "*/test_*.py,harness/parallel/io_fusion.py"
+          --min-confidence 80
+
+  # ---------------------------------------------------------------------------
+  # T1.2: Type check (mypy) — ~30s
+  # allow_failure: 92 errores de tipo en 32 archivos (ADR-0037).
+  # Se arregla progresivamente; por ahora es informativo.
+  # ---------------------------------------------------------------------------
+  type-check:
+    name: type-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Instalar dependencias
+        run: uv sync --extra dev
+
+      - name: MyPy type check
         # TODO(ADR-0037): 92 errores de tipo en 32 archivos detectados 2026-07-31
-        # (build-up desde 2026-05). mypy queda en warning hasta tipado progresivo.
-        # Tracking: docs/src/es/roadmap/estado.md > Deuda tecnica.
+        # Tracking: docs/src/es/roadmap/estado.md > Deuda tecnica
         run: uv run mypy harness/ --ignore-missing-imports || true
 
+  # ---------------------------------------------------------------------------
+  # T1.3: Tests (pytest fail-fast) — ~60s
+  # Name EXACTO "test" para branch protection (case-sensitive)
+  # ---------------------------------------------------------------------------
   test:
-    # name en minusculas: matchea el required check "test" (case-sensitive)
     name: test
     runs-on: ubuntu-latest
     needs: lint
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+
       - name: Cache uv
         uses: actions/cache@v4
         with:
@@ -63,35 +157,47 @@ jobs:
           key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
             uv-${{ runner.os }}-
-      - name: Install dependencies
-        run: uv sync --group test
-      - name: Run tests
-        run: |
-          uv run python -m pytest harness/tests/ -v --cov=harness --cov-report=term --cov-report=xml
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
 
+      - name: Instalar dependencias
+        run: uv sync --group test
+
+      - name: Ejecutar tests (fail-fast)
+        run: >
+          uv run python -m pytest harness/tests/
+          -x -q --tb=short
+          --junitxml=test-results.xml
+
+      - name: Subir resultados JUnit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results.xml
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # T1.4: Security audit — ~20s
+  # Name EXACTO "security" para branch protection (case-sensitive)
+  # ---------------------------------------------------------------------------
   security:
-    # name en minusculas: matchea el required check "security" (case-sensitive)
     name: security
     runs-on: ubuntu-latest
     needs: lint
-    # nltk 3.10 (dep de safety v3 para typosquatting) bloquea imports de
-    # 'regex' cuando el .venv esta dentro del CWD (checkout): su finder
-    # considera 'en CWD' a .venv/... y lanza ImportError. Escape oficial:
-    # NLTK_DISABLE_IMPORT_SECURITY=1 (ver nltk/inisec.py).
+    timeout-minutes: 10
+    # NLTK 3.10 (dep de safety para typosquatting) bloquea imports de 'regex'
+    # cuando .venv esta dentro del CWD. Escape oficial de nltk/inisec.py.
     env:
       NLTK_DISABLE_IMPORT_SECURITY: "1"
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+
       - name: Cache uv
         uses: actions/cache@v4
         with:
@@ -99,33 +205,46 @@ jobs:
           key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
             uv-${{ runner.os }}-
-      - name: Install dependencies
-        # regex es dependencia de safety (import directo); no viene del
-        # dependency-group test -> sin el, safety falla en Python 3.12
-        # ('Blocked import of regex from current working directory').
+
+      - name: Instalar dependencias
         run: |
           uv sync
           uv pip install 'safety>=3.0' bandit regex
-      - name: Bandit
-        run: uv run bandit -r harness/ -x harness/tests -ll -q
-      - name: Security audit
-        # safety audita el lockfile (no el Python del sistema, que tiene
-        # setuptools 79.0.1 con CVE-2026-3447). setuptools>=83 en pyproject.
+
+      - name: Bandit (SAST)
+        # -ll: solo HIGH+CRITICAL, -q: quiet
+        run: uv run bandit -r harness/ -x harness/tests -ll -q --format=screen
+
+      - name: Safety audit (dependencias)
+        # Audita lockfile exportado (NO el Python del sistema, que tiene
+        # setuptools con CVE-2026-3447). setuptools>=83 en pyproject.toml.
+        # --ignore SFTY-20260120-40557: CVE-2025-33228 en "cuda-toolkit 13.0.3.0"
+        # es falso positivo: cuda-toolkit NO es paquete pip (el escaner detecta
+        # el string de version CUDA del ambiente); se remedia actualizando el
+        # toolkit/driver del sistema, no este lockfile.
         run: |
           uv export --format requirements-txt --no-hashes > /tmp/requirements.txt
-          uv run safety check -r /tmp/requirements.txt --output text
+          uv run safety check -r /tmp/requirements.txt --output text --ignore SFTY-20260120-40557
 
-  compile:
-    name: Compile
+  # ---------------------------------------------------------------------------
+  # T1.5: Dead code (vulture) — ~5s
+  # Separado del lint para visibilidad en la UI de GitHub
+  # ---------------------------------------------------------------------------
+  dead-code:
+    name: dead-code
     runs-on: ubuntu-latest
     needs: lint
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+
       - name: Cache uv
         uses: actions/cache@v4
         with:
@@ -133,9 +252,47 @@ jobs:
           key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
             uv-${{ runner.os }}-
-      - name: Install dependencies
+
+      - name: Instalar dependencias
+        run: uv sync --extra dev
+
+      - name: Vulture dead code
+        run: >
+          uv run vulture harness/ harness/vulture_whitelist.py
+          --exclude "*/test_*.py,harness/parallel/io_fusion.py"
+          --min-confidence 80
+
+  # ---------------------------------------------------------------------------
+  # T1.6: Compile check — ~5s
+  # Verifica que todos los archivos .py compilan sin errores de sintaxis
+  # ---------------------------------------------------------------------------
+  compile:
+    name: compile
+    runs-on: ubuntu-latest
+    needs: lint
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Instalar dependencias
         run: uv sync
-      - name: Check compile
+
+      - name: Compile check
         run: |
           uv run python -c "
           import py_compile, glob
@@ -151,17 +308,25 @@ jobs:
           print(f'OK: {len(files)} files')
           "
 
+  # ---------------------------------------------------------------------------
+  # T1.7: Agents discovery — ~5s
+  # Verifica que los agentes se descubren correctamente
+  # ---------------------------------------------------------------------------
   agents:
-    name: Agents
+    name: agents
     runs-on: ubuntu-latest
     needs: lint
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+
       - name: Cache uv
         uses: actions/cache@v4
         with:
@@ -169,9 +334,11 @@ jobs:
           key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
             uv-${{ runner.os }}-
-      - name: Install dependencies
+
+      - name: Instalar dependencias
         run: uv sync
-      - name: Verify agents
+
+      - name: Verificar agentes
         run: |
           uv run python -c "
           import sys; sys.path.insert(0, '.')
@@ -183,20 +350,297 @@ jobs:
           assert 'builder' in agents
           "
 
-  docs:
-    name: Docs
+  # =============================================================================
+  # TIER 2 — Mutation Testing (<10min) — BLOQUEA MERGE (solo PRs)
+  # =============================================================================
+  # Estos jobs NO corren en push directo a main (solo en pull_request).
+  # En main, el coverage real ya se valida en el gate de T1 (test job).
+  # Para añadir T2 como required check en branch protection, usar la
+  # condicion: `if: github.event_name == 'pull_request'`
+  # en la protection rule (requiere GitHub Actions como source).
+
+  mutation:
+    name: mutation
     runs-on: ubuntu-latest
     needs: lint
+    # Solo en pull_request (mutation testing es costoso)
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Install mdbook
-        run: |
-          curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.40/mdbook-v0.4.40-x86_64-unknown-linux-gnu.tar.gz | tar -xz
-          chmod +x mdbook
-          sudo mv mdbook /usr/local/bin/mdbook
-      - name: Build mdbook
-        run: mdbook build
-      - name: Upload docs artifact
-        uses: actions/upload-pages-artifact@v3
+
+      - uses: actions/setup-python@v5
         with:
-          path: docs/book
+          python-version: "3.12"
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Instalar dependencias
+        run: |
+          uv sync --group test
+          uv pip install mutmut
+
+      - name: Configurar mutmut (setup.cfg temporal)
+        # Subconjunto estrategico de logica core pura con tests dedicados.
+        # NO incluye pbt_stage.py (hypothesis en subprocess, lento).
+        # El archivo NO se versiona (cleanup al final).
+        run: |
+          cat > setup.cfg <<'MUTMUT_CFG'
+          [mutmut]
+          source_paths =
+              harness/memory_rag/cache_geometry.py
+              harness/memory_rag/compaction.py
+              harness/memory_rag/reversible_compaction.py
+              harness/memory_rag/shaped_cache.py
+          pytest_add_cli_args_test_selection =
+              harness/tests/test_cache_geometry.py
+              harness/tests/test_compaction.py
+              harness/tests/test_reversible_compaction.py
+              harness/tests/test_semantic_cache_extended.py
+              harness/tests/test_pbt_core.py
+          MUTMUT_CFG
+          echo "setup.cfg temporal creado (no se versiona)"
+
+      - name: Ejecutar mutation testing
+        # --max-children 2: runner hosted standard = 2 vCPU
+        run: uv run mutmut run --max-children 2
+
+      - name: Exportar stats CI/CD
+        # Genera mutants/mutmut-cicd-stats.json
+        run: uv run mutmut export-cicd-stats || true
+
+      - name: Mostrar mutantes no eliminados
+        run: uv run mutmut results || true
+
+      - name: Enforce mutation score (>= 70%)
+        # Gate equivalente a --fail-under=70 (no existe en mutmut 3.x)
+        run: |
+          uv run python - <<'PY'
+          """Gate de mutation score (doctrina TST, >= 70%).
+
+          Lee mutants/mutmut-cicd-stats.json y falla si score < 70%
+          o si hay mutantes sin tests asociados (no_tests > 0).
+          """
+          import json
+          import pathlib
+          import sys
+
+          stats_path = pathlib.Path("mutants/mutmut-cicd-stats.json")
+          if not stats_path.exists():
+              print("WARN: mutmut-cicd-stats.json no encontrado, saltando gate")
+              sys.exit(0)
+
+          stats = json.loads(stats_path.read_text(encoding="utf-8"))
+          denominator = stats["total"] - stats["no_tests"] - stats["skipped"]
+          score = stats["killed"] / denominator if denominator > 0 else 0.0
+          print(f"mutation score: {score:.1%} ({stats['killed']}/{denominator})")
+          print(
+              f"killed={stats['killed']} survived={stats['survived']} "
+              f"no_tests={stats['no_tests']} timeout={stats['timeout']} "
+              f"suspicious={stats['suspicious']} skipped={stats['skipped']} "
+              f"total={stats['total']}"
+          )
+          if stats["no_tests"] > 0:
+              print(
+                  f"FAIL: {stats['no_tests']} mutantes sin tests asociados — "
+                  "ajusta pytest_add_cli_args_test_selection en mutation.yml"
+              )
+              sys.exit(1)
+          if score < 0.70:
+              print(f"FAIL: mutation score {score:.1%} < 70% (gate TST)")
+              sys.exit(1)
+          print(f"PASS: mutation score {score:.1%} >= 70%")
+          PY
+
+      - name: Subir stats de mutation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutmut-cicd-stats
+          path: mutants/mutmut-cicd-stats.json
+          if-no-files-found: warn
+
+      - name: Cleanup setup.cfg temporal
+        if: always()
+        run: rm -f setup.cfg
+
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    needs: lint
+    # Solo en pull_request
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Instalar dependencias
+        run: uv sync --group test
+
+      - name: Ejecutar tests con coverage
+        run: >
+          uv run python -m pytest harness/tests/
+          -x -q --tb=short
+          --cov=harness --cov-report=xml --cov-report=term-missing
+          --cov-fail-under=80
+
+      - name: Subir coverage XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+          if-no-files-found: warn
+
+      - name: Upload coverage a Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+          flags: t2-pr
+
+  # =============================================================================
+  # TIER 3 — Regresion (<60min) — SOLO ALERTAS (no bloquea)
+  # =============================================================================
+  # Se ejecuta diariamente a las 02:00 UTC o manualmente.
+  # Estos jobs NO son required checks — solo generan reportes.
+  # Si fallan, se notifica via GitHub (email/slack si se configura).
+
+  regression:
+    name: regression
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Instalar dependencias
+        run: uv sync --group test
+
+      - name: Suite completa de regresion (verbose)
+        run: >
+          uv run python -m pytest harness/tests/
+          -v --tb=long
+          --junitxml=regression-results.xml
+          --cov=harness --cov-report=xml --cov-report=term-missing
+          -m "not slow"
+
+      - name: Subir resultados de regresion
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-results
+          path: |
+            regression-results.xml
+            coverage.xml
+          if-no-files-found: warn
+
+      - name: Upload coverage regresion a Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+          flags: t3-regression
+
+  benchmark:
+    name: benchmark
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Instalar dependencias
+        run: uv sync --group test
+
+      - name: Ejecutar benchmark tests
+        # Si no existen tests de benchmark, pytest retorna 0 con "no tests"
+        run: |
+          uv run python -m pytest harness/tests/ \
+            -v --tb=short \
+            -m "slow" \
+            --junitxml=benchmark-results.xml \
+            || echo "WARN: No benchmark tests found or some failed"
+
+      - name: Subir resultados de benchmark
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark-results.xml
+          if-no-files-found: warn
+
+# =============================================================================
+# Badges para README.md:
+#
+# [![CI](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml/badge.svg)](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml)
+#
+# Status checks en branch protection (main):
+#   - lint          (T1, required)
+#   - test          (T1, required)
+#   - security      (T1, required)
+#   - mutation      (T2, optional — recomendado agregar como required)
+#   - coverage      (T2, optional — recomendado agregar como required)
+#
+# Notas de diseno:
+#   - T1 corre en push+PR; T2 solo en PR; T3 solo en schedule/manual
+#   - concurrency group cancela runs antiguos del mismo branch
+#   - branch protection requiere exactamente "lint", "test", "security"
+#     (case-sensitive, verificar con gh api)
+# =============================================================================

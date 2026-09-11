@@ -52,9 +52,11 @@ El sistema Swarmind opera con **22 perfiles de agente** organizados en 4 categor
 
 ---
 
-## Skills (33)
+## Skills (34)
 
-El sistema cuenta con **33 skills** organizados en 12 categorias funcionales. La lista completa con descripciones esta en [Skills Registry](../skills/registry.md).
+El sistema cuenta con **34 skills** (PEC universal) organizadas en categorias funcionales. La lista completa con descripciones esta en [Skills Registry](../skills/registry.md) y los tiers de residencia en [Tiers](../skills/tiers.md).
+
+**PEC universal (ADR-0072, 2026-09-07):** toda skill envebe una seccion `## PERSONA & CANON` — persona experta (rol senior + años + especializacion), canon de referencias frontera por especialidad (OWASP para security, HL7 FHIR para healthtech, Rust API Guidelines, RICOUI Brands para UI...) y regla ANTI-HEDGING. Generadas por `scripts/apply_pec.py` (SSOT); gate con 171 tests.
 
 **Categorias:** Desarrollo y Tecnologia (6), Seguridad (1), Negocio y Estrategia (4), Finanzas y Trading (3), Ciencia e Investigacion (4), Humanidades y Ciencias Sociales (6), Salud (1), Legal (1), Retail (1), Marketing (1), Riesgo (1), Sostenibilidad (1), Meta (1).
 
@@ -225,17 +227,17 @@ Cada agente carga los skills necesarios segun su dominio. La asignacion es gesti
 | Agente | Skills que utiliza |
 |--------|-------------------|
 | **coordinator** | evolve, project-management, communication, risk-intelligence |
-| **builder** | architecture, rust-lang, frontend-uiux, responsive-ui, data-science, devops-infra, security-audit, ads-optimizer |
+| **builder** | architecture, rust-lang, frontend-uiux, data-science, devops-infra, security-audit, ads-optimizer |
 | **scientist** | alpha-research, math-doc, science-doc, physical-sciences, behavioral-economics, ethics, linguistics |
 | **guardian** | security-audit, risk-execution, risk-intelligence, devops-infra, legal-doc |
 | **evolve** | evolve (meta), alpha-research, risk-intelligence, behavioral-economics |
 | **architect** | architecture, evolve, communication |
 | **backend-engineer** | rust-lang, architecture, security-audit, devops-infra |
-| **frontend-engineer** | frontend-uiux, responsive-ui, creative-design, communication |
+| **frontend-engineer** | frontend-uiux, creative-design, communication |
 | **data-engineer** | data-science, devops-infra, architecture |
 | **database-administrator** | architecture, security-audit, devops-infra |
 | **devops** | devops-infra, security-audit, communication |
-| **mobile-engineer** | frontend-uiux, responsive-ui, rust-lang, architecture |
+| **mobile-engineer** | frontend-uiux, rust-lang, architecture |
 | **qa-engineer** | security-audit, devops-infra, risk-execution |
 | **security-engineer** | security-audit, risk-intelligence, devops-infra |
 | **product-manager** | business-strategy, project-management, communication, behavioral-economics, creative-design |
@@ -268,7 +270,7 @@ Cada agente carga los skills necesarios segun su dominio. La asignacion es gesti
 | "investiga papers sobre transformers eficientes" | scientist | alpha-research, science-doc |
 | "audita la seguridad del sistema contra OWASP" | guardian | security-audit, risk-intelligence |
 | "mejora el rendimiento del sistema multi-agente" | evolve | evolve (meta), alpha-research |
-| "crea un dashboard financiero con graficos" | builder | frontend-uiux, responsive-ui, quant-trading |
+| "crea un dashboard financiero con graficos" | builder | frontend-uiux, quant-trading |
 | "analiza este contrato legal colombiano" | coordinator -> scientist | legal-doc |
 | "genera campana de Meta Ads para ecommerce" | builder | ads-optimizer, data-science, creative-design |
 | "despliega la aplicacion en Kubernetes" | devops | devops-infra, security-audit |
@@ -393,12 +395,11 @@ bundle = bundler.compose("Desarrollar API REST en Rust con PostgreSQL")
 │   ├── evolve-engineer.md
 │   ├── evolve-analyzer.md
 │   └── auto/              # (agentes generados por evolve)
-├── skills/              # 33 skills (SKILL.md + SKILL.min.md)
+├── skills/              # 34 skills (SKILL.md + SKILL.min.md)
 │   ├── skills_registry.yaml
 │   ├── architecture/
 │   ├── rust-lang/
 │   ├── frontend-uiux/
-│   ├── responsive-ui/
 │   ├── data-science/
 │   ├── devops-infra/
 │   ├── security-audit/

@@ -97,15 +97,16 @@ def list_local_models() -> list[str]:
 
 def main() -> None:
     """CLI entry point."""
-    logger.info()
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    logger.info("")
     logger.info("=" * 50)
     logger.info("  Ollama Health Check")
     logger.info("=" * 50)
-    logger.info()
+    logger.info("")
 
     available = check_ollama()
 
-    logger.info()
+    logger.info("")
     if available:
         logger.info("âœ… Estado: OLLAMA DISPONIBLE")
         logger.info("   El ModelRouter puede usar modo LOCAL.")
@@ -113,7 +114,7 @@ def main() -> None:
         logger.info("âŒ Estado: OLLAMA NO DISPONIBLE")
         logger.info("   El ModelRouter usara solo modo CLOUD.")
         logger.info("   Para modo local: https://ollama.com")
-    logger.info()
+    logger.info("")
 
     return 0 if available else 1
 

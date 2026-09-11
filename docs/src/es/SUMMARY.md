@@ -64,7 +64,7 @@
 - [Scientist](agents/scientist.md)
 - [Security Engineer](agents/security-engineer.md)
 
-# Skills (33)
+# Skills (34)
 
 - [Ads Optimizer](skills/ads-optimizer.md)
 - [Alpha Research](skills/alpha-research.md)
@@ -89,7 +89,6 @@
 - [Project Management](skills/project-management.md)
 - [Psychology](skills/psychology.md)
 - [Quant Trading](skills/quant-trading.md)
-- [Responsive UI](skills/responsive-ui.md)
 - [Risk Execution](skills/risk-execution.md)
 - [Risk Intelligence](skills/risk-intelligence.md)
 - [Rust Lang](skills/rust-lang.md)
@@ -111,6 +110,7 @@
 - [Investigacion Aplicada 2026](reference/investigacion-aplicada.md)
 - [Comparativa Harness 2026](reference/comparativa-harness-2026.md)
 - [Skills Registry](skills/registry.md)
+- [Tiers de Residencia](skills/tiers.md)
 - [Otras Skills](skills/otras.md)
 - [Alpha Libraries List](reference/alpha_libraries_list.md)
 - [Analisis Retrospectivo y Comparativo 2026](reference/analisis-retrospectivo-2026.md)

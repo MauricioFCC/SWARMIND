@@ -5,7 +5,7 @@
 
 name: behavioral-economics
 domain: economics
-description: "Usar cuando el problema involucra decisiones humanas bajo incertidumbre. teoria de juegos, sesgos cognitivos, heuristicas, incentivos, economia del comportamiento, nudges. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el problema involucra decisiones humanas bajo incertidumbre. teoria de juegos, sesgos cognitivos, heuristicas, incentivos, nudges. Alcance: decisiones economicas; para aprendizaje y equipo ver psychology. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -28,6 +28,13 @@ metadata:
 ---
 # Behavioral Economics — Economia del Comportamiento
 
+## PERSONA & CANON (patrón PEC universal, ADR-0072)
+
+- **PERSONA**: Eres un/a **Behavioral economist senior (10+ anos): teoria de juegos, sesgos cognitivos, diseno de incentivos y nudges con evidencia experimental.**
+- **CANON** (estudiar ANTES de generar, regla RSF):
+  - BehavioralEconomics.com — https://www.behavioraleconomics.com
+  - Our World in Data (economia) — https://ourworldindata.org
+- **ANTI-HEDGING**: Ancla cada conclusion a un experimento o meta-analisis citado; no teorize sin evidencia.
 ## Descripcion
 Skill de economia del comportamiento para mejorar la toma de decisiones de agentes. Integra teoria de juegos, psicologia cognitiva y diseno de incentivos para optimizar decisiones estrategicas en sistemas multi-agente.
 

@@ -2,6 +2,193 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-09-07] Frontier harvest ADR-0065..0073 + PEC universal + CI verdes
+
+### Skills
+- **PEC universal (ADR-0072)** — las 34 skills enveben `## PERSONA & CANON`:
+  persona experta (rol senior + años + especialización), canon de referencias
+  frontera por especialidad (RICOUI Brands, OWASP, HL7 FHIR, Rust API Guidelines,
+  DORA, CFA, DIAN...) y regla ANTI-HEDGING (PRISM: persona genérica daña accuracy).
+  Generador idempotente `scripts/apply_pec.py` (SSOT del canon) + gate
+  `test_skill_pec.py` (171 tests parametrizados). Supersede ADR-0071 (3 skills).
+- **Fusión responsive-ui → frontend-uiux v1.2.0** (34 activas, −487 líneas);
+  descripciones con delimitadores `Alcance:` en cluster trading/psico (12 ediciones
+  espejadas SKILL.md+registry); `project_config.yaml` total 34; página
+  [Tiers de residencia](docs/src/es/skills/tiers.md).
+
+### Routing / Tokens
+- **ADR-0067 LLM-grep** — `harness/memory_rag/llm_grep.py`: ripgrep-first 3 capas
+  (lexical `rg` → estructural `ast-grep` condicional → semántica `HybridRetriever`
+  último recurso), salida compaction-friendly (`path:line`+2 ctx, dedup, GrepBudget),
+  `RouteReport` con alerta `semantic_ratio>20%`. 12 tests.
+- **ADR-0068 Cascada STEER + cache health** — `harness/model_router/cascade_router.py`
+  (small→frontier si confianza<0.7, gate estricto, escape_hatch, costo por intento)
+  + `TokenUsageTracker.cache_health` (flag cache-buster si hit<60% con volumen≥10K).
+  Mutantes M-gate/M3 verificados muertos.
+- **ADR-0073 Quality/Latency/Tokens** — `batch_vote.py` (k votos en 1 llamada con el
+  parámetro n: input 1× vs k×, fallback automático, quorum; arXiv 2604.13717) +
+  `session_affinity.py` (tier sticky por sesión con TTL, patrón SAAR −79% switches) +
+  `structured_enforcer.py` (JSON schema con retries con feedback, 99.9% adherencia).
+  21 tests.
+
+### Memoria / Compaction
+- **ADR-0070 Re-anclaje post-compaction** — `harness/memory_rag/reanchor.py`: bloque
+  `<<RE-ANCHOR>>` (N1+rol+skills+estado) reinyectado tras cada compactación
+  (summary retiene ~17%, bloque restaura >90%; 65% de fallos enterprise = drift).
+  7 tests.
+- **base_principles v3.0.0** — 2 principios nuevos (RPA re-pin post-compaction, CPD
+  fundamentos de competición) + taxonomía de adherencia CHECK/GUIDE con 8 categorías
+  (IFEval/DRFR/FollowBench), self-restatement y jerarquía de conflicto.
+
+### Modelos locales
+- **ADR-0069 Ollama tier CODING** — `qwen2.5-coder:7b` con precedencia sobre QUALITY
+  (orden EMBEDDING→VISION→CODING→QUALITY→FAST); keywords ES/EN sin fragmentos
+  ambiguos; fix `logger.info()` en `check_ollama.py`. 20 tests.
+
+### ADRs propuestas (local-only)
+- ADR-0065 Segundo Cerebro (spike SurrealDB overlay, LanceDB sigue SSOT).
+- ADR-0066 Prompt-cache TTL (prefijo estable, sin cambio de modelo mid-sesión,
+  TTL chat 3600/API 300, Effective-Input-Price).
+
+### CI / Calidad
+- Required {lint, test, security} **verdes** en PR #16: `uv sync --extra dev` en
+  lint/type-check/vulture; formato ruff `github` (removido `github-actions` en
+  ruff 0.16); vulture 2.16 sin `--whitelist-file`; SIM102 en `audit_docstrings.py`;
+  skills SDO + presupuesto 320 chars + progressive disclosure restaurado
+  (advanced/core pisados por sync); safety con `--ignore SFTY-20260120-40557`
+  (CVE-2025-33228 cuda-toolkit: falso positivo, no es paquete pip).
+- **UPG check-web**: 6 deps actualizadas (ruff 0.16.6, mypy 2.3.1, hypothesis 6.167.1,
+  lancedb 0.38.0, numpy 2.5.3, torch 2.14.0) + fix falso positivo TYP (`\bany\b`
+  word-boundary vs `firecrawl-anydoc`).
+- Verificación adversarial: 0 `except:pass` silenciosos en `harness/` (AST-scan);
+  2 fallbacks con logger añadidos (`lance_vector_store`, `cognition_sync`); bandit
+  0 High/Medium; 0 secretos.
+
+### Documentación
+- README (EN/ES) alineados: 5160 tests, 34 skills PEC, secciones Frontier 2026
+  (ADR-0065..0073), Cambios Septiembre 2026, métricas CI.
+- Índice ADRs actualizado (0065..0073) + `estado.md` con entrada 2026-09-06/07.
+
+## [2026-08-18] Arquitecturas RAG frontier: Hibrido (RRF) + Correctivo (CRAG)
+
+### Evaluacion de las 5 arquitecturas RAG 2026 (FRS)
+- **Hibrido (dense + sparse)** → **IMPLEMENTADO**: `harness/memory_rag/hybrid_retriever.py`
+  (NUEVO): `HybridRetriever` fusiona vector denso (LanceDB embeddings) y BM25 disperso
+  (SQLite FTS5) con **Reciprocal Rank Fusion** (k=60, Cormack 2009). `HybridResult`
+  (dataclass frozen: doc_id, score, dense_rank, sparse_rank, metadata); DI sobre
+  `FTSSearch` + `LanceVectorStore`; `DENSE_WEIGHT`/`SPARSE_WEIGHT` exportados. Cierra
+  el gap: `LanceVectorStore.hybrid_search` era vector + filtro keyword en metadata,
+  NO fusion BM25 real.
+- **Correctivo (CRAG)** → **IMPLEMENTADO**: `harness/memory_rag/corrective_retriever.py`
+  (NUEVO): `CorrectiveRetriever` valida la calidad de la recuperacion ANTES de
+  generacion (Yan et al., arXiv:2401.15884). Evaluador heuristico cero-LLM
+  (score medio normalizado + cobertura de terminos de la query); si calidad < 0.30 →
+  query rewrite por expansion de keywords o fallback a fuente alternativa;
+  reporta `corrective_action` (none/rewrite/fallback) + `quality_score`.
+- **GraphRAG** → CUBIERTO (documentado): `knowledge_graph.py` (grafo de metadatos
+  skills/agentes/ADRs con NetworkX) + `TokenBudgetRouter` (PageRank + TF-IDF) ya
+  cubren la navegacion por grafo a nivel sistema; pipeline LLM de extraccion de
+  entidades = YAGNI.
+- **Agentic RAG** → CUBIERTO (documentado): el orchestrator multi-agente con
+  fan-out + votacion gobernada + tools ya es la capa agentica; no requiere modulo nuevo.
+- **Multimodal** → PARCIAL (documentado): `anydoc` (doc_converter + doc_ingester)
+  convierte binarios (21 extensiones) a Markdown antes del chunking; embeddings
+  multimodales nativos = YAGNI.
+- Tests: `test_hybrid_retriever.py` (12) + `test_corrective_retriever.py` (10);
+  regresion memory_rag **191 passed**; ruff 0 errores.
+
+## [2026-08-18] Integraciones: anydoc (binarios → RAG) + patrones deepseek-harness (plugin lifecycle + session replay)
+
+### anydoc — documentos binarios a Markdown en RAG (feat, commit 983f93c)
+- **doc_converter** (NUEVO `harness/memory_rag/doc_converter.py`): Protocol
+  `DocumentConverter` + `AnyDocConverter` (lazy, basado en
+  `firecrawl-anydoc>=0.1.9`), `DocumentConversionError(path, reason)` con path y
+  causa, `DOC_EXTENSIONS` con **21 extensiones** (pdf, docx, doc, pptx, ppt, xlsx,
+  xls, odt, odp, ods, rtf, epub, csv, tsv, html, htm, md, txt, json, yaml, yml).
+- **doc_ingester** (`harness/memory_rag/doc_ingester.py`): `DocumentChunker` acepta
+  `converter` inyectado (DI, default `AnyDocConverter`); mapeo `_EXTENSION_TIPO`
+  ampliado (documento/presentacion/hoja_calculo/datos_tabulares); `chunk_file()`
+  convierte binarios a Markdown antes de chunkear y propaga
+  `DocumentConversionError` (no traga el error).
+- **Ingesta**: flag `--include-docs` en `harness/scripts/rag_ingest.py` y comando
+  `!rag ingest --docs` (`harness/run_commands/handlers_other.py`).
+- Dependencia `firecrawl-anydoc>=0.1.9` en `pyproject.toml` + `uv.lock`.
+- Verificado: CSV → tabla Markdown real, PDF inexistente → `DocumentConversionError`,
+  31+ tests nuevos.
+
+### Patrones deepseek-harness — plugin lifecycle + session replay (feat, commit 983f93c)
+- **Plugin lifecycle** (`harness/plugins/registry.py`): `PluginBase` con `on_load()`,
+  `on_unload()` y `events` (defaults no-op); `ToolRegistry.__init__(event_bus=None)`
+  (DI); `load_all()`/`unload_all()` idempotentes; suscripcion automatica de plugins
+  a eventos `on_{event}` del EventBus.
+- **Demo** (`harness/plugins/tools/example_tool.py`): `GreeterTool` con ciclo de vida
+  (on_load/on_unload).
+- **Session replay** (NUEVO `harness/observability/session_replay.py`):
+  `SessionReplay` para reproducir sesiones (export markdown/json) +
+  `SessionNotFoundError`.
+- Tests: `test_plugin_lifecycle.py` (30) + `test_session_replay.py` (29); coverage:
+  registry 94%, session_replay 100%.
+- Suite: **4722 tests** collected; 35 skills validos (`validate_skills.py --strict`).
+
+## [2026-08-14] Delegacion local Ollama: 4 tiers por capacidad + keep_alive (minimo tokens cloud)
+
+### Delegacion local (TKN — minimizar tokens cloud)
+- **OllamaClient** (NUEVO `harness/model_router/ollama_client.py`): cliente HTTP real
+  contra la API local de Ollama — generate/chat/embed + keep_alive (warm/precarga y
+  unload) + `/api/ps` + `pull` (instalacion automatica) + deteccion de capacidades.
+- **OllamaTierRouter** (NUEVO `harness/model_router/ollama_tiers.py`): 4 tiers por
+  capacidad — FAST (`qwen3:4b`), QUALITY (`deepseek-r1:8b`), EMBEDDING
+  (`qwen3-embedding:0.6b`) y VISION (`qwen3-vl:4b`) + tier CODING
+  (`qwen2.5-coder:7b`) — con heuristica sin LLM (TKN) +
+  `auto_pull` + `warm_on_start`. Modelos 100% configurables en
+  `.opencode/config/ollama_models.yaml` (base_url, timeout, warm_on_start, tiers),
+  sin hardcode.
+- **Integracion**: delegacion local conectada a ModelRouter/SlmRouter existentes
+  (small-first), con degradacion a cloud si Ollama no esta disponible o falta el modelo.
+- Base de arranque: `harness/scripts/check_ollama.py` existente (deteccion +
+  list_local_models).
+
+### Detalles finales (verificados, commit 3164be4)
+- **Modelos 2026 instalados en el PC** (verificado con `/api/tags`): `qwen3:4b`,
+  `deepseek-r1:8b`, `qwen2.5-coder:7b`, `qwen3-embedding:0.6b`, `qwen3-vl:4b` —
+  los 5 instalados con `ollama pull` (FRS: reemplazan a `nomic-embed-text` y
+  `llava:7b`, 2 anos obsoletos).
+- **2 bugs latentes corregidos** en `_apply_model_routing()`
+  (`harness/run_commands/handlers_extra.py`): `decision.provider` →
+  `decision.suggested_provider` y `decision.reason` →
+  `decision.model_route.reason` — el routing local NUNCA habia funcionado antes.
+- **38 tests nuevos** (21 `test_ollama_client` + 17 `test_ollama_tiers`), todos
+  mock sin red. Coverage: ollama_client 92%, ollama_tiers 69% (total 77.38%).
+- **Verificacion real** (Ollama local): embed `qwen3-embedding` → 1024 dims,
+  generate `qwen3:4b` → "OK", warm → True, has_capability vision
+  (`qwen3-vl:4b`) → True.
+
+## [2026-08-14] Auditoria TDD + herramientas universales: mutation testing, TDAD, atdd-spec, test-writer
+
+### Calidad (gap TST cerrado)
+- **Mutation testing con mutmut** (NUEVO `.github/workflows/mutation.yml`):
+  workflow_dispatch + semanal, subconjunto core acotado (cache_geometry,
+  compaction, reversible_compaction, shaped_cache), gate **mutation score ≥ 70%**
+  via `mutmut export-cicd-stats` + paso Python, artifact JSON + evidencia
+  `mutmut results`. Baseline verificado: cache_geometry 88.9% (48/54 killed).
+- **Coverage real verificado: 75.70%** (4465 passed, 37 skipped, 4 xfailed) —
+  fix comentario stale en pyproject.toml (59.69% → 75.70%).
+
+### TDAD (Test-Driven Agentic Development, arXiv:2603.17973)
+- **scripts/tdad_select.py** (NUEVO, 479 lineas): seleccion de tests impactados
+  por cambios via grafo de dependencias de imports (ast, stdlib puro).
+  Transitividad A→B→C, dedup, `--dry-run`/`--run`/`--exit-code`/`--base`.
+- **test_tdad_select.py** (NUEVO, 37 tests, 99% cov del script, ruff 0).
+
+### Skills y agentes (34 skills, 23 agentes)
+- **Skill atdd-spec v1.0.0** (NUEVO): ciclo Spec→Test→Code basado en
+  OpenSpec-ATDD + "tests como prompt+verificacion" (Cui 2025, arXiv:2505.09027)
+  + TDD prompting paradox (prompts cortos/progresivos).
+- **Agente test-writer** (NUEVO): subagente aislado que escribe tests ANTES de
+  ver la implementacion (patron Superpowers 2026) — model small (TKN),
+  prohibiciones explicitas, workflow Red→Green→Refactor con evidencia RED.
+- 33 → **34 skills** (registry + project_config sincronizados, 16 tests sync verdes).
+
 ## [2026-08-13] Skills frontier 2026: diagram-design + SDO + validador + deploy dinamico
 
 ### Nuevo skill diagram-design (upstream cathrynlavery/diagram-design v2.3)

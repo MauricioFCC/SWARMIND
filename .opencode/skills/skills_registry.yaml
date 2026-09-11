@@ -1,7 +1,7 @@
 skills:
   - name: alpha-research
     domain: quantitative
-    description: "Usar cuando el usuario busca investigar/validar factores de alpha o features cuantitativos. alpha, factores, ML, feature engineering, validacion estadistica, backtesting, motores cuantitativos. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario busca investigar o validar factores de alpha. alpha, factores, ML, feature engineering, validacion estadistica, backtesting. Alcance: investigacion (falsacion, walk-forward); para motor de datos ver quant-trading. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
@@ -19,7 +19,7 @@ skills:
 
   - name: hedgefund
     domain: financial
-    description: "Usar cuando se opera el proyecto como fondo de inversion institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, data-driven, riesgo institucional. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, riesgo institucional. Alcance: doctrina y estrategia; para motores ver quant-trading, para ejecucion ver risk-execution. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
@@ -43,13 +43,13 @@ skills:
 
   - name: quant-trading
     domain: quantitative
-    description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. Alcance: implementacion del motor sobre CQE; para validacion de factores ver alpha-research. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: risk-execution
     domain: quantitative
-    description: "Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica. Alcance: implementacion tactica; para doctrina institucional ver hedgefund. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
@@ -62,7 +62,7 @@ skills:
   - name: frontend-uiux
     domain: frontend
     description: "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. | UPG·NAM·FRS (reglas en base_principles.md)"
-    version: 1.0.0
+    version: 1.2.0
     project_agnostic: true
 
   - name: rust-lang
@@ -74,12 +74,6 @@ skills:
   - name: architecture
     domain: architecture
     description: "Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones. | UPG·NAM·FRS (reglas en base_principles.md)"
-    version: 1.0.0
-    project_agnostic: true
-
-  - name: responsive-ui
-    domain: frontend
-    description: "Usar cuando el usuario construye interfaces responsivas accesibles. responsive, accesibilidad, WCAG, design systems, component libraries, UX, movil, desktop. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
@@ -121,7 +115,7 @@ skills:
 
   - name: psychology
     domain: psychology
-    description: "Usar cuando el problema involucra comportamiento o psicologia. psicologia cognitiva, organizacional, del aprendizaje, positiva, sistemas multi-agente. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el problema involucra comportamiento o psicologia. psicologia cognitiva, organizacional, del aprendizaje, positiva, sistemas multi-agente. Alcance: individuo, equipo y aprendizaje; para decisiones economicas e incentivos ver behavioral-economics. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
@@ -139,7 +133,7 @@ skills:
 
   - name: behavioral-economics
     domain: economics
-    description: "Usar cuando el problema involucra decisiones humanas bajo incertidumbre. teoria de juegos, sesgos cognitivos, heuristicas, incentivos, economia del comportamiento, nudges. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el problema involucra decisiones humanas bajo incertidumbre. teoria de juegos, sesgos cognitivos, heuristicas, incentivos, nudges. Alcance: decisiones economicas; para aprendizaje y equipo ver psychology. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
@@ -194,5 +188,17 @@ skills:
   - name: swarm-release-ops
     domain: swarm-release-ops
     description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. | UPG·NAM·FRS (reglas en base_principles.md)"
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: atdd-spec
+    domain: testing
+    description: "Usar cuando se desarrolla una feature con ciclo Spec→Test→Code: especificación de comportamiento primero, tests como prompt+verificación, implementación mínima, refactor. | UPG·NAM·FRS (reglas en base_principles.md)"
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: process-over-tools
+    domain: orchestration
+    description: "Usar cuando se evalúa adoptar herramienta, modelo o agente en el proyecto: aplica el principio 'la diferencia no es la herramienta, es el proceso' — antes de adoptar, define objetivo, responsable, datos, medición y escalado, y enrútalo al harness. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true

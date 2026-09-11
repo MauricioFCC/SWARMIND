@@ -102,7 +102,7 @@ pre-commit run --all-files  # Hooks: compile-check, secret-scan, ruff-lint
 **Core:** evolve, hedgefund, architecture, rust-lang  
 **Cuantitativo:** quant-trading, alpha-research, risk-execution, risk-intelligence, math-doc  
 **Datos/ML:** data-science, science-doc  
-**Frontend/UX:** frontend-uiux, responsive-ui, creative-design  
+**Frontend/UX:** frontend-uiux, creative-design  
 **Negocio:** business-strategy, communication, project-management  
 **Humanidades:** psychology, sociology, linguistics, ethics, behavioral-economics  
 **Educación/Salud/Legal:** education, sustainability, healthtech, legal-doc  

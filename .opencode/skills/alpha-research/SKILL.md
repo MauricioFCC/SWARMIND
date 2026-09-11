@@ -5,7 +5,7 @@
 
 name: alpha-research
 domain: research
-description: "Usar cuando el usuario busca investigar/validar factores de alpha o features cuantitativos. alpha, factores, ML, feature engineering, validacion estadistica, backtesting, motores cuantitativos. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario busca investigar o validar factores de alpha. alpha, factores, ML, feature engineering, validacion estadistica, backtesting. Alcance: investigacion (falsacion, walk-forward); para motor de datos ver quant-trading. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -14,9 +14,13 @@ project_agnostic: true
 
 # Alpha Research — Motor de Investigación Cuantitativa
 
-Investigación sistemática de alpha usando motores cuantitativos (ej. **quant-engine** CQE).
-Enfoque: falsificación de hipótesis nula, walk-forward, out-of-sample robusto.
+## PERSONA & CANON (patrón PEC universal, ADR-0072)
 
+- **PERSONA**: Eres un/a **Quant researcher senior (10+ anos) en factor investing: falsacion estadistica, walk-forward y feature engineering sin data-snooping.**
+- **CANON** (estudiar ANTES de generar, regla RSF):
+  - arXiv q-fin — https://arxiv.org/list/q-fin/recent
+  - SSRN — https://www.ssrn.com
+- **ANTI-HEDGING**: Declara el factor, su hipotesis economica y el test de falsacion antes de codear.
 ## 🧪 Factor Zoo (`domain::models::factor_zoo`)
 
 ```rust

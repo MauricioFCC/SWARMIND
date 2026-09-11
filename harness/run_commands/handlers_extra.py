@@ -9,12 +9,12 @@ import harness.run_commands as _rc
 
 
 def _handle_hooks_status() -> None:
-    """Handle ``!hooks status`` â€” shows hook installation status."""
+    """Handle ``!hooks status`` — shows hook installation status."""
     from harness.scripts.install_hooks import show_status
     show_status()
 
 
-# â”€â”€ Evolve â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Evolve ──────────────────────────────────────────────────────────
 
 def _handle_evolve_mutate(store, cmd: str) -> None:
     """Handle ``!evolve mutate @<agent> \"<task>\"``."""
@@ -125,32 +125,59 @@ def _handle_schedule_list(store) -> None:
         _rc.logger.info(f"  - {job.name}: {job.trigger} = {job.trigger_value} [{status}] ultimo: {job.last_run or 'nunca'}")
 
 
-# â”€â”€ Model Routing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Model Routing ────────────────────────────────────────────────────
 
 def _apply_model_routing(task: str, target_agent: str, force_cloud: bool = False) -> str:
     """Apply ModelRouter to determine local vs cloud execution.
 
     Returns the routing source ("local" or "cloud") for logging.
     """
+    from harness.model_router.ollama_client import OllamaClient
+    from harness.model_router.ollama_tiers import OllamaTierRouter
     from harness.model_router.router import ModelRouter
+
     router = ModelRouter()
     if force_cloud:
-        _rc.logger.info(f"[ROUTER] @{target_agent} â†’ cloud (--force-cloud override)")
+        _rc.logger.info(f"[ROUTER] @{target_agent} → cloud (--force-cloud override)")
         return "cloud"
     decision = router.route(task, target_agent)
     source = decision.source
-    _rc.logger.info(f"[ROUTER] @{target_agent} â†’ {source} ({decision.provider}/{decision.model}) [{decision.reason}]")
-    if source == "local" and not router._is_ollama_available():
-        _rc.logger.info(f"[ROUTER] âš ï¸  Ollama no detectado. Modelo local '{decision.model}' no disponible.")
+    _rc.logger.info(
+        f"[ROUTER] @{target_agent} → {source} "
+        f"({decision.suggested_provider or 'n/a'}/{decision.model}) "
+        f"[{decision.model_route.reason}]"
+    )
+    if source == "local":
+        # Delegación local 5-tier por capacidad (fast/quality/coding/embedding/vision).
+        # Tareas FRONTIER_ONLY (diseño/arquitectura/planning/síntesis/razonamiento/
+        # security audit/code review) NO se delegan: tier_for_task retorna None.
+        # Degrada a cloud si Ollama no está disponible (no crashea).
+        client = OllamaClient()
+        if client.is_available():
+            tiers = OllamaTierRouter(client)
+            tier = tiers.tier_for_task(task)
+            if tier is None:
+                _rc.logger.info(
+                    f"[ROUTER] @{target_agent} → frontier-only (diseño/planning/"
+                    "síntesis/razonamiento/audit): se paga cloud (TKN justificado)"
+                )
+                return "cloud"
+            model = tiers.model_for(tier)
+            _rc.logger.info(
+                f"[ROUTER] @{target_agent} → local tier={tier.value} model={model} "
+                f"(keep_alive {tiers.model_for(tier)})"
+            )
+            return "local"
+        _rc.logger.info("[ROUTER] ⚠️  Ollama no detectado. Modelo local no disponible.")
         if router.config.get("local", {}).get("fallback_to_cloud", True):
-            _rc.logger.info("[ROUTER] âš ï¸  Fallback a cloud automatico activado.")
+            _rc.logger.info("[ROUTER] ⚠️  Fallback a cloud automatico activado.")
         else:
-            _rc.logger.info("[ROUTER] ðŸ’¡ Instala Ollama: https://ollama.com")
-            _rc.logger.info("[ROUTER] ðŸ’¡ O usa --force-cloud para modo cloud")
+            _rc.logger.info("[ROUTER] 💡 Instala Ollama: https://ollama.com")
+            _rc.logger.info("[ROUTER] 💡 O usa --force-cloud para modo cloud")
     return source
 
 
-# â”€â”€ HITL Guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── HITL Guard ─────────────────────────────────────────────────────
 
 def _check_hitl(action: str, agent_role: str, guard) -> bool:
     """Check if an action needs human approval and handle it.
@@ -167,7 +194,7 @@ def _check_hitl(action: str, agent_role: str, guard) -> bool:
     return guard.request_approval(action, agent_role)
 
 
-# â”€â”€ Watch mode helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Watch mode helpers ──────────────────────────────────────────────
 
 def _get_files_to_watch(harness_root: Path) -> dict:
     """Get file modification times for harness/ and .opencode/."""
@@ -194,7 +221,7 @@ def _get_files_to_watch(harness_root: Path) -> dict:
     return snapshots
 
 
-# â”€â”€ Watch-mode handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Watch-mode handler ──────────────────────────────────────────────
 
 
 def _handle_watch_mode(harness_root: Path) -> None:
@@ -285,7 +312,7 @@ def _handle_watch_mode(harness_root: Path) -> None:
         _rc._safe_print(f"\n  {_rc._cyan('[WATCH]')} Watch mode detenido.")
 
 
-# â”€â”€ Hermes commands â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Hermes commands ────────────────────────────────────────────────
 
 
 def _handle_hermes(cmd: str) -> None:
@@ -309,7 +336,7 @@ def _handle_hermes(cmd: str) -> None:
         _rc.logger.info("[Hermes] Unknown subcommand: '%s'. Try '!hermes sync' or '!hermes stats'.", sub)
 
 
-# â”€â”€ Guardrails helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Guardrails helper ──────────────────────────────────────────────
 
 
 def _run_guardrails(task: str, target_agent: str, ctx: Any,
@@ -318,7 +345,7 @@ def _run_guardrails(task: str, target_agent: str, ctx: Any,
     """
     Ejecuta guardrails de seguridad.
     
-    Si run_full_pipeline no estÃ¡ disponible, emite WARNING pero continÃºa
+    Si run_full_pipeline no está disponible, emite WARNING pero continúa
     (comportamiento degradado pero no bloqueante para desarrollo local).
     """
     if run_full_pipeline is None:
@@ -344,7 +371,7 @@ def _run_guardrails(task: str, target_agent: str, ctx: Any,
                  result['summary']['passed'], result['summary']['total_checks'])
 
 
-# â”€â”€ ANSI helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── ANSI helpers ────────────────────────────────────────────────────
 
 __all__ = [
     "_apply_model_routing",

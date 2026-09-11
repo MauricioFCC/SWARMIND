@@ -1,6 +1,15 @@
 # Registro de Skills — Swarmind Harness
 
-**33 skills** disponibles en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado). Cobertura: 100% con ambos formatos.
+**34 skills activas** (+1 fusionada) en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado). Cobertura: 100% con ambos formatos. **23 agentes** especializados los consumen vía `SkillRouter` (ver [Agentes y Skills](../guide/agentes-y-skills.md)).
+
+> **2026-09-07 (PEC universal, ADR-0072):** todas las skills enveben una sección
+> `## PERSONA & CANON` — persona experta (rol senior + años + especialización),
+> canon de referencias frontera por especialidad (se estudian ANTES de generar,
+> regla RSF) y regla ANTI-HEDGING (PRISM: persona genérica daña accuracy).
+> Generadas idempotentemente por `scripts/apply_pec.py`; gate en
+> `harness/tests/test_skill_pec.py` (171 tests).
+
+> **2026-09-06 (fusión UI):** `responsive-ui` se fusionó en `frontend-uiux` v1.2.0 (el contenido ya vivía en `advanced.md` § Responsive Design). 34 activas + 0 alias = 34 directorios. Residencia total si todas fueran INSTALLED: ~5.1K tokens (auditoría `skill_residency`); ver [Tiers de residencia](tiers.md).
 
 ## Tabla Completa de Skills
 
@@ -9,10 +18,12 @@
 |-------|---------|-----------|
 | **architecture** | software | Patrones GoF, Clean/Hexagonal, DDD, C4, decisión arquitectónica |
 | **rust-lang** | systems | Rust: ownership, async, FFI con Python, crates, optimización systems-level |
-| **frontend-uiux** | frontend | Generative UI 2026, design tokens, A2UI/OpenUI, WCAG 2.2, StyleSeed |
-| **responsive-ui** | frontend | UI responsive, mobile-first, Core Web Vitals, accesibilidad axe-core |
+| **frontend-uiux** | frontend | Generative UI 2026, design tokens, A2UI/OpenUI, WCAG 2.2, StyleSeed, responsive + mobile-first (v1.2.0 absorbe responsive-ui) |
 | **data-science** | data | ML pipelines, PyTorch/JAX, GPU acceleration, feature engineering, validación estadística |
 | **devops-infra** | devops | CI/CD, Docker, Kubernetes, Terraform, monitoreo, OpenTelemetry, observabilidad |
+| **atdd-spec** | testing | Ciclo Spec→Test→Code (OpenSpec-ATDD), tests como prompt+verificación, TDD prompting paradox |
+| **diagram-design** | design | 27 tipos de diagramas editoriales autocontenidos HTML+SVG (upstream cathrynlavery/diagram-design v2.3) |
+| **swarm-release-ops** | devops | GitHub Actions, uv, safety, bandit, auto-merge, branch protection, checks rojos del repo SWARMIND |
 
 ### Seguridad
 | Skill | Dominio | Propósito |
@@ -23,7 +34,7 @@
 ### Negocio y Gestión
 | Skill | Dominio | Propósito |
 |-------|---------|-----------|
-| **hedgefund** | finance | Doctrina hedge fund: riesgo/reward, capital allocation, stop-loss, institutional risk |
+| **hedgefund** | finance | Doctrina hedge fund: riesgo/reward, capital allocation, stop-loss (estrategia; táctica en risk-execution) |
 | **business-strategy** | business | DOFA, Porter, Canvas, OKR, ROI, planificación estratégica, KPIs de negocio |
 | **project-management** | management | Scrum, Kanban, WBS, riesgos, estimaciones, comunicación con stakeholders |
 | **communication** | communication | Escritura ejecutiva, presentaciones, storytelling, negociación, liderazgo |
@@ -31,14 +42,14 @@
 ### Finanzas y Trading
 | Skill | Dominio | Propósito |
 |-------|---------|-----------|
-| **quant-trading** | trading | Estrategias cuantitativas CQE Rust, backtesting, execution, generación de alpha |
-| **risk-execution** | trading | Risk management, position sizing, market making, TCA, execution algorítmica |
-| **behavioral-economics** | economics | Teoría de juegos, sesgos cognitivos, incentivos, nudges, toma de decisiones |
+| **quant-trading** | trading | Motor CQE Rust, backtesting, execution (implementación; validación en alpha-research) |
+| **risk-execution** | trading | Position sizing, market making, TCA (táctica; doctrina en hedgefund) |
+| **behavioral-economics** | economics | Juegos, sesgos, incentivos, nudges (decisiones económicas; equipo/aprendizaje en psychology) |
 
 ### Ciencia e Investigación
 | Skill | Dominio | Propósito |
 |-------|---------|-----------|
-| **alpha-research** | research | Factor research, ML avanzado, feature engineering, validación estadística con CQE Rust |
+| **alpha-research** | research | Factor research, feature engineering, validación estadística (investigación; motor en quant-trading) |
 | **math-doc** | academic | Documentos matemáticos, LaTeX, proofs, estadística, notación formal |
 | **science-doc** | academic | Documentos científicos, peer review, revisiones sistemáticas, paper drafting |
 | **physical-sciences** | science | Física, química, biología, método científico experimental, análisis de datos |
@@ -46,7 +57,7 @@
 ### Humanidades y Ciencias Sociales
 | Skill | Dominio | Propósito |
 |-------|---------|-----------|
-| **psychology** | psychology | Psicología cognitiva, organizacional, del aprendizaje, neurociencia aplicada |
+| **psychology** | psychology | Cognitiva, organizacional, aprendizaje (individuo/equipo; decisiones económicas en behavioral-economics) |
 | **education** | education | Diseño instruccional (ADDIE), Bloom, andragogía, microlearning, evaluación educativa |
 | **ethics** | philosophy | Ética de IA, alineamiento de valores, marcos éticos para agentes autónomos |
 | **linguistics** | linguistics | Lingüística cognitiva, semiótica, pragmática, análisis del discurso, PLN teórico |
@@ -74,12 +85,13 @@
 |-------|---------|-----------|
 | **ads-optimizer** | marketing | Optimización end-to-end de campañas Meta Ads con BOAD, ShapleyFlow, MetaClaw, RL Bidding |
 | **evolve** | meta | Auto-mejora continua, ciclo ASI-Evolve (Learn → Design → Experiment → Analyze → Deploy) |
+| **process-over-tools** | meta | Principio POC: todo tool/modelo/agente nuevo se adopta como proceso orquestado o se descarta (skill #35, 2026-08-13) |
 
 ## Carga de Skills por Proyecto
 
 > **NUEVO (2026-07-31):** desde la [Opción A — SSOT Global
 > OpenCode](../guide/opcion-a-ssot-global.md), **todos** los proyectos de
-> DEV-SPACE reciben las **33 skills completas** (potencia total) vía
+> DEV-SPACE reciben las **34 skills activas** (potencia total) vía
 > `scripts/deploy_all.py` + `skills_registry.yaml`. El mirror local ya no se
 > limita por tipo. La matriz siguiente queda como referencia del enrutamiento
 > recomendado por dominio (histórico).

@@ -62,10 +62,10 @@ class TestSelectSkills:
     """Seleccion de skills por dominio."""
 
     def test_domain_skills(self, bundler: SkillBundler) -> None:
-        """Dominio web debe incluir frontend-uiux y responsive-ui."""
+        """Dominio web debe incluir frontend-uiux (responsive-ui fusionado en v1.2.0)."""
         skills = bundler.select_skills("web")
         assert "frontend-uiux" in skills
-        assert "responsive-ui" in skills
+        assert "responsive-ui" not in skills
 
     def test_security_domain(self, bundler: SkillBundler) -> None:
         """Dominio security debe incluir security-audit."""
