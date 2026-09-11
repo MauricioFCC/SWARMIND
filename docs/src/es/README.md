@@ -30,7 +30,7 @@
 | Observabilidad | OpenTelemetry (trazas, metricas, exportacion OTLP) |
 | Orquestacion paralela | ParallelExecutor fan-out nativo + voting gobernado |
 | CI | lint / test / security verdes (3-tier: T1 bloquea, T2 mutation, T3 nightly) |
-| Principios | base_principles v3.0.0 (36 IDs, taxonomía CHECK/GUIDE, RPA + CPD) |
+| Principios | base_principles v3.1.0 (36 IDs, taxonomía CHECK/GUIDE, RPA + CPD + TDD adversarial) |
 | Lint / dead code | ruff 0 errores, vulture 0 dead code |
 
 El detalle de cobertura por modulo, hitos y roadmap esta en [Estado del Proyecto](roadmap/estado.md).
@@ -95,8 +95,8 @@ Swarmind compite con **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (4
 
 ### Cambios Septiembre 2026 (ADR-0065 .. 0073)
 
-- **Re-anclaje post-compaction** (`reanchor.py`): bloque `<<RE-ANCHOR>>` con N1+rol+skills+estado tras cada compactacion (los summaries retienen ~17%, el bloque restaura >90%); regla RPA en base_principles v3.0.0.
-- **base_principles v3.0.0**: taxonomia de adherencia CHECK/GUIDE (IFEval/DRFR), CPD (fundamentos de competicion: checklist edges+invariants+BigO, repair 3 fases 5/80→46/80).
+- **Re-anclaje post-compaction** (`reanchor.py`): bloque `<<RE-ANCHOR>>` con N1+rol+skills+estado tras cada compactacion (los summaries retienen ~17%, el bloque restaura >90%); regla RPA en base_principles v3.1.0.
+- **base_principles v3.1.0**: taxonomia de adherencia CHECK/GUIDE (IFEval/DRFR), CPD (fundamentos de competicion: checklist edges+invariants+BigO, repair 3 fases 5/80→46/80) + TST/PBT ampliados (AdverTest, mutantes, pairwise t=2→6, BVA, PROBE, MR metamorficas, fuzz).
 - **PEC universal (ADR-0072)**: las 34 skills envebidas con persona experta + canon frontera por especialidad + anti-hedging (`scripts/apply_pec.py`, 171 tests).
 - **LLM-grep** (`llm_grep.py`, ADR-0067): busqueda de codigo ripgrep-first 3 capas, budget-aware, salida compaction-friendly con alerta de misrouting semantico.
 - **Cascada STEER-lite** (`cascade_router.py`, ADR-0068): small→frontier si confianza<0.7 con costo por intento + `cache_health` (flag de cache-buster estructural si hit<60% con volumen).
