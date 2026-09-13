@@ -120,9 +120,10 @@ AGENTS:
     - token-budget-auditor
 
 SKILLS:
-  total: 34
+  total: 35
   skill_list:
     - ads-optimizer
+    - agent-rigor
     - alpha-research
     - architecture
     - atdd-spec

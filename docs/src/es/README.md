@@ -3,23 +3,30 @@
 ![Swarmind](/assets/logo.svg)
 
 **Swarmind** es un sistema multi-agente de orquestacion, ejecucion y auto-mejora continua con
-34 skills contextuales (PEC universal), orquestacion multi-nivel, GPU acceleration y token economics.
+35 skills contextuales (PEC universal), orquestacion multi-nivel, GPU acceleration y token economics.
 
 ## Estado Actual (Septiembre 2026)
 
 | Metrica | Valor |
 |---------|-------|
-| Tests | 5160 collected (TDD suite) · mutation testing ≥70% |
-| Agentes | 23 especializados (100% perfiles) |
-| Skills | 34 contextuales (100% SKILL.md + SKILL.min.md + **PEC universal**) |
-| ADRs frontera | 0065-0073 (surrealdb spike, prompt-cache TTL, llm-grep, cascada STEER, cache-health, Ollama CODING, reanchor+taxonomía, PEC universal, quality/latency/tokens) |
+| Tests | 5276 collected (TDD suite) · mutation testing ≥70% |
+| Agentes | 22 especializados (100% perfiles) |
+| Skills | 35 contextuales (100% SKILL.md + SKILL.min.md + **PEC universal**) |
+| ADRs frontera | 0065-0080 (surrealdb spike, prompt-cache TTL, llm-grep, cascada STEER, cache-health, Ollama CODING, reanchor+taxonomía, PEC universal, quality/latency/tokens, contexto, skills/agentes, tooling, verify-replan, competición, deepseek-local) |
 | Re-anclaje post-compaction | bloque `<<RE-ANCHOR>>` (restaura >90% de restricciones vs ~17% del summary) |
-| Routing | complexity + cascade STEER-lite + session-affinity (SAAR) + Ollama 5-tier local |
-| Votación | fan-out gobernado + batch_vote k-en-1 (input 1× vs k×) |
-| Salidas machine-readable | structured_enforcer (JSON schema + retries con feedback) |
-| Búsqueda de código | llm_grep ripgrep-first 3 capas (lexical → estructural → semántica) |
+| Routing | complexity + cascade STEER-lite + session-affinity (SAAR) + Ollama 5-tier local + LocalExecutor (triviales = 0 tokens cloud) |
+| Votación | fan-out gobernado + batch_vote k-en-1 (input 1× vs k×) + fanout_gate anti-sobre-descomposición |
+| Salidas machine-readable | structured_enforcer (JSON schema + retries con feedback + strict keys) |
+| Búsqueda de código | llm_grep ripgrep-first 3 capas (lexical → estructural → semántica) + backend tgrep opt-in |
+| Competición | cp_spec_gate (4 pilares pre-código) + dual_verify (fast vs brute-force) |
+| Trazas | trace_viewer (export trace.jsonl + replay sin LLM) + verify_replan_gate (VMAO) |
+| Skills/agentes | skill_composition (calls + invocation + compat) + competence_model (Beta/Thompson) |
+| Contexto | artifact_store + cue_ledger + compaction_calibration + prune_then_summarize |
+| Tooling | rtk wrapper + idempotency_guard + scripts Python/bash (PowerShell prohibido, corrompe UTF-8) |
+| opencode local | default `ollama/qwen3:4b` + 6 modelos registrados + permisos por agente |
 | Modulos Orchestrator | 19 paquetes / 142 modulos |
 | Modulos Memory/RAG | 14 paquetes / 109 modulos |
+| Modulos Validation | cp_spec_gate + dual_verify + mutation/pbt stages + conclusion_gate |
 | Modulos Hooks | 4 (security_validator, permission_checker, audit_logger, metrics) |
 | Modulos Security | Zero Trust (TokenManager, PolicyEngine, verify_agent_identity) |
 | Modulos Multi-Harness | 5 adapters (opencode, claude, codex, cursor, gemini) |
@@ -91,22 +98,29 @@ Para la estructura detallada, ver [Agentes y Skills — Sistema de Archivos](gui
 
 Swarmind compite con **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (46.2k) y **CodeWhale** (40.2k). La comparativa completa con tabla de capacidades esta en [Comparativa Harness 2026](reference/comparativa-harness-2026.md).
 
-**Diferenciación clave:** GPU Acceleration (search x10.9), Token Economics (-51%), Governance completo, Zero Trust, Hook System determinista, Multi-Harness (5 runtimes), 5160 tests, PEC universal en skills, re-anclaje post-compaction.
+**Diferenciación clave:** GPU Acceleration (search x10.9), Token Economics (-51%), Governance completo, Zero Trust, Hook System determinista, Multi-Harness (5 runtimes), 5276 tests, PEC universal en skills, re-anclaje post-compaction, ejecución local real (0 tokens cloud en triviales).
 
-### Cambios Septiembre 2026 (ADR-0065 .. 0073)
+### Cambios Septiembre 2026 (ADR-0065 .. 0080)
 
 - **Re-anclaje post-compaction** (`reanchor.py`): bloque `<<RE-ANCHOR>>` con N1+rol+skills+estado tras cada compactacion (los summaries retienen ~17%, el bloque restaura >90%); regla RPA en base_principles v3.1.0.
-- **base_principles v3.1.0**: taxonomia de adherencia CHECK/GUIDE (IFEval/DRFR), CPD (fundamentos de competicion: checklist edges+invariants+BigO, repair 3 fases 5/80→46/80) + TST/PBT ampliados (AdverTest, mutantes, pairwise t=2→6, BVA, PROBE, MR metamorficas, fuzz).
-- **PEC universal (ADR-0072)**: las 34 skills envebidas con persona experta + canon frontera por especialidad + anti-hedging (`scripts/apply_pec.py`, 171 tests).
-- **LLM-grep** (`llm_grep.py`, ADR-0067): busqueda de codigo ripgrep-first 3 capas, budget-aware, salida compaction-friendly con alerta de misrouting semantico.
-- **Cascada STEER-lite** (`cascade_router.py`, ADR-0068): small→frontier si confianza<0.7 con costo por intento + `cache_health` (flag de cache-buster estructural si hit<60% con volumen).
+- **base_principles v3.1.0**: taxonomia de adherencia CHECK/GUIDE (IFEval/DRFR), CPD (fundamentos de competicion: checklist edges+invariants+BigO, repair 3 fases 5/80→46/80) + TST/PBT ampliados (AdverTest, mutantes, pairwise t=2→6, BVA, PROBE, MR metamorficas, fuzz) + disciplina R1 (reason→verify→reflect→final).
+- **PEC universal (ADR-0072)**: las 35 skills envebidas con persona experta + canon frontera por especialidad + anti-hedging (`scripts/apply_pec.py`, 176 tests).
+- **LLM-grep** (`llm_grep.py`, ADR-0067): busqueda de codigo ripgrep-first 3 capas, budget-aware, salida compaction-friendly con alerta de misrouting semantico + backend tgrep opt-in (ADR-0076).
+- **Cascada STEER-lite** (`cascade_router.py`, ADR-0068): small→frontier si confianza<0.7 con costo por intento + `cache_health` (flag de cache-buster estructural si hit<60% con volumen) + `model_efficiency_report()` (ADR-0074).
 - **Session-affinity** (`session_affinity.py`, ADR-0073): tier sticky por sesion con TTL (patron SAAR: -79% switches, -78.7% costo).
-- **Votacion k-en-1** (`batch_vote.py`, ADR-0073): k votos en 1 llamada con el parametro n (input 1x vs kx, arXiv 2604.13717) + fallback.
-- **Structured enforcer** (`structured_enforcer.py`, ADR-0073): JSON schema + retries con feedback (99.9% adherencia vs <70% sin constraint).
-- **Ollama 5-tier** (ADR-0069): tier CODING (`qwen2.5-coder:7b`) con precedencia sobre QUALITY para tareas de codigo.
+- **Votacion k-en-1** (`batch_vote.py`, ADR-0073): k votos en 1 llamada con el parametro n (input 1x vs kx, arXiv 2604.13717) + fallback + fanout_gate anti-sobre-descomposición (ADR-0075).
+- **Structured enforcer** (`structured_enforcer.py`, ADR-0073/0076): JSON schema + retries con feedback (99.9% adherencia) + strict keys contra troyanos.
+- **Ollama 5-tier + ejecución real** (ADR-0069/0078): tier CODING (`qwen2.5-coder:7b`) con precedencia + filtro `is_frontier_only()` + `LocalExecutor` (triviales ejecutadas en local, 0 tokens cloud) + `pressure()` + pipeline `prune_then_summarize`.
 - **Prompt-cache TTL** (ADR-0066): prefijo estable, prohibido cambio de modelo mid-sesion, TTL chat 3600 / API-subagente 300.
-- **Skills 34** (fusion `responsive-ui`→`frontend-uiux` v1.2.0) + tiers de residencia (REF/Saved/Installed ≤10).
+- **Skills 35** (fusión `responsive-ui`→`frontend-uiux` v1.2.0 + nueva `agent-rigor`) + tiers de residencia (REF/Saved/Installed ≤10) + composición (`calls:`, invocation tiers, poda de conflictos, ADR-0075).
+- **Agentes con evidencia** (ADR-0075): `competence_model.py` (Beta/Thompson) integrado en `AgentSelector`; `adaptive_planner` degrada a single con baseline fuerte.
+- **Contexto optimizado** (ADR-0074): `artifact_store.py` + `cue_ledger.py` (dedup −42%) + `compaction_calibration.py` (AgeMem).
+- **Verify-replan + trazas** (ADR-0079): `verify_replan_gate.py` (VMAO) + `trace_viewer.py` (replay sin LLM) + permisos por agente en `opencode.json` + skill `agent-rigor`.
+- **Competición aplicada** (ADR-0080): `cp_spec_gate.py` (4 pilares) + `dual_verify.py` (fast vs brute-force).
+- **Tooling Linux-first** (ADR-0076): wrapper `rtk` (−90% output bash) + `idempotency_guard` (distributed systems); scripts Python/bash (PowerShell prohibido, corrompe UTF-8).
+- **opencode local por defecto** (este equipo): `"model": "ollama/qwen3:4b"` + 6 modelos registrados.
 - **CI 3-tier verdes**: required {lint, test, security} PASS (extras dev en CI, SDO+presupuesto skills, safety con ignore CVE-2025-33228 falso-positivo).
+- **main sincronizado**: PR #16 mergeado a `main` (`d3934fe`); ADRs 0065-0080 versionados local (pre-push los bloquea, correcto por diseño).
 
 ### Cambios Agosto 2026
 

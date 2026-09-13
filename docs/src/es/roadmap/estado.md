@@ -5,6 +5,14 @@
 
 ## Estado Actual (2026-08-04)
 
+### Estado 2026-09-08/09 (ADRs 0074-0080 + agent-rigor + merge a main)
+
+- **PR #16 mergeado a `main`** (`d3934fe`): required {lint, test, security} verdes; CodeQL v4; 2 hilos resueltos (ellipsis→NotImplementedError + falso positivo Enum).
+- **5276 tests** (211 archivos), **35 skills** (nueva `agent-rigor`), **22 agentes**, principios v3.1.0.
+- **ADR-0076 Tooling Linux-first (APLICADO)** — `tool_output_filter.py` (wrapper rtk −90% output bash, opt-in) + `idempotency_guard.py` (dedup por key+hash, replay cache) + `structured_enforcer` strict keys (anti-troyanos) + `TgrepBackend` (Microsoft, opt-in); principios TOOLING (Python/bash, PowerShell prohibido por mojibake UTF-8); dump `Randon search 9-8-2026.md` destilado (rtk 79K★, tgrep, agentic=distributed systems, K2 Horizon diferido).
+- **opencode local por defecto** — `"model": "ollama/qwen3:4b"` + 6 modelos registrados + `agent.*.permission.task` granular (coordinator primary; builder/guardian/scientist least-privilege).
+- **Backup a Google Drive** — `scripts/backup_to_gdrive.py` (robocopy /E idempotente, 11 proyectos OK, sensibles opt-in SEG).
+
 ### Estado 2026-09-06 (ADRs frontera 0065-0067 + llm-grep + gitignore ADRs)
 
 - **ADR-0065 Segundo Cerebro (PROPUESTO)** — overlay `graph_overlay.py` SurrealDB solo aristas, LanceDB sigue SSOT; router local-first → nube solo `is_heavy()`.
@@ -14,7 +22,7 @@
 - **Deuda doc detectada**: `docs/src/es/adr/README.md` indexa hasta 0041, existen 0042-0067 (26 ADRs sin índice); `docs/src/en/adr/` vacío; `estado.md` cabecera anclada a 2026-08-11.
 - **ADR-0068 Cascada STEER + salud cache (APLICADO)** — `harness/model_router/cascade_router.py` (small→frontier si confianza<0.7, escape_hatch, costo por intento) + `TokenUsageTracker.cache_health` (flag bug estructural si hit<60% con volumen≥10K). TDD: `test_cascade_router.py` 10 + tracker 44; mutante M-gate verificado muerto; ruff 0. Personal auditado: `deploy_local.json` ignorado, 0 secretos/paths en `harness/`.
 - **ADR-0070/0077 Re-anclaje + taxonomía + TDD adversarial (APLICADO)** — `harness/memory_rag/reanchor.py` (bloque `<<RE-ANCHOR>>` post-compaction: N1+rol+skills+estado, SC-aware; summary retiene 17%, bloque restaura >90%) + `base_principles.md` v3.1.0 (RPA re-pin post-compaction, CPD checklist competición 28.6%+15.5% design/boundary, taxonomía CHECK/GUIDE 8 categorías con IDs estables; TST+PBT ampliados: AdverTest, mutantes MS≥70/85, pairwise t=2→6, BVA, PROBE, MR metamórficas, fuzz). TDD: `test_reanchor.py` 7; research 3 tracks + testing frontera (AdverTest +8.56%, PROBE +9.79pp).
-- **ADR-0072 PEC universal (APLICADO)** — las 34 skills con persona-experta + canon frontera por especialidad (`scripts/apply_pec.py` SSOT, 171 tests `test_skill_pec.py`); supersede ADR-0071 (3 skills estéticas).
+- **ADR-0072 PEC universal (APLICADO)** — las 35 skills con persona-experta + canon frontera por especialidad (`scripts/apply_pec.py` SSOT, 176 tests `test_skill_pec.py`); supersede ADR-0071 (3 skills estéticas); nueva `agent-rigor` (PEC-35, 2026-09-08).
 - **ADR-0073 Quality/Latency/Tokens (APLICADO)** — `batch_vote.py` (votación k-en-1 con parámetro n: input 1× vs k×, fallback, arXiv 2604.13717) + `session_affinity.py` (sticky por sesión, SAAR −79% switches) + `structured_enforcer.py` (99.9% schema adherence, retries con feedback). 21 tests, mutante verificado muerto.
 - **ADR-0074 Optimización de contexto (APLICADO)** — `artifact_store.py` (tool result >4K chars → disco + handle/offset, acceso preservado) + `cue_ledger.py` (índice cue-anchored con dedup de inyecciones y staleness, arXiv 2607.20972 −42% tokens) + `compaction_calibration.py` (zonas warn 0.75/critical 0.90 AgeMem, dedup de repetidos) + `model_efficiency_report()` (tokens/llamada por modelo, gap 40% Copilot). 25 tests, mutante de frontera muerto.
 - **Delegación Ollama corregida** — `task_uses_local` era no-op (texto vs tipos de tarea); filtro `is_frontier_only()` por keywords en `tier_for_task` (None → cloud justificado). End-to-end: 5/8 tareas a local (0 tokens cloud), 3 frontier-only a cloud.

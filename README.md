@@ -9,7 +9,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](pyproject.toml)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
-[![Tests](https://img.shields.io/badge/tests-5160_passing-brightgreen.svg)](harness/tests/)
+[![Tests](https://img.shields.io/badge/tests-5276_passing-brightgreen.svg)](harness/tests/)
 [![CI](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml/badge.svg)](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -84,7 +84,7 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 - Hot models are kept resident with `keep_alive: "5m"` (warm/unload via `/api/ps`) and are auto-installed with `ollama pull` when missing (`auto_pull: true`), so simple tasks run fully local: **0 cloud tokens** (TKN).
 - If Ollama is unavailable or a tier's model is missing, the router degrades to the existing cloud `ModelRouter`/`SlmRouter` fallback.
 
-### Frontier 2026 Modules (ADR-0065 .. 0073)
+### Frontier 2026 Modules (ADR-0065 .. 0080)
 - **LLM-grep for code** (`harness/memory_rag/llm_grep.py`): ripgrep-first 3-layer search (lexical `rg` → structural `ast-grep` → semantic `HybridRetriever` last resort), compaction-friendly output (`path:line` + 2 context lines, dedup, byte budget), auditable routing report (`semantic_ratio` misrouting alert) — ADR-0067.
 - **Post-compaction re-anchor** (`harness/memory_rag/reanchor.py`): condensed `<<RE-ANCHOR>>` block (N1 + active role + skills + task) re-injected after every compaction; summaries retain ~17% of session constraints, the block restores >90% (65% of enterprise agent failures are context drift, not token exhaustion) — ADR-0070.
 - **Cascade routing (STEER-lite)** (`harness/model_router/cascade_router.py`): try small first, escalate to frontier when confidence < 0.7, `force_tier` escape hatch, per-attempt cost accounting for offline threshold calibration — ADR-0068.
@@ -92,9 +92,16 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 - **Batch voting k-in-1** (`harness/orchestrator/batch_vote.py`): k votes in one API call via the `n` parameter (input charged once instead of k×), automatic fallback to k sequential calls, quorum-gated majority — ADR-0073 (arXiv 2604.13717).
 - **Structured-output enforcer** (`harness/orchestrator/structured_enforcer.py`): JSON-schema validation with error-feedback retries (99.9% schema adherence vs <70% unconstrained; 30× fewer parse failures) — ADR-0073.
 - **Cache health diagnostics** (`TokenUsageTracker.cache_health`): flags structural cache-busters (hit ratio < 60% with ≥10K volume — timestamps in system, reordered few-shots, dynamic tool lists) — ADR-0068.
-- **PEC universal in skills**: all 34 skills carry an expert persona + canonical frontier references per specialty (OWASP for security, HL7 FHIR for healthtech, Rust API Guidelines, RICOUI Brands for UI...) + anti-hedging rule (`scripts/apply_pec.py`, 171 tests) — ADR-0072.
-- **Universal principles v3.0.0**: 36 numbered principles with an adherence taxonomy (CHECK vs GUIDE, IFEval/DRFR), post-compaction re-pin rule (RPA) and competition-programming fundamentals (CPD: edges+invariants+BigO checklist, 3-phase repair) — ADR-0070.
-- **Ollama CODING tier**: local `qwen2.5-coder:7b` tier with precedence over QUALITY for code tasks — ADR-0069.
+- **Context optimization (ADR-0074)**: `artifact_store.py` (tool results >4K chars → disk + handle/offset, access preserved), `cue_ledger.py` (cue-anchored index with injection dedup + staleness, arXiv 2607.20972: −42% tokens), `compaction_calibration.py` (AgeMem warn 0.75/critical 0.90 zones), `model_efficiency_report()` (tokens/call per model).
+- **Skills/agents frontier (ADR-0075 + wiring)**: `skill_composition.py` (lazy `calls:` + cycle detection + invocation tiers + conflict pruning, Pocock −63%), `competence_model.py` (Beta posterior per agent×skill + Thompson anti-collapse + imp@k), `fanout_gate.py` (anti-over-decomposition: baseline ≥80% → single, avoids ×17.2 noise). Wired: composition pilot, competence re-rank in `AgentSelector`, baseline gate in `vote_on_task` + `adaptive_planner`.
+- **Distributed-systems tooling (ADR-0076)**: `tool_output_filter.py` (rtk wrapper: up to 90% less bash output, opt-in passthrough), `idempotency_guard.py` (effect dedup by key+payload hash, replay cache), `structured_enforcer` strict keys (rejects trojan keys), `llm_grep.TgrepBackend` (Microsoft tgrep, opt-in); principles mandate Python/bash scripts (PowerShell corrupts UTF-8) + Linux-first tools.
+- **Verify-replan + trace replay (ADR-0079)**: `verify_replan_gate.py` (VMAO stop thresholds), `trace_viewer.py` (export trace.jsonl + deterministic replay without LLM), per-agent permissions in `opencode.json`, `agent-rigor` skill (PEC-35: pre-merge gates, anti-greenwashing).
+- **Competition harness (ADR-0080)**: `cp_spec_gate.py` (4-pillar pre-code gate: edges/invariants/complexity/io_constraints; attacks the 44% design+boundary at the gate) + `dual_verify.py` (fast vs brute-force with indexed mismatches).
+- **Local execution real (ADR-0078)**: `LocalExecutor` closes the loop (closed-task allowlist + cloud fallback; trivial = 0 cloud tokens), `pressure()` meter, `prune_then_summarize` pipeline, R1 reasoning discipline in principles.
+- **PEC universal in skills**: all 35 skills carry an expert persona + canonical frontier references per specialty (OWASP for security, HL7 FHIR for healthtech, Rust API Guidelines, RICOUI Brands for UI...) + anti-hedging rule (`scripts/apply_pec.py`, 176 tests) — ADR-0072.
+- **Universal principles v3.1.0**: 36 numbered principles with an adherence taxonomy (CHECK vs GUIDE, IFEval/DRFR), post-compaction re-pin rule (RPA), competition-programming fundamentals (CPD) and adversarial TDD/mutants/PBT/pairwise/BVA (TST/PBT) — ADR-0070/0077.
+- **Ollama CODING tier**: local `qwen2.5-coder:7b` tier with precedence over QUALITY for code tasks + frontier-only keyword filter (`is_frontier_only`) — ADR-0069.
+- **opencode runs local by default**: `"model": "ollama/qwen3:4b"` in `.opencode/opencode.json` with 6 registered local models (fast/quality/coding/instruct/vision/ultra-fast).
 
 ### Integrations
 - **anydoc — document ingestion for RAG** (`harness/memory_rag/doc_converter.py`): a `DocumentConverter` protocol plus `AnyDocConverter` (lazy, backed by `firecrawl-anydoc>=0.1.9`) converts **21 binary/text extensions** (pdf, docx, doc, pptx, ppt, xlsx, xls, odt, odp, ods, rtf, epub, csv, tsv, html, htm, md, txt, json, yaml, yml) to Markdown before chunking. `DocumentChunker` accepts an injected converter (DI, default `AnyDocConverter`) and raises `DocumentConversionError(path, reason)` when conversion fails — errors are never swallowed. Enable it with `harness/scripts/rag_ingest.py --include-docs` or the interactive `!rag ingest --docs`.
@@ -292,7 +299,7 @@ python scripts/enable_gpu.py
 
 Quality is enforced continuously, not at the end:
 
-- **Test suite**: 5160 tests collected (TDD suite), mutation testing mutmut gate ≥70%.
+- **Test suite**: 5276 tests collected (TDD suite), mutation testing mutmut gate ≥70%.
 - **Lint**: ruff — all checks passed.
 - **Dead code**: vulture — 0 dead code.
 - **Architecture debt (AGR)**: 0 files over 500 lines in non-test code; 32 flat modules refactored into packages with re-exporting `__init__.py`; mixins limited to ≤ 2 bases; SOLID corrected in 9 classes.
@@ -343,7 +350,7 @@ SWARMIND/
 │   ├── evals/                     # eval_factory
 │   ├── context/                   # token_budget_router, skill_contract
 │   ├── scripts/                   # init, rag_ingest, end_of_iteration, ...
-│   └── tests/                     # 176+ test files (5160 tests)
+│   └── tests/                     # 211 test files (5276 tests)
 ├── scripts/                       # Repo-level tooling
 │   ├── setup_swarmind.py          # one-command setup (Python 3.12+, uv, uv sync, sync global, central memory)
 │   ├── enable_gpu.py              # reinstall torch CUDA wheel after uv sync
@@ -363,7 +370,7 @@ SWARMIND/
 │   │   └── guide/, technical/, reference/, skills/
 │   ├── src/en/SUMMARY.md
 │   └── .MEJORAS_SWARMIND.md
-├── .opencode/                     # agents (23), skills (34, PEC universal), config — SSOT
+├── .opencode/                     # agents (22), skills (35, PEC universal), config — SSOT
 ├── CHANGELOG.md
 ├── pyproject.toml
 └── README.md
@@ -374,7 +381,7 @@ SWARMIND/
 - [Documentation (ES) — primary language](docs/src/es/) — full docs in Spanish, the main documentation language.
 - [English summary](docs/src/en/SUMMARY.md)
 - [Roadmap](docs/src/es/roadmap/estado.md)
-- [Skills registry + residency tiers](docs/src/es/skills/registry.md) — 34 skills, PEC universal, REFERENCE/SAVED/INSTALLED
+- [Skills registry + residency tiers](docs/src/es/skills/registry.md) — 35 skills, PEC universal, REFERENCE/SAVED/INSTALLED
 - [CHANGELOG](CHANGELOG.md)
 - [Improvements log](docs/.MEJORAS_SWARMIND.md)
 
