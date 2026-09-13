@@ -2,6 +2,41 @@
   "$schema": "https://opencode.ai/config.json",
   "instructions": [".opencode/core/base_principles.md"],
   "model": "ollama/qwen3:4b",
+  "agent": {
+    "coordinator": {
+      "mode": "primary",
+      "permission": {
+        "task": {
+          "*": "ask",
+          "builder-*": "allow",
+          "scientist-*": "allow",
+          "guardian-*": "allow"
+        }
+      }
+    },
+    "builder": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "allow",
+        "bash": "ask"
+      }
+    },
+    "guardian": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "deny",
+        "bash": "allow"
+      }
+    },
+    "scientist": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "deny",
+        "bash": "ask",
+        "webfetch": "allow"
+      }
+    }
+  },
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
