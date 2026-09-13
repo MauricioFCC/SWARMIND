@@ -60,6 +60,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0076 | [Tooling Linux-First + Distributed-Systems Guards — rtk, tgrep, Idempotency, Boundary](adr-0076-tooling-linux-first-distributed-guards.md) | APLICADO (2 módulos + strict keys + tgrep backend) | — |
 | 0077 | [TDD Adversarial + Cobertura del Espacio de Variables (frontera 2026)](adr-0077-tdd-adversarial-espacio-variables.md) | APLICADO (`base_principles.md` v3.1.0: TST+PBT ampliados) | — |
 | 0078 | [DeepSeek + deepseek-harness — Ejecución Local Real de Triviales](adr-0078-deepseek-ejecucion-local.md) | APLICADO (`local_executor.py` + pressure + pipeline 2 fases + R1) | — |
+| 0079 | [Verify-Replan Gate + Trace Viewer + Permisos por Agente + Skill agent-rigor](adr-0079-verify-replan-trace-permisos-rigor.md) | APLICADO (2 módulos + opencode.json + PEC-35) | — |
 
 ## Resumen por Categoria
 
