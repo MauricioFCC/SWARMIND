@@ -19,11 +19,11 @@ from harness.model_router.ollama_tiers import (
     is_frontier_only,
 )
 
-DEFAULT_FAST_MODEL = "qwen3:4b"
-DEFAULT_QUALITY_MODEL = "deepseek-r1:8b"
+DEFAULT_FAST_MODEL = "onyx-edge"
+DEFAULT_QUALITY_MODEL = "onyx-cerebro"
 DEFAULT_EMBEDDING_MODEL = "qwen3-embedding:0.6b"
 DEFAULT_VISION_MODEL = "qwen3-vl:4b"
-DEFAULT_CODING_MODEL = "qwen2.5-coder:7b"
+DEFAULT_CODING_MODEL = "onyx-coder"
 
 
 def _client() -> MagicMock:
@@ -247,7 +247,7 @@ embedding:
 vision:
   model: qwen3-vl:4b
 coding:
-  model: qwen2.5-coder:7b
+  model: onyx-coder
 """.strip(),
         encoding="utf-8",
     )
@@ -275,8 +275,8 @@ def test_load_from_yaml_reads_repo_ssot() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     ssot = repo_root / ".opencode" / "config" / "ollama_models.yaml"
     router = OllamaTierRouter.load_from_yaml(ssot)
-    assert router.model_for(CapabilityTier.FAST) == "qwen3:4b"
-    assert router.model_for(CapabilityTier.QUALITY) == "deepseek-r1:8b"
+    assert router.model_for(CapabilityTier.FAST) == "onyx-edge"
+    assert router.model_for(CapabilityTier.QUALITY) == "onyx-cerebro"
 
 
 def test_is_frontier_only_detects_design_and_planning() -> None:
@@ -307,4 +307,4 @@ def test_tier_for_task_returns_none_for_frontier_only() -> None:
     assert router.tier_for_task("implementar modulo con pytest") is CapabilityTier.CODING
     assert router.model_for(CapabilityTier.EMBEDDING) == "qwen3-embedding:0.6b"
     assert router.model_for(CapabilityTier.VISION) == "qwen3-vl:4b"
-    assert router.model_for(CapabilityTier.CODING) == "qwen2.5-coder:7b"
+    assert router.model_for(CapabilityTier.CODING) == DEFAULT_CODING_MODEL

@@ -1,17 +1,24 @@
 # Ollama local delegation — tiers por capacidad (minimiza tokens cloud)
-# Modelos 2026 verificados (FRS 2026-08-14): los instalados tienen prioridad.
-#   fast:      qwen3:4b (instalado) — borradores, tareas simples
-#   quality:   deepseek-r1:8b (instalado) — razonamiento, calidad de texto
-#   coding:    qwen2.5-coder:7b (instalado) — código (tier opcional)
+# Recableado onyx-first 2026-09-08 (Ollama actualizado: familia onyx-* tuneada
+# + Qwen3.5-9B; legacy qwen/deepseek como fallback). Todos instalados.
+#   fast:      onyx-edge 2.9GB (LFM2.5) — latencia minima, triviales
+#   quality:   onyx-cerebro 5.8GB (Qwen3.8 distill) — razonamiento general
+#   coding:    onyx-coder 6.6GB (Qwopus3.5 coder) — código (tier opcional)
 #   embedding: qwen3-embedding:0.6b — RAG (reemplaza nomic-embed-text, 2 años obsoleto)
 #   vision:    qwen3-vl:4b — imágenes/alt-text (RTX 4060 8GB OK); alt: gemma4:e4b
+# Alternativos instalados (no en tier, uso manual/override):
+#   onyx-flash 6.6GB (Qwen3.5 DeepSeek-Flash: general mas potente)
+#   onyx-secretario 2.7GB (MiniCPM5: asistente trivial ultra-rapido)
+#   onyx-moe 3.9GB (OLMoE distill: eficiente)
+#   onyx-reasoning 6.2GB (GLM-Z1: razonamiento profundo)
+# Legacy fallback: qwen3:4b, deepseek-r1:8b, qwen2.5-coder:7b, llama3.2:3b
 ollama:
   base_url: "http://localhost:11434"
   timeout: 60
   warm_on_start: [fast, embedding]   # precargar al arrancar
   tiers:
-    fast:      {model: "qwen3:4b",             keep_alive: "5m", auto_pull: true}
-    quality:   {model: "deepseek-r1:8b",       keep_alive: "5m", auto_pull: true}
-    coding:    {model: "qwen2.5-coder:7b",     keep_alive: "5m", auto_pull: true}
+    fast:      {model: "onyx-edge",            keep_alive: "5m", auto_pull: true}
+    quality:   {model: "onyx-cerebro",         keep_alive: "5m", auto_pull: true}
+    coding:    {model: "onyx-coder",           keep_alive: "5m", auto_pull: true}
     embedding: {model: "qwen3-embedding:0.6b", keep_alive: "5m", auto_pull: true}
     vision:    {model: "qwen3-vl:4b",          keep_alive: "5m", auto_pull: true}

@@ -155,14 +155,16 @@ def is_frontier_only(task: str) -> bool:
     task_lower = task.lower()
     return any(kw in task_lower for kw in _FRONTIER_ONLY_KEYWORDS)
 
-# Modelos por defecto por tier (2026, FRS 2026-08-14: qwen3/3-vl/3-embedding;
-# configurables via YAML .opencode/config/ollama_models.yaml).
+# Modelos por defecto por tier (2026-09-08, Ollama recableado onyx-first:
+# FAST=onyx-edge 2.9GB latencia minima, QUALITY=onyx-cerebro 5.8GB,
+# CODING=onyx-coder 6.6GB; legacy qwen3:4b/deepseek-r1:8b/qwen2.5-coder:7b
+# como fallback; configurables via YAML .opencode/config/ollama_models.yaml).
 _DEFAULT_TIER_MODELS: dict[CapabilityTier, str] = {
-    CapabilityTier.FAST: "qwen3:4b",
-    CapabilityTier.QUALITY: "deepseek-r1:8b",
+    CapabilityTier.FAST: "onyx-edge",
+    CapabilityTier.QUALITY: "onyx-cerebro",
     CapabilityTier.EMBEDDING: "qwen3-embedding:0.6b",
     CapabilityTier.VISION: "qwen3-vl:4b",
-    CapabilityTier.CODING: "qwen2.5-coder:7b",
+    CapabilityTier.CODING: "onyx-coder",
 }
 
 
