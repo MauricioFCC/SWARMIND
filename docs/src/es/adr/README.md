@@ -62,6 +62,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0078 | [DeepSeek + deepseek-harness — Ejecución Local Real de Triviales](adr-0078-deepseek-ejecucion-local.md) | APLICADO (`local_executor.py` + pressure + pipeline 2 fases + R1) | — |
 | 0079 | [Verify-Replan Gate + Trace Viewer + Permisos por Agente + Skill agent-rigor](adr-0079-verify-replan-trace-permisos-rigor.md) | APLICADO (2 módulos + opencode.json + PEC-35) | — |
 | 0080 | [Competición Aplicada — Spec-Gate Pre-Código + Verificación Dual](adr-0080-competicion-spec-gate-dual.md) | APLICADO (2 módulos + 9 tests) | — |
+| 0081 | [Search 9-13 — Tool Pruning, Cross-Review, RAG-20, Action-First, Sandbox, TurboVec](adr-0081-search913-pruning-review-rag.md) | APLICADO (6 módulos + 27 tests + SDD en SPE) | — |
 
 ## Resumen por Categoria
 
