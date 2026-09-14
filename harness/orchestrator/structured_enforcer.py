@@ -89,6 +89,37 @@ def _validate(
     return None
 
 
+def action_first_instruction(max_steps: int = 5) -> str:
+    """Instruccion de formato Action-First (Search 9-13, i-have-adhd 40k★).
+
+    WHAT: Obliga a responder con 1ra linea = accion, pasos numerados
+    (maximo `max_steps`), sin preambulos ni relleno.
+    WHY: Frontera — elimina preambulos ("espero que esto ayude") y reduce
+    tokens de output en debate_orchestrator/logs; la salida es ejecutable.
+    WHERE: System prompt de agentes o `instruction=` de enforce_schema.
+
+    Args:
+        max_steps: Maximo de pasos numerados (> 0).
+
+    Returns:
+        Texto de instruccion listo para inyectar.
+
+    Raises:
+        ValueError: Si max_steps < 1 (WHAT+WHY+WHERE).
+    """
+    if max_steps < 1:
+        raise ValueError(
+            f"WHAT: max_steps invalido: {max_steps}. "
+            "WHY: se necesita al menos 1 paso. "
+            "WHERE: action_first_instruction"
+        )
+    return (
+        "Formato Action-First obligatorio: la PRIMERA linea es la accion "
+        f"(verbo + objeto), luego pasos numerados (maximo {max_steps}), "
+        "sin preambulos, sin disculpas, sin relleno."
+    )
+
+
 def enforce_schema(
     retry_fn: Callable[[str], str],
     schema: dict,
