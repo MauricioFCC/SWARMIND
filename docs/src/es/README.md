@@ -31,7 +31,7 @@
 | Modulos Security | Zero Trust (TokenManager, PolicyEngine, verify_agent_identity) |
 | Modulos Multi-Harness | 5 adapters (opencode, claude, codex, cursor, gemini) |
 | GPU | RTX 4060 8GB, CUDA 12.6, torch 2.13.0+cu126 (search x10.9, embeddings 41us/msg) |
-| Deuda arquitectura (AGR) | 0 archivos >500 lineas en codigo no-test (32 modulos refactor a paquetes) |
+| Deuda arquitectura (AGR) | 1 archivo >500 lineas en codigo no-test (`agent_kpi_tracker.py` 713L, pendiente de split); 7 monolitos sombreados eliminados 2026-09-08 (~4500L) |
 | Token savings | -51% capsulas, -40% structured output, -38% cache-shape, hit<60% con volumen = cache-buster flaggeado |
 | Vector stores | LanceDB (central) + SQLite-vec (edge) + federated search |
 | Observabilidad | OpenTelemetry (trazas, metricas, exportacion OTLP) |

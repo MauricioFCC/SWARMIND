@@ -64,6 +64,9 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0080 | [Competición Aplicada — Spec-Gate Pre-Código + Verificación Dual](adr-0080-competicion-spec-gate-dual.md) | APLICADO (2 módulos + 9 tests) | — |
 | 0081 | [Search 9-13 — Tool Pruning, Cross-Review, RAG-20, Action-First, Sandbox, TurboVec](adr-0081-search913-pruning-review-rag.md) | APLICADO (6 módulos + 27 tests + SDD en SPE) | — |
 | 0082 | [Search 9-13 R2 — Snapshot 5KB, Docs-Gate, Affinity Wiring, 7 Dimensiones](adr-0082-search913-r2-snapshot-docs-affinity.md) | APLICADO (2 módulos + wiring + skill, 11 tests) | — |
+| 0083 | [Roles y Procesos de Empresa Élite — DORA, Shape Up, Trunk, RFC, Postmortem + Limpieza de Legados](adr-0083-roles-procesos-elite.md) | APLICADO (agente platform-engineer + flags + templates + v3.2.0, −4500L) | — |
+| 0084 | [Ratio Local ≥60% — Draft-Review + Supervisión Cloud como Guía](adr-0084-ratio-local-supervision-cloud.md) | APLICADO (3 módulos + policy YAML, 15 tests) | — |
+| 0083 | [Roles y Procesos de Empresa Élite — DORA, Shape Up, Trunk, RFC, Postmortem + Limpieza de Legados](adr-0083-roles-procesos-elite.md) | APLICADO (agente platform-engineer + flags + templates + v3.2.0, −4500L) | — |
 
 ## Resumen por Categoria
 

@@ -5,10 +5,10 @@
 
 ## Estado Actual (2026-08-04)
 
-### Estado 2026-09-08/09 (ADRs 0074-0080 + agent-rigor + merge a main)
-
+### Estado 2026-09-08/09 (ADRs 0074-0083 + agent-rigor + merge a main)
 - **PR #16 mergeado a `main`** (`d3934fe`): required {lint, test, security} verdes; CodeQL v4; 2 hilos resueltos (ellipsis→NotImplementedError + falso positivo Enum).
-- **5276 tests** (211 archivos), **35 skills** (nueva `agent-rigor`), **22 agentes**, principios v3.1.0.
+- **5276 tests** (211 archivos), **35 skills** (nueva `agent-rigor`), **23 agentes** (nuevo `platform-engineer`), principios v3.2.0.
+- **ADR-0083 Roles/procesos élite (APLICADO)** — agente `platform-engineer` (thinnest viable platform, DORA SLO) + `FeatureFlags` (`SWARMIND_FF_*=1`, merge≠release) + spec como pitch (`appetite`/`boundaries`/RFC en template) + postmortem blameless (`specs/postmortem_template.md`) + principios v3.2.0 (DOR/SPE/FAIL/OPS) + **limpieza de 7 monolitos sombreados** (~4500 líneas muertas; la migración a paquetes nunca borró los originales; 433+68 tests verdes; resta `agent_kpi_tracker.py` 713L).
 - **ADR-0076 Tooling Linux-first (APLICADO)** — `tool_output_filter.py` (wrapper rtk −90% output bash, opt-in) + `idempotency_guard.py` (dedup por key+hash, replay cache) + `structured_enforcer` strict keys (anti-troyanos) + `TgrepBackend` (Microsoft, opt-in); principios TOOLING (Python/bash, PowerShell prohibido por mojibake UTF-8); dump `Randon search 9-8-2026.md` destilado (rtk 79K★, tgrep, agentic=distributed systems, K2 Horizon diferido).
 - **opencode local por defecto** — `"model": "ollama/qwen3:4b"` + 6 modelos registrados + `agent.*.permission.task` granular (coordinator primary; builder/guardian/scientist least-privilege).
 - **Backup a Google Drive** — `scripts/backup_to_gdrive.py` (robocopy /E idempotente, 11 proyectos OK, sensibles opt-in SEG).
