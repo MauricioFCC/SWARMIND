@@ -79,6 +79,10 @@ def _parse_simple_yaml(text: str) -> dict:
             continue
         if in_section and ":" in stripped:
             key, _, value = stripped.partition(":")
+            if key.strip() not in (
+                "target_local_ratio", "confidence_margin", "sample_rate",
+            ):
+                continue  # p. ej. env_prefix (string, no numerico)
             cleaned = value.split("#", 1)[0].strip()
             try:
                 out[key.strip()] = float(cleaned)

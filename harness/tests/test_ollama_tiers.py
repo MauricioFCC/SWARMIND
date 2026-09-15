@@ -19,11 +19,11 @@ from harness.model_router.ollama_tiers import (
     is_frontier_only,
 )
 
-DEFAULT_FAST_MODEL = "onyx-edge"
-DEFAULT_QUALITY_MODEL = "onyx-cerebro"
+DEFAULT_FAST_MODEL = "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0"
+DEFAULT_QUALITY_MODEL = "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M"
 DEFAULT_EMBEDDING_MODEL = "qwen3-embedding:0.6b"
 DEFAULT_VISION_MODEL = "qwen3-vl:4b"
-DEFAULT_CODING_MODEL = "onyx-coder"
+DEFAULT_CODING_MODEL = "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M"
 
 
 def _client() -> MagicMock:
@@ -247,7 +247,7 @@ embedding:
 vision:
   model: qwen3-vl:4b
 coding:
-  model: onyx-coder
+  model: hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M
 """.strip(),
         encoding="utf-8",
     )
@@ -275,8 +275,8 @@ def test_load_from_yaml_reads_repo_ssot() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     ssot = repo_root / ".opencode" / "config" / "ollama_models.yaml"
     router = OllamaTierRouter.load_from_yaml(ssot)
-    assert router.model_for(CapabilityTier.FAST) == "onyx-edge"
-    assert router.model_for(CapabilityTier.QUALITY) == "onyx-cerebro"
+    assert router.model_for(CapabilityTier.FAST) == "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0"
+    assert router.model_for(CapabilityTier.QUALITY) == "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M"
 
 
 def test_is_frontier_only_detects_design_and_planning() -> None:
