@@ -22,3 +22,11 @@ ollama:
     coding:    {model: "onyx-coder",           keep_alive: "5m", auto_pull: true}
     embedding: {model: "qwen3-embedding:0.6b", keep_alive: "5m", auto_pull: true}
     vision:    {model: "qwen3-vl:4b",          keep_alive: "5m", auto_pull: true}
+# Politica local-first con supervision cloud (ADR-0084, RLM-Cascade/Local-Splitter):
+# el draft local ejecuta; el cloud solo verifica/muestrea como guia.
+# Todo configurable aqui o por entorno (sin hardcode en codigo).
+local_first:
+  target_local_ratio: 0.60        # objetivo: >=60% tareas en local (destilados)
+  confidence_margin: 0.50         # bajo esto se escala aunque sea trivial (anti falso+)
+  sample_rate: 0.10               # fraccion de salidas locales que audita el cloud
+  env_prefix: "SWARMIND_LOCAL_"   # overrides: SWARMIND_LOCAL_SAMPLE_RATE=0.2, etc.

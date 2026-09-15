@@ -6,7 +6,6 @@ solo registrar telemetria. Cualquier condicion no cumplida -> None (el
 flujo cloud sigue intacto).
 """
 
-import pytest
 
 from harness.run import _try_local_execution
 

@@ -6,7 +6,6 @@ sandbox efimero (Docker si existe, subprocess si no; credenciales nunca en
 contexto) y adapter turbovec experimental (graceful si falta el binario).
 """
 
-import pytest
 
 from harness.memory_rag.rag_evaluator import (
     RAG_QUESTIONS,
@@ -14,14 +13,16 @@ from harness.memory_rag.rag_evaluator import (
     evaluate_question,
     evaluate_suite,
 )
+from harness.memory_rag.turbovec_adapter import (
+    TurboVecAdapter,
+)
+from harness.memory_rag.turbovec_adapter import (
+    is_available as turbovec_available,
+)
 from harness.orchestrator.structured_enforcer import action_first_instruction
 from harness.validation.sandbox_executor import (
     SandboxExecutor,
     SandboxResult,
-)
-from harness.memory_rag.turbovec_adapter import (
-    TurboVecAdapter,
-    is_available as turbovec_available,
 )
 
 
