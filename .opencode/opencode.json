@@ -1,6 +1,44 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": [".opencode/core/base_principles.md"],
+  "instructions": [
+    ".opencode/core/base_principles.md"
+  ],
+  "model": "ollama/hf.co/Jackrong/Qwen3.5-9B-DeepSeek-V4-Flash-GGUF:Q4_K_M",
+  "agent": {
+    "coordinator": {
+      "mode": "primary",
+      "permission": {
+        "task": {
+          "*": "ask",
+          "builder-*": "allow",
+          "scientist-*": "allow",
+          "guardian-*": "allow"
+        }
+      }
+    },
+    "builder": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "allow",
+        "bash": "ask"
+      }
+    },
+    "guardian": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "deny",
+        "bash": "allow"
+      }
+    },
+    "scientist": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "deny",
+        "bash": "ask",
+        "webfetch": "allow"
+      }
+    }
+  },
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
@@ -10,25 +48,77 @@
       },
       "models": {
         "qwen3:4b": {
-          "name": "qwen3:4b (local fast)",
+          "name": "qwen3 4B fast legacy",
           "reasoning": false,
           "tools": true
         },
         "deepseek-r1:8b": {
-          "name": "deepseek-r1:8b (local quality)",
+          "name": "deepseek-r1 8B quality legacy",
           "reasoning": true,
           "tools": true
         },
         "qwen2.5-coder:7b": {
-          "name": "qwen2.5-coder:7b (local coding)",
+          "name": "qwen2.5-coder 7B coding legacy",
           "reasoning": false,
+          "tools": true
+        },
+        "qwen2.5-coder:7b-instruct": {
+          "name": "qwen2.5-coder 7B instruct legacy",
+          "reasoning": false,
+          "tools": true
+        },
+        "llama3.2:3b": {
+          "name": "llama3.2 3B trivial legacy",
+          "reasoning": false,
+          "tools": true
+        },
+        "qwen3-vl:4b": {
+          "name": "qwen3-vl 4B vision",
+          "reasoning": false,
+          "tools": true
+        },
+        "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0": {
+          "name": "LFM2.5 2.6B Q8 fast",
+          "reasoning": false,
+          "tools": true
+        },
+        "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M": {
+          "name": "Qwen3.8 9B Q4 quality",
+          "reasoning": true,
+          "tools": true
+        },
+        "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M": {
+          "name": "Qwopus3.5 9B Q4 coding",
+          "reasoning": false,
+          "tools": true
+        },
+        "hf.co/Jackrong/Qwen3.5-9B-DeepSeek-V4-Flash-GGUF:Q4_K_M": {
+          "name": "Qwen3.5 9B Q4 flash",
+          "reasoning": true,
+          "tools": true
+        },
+        "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0": {
+          "name": "MiniCPM5 2B Q8 trivial",
+          "reasoning": false,
+          "tools": true
+        },
+        "hf.co/mradermacher/OLMoE-1B-7B-0125-Instruct-Distill-ot114k-batch32-i1-GGUF:IQ4_NL": {
+          "name": "OLMoE 1B-7B Q4 efficient",
+          "reasoning": false,
+          "tools": true
+        },
+        "hf.co/unsloth/GLM-Z1-9B-0414-GGUF:UD-Q4_K_XL": {
+          "name": "GLM-Z1 9B Q4 reasoning",
+          "reasoning": true,
           "tools": true
         }
       }
     }
   },
   "skills": {
-    "paths": [".opencode/skills"]
+    "paths": [
+      ".opencode/skills"
+    ]
   },
   "compaction": {
     "auto": true,

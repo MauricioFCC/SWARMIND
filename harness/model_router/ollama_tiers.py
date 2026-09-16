@@ -155,14 +155,15 @@ def is_frontier_only(task: str) -> bool:
     task_lower = task.lower()
     return any(kw in task_lower for kw in _FRONTIER_ONLY_KEYWORDS)
 
-# Modelos por defecto por tier (2026, FRS 2026-08-14: qwen3/3-vl/3-embedding;
-# configurables via YAML .opencode/config/ollama_models.yaml).
+# Modelos por defecto por tier (2026-09-08, nombres canonicos hf.co + uso;
+# sin alias onyx duplicados: cada blob un solo nombre. Legacy qwen como
+# fallback; configurables via YAML .opencode/config/ollama_models.yaml).
 _DEFAULT_TIER_MODELS: dict[CapabilityTier, str] = {
-    CapabilityTier.FAST: "qwen3:4b",
-    CapabilityTier.QUALITY: "deepseek-r1:8b",
+    CapabilityTier.FAST: "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0",
+    CapabilityTier.QUALITY: "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
     CapabilityTier.EMBEDDING: "qwen3-embedding:0.6b",
     CapabilityTier.VISION: "qwen3-vl:4b",
-    CapabilityTier.CODING: "qwen2.5-coder:7b",
+    CapabilityTier.CODING: "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M",
 }
 
 

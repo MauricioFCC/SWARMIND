@@ -43,12 +43,26 @@ class CueEntry:
         source: Procedencia (ruta o id).
         content_hash: Hash del contenido del source en el momento del registro.
         registered_at: Timestamp del registro (del clock inyectado).
+        ttl_s: Tiempo de vida en segundos (None = no expira; CL-Bench:
+            lessons stale son el fallo #1 de memoria).
     """
 
     cue: str
     source: str
     content_hash: str
     registered_at: float
+    ttl_s: float | None = None
+
+    def is_expired(self, now: float) -> bool:
+        """True si el TTL vencio respecto a ``now``.
+
+        Args:
+            now: Timestamp actual del clock.
+
+        Returns:
+            False si no tiene TTL o aun esta vigente.
+        """
+        return self.ttl_s is not None and (now - self.registered_at) > self.ttl_s
 
 
 def _content_hash(source: str) -> str:
@@ -90,6 +104,12 @@ class CueLedger:
         self._entries: list[CueEntry] = []
         self._injected: set[str] = set()
         self._dedup_hits = 0
+        self._pruned_expired = 0
+
+    @property
+    def pruned_expired(self) -> int:
+        """Cues expirados podados (metrica anti-stale CL-Bench)."""
+        return self._pruned_expired
 
     @property
     def dedup_hits(self) -> int:
@@ -101,12 +121,13 @@ class CueLedger:
         """Tokens ahorrados por dedup (cue vs contenido completo)."""
         return self._dedup_hits * (_FULL_CONTENT_TOKENS - _CUE_TOKENS)
 
-    def register(self, cue: str, source: str) -> CueEntry:
-        """Registra un hecho con su procedencia.
+    def register(self, cue: str, source: str, ttl_s: float | None = None) -> CueEntry:
+        """Registra un hecho con su procedencia y TTL opcional.
 
         Args:
             cue: Hecho corto (no vacio).
             source: Ruta o id de procedencia (no vacio).
+            ttl_s: Tiempo de vida en segundos (None = no expira).
 
         Returns:
             CueEntry registrado.
@@ -131,9 +152,27 @@ class CueLedger:
             source=source.strip(),
             content_hash=_content_hash(source),
             registered_at=self._clock(),
+            ttl_s=ttl_s,
         )
         self._entries.append(entry)
         return entry
+
+    def _live_entries(self) -> list[CueEntry]:
+        """Entradas vigentes (poda expiradas con metrica).
+
+        Returns:
+            Lista sin cues con TTL vencido.
+        """
+        now = self._clock()
+        live: list[CueEntry] = []
+        for entry in self._entries:
+            if entry.is_expired(now):
+                self._pruned_expired += 1
+                logger.debug("cue_ledger: cue expirado podado: %s", entry.cue)
+            else:
+                live.append(entry)
+        self._entries = live
+        return live
 
     def render_index(self) -> str:
         """Renderiza el indice compacto (cue + procedencia).
@@ -144,7 +183,7 @@ class CueLedger:
         if not self._entries:
             return ""
         lines = ["[cue-ledger] hechos vivos:"]
-        for entry in self._entries:
+        for entry in self._live_entries():
             lines.append(f"- {entry.cue} (src: {entry.source})")
         return "\n".join(lines)
 
