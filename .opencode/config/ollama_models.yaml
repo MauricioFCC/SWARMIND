@@ -12,6 +12,16 @@
 #   OLMoE 1B-7B Q4 efficient (eficiente)
 #   GLM-Z1 9B Q4 reasoning (razonamiento profundo)
 # Legacy fallback: qwen3:4b, deepseek-r1:8b, qwen2.5-coder:7b, llama3.2:3b
+# Evaluados 2026-09-08 (Los mejores modelos destilados.md + Ollama Hub),
+# PENDIENTES de instalacion (no descargar sin aprobacion; ~15GB):
+#   Qwimi3.5-9B (Kimi K2.6 + Claude Opus 4.5 + Qwen, fusion trjxter, MTP)
+#     hf.co/trjxter/Qwimi3.5-9B-Kimik2.6-Opus-Distill-MTP-GGUF
+#   Nemotron-Cascade-8B (logica Claude 4.5 Opus, optimizado NVIDIA/RTX 4060)
+#     hf.co/TeichAI/Nemotron-Cascade-8B-Thinking-Claude-4.5-Opus-High-Reasoning-Distill-GGUF
+#   Phi-4-mini-flash-reasoning 3.8B (Microsoft, razonamiento denso)
+#     hf.co/unsloth/Phi-4-mini-reasoning-GGUF
+# Hub oficial nuevo (monitorear): qwen3.5 (0.8b-122b), gemma4 (e2b/e4b edge),
+# kimi-k2.6/k2.7-code, glm-5.x, nemotron-3-nano 4b — candidatos edge (RTX 4060).
 ollama:
   base_url: "http://localhost:11434"
   timeout: 60

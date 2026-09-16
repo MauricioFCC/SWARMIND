@@ -20,7 +20,10 @@ project_agnostic: true
 - **CANON** (estudiar ANTES de generar, regla RSF):
   - QuantConnect (Lean) — https://www.quantconnect.com/docs
   - arXiv q-fin TR — https://arxiv.org/list/q-fin.TR/recent
+  - MQL5 Docs (ONNX/DLL/MT5) — https://www.mql5.com/en/docs
+  - NinjaTrader 8 (NinjaScript C#) — https://ninjatrader.com/support/helpGuides/nt8/
 - **ANTI-HEDGING**: Estrategia con edge cuantificado, costos (fees/slippage) y out-of-sample test.
+- **PLATAFORMAS RETAIL** (Search 9-13/NT8, ADR-0086): MT5+MQL5 (EAs, ONNX runtime, DLL bridge, deployment off-box en `MQL5/Files/`) y NinjaTrader 8 (NinjaScript C#, `OnBarUpdate()`, Strategy Analyzer, feeds Rithmic/CQG/FIX para prop firms). Backtest ANTES de capital real; optimization con walk-forward (no curve-fitting).
 ## 📡 Data Processing (`domain::data_processing`)
 
 ```rust
