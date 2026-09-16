@@ -67,6 +67,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0083 | [Roles y Procesos de Empresa Élite — DORA, Shape Up, Trunk, RFC, Postmortem + Limpieza de Legados](adr-0083-roles-procesos-elite.md) | APLICADO (agente platform-engineer + flags + templates + v3.2.0, −4500L) | — |
 | 0084 | [Ratio Local ≥60% — Draft-Review + Supervisión Cloud como Guía](adr-0084-ratio-local-supervision-cloud.md) | APLICADO (3 módulos + policy YAML, 15 tests) | — |
 | 0085 | [Creativo Frontera — Voto con Stakes, Trajectory Audit y TTL en Cognition](adr-0085-creativo-stakes-audit-ttl.md) | APLICADO (2 módulos + TTL, 8 tests) | — |
+| 0086 | [Destilados Frontera + Dominio NT8/MQL5](adr-0086-destilados-nt8.md) | APLICADO (canon NT8 + alternos evaluados) | — |
 
 ## Resumen por Categoria
 
