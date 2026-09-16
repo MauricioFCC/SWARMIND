@@ -41,7 +41,7 @@ def _handle_iteration_end(cmd: str, harness_root) -> None:
 
     _rc.logger.info("[Harness] Iniciando pipeline de fin de iteracion...")
     if flags["dry_run"]:
-        _rc.logger.info("[Harness] Modo DRY-RUN â€” no se modificaran archivos")
+        _rc.logger.info("[Harness] Modo DRY-RUN — no se modificaran archivos")
     if any([flags["skip_bugs"], flags["skip_sec"], flags["skip_docs"]]):
         skips = []
         if flags["skip_bugs"]:
@@ -61,7 +61,7 @@ def _handle_iteration_end(cmd: str, harness_root) -> None:
 def _handle_iteration_quick(cmd: str = "", harness_root=None) -> None:
     """Handle ``!iteration quick`` or ``!iteration end --quick``.
 
-    Modo rÃ¡pido: solo bugs + tokens, salta security y docs.
+    Modo rápido: solo bugs + tokens, salta security y docs.
     """
     _rc.sys.path.insert(1, str(Path(__file__).resolve().parent.parent.parent))
     from harness.scripts.end_of_iteration import run_quick_pipeline
@@ -70,39 +70,39 @@ def _handle_iteration_quick(cmd: str = "", harness_root=None) -> None:
 def _handle_iteration_auto(cmd: str = "", harness_root=None) -> None:
     """Handle ``!iteration auto`` or ``!iteration end --auto``.
 
-    Modo automÃ¡tico: pipeline completo + commit si no hay criticals.
+    Modo automático: pipeline completo + commit si no hay criticals.
     """
     _rc.sys.path.insert(1, str(Path(__file__).resolve().parent.parent.parent))
     from harness.scripts.end_of_iteration import run_auto_pipeline
     run_auto_pipeline()
 
 def _handle_iteration_report() -> None:
-    """Handle ``!iteration report`` â€” shows the last saved iteration report."""
+    """Handle ``!iteration report`` — shows the last saved iteration report."""
     from harness.scripts.end_of_iteration import print_last_report
     print_last_report()
 
 def _handle_iteration_history(cmd: str) -> None:
-    """Handle ``!iteration history [--all]`` â€” muestra timeline de iteraciones."""
+    """Handle ``!iteration history [--all]`` — muestra timeline de iteraciones."""
     from harness.scripts.end_of_iteration import show_iteration_history
     parts = cmd.split()
     if "--all" in parts:
-        show_iteration_history(limit=0)  # 0 = sin lÃ­mite
+        show_iteration_history(limit=0)  # 0 = sin límite
     else:
         show_iteration_history(limit=10)
 
 def _handle_iteration_diff(cmd: str) -> None:
-    """Handle ``!iteration diff [--last] [--n <num>]`` â€” muestra detalle de iteraciÃ³n.
+    """Handle ``!iteration diff [--last] [--n <num>]`` — muestra detalle de iteración.
 
     Ejemplos:
-        !iteration diff            â†’ Ãºltima iteraciÃ³n
-        !iteration diff --last     â†’ Ãºltima iteraciÃ³n
-        !iteration diff --n 2      â†’ penÃºltima iteraciÃ³n
-        !iteration diff --n 3      â†’ antepenÃºltima iteraciÃ³n
+        !iteration diff            → última iteración
+        !iteration diff --last     → última iteración
+        !iteration diff --n 2      → penúltima iteración
+        !iteration diff --n 3      → antepenúltima iteración
     """
     from harness.scripts.end_of_iteration import show_iteration_diff
     parts = cmd.split()
 
-    n = 1  # default: Ãºltima
+    n = 1  # default: última
     if "--n" in parts:
         idx = parts.index("--n")
         if idx + 1 < len(parts):
@@ -110,7 +110,7 @@ def _handle_iteration_diff(cmd: str) -> None:
                 n = max(1, int(parts[idx + 1]))
             except (ValueError, IndexError):
                 n = 1
-    # --last tambiÃ©n es 1 (default)
+    # --last también es 1 (default)
     show_iteration_diff(n=n)
 
 __all__ = [
