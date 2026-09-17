@@ -34,7 +34,7 @@ jobs:
           severity: HIGH,CRITICAL
         continue-on-error: true  # no bloquea si no hay imagen construida
       - name: Upload SARIF to code-scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy.sarif
         if: always()
