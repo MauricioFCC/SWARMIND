@@ -31,12 +31,21 @@ def _handle_iteration_end(cmd: str, harness_root) -> None:
     """Handle ``!iteration end [--dry-run] [--skip-bugs] [--skip-sec] [--skip-docs] [--quick] [--auto]``."""
     flags = _rc._parse_iteration_flags(cmd)
 
-    # Redirect to quick/auto mode if flagged
+    # Redirect to quick/auto mode if flagged. Se resuelve via _get_pkg_attr
+    # (late-binding al namespace del paquete) en vez del alias _rc congelado
+    # a import-time: si el modulo fue re-importado (sys.modules games en
+    # suites grandes), _rc puede apuntar a un objeto paquete viejo mientras
+    # los tests mockean el vigente. _get_pkg_attr lee sys.modules al llamar.
+    from harness.run_commands import _get_pkg_attr
     if flags["quick"]:
-        _rc._handle_iteration_quick(cmd, harness_root)
+        _get_pkg_attr("_handle_iteration_quick", _handle_iteration_quick)(
+            cmd, harness_root
+        )
         return
     if flags["auto"]:
-        _rc._handle_iteration_auto(cmd, harness_root)
+        _get_pkg_attr("_handle_iteration_auto", _handle_iteration_auto)(
+            cmd, harness_root
+        )
         return
 
     _rc.logger.info("[Harness] Iniciando pipeline de fin de iteracion...")
