@@ -26,7 +26,7 @@ jobs:
           --sarif
           --output semgrep.sarif
       - name: Upload SARIF to code-scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: semgrep.sarif
         if: always()
