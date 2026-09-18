@@ -68,6 +68,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0084 | [Ratio Local ≥60% — Draft-Review + Supervisión Cloud como Guía](adr-0084-ratio-local-supervision-cloud.md) | APLICADO (3 módulos + policy YAML, 15 tests) | — |
 | 0085 | [Creativo Frontera — Voto con Stakes, Trajectory Audit y TTL en Cognition](adr-0085-creativo-stakes-audit-ttl.md) | APLICADO (2 módulos + TTL, 8 tests) | — |
 | 0086 | [Destilados Frontera + Dominio NT8/MQL5](adr-0086-destilados-nt8.md) | APLICADO (canon NT8 + alternos evaluados) | — |
+| 0087 | [Mesa Adversarial + BUSEV Ejecutables](adr-0087-mesa-adversarial-busev.md) | APLICADO (4 módulos + WIP-2/TTL, 20 tests) | — |
 
 ## Resumen por Categoria
 
