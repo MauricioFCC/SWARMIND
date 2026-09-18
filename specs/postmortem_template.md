@@ -41,3 +41,9 @@ status: "draft"  # draft | action-items | done
 - [ ] Failure en `harness/db/failures.jsonl` (WHAT+WHY+WHERE)
 - [ ] Skill derivado identificado (si aplica)
 - [ ] ADR actualizado (si cambio una decision)
+
+## 7. WIP-2 + TTL + tripwire (MESA: lo sistemico se escala, nada sin dueno)
+- **WIP-2**: maximo 2 improvements adoptados por mesa/sesion (resto a backlog priorizado).
+- **TTL por improvement**: {{TTL_dias}} dias; vencido sin evidencia → se revierte o revalida.
+- **Tripwire**: {{condicion medible que dispara revision}} (si se dispara, reabrir postmortem).
+- **Dueno + fecha**: toda mejora adoptada sale con dueno y TTL (0 sin dueno a 30d).
