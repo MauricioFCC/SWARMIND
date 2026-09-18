@@ -45,6 +45,8 @@ class CueEntry:
         registered_at: Timestamp del registro (del clock inyectado).
         ttl_s: Tiempo de vida en segundos (None = no expira; CL-Bench:
             lessons stale son el fallo #1 de memoria).
+        valid_from: Inicio de validez en el mundo (ISO YYYY-MM-DD o None).
+        valid_to: Fin de validez en el mundo (ISO o None = vigente).
     """
 
     cue: str
@@ -52,6 +54,8 @@ class CueEntry:
     content_hash: str
     registered_at: float
     ttl_s: float | None = None
+    valid_from: str | None = None
+    valid_to: str | None = None
 
     def is_expired(self, now: float) -> bool:
         """True si el TTL vencio respecto a ``now``.
@@ -63,6 +67,19 @@ class CueEntry:
             False si no tiene TTL o aun esta vigente.
         """
         return self.ttl_s is not None and (now - self.registered_at) > self.ttl_s
+
+    def valid_at(self, iso_date: str) -> bool:
+        """True si el hecho es valido en la fecha ISO dada (bitemporal).
+
+        Args:
+            iso_date: Fecha YYYY-MM-DD a evaluar.
+
+        Returns:
+            True si valid_from <= fecha < valid_to (None = abierto).
+        """
+        if self.valid_from is not None and iso_date < self.valid_from:
+            return False
+        return not (self.valid_to is not None and iso_date >= self.valid_to)
 
 
 def _content_hash(source: str) -> str:
@@ -121,19 +138,25 @@ class CueLedger:
         """Tokens ahorrados por dedup (cue vs contenido completo)."""
         return self._dedup_hits * (_FULL_CONTENT_TOKENS - _CUE_TOKENS)
 
-    def register(self, cue: str, source: str, ttl_s: float | None = None) -> CueEntry:
-        """Registra un hecho con su procedencia y TTL opcional.
+    def register(
+        self, cue: str, source: str, ttl_s: float | None = None,
+        valid_from: str | None = None, valid_to: str | None = None,
+    ) -> CueEntry:
+        """Registra un hecho con su procedencia, TTL y validez bitemporal.
 
         Args:
             cue: Hecho corto (no vacio).
             source: Ruta o id de procedencia (no vacio).
             ttl_s: Tiempo de vida en segundos (None = no expira).
+            valid_from: Inicio de validez ISO (None = siempre).
+            valid_to: Fin de validez ISO (None = vigente).
 
         Returns:
             CueEntry registrado.
 
         Raises:
-            ValueError: Si cue o source estan vacios (WHAT+WHY+WHERE).
+            ValueError: Si cue/source vacios o el rango es invalido
+                (WHAT+WHY+WHERE).
         """
         if not cue.strip():
             raise ValueError(
@@ -147,12 +170,20 @@ class CueLedger:
                 "WHY: la procedencia es la clave del staleness check. "
                 "WHERE: CueLedger.register"
             )
+        if valid_from is not None and valid_to is not None and valid_to < valid_from:
+            raise ValueError(
+                f"WHAT: rango invalido ({valid_from}..{valid_to}). "
+                "WHY: valid_to anterior a valid_from no cubre ningun dia. "
+                "WHERE: CueLedger.register"
+            )
         entry = CueEntry(
             cue=cue.strip(),
             source=source.strip(),
             content_hash=_content_hash(source),
             registered_at=self._clock(),
             ttl_s=ttl_s,
+            valid_from=valid_from,
+            valid_to=valid_to,
         )
         self._entries.append(entry)
         return entry
@@ -234,3 +265,14 @@ class CueLedger:
         """
         self._injected.clear()
         self._dedup_hits = 0
+
+    def valid_at(self, iso_date: str) -> list[CueEntry]:
+        """Cues validos en la fecha ISO dada (tiempo bitemporal).
+
+        Args:
+            iso_date: Fecha YYYY-MM-DD a evaluar.
+
+        Returns:
+            Entradas vigentes ese dia (orden de registro).
+        """
+        return [e for e in self._entries if e.valid_at(iso_date)]

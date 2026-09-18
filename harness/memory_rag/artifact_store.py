@@ -151,5 +151,9 @@ class ArtifactStore:
                 f"limpiada). WHERE: ArtifactStore.retrieve (dir={self._cache_dir})"
             )
         payload = json.loads(path.read_text(encoding="utf-8"))
-        lines = str(payload.get("content", "")).splitlines()
-        return "\n".join(lines[offset:])
+        content = str(payload.get("content", ""))
+        lines = content.splitlines()
+        out = "\n".join(lines[offset:])
+        if content.endswith("\n") and out:
+            out += "\n"
+        return out
