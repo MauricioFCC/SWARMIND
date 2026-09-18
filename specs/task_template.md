@@ -28,6 +28,12 @@ status: "draft"  # draft | in_progress | evidence | review | done | failed
 - [ ] NF-2: Seguridad — {{restricciones de seguridad}}
 - [ ] NF-3: Portabilidad — {{funciona en Linux/Mac/Windows}}
 
+### Apuesta (Shape Up: appetite + boundaries + RFC?)
+- **Appetite**: {{tiempo fijo que vale la pena (p. ej. 1 ciclo) — scope variable, tiempo fijo}}
+- **Boundaries**: {{qué está dentro/fuera del pitch}}
+- **¿RFC previo?**: {{sí + link si >1 dependencia/riesgo o cambia contrato público | no: cambio pequeño, spec mínima basta}}
+- **En cooldown si pierde**: {{sí → cognition store + deuda AGR | no}}
+
 ## 2. PLAN (Plan & Task Breakdown)
 
 ### Pasos de ejecución

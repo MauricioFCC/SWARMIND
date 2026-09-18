@@ -179,6 +179,9 @@ routing_rules:
     - domain: "swarm-release-ops"
       agents: ["release-ops", "devops", "builder"]
       priority: 9
+    - domain: "agent-rigor"
+      agents: ["guardian", "coordinator"]
+      priority: 9
 
     # -------------------------------------------------------------------------
     # [3] CATCH-ALL (minimo: solo coordinacion + auditoria de tokens)

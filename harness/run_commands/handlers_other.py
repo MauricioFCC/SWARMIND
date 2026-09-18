@@ -8,7 +8,7 @@ import harness.run_commands as _rc
 
 
 def _handle_rag_ingest(store, cmd: str) -> None:
-    """Handle ``!rag ingest [--dir <path>]``."""
+    """Handle ``!rag ingest [--dir <path>] [--docs]``."""
     from harness.memory_rag.doc_ingester import ingest_project_directory
 
     parts = cmd.split()
@@ -16,6 +16,7 @@ def _handle_rag_ingest(store, cmd: str) -> None:
     if "--dir" in parts:
         idx = parts.index("--dir")
         target_dir = parts[idx + 1] if idx + 1 < len(parts) else None
+    include_docs = "--docs" in parts
 
     if target_dir:
         directory = Path(target_dir).resolve()
@@ -27,10 +28,12 @@ def _handle_rag_ingest(store, cmd: str) -> None:
         _rc.logger.info("[RAG] Directorio no encontrado: %s", directory)
         return
 
-    _rc.logger.info("[RAG] Ingestando desde: %s", directory)
+    _rc.logger.info("[RAG] Ingestando desde: %s (docs=%s)", directory, include_docs)
     start = _rc.time.time()
     try:
-        stats = ingest_project_directory(str(directory), show_progress=True)
+        stats = ingest_project_directory(
+            str(directory), show_progress=True, include_docs=include_docs
+        )
         elapsed = _rc.time.time() - start
         _rc.logger.info(
             "[RAG] \u2705 Completado: %d archivos, %d chunks en %.1fs",
@@ -45,7 +48,7 @@ def _handle_rag_ingest(store, cmd: str) -> None:
 
 
 def _handle_rag_stats(store) -> None:
-    """Handle ``!rag stats`` â€” muestra estadisticas de la BD RAG."""
+    """Handle ``!rag stats`` — muestra estadisticas de la BD RAG."""
     colls = store.list_collections()
     _rc.logger.info("")
     _rc.logger.info("[RAG] Colecciones disponibles: %s", colls)
@@ -63,7 +66,7 @@ def _handle_rag_stats(store) -> None:
     _rc.logger.info("")
 
 
-# â”€â”€ DB Commands â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── DB Commands ──────────────────────────────────────────────────────
 
 def _handle_db_migrate(store, cmd: str) -> None:
     """Handle ``!db migrate [--path <ruta>]``."""
@@ -150,7 +153,7 @@ def _handle_db_rollback(cmd: str) -> None:
         _rc.logger.info(f"[DB] Error al restaurar desde: {backup_path}")
 
 
-# â”€â”€ Iteration End â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Iteration End ───────────────────────────────────────────────────
 
 
 
@@ -166,17 +169,17 @@ def _handle_db_rollback(cmd: str) -> None:
 
 
 
-# â”€â”€ Hooks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Hooks ────────────────────────────────────────────────────────────
 
 def _handle_hooks_install() -> None:
-    """Handle ``!hooks install`` â€” installs the pre-commit hook."""
+    """Handle ``!hooks install`` — installs the pre-commit hook."""
     from harness.scripts.install_hooks import install_hook
     _rc.logger.info("[Harness] Instalando hook pre-commit...")
     install_hook()
 
 
 def _handle_hooks_uninstall() -> None:
-    """Handle ``!hooks uninstall`` â€” uninstalls the pre-commit hook."""
+    """Handle ``!hooks uninstall`` — uninstalls the pre-commit hook."""
     from harness.scripts.install_hooks import uninstall_hook
     _rc.logger.info("[Harness] Desinstalando hook pre-commit...")
     uninstall_hook()

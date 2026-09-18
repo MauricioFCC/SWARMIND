@@ -339,6 +339,54 @@ def _display_final_output(orch_result: Any, target_agent: str, routing_source: s
                 target_agent, routing_source, orch_result.session_id)
 
 
+def _try_local_execution(
+    task: str,
+    routing_source: str,
+    client=None,
+    tiers=None,
+) -> str | None:
+    """Ejecuta tareas cerradas en Ollama tras routing local + HITL (ADR-0078).
+
+    Cierra el loop local: antes el routing a local era solo telemetria (el
+    modelo externo hacia el trabajo). Ahora las tareas cerradas se ejecutan
+    en el tier local (0 tokens cloud). Cualquier condicion no cumplida
+    retorna None y el flujo cloud sigue intacto (HITL ya aprobado arriba).
+
+    Args:
+        task: Descripcion de la tarea.
+        routing_source: "local" o "cloud" (de _apply_model_routing).
+        client: OllamaClient (DI para tests; None = real).
+        tiers: OllamaTierRouter (DI para tests; None = real).
+
+    Returns:
+        Respuesta del modelo local, o None si no aplica (cloud sigue).
+    """
+    if routing_source != "local":
+        return None
+    try:
+        from harness.model_router.local_executor import LocalExecutor
+        from harness.model_router.ollama_client import OllamaClient
+        from harness.model_router.ollama_tiers import OllamaTierRouter
+    except ImportError as exc:
+        logger.warning("[LocalExec] modulos locales no disponibles: %s", exc)
+        return None
+    try:
+        executor = LocalExecutor(
+            client=client if client is not None else OllamaClient(),
+            tiers=tiers if tiers is not None else OllamaTierRouter(
+                client if client is not None else OllamaClient()
+            ),
+        )
+        out = executor.execute(task)
+    except Exception as exc:  # noqa: BLE001 - fallback a cloud, nunca crashea run
+        logger.warning("[LocalExec] fallo, sigue flujo cloud: %s", exc)
+        return None
+    if not out.executed_locally:
+        return None
+    logger.info("[LocalExec] %s", out.reason)
+    return out.output
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -424,6 +472,15 @@ def main() -> None:
     if not _check_hitl(task, target_agent, guard):
         logger.info("[HITL] Accion rechazada por el usuario. Cancelando.")
         sys.exit(1)
+
+    # Ejecucion local real (ADR-0078 cierra el loop): tras routing local +
+    # HITL aprobado, las tareas cerradas se ejecutan en Ollama (0 tokens
+    # cloud). Si no aplica, el flujo cloud sigue intacto.
+    local_answer = _try_local_execution(task, routing_source)
+    if local_answer is not None:
+        _safe_print(f"\n  {_ok('[Local]')} Respuesta local (0 tokens cloud):")
+        _safe_print(f"  {local_answer}")
+        return
 
     # RAG context
     ctx = _ensure_rag_context(store, task, target_agent)

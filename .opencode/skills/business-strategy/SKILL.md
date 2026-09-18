@@ -25,6 +25,7 @@ variables:
   - Harvard Business Review — https://hbr.org
   - McKinsey Insights — https://www.mckinsey.com/insights
 - **ANTI-HEDGING**: Entrega UNA recomendacion estrategica con rationale y riesgos top-3.
+- **7 DIMENSIONES IA** (Marc Griful, Search 9-13): Ambicion, Casos de uso/valor, Datos, Tecnologia, Modelo operativo, Personas y cultura, Gobernanza y riesgos — evaluar las 7 antes de recomendar adopcion de IA.
 ## Descripcion
 Skill para analisis estrategico, modelos de negocio y toma de decisiones empresariales. Complementa el enfoque tecnico con vision de negocio.
 
