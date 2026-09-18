@@ -47,6 +47,25 @@ SKILL_TO_AGENT: dict[str, str] = {
     "architecture": "scientist",
     "data-science": "scientist",
     "security-audit": "guardian",
+    "agent-rigor": "guardian",
+    "atdd-spec": "builder",
+    "behavioral-economics": "scientist",
+    "business-strategy": "scientist",
+    "communication": "builder",
+    "creative-design": "builder",
+    "devops-infra": "builder",
+    "diagram-design": "builder",
+    "education": "scientist",
+    "ethics": "guardian",
+    "linguistics": "scientist",
+    "physical-sciences": "scientist",
+    "process-over-tools": "coordinator",
+    "project-management": "builder",
+    "psychology": "scientist",
+    "risk-intelligence": "scientist",
+    "sociology": "scientist",
+    "sustainability": "scientist",
+    "swarm-release-ops": "builder",
 }
 
 # Mapa de dominios → skills relevantes
@@ -64,7 +83,8 @@ DOMAIN_SKILLS: dict[str, list[str]] = {
     "legal": ["legal-doc", "science-doc"],
     "health": ["healthtech", "data-science", "security-audit"],
     "retail": ["pos-retail", "frontend-uiux", "security-audit"],
-    "devops": ["rust-lang", "security-audit"],
+    "devops": ["rust-lang", "security-audit", "devops-infra", "swarm-release-ops"],
+    "quality": ["agent-rigor", "atdd-spec", "security-audit"],
     "general": ["architecture", "security-audit", "data-science", "rust-lang"],
 }
 
@@ -84,6 +104,7 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
     "health": ["health-record", "salud", "hospital", "paciente", "hipaa"],
     "retail": ["retail", "punto de venta", "pos", "tienda", "inventario", "facturacion"],
     "devops": ["devops", "ci/cd", "deploy", "kubernetes", "docker", "infraestructura"],
+    "quality": ["quality gate", "mutation testing", "code review", " QA ", " TDD ", "cobertura"],
 }
 
 
