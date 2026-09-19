@@ -17,13 +17,14 @@ Uso:
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from harness.common import short_hash
 
 logger = logging.getLogger("harness.memory_rag.session_snapshot")
 
@@ -45,7 +46,7 @@ def _handle_for(payload: str) -> str:
     Returns:
         Handle hexadecimal (12 chars).
     """
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:_HASH_LEN]
+    return short_hash(payload, _HASH_LEN)
 
 
 @dataclass(frozen=True)

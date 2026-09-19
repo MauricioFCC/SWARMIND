@@ -273,7 +273,7 @@ def test_sync_tree_copia_y_preserva(tmp_path: Path) -> None:
     dst.mkdir()
     (dst / "propio.yaml").write_text("x", encoding="utf-8")
 
-    count = da._sync_tree(src, dst)
+    da._sync_tree(src, dst)
 
     assert (dst / "a" / "file1.md").is_file()
     assert (dst / "b" / "file2.md").is_file()

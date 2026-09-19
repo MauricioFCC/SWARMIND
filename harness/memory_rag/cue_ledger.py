@@ -19,10 +19,11 @@ Uso:
 
 from __future__ import annotations
 
-import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+
+from harness.common import short_hash
 
 logger = logging.getLogger("harness.memory_rag.cue_ledger")
 
@@ -80,7 +81,7 @@ def _content_hash(source: str) -> str:
         basis = f"{source}:{stat.st_mtime_ns}:{stat.st_size}"
     else:
         basis = source
-    return hashlib.sha256(basis.encode("utf-8")).hexdigest()[:_HASH_LEN]
+    return short_hash(basis, _HASH_LEN)
 
 
 class CueLedger:
@@ -206,7 +207,7 @@ class CueLedger:
                 "WHERE: CueLedger.inject"
             )
         index = self.render_index()
-        digest = hashlib.sha256(index.encode("utf-8")).hexdigest()[:_HASH_LEN]
+        digest = short_hash(index, _HASH_LEN)
         if digest in self._injected:
             self._dedup_hits += 1
             logger.debug("cue_ledger: inyeccion duplicada evitada (sesion=%s)", session_id)
