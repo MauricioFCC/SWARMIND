@@ -73,6 +73,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0089 | [Search 9-17 Segunda Pasada — Vibe-Gate, Skill-Auditor, Canon, Transcribe, Governance](adr-0089-search917-segunda-pasada.md) | APLICADO (5 módulos, 15 tests) | — |
 | 0090 | [Pulido de Skills y Agentes — Mesa Adversarial + SkillReducer](adr-0090-pulido-skills-agentes.md) | APLICADO (bundler 35 + probe + splits + agentes) | — |
 | 0091 | [Especialistas de Rendimiento — Fusiones, Splits y Caché de Tags](adr-0091-especialistas-rendimiento.md) | APLICADO (−9 archivos, splits, TTL) | — |
+| 0092 | [Ratio Local ≥60% — Capability Profiles + YAML Confidencial (Mesa 2-1)](adr-0092-ratio-local-capabilities.md) | APLICADO (perfiles 13 modelos + clasificador + calibración, 95% verificado) | — |
 
 ## Resumen por Categoria
 
