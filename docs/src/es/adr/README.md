@@ -75,6 +75,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0091 | [Especialistas de Rendimiento — Fusiones, Splits y Caché de Tags](adr-0091-especialistas-rendimiento.md) | APLICADO (−9 archivos, splits, TTL) | — |
 | 0092 | [Ratio Local ≥60% — Capability Profiles + YAML Confidencial (Mesa 2-1)](adr-0092-ratio-local-capabilities.md) | APLICADO (perfiles 13 modelos + clasificador + calibración, 95% verificado) | — |
 | 0093 | [OTP Lite — Bulkhead + Backpressure + Watchdog (Mesa 2/3)](adr-0093-otp-lite-bulkhead.md) | APLICADO (bounded executor + shed + watchdog, 7 tests) | — |
+| 0094 | [Librería Compartida — Crecer `harness/common.py`, No Nueva Librería](adr-0094-libreria-compartida-common.md) | APLICADO (3 helpers + 6 migraciones) | — |
 
 ## Resumen por Categoria
 
