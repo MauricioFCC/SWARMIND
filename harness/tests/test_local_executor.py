@@ -127,4 +127,12 @@ def test_savings_metric() -> None:
     ex.execute("resume esto")
     ex.execute("disena la arquitectura")
     assert ex.local_tasks == 1
+
+
+def test_oversized_task_falls_back_to_cloud() -> None:
+    """Tarea que excede la ventana no va a local (anti-loop/OOM)."""
+    ex = _executor()
+    out = ex.execute("resume esto: " + "x" * 20000)
+    assert out.executed_locally is False
+    assert "ventana" in out.reason.lower()
     assert ex.cloud_tasks == 1

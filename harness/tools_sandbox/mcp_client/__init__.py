@@ -30,10 +30,13 @@ from ._types import (
     MCP_VERSION,
     STATELESS_DISCOVER_RPC,
     STATELESS_VERSION,
+    MCPConnectionError,
+    MCPResult,
+    MCPTimeoutError,
+    MCPTool,
+    MCPToolError,
 )
 from .core import MCPClient
-from ._types import MCPConnectionError, MCPTimeoutError, MCPToolError
-from ._types import MCPResult, MCPTool
 
 logger = logging.getLogger("harness.tools_sandbox.mcp_client")
 

@@ -130,7 +130,7 @@ class AdversarialTable:
         order = list(self._voices)
         r0 = [self._voice_fn(task, voice) for voice in order]
         answers = [a for a, _ in r0]
-        verdict, score = self._judge_fn(answers)
+        verdict, _r0_score = self._judge_fn(answers)
         if self._has_supermajority(answers, verdict):
             logger.info("adversarial_table: acuerdo en R0 (sin rondas)")
             return self._minutes(verdict, answers, rounds=0, agreement=0)

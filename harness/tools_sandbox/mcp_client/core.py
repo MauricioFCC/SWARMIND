@@ -12,15 +12,16 @@ import time
 import uuid
 from typing import Any
 
-from .connection import _ConnectionMixin
 from ._types import (
     DEFAULT_TIMEOUT,
     HEADER_METHOD,
     HEADER_NAME,
     MCP_CLIENT_NAME,
     STATELESS_VERSION,
+    MCPResult,
+    MCPTool,
 )
-from ._types import MCPResult, MCPTool
+from .connection import _ConnectionMixin
 from .tools import _ToolsMixin
 
 logger = logging.getLogger("harness.tools_sandbox.mcp_client")

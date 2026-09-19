@@ -21,6 +21,8 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
+from harness.model_router.model_windows import fits_in_window
+
 logger = logging.getLogger("harness.model_router.local_executor")
 
 #: Allowlist de tareas cerradas (substrings ES/EN, sin fragmentos ambiguos).
@@ -97,8 +99,9 @@ class LocalExecutor:
         """Ejecuta la tarea en local si es cerrada, si no deriva a cloud.
 
         Orden de gates: tarea cerrada? -> Ollama disponible? -> tier no-None?
-        Cualquier fallo (incluida excepcion del modelo) deriva a cloud con
-        reason accionable, sin lanzar.
+        -> cabe en ventana (anti-loop compactacion)? Cualquier fallo
+        (incluida excepcion del modelo) deriva a cloud con reason
+        accionable, sin lanzar.
 
         Args:
             task: Descripcion de la tarea.
@@ -126,6 +129,15 @@ class LocalExecutor:
                 reason="tarea frontier-only: requiere cloud (TKN justificado)",
             )
         model = self._tiers.model_for(tier)
+        if not fits_in_window(model, task_chars=len(task)):
+            self._cloud_tasks += 1
+            return LocalExecutionResult(
+                output="", executed_locally=False,
+                reason=(
+                    f"prompt excede la ventana de {model} (anti-loop "
+                    "compactacion/OOM): fallback a cloud"
+                ),
+            )
         try:
             data = self._client.generate(model, task)
         except Exception as exc:  # noqa: BLE001 - fallback a cloud, no crash
