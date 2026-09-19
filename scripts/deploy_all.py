@@ -106,6 +106,12 @@ _SKIP_DIRS = {
     ".git", ".venv", "venv", "__pycache__", ".idea", ".vscode",
 }
 
+# Archivos machine-private que NUNCA se espejan a otros proyectos
+# (tuning confidencial de ESTA maquina; cada proyecto usa el suyo o defaults).
+_SKIP_FILES = {
+    "ollama_local.yaml",
+}
+
 # Alias CLI -> nombre real de carpeta (SOLO desde deploy_local.json;
 # el codigo fuente no contiene nombres de proyectos privados).
 _ALIASES: dict[str, str] = {
@@ -360,6 +366,9 @@ def _sync_tree(src: Path, dst: Path, dry_run: bool = False) -> int:
 
     count = 0
     for item in src.iterdir():
+        if item.name in _SKIP_FILES:
+            logger.debug("sync: archivo machine-private excluido: %s", item.name)
+            continue
         target = dst / item.name
         if item.is_dir():
             if target.exists() and target.is_dir() and not target.is_symlink():
@@ -367,6 +376,11 @@ def _sync_tree(src: Path, dst: Path, dry_run: bool = False) -> int:
             else:
                 if not dry_run:
                     shutil.copytree(item, target, dirs_exist_ok=True)
+                    # copytree no filtra: purgar machine-private del arbol nuevo
+                    for stale in target.rglob("*"):
+                        if stale.is_file() and stale.name in _SKIP_FILES:
+                            stale.unlink()
+                            logger.debug("sync: purgado machine-private: %s", stale)
                 count += sum(1 for _ in item.rglob("*") if _.is_file())
         else:
             if not dry_run:

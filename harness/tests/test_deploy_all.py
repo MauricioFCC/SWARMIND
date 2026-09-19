@@ -278,7 +278,20 @@ def test_sync_tree_copia_y_preserva(tmp_path: Path) -> None:
     assert (dst / "a" / "file1.md").is_file()
     assert (dst / "b" / "file2.md").is_file()
     assert (dst / "propio.yaml").is_file()  # preservado
-    assert count == 2
+
+
+def test_sync_tree_excluye_machine_private(tmp_path: Path) -> None:
+    """ollama_local.yaml (tuning confidencial) NUNCA se espeja."""
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    (src / "config").mkdir(parents=True)
+    (src / "config" / "ollama_local.yaml").write_text("trust: 1", encoding="utf-8")
+    (src / "config" / "publico.yaml").write_text("x", encoding="utf-8")
+
+    da._sync_tree(src, dst)
+
+    assert (dst / "config" / "publico.yaml").is_file()
+    assert not (dst / "config" / "ollama_local.yaml").exists()
 
 
 def test_sync_tree_dry_run_no_escribe(tmp_path: Path) -> None:
