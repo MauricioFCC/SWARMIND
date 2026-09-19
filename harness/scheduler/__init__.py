@@ -66,10 +66,10 @@ _DEFAULT_LANCE_JOBS_PATH = str(
 # Submódulos (re-export backward-compat)
 # ---------------------------------------------------------------------------
 
-from .base import BaseScheduler
+from .models import BaseScheduler
 from .job_store import JobStore
 from .lance import LanceScheduler
-from .scheduled_job import ScheduledJob
+from .models import ScheduledJob
 from .simple import SimpleScheduler
 
 # ---------------------------------------------------------------------------

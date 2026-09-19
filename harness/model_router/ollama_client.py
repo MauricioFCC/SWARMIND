@@ -59,6 +59,35 @@ class OllamaClient:
         """Inicializa el cliente con la URL base normalizada (sin slash final)."""
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
+        self._tags_cache: tuple[float, list[str]] | None = None
+
+    def _cached_tags(self, ttl_s: float = 60.0) -> list[str] | None:
+        """Modelos cacheados si estan frescos (evita HTTP por routing).
+
+        Args:
+            ttl_s: Segundos de validez de la cache.
+
+        Returns:
+            Lista cacheada o None si expiro/ausente.
+        """
+        import time
+
+        if self._tags_cache is None:
+            return None
+        stamped, models = self._tags_cache
+        if time.monotonic() - stamped > ttl_s:
+            return None
+        return models
+
+    def _store_tags(self, models: list[str]) -> None:
+        """Guarda modelos en cache con timestamp.
+
+        Args:
+            models: Nombres de modelos instalados.
+        """
+        import time
+
+        self._tags_cache = (time.monotonic(), list(models))
 
     # ------------------------------------------------------------------
     # Helper privado centralizado
@@ -126,10 +155,14 @@ class OllamaClient:
     def is_available(self) -> bool:
         """Comprueba si la API de Ollama responde usando un timeout corto de 2s.
 
+        Usa la cache de tags si esta fresca (evita 1 HTTP por routing).
+
         Returns:
             True si el endpoint /api/tags respondio correctamente,
             False si hubo cualquier error (incluye Ollama apagado).
         """
+        if self._cached_tags() is not None:
+            return True
         try:
             self._request("GET", "/api/tags", timeout=AVAILABILITY_TIMEOUT)
         except OllamaError as exc:
@@ -147,7 +180,9 @@ class OllamaClient:
             OllamaError: Si Ollama no responde o devuelve status != 200.
         """
         data = self._request("GET", "/api/tags")
-        return [model["name"] for model in data.get("models", []) if model.get("name")]
+        models = [model["name"] for model in data.get("models", []) if model.get("name")]
+        self._store_tags(models)
+        return models
 
     def loaded_models(self) -> list[str]:
         """Devuelve los nombres de los modelos actualmente cargados en RAM.

@@ -205,8 +205,8 @@ class TestHandleGatewayMode:
         mock_cli.is_active.return_value = True
         mock_gm.get_gateway.return_value = mock_cli
 
-        with patch("harness.gateway.gateway.GatewayManager", return_value=mock_gm), \
-             patch("harness.gateway.gateway.load_gateway_config",
+        with patch("harness.gateway.GatewayManager", return_value=mock_gm), \
+             patch("harness.gateway.load_gateway_config",
                    return_value={"active_gateways": ["cli"]}), \
              patch("builtins.input", side_effect=["mensaje test", "exit"]):
 
@@ -222,8 +222,8 @@ class TestHandleGatewayMode:
         mock_cli.is_active.return_value = False
         mock_gm.get_gateway.return_value = mock_cli
 
-        with patch("harness.gateway.gateway.GatewayManager", return_value=mock_gm), \
-             patch("harness.gateway.gateway.load_gateway_config",
+        with patch("harness.gateway.GatewayManager", return_value=mock_gm), \
+             patch("harness.gateway.load_gateway_config",
                    return_value={"active_gateways": []}):
 
             from harness.run import _handle_gateway_mode

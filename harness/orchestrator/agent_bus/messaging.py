@@ -14,7 +14,7 @@ from typing import Any
 import numpy as np
 
 from .constants import _COLLECTION, _VALID_MESSAGE_TYPES, _VALID_STATUSES
-from .exceptions import AgentBusError
+from .core import AgentBusError
 
 logger = logging.getLogger(__name__)
 

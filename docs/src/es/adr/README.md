@@ -71,6 +71,8 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0087 | [Mesa Adversarial + BUSEV Ejecutables](adr-0087-mesa-adversarial-busev.md) | APLICADO (4 módulos + WIP-2/TTL, 20 tests) | — |
 | 0088 | [Search 9-17 — QUAD, Bitemporal, Restrictor, Shunt, Misbehavior, Dream-Replay](adr-0088-search917-quad-restrict-guard.md) | APLICADO (6 módulos, 19 tests) | — |
 | 0089 | [Search 9-17 Segunda Pasada — Vibe-Gate, Skill-Auditor, Canon, Transcribe, Governance](adr-0089-search917-segunda-pasada.md) | APLICADO (5 módulos, 15 tests) | — |
+| 0090 | [Pulido de Skills y Agentes — Mesa Adversarial + SkillReducer](adr-0090-pulido-skills-agentes.md) | APLICADO (bundler 35 + probe + splits + agentes) | — |
+| 0091 | [Especialistas de Rendimiento — Fusiones, Splits y Caché de Tags](adr-0091-especialistas-rendimiento.md) | APLICADO (−9 archivos, splits, TTL) | — |
 
 ## Resumen por Categoria
 

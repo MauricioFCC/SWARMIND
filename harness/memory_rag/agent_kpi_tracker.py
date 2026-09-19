@@ -35,6 +35,26 @@ from harness.memory_rag.memory_config import (
 logger = logging.getLogger(__name__)
 
 
+def _parse_meta(meta: object) -> dict:
+    """Parsea metadata que puede venir como dict o JSON string.
+
+    Args:
+        meta: Metadata cruda (dict, JSON str o cualquier otro valor).
+
+    Returns:
+        Dict parseado ({} si es invalido o no es dict/str).
+    """
+    if isinstance(meta, dict):
+        return meta
+    if isinstance(meta, str):
+        try:
+            parsed = json.loads(meta)
+        except (json.JSONDecodeError, TypeError):
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+    return {}
+
+
 # ---------------------------------------------------------------------------
 # Constants — nombres de colecciones KPI
 # ---------------------------------------------------------------------------
@@ -367,12 +387,6 @@ class AgentKpiTracker:
         if existing:
             # Actualizar métricas acumuladas
             existing_id = existing.get("id", "")
-            meta = existing.get("metadata", {})
-            if isinstance(meta, str):
-                try:
-                    meta = json.loads(meta)
-                except (json.JSONDecodeError, TypeError):
-                    meta = {}
 
             current_use = existing.get("use_count", 0)
             current_success = existing.get("success_rate", 1.0) * current_use
@@ -427,12 +441,7 @@ class AgentKpiTracker:
                 top_k=20,
             )
             for r in results:
-                meta = r.get("metadata", {})
-                if isinstance(meta, str):
-                    try:
-                        meta = json.loads(meta)
-                    except (json.JSONDecodeError, TypeError):
-                        meta = {}
+                meta = _parse_meta(r.get("metadata", {}))
                 r_skill = meta.get("skill_name", r.get("skill_name", ""))
                 r_domain = meta.get("domain", r.get("domain", ""))
                 r_agent = meta.get("agent", r.get("agent", ""))
@@ -564,12 +573,7 @@ class AgentKpiTracker:
                 top_k=10,
             )
             for r in results:
-                meta = r.get("metadata", {})
-                if isinstance(meta, str):
-                    try:
-                        meta = json.loads(meta)
-                    except (json.JSONDecodeError, TypeError):
-                        meta = {}
+                meta = _parse_meta(r.get("metadata", {}))
                 if r.get("session_id", meta.get("session_id", "")) == session_id:
                     return r
         except Exception as _exc:  # noqa: BLE001
@@ -636,12 +640,7 @@ class AgentKpiTracker:
         # Aggregate by agent
         agent_stats: dict[str, dict] = {}
         for r in results:
-            meta = r.get("metadata", {})
-            if isinstance(meta, str):
-                try:
-                    meta = json.loads(meta)
-                except (json.JSONDecodeError, TypeError):
-                    meta = {}
+            meta = _parse_meta(r.get("metadata", {}))
 
             name = r.get("agent_name", meta.get("agent_name", "unknown"))
             if name not in agent_stats:
@@ -700,12 +699,7 @@ class AgentKpiTracker:
 
         rankings = []
         for r in results:
-            meta = r.get("metadata", {})
-            if isinstance(meta, str):
-                try:
-                    meta = json.loads(meta)
-                except (json.JSONDecodeError, TypeError):
-                    meta = {}
+            meta = _parse_meta(r.get("metadata", {}))
 
             rankings.append({
                 "skill_name": r.get("skill_name", meta.get("skill_name", "")),
@@ -746,12 +740,6 @@ class AgentKpiTracker:
         for r in results:
             if status and r.get("status", "") != status:
                 continue
-            meta = r.get("metadata", {})
-            if isinstance(meta, str):
-                try:
-                    meta = json.loads(meta)
-                except (json.JSONDecodeError, TypeError):
-                    meta = {}
             sessions.append({
                 "session_id": r.get("session_id", ""),
                 "task": r.get("task", ""),

@@ -149,3 +149,7 @@ docs/src/es/adr/
 
 # Config local privada del operador (nombres de proyectos reales) - NUNCA pushear
 scripts/deploy_local.json
+
+# Perfiles de capacidad locales confidenciales (tuning de ESTA maquina) - NUNCA pushear.
+# La plantilla SI se versiona (.opencode/config/ollama_local.example.yaml).
+.opencode/config/ollama_local.yaml

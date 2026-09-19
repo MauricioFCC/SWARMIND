@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import logging
 
-from .constants import (
+from ._types import (
     DEFAULT_STATELESS_TIMEOUT,
     DEFAULT_TIMEOUT,
     HEADER_METHOD,
@@ -32,8 +32,8 @@ from .constants import (
     STATELESS_VERSION,
 )
 from .core import MCPClient
-from .exceptions import MCPConnectionError, MCPTimeoutError, MCPToolError
-from .models import MCPResult, MCPTool
+from ._types import MCPConnectionError, MCPTimeoutError, MCPToolError
+from ._types import MCPResult, MCPTool
 
 logger = logging.getLogger("harness.tools_sandbox.mcp_client")
 

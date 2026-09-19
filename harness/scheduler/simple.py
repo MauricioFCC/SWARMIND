@@ -17,9 +17,9 @@ import time
 
 import harness.scheduler as _pkg
 
-from .base import BaseScheduler
+from .models import BaseScheduler
 from .job_store import JobStore
-from .scheduled_job import ScheduledJob
+from .models import ScheduledJob
 
 
 class SimpleScheduler(BaseScheduler, JobStore):

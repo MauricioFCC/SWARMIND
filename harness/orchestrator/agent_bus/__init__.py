@@ -4,7 +4,7 @@ Antes: harness/orchestrator/agent_bus.py (715 lineas).
 Ahora: paquete ``harness/orchestrator/agent_bus/``:
 
 - ``constants.py``: constantes de coleccion y validacion.
-- ``exceptions.py``: AgentBusError, InvalidMessageError.
+- ``core.py``: clase ``AgentBus`` + errores (AgentBusError, InvalidMessageError).
 - ``core.py``: clase ``AgentBus`` (estado + payload + helpers).
 - ``messaging.py``: mixin ``_MessagingMixin`` (post/batch/async).
 - ``reading.py``: mixin ``_ReadingMixin`` (poll/thread/history).
@@ -30,8 +30,7 @@ from .constants import (
     _VALID_MESSAGE_TYPES,
     _VALID_STATUSES,
 )
-from .core import AgentBus
-from .exceptions import AgentBusError, InvalidMessageError
+from .core import AgentBus, AgentBusError, InvalidMessageError
 
 __all__ = [
     "_COLLECTION",

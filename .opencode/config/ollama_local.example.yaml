@@ -1,0 +1,15 @@
+# PLANTILLA de configuracion local confidencial (NO commitear el real).
+# Copiar a `ollama_local.yaml` (gitignored) y ajustar a tu maquina:
+#   copy .opencode\config\ollama_local.example.yaml .opencode\config\ollama_local.yaml
+# Sobreescribe caps (0..1) y trust por model_id. Lo ausente usa builtin.
+# Ejemplo: si Qwen3.8 te rinde mejor en codigo que el prior, sube su coding.
+models:
+  # "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M":
+  #   caps: {coding: 0.80}
+  #   trust: 1.0
+  # "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M":
+  #   trust: 0.9
+# Politica local-first (sobreescribe local_first de ollama_models.yaml):
+# local_first:
+#   target_local_ratio: 0.65
+#   sample_rate: 0.15

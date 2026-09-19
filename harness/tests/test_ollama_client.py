@@ -372,3 +372,29 @@ def test_has_capability_checks_membership(mocker: MockerFixture) -> None:
     client = _client()
     assert client.has_capability(model="llava:7b", capability="vision") is True
     assert client.has_capability(model="llava:7b", capability="tools") is False
+
+
+def test_list_models_populates_cache(mocker: MockerFixture) -> None:
+    """list_models guarda en cache; is_available reusa sin HTTP (TTL 60s)."""
+    mock_request = _patch_transport(
+        mocker,
+        response=_FakeResponse(200, {"models": [{"name": "qwen3:4b"}]}),
+    )
+    client = _client()
+    assert client.list_models() == ["qwen3:4b"]
+    assert client.is_available() is True
+    assert mock_request.call_count == 1  # 2da llamada servida por cache
+
+
+def test_cache_expired_refetches(mocker: MockerFixture) -> None:
+    """Cache expirada vuelve a HTTP (TTL vencido)."""
+    mock_request = _patch_transport(
+        mocker,
+        response=_FakeResponse(200, {"models": []}),
+    )
+    client = _client()
+    assert client.is_available() is True
+    assert mock_request.call_count == 1
+    client._tags_cache = (0.0, [])  # fuerza expiracion (monotonic >> 0)
+    assert client.is_available() is True
+    assert mock_request.call_count == 2

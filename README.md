@@ -9,7 +9,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](pyproject.toml)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
-[![Tests](https://img.shields.io/badge/tests-5276_passing-brightgreen.svg)](harness/tests/)
+[![Tests](https://img.shields.io/badge/tests-5383_passing-brightgreen.svg)](harness/tests/)
 [![CI](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml/badge.svg)](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -299,7 +299,7 @@ python scripts/enable_gpu.py
 
 Quality is enforced continuously, not at the end:
 
-- **Test suite**: 5276 tests collected (TDD suite), mutation testing mutmut gate ≥70%.
+- **Test suite**: 5383 tests collected (TDD suite), mutation testing mutmut gate ≥70%.
 - **Lint**: ruff — all checks passed.
 - **Dead code**: vulture — 0 dead code.
 - **Architecture debt (AGR)**: 0 files over 500 lines in non-test code; 32 flat modules refactored into packages with re-exporting `__init__.py`; mixins limited to ≤ 2 bases; SOLID corrected in 9 classes.
@@ -350,7 +350,7 @@ SWARMIND/
 │   ├── evals/                     # eval_factory
 │   ├── context/                   # token_budget_router, skill_contract
 │   ├── scripts/                   # init, rag_ingest, end_of_iteration, ...
-│   └── tests/                     # 211 test files (5276 tests)
+│   └── tests/                     # 224 test files (5383 tests)
 ├── scripts/                       # Repo-level tooling
 │   ├── setup_swarmind.py          # one-command setup (Python 3.12+, uv, uv sync, sync global, central memory)
 │   ├── enable_gpu.py              # reinstall torch CUDA wheel after uv sync

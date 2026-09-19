@@ -9,7 +9,7 @@
 
 | Metrica | Valor |
 |---------|-------|
-| Tests | 5276 collected (TDD suite) · mutation testing ≥70% |
+| Tests | 5383 collected (TDD suite) · mutation testing ≥70% |
 | Agentes | 22 especializados (100% perfiles) |
 | Skills | 35 contextuales (100% SKILL.md + SKILL.min.md + **PEC universal**) |
 | ADRs frontera | 0065-0080 (surrealdb spike, prompt-cache TTL, llm-grep, cascada STEER, cache-health, Ollama CODING, reanchor+taxonomía, PEC universal, quality/latency/tokens, contexto, skills/agentes, tooling, verify-replan, competición, deepseek-local) |
@@ -98,7 +98,7 @@ Para la estructura detallada, ver [Agentes y Skills — Sistema de Archivos](gui
 
 Swarmind compite con **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (46.2k) y **CodeWhale** (40.2k). La comparativa completa con tabla de capacidades esta en [Comparativa Harness 2026](reference/comparativa-harness-2026.md).
 
-**Diferenciación clave:** GPU Acceleration (search x10.9), Token Economics (-51%), Governance completo, Zero Trust, Hook System determinista, Multi-Harness (5 runtimes), 5276 tests, PEC universal en skills, re-anclaje post-compaction, ejecución local real (0 tokens cloud en triviales).
+**Diferenciación clave:** GPU Acceleration (search x10.9), Token Economics (-51%), Governance completo, Zero Trust, Hook System determinista, Multi-Harness (5 runtimes), 5383 tests, PEC universal en skills, re-anclaje post-compaction, ejecución local real (0 tokens cloud en triviales).
 
 ### Cambios Septiembre 2026 (ADR-0065 .. 0080)
 

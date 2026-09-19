@@ -1,18 +1,13 @@
-"""Dataclass unificada ``ScheduledJob`` (schemas SimpleScheduler y LanceScheduler).
+"""Modelos del scheduler: ``ScheduledJob`` + ABC ``BaseScheduler``.
 
-Extracción mecánica desde ``harness/scheduler.py`` (sin cambios de lógica).
-
-SimpleScheduler fields:
-    ``cron_expr``, ``task_description``, ``run_count``, ``created_at``
-LanceScheduler fields:
-    ``trigger``, ``trigger_value``, ``command``, ``max_retries``
-Common fields:
-    ``name``, ``enabled``, ``last_run``, ``next_run``
+Fusion mecanica de ``scheduled_job.py`` (77L) + ``base.py`` (40L)
+(especialistas de arquitectura; sin cambios de logica ni firmas).
 """
 
 from __future__ import annotations
 
 import datetime
+from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import Any
 
@@ -75,3 +70,32 @@ class ScheduledJob:
             last_run=data.get("last_run", ""),
             next_run=data.get("next_run", ""),
         )
+
+
+class BaseScheduler(ABC):
+    """Abstract base scheduler defining the common job-management API."""
+
+    @abstractmethod
+    def add_job(self, *args: Any, **kwargs: Any) -> ScheduledJob:
+        """Register a new job.
+
+        Concrete subclasses define their own signature
+        (e.g. ``add_job(name, cron_expr, task_description)`` or
+        ``add_job(name, trigger, trigger_value, command, ...)``).
+        """
+
+    @abstractmethod
+    def remove_job(self, name: str) -> bool:
+        """Remove a job by name.  Returns ``True`` if the job was removed."""
+
+    @abstractmethod
+    def list_jobs(self) -> list[ScheduledJob]:
+        """Return all registered jobs."""
+
+    @abstractmethod
+    def get_job(self, name: str) -> ScheduledJob | None:
+        """Return a specific job by name, or ``None``."""
+
+    @abstractmethod
+    def stop(self) -> None:
+        """Signal the scheduler to stop (thread-safe)."""
