@@ -77,6 +77,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0093 | [OTP Lite — Bulkhead + Backpressure + Watchdog (Mesa 2/3)](adr-0093-otp-lite-bulkhead.md) | APLICADO (bounded executor + shed + watchdog, 7 tests) | — |
 | 0094 | [Librería Compartida — Crecer `harness/common.py`, No Nueva Librería](adr-0094-libreria-compartida-common.md) | APLICADO (3 helpers + 6 migraciones) | — |
 | 0095 | [Benchmarks Competitivos — Calibración Math + Freshness + Global Sincronizado](adr-0095-benchmarks-competitivos.md) | APLICADO (math 0.85, stale 540d, 13 modelos global) | — |
+| 0096 | [Mesa Competitiva — Timeout Dual, Reasoning 5º Pilar, Math-Gate](adr-0096-mesa-competitiva.md) | APLICADO (timeout anti-hang, R1 auditable, 20 casos) | — |
 
 ## Resumen por Categoria
 
