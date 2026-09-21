@@ -20,6 +20,7 @@ from __future__ import annotations
 import datetime
 import logging
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any
 
@@ -53,6 +54,7 @@ def dual_verify(
     cases: list[Any],
     as_of: str | None = None,
     freshness_days: int = CASE_FRESHNESS_DAYS,
+    timeout_s: float | None = None,
 ) -> DualReport:
     """Compara fast vs brute-force caso por caso (sin OJ externo).
 
@@ -62,6 +64,8 @@ def dual_verify(
         cases: Casos de entrada (incluir vacios, unitarios, duplicados).
         as_of: Fecha ISO del set de casos (None = sin control de vigencia).
         freshness_days: Vigencia maxima en dias (default 540).
+        timeout_s: Timeout por llamada (None = sin limite; recomendado en
+            prod: lo primero que rompe es un brute colgado).
 
     Returns:
         DualReport con pass, mismatches, conteo y flag stale.
@@ -69,18 +73,48 @@ def dual_verify(
     mismatches: list[tuple[int, Any, Any]] = []
     for idx, case in enumerate(cases):
         try:
-            got = fast_fn(case)
+            got = _call_with_timeout(fast_fn, case, timeout_s)
         except Exception as exc:  # noqa: BLE001 - robustez: el fallo es dato
             logger.warning("dual_verify: fast lanzo en caso %d: %s", idx, exc)
-            mismatches.append((idx, f"<excepcion: {exc}>", _safe_brute(brute_fn, case)))
+            mismatches.append((idx, f"<excepcion: {exc}>", _safe_brute(brute_fn, case, timeout_s)))
             continue
-        expected = _safe_brute(brute_fn, case)
+        expected = _safe_brute(brute_fn, case, timeout_s)
         if got != expected:
             mismatches.append((idx, got, expected))
     return DualReport(
         passed=not mismatches, mismatches=tuple(mismatches), cases=len(cases),
         stale=_is_stale(as_of, freshness_days),
     )
+
+
+def _call_with_timeout(
+    fn: Callable[[Any], Any], case: Any, timeout_s: float | None
+) -> Any:
+    """Ejecuta con timeout opcional (anti-hang de la mesa).
+
+    Args:
+        fn: Callable a ejecutar.
+        case: Entrada.
+        timeout_s: Segundos (None = directo, compat).
+
+    Returns:
+        Salida de fn.
+
+    Raises:
+        TimeoutError: Si excede el timeout (con mensaje con "timeout").
+        Exception: La que lance fn.
+    """
+    if timeout_s is None:
+        return fn(case)
+    pool = ThreadPoolExecutor(max_workers=1)
+    try:
+        future = pool.submit(fn, case)
+        try:
+            return future.result(timeout=timeout_s)
+        except TimeoutError as exc:
+            raise TimeoutError(f"timeout tras {timeout_s}s en caso") from exc
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
 
 
 def _is_stale(as_of: str | None, freshness_days: int) -> bool:
@@ -103,17 +137,20 @@ def _is_stale(as_of: str | None, freshness_days: int) -> bool:
     return (today - born).days > freshness_days
 
 
-def _safe_brute(brute_fn: Callable[[Any], Any], case: Any) -> Any:
+def _safe_brute(
+    brute_fn: Callable[[Any], Any], case: Any, timeout_s: float | None = None
+) -> Any:
     """Ejecuta la referencia capturando su excepcion como valor.
 
     Args:
         brute_fn: Referencia brute-force.
         case: Caso de entrada.
+        timeout_s: Timeout opcional (anti-hang).
 
     Returns:
         Salida de la referencia o "<excepcion: ...>" si lanza.
     """
     try:
-        return brute_fn(case)
+        return _call_with_timeout(brute_fn, case, timeout_s)
     except Exception as exc:  # noqa: BLE001 - la referencia tambien puede fallar
         return f"<excepcion: {exc}>"
