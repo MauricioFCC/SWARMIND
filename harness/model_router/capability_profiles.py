@@ -76,26 +76,18 @@ _BUILTIN: tuple[tuple[str, float, str, dict[str, float]], ...] = (
     ("hf.co/unsloth/GLM-Z1-9B-0414-GGUF:UD-Q4_K_XL",
      9.0, "Q4", {"coding": 0.70, "reasoning": 0.90, "math": 0.85,
                  "multilingual": 0.75, "agentic": 0.75}),
-    ("qwen2.5-coder:7b", 7.0, "Q4",
-     {"coding": 0.80, "reasoning": 0.65, "multilingual": 0.65, "agentic": 0.60}),
-    ("deepseek-r1:8b", 8.0, "Q4",
-     {"coding": 0.70, "reasoning": 0.85, "math": 0.80,
-      "multilingual": 0.75, "agentic": 0.70}),
-    ("qwen3:4b", 4.0, "Q4",
-     {"coding": 0.60, "reasoning": 0.65, "multilingual": 0.65, "agentic": 0.60}),
-    ("hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0", 2.6, "Q8",
-     {"coding": 0.55, "reasoning": 0.55, "multilingual": 0.60, "agentic": 0.50}),
     ("hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0", 2.0, "Q8",
      {"coding": 0.60, "reasoning": 0.60, "multilingual": 0.65, "agentic": 0.55}),
-    ("llama3.2:3b", 3.0, "Q4",
-     {"coding": 0.50, "reasoning": 0.50, "multilingual": 0.55, "agentic": 0.50}),
-    ("hf.co/mradermacher/OLMoE-1B-7B-0125-Instruct-Distill-ot114k-batch32-i1-GGUF:IQ4_NL",
-     7.0, "Q4", {"coding": 0.50, "reasoning": 0.55, "multilingual": 0.55, "agentic": 0.50}),
     ("qwen3-vl:4b", 4.0, "Q4",
      {"coding": 0.50, "reasoning": 0.60, "multilingual": 0.60,
       "agentic": 0.55, "vision": 0.90}),
-    ("qwen2.5-coder:7b-instruct", 7.0, "Q4",
-     {"coding": 0.80, "reasoning": 0.65, "multilingual": 0.65, "agentic": 0.60}),
+    # Bonsai-2-27B ternario (Qwen3.8-27B, 5.54GB, bench pub. avg 76.11,
+    # AIME>87): STANDBY — stock Ollama no carga PTQ1_0 ("unsupported tensor"),
+    # requiere fork llama.cpp de PrismML. GGUF aparcado en .ollama/manual.
+    # NO poner en tiers activos (auto_pull fallaria).
+    ("hf.co/dealignai/Bonsai-2-27B-1bit-CRACK-GGUF:TQ1_0", 27.0, "TQ1_0",
+     {"coding": 0.80, "reasoning": 0.85, "math": 0.85,
+      "multilingual": 0.80, "agentic": 0.75}),
 )
 
 

@@ -42,6 +42,7 @@ _MODEL_WINDOWS: tuple[tuple[str, int], ...] = (
     ("qwen2.5-coder", 8192),
     ("deepseek-r1", 8192),
     ("qwen3.8", 8192),        # 9B Q4: 16Kctx + 6GB pesos = OOM en 8GB
+    ("bonsai", 16384),        # 27B ternario 5.5GB + KV hibrida pequena; solo via fork
     ("qwopus", 8192),
     ("qwen3.5", 8192),
     ("glm-z1", 8192),

@@ -76,11 +76,12 @@ def test_profile_is_frozen() -> None:
 
 
 def test_load_builtin_profiles(tmp_path) -> None:
-    """Sin YAML: perfiles builtin de los 13 instalados."""
+    """Sin YAML: perfiles builtin de los instalados (flota 2026-09-21: 6+1 standby)."""
     profiles = load_profiles(None)
     ids = {p.model_id for p in profiles}
-    assert len(profiles) >= 10
+    assert len(profiles) >= 6
     assert any("Qwen3.8" in i or "qwen" in i.lower() for i in ids)
+    assert any("Bonsai" in i for i in ids)
 
 
 def test_local_confidence_constant() -> None:
