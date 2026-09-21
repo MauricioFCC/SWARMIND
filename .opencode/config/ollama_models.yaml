@@ -1,42 +1,29 @@
 # Ollama local delegation — tiers por capacidad (minimiza tokens cloud)
-# Nombres canonicos + uso (2026-09-08): sin alias duplicados (cada blob un
-# solo nombre); legacy qwen como fallback. Todos instalados y verificados.
-#   fast:      LFM2.5 2.6B Q8 — latencia minima, triviales
-#   quality:   Qwen3.8 9B Q4 — razonamiento general (destilado)
-#   coding:    Qwopus3.5 9B Q4 — código (tier opcional)
-#   embedding: qwen3-embedding 0.6B — RAG (reemplaza nomic-embed-text, 2 años obsoleto)
-#   vision:    qwen3-vl 4B — imágenes/alt-text (RTX 4060 8GB OK); alt: gemma4:e4b
-# Alternativos instalados (no en tier, uso manual/override):
-#   Qwen3.5 9B Q4 flash (DeepSeek-Flash: general mas potente)
-#   MiniCPM5 2B Q8 trivial (asistente trivial ultra-rapido)
-#   OLMoE 1B-7B Q4 efficient (eficiente)
-#   GLM-Z1 9B Q4 reasoning (razonamiento profundo)
-# Legacy fallback: qwen3:4b, deepseek-r1:8b, qwen2.5-coder:7b, llama3.2:3b
-# Evaluados 2026-09-08 (Los mejores modelos destilados.md + Ollama Hub),
-# PENDIENTES de instalacion (no descargar sin aprobacion; ~15GB):
-#   Qwimi3.5-9B (Kimi K2.6 + Claude Opus 4.5 + Qwen, fusion trjxter, MTP)
-#     hf.co/trjxter/Qwimi3.5-9B-Kimik2.6-Opus-Distill-MTP-GGUF
-#   Nemotron-Cascade-8B (logica Claude 4.5 Opus, optimizado NVIDIA/RTX 4060)
-#     hf.co/TeichAI/Nemotron-Cascade-8B-Thinking-Claude-4.5-Opus-High-Reasoning-Distill-GGUF
-#   Phi-4-mini-flash-reasoning 3.8B (Microsoft, razonamiento denso)
-#     hf.co/unsloth/Phi-4-mini-reasoning-GGUF
-# Hub oficial nuevo (monitorear): qwen3.5 (0.8b-122b), gemma4 (e2b/e4b edge),
-# kimi-k2.6/k2.7-code, glm-5.x, nemotron-3-nano 4b — candidatos edge (RTX 4060).
+# Flota 2026-09-21 (RTX 4060 8GB, nombres canonicos hf.co; cada blob un solo
+# nombre, sin alias locales). Medidos: MiniCPM5 81.8 tok/s, Qwen3.8-distill
+# 43 tok/s, Qwopus 43 tok/s, GLM-Z1 37 tok/s.
+#   fast:      MiniCPM5-2B Q8_0 — borradores, tareas simples
+#   quality:   Qwen3.8-9B distill Q4_K_M — razonamiento general
+#   coding:    Qwopus3.5-9B coder Q4_K_M — codigo
+#   embedding: qwen3-embedding:0.6b — RAG (auto_pull lo restaura si se usa)
+#   vision:    qwen3-vl:4b — imagenes/alt-text (auto_pull lo restaura si se usa)
+# Extra (uso manual): V4-Flash distill, GLM-Z1-9B, LFM2.5-2.6B (instalados).
+# Standby (NO tier: stock Ollama no lo carga): Bonsai-2-27B-PTQ1_0-CRACK
+# (Qwen3.8-27B ternario, 5.54GB en .ollama/manual) — requiere fork PrismML.
 ollama:
   base_url: "http://localhost:11434"
   timeout: 60
-  warm_on_start: [fast, embedding]   # precargar al arrancar
+  warm_on_start: [fast]   # precargar al arrancar
   tiers:
-    fast:      {model: "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0",                             keep_alive: "5m", auto_pull: true}
-    quality:   {model: "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",                    keep_alive: "5m", auto_pull: true}
+    fast:      {model: "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0",                          keep_alive: "5m", auto_pull: true}
+    quality:   {model: "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",                keep_alive: "5m", auto_pull: true}
     coding:    {model: "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M", keep_alive: "5m", auto_pull: true}
-    embedding: {model: "qwen3-embedding:0.6b",                                              keep_alive: "5m", auto_pull: true}
-    vision:    {model: "qwen3-vl:4b",                                                       keep_alive: "5m", auto_pull: true}
-# Politica local-first con supervision cloud (ADR-0084, RLM-Cascade/Local-Splitter):
-# el draft local ejecuta; el cloud solo verifica/muestrea como guia.
-# Todo configurable aqui o por entorno (sin hardcode en codigo).
+    embedding: {model: "qwen3-embedding:0.6b", keep_alive: "5m", auto_pull: true}
+    vision:    {model: "qwen3-vl:4b",          keep_alive: "5m", auto_pull: true}
+# Politica local-first con supervision cloud como oraculo 1% (ADR-0084/0097):
+# 99% local en destilados potentes; el cloud solo verifica muestras.
 local_first:
-  target_local_ratio: 0.60        # objetivo: >=60% tareas en local (destilados)
-  confidence_margin: 0.50         # bajo esto se escala aunque sea trivial (anti falso+)
-  sample_rate: 0.10               # fraccion de salidas locales que audita el cloud
-  env_prefix: "SWARMIND_LOCAL_"   # overrides: SWARMIND_LOCAL_SAMPLE_RATE=0.2, etc.
+  target_local_ratio: 0.99
+  confidence_margin: 0.50
+  sample_rate: 0.01
+  env_prefix: "SWARMIND_LOCAL_"

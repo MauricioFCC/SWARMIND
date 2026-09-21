@@ -25,9 +25,9 @@ logger = logging.getLogger("harness.model_router.local_policy")
 #: Prefijo de overrides por entorno.
 ENV_PREFIX = "SWARMIND_LOCAL_"
 #: Defaults seguros (documentados en el YAML).
-DEFAULT_TARGET_RATIO = 0.6
+DEFAULT_TARGET_RATIO = 0.99
 DEFAULT_CONFIDENCE_MARGIN = 0.5
-DEFAULT_SAMPLE_RATE = 0.1
+DEFAULT_SAMPLE_RATE = 0.01
 
 
 @dataclass(frozen=True)

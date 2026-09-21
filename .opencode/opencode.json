@@ -3,7 +3,7 @@
   "instructions": [
     ".opencode/core/base_principles.md"
   ],
-  "model": "ollama/hf.co/Jackrong/Qwen3.5-9B-DeepSeek-V4-Flash-GGUF:Q4_K_M",
+  "model": "ollama/hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
   "agent": {
     "coordinator": {
       "mode": "primary",
@@ -47,62 +47,6 @@
         "baseURL": "http://localhost:11434/v1"
       },
       "models": {
-        "qwen3:4b": {
-          "name": "qwen3 4B fast legacy",
-          "reasoning": false,
-          "tools": true,
-          "options": {
-            "num_ctx": 8192
-          }
-        },
-        "deepseek-r1:8b": {
-          "name": "deepseek-r1 8B quality legacy",
-          "reasoning": true,
-          "tools": true,
-          "options": {
-            "num_ctx": 8192
-          }
-        },
-        "qwen2.5-coder:7b": {
-          "name": "qwen2.5-coder 7B coding legacy",
-          "reasoning": false,
-          "tools": true,
-          "options": {
-            "num_ctx": 8192
-          }
-        },
-        "qwen2.5-coder:7b-instruct": {
-          "name": "qwen2.5-coder 7B instruct legacy",
-          "reasoning": false,
-          "tools": true,
-          "options": {
-            "num_ctx": 8192
-          }
-        },
-        "llama3.2:3b": {
-          "name": "llama3.2 3B trivial legacy",
-          "reasoning": false,
-          "tools": true,
-          "options": {
-            "num_ctx": 8192
-          }
-        },
-        "qwen3-vl:4b": {
-          "name": "qwen3-vl 4B vision",
-          "reasoning": false,
-          "tools": true,
-          "options": {
-            "num_ctx": 8192
-          }
-        },
-        "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0": {
-          "name": "LFM2.5 2.6B Q8 fast",
-          "reasoning": false,
-          "tools": true,
-          "options": {
-            "num_ctx": 8192
-          }
-        },
         "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M": {
           "name": "Qwen3.8 9B Q4 quality",
           "reasoning": true,
@@ -119,28 +63,12 @@
             "num_ctx": 8192
           }
         },
-        "hf.co/Jackrong/Qwen3.5-9B-DeepSeek-V4-Flash-GGUF:Q4_K_M": {
-          "name": "Qwen3.5 9B Q4 flash",
-          "reasoning": true,
-          "tools": true,
-          "options": {
-            "num_ctx": 8192
-          }
-        },
         "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0": {
           "name": "MiniCPM5 2B Q8 trivial",
           "reasoning": false,
           "tools": true,
           "options": {
             "num_ctx": 8192
-          }
-        },
-        "hf.co/mradermacher/OLMoE-1B-7B-0125-Instruct-Distill-ot114k-batch32-i1-GGUF:IQ4_NL": {
-          "name": "OLMoE 1B-7B Q4 efficient",
-          "reasoning": false,
-          "tools": true,
-          "options": {
-            "num_ctx": 4096
           }
         },
         "hf.co/unsloth/GLM-Z1-9B-0414-GGUF:UD-Q4_K_XL": {
