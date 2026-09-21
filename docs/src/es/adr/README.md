@@ -76,6 +76,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0092 | [Ratio Local ≥60% — Capability Profiles + YAML Confidencial (Mesa 2-1)](adr-0092-ratio-local-capabilities.md) | APLICADO (perfiles 13 modelos + clasificador + calibración, 95% verificado) | — |
 | 0093 | [OTP Lite — Bulkhead + Backpressure + Watchdog (Mesa 2/3)](adr-0093-otp-lite-bulkhead.md) | APLICADO (bounded executor + shed + watchdog, 7 tests) | — |
 | 0094 | [Librería Compartida — Crecer `harness/common.py`, No Nueva Librería](adr-0094-libreria-compartida-common.md) | APLICADO (3 helpers + 6 migraciones) | — |
+| 0095 | [Benchmarks Competitivos — Calibración Math + Freshness + Global Sincronizado](adr-0095-benchmarks-competitivos.md) | APLICADO (math 0.85, stale 540d, 13 modelos global) | — |
 
 ## Resumen por Categoria
 
