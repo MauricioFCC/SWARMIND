@@ -78,6 +78,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0094 | [Librería Compartida — Crecer `harness/common.py`, No Nueva Librería](adr-0094-libreria-compartida-common.md) | APLICADO (3 helpers + 6 migraciones) | — |
 | 0095 | [Benchmarks Competitivos — Calibración Math + Freshness + Global Sincronizado](adr-0095-benchmarks-competitivos.md) | APLICADO (math 0.85, stale 540d, 13 modelos global) | — |
 | 0096 | [Mesa Competitiva — Timeout Dual, Reasoning 5º Pilar, Math-Gate](adr-0096-mesa-competitiva.md) | APLICADO (timeout anti-hang, R1 auditable, 20 casos) | — |
+| 0097 | [99% Local + Oráculo Cloud 1% — Recableo a 4 Destilados Instalados](adr-0097-nueve-nueve-local.md) | APLICADO (tiers instalados, 0.99/0.01, 95% verificado) | — |
 
 ## Resumen por Categoria
 
