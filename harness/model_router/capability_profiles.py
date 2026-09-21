@@ -60,20 +60,21 @@ _DIM_KEYWORDS: dict[str, frozenset[str]] = {
 }
 
 #: Perfiles builtin de los instalados (priors por benchmark; calibrables).
-#: Fuentes: Qwen2.5/3 reports (MMLU/HumanEval/GSM8K), MiniCPM-SALA 0.951
+#: Fuentes: Qwen2.5/3 reports (MMLU/HumanEval; GSM8K deprecado por saturacion/
+#: contaminacion — usar MATH-500/AIME como gate), MiniCPM-SALA 0.951
 #: HumanEval (llm-stats), LXT (solo 4/15 predicen prod).
 _BUILTIN: tuple[tuple[str, float, str, dict[str, float]], ...] = (
     ("hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M",
      9.0, "Q4", {"coding": 0.90, "reasoning": 0.70, "math": 0.65,
                  "multilingual": 0.70, "agentic": 0.65}),
     ("hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
-     9.0, "Q4", {"coding": 0.75, "reasoning": 0.85, "math": 0.80,
+     9.0, "Q4", {"coding": 0.75, "reasoning": 0.85, "math": 0.85,
                  "multilingual": 0.80, "agentic": 0.75}),
     ("hf.co/Jackrong/Qwen3.5-9B-DeepSeek-V4-Flash-GGUF:Q4_K_M",
      9.0, "Q4", {"coding": 0.80, "reasoning": 0.85, "math": 0.80,
                  "multilingual": 0.80, "agentic": 0.80}),
     ("hf.co/unsloth/GLM-Z1-9B-0414-GGUF:UD-Q4_K_XL",
-     9.0, "Q4", {"coding": 0.70, "reasoning": 0.90, "math": 0.80,
+     9.0, "Q4", {"coding": 0.70, "reasoning": 0.90, "math": 0.85,
                  "multilingual": 0.75, "agentic": 0.75}),
     ("qwen2.5-coder:7b", 7.0, "Q4",
      {"coding": 0.80, "reasoning": 0.65, "multilingual": 0.65, "agentic": 0.60}),
