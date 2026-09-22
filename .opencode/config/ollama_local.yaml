@@ -1,0 +1,12 @@
+# CONFIDENCIAL — NO commitear (gitignored). Tuning de ESTA maquina.
+# Sobreescribe caps/trust por model_id + politica local_first.
+# Generado 2026-09-08 desde benchmarks + smoke tests locales.
+models:
+  "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M":
+    trust: 1.0
+  "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M":
+    trust: 1.0
+local_first:
+  target_local_ratio: 0.60
+  confidence_margin: 0.50
+  sample_rate: 0.10
