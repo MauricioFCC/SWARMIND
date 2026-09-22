@@ -81,6 +81,7 @@ Indice de todas las decisiones arquitectónicas del proyecto.
 | 0097 | [99% Local + Oráculo Cloud 1% — Recableo a 4 Destilados Instalados](adr-0097-nueve-nueve-local.md) | APLICADO (tiers instalados, 0.99/0.01, 95% verificado) | — |
 | 0098 | [Deep-Docs — Credentials, Tool Pipeline, Op-Sec, Attachments, Delegation](adr-0098-deep-docs-credentials-pipeline.md) | APLICADO (5 módulos, 16 tests) | — |
 | 0099 | [Unsloth Desktop — llama-server con Discovery Dinámico](adr-0099-unsloth-desktop.md) | APLICADO (cliente + check, verificado en vivo :61767) | — |
+| 0100 | [Dispatch Obligatorio del Coordinador (Determinista vs LLM)](adr-0100-dispatch-obligatorio.md) | APLICADO (plan frozen + guards, 7 tests) | — |
 
 ## Resumen por Categoria
 
