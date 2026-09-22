@@ -276,18 +276,32 @@ class TestIterationEnd:
         )
 
     def test_iteration_end_quick_redirect(self):
-        """!iteration end --quick debe redirigir a _handle_iteration_quick."""
-        with patch("harness.run_commands._handle_iteration_quick") as mock_fn:
-            from harness.run_commands import _handle_iteration_end
-            _handle_iteration_end("!iteration end --quick", Path("/fake/harness"))
-        mock_fn.assert_called_once()
+        """!iteration end --quick debe redirigir a _handle_iteration_quick (DI)."""
+        from harness.run_commands import _handle_iteration_end
+
+        calls: list[str] = []
+
+        def fake_quick(cmd: str, root) -> None:
+            calls.append(cmd)
+
+        _handle_iteration_end(
+            "!iteration end --quick", Path("/fake/harness"), quick_fn=fake_quick
+        )
+        assert calls == ["!iteration end --quick"]
 
     def test_iteration_end_auto_redirect(self):
-        """!iteration end --auto debe redirigir a _handle_iteration_auto."""
-        with patch("harness.run_commands._handle_iteration_auto") as mock_fn:
-            from harness.run_commands import _handle_iteration_end
-            _handle_iteration_end("!iteration end --auto", Path("/fake/harness"))
-        mock_fn.assert_called_once()
+        """!iteration end --auto debe redirigir a _handle_iteration_auto (DI)."""
+        from harness.run_commands import _handle_iteration_end
+
+        calls: list[str] = []
+
+        def fake_auto(cmd: str, root) -> None:
+            calls.append(cmd)
+
+        _handle_iteration_end(
+            "!iteration end --auto", Path("/fake/harness"), auto_fn=fake_auto
+        )
+        assert calls == ["!iteration end --auto"]
 
 
 class TestIterationQuick:
