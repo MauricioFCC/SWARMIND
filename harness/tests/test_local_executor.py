@@ -46,6 +46,25 @@ class _FakeClient:
         return {"response": self._output, "model": model}
 
 
+class _FakeUnsloth:
+    """UnslothClient fake (generate retorna str directo)."""
+
+    def __init__(self, available: bool = True, models: list | None = None) -> None:
+        self._available = available
+        self._models = models if models is not None else ["unsloth/m1"]
+        self.calls: list[str] = []
+
+    def is_available(self) -> bool:
+        return self._available
+
+    def list_models(self) -> list[str]:
+        return list(self._models)
+
+    def generate(self, model: str, prompt: str, **kwargs) -> str:
+        self.calls.append(prompt)
+        return "respuesta unsloth"
+
+
 def _executor(**kw):
     from harness.model_router.ollama_tiers import CapabilityTier
 
@@ -121,14 +140,6 @@ def test_result_is_frozen() -> None:
         out.output = "x"  # type: ignore[misc]
 
 
-def test_savings_metric() -> None:
-    """Contadores de ahorro auditables (tareas y tokens cloud evitados)."""
-    ex = _executor()
-    ex.execute("resume esto")
-    ex.execute("disena la arquitectura")
-    assert ex.local_tasks == 1
-
-
 def test_oversized_task_falls_back_to_cloud() -> None:
     """Tarea que excede la ventana no va a local (anti-loop/OOM)."""
     ex = _executor()
@@ -136,3 +147,44 @@ def test_oversized_task_falls_back_to_cloud() -> None:
     assert out.executed_locally is False
     assert "ventana" in out.reason.lower()
     assert ex.cloud_tasks == 1
+
+
+def test_savings_metric() -> None:
+    """Contadores de ahorro auditables (tareas y tokens cloud evitados)."""
+    ex = _executor()
+    ex.execute("resume esto")
+    ex.execute("disena la arquitectura")
+    assert ex.local_tasks == 1
+    assert ex.cloud_tasks == 1
+
+
+def test_unsloth_preferred_over_ollama() -> None:
+    """Unsloth disponible => se usa primero (0 tokens cloud)."""
+    ollama = _FakeClient()
+    unsloth = _FakeUnsloth()
+    ex = _executor(client=ollama, unsloth_client=unsloth)
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert out.output == "respuesta unsloth"
+    assert len(unsloth.calls) == 1
+    assert ollama.calls == []
+
+
+def test_unsloth_down_falls_to_ollama() -> None:
+    """Unsloth caido => fallback a Ollama (no a cloud directo)."""
+    ollama = _FakeClient()
+    ex = _executor(client=ollama, unsloth_client=_FakeUnsloth(available=False))
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert out.output == "respuesta local"
+    assert len(ollama.calls) == 1
+
+
+def test_unsloth_explicit_model() -> None:
+    """unsloth_model override usa ese modelo."""
+    unsloth = _FakeUnsloth(models=["a", "b"])
+    ex = _executor(client=_FakeClient(), unsloth_client=unsloth,
+                   unsloth_model="b")
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert "b" in out.model

@@ -68,22 +68,64 @@ def is_closed_task(task: str) -> bool:
 class LocalExecutor:
     """Ejecutor de tareas cerradas en modelos locales con fallback a cloud.
 
+    Orden de backends: Unsloth (si se inyecta y esta disponible) ->
+    Ollama -> cloud. Unsloth primero porque sirve modelos que Ollama no
+    carga (forks/quants propios) con el mismo dialecto.
+
     Args:
         client: OllamaClient (o compatible con is_available/generate).
         tiers: OllamaTierRouter (o compatible con tier_for_task/model_for).
+        unsloth_client: UnslothClient opcional (is_available/list_models/
+            generate). None = solo Ollama.
+        unsloth_model: Modelo a usar en Unsloth (None = primero servido).
     """
 
-    def __init__(self, client, tiers) -> None:
-        """Inicializa el ejecutor con cliente y router de tiers.
+    def __init__(self, client, tiers, unsloth_client=None, unsloth_model=None) -> None:
+        """Inicializa el ejecutor con cliente, router y backend preferente.
 
         Args:
             client: Cliente Ollama con is_available() y generate().
             tiers: Router con tier_for_task() y model_for().
+            unsloth_client: Cliente Unsloth opcional (primero en orden).
+            unsloth_model: Override de modelo Unsloth (None = auto).
         """
         self._client = client
         self._tiers = tiers
+        self._unsloth = unsloth_client
+        self._unsloth_model = unsloth_model
         self._local_tasks = 0
         self._cloud_tasks = 0
+
+    def _try_unsloth(self, task: str) -> LocalExecutionResult | None:
+        """Intenta ejecutar en Unsloth (preferente sobre Ollama).
+
+        Args:
+            task: Tarea cerrada ya validada.
+
+        Returns:
+            Resultado si Unsloth respondio, None para seguir a Ollama.
+        """
+        if self._unsloth is None:
+            return None
+        try:
+            if not self._unsloth.is_available():
+                return None
+            model = self._unsloth_model
+            if model is None:
+                models = self._unsloth.list_models()
+                if not models:
+                    return None
+                model = models[0]
+            output = self._unsloth.generate(model, task)
+        except Exception as exc:  # noqa: BLE001 - fallback a Ollama, no crash
+            logger.warning("local_executor: Unsloth fallo (%s), sigue Ollama", exc)
+            return None
+        self._local_tasks += 1
+        logger.info("local_executor: tarea cerrada en Unsloth %s (0 tokens cloud)", model)
+        return LocalExecutionResult(
+            output=str(output), executed_locally=True, model=f"unsloth:{model}",
+            reason=f"ejecutada en Unsloth con {model}",
+        )
 
     @property
     def local_tasks(self) -> int:
@@ -115,6 +157,9 @@ class LocalExecutor:
                 output="", executed_locally=False,
                 reason="tarea abierta: no esta en la allowlist cerrada (cloud)",
             )
+        unsloth_out = self._try_unsloth(task)
+        if unsloth_out is not None:
+            return unsloth_out
         if not self._client.is_available():
             self._cloud_tasks += 1
             return LocalExecutionResult(
