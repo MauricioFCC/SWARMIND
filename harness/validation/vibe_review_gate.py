@@ -39,8 +39,7 @@ class VibeReport:
     second_agent_approved: bool = False
 
 
-def vibe_review_gate(
-    diff: str,
+def vibe_review_gate(    diff: str,
     perf_scan_fn: Callable[[str], list[str]],
     sec_scan_fn: Callable[[str], list[str]],
     second_agent_fn: Callable[[str], bool],
@@ -78,3 +77,46 @@ def vibe_review_gate(
         passed=passed, perf_findings=perf,
         sec_findings=sec, second_agent_approved=approved,
     )
+
+
+#: Cliches tipicos de slop generativo (delve/tapestry/landscape...).
+_SLOP_CLICHES: frozenset[str] = frozenset({
+    "delve", "tapestry", "landscape", "testament", "vibrant", "crucially",
+    "moreover", "furthermore", "in conclusion", "game-changer",
+})
+
+#: Hedging que diluye decisiones (might/perhaps/consider...).
+_SLOP_HEDGES: frozenset[str] = frozenset({
+    "might", "perhaps", "possibly", "could potentially", "may",
+    "consider considering", "worth considering", "it seems",
+})
+
+
+def slop_score(text: str) -> float:
+    """Puntua genericidad/hedging de un texto (0.0 tecnico - 1.0 slop).
+
+    WHAT: Fraccion de oraciones con cliches IA o hedging.
+    WHY: Anti-slop: aceptar output generico como DONE degrada el producto;
+        el score alimenta el gate (umbral sugerido: bloquear >= 0.5).
+    WHERE: Salidas de contenido (docs, skills, reportes) antes de aprobar.
+
+    Args:
+        text: Texto a puntuar (vacio = 0.0).
+
+    Returns:
+        Fraccion 0..1 de oraciones con slop.
+    """
+    import re as _re
+
+    sentences = [s.strip() for s in _re.split(r"[.!?]+", text) if s.strip()]
+    if not sentences:
+        return 0.0
+    hits = 0
+    for sentence in sentences:
+        lowered = sentence.lower()
+        if any(c in lowered for c in _SLOP_CLICHES):
+            hits += 1
+            continue
+        if sum(1 for h in _SLOP_HEDGES if h in lowered) >= 2:
+            hits += 1
+    return hits / len(sentences)

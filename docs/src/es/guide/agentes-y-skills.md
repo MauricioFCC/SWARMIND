@@ -1,12 +1,23 @@
 # Agentes y Skills — Sistema Multi-Agente Swarmind
 
-> **Version:** Septiembre 2026 | **22 agentes** | **35 skills** | **principios v3.1.0** | **ADRs 0065-0080**
+> **Version:** Septiembre 2026 | **23 agentes** | **35 skills** | **principios v3.3.0** | **ADRs 0065-0097**
 
 Este documento es la **fuente unica de verdad (SSOT)** para la composicion del sistema: lista completa de agentes, skills, modulos nuevos, papers 2026, asignaciones y ejemplos. Otros documentos referencian aqui en lugar de duplicar contenido.
 
 ---
 
-## Agentes (22)
+## Agente = 4 Sistemas (ADR-0097)
+
+Cada agente se modela como 4 sistemas testeables por separado (no un loop acoplado):
+
+| Sistema | Que es | Ejemplo (coordinator) |
+|---------|--------|----------------------|
+| **Modelo** | LLM + tier + perfil PEC | ollama flash / frontier |
+| **Memoria** | cues bitemporales + TTL + snapshots | `cue_ledger`, `session_snapshot` |
+| **Herramientas** | set podado por tarea (max 3-4) | `tool_pruner`, `read_guard` |
+| **Gobernanza** | gates + permisos + audit trail | `misbehavior_guard`, HITL, `trace_viewer` |
+
+## Agentes (23)
 
 El sistema Swarmind opera con **22 perfiles de agente** organizados en 4 categorias. Los agentes principales (coordinator, builder, scientist, guardian, evolve) son el nucleo; los agentes especializados complementan areas especificas.
 
