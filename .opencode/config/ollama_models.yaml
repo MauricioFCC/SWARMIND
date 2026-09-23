@@ -16,10 +16,10 @@ ollama:
   warm_on_start: [fast]   # precargar al arrancar
   tiers:
     fast:      {model: "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0",                          keep_alive: "5m", auto_pull: true}
-    quality:   {model: "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",                keep_alive: "5m", auto_pull: true}
-    coding:    {model: "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M", keep_alive: "5m", auto_pull: true}
-    embedding: {model: "qwen3-embedding:0.6b", keep_alive: "5m", auto_pull: true}
-    vision:    {model: "qwen3-vl:4b",          keep_alive: "5m", auto_pull: true}
+    quality:   {model: "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",                keep_alive: "0", auto_pull: true}
+    coding:    {model: "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M", keep_alive: "0", auto_pull: true}
+    embedding: {model: "qwen3-embedding:0.6b", keep_alive: "0", auto_pull: true}
+    vision:    {model: "qwen3-vl:4b",          keep_alive: "0", auto_pull: true}
 # Politica local-first con supervision cloud como oraculo 1% (ADR-0084/0097):
 # 99% local en destilados potentes; el cloud solo verifica muestras.
 local_first:

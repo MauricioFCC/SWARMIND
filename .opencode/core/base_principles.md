@@ -158,6 +158,8 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 > Contiene: checklists ARQ, SEG, DOC, TST, OPS, ERR, CMT, QLT, FDE, EVO, UPG, TYP,
 > IMM, SOL, MAG, FSZ, NAM, CMP, DEM, FRS + MAPA DE ROLES->CATEGORIAS + ABREVIACIONES.
 > Cargar SOLO si el agente necesita detalles de implementacion, tabla de roles o abreviaciones.
+> Sesiones locales 9B (ctx 16K): inyectar `.opencode/core/base_principles.min.md`
+> (solo N1) en vez de este archivo.
 
 ### UPG - Upgrade Continuo (regla universal para TODO stack)
 

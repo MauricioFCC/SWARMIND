@@ -72,6 +72,18 @@ def _executor(**kw):
     return LocalExecutor(client=kw.pop("client", _FakeClient()), tiers=tiers, **kw)
 
 
+@pytest.fixture(autouse=True)
+def _vram_hermetica(monkeypatch: pytest.MonkeyPatch) -> None:
+    """VRAM hermetica: sin GPU real en tests (el gate lee nvidia-smi).
+
+    El escenario sin-VRAM se cubre en test_vram_guard_blocks_without_vram
+    (su monkeypatch posterior gana a este autouse).
+    """
+    import harness.model_router.local_executor as le
+
+    monkeypatch.setattr(le, "_fits_vram_for", lambda model: True)
+
+
 def test_closed_task_patterns_documented() -> None:
     """La allowlist cubre resumir/formatear/extraer/traducir/contar."""
     joined = " ".join(CLOSED_TASK_PATTERNS)
@@ -188,3 +200,35 @@ def test_unsloth_explicit_model() -> None:
     out = ex.execute("resume esto")
     assert out.executed_locally is True
     assert "b" in out.model
+
+
+def test_vram_guard_blocks_without_vram(monkeypatch) -> None:
+    """Sin VRAM para el modelo va a cloud (anti-OOM)."""
+    import harness.model_router.local_executor as le
+
+    monkeypatch.setattr(le, "_fits_vram_for", lambda model: False)
+    ex = _executor()
+    out = ex.execute("resume esto")
+    assert out.executed_locally is False
+    assert "vram" in out.reason.lower()
+
+
+def test_keep_alive_passed_to_generate() -> None:
+    """El keep_alive del tier viaja al generate (descarga en grandes)."""
+    from harness.model_router.ollama_tiers import CapabilityTier
+
+    seen: dict = {}
+
+    class _KAClient(_FakeClient):
+        def generate(self, model: str, prompt: str, **kwargs):
+            seen.update(kwargs)
+            return {"response": "ok", "model": model}
+
+    class _KATiers(_FakeTiers):
+        def keep_alive_for(self, tier) -> str:
+            return "0"
+
+    ex = LocalExecutor(client=_KAClient(), tiers=_KATiers(CapabilityTier.FAST))
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert seen.get("keep_alive") == "0"

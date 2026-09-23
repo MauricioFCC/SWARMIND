@@ -305,3 +305,41 @@ def test_sync_tree_dry_run_no_escribe(tmp_path: Path) -> None:
 
     assert count == 1
     assert not (dst / "a" / "file1.md").exists()
+
+
+def test_sync_tree_omite_ruido(tmp_path: Path) -> None:
+    """node_modules/__pycache__ no se sincronizan (ruido de arranque)."""
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    (src / "node_modules" / "dep").mkdir(parents=True)
+    (src / "node_modules" / "dep" / "index.js").write_text("x", encoding="utf-8")
+    (src / "core").mkdir(parents=True)
+    (src / "core" / "__pycache__").mkdir(parents=True)
+    (src / "core" / "__pycache__" / "m.pyc").write_text("x", encoding="utf-8")
+    (src / "core" / "ok.py").write_text("x", encoding="utf-8")
+
+    count = da._sync_tree(src, dst)
+
+    assert count == 1
+    assert (dst / "core" / "ok.py").is_file()
+    assert not (dst / "node_modules").exists()
+    assert not (dst / "core" / "__pycache__").exists()
+
+
+def test_seed_node_modules_solo_si_falta(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Siembra node_modules una vez; si existe, no toca nada."""
+    src_nm = tmp_path / "src_nm"
+    (src_nm / "dep").mkdir(parents=True)
+    (src_nm / "dep" / "index.js").write_text("x", encoding="utf-8")
+    monkeypatch.setattr(da, "_ROOT", tmp_path)
+    (tmp_path / ".opencode").mkdir()
+    import shutil as _shutil
+
+    _shutil.copytree(src_nm, tmp_path / ".opencode" / "node_modules")
+    dst = tmp_path / "proj" / ".opencode"
+
+    assert da._seed_node_modules(dst) > 0
+    assert (dst / "node_modules" / "dep" / "index.js").is_file()
+    assert da._seed_node_modules(dst) == 0  # segunda vez: no-op

@@ -22,6 +22,38 @@ import logging
 from dataclasses import dataclass
 
 from harness.model_router.model_windows import fits_in_window
+from harness.model_router.vram_guard import fits_in_vram, footprint_mb, free_vram_mb
+
+
+def _tier_keep_alive(tiers, tier: object) -> str:
+    """keep_alive del tier (default "5m" si el router no lo expone).
+
+    Args:
+        tiers: Router con keep_alive_for() opcional.
+        tier: Tier decidido.
+
+    Returns:
+        keep_alive ("0" descarga inmediata en tiers grandes).
+    """
+    getter = getattr(tiers, "keep_alive_for", None)
+    if getter is None:
+        return "5m"
+    try:
+        return str(getter(tier))
+    except (KeyError, AttributeError, TypeError):
+        return "5m"
+
+
+def _fits_vram_for(model: str) -> bool:
+    """True si hay VRAM para el modelo (desconocida = permitir).
+
+    Args:
+        model: Tag del modelo.
+
+    Returns:
+        True si cabe con margen o no hay dato de GPU.
+    """
+    return fits_in_vram(footprint_mb(model), free_vram_mb())
 
 logger = logging.getLogger("harness.model_router.local_executor")
 
@@ -183,8 +215,18 @@ class LocalExecutor:
                     "compactacion/OOM): fallback a cloud"
                 ),
             )
+        if not _fits_vram_for(model):
+            self._cloud_tasks += 1
+            return LocalExecutionResult(
+                output="", executed_locally=False,
+                reason=(
+                    f"VRAM insuficiente para {model} (anti-OOM): "
+                    "fallback a cloud"
+                ),
+            )
+        keep_alive = _tier_keep_alive(self._tiers, tier)
         try:
-            data = self._client.generate(model, task)
+            data = self._client.generate(model, task, keep_alive=keep_alive)
         except Exception as exc:  # noqa: BLE001 - fallback a cloud, no crash
             self._cloud_tasks += 1
             logger.warning("local_executor: fallo local (%s), fallback a cloud", exc)

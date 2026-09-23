@@ -112,6 +112,11 @@ _SKIP_FILES = {
     "ollama_local.yaml",
 }
 
+# Dirs que NUNCA se sincronizan archivo-por-archivo (ruido de arranque):
+# node_modules (3667 archivos del plugin; se siembra 1 vez si falta),
+# __pycache__/.pytest_cache (artefactos regenerables).
+_SYNC_SKIP_DIRS = frozenset({"node_modules", "__pycache__", ".pytest_cache"})
+
 # Alias CLI -> nombre real de carpeta (SOLO desde deploy_local.json;
 # el codigo fuente no contiene nombres de proyectos privados).
 _ALIASES: dict[str, str] = {
@@ -369,19 +374,30 @@ def _sync_tree(src: Path, dst: Path, dry_run: bool = False) -> int:
         if item.name in _SKIP_FILES:
             logger.debug("sync: archivo machine-private excluido: %s", item.name)
             continue
+        if item.is_dir() and item.name in _SYNC_SKIP_DIRS:
+            logger.debug("sync: dir de ruido excluido: %s", item.name)
+            continue
         target = dst / item.name
         if item.is_dir():
             if target.exists() and target.is_dir() and not target.is_symlink():
                 count += _sync_tree(item, target, dry_run)
             else:
                 if not dry_run:
-                    shutil.copytree(item, target, dirs_exist_ok=True)
-                    # copytree no filtra: purgar machine-private del arbol nuevo
+                    shutil.copytree(
+                        item, target, dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns(*_SYNC_SKIP_DIRS),
+                    )
+                    # copytree no filtra machine-private: purgar del arbol nuevo
                     for stale in target.rglob("*"):
                         if stale.is_file() and stale.name in _SKIP_FILES:
                             stale.unlink()
                             logger.debug("sync: purgado machine-private: %s", stale)
-                count += sum(1 for _ in item.rglob("*") if _.is_file())
+                count += sum(
+                    1 for _ in item.rglob("*")
+                    if _.is_file() and not any(
+                        part in _SYNC_SKIP_DIRS for part in _.relative_to(item).parts
+                    )
+                )
         else:
             if not dry_run:
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -529,6 +545,31 @@ python scripts/agentic_bridge_sync.py
 # ---------------------------------------------------------------------------
 
 
+def _seed_node_modules(dst_opencode: Path, dry_run: bool = False) -> int:
+    """Copia node_modules del plugin SOLO si el destino no lo tiene.
+
+    El plugin (.opencode/plugin/) requiere @opencode-ai/plugin en arranque;
+    copiar 3667 archivos en cada deploy es lo que lo hacia lento. Primera
+    vez se siembra completo; despues se omite (el lockfile manda).
+
+    Args:
+        dst_opencode: .opencode/ del proyecto destino.
+        dry_run: Si True, solo simula.
+
+    Returns:
+        Número de archivos sembrados (0 si ya existía).
+    """
+    src_nm = _ROOT / ".opencode" / "node_modules"
+    dst_nm = dst_opencode / "node_modules"
+    if not src_nm.is_dir() or dst_nm.is_dir():
+        return 0
+    if not dry_run:
+        shutil.copytree(src_nm, dst_nm, dirs_exist_ok=True)
+    count = sum(1 for _ in src_nm.rglob("*") if _.is_file())
+    logger.info("  🌱 node_modules sembrado (1ra vez): %d archivos", count)
+    return count
+
+
 def deploy_project(
     project: Project,
     dry_run: bool = False,
@@ -562,6 +603,7 @@ def deploy_project(
     # 2. Sync .opencode/ (cerebro mirror — agents, skills, core, config)
     logger.info("📁 .opencode/ — syncing cerebro mirror...")
     opencode_count = _sync_tree(_ROOT / ".opencode", project.path / ".opencode", dry_run)
+    opencode_count += _seed_node_modules(project.path / ".opencode", dry_run)
     logger.info("  ✅ .opencode/: %d archivos %s", opencode_count, "(simulado)" if dry_run else "")
 
     # 3. Motor (harness/): NO se copia a proyectos (estándar v2.5).
@@ -644,6 +686,7 @@ def sync_hermes_memory(dry_run: bool = False) -> dict:
 
     # Sync .opencode/ preservando skills_registry (restaurado después)
     opencode_count = _sync_tree(_ROOT / ".opencode", hermes.path / ".opencode", dry_run)
+    opencode_count += _seed_node_modules(hermes.path / ".opencode", dry_run)
 
     # harness/ NO se copia a Hermes (estándar v2.5: vive en opencode global)
     logger.info("📁 harness/ — SKIPPED (una sola copia en opencode global, estandar v2.5)")

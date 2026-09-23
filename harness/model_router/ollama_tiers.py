@@ -371,6 +371,18 @@ class OllamaTierRouter:
             )
         return spec.model
 
+    def keep_alive_for(self, tier: CapabilityTier) -> str:
+        """Devuelve el keep_alive del tier (del YAML; default "5m").
+
+        Args:
+            tier: Tier de capacidad.
+
+        Returns:
+            keep_alive ("5m", "0", ...) o "5m" si el tier no existe.
+        """
+        spec = self._specs.get(tier)
+        return spec.keep_alive if spec is not None else "5m"
+
     def tier_for_task(self, task: str) -> CapabilityTier | None:
         """Clasifica una tarea por capacidad usando keywords (sin LLM).
 

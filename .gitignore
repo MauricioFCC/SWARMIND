@@ -1,6 +1,8 @@
 ﻿# Swarmind es el REPOSITORIO CENTRAL del framework.
 # NO ignorar harness/ ni .opencode/ porque ES la fuente.
 # Otros proyectos usan un .gitignore diferente que SI los ignora.
+# node_modules del plugin: ruido local (se siembra en deploy si falta).
+.opencode/node_modules/
 
 # === Local scripts (KEEP) ===
 # scripts/launcher.py         # CLI entry point del proyecto

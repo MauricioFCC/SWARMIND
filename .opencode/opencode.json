@@ -3,7 +3,7 @@
   "instructions": [
     ".opencode/core/base_principles.md"
   ],
-  "model": "ollama/hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
+  "model": "ollama/qwen38-9b-16k",
   "agent": {
     "coordinator": {
       "mode": "primary",
@@ -47,37 +47,25 @@
         "baseURL": "http://localhost:11434/v1"
       },
       "models": {
-        "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M": {
-          "name": "Qwen3.8 9B Q4 quality",
+        "qwen38-9b-16k": {
+          "name": "Qwen3.8 9B Q4 quality (ctx 16K baked)",
           "reasoning": true,
-          "tools": true,
-          "options": {
-            "num_ctx": 8192
-          }
+          "tools": true
         },
-        "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M": {
-          "name": "Qwopus3.5 9B Q4 coding",
+        "qwopus-9b-16k": {
+          "name": "Qwopus3.5 9B Q4 coding (ctx 16K baked)",
           "reasoning": false,
-          "tools": true,
-          "options": {
-            "num_ctx": 8192
-          }
+          "tools": true
         },
-        "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0": {
-          "name": "MiniCPM5 2B Q8 trivial",
+        "minicpm5-2b-32k": {
+          "name": "MiniCPM5 2B Q8 fast (ctx 32K baked)",
           "reasoning": false,
-          "tools": true,
-          "options": {
-            "num_ctx": 8192
-          }
+          "tools": true
         },
-        "hf.co/unsloth/GLM-Z1-9B-0414-GGUF:UD-Q4_K_XL": {
-          "name": "GLM-Z1 9B Q4 reasoning",
+        "glm-z1-9b-16k": {
+          "name": "GLM-Z1 9B Q4 reasoning (ctx 16K baked)",
           "reasoning": true,
-          "tools": true,
-          "options": {
-            "num_ctx": 8192
-          }
+          "tools": true
         }
       }
     }
