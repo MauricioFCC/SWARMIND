@@ -6,9 +6,26 @@ El smoke de Unsloth no debe generar si el modelo no cabe en VRAM
 
 from __future__ import annotations
 
-import harness.model_router.unsloth_client as unsloth_module
-import harness.model_router.vram_guard as vram_guard_module
 from harness.scripts.check_unsloth import check_unsloth
+
+
+def _live_modules():
+    """Modulos vigentes (inmune a purgas como test_lazy_loading).
+
+    Los imports de arriba ligan la instancia de collection; check_unsloth
+    importa DIFERIDO (resuelve al llamar). import_module retorna la
+    vigente (importa si la purga la borro): parchar ESA es lo unico que
+    muerde siempre.
+
+    Returns:
+        Tupla (unsloth_client, vram_guard) vigentes.
+    """
+    import importlib
+
+    return (
+        importlib.import_module("harness.model_router.unsloth_client"),
+        importlib.import_module("harness.model_router.vram_guard"),
+    )
 
 
 class _FakeConfig:
@@ -85,6 +102,7 @@ def _patch_unsloth(monkeypatch, models: list[str], output: str = "UNSLOTH OK"):
         Fake cliente instanciado por check_unsloth (via holder).
     """
     holder: dict = {}
+    unsloth_module, _ = _live_modules()
     monkeypatch.setattr(
         unsloth_module, "discover_base_url", lambda: "http://127.0.0.1:9999",
     )
@@ -101,12 +119,14 @@ def _patch_unsloth(monkeypatch, models: list[str], output: str = "UNSLOTH OK"):
 
 def test_server_off_returns_false(monkeypatch) -> None:
     """Servidor apagado (discovery None) -> False sin red."""
+    unsloth_module, _ = _live_modules()
     monkeypatch.setattr(unsloth_module, "discover_base_url", lambda: None)
     assert check_unsloth() is False
 
 
 def test_big_model_skips_smoke_without_generate(monkeypatch) -> None:
     """Modelo 26B con 8188MB libres -> False SIN llamar a generate (anti-OOM)."""
+    _, vram_guard_module = _live_modules()
     holder = _patch_unsloth(monkeypatch, models=["unsloth/gemma-4-26B"])
     monkeypatch.setattr(vram_guard_module, "free_vram_mb", lambda: 8188)
     assert check_unsloth() is False
@@ -115,6 +135,7 @@ def test_big_model_skips_smoke_without_generate(monkeypatch) -> None:
 
 def test_small_model_smoke_ok(monkeypatch) -> None:
     """Modelo pequeno con VRAM suficiente -> smoke genera y retorna True."""
+    _, vram_guard_module = _live_modules()
     holder = _patch_unsloth(
         monkeypatch, models=["minicpm5-2b-32k"], output="UNSLOTH OK",
     )

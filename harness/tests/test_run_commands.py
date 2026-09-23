@@ -756,12 +756,18 @@ class TestHandleWatchMode:
         scripts_dir.mkdir()
         (scripts_dir / "end_of_iteration.py").write_text("")
         mock_snapshot = {"/fake/file.py": 1000.0}
-        with patch("harness.run_commands._get_files_to_watch",
-                   return_value=mock_snapshot), \
-             patch("harness.run_commands._safe_print"), \
-             patch("harness.run_commands.time.sleep", side_effect=KeyboardInterrupt):
-            from harness.run_commands import _handle_watch_mode
-            _handle_watch_mode(harness_dir)
+        # Hermetico por construccion: se parcha el _rc EXACTO que usa la
+        # funcion bajo test (inmune a dobles instancias por purgas de
+        # sys.modules como las de test_lazy_loading; si el parche no
+        # mordiera, el while True real colgaria la suite).
+        import harness.run_commands.handlers_extra as he_mod
+
+        with patch.object(he_mod._rc, "_get_files_to_watch",
+                          return_value=mock_snapshot), \
+            patch.object(he_mod._rc, "_safe_print"), \
+            patch.object(he_mod._rc.time, "sleep",
+                         side_effect=KeyboardInterrupt):
+            he_mod._handle_watch_mode(harness_dir)
 
     def test_watch_mode_detecta_cambios(self, tmp_path):
         """Watch mode debe detectar cambios y ejecutar pipeline."""
@@ -786,14 +792,16 @@ class TestHandleWatchMode:
                 raise KeyboardInterrupt()
             return {"/fake/file.py": float(1000 + call_count[0])}
 
-        with patch("harness.run_commands._get_files_to_watch",
-                   side_effect=snapshot_side_effect), \
-             patch("harness.run_commands._safe_print"), \
-             patch("harness.run_commands.time.sleep"), \
-             patch("harness.run_commands.time.time", return_value=100.0):
+        # Hermetico por construccion (ver test_watch_mode_loop_keyboard_interrupt).
+        import harness.run_commands.handlers_extra as he_mod
 
-            from harness.run_commands import _handle_watch_mode
-            _handle_watch_mode(harness_dir)
+        with patch.object(he_mod._rc, "_get_files_to_watch",
+                          side_effect=snapshot_side_effect), \
+            patch.object(he_mod._rc, "_safe_print"), \
+            patch.object(he_mod._rc.time, "sleep"), \
+            patch.object(he_mod._rc.time, "time", return_value=100.0):
+
+            he_mod._handle_watch_mode(harness_dir)
 
 
 # ===================================================================
