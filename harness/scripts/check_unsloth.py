@@ -46,6 +46,28 @@ def check_unsloth() -> bool:
     logger.info("Unsloth OK en %s: %d modelos.", base_url, len(models))
     if not models:
         return True
+    from harness.model_router.vram_guard import (
+        fits_in_vram,
+        footprint_mb,
+        free_vram_mb,
+    )
+
+    free_mb = free_vram_mb()
+    for name in models:
+        need_mb = footprint_mb(f"unsloth:{name}")
+        fits = fits_in_vram(need_mb, free_mb)
+        logger.info(
+            "Unsloth modelo %s: ~%dMB (libre %s) -> %s",
+            name, need_mb, free_mb,
+            "CABE" if fits else "NO CABE (smoke omitido, anti-OOM)",
+        )
+    if not fits_in_vram(footprint_mb(f"unsloth:{models[0]}"), free_mb):
+        logger.warning(
+            "Unsloth %s no cabe en VRAM con Ollama residente: "
+            "descarga modelos de Ollama (keep_alive 0) o usa un modelo "
+            "pequeno antes del smoke.", models[0],
+        )
+        return False
     try:
         out = client.generate(models[0], "Responde solo: UNSLOTH OK", max_tokens=20)
     except Exception as exc:  # noqa: BLE001 - diagnostico, no crash

@@ -69,19 +69,11 @@ def _executor(**kw):
     from harness.model_router.ollama_tiers import CapabilityTier
 
     tiers = _FakeTiers(kw.pop("tier", CapabilityTier.FAST))
+    # VRAM hermetica por DI: sin GPU real en tests (inmune a purgas de
+    # sys.modules como las de test_lazy_loading). El escenario sin-VRAM
+    # se cubre con vram_check explicito en sus propios tests.
+    kw.setdefault("vram_check", lambda model: True)
     return LocalExecutor(client=kw.pop("client", _FakeClient()), tiers=tiers, **kw)
-
-
-@pytest.fixture(autouse=True)
-def _vram_hermetica(monkeypatch: pytest.MonkeyPatch) -> None:
-    """VRAM hermetica: sin GPU real en tests (el gate lee nvidia-smi).
-
-    El escenario sin-VRAM se cubre en test_vram_guard_blocks_without_vram
-    (su monkeypatch posterior gana a este autouse).
-    """
-    import harness.model_router.local_executor as le
-
-    monkeypatch.setattr(le, "_fits_vram_for", lambda model: True)
 
 
 def test_closed_task_patterns_documented() -> None:
@@ -202,15 +194,27 @@ def test_unsloth_explicit_model() -> None:
     assert "b" in out.model
 
 
-def test_vram_guard_blocks_without_vram(monkeypatch) -> None:
+def test_vram_guard_blocks_without_vram() -> None:
     """Sin VRAM para el modelo va a cloud (anti-OOM)."""
-    import harness.model_router.local_executor as le
-
-    monkeypatch.setattr(le, "_fits_vram_for", lambda model: False)
-    ex = _executor()
+    ex = _executor(vram_check=lambda model: False)
     out = ex.execute("resume esto")
     assert out.executed_locally is False
     assert "vram" in out.reason.lower()
+
+
+def test_unsloth_blocked_without_vram_falls_to_ollama() -> None:
+    """Unsloth grande sin VRAM no genera: cae a Ollama (anti-OOM)."""
+    ollama = _FakeClient()
+    unsloth = _FakeUnsloth(models=["unsloth/gemma-4-26B"])
+    ex = _executor(
+        client=ollama, unsloth_client=unsloth,
+        vram_check=lambda model: not str(model).startswith("unsloth:"),
+    )
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert out.output == "respuesta local"
+    assert unsloth.calls == []
+    assert len(ollama.calls) == 1
 
 
 def test_keep_alive_passed_to_generate() -> None:
@@ -228,7 +232,10 @@ def test_keep_alive_passed_to_generate() -> None:
         def keep_alive_for(self, tier) -> str:
             return "0"
 
-    ex = LocalExecutor(client=_KAClient(), tiers=_KATiers(CapabilityTier.FAST))
+    ex = LocalExecutor(
+        client=_KAClient(), tiers=_KATiers(CapabilityTier.FAST),
+        vram_check=lambda model: True,
+    )
     out = ex.execute("resume esto")
     assert out.executed_locally is True
     assert seen.get("keep_alive") == "0"

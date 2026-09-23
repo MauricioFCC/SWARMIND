@@ -344,6 +344,7 @@ def _try_local_execution(
     routing_source: str,
     client=None,
     tiers=None,
+    vram_check=None,
 ) -> str | None:
     """Ejecuta tareas cerradas en Ollama tras routing local + HITL (ADR-0078).
 
@@ -357,6 +358,7 @@ def _try_local_execution(
         routing_source: "local" o "cloud" (de _apply_model_routing).
         client: OllamaClient (DI para tests; None = real).
         tiers: OllamaTierRouter (DI para tests; None = real).
+        vram_check: Gate anti-OOM (DI para tests; None = guard real).
 
     Returns:
         Respuesta del modelo local, o None si no aplica (cloud sigue).
@@ -376,6 +378,7 @@ def _try_local_execution(
             tiers=tiers if tiers is not None else OllamaTierRouter(
                 client if client is not None else OllamaClient()
             ),
+            vram_check=vram_check,
         )
         out = executor.execute(task)
     except Exception as exc:  # noqa: BLE001 - fallback a cloud, nunca crashea run

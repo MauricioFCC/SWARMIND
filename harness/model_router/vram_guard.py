@@ -1,12 +1,15 @@
-"""vram_guard.py — Guard de VRAM anti-OOM (2 desbordamientos GPU).
+"""vram_guard.py — Guard de VRAM anti-OOM (2 desbordamientos GPU + ruta Unsloth).
 
 WHAT: `free_vram_mb()` (nvidia-smi, None si no hay GPU) + tabla de
 footprints + `fits()` con margen de seguridad.
 WHY: Causa de los OOMs: keep_alive 5m en todos los tiers mantenia
 Qwen3.8 (5.8GB) + Qwopus (6.6GB) = 12.4GB residentes en 8GB, mas
-Unsloth concurrente. El guard + keep_alive "0" en tiers grandes
-(descarga inmediata) lo impide por diseno.
-WHERE: `LocalExecutor` antes de generar; diagnostico en `check_ollama.py`.
+Unsloth concurrente. Segundo vector: `LocalExecutor` intentaba Unsloth
+PRIMERO sin gate — el llama-server cargaba modelos grandes (clase 26B)
+con Ollama residente y reventaba (nvlddmkm 153). El guard + keep_alive
+"0" en tiers grandes (descarga inmediata) lo impide por diseno.
+WHERE: `LocalExecutor` antes de generar (Ollama y Unsloth);
+diagnostico en `check_ollama.py` y `check_unsloth.py`.
 """
 
 from __future__ import annotations
@@ -20,6 +23,7 @@ logger = logging.getLogger("harness.model_router.vram_guard")
 #: VRAM ocupada estimada por modelo (MB, pesos Q4/Q8 + KV tipica).
 MODEL_FOOTPRINT_MB: dict[str, int] = {
     "qwen3.8": 5800,
+    "qwen38": 5800,  # nombre corto con ctx horneado (mismos pesos 9B Q4)
     "qwopus": 6600,
     "glm": 6200,
     "minicpm5": 2700,
@@ -31,6 +35,10 @@ MODEL_FOOTPRINT_MB: dict[str, int] = {
     "olmoe": 3900,
     "qwen3-vl": 2600,
     "qwen3-embedding": 400,
+    "gemma-4": 16000,  # clase 26B Q4 servida por Unsloth: nunca cabe en 8GB
+    "gemma4": 16000,
+    "26b": 16000,  # cualquier 26B Q4 (~15-16GB con KV)
+    "bonsai": 6000,  # 27B ternario 5.54GB en disco + KV (standby, solo fork)
 }
 
 #: Margen de seguridad por defecto (15% headroom).

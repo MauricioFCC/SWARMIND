@@ -18,8 +18,26 @@ from harness.model_router.vram_guard import (
 def test_footprints_documented() -> None:
     """Footprints conocidos (MB en VRAM con Q4/Q8)."""
     assert MODEL_FOOTPRINT_MB["qwen3.8"] == 5800
+    assert MODEL_FOOTPRINT_MB["qwen38"] == 5800
     assert MODEL_FOOTPRINT_MB["qwopus"] == 6600
     assert MODEL_FOOTPRINT_MB["minicpm5"] == 2700
+    assert MODEL_FOOTPRINT_MB["gemma-4"] == 16000
+    assert MODEL_FOOTPRINT_MB["26b"] == 16000
+    assert MODEL_FOOTPRINT_MB["bonsai"] == 6000
+
+
+def test_unsloth_model_ids_resolve() -> None:
+    """IDs largos de Unsloth matchean por substring (case-insensitive)."""
+    from harness.model_router.vram_guard import footprint_mb
+
+    assert footprint_mb("unsloth:unsloth/gemma-4-26B") == 16000
+    assert footprint_mb("unsloth:qwen38-9b-16k") == 5800
+
+
+def test_26b_never_fits_8gb() -> None:
+    """Clase 26B (~16GB) jamas cabe en 8GB: el guard la bloquea siempre."""
+    assert fits_in_vram(16000, free_mb=8188) is False
+    assert fits_in_vram(16000, free_mb=8188, safety=1.0) is False
 
 
 def test_fits_rejects_overload() -> None:

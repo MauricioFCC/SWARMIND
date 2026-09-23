@@ -110,9 +110,14 @@ class LocalExecutor:
         unsloth_client: UnslothClient opcional (is_available/list_models/
             generate). None = solo Ollama.
         unsloth_model: Modelo a usar en Unsloth (None = primero servido).
+        vram_check: Gate anti-OOM (model -> bool). Default el guard real;
+            inyectar lambda en tests (hermeticos sin GPU).
     """
 
-    def __init__(self, client, tiers, unsloth_client=None, unsloth_model=None) -> None:
+    def __init__(
+        self, client, tiers, unsloth_client=None, unsloth_model=None,
+        vram_check=None,
+    ) -> None:
         """Inicializa el ejecutor con cliente, router y backend preferente.
 
         Args:
@@ -120,16 +125,23 @@ class LocalExecutor:
             tiers: Router con tier_for_task() y model_for().
             unsloth_client: Cliente Unsloth opcional (primero en orden).
             unsloth_model: Override de modelo Unsloth (None = auto).
+            vram_check: Gate anti-OOM inyectable (None = guard real).
         """
         self._client = client
         self._tiers = tiers
         self._unsloth = unsloth_client
         self._unsloth_model = unsloth_model
+        self._vram_check = vram_check or _fits_vram_for
         self._local_tasks = 0
         self._cloud_tasks = 0
 
     def _try_unsloth(self, task: str) -> LocalExecutionResult | None:
         """Intenta ejecutar en Unsloth (preferente sobre Ollama).
+
+        Gatea VRAM ANTES de generar: el llama-server carga el modelo al
+        servir (sin keep_alive como Ollama) y con Ollama residente + 8GB
+        un modelo grande revienta la GPU (nvlddmkm 153). Si no cabe, None
+        para seguir a Ollama/cloud (que tienen su propio guard).
 
         Args:
             task: Tarea cerrada ya validada.
@@ -148,6 +160,12 @@ class LocalExecutor:
                 if not models:
                     return None
                 model = models[0]
+            if not self._vram_check(f"unsloth:{model}"):
+                logger.warning(
+                    "local_executor: Unsloth %s no cabe en VRAM "
+                    "(anti-OOM), sigue Ollama", model,
+                )
+                return None
             output = self._unsloth.generate(model, task)
         except Exception as exc:  # noqa: BLE001 - fallback a Ollama, no crash
             logger.warning("local_executor: Unsloth fallo (%s), sigue Ollama", exc)
@@ -215,7 +233,7 @@ class LocalExecutor:
                     "compactacion/OOM): fallback a cloud"
                 ),
             )
-        if not _fits_vram_for(model):
+        if not self._vram_check(model):
             self._cloud_tasks += 1
             return LocalExecutionResult(
                 output="", executed_locally=False,
