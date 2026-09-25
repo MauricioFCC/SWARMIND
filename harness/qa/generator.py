@@ -1,4 +1,4 @@
-﻿"""L3 â€” TestCaseGenerator: Generacion de casos de prueba con guardrails.
+﻿"""L3 — TestCaseGenerator: Generacion de casos de prueba con guardrails.
 
 Genera casos de prueba a partir de especificaciones usando Gen AI,
 aplicando multiples guardrails anti-alucinacion para garantizar:
@@ -8,7 +8,7 @@ aplicando multiples guardrails anti-alucinacion para garantizar:
 - Cobertura de casos borde y limite
 - Trazabilidad bidireccional requisito-caso
 
-Referencia: IMACS arXiv:2607.25446 â€” Guardrail Composition Framework
+Referencia: IMACS arXiv:2607.25446 — Guardrail Composition Framework
 
 Example:
     gen = TestCaseGenerator()
@@ -35,7 +35,7 @@ from harness.qa import QALayer, QAMetadata
 
 logger = logging.getLogger(__name__)
 
-# â”€â”€ Patrones de validacion anti-alucinacion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Patrones de validacion anti-alucinacion ───────────────────────────────────
 
 _PATRON_IMPORT_FANTASMA = re.compile(
     r"(?:from|import)\s+(?:\w+\.)*(\w+)", re.IGNORECASE

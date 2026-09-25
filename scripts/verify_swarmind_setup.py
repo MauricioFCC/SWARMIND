@@ -194,10 +194,9 @@ def persist_env_vars() -> dict:
     if mem.is_dir() and not os.environ.get("MEMORY_ROOT"):
         set_vars["MEMORY_ROOT"] = str(mem)
 
-    # DEV_SPACE_ROOT: detectar <home>/Documents/DEV_SPACE (underscore real)
+    # DEV_SPACE_ROOT: detectar raiz de proyectos en Documents (convencion
+    # con underscore); la ruta exacta puede overridearse via deploy_local.json
     dev_space = Path.home() / "Documents" / "DEV_SPACE"
-    if not dev_space.is_dir():
-        dev_space = Path.home() / "Documents" / "DEV-SPACE"
     if dev_space.is_dir() and not os.environ.get("DEV_SPACE_ROOT"):
         set_vars["DEV_SPACE_ROOT"] = str(dev_space)
 

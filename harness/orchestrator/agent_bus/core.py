@@ -1,4 +1,4 @@
-"""AgentBus core â€” clase base ``AgentBus``.
+"""AgentBus core — clase base ``AgentBus``.
 
 Contiene el estado, payload builder y helpers estaticos. Los metodos de
 envio viven en ``_MessagingMixin`` (messaging.py), lectura en
@@ -22,7 +22,16 @@ from harness.common import fallback_embedding
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 
 from .constants import _COLLECTION, _VALID_MESSAGE_TYPES
-from .exceptions import InvalidMessageError
+
+
+class AgentBusError(Exception):
+    """Error base del AgentBus (fusionado desde exceptions.py)."""
+
+
+class InvalidMessageError(AgentBusError):
+    """El mensaje no cumple con el esquema requerido."""
+
+
 from .messaging import _MessagingMixin
 from .reading import _ReadingMixin
 

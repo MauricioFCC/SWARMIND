@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Auto-Compact â€” Automatic context compaction pipeline.
+"""Auto-Compact — Automatic context compaction pipeline.
 
-Auto-Compact â€” Automatic context compaction pipeline.
+Auto-Compact — Automatic context compaction pipeline.
 
 Inspirado en Anthropic context engineering (Sep 2025):
 Cuando el contexto se acumula, comprime automaticamente

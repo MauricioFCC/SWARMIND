@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Agent Notes â€” Structured note-taking tool (Anthropic-style Swarmind memory).
+Agent Notes — Structured note-taking tool (Anthropic-style Swarmind memory).
 
 Los agentes pueden escribir notas estructuradas que persisten entre sesiones.
 Implementa el patron NOTES.md de Anthropic: el agente escribe notas regularmente
@@ -203,7 +203,7 @@ def cmd_export(args: argparse.Namespace) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Agent Notes â€” structured note-taking")
+    parser = argparse.ArgumentParser(description="Agent Notes — structured note-taking")
     sub = parser.add_subparsers(dest="command", help="Command")
     
     p_write = sub.add_parser("write", help="Write a note")

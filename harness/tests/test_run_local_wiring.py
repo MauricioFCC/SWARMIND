@@ -43,6 +43,7 @@ def test_closed_task_local_source_executes() -> None:
     out = _try_local_execution(
         "resume esto en 2 lineas", "local",
         client=_FakeClient(), tiers=_FakeTiers(CapabilityTier.FAST),
+        vram_check=lambda model: True,
     )
     assert out is not None
     assert out.startswith("local:")

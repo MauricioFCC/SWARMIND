@@ -1,12 +1,23 @@
 # Agentes y Skills — Sistema Multi-Agente Swarmind
 
-> **Version:** Agosto 2026 | **22 agentes** | **33 skills** | **5 modulos nuevos** | **15 papers 2026**
+> **Version:** Septiembre 2026 | **23 agentes** | **35 skills** | **principios v3.3.0** | **ADRs 0065-0097**
 
 Este documento es la **fuente unica de verdad (SSOT)** para la composicion del sistema: lista completa de agentes, skills, modulos nuevos, papers 2026, asignaciones y ejemplos. Otros documentos referencian aqui en lugar de duplicar contenido.
 
 ---
 
-## Agentes (20)
+## Agente = 4 Sistemas (ADR-0097)
+
+Cada agente se modela como 4 sistemas testeables por separado (no un loop acoplado):
+
+| Sistema | Que es | Ejemplo (coordinator) |
+|---------|--------|----------------------|
+| **Modelo** | LLM + tier + perfil PEC | ollama flash / frontier |
+| **Memoria** | cues bitemporales + TTL + snapshots | `cue_ledger`, `session_snapshot` |
+| **Herramientas** | set podado por tarea (max 3-4) | `tool_pruner`, `read_guard` |
+| **Gobernanza** | gates + permisos + audit trail | `misbehavior_guard`, HITL, `trace_viewer` |
+
+## Agentes (23)
 
 El sistema Swarmind opera con **22 perfiles de agente** organizados en 4 categorias. Los agentes principales (coordinator, builder, scientist, guardian, evolve) son el nucleo; los agentes especializados complementan areas especificas.
 
@@ -52,11 +63,11 @@ El sistema Swarmind opera con **22 perfiles de agente** organizados en 4 categor
 
 ---
 
-## Skills (34)
+## Skills (35)
 
-El sistema cuenta con **34 skills** (PEC universal) organizadas en categorias funcionales. La lista completa con descripciones esta en [Skills Registry](../skills/registry.md) y los tiers de residencia en [Tiers](../skills/tiers.md).
+El sistema cuenta con **35 skills** (PEC universal) organizadas en categorias funcionales. La lista completa con descripciones esta en [Skills Registry](../skills/registry.md) y los tiers de residencia en [Tiers](../skills/tiers.md).
 
-**PEC universal (ADR-0072, 2026-09-07):** toda skill envebe una seccion `## PERSONA & CANON` — persona experta (rol senior + años + especializacion), canon de referencias frontera por especialidad (OWASP para security, HL7 FHIR para healthtech, Rust API Guidelines, RICOUI Brands para UI...) y regla ANTI-HEDGING. Generadas por `scripts/apply_pec.py` (SSOT); gate con 171 tests.
+**PEC universal (ADR-0072, 2026-09-07):** toda skill envebe una seccion `## PERSONA & CANON` — persona experta (rol senior + años + especializacion), canon de referencias frontera por especialidad (OWASP para security, HL7 FHIR para healthtech, Rust API Guidelines, RICOUI Brands para UI...) y regla ANTI-HEDGING. Generadas por `scripts/apply_pec.py` (SSOT); gate con 176 tests.
 
 **Categorias:** Desarrollo y Tecnologia (6), Seguridad (1), Negocio y Estrategia (4), Finanzas y Trading (3), Ciencia e Investigacion (4), Humanidades y Ciencias Sociales (6), Salud (1), Legal (1), Retail (1), Marketing (1), Riesgo (1), Sostenibilidad (1), Meta (1).
 
@@ -395,7 +406,7 @@ bundle = bundler.compose("Desarrollar API REST en Rust con PostgreSQL")
 │   ├── evolve-engineer.md
 │   ├── evolve-analyzer.md
 │   └── auto/              # (agentes generados por evolve)
-├── skills/              # 34 skills (SKILL.md + SKILL.min.md)
+├── skills/              # 35 skills (SKILL.md + SKILL.min.md)
 │   ├── skills_registry.yaml
 │   ├── architecture/
 │   ├── rust-lang/
@@ -586,4 +597,4 @@ harness debate <topic> --creative           # Ejecutar debate creativo
 
 ---
 
-*Documentacion generada el 13 Agosto 2026. Sistema Swarmind v0.1.0 — 22 agentes, 33 skills, 5 modulos nuevos, 15 papers 2026.*
+*Documentacion actualizada el 8 Septiembre 2026. Sistema Swarmind — 22 agentes, 35 skills (PEC universal), principios v3.1.0, ADRs 0065-0080.*

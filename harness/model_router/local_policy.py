@@ -25,9 +25,9 @@ logger = logging.getLogger("harness.model_router.local_policy")
 #: Prefijo de overrides por entorno.
 ENV_PREFIX = "SWARMIND_LOCAL_"
 #: Defaults seguros (documentados en el YAML).
-DEFAULT_TARGET_RATIO = 0.6
+DEFAULT_TARGET_RATIO = 0.99
 DEFAULT_CONFIDENCE_MARGIN = 0.5
-DEFAULT_SAMPLE_RATE = 0.1
+DEFAULT_SAMPLE_RATE = 0.01
 
 
 @dataclass(frozen=True)
@@ -79,6 +79,10 @@ def _parse_simple_yaml(text: str) -> dict:
             continue
         if in_section and ":" in stripped:
             key, _, value = stripped.partition(":")
+            if key.strip() not in (
+                "target_local_ratio", "confidence_margin", "sample_rate",
+            ):
+                continue  # p. ej. env_prefix (string, no numerico)
             cleaned = value.split("#", 1)[0].strip()
             try:
                 out[key.strip()] = float(cleaned)

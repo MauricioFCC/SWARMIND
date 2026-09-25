@@ -110,11 +110,11 @@ def _safe_print(*args, **kwargs) -> None:
                        .replace("\u00f3", "o")
                        .replace("\u00fa", "u")
                         .replace("\u00f1", "n")
-                        .replace("\u26a1", "!")         # âš¡ -> !
+                        .replace("\u26a1", "!")         # ⚡ -> !
                         .replace("\U0001f50d", "[SEARCH]")  # ðŸ” -> [SEARCH]
                         .replace("\U0001f4b0", "[MONEY]")   # ðŸ’° -> [MONEY]
-                        .replace("\u2705", "[OK]")           # âœ… -> [OK]
-                        .replace("\u274c", "[X]")            # âŒ -> [X]
+                        .replace("\u2705", "[OK]")           # ✅ -> [OK]
+                        .replace("\u274c", "[X]")            # ❌ -> [X]
                         .replace("\U0001f4cb", "[LIST]")     # ðŸ“‹ -> [LIST]
                         .replace("\U0001f4dd", "[NOTE]")     # ðŸ“ -> [NOTE]
                         .replace("\U0001f916", "[AI]"))      # ðŸ¤– -> [AI]

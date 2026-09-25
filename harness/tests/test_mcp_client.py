@@ -192,9 +192,7 @@ class TestConnect:
         import builtins
 
         original_import = builtins.__import__
-        had_requests = "requests" in sys.modules
-        if had_requests:
-            del sys.modules["requests"]
+        original_requests = sys.modules.get("requests")
 
         def mock_import(name, *args, **kwargs):
             if name == "requests":
@@ -202,16 +200,19 @@ class TestConnect:
             return original_import(name, *args, **kwargs)
 
         try:
+            # Eliminar SOLO si estaba presente; restaurar el objeto original
+            if original_requests is not None:
+                del sys.modules["requests"]
             with patch("builtins.__import__", side_effect=mock_import):
                 c = MCPClient()
                 result = c.connect("http://localhost:3100")
                 assert result is False
                 assert c._connected is False
         finally:
-            # Restaurar
-            if had_requests:
-                import requests as _req
-                sys.modules["requests"] = _req
+            # Restaurar el MISMO objeto original (evitar contaminar el
+            # sys.modules con un re-import que rompa patches posteriores)
+            if original_requests is not None:
+                sys.modules["requests"] = original_requests
 
     def test_connect_custom_timeout(self) -> None:
         """connect debe usar timeout personalizado si se pasa."""

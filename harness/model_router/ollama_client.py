@@ -59,6 +59,35 @@ class OllamaClient:
         """Inicializa el cliente con la URL base normalizada (sin slash final)."""
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
+        self._tags_cache: tuple[float, list[str]] | None = None
+
+    def _cached_tags(self, ttl_s: float = 60.0) -> list[str] | None:
+        """Modelos cacheados si estan frescos (evita HTTP por routing).
+
+        Args:
+            ttl_s: Segundos de validez de la cache.
+
+        Returns:
+            Lista cacheada o None si expiro/ausente.
+        """
+        import time
+
+        if self._tags_cache is None:
+            return None
+        stamped, models = self._tags_cache
+        if time.monotonic() - stamped > ttl_s:
+            return None
+        return models
+
+    def _store_tags(self, models: list[str]) -> None:
+        """Guarda modelos en cache con timestamp.
+
+        Args:
+            models: Nombres de modelos instalados.
+        """
+        import time
+
+        self._tags_cache = (time.monotonic(), list(models))
 
     # ------------------------------------------------------------------
     # Helper privado centralizado
@@ -126,10 +155,14 @@ class OllamaClient:
     def is_available(self) -> bool:
         """Comprueba si la API de Ollama responde usando un timeout corto de 2s.
 
+        Usa la cache de tags si esta fresca (evita 1 HTTP por routing).
+
         Returns:
             True si el endpoint /api/tags respondio correctamente,
             False si hubo cualquier error (incluye Ollama apagado).
         """
+        if self._cached_tags() is not None:
+            return True
         try:
             self._request("GET", "/api/tags", timeout=AVAILABILITY_TIMEOUT)
         except OllamaError as exc:
@@ -147,7 +180,9 @@ class OllamaClient:
             OllamaError: Si Ollama no responde o devuelve status != 200.
         """
         data = self._request("GET", "/api/tags")
-        return [model["name"] for model in data.get("models", []) if model.get("name")]
+        models = [model["name"] for model in data.get("models", []) if model.get("name")]
+        self._store_tags(models)
+        return models
 
     def loaded_models(self) -> list[str]:
         """Devuelve los nombres de los modelos actualmente cargados en RAM.
@@ -170,6 +205,7 @@ class OllamaClient:
         prompt: str,
         keep_alive: str = DEFAULT_KEEP_ALIVE,
         images: list[str] | None = None,
+        options: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Genera texto con el modelo local (POST /api/generate, sin stream).
 
@@ -178,6 +214,9 @@ class OllamaClient:
             prompt: Texto de entrada para el modelo.
             keep_alive: Tiempo que el modelo permanece en RAM ("5m", "0").
             images: Lista opcional de imagenes base64 para modelos vision.
+            options: Opciones Modelfile por llamada (num_ctx, num_predict,
+                temperature, top_p, repeat_penalty, think...). None = defaults
+                del modelo (incluye num_ctx horneado si existe).
 
         Returns:
             Dict JSON completo de respuesta de Ollama (incluye "response").
@@ -194,13 +233,19 @@ class OllamaClient:
         }
         if images:
             body["images"] = images
+        if options:
+            body["options"] = dict(options)
         data = self._request("POST", "/api/generate", body=body)
         error = data.get("error")
         if error and not data.get("response"):
             raise _build_error("Ollama reporto error en generate", str(error), f"POST /api/generate (model={model})")
         return data
 
-    def chat(self, model: str, messages: list[dict], keep_alive: str = DEFAULT_KEEP_ALIVE) -> dict[str, Any]:
+    def chat(
+        self, model: str, messages: list[dict],
+        keep_alive: str = DEFAULT_KEEP_ALIVE,
+        options: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Mantiene una conversacion con el modelo local (POST /api/chat).
 
         Args:
@@ -208,6 +253,7 @@ class OllamaClient:
             messages: Mensajes de chat con formato Ollama
                 (ej. [{"role": "user", "content": "hola"}]).
             keep_alive: Tiempo que el modelo permanece en RAM ("5m", "0").
+            options: Opciones Modelfile por llamada (ver generate()).
 
         Returns:
             Dict JSON de respuesta, incluye "message.content".
@@ -220,6 +266,8 @@ class OllamaClient:
             "messages": messages,
             "keep_alive": keep_alive,
         }
+        if options:
+            body["options"] = dict(options)
         data = self._request("POST", "/api/chat", body=body)
         error = data.get("error")
         if error:

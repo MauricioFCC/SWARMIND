@@ -1,6 +1,6 @@
 ﻿"""
 
-Sandbox Loop Autonomo â€” Quality Gate - Sandbox Loop
+Sandbox Loop Autonomo — Quality Gate - Sandbox Loop
 
 Orquesta el bucle autonomo de calidad para codigo generado por agentes:
 
@@ -302,7 +302,7 @@ class SandboxLoop:
     ) -> str:
         """Notifica a @quality-gate que los tests pasaron."""
         msg = (
-            f"âœ… Tests SUPERADOS para: {task_description}\n\n"
+            f"✅ Tests SUPERADOS para: {task_description}\n\n"
             f"```\n{output[:1500]}\n```\n\n"
             f"Tiempo de ejecucion: {execution_time:.2f}s\n"
             f"Se requiere revision final de @quality-gate."
@@ -330,7 +330,7 @@ class SandboxLoop:
     ) -> str:
         """Notifica a @software-engineer que los tests fallaron."""
         msg = (
-            f"âŒ Tests FALLIDOS (intento {iteration}) para: {task_description}\n\n"
+            f"❌ Tests FALLIDOS (intento {iteration}) para: {task_description}\n\n"
             f"```\n{error[:1500]}\n```\n\n"
             f"Tiempo de ejecucion: {execution_time:.2f}s\n"
             f"@software-engineer debe corregir el codigo."

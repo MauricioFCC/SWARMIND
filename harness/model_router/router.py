@@ -107,10 +107,26 @@ class ModelRouter:
     - Latency: ~10ms vs ~200ms+ por avoid LLM call en routing decision
     """
 
-    def __init__(self, threshold: float = DEFAULT_THRESHOLD) -> None:
+    def __init__(self, threshold: float = DEFAULT_THRESHOLD, affinity=None) -> None:
         self._router = ComplexityRouter(threshold=threshold)
         self._decision_cache: dict[str, ComplexityResult] = {}
         self._cache_max_size = 1000
+        self._affinity = affinity
+        self._session_results: dict[str, ModelRouteResult] = {}
+
+    @property
+    def _affinity_bound(self):
+        """Afinidad enlazada (None si no hay; compat con tests viejos)."""
+        return getattr(self, "_affinity", None)
+
+    def attach_affinity(self, affinity) -> None:
+        """Enlaza un SessionAffinityRouter (SAAR, ADR-0073/0082).
+
+        Args:
+            affinity: Router sticky por sesion (decide_fn inyectado).
+        """
+        self._affinity = affinity
+        self._session_results = {}
 
     # -----------------------------------------------------------------
     # API Pública
@@ -142,20 +158,24 @@ class ModelRouter:
         task_text: str,
         preferred_provider: str | None = None,
         model_preference: str | None = None,
+        session_id: str | None = None,
     ) -> ModelRouteResult:
         """
         Enruta una tarea al modelo appropriate.
 
         La lógica es:
-        1. Intentar routing heurístico (sin LLM call) -> small si posible
-        2. Si small enough y confidence alta, retornar small
-        3. Si frontier necesario o confidence baja, usar ComplexityRouter
-        4. Si route == frontier y preferred_provider, sugerir proveedor
+        1. Si hay afinidad enlazada + session_id: tier sticky (SAAR);
+           la 2da tarea de la sesion reusa sin re-decidir.
+        2. Intentar routing heurístico (sin LLM call) -> small si posible
+        3. Si small enough y confidence alta, retornar small
+        4. Si frontier necesario o confidence baja, usar ComplexityRouter
+        5. Si route == frontier y preferred_provider, sugerir proveedor
 
         Args:
             task_text: Descripción de la tarea.
             preferred_provider: Proveedor preferido si route == "frontier".
             model_preference: "small" o "frontier" para forzar ruta.
+            session_id: Sesion para afinidad sticky (None = sin afinidad).
 
         Returns:
             ModelRouteResult con route, score, reason y metadata.
@@ -170,6 +190,13 @@ class ModelRouter:
                 ),
                 estimated_cost_reduction=3.0,
             )
+
+        # Afinidad de sesion (SAAR): sticky sin re-decidir (ADR-0082)
+        affinity = self._affinity_bound
+        if affinity is not None and session_id:
+            aff = affinity.route(session_id, task_text)
+            if aff.from_cache and session_id in self._session_results:
+                return self._session_results[session_id]
 
         # Verificar cache
         cache_key = task_text.lower()[:100]
@@ -192,11 +219,14 @@ class ModelRouter:
 
         cost_reduction = self._estimate_cost_reduction(complexity_result.decision.score)
 
-        return ModelRouteResult(
+        result = ModelRouteResult(
             model_route=self._to_model_route(complexity_result),
             estimated_cost_reduction=cost_reduction,
             suggested_provider=self._suggest_provider(complexity_result, preferred_provider),
         )
+        if affinity is not None and session_id:
+            self._session_results[session_id] = result
+        return result
 
     @staticmethod
     def _suggest_provider(

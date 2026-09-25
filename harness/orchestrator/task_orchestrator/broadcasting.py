@@ -65,7 +65,7 @@ class _BroadcastingMixin:
                     tasks.append(asyncio.to_thread(
                         self._bus.post_message, f"#session-{session.session_id}",
                         "@coordinator", agent,
-                        f"â³ Asignado al plan `{session.session_id}`. Esperaras turno."
+                        f"⏳ Asignado al plan `{session.session_id}`. Esperaras turno."
                         + (f"\nPendientes: {len(pending)}" if pending else ""),
                         "notification",
                     ))
@@ -87,7 +87,7 @@ class _BroadcastingMixin:
                 asyncio.to_thread(
                     self._bus.post_message, f"#session-{session.session_id}",
                     f"@{subtask.agent}", "@all",
-                    f"âœ… **Subtask {subtask_id} COMPLETADA**\nAgente: @{subtask.agent}\n"
+                    f"✅ **Subtask {subtask_id} COMPLETADA**\nAgente: @{subtask.agent}\n"
                     f"Que: {subtask.description}\nResultado: {result[:200]}",
                     "response",
                 ),
@@ -108,13 +108,13 @@ class _BroadcastingMixin:
         """Broadcast de plan completo."""
         try:
             summary = "\n".join(
-                f"{'âœ…' if st.completed else 'âŒ'} [{st.agent}] {st.description}"
+                f"{'✅' if st.completed else '❌'} [{st.agent}] {st.description}"
                 for st in session.plan.subtasks
             )
             await asyncio.to_thread(
                 self._bus.post_message, f"#session-{session.session_id}",
                 "@coordinator", "@all",
-                f"ðŸŽ‰ **PLAN COMPLETO**\n\nSesiÃ³n: {session.session_id}\n"
+                f"ðŸŽ‰ **PLAN COMPLETO**\n\nSesión: {session.session_id}\n"
                 f"Tarea: {session.original_message[:120]}\n\n{summary}",
                 "notification",
             )

@@ -165,7 +165,7 @@ def gpu_similarity_search(
     N = candidates.shape[0]
 
     # Smart routing: GPU solo para batches grandes
-    use_gpu = HAVE_CUDA and N >= min_gpu_size
+    use_gpu = HAVE_CUDA and min_gpu_size <= N
 
     if use_gpu:
         import torch

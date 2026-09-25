@@ -11,7 +11,7 @@ import logging
 import time
 from typing import Any
 
-from .models import MCPTool
+from .mcp_types import MCPTool
 
 logger = logging.getLogger("harness.tools_sandbox.mcp_client")
 

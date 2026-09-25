@@ -112,7 +112,7 @@ class TestCosineSimilarityBatch:
         scores = cosine_similarity_batch(q, batch)
         assert scores.shape == (5000,)
         # Scores deben estar en [-1, 1] o ser NaN (cuando norma=0)
-        valid = np.logical_or(np.isnan(scores), np.logical_and(-1.0 <= scores, scores <= 1.0))
+        valid = np.logical_or(np.isnan(scores), np.logical_and(scores >= -1.0, scores <= 1.0))
         assert np.all(valid)
 
 

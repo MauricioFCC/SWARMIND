@@ -26,7 +26,7 @@ EXCLUDED_DIRS: set[str] = {
     "lancedb",      # datos binarios LanceDB
     "import",       # BDs legacy para migrar
     "_archived",    # colecciones archivadas
-    "_backup",      # backups automÃ¡ticos
+    "_backup",      # backups automáticos
     ".lance",       # datos internos LanceDB
 }
 
@@ -129,7 +129,7 @@ def _categorise(path: Path) -> str:
 
 
 # ---------------------------------------------------------------------------
-# llms.txt â€” curated index
+# llms.txt — curated index
 # ---------------------------------------------------------------------------
 
 
@@ -151,7 +151,7 @@ def generate_llms_txt() -> str:
 
     lines: list[str] = [
         "# Swarmind Harness",
-        "> LLMs.txt â€” contexto curado para LLMs (generado automaticamente)",
+        "> LLMs.txt — contexto curado para LLMs (generado automaticamente)",
         "",
         "## Core",
     ]
@@ -197,13 +197,13 @@ def generate_llms_txt() -> str:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     with open(str(LLMS_TXT), "w", encoding="utf-8") as f:
         f.write(content)
-    logger.info(f"[OK] {LLMS_TXT} â€” {len(content)} caracteres")
+    logger.info(f"[OK] {LLMS_TXT} — {len(content)} caracteres")
 
     return content
 
 
 # ---------------------------------------------------------------------------
-# llms-full.txt â€” full content
+# llms-full.txt — full content
 # ---------------------------------------------------------------------------
 
 
@@ -240,7 +240,7 @@ def generate_llms_full_txt() -> str:
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     with open(str(LLMS_FULL_TXT), "w", encoding="utf-8") as f:
         f.write(full)
-    logger.info(f"[OK] {LLMS_FULL_TXT} â€” {len(full)} caracteres, ~{estimated_tokens} tokens estimados")
+    logger.info(f"[OK] {LLMS_FULL_TXT} — {len(full)} caracteres, ~{estimated_tokens} tokens estimados")
 
     return full
 

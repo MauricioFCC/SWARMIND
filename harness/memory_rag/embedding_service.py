@@ -1,5 +1,5 @@
 ﻿"""
-embedding_service.py â€” Servicio de embeddings con batching inteligente.
+embedding_service.py — Servicio de embeddings con batching inteligente.
 
 Cuando N agentes hacen RAG queries simultaneamente, en lugar de
 N llamadas secuenciales (N x 200ms), se batch-ean en UNA sola

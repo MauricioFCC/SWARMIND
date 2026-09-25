@@ -211,11 +211,11 @@ class TestCleanupOldZips:
     def test_legacy_tag_zips_not_touched(self, env_isolated: tuple[Path, Path]) -> None:
         """ZIPs de tags que ya no existen (proyectos viejos) no se borran."""
         _, export_base = env_isolated
-        self._create_zip(export_base, "CQE_2026-07-24.zip")
+        self._create_zip(export_base, "PROJ_A_2026-07-24.zip")
         self._create_zip(export_base, "SWARMIND_2026-08-09.zip")
 
         export_mod.cleanup_old_zips("SWARMIND")
-        assert (export_base / "CQE_2026-07-24.zip").exists()
+        assert (export_base / "PROJ_A_2026-07-24.zip").exists()
         assert (export_base / "SWARMIND_2026-08-09.zip").exists()
 
     def test_no_matching_returns_zero(self, env_isolated: tuple[Path, Path]) -> None:
@@ -245,7 +245,7 @@ class TestPortablePaths:
 
     def test_today_is_utc_iso(self) -> None:
         """TODAY es fecha ISO en UTC (sin timezone local)."""
-        assert export_mod.TODAY == datetime.now(UTC).date().isoformat()
+        assert datetime.now(UTC).date().isoformat() == export_mod.TODAY
         # formato YYYY-MM-DD estricto
         parts = export_mod.TODAY.split("-")
         assert len(parts) == 3 and all(p.isdigit() for p in parts)

@@ -13,14 +13,15 @@ import uuid
 from typing import Any
 
 from .connection import _ConnectionMixin
-from .constants import (
+from .mcp_types import (
     DEFAULT_TIMEOUT,
     HEADER_METHOD,
     HEADER_NAME,
     MCP_CLIENT_NAME,
     STATELESS_VERSION,
+    MCPResult,
+    MCPTool,
 )
-from .models import MCPResult, MCPTool
 from .tools import _ToolsMixin
 
 logger = logging.getLogger("harness.tools_sandbox.mcp_client")

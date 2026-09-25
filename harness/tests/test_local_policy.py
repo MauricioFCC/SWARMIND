@@ -17,12 +17,12 @@ from harness.model_router.local_policy import (
 
 
 def test_defaults_when_no_file(tmp_path) -> None:
-    """Sin YAML: defaults seguros (0.60/0.50/0.10)."""
+    """Sin YAML: defaults 99% local + oraculo 1% (0.99/0.50/0.01)."""
     policy = load_local_policy(tmp_path / "no-existe.yaml")
     assert policy.target_local_ratio == DEFAULT_TARGET_RATIO
     assert policy.confidence_margin == DEFAULT_CONFIDENCE_MARGIN
     assert policy.sample_rate == DEFAULT_SAMPLE_RATE
-    assert DEFAULT_TARGET_RATIO == 0.6
+    assert DEFAULT_TARGET_RATIO == 0.99
 
 
 def test_loads_yaml_section(tmp_path) -> None:
@@ -69,5 +69,5 @@ def test_repo_yaml_loads() -> None:
 
     repo = Path(__file__).resolve().parents[2]
     policy = load_local_policy(repo / ".opencode" / "config" / "ollama_models.yaml")
-    assert policy.target_local_ratio == 0.6
-    assert policy.sample_rate == 0.1
+    assert policy.target_local_ratio == 0.99
+    assert policy.sample_rate == 0.01

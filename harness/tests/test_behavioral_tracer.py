@@ -1,4 +1,4 @@
-﻿"""Tests para Behavioral Tracer â€” trazabilidad de decisiones."""
+﻿"""Tests para Behavioral Tracer — trazabilidad de decisiones."""
 from __future__ import annotations
 
 import pytest

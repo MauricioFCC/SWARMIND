@@ -30,6 +30,27 @@ Swarmind es un **sistema multi-agente evolutivo** diseñado para operar como un 
 | **Quality by Default** | Clean Code, DRY, KISS, SSOT, <900LC, patrones, DocStrings ES-UTF8, tests >80% |
 | **Speed at Scale** | Paralelismo máximo, fan-out, consolidación al final |
 
+### Principio: proceso > herramienta
+
+**La diferencia no es el modelo. Es el harness.** Un agente sin harness es un departamento aislado: duplica esfuerzo, no comparte memoria, no escala y no es medible. Toda capacidad nueva (tool, MCP, modelo) se incorpora como **proceso orquestado** — fan-out, votación gobernada gate≥70, memoria SSOT, oráculos PBT/mutation, KPIs — o se descarta. Caso real: stablyai/orca fue descartada como herramienta en 2026 y se adoptó su proceso (paralelismo + votación gobernada).
+
+```
+   SIN HARNESS: cada agente hace lo suyo        CON SWARMIND: dirección común
+ ┌───────────────────────────────────┐     ┌─────────────────────────────────────┐
+ │ opencode      Claude Code  Codex  │     │ 🎯 Objetivo claro → task_planner    │
+ │ (su ctx)      (su ctx)    (su ctx)│     │              │                      │
+ │                                   │     │ Proceso definido → orchestrator     │
+ │ ✗ Contexto y esfuerzo duplicados  │ ──▶ │ (fan-out N=3 + votación gobernada)  │
+ │ ✗ Memoria no compartida           │     │   ¿Problema? → planner  ¿Resp.? →   │
+ │ ✗ Sin validación cruzada          │     │   governance  ¿Datos? → !rag/LanceDB│
+ │ ✗ Tokens sin gobierno             │     │   ¿Medición? → PBT+KPIs ¿Escalar? → │
+ │                                   │     │   evolve/GPU                        │
+ │                                   │     │ ✓ Alineado ✓ Compartido ✓ Escala    │
+ │                                   │     │ ✓ Medible ✓ Visible                 │
+ └───────────────────────────────────┘     └─────────────────────────────────────┘
+        La diferencia no es el modelo. Es el harness.
+```
+
 ---
 
 ## 🚀 Cómo Usar Swarmind Correctamente
@@ -192,11 +213,11 @@ Para tareas largas o complejas, incluir un **brief recordatorio** al inicio:
 
 ```
 Contexto actual del proyecto Swarmind:
-- .opencode/agents/ → perfiles de 5 agentes
-- harness/ → motor de ejecución con 327 tests
-- skills disponibles: 10 skills en .opencode/skills/
+- .opencode/agents/ → perfiles de 23 agentes
+- harness/ → motor de ejecución con 4722 tests
+- skills disponibles: 35 skills en .opencode/skills/
 - export: scripts/export_archive.py
-- commit reciente: d102c2f (optimización tokens + Swiss Watch)
+- commit reciente: 983f93c (integraciones anydoc + deepseek-harness)
 ```
 
 ### 📌 Estrategia 3: Usar el sistema de skills como memoria externa
@@ -455,7 +476,7 @@ Usuario -> Coordinator -> SWARM (Nivel 0) --------------------------------
 ```
 Swarmind/
 ├── .opencode/                          # CEREBRO DEL SISTEMA (memoria del LLM)
-│   ├── agents/                         # Perfiles de agentes (5)
+│   ├── agents/                         # Perfiles de agentes (23)
 │   │   ├── coordinator.md              # Orquestador Swiss Watch
 │   │   ├── coordinator.agent.min.md    # Versión minificada (<300 chars)
 │   │   ├── builder.md                  # Implementador calidad automática
@@ -463,7 +484,7 @@ Swarmind/
 │   │   ├── scientist.md                # Investigador técnico
 │   │   ├── guardian.md                 # Calidad, seguridad, docs
 │   │   └── evolve.md                   # Auto-mejora del sistema
-│   ├── skills/                         # MEMORIA ESPECIALIZADA (10 skills)
+│   ├── skills/                         # MEMORIA ESPECIALIZADA (35 skills)
 │   │   ├── alpha-research/             # Factor research, ML, feature engineering
 │   │   ├── evolve/                     # Self-improvement loop
 │   │   ├── healthtech/                 # Salud, HIPAA, interoperabilidad
@@ -500,6 +521,8 @@ Swarmind/
 │   │   └── ... (adaptive_planner, debate, confidence, etc.)
 │   ├── memory_rag/                     # MEMORIA VECTORIAL (LanceDB)
 │   │   ├── lance_vector_store.py       # Vector store principal
+│   │   ├── doc_converter.py            # anydoc: binarios → Markdown (21 extensiones)
+│   │   ├── doc_ingester.py             # DocumentChunker con converter DI + --include-docs
 │   │   ├── prompt_compressor.py        # Compresor ligero (19% ahorro)
 │   │   ├── semantic_cache.py           # Cache semántico (evita LLM calls)
 │   │   ├── token_budget.py             # Presupuesto de tokens por pool
@@ -509,13 +532,15 @@ Swarmind/
 │   │   ├── skill_loader.py             # Carga skills desde .opencode
 │   │   └── trajectory_compressor.py    # Compresión de trayectorias
 │   ├── model_router/                   # Enrutamiento local/cloud
+│   ├── plugins/                        # Plugin lifecycle (on_load/on_unload/events) + GreeterTool
+│   ├── observability/                  # OpenTelemetry + session_replay (export markdown/json)
 │   ├── evolve_loop/                    # Auto-mejora ASI-Evolve
 │   ├── gateway/                        # CLIs, Slack, Telegram
 │   ├── db/                             # Migración y persistencia
 │   │   ├── migrate_engine.py           # Motor de migración
 │   │   ├── migrate_discovery.py        # Descubrimiento de colecciones
 │   │   └── migrate_cli.py              # CLI de migración
-│   └── tests/                          # 327 tests de integración
+│   └── tests/                          # 4722 tests (176 test_*.py)
 ├── scripts/
 │   ├── export_archive.py               # Script universal de exportación
 │   ├── hermes_bridge.py                # Puente con shared_memory
@@ -666,6 +691,117 @@ Los agentes **intercambian información en tiempo real** via AgentBus:
 2. **No repitas estándares**: El sistema ya los conoce
 3. **Prefiere español**: Algunos tokens se comprimen mejor en español
 4. **Usa el semantic cache**: Preguntas similares se responden desde caché
+
+---
+
+## 🤖 Delegación Local Ollama
+
+Swarmind resuelve tareas simples con **modelos locales** a través de Ollama,
+minimizando el consumo de tokens cloud (TKN): `OllamaClient`
+(`harness/model_router/ollama_client.py`) es un cliente HTTP real contra la API
+local, y `OllamaTierRouter` (`harness/model_router/ollama_tiers.py`) elige el
+modelo por **capacidad** según la tarea, con heurística sin LLM.
+
+### Tiers por capacidad (modelos 2026 instalados)
+
+| Tier | Modelo | Uso típico |
+|------|--------|------------|
+| ⚡ **fast** | `qwen3:4b` | Borradores, tareas simples |
+| 🧠 **quality** | `deepseek-r1:8b` | Razonamiento, calidad de texto |
+| 💻 **coding** | `qwen2.5-coder:7b` | Generación de código |
+| 🔎 **embedding** | `qwen3-embedding:0.6b` | RAG / búsqueda semántica (1024 dims) |
+| 👁️ **vision** | `qwen3-vl:4b` | Imágenes, alt-text |
+
+### Cómo configurar
+
+Todo es configurable (sin hardcode) en `.opencode/config/ollama_models.yaml`:
+`base_url`, `timeout`, `warm_on_start` (precarga fast + embedding al arrancar)
+y por tier: `model`, `keep_alive` ("5m") y `auto_pull` (true).
+
+### Comandos
+
+```bash
+# Instalar un modelo manualmente (el harness tambien auto-instala con auto_pull)
+ollama pull qwen3:4b
+ollama pull qwen3-embedding:0.6b
+
+# Ver modelos cargados en memoria (keep_alive "5m": warm/unload)
+ollama ps
+```
+
+Si Ollama no está disponible o falta un modelo, el sistema **degrada
+automáticamente a cloud** (ModelRouter/SlmRouter) — nunca falla.
+
+---
+
+## 🔌 Integraciones: anydoc + patrones deepseek-harness
+
+### anydoc — documentos binarios a Markdown en RAG
+
+El RAG ahora ingesta **documentos binarios** (PDF, DOCX, PPTX, XLSX, ODT, EPUB,
+RTF, CSV… — **21 extensiones**) convirtiéndolos a Markdown antes de chunkear:
+
+- `harness/memory_rag/doc_converter.py`: Protocol `DocumentConverter` +
+  `AnyDocConverter` (lazy, basado en `firecrawl-anydoc>=0.1.9`) +
+  `DocumentConversionError(path, reason)` (qué falló, por qué, en qué archivo).
+- `harness/memory_rag/doc_ingester.py`: `DocumentChunker` acepta el converter
+  inyectado (DI, default `AnyDocConverter`); si la conversión falla se lanza
+  `DocumentConversionError` — nunca se traga el error.
+
+```bash
+# Ingesta con documentos binarios (CLI)
+python harness/scripts/rag_ingest.py --dir <ruta> --include-docs
+
+# Igual desde la consola interactiva
+!rag ingest --dir <ruta> --docs
+```
+
+### deepseek-harness — plugin lifecycle + session replay
+
+- **Plugin lifecycle** (`harness/plugins/registry.py`): `PluginBase` con
+  `on_load()` / `on_unload()` / `events` (defaults no-op). `ToolRegistry`
+  acepta `event_bus` inyectado (DI) y suscribe automáticamente cada plugin a
+  sus eventos `on_{event}`. `load_all()` / `unload_all()` son idempotentes.
+  Demo: `harness/plugins/tools/example_tool.py` (`GreeterTool`).
+- **Session replay** (`harness/observability/session_replay.py`):
+  `SessionReplay` reproduce sesiones grabadas y exporta a **Markdown o JSON**;
+  `SessionNotFoundError` si la sesión no existe.
+
+### Arquitecturas RAG frontier — híbrido (RRF) + correctivo (CRAG)
+
+Evaluación de las 5 arquitecturas RAG 2026 (FRS). **2 implementadas**, 2 ya
+cubiertas por módulos existentes, 1 parcial:
+
+- **Híbrido RRF** (`harness/memory_rag/hybrid_retriever.py`): `HybridRetriever`
+  fusiona vector denso (LanceDB embeddings) + BM25 disperso (SQLite FTS5) con
+  **Reciprocal Rank Fusion** (k=60) — los docs presentes en AMBOS rankings
+  puntúan más alto que los que aparecen en uno solo. DI sobre `FTSSearch` +
+  `LanceVectorStore`; `DENSE_WEIGHT`/`SPARSE_WEIGHT` exportados.
+- **Correctivo CRAG** (`harness/memory_rag/corrective_retriever.py`):
+  `CorrectiveRetriever` valida la calidad de la recuperación ANTES de generar
+  (arXiv:2401.15884). Si es pobre (< umbral 0.30) reescribe la query o cae a
+  una fuente alternativa, reportando `corrective_action` (`none`/`rewrite`/
+  `fallback`) + `quality_score`. Evaluador heurístico cero-LLM (TKN) —
+  inyectable por DI.
+- **GraphRAG**: cubierto por `knowledge_graph.py` (grafo de metadatos) +
+  TokenBudgetRouter (PageRank + TF-IDF) — pipeline LLM de entidades = YAGNI.
+- **Agentic RAG**: cubierto por el orchestrator multi-agente (fan-out + votación
+  gobernada + tools).
+- **Multimodal**: parcial — anydoc convierte binarios (21 extensiones) a
+  Markdown antes del chunking; embeddings multimodales nativos = YAGNI.
+
+```python
+from harness.memory_rag.hybrid_retriever import HybridRetriever
+from harness.memory_rag.corrective_retriever import CorrectiveRetriever
+
+hybrid = HybridRetriever(vector_store=vector, fts_search=fts, embed_fn=embed)
+results = hybrid.retrieve("query", top_k=5)   # fusión RRF
+
+crag = CorrectiveRetriever(primary=hybrid, fallback=fts)
+out = crag.retrieve("query", top_k=5)         # validación + corrección
+out.action          # "none" | "rewrite" | "fallback"
+out.quality_score   # [0, 1]
+```
 
 ---
 

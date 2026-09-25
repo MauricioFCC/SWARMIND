@@ -16,6 +16,7 @@ Uso:
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 #: Los 4 pilares del checklist (orden de verificacion).
@@ -78,3 +79,47 @@ def check_spec(spec: dict) -> SpecGateReport:
         )
     missing = tuple(p for p in REQUIRED_CHECKLIST if not _has_content(spec.get(p)))
     return SpecGateReport(passed=not missing, missing=missing)
+
+
+@dataclass(frozen=True)
+class ReasoningReport:
+    """Resultado del 5o pilar opcional (reasoning R1 auditable).
+
+    Attributes:
+        passed: True si hay verdict + pasos numerados.
+        missing: Partes ausentes ("verdict" y/o "steps").
+    """
+
+    passed: bool
+    missing: tuple[str, ...] = ()
+
+
+def check_reasoning(trace: str) -> ReasoningReport:
+    """Valida un reasoning trace R1 (verdict + pasos numerados).
+
+    5o pilar OPCIONAL del spec-gate (mesa: sin trace, el R1 verify/reflect
+    es inauditable e irreproducible). No rompe `check_spec` (separado).
+
+    Args:
+        trace: Texto del trace (no vacio).
+
+    Returns:
+        ReasoningReport con pass y partes faltantes.
+
+    Raises:
+        ValueError: Si esta vacio (WHAT+WHY+WHERE).
+    """
+    if not trace.strip():
+        raise ValueError(
+            "WHAT: trace vacio. "
+            "WHY: sin trace no hay R1 que auditar. "
+            "WHERE: check_reasoning"
+        )
+    lowered = trace.lower()
+    missing: list[str] = []
+    if "verdict" not in lowered:
+        missing.append("verdict")
+    steps = re.findall(r"(?m)^\s*\d+[.)]\s+\S", trace)
+    if len(steps) < 1:
+        missing.append("steps")
+    return ReasoningReport(passed=not missing, missing=tuple(missing))

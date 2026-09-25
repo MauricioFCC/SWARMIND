@@ -17,6 +17,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from harness.security.sandbox_guard import check_command
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -115,10 +117,10 @@ class MCPExecutor:
 
         Built-in tool mappings:
 
-        - ``"pytest"``  â†’ ``pytest <test_path> [args]``
-        - ``"python"``  â†’ ``python <script> [args]``
-        - ``"shell"``   â†’ ``<command>``  (use with extreme caution)
-        - ``"echo"``   â†’ echo the params (safe testing)
+        - ``"pytest"``  → ``pytest <test_path> [args]``
+        - ``"python"``  → ``python <script> [args]``
+        - ``"shell"``   → ``<command>``  (use with extreme caution)
+        - ``"echo"``   → echo the params (safe testing)
 
         Args:
             tool_name: Name / identifier of the tool.
@@ -147,6 +149,23 @@ class MCPExecutor:
             )
             self._log_execution(tool_name, params, result)
             return result
+
+        # Guardián anti reward-hacking (ADR-0055): filtrar el CONTENIDO de
+        # comandos shell (historial git / red saliente) antes de ejecutar.
+        if tool_name.strip().lower() == "shell":
+            guard_decision = check_command(str(params.get("command", "")))
+            if not guard_decision.allowed:
+                elapsed = time.perf_counter() - start
+                result = SandboxResult(
+                    success=False,
+                    output="",
+                    error=guard_decision.reason,
+                    execution_time=round(elapsed, 4),
+                    trace_id=trace_id,
+                    exit_code=-1,
+                )
+                self._log_execution(tool_name, params, result)
+                return result
 
         # Resolve command
         try:

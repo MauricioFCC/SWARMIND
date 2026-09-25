@@ -1,4 +1,4 @@
-﻿"""SpeculativeDecoder â€” Decodificacion especulativa para acelerar generacion LLM.
+﻿"""SpeculativeDecoder — Decodificacion especulativa para acelerar generacion LLM.
 
 Usa un modelo pequeno (drafter) para generar candidatos y un modelo grande
 (verifier) para validarlos en paralelo, logrando 2-5x speedup.

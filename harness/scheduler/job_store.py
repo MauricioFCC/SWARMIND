@@ -15,7 +15,7 @@ from typing import Any, ClassVar
 
 import harness.scheduler as _pkg
 
-from .scheduled_job import ScheduledJob
+from .models import ScheduledJob
 
 
 class JobStore:

@@ -139,7 +139,7 @@ def _parse_args() -> dict[str, Any]:
 
 def _handle_gateway_mode(parsed: dict[str, Any]) -> None:
     """Handle --gateway mode."""
-    from harness.gateway.gateway import GatewayManager, Message, load_gateway_config
+    from harness.gateway import GatewayManager, Message, load_gateway_config
 
     config = load_gateway_config()
     if parsed["gateway"] not in config.get("active_gateways", []):

@@ -1,13 +1,13 @@
 # Registro de Skills — Swarmind Harness
 
-**34 skills activas** (+1 fusionada) en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado). Cobertura: 100% con ambos formatos. **23 agentes** especializados los consumen vía `SkillRouter` (ver [Agentes y Skills](../guide/agentes-y-skills.md)).
+**35 skills activas** (+1 fusionada, +1 nueva `agent-rigor`) en `.opencode/skills/`. Cada skill tiene formato dual: `SKILL.md` (completo) y `SKILL.min.md` (minificado). Cobertura: 100% con ambos formatos. **22 agentes** especializados los consumen vía `SkillRouter` (ver [Agentes y Skills](../guide/agentes-y-skills.md)).
 
 > **2026-09-07 (PEC universal, ADR-0072):** todas las skills enveben una sección
 > `## PERSONA & CANON` — persona experta (rol senior + años + especialización),
 > canon de referencias frontera por especialidad (se estudian ANTES de generar,
 > regla RSF) y regla ANTI-HEDGING (PRISM: persona genérica daña accuracy).
 > Generadas idempotentemente por `scripts/apply_pec.py`; gate en
-> `harness/tests/test_skill_pec.py` (171 tests).
+> `harness/tests/test_skill_pec.py` (176 tests).
 
 > **2026-09-06 (fusión UI):** `responsive-ui` se fusionó en `frontend-uiux` v1.2.0 (el contenido ya vivía en `advanced.md` § Responsive Design). 34 activas + 0 alias = 34 directorios. Residencia total si todas fueran INSTALLED: ~5.1K tokens (auditoría `skill_residency`); ver [Tiers de residencia](tiers.md).
 
@@ -22,6 +22,7 @@
 | **data-science** | data | ML pipelines, PyTorch/JAX, GPU acceleration, feature engineering, validación estadística |
 | **devops-infra** | devops | CI/CD, Docker, Kubernetes, Terraform, monitoreo, OpenTelemetry, observabilidad |
 | **atdd-spec** | testing | Ciclo Spec→Test→Code (OpenSpec-ATDD), tests como prompt+verificación, TDD prompting paradox |
+| **agent-rigor** | quality | Disciplina pre-merge: gates deterministas, anti-pintar-verde, tests decorativos, MS≥70% (2026-09-08) |
 | **diagram-design** | design | 27 tipos de diagramas editoriales autocontenidos HTML+SVG (upstream cathrynlavery/diagram-design v2.3) |
 | **swarm-release-ops** | devops | GitHub Actions, uv, safety, bandit, auto-merge, branch protection, checks rojos del repo SWARMIND |
 
@@ -85,13 +86,13 @@
 |-------|---------|-----------|
 | **ads-optimizer** | marketing | Optimización end-to-end de campañas Meta Ads con BOAD, ShapleyFlow, MetaClaw, RL Bidding |
 | **evolve** | meta | Auto-mejora continua, ciclo ASI-Evolve (Learn → Design → Experiment → Analyze → Deploy) |
-| **process-over-tools** | meta | Principio POC: todo tool/modelo/agente nuevo se adopta como proceso orquestado o se descarta (skill #35, 2026-08-13) |
+| **process-over-tools** | meta | Principio POC: todo tool/modelo/agente nuevo se adopta como proceso orquestado o se descarta |
 
 ## Carga de Skills por Proyecto
 
 > **NUEVO (2026-07-31):** desde la [Opción A — SSOT Global
 > OpenCode](../guide/opcion-a-ssot-global.md), **todos** los proyectos de
-> DEV-SPACE reciben las **34 skills activas** (potencia total) vía
+> DEV-SPACE reciben las **35 skills activas** (potencia total) vía
 > `scripts/deploy_all.py` + `skills_registry.yaml`. El mirror local ya no se
 > limita por tipo. La matriz siguiente queda como referencia del enrutamiento
 > recomendado por dominio (histórico).

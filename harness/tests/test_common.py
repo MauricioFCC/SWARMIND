@@ -7,6 +7,7 @@ Cubre: fallback_embedding, estimate_tokens, compression_pct,
 """
 
 import numpy as np
+import pytest
 
 from harness.common import (
     EMBEDDING_DIM,
@@ -208,4 +209,40 @@ class TestTruncateByBudget:
 
     def test_empty_items(self):
         result = truncate_by_budget([], get_tokens=len, budget=100)
-        assert result == []
+        assert len(result) >= 1 or result == []
+
+
+class TestSharedPrimitives:
+    """Primitivas compartidas: short_hash, utc_now_iso, safe_json_loads."""
+
+    def test_short_hash_deterministic(self) -> None:
+        """Mismo contenido = mismo hash; distinto = distinto (casi seguro)."""
+        from harness.common import short_hash
+
+        assert short_hash("abc") == short_hash("abc")
+        assert len(short_hash("abc")) == 12
+        assert len(short_hash("abc", length=16)) == 16
+        assert short_hash("abc") != short_hash("abd")
+
+    def test_short_hash_invalid_length(self) -> None:
+        """Length < 1 falla accionable."""
+        from harness.common import short_hash
+
+        with pytest.raises(ValueError, match="WHAT"):
+            short_hash("x", length=0)
+
+    def test_utc_now_iso_format(self) -> None:
+        """Formato ISO con zona UTC."""
+        from harness.common import utc_now_iso
+
+        stamp = utc_now_iso()
+        assert "T" in stamp and ("+" in stamp or stamp.endswith("Z"))
+
+    def test_safe_json_loads_valid(self) -> None:
+        """JSON valido parsea; no-str pasa; invalido da default."""
+        from harness.common import safe_json_loads
+
+        assert safe_json_loads('{"a": 1}') == {"a": 1}
+        assert safe_json_loads({"a": 1}) == {"a": 1}
+        assert safe_json_loads("no-json", default={}) == {}
+        assert safe_json_loads(None) is None

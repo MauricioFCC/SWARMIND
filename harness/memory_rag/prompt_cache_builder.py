@@ -12,10 +12,11 @@ Ahorro estimado: 50-90% en tokens de input para llamadas repetitivas.
 
 from __future__ import annotations
 
-import hashlib
 import logging
 from dataclasses import dataclass
 from typing import Any
+
+from harness.common import short_hash
 
 logger = logging.getLogger(__name__)
 
@@ -260,7 +261,7 @@ class PromptCacheBuilder:
         full_prompt = "\n".join(prompt_parts)
 
         # --- Cache Geometry (ADR-0034): hash del prefijo estatico ---
-        geometry_hash = hashlib.sha256(stable_prefix.encode("utf-8")).hexdigest()[:16]
+        geometry_hash = short_hash(stable_prefix, 16)
 
         # Stats
         self._stats["builds"] += 1

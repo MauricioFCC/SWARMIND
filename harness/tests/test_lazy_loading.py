@@ -4,6 +4,24 @@ from __future__ import annotations
 import importlib
 import sys
 
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _revierte_purga():
+    """Revierte cualquier purga de sys.modules al terminar cada test.
+
+    Estos tests borran harness.* de sys.modules a proposito; sin revertir,
+    los modulos reimportados despues son OTRA instancia y los tests que
+    ligaron la original (imports de collection) leen estado rancio
+    (misma enfermedad que tumbaba local_executor/watchmode en suite).
+    """
+    antes = dict(sys.modules)
+    yield
+    for mod in [m for m in sys.modules if m not in antes]:
+        del sys.modules[mod]
+    sys.modules.update(antes)
+
 
 class TestLazyLoading:
     """Verifica que harness use lazy imports para inicio rapido."""

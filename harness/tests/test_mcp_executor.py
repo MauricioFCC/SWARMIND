@@ -1,15 +1,15 @@
 ﻿"""
-Tests para MCPExecutor â€” cobertura completa de mcp_executor.py.
+Tests para MCPExecutor — cobertura completa de mcp_executor.py.
 
 Cubre:
-- InicializaciÃ³n del executor (default_timeout, allowed_commands, workdir)
-- ResoluciÃ³n de comandos (_resolve_command: pytest, python, shell, echo, unknown)
-- EjecuciÃ³n de subprocesos (_run_subprocess: Ã©xito, timeout, FileNotFoundError, excepciÃ³n)
-- EjecuciÃ³n pÃºblica (execute_tool: comando permitido/no permitido, tool desconocida)
-- ValidaciÃ³n de esquemas (validate_output: tipos, keys requeridas, propiedades anidadas)
+- Inicialización del executor (default_timeout, allowed_commands, workdir)
+- Resolución de comandos (_resolve_command: pytest, python, shell, echo, unknown)
+- Ejecución de subprocesos (_run_subprocess: éxito, timeout, FileNotFoundError, excepción)
+- Ejecución pública (execute_tool: comando permitido/no permitido, tool desconocida)
+- Validación de esquemas (validate_output: tipos, keys requeridas, propiedades anidadas)
 - run_test (pytest, python, limpieza temp files)
 - Logging (get_execution_log, clear_log)
-- Edge cases (cÃ³digo vacÃ­o, comandos invÃ¡lidos, resultados nulos)
+- Edge cases (código vacío, comandos inválidos, resultados nulos)
 """
 from __future__ import annotations
 
@@ -53,12 +53,12 @@ def executor_with_allowed() -> MCPExecutor:
 
 
 # ===========================================================================
-# Tests: InicializaciÃ³n
+# Tests: Inicialización
 # ===========================================================================
 
 
 class TestInit:
-    """Tests de inicializaciÃ³n del MCPExecutor."""
+    """Tests de inicialización del MCPExecutor."""
 
     def test_default_timeout(self) -> None:
         """Debe usar timeout por defecto de 30 segundos."""
@@ -91,7 +91,7 @@ class TestInit:
         assert exe.workdir == "/tmp/test"
 
     def test_execution_log_empty(self) -> None:
-        """El log de ejecuciÃ³n debe comenzar vacÃ­o."""
+        """El log de ejecución debe comenzar vacío."""
         exe = MCPExecutor()
         assert exe._execution_log == []
         assert exe.get_execution_log() == []
@@ -121,7 +121,7 @@ class TestInit:
 
 
 class TestResolveCommand:
-    """Tests del mÃ©todo _resolve_command."""
+    """Tests del método _resolve_command."""
 
     def test_pytest_command(self, executor: MCPExecutor) -> None:
         """_resolve_command con tool_name='pytest' debe retornar comando pytest."""
@@ -183,7 +183,7 @@ class TestResolveCommand:
             executor._resolve_command("invalid_tool", {})
 
     def test_tool_name_case_insensitive(self, executor: MCPExecutor) -> None:
-        """_resolve_command debe ignorar mayÃºsculas/minÃºsculas en tool_name."""
+        """_resolve_command debe ignorar mayúsculas/minúsculas en tool_name."""
         cmd = executor._resolve_command("PYTEST", {"test_path": "tests"})
         assert cmd[0] == "pytest"
 
@@ -194,10 +194,10 @@ class TestResolveCommand:
 
 
 class TestRunSubprocess:
-    """Tests del mÃ©todo _run_subprocess."""
+    """Tests del método _run_subprocess."""
 
     def test_success(self, executor: MCPExecutor) -> None:
-        """_run_subprocess exitoso debe retornar SandboxResult con Ã©xito."""
+        """_run_subprocess exitoso debe retornar SandboxResult con éxito."""
         mock_proc = MagicMock()
         mock_proc.communicate.return_value = ("output OK", "")
         mock_proc.returncode = 0
@@ -236,7 +236,7 @@ class TestRunSubprocess:
     def test_timeout(self, executor: MCPExecutor) -> None:
         """_run_subprocess con timeout debe retornar error de timeout."""
         mock_proc = MagicMock()
-        # Primer communicate lanza TimeoutExpired, segundo (en except) retorna vacÃ­o
+        # Primer communicate lanza TimeoutExpired, segundo (en except) retorna vacío
         mock_proc.communicate.side_effect = [
             subprocess.TimeoutExpired(cmd="test", timeout=5),
             ("", ""),
@@ -260,7 +260,7 @@ class TestRunSubprocess:
         assert result.exit_code == -1
 
     def test_unexpected_exception(self, executor: MCPExecutor) -> None:
-        """_run_subprocess con excepciÃ³n inesperada debe retornar error."""
+        """_run_subprocess con excepción inesperada debe retornar error."""
         with patch.object(subprocess, "Popen", side_effect=PermissionError("access denied")):
             result = executor._run_subprocess(["cmd"], 10, "t5")
 
@@ -327,7 +327,7 @@ class TestRunSubprocess:
 
 
 class TestExecuteTool:
-    """Tests del mÃ©todo execute_tool."""
+    """Tests del método execute_tool."""
 
     def test_execute_allowed_command(self, executor_with_allowed: MCPExecutor) -> None:
         """execute_tool con comando permitido debe ejecutarse."""
@@ -350,7 +350,7 @@ class TestExecuteTool:
         assert result.exit_code == -1
 
     def test_allowed_commands_none_means_all(self, executor: MCPExecutor) -> None:
-        """execute_tool con allowed_commands=None debe ejecutar comandos conocidos sin restricciÃ³n."""
+        """execute_tool con allowed_commands=None debe ejecutar comandos conocidos sin restricción."""
         mock_proc = MagicMock()
         mock_proc.communicate.return_value = ("ok", "")
         mock_proc.returncode = 0
@@ -407,7 +407,7 @@ class TestExecuteTool:
         mock_popen.return_value.communicate.assert_called_once_with(timeout=5)
 
     def test_execute_empty_params(self, executor: MCPExecutor) -> None:
-        """execute_tool con params vacÃ­o debe manejar graceful."""
+        """execute_tool con params vacío debe manejar graceful."""
         mock_proc = MagicMock()
         mock_proc.communicate.return_value = ("ok", "")
         mock_proc.returncode = 0
@@ -433,7 +433,7 @@ class TestExecuteTool:
 
 
 class TestValidateOutput:
-    """Tests del mÃ©todo validate_output."""
+    """Tests del método validate_output."""
 
     def test_validates_type_string(self, executor: MCPExecutor) -> None:
         """validate_output debe validar tipo string."""
@@ -506,7 +506,7 @@ class TestValidateOutput:
         assert valid is True
 
     def test_nested_properties_fail(self, executor: MCPExecutor) -> None:
-        """validate_output debe fallar en propiedades anidadas invÃ¡lidas."""
+        """validate_output debe fallar en propiedades anidadas inválidas."""
         schema = {
             "type": "dict",
             "properties": {
@@ -520,13 +520,13 @@ class TestValidateOutput:
         assert "Key 'data'" in msg
 
     def test_no_schema_type_skips_check(self, executor: MCPExecutor) -> None:
-        """validate_output sin 'type' en schema debe saltar verificaciÃ³n de tipo."""
+        """validate_output sin 'type' en schema debe saltar verificación de tipo."""
         valid, msg = executor.validate_output("anything", {})
         assert valid is True
         assert msg == "Validation passed."
 
     def test_empty_dict_valid(self, executor: MCPExecutor) -> None:
-        """validate_output con dict vacÃ­o sin required debe pasar."""
+        """validate_output con dict vacío sin required debe pasar."""
         valid, _ = executor.validate_output({}, {"type": "dict"})
         assert valid is True
 
@@ -552,7 +552,7 @@ class TestValidateOutput:
 
 
 class TestRunTest:
-    """Tests del mÃ©todo run_test."""
+    """Tests del método run_test."""
 
     def test_run_pytest(
         self, executor: MCPExecutor, real_tmp_dir: Path
@@ -591,7 +591,7 @@ class TestRunTest:
     def test_run_test_empty_code(
         self, executor: MCPExecutor, real_tmp_dir: Path
     ) -> None:
-        """run_test con cÃ³digo vacÃ­o debe ejecutarse sin error."""
+        """run_test con código vacío debe ejecutarse sin error."""
         with patch.object(tempfile, "mkdtemp", return_value=str(real_tmp_dir)):
             mock_proc = MagicMock()
             mock_proc.communicate.return_value = ("", "")
@@ -656,7 +656,7 @@ class TestExecutionLog:
     """Tests de get_execution_log y clear_log."""
 
     def test_get_log_empty(self, executor: MCPExecutor) -> None:
-        """get_execution_log debe retornar lista vacÃ­a si no hay ejecuciones."""
+        """get_execution_log debe retornar lista vacía si no hay ejecuciones."""
         assert executor.get_execution_log() == []
 
     def test_get_log_with_entries(self, executor: MCPExecutor) -> None:
@@ -674,7 +674,7 @@ class TestExecutionLog:
         assert log[0]["params"]["n"] == 2  # newest first
 
     def test_get_log_limit(self, executor: MCPExecutor) -> None:
-        """get_execution_log debe respetar el lÃ­mite de entradas."""
+        """get_execution_log debe respetar el límite de entradas."""
         mock_proc = MagicMock()
         mock_proc.communicate.return_value = ("ok", "")
         mock_proc.returncode = 0
@@ -687,7 +687,7 @@ class TestExecutionLog:
         assert len(log) == 3
 
     def test_clear_log(self, executor: MCPExecutor) -> None:
-        """clear_log debe vaciar el log de ejecuciÃ³n."""
+        """clear_log debe vaciar el log de ejecución."""
         mock_proc = MagicMock()
         mock_proc.communicate.return_value = ("ok", "")
         mock_proc.returncode = 0
@@ -732,7 +732,7 @@ class TestEdgeCases:
         assert r2.execution_time == r.execution_time
 
     def test_execute_tool_creates_trace_id(self, executor: MCPExecutor) -> None:
-        """execute_tool debe generar un trace_id Ãºnico."""
+        """execute_tool debe generar un trace_id único."""
         mock_proc = MagicMock()
         mock_proc.communicate.return_value = ("ok", "")
         mock_proc.returncode = 0

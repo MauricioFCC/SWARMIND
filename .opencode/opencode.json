@@ -3,7 +3,7 @@
   "instructions": [
     ".opencode/core/base_principles.md"
   ],
-  "model": "ollama/hf.co/Jackrong/Qwen3.5-9B-DeepSeek-V4-Flash-GGUF:Q4_K_M",
+  "model": "ollama/qwen38-9b-16k",
   "agent": {
     "coordinator": {
       "mode": "primary",
@@ -47,68 +47,23 @@
         "baseURL": "http://localhost:11434/v1"
       },
       "models": {
-        "qwen3:4b": {
-          "name": "qwen3 4B fast legacy",
-          "reasoning": false,
-          "tools": true
-        },
-        "deepseek-r1:8b": {
-          "name": "deepseek-r1 8B quality legacy",
+        "qwen38-9b-16k": {
+          "name": "Qwen3.8 9B Q4 quality (ctx 16K baked)",
           "reasoning": true,
           "tools": true
         },
-        "qwen2.5-coder:7b": {
-          "name": "qwen2.5-coder 7B coding legacy",
+        "qwopus-9b-16k": {
+          "name": "Qwopus3.5 9B Q4 coding (ctx 16K baked)",
           "reasoning": false,
           "tools": true
         },
-        "qwen2.5-coder:7b-instruct": {
-          "name": "qwen2.5-coder 7B instruct legacy",
+        "minicpm5-2b-32k": {
+          "name": "MiniCPM5 2B Q8 fast (ctx 32K baked)",
           "reasoning": false,
           "tools": true
         },
-        "llama3.2:3b": {
-          "name": "llama3.2 3B trivial legacy",
-          "reasoning": false,
-          "tools": true
-        },
-        "qwen3-vl:4b": {
-          "name": "qwen3-vl 4B vision",
-          "reasoning": false,
-          "tools": true
-        },
-        "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0": {
-          "name": "LFM2.5 2.6B Q8 fast",
-          "reasoning": false,
-          "tools": true
-        },
-        "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M": {
-          "name": "Qwen3.8 9B Q4 quality",
-          "reasoning": true,
-          "tools": true
-        },
-        "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M": {
-          "name": "Qwopus3.5 9B Q4 coding",
-          "reasoning": false,
-          "tools": true
-        },
-        "hf.co/Jackrong/Qwen3.5-9B-DeepSeek-V4-Flash-GGUF:Q4_K_M": {
-          "name": "Qwen3.5 9B Q4 flash",
-          "reasoning": true,
-          "tools": true
-        },
-        "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0": {
-          "name": "MiniCPM5 2B Q8 trivial",
-          "reasoning": false,
-          "tools": true
-        },
-        "hf.co/mradermacher/OLMoE-1B-7B-0125-Instruct-Distill-ot114k-batch32-i1-GGUF:IQ4_NL": {
-          "name": "OLMoE 1B-7B Q4 efficient",
-          "reasoning": false,
-          "tools": true
-        },
-        "hf.co/unsloth/GLM-Z1-9B-0414-GGUF:UD-Q4_K_XL": {
-          "name": "GLM-Z1 9B Q4 reasoning",
+        "glm-z1-9b-16k": {
+          "name": "GLM-Z1 9B Q4 reasoning (ctx 16K baked)",
           "reasoning": true,
           "tools": true
         }
@@ -123,7 +78,7 @@
   "compaction": {
     "auto": true,
     "prune": true,
-    "reserved": 10000
+    "reserved": 2000
   },
   "tool_output": {
     "max_lines": 200,

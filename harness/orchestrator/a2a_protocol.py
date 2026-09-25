@@ -1,4 +1,4 @@
-﻿"""A2AProtocol â€” Agent-to-Agent Protocol para interoperabilidad.
+﻿"""A2AProtocol — Agent-to-Agent Protocol para interoperabilidad.
 
 Implementa el protocolo A2A v1.0 para comunicacion estandarizada entre
 agentes, permitiendo discovery, mensajeria, invocacion de herramientas

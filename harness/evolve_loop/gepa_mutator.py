@@ -1,5 +1,5 @@
 ﻿"""
-GEPA (Genetic Evolutionary Prompt Algorithm) â€” Hermes-inspired prompt mutator.
+GEPA (Genetic Evolutionary Prompt Algorithm) — Hermes-inspired prompt mutator.
 
 Creates N mutated variants of an agent/system prompt, tests them in a sandbox,
 and promotes the winner. Implements the "Evolucion Genetica de Prompts" pattern.

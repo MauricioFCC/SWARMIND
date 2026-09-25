@@ -13,25 +13,27 @@ CADA PROYECTO conserva solo:
   - config propia       : project_config, routing_rules, token_budgets, .env
 
 EL MOTOR (harness/) NO se copia a los proyectos: una sola copia vive en
-opencode global (~/.config/opencode/harness). Esto elimina ~5.3 GB de
-duplicación (Hermes: 3.3 GB/88k archivos, sugurityOs: 1.7 GB/43k).
+opencode global (~/.config/opencode/harness). Esto elimina gigas de
+duplicacion en proyectos grandes.
 
 Si un script de un proyecto necesita harness, importa desde el global
 (symlink o PYTHONPATH), no copia local.
 
-Este script despliega/limpia el mirror de todos los proyectos de
-DEV-SPACE: actualiza cerebro, elimina skills obsoletas, deja
-skills_registry.yaml completo (skills descubiertas dinamicamente) y preserva la configuración
-propia (project_config, routing_rules, token_budgets, federated/, db/,
-.env).
+Este script despliega/limpia el mirror de todos los proyectos del
+directorio raiz configurado: actualiza cerebro, elimina skills obsoletas,
+deja skills_registry.yaml completo (skills descubiertas dinamicamente) y
+preserva la configuración propia (project_config, routing_rules,
+token_budgets, federated/, db/, .env).
 
 Seguridad (ADR-0035): rutas portables via env vars (DEV_SPACE_ROOT, ...)
-con fallback a ``Path.home()``. Nunca ``$HOME`` literal.
+con fallback a ``Path.home()``. Nunca ``$HOME`` literal. Los nombres de
+proyectos privados y alias CLI viven SOLO en ``deploy_local.json``
+(gitignoreado); el codigo fuente es project-agnostic.
 
 Uso:
     python scripts/deploy_all.py                   # Deploy completo a todos
     python scripts/deploy_all.py --dry-run         # Simular sin escribir
-    python scripts/deploy_all.py --project CQE     # Solo un proyecto (alias o nombre)
+    python scripts/deploy_all.py --project ALIAS   # Solo un proyecto (alias o nombre)
     python scripts/deploy_all.py --sync-only       # Solo sync, sin regenerar README
     python scripts/deploy_all.py --sync-global     # Solo sync del global opencode
     python scripts/deploy_all.py --sync-harness-global  # Sync harness al global opencode
@@ -39,6 +41,7 @@ Uso:
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import shutil
@@ -57,13 +60,41 @@ logger = logging.getLogger(__name__)
 _HERE = Path(__file__).resolve().parent            # Swarmind/scripts/
 _ROOT = _HERE.parent                                # Swarmind/
 
+# Config local PRIVADA (gitignoreada): nombres de proyectos reales y rutas
+# del operador. El codigo fuente permanece project-agnostic (privacidad).
+_LOCAL_CONFIG_PATH = _HERE / "deploy_local.json"
+
+
+def _load_local_config() -> dict[str, object]:
+    """Carga la config local privada si existe (si no, dict vacio).
+
+    Returns:
+        Dict con claves opcionales: dev_space_root, aliases.
+    """
+    if not _LOCAL_CONFIG_PATH.is_file():
+        return {}
+    try:
+        data = json.loads(_LOCAL_CONFIG_PATH.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning(
+            "deploy_all: config local ilegible %s: %s (WHERE: _load_local_config)",
+            _LOCAL_CONFIG_PATH, exc,
+        )
+        return {}
+
+
+_LOCAL_CONFIG = _load_local_config()
+
 _DEV_SPACE = Path(os.environ.get(
-    "DEV_SPACE_ROOT", str(Path.home() / "Documents" / "DEV-SPACE"),
+    "DEV_SPACE_ROOT",
+    str(_LOCAL_CONFIG.get("dev_space_root") or (Path.home() / "projects")),
 ))
-_HERMES_PATH = Path(os.environ.get(
-    "MEMORY_ROOT",
-    str(Path.home() / "Documents" / "Memory_Proyects"),
-))
+_HERMES_PATH = Path(
+    os.environ.get("MEMORY_ROOT")
+    or str(_LOCAL_CONFIG.get("hermes_path") or "")
+    or str(Path.home() / "Memory_Proyects")
+)
 _GLOBAL = Path(os.environ.get(
     "OPENCODE_GLOBAL_DIR",
     str(Path.home() / ".config" / "opencode"),
@@ -75,15 +106,22 @@ _SKIP_DIRS = {
     ".git", ".venv", "venv", "__pycache__", ".idea", ".vscode",
 }
 
-# Alias CLI -> nombre real de carpeta
-_ALIASES = {
-    "CQE": "core-quant-engine",
-    "HC": "Historia Clinica",
-    "ONYX": "Onyx-Quan-AIBot",
-    "PDV": "PDV Basic",
-    "HERMES": "Hermes_Memory_Proyects",
-    "ALFA": "de_0_a_Alfa",
-    "SECURITY": "sugurityOs",
+# Archivos machine-private que NUNCA se espejan a otros proyectos
+# (tuning confidencial de ESTA maquina; cada proyecto usa el suyo o defaults).
+_SKIP_FILES = {
+    "ollama_local.yaml",
+}
+
+# Dirs que NUNCA se sincronizan archivo-por-archivo (ruido de arranque):
+# node_modules (3667 archivos del plugin; se siembra 1 vez si falta),
+# __pycache__/.pytest_cache (artefactos regenerables).
+_SYNC_SKIP_DIRS = frozenset({"node_modules", "__pycache__", ".pytest_cache"})
+
+# Alias CLI -> nombre real de carpeta (SOLO desde deploy_local.json;
+# el codigo fuente no contiene nombres de proyectos privados).
+_ALIASES: dict[str, str] = {
+    str(k).upper(): str(v)
+    for k, v in (_LOCAL_CONFIG.get("aliases") or {}).items()
 }
 
 # ---------------------------------------------------------------------------
@@ -138,10 +176,10 @@ def _discover_agents() -> list[str]:
 
 @dataclass
 class Project:
-    """Proyecto destino detectado en DEV-SPACE.
+    """Proyecto destino detectado en la raiz de proyectos.
 
     Args:
-        name: Nombre real de la carpeta (ej. "core-quant-engine").
+        name: Nombre real de la carpeta del proyecto.
         path: Ruta absoluta del proyecto.
         ptype: Tipo inferido (trading, healthtech, retail, security, general).
         description: Descripción usada en el README generado.
@@ -168,19 +206,19 @@ def _detect_type(name: str) -> str:
         Tipo: trading, healthtech, retail, security o general (default).
     """
     lower = name.lower()
-    if any(k in lower for k in ("quant", "alpha", "trading", "bot", "onyx")):
+    if any(k in lower for k in ("quant", "alpha", "trading", "bot")):
         return "trading"
     if any(k in lower for k in ("clinica", "health", "historia", "salud")):
         return "healthtech"
     if any(k in lower for k in ("pdv", "pos", "venta", "retail", "store")):
         return "retail"
-    if any(k in lower for k in ("security", "seguridad", "harden", "sugurity")):
+    if any(k in lower for k in ("security", "seguridad", "harden")):
         return "security"
     return "general"
 
 
 def discover_projects() -> list[Project]:
-    """Auto-descubre proyectos en DEV-SPACE (los que tienen .opencode).
+    """Auto-descubre proyectos en la raiz (los que tienen .opencode).
 
     Estándar v2.5: solo requiere .opencode/ (el motor harness vive en
     opencode global). Proyectos sin harness también se despliegan.
@@ -190,7 +228,7 @@ def discover_projects() -> list[Project]:
     """
     projects: list[Project] = []
     if not _DEV_SPACE.exists():
-        logger.warning("  ⚠️  DEV-SPACE no existe: %s", _DEV_SPACE)
+        logger.warning("  ⚠️  Raiz de proyectos no existe: %s", _DEV_SPACE)
         return projects
 
     for entry in sorted(_DEV_SPACE.iterdir()):
@@ -212,7 +250,7 @@ def resolve_project(selector: str, projects: list[Project]) -> Project | None:
     """Resuelve un selector CLI (alias o nombre) a un Project.
 
     Args:
-        selector: Alias (CQE, HC...) o nombre real de carpeta.
+        selector: Alias definido en deploy_local.json o nombre real de carpeta.
         projects: Lista de proyectos descubiertos.
 
     Returns:
@@ -333,14 +371,33 @@ def _sync_tree(src: Path, dst: Path, dry_run: bool = False) -> int:
 
     count = 0
     for item in src.iterdir():
+        if item.name in _SKIP_FILES:
+            logger.debug("sync: archivo machine-private excluido: %s", item.name)
+            continue
+        if item.is_dir() and item.name in _SYNC_SKIP_DIRS:
+            logger.debug("sync: dir de ruido excluido: %s", item.name)
+            continue
         target = dst / item.name
         if item.is_dir():
             if target.exists() and target.is_dir() and not target.is_symlink():
                 count += _sync_tree(item, target, dry_run)
             else:
                 if not dry_run:
-                    shutil.copytree(item, target, dirs_exist_ok=True)
-                count += sum(1 for _ in item.rglob("*") if _.is_file())
+                    shutil.copytree(
+                        item, target, dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns(*_SYNC_SKIP_DIRS),
+                    )
+                    # copytree no filtra machine-private: purgar del arbol nuevo
+                    for stale in target.rglob("*"):
+                        if stale.is_file() and stale.name in _SKIP_FILES:
+                            stale.unlink()
+                            logger.debug("sync: purgado machine-private: %s", stale)
+                count += sum(
+                    1 for _ in item.rglob("*")
+                    if _.is_file() and not any(
+                        part in _SYNC_SKIP_DIRS for part in _.relative_to(item).parts
+                    )
+                )
         else:
             if not dry_run:
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -488,6 +545,31 @@ python scripts/agentic_bridge_sync.py
 # ---------------------------------------------------------------------------
 
 
+def _seed_node_modules(dst_opencode: Path, dry_run: bool = False) -> int:
+    """Copia node_modules del plugin SOLO si el destino no lo tiene.
+
+    El plugin (.opencode/plugin/) requiere @opencode-ai/plugin en arranque;
+    copiar 3667 archivos en cada deploy es lo que lo hacia lento. Primera
+    vez se siembra completo; despues se omite (el lockfile manda).
+
+    Args:
+        dst_opencode: .opencode/ del proyecto destino.
+        dry_run: Si True, solo simula.
+
+    Returns:
+        Número de archivos sembrados (0 si ya existía).
+    """
+    src_nm = _ROOT / ".opencode" / "node_modules"
+    dst_nm = dst_opencode / "node_modules"
+    if not src_nm.is_dir() or dst_nm.is_dir():
+        return 0
+    if not dry_run:
+        shutil.copytree(src_nm, dst_nm, dirs_exist_ok=True)
+    count = sum(1 for _ in src_nm.rglob("*") if _.is_file())
+    logger.info("  🌱 node_modules sembrado (1ra vez): %d archivos", count)
+    return count
+
+
 def deploy_project(
     project: Project,
     dry_run: bool = False,
@@ -521,6 +603,7 @@ def deploy_project(
     # 2. Sync .opencode/ (cerebro mirror — agents, skills, core, config)
     logger.info("📁 .opencode/ — syncing cerebro mirror...")
     opencode_count = _sync_tree(_ROOT / ".opencode", project.path / ".opencode", dry_run)
+    opencode_count += _seed_node_modules(project.path / ".opencode", dry_run)
     logger.info("  ✅ .opencode/: %d archivos %s", opencode_count, "(simulado)" if dry_run else "")
 
     # 3. Motor (harness/): NO se copia a proyectos (estándar v2.5).
@@ -603,6 +686,7 @@ def sync_hermes_memory(dry_run: bool = False) -> dict:
 
     # Sync .opencode/ preservando skills_registry (restaurado después)
     opencode_count = _sync_tree(_ROOT / ".opencode", hermes.path / ".opencode", dry_run)
+    opencode_count += _seed_node_modules(hermes.path / ".opencode", dry_run)
 
     # harness/ NO se copia a Hermes (estándar v2.5: vive en opencode global)
     logger.info("📁 harness/ — SKIPPED (una sola copia en opencode global, estandar v2.5)")
@@ -683,7 +767,7 @@ def main() -> None:
 
     # ── Solo sync global ──
     if args.sync_global:
-        from scripts.sync_opencode_global import sync_global
+        from sync_opencode_global import sync_global
         sync_global(dry_run=args.dry_run)
         return
 
@@ -696,7 +780,7 @@ def main() -> None:
     logger.info("🚀 Swarmind DEPLOY & SYNC (Opción A — SSOT global + mirror local)")
     logger.info("   Source:     %s", _ROOT)
     logger.info("   Global:     %s", _GLOBAL)
-    logger.info("   DEV-SPACE:  %s", _DEV_SPACE)
+    logger.info("   Raiz proyectos:  %s", _DEV_SPACE)
     logger.info("   Dry run:    %s", args.dry_run)
     logger.info("=" * 60)
 

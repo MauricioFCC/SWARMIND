@@ -1,5 +1,5 @@
 ﻿"""
-MCP Manager â€” manages a pool of MCP client connections to multiple servers.
+MCP Manager — manages a pool of MCP client connections to multiple servers.
 
 Provides a unified interface to discover and execute tools across
 all registered MCP servers. Tools are resolved by name and routed

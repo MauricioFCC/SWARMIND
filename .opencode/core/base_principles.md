@@ -1,11 +1,11 @@
 ---
-description: Principios universales v3.2.0 - N1+N2 siempre, N3 bajo demanda + taxonomia de adherencia (IFEval/DRFR) + RPA re-anclaje post-compaction + CPD fundamentos de competicion (ADR-0070) + TDD adversarial/mutante/PBT/pairwise/BVA/metamorphic/fuzz (ADR-0077) + DORA/ShapeUp/trunk/RFC/postmortem (ADR-0083)
+description: Principios universales v3.3.0 - N1+N2 siempre, N3 bajo demanda + taxonomia de adherencia (IFEval/DRFR) + RPA re-anclaje post-compaction + CPD fundamentos de competicion (ADR-0070) + TDD adversarial/mutante/PBT/pairwise/BVA/metamorphic/fuzz (ADR-0077) + DORA/ShapeUp/trunk/RFC/postmortem (ADR-0083) + ADV verificacion adversarial atacante/steelman/juez + SWE-ABS/RvB
 inherit:
   - core/base_principles.md
   - core/fde_principles.md
 name: base-principles
 project_agnostic: true
-version: 3.2.0
+version: 3.3.0
 ---
 
 # PRINCIPIOS UNIVERSALES | Multi-nivel
@@ -54,6 +54,7 @@ FAIL: Failure Registry | registrar fallos en JSONL | distillar en skills | Socra
 SBX: Sandboxing | aislamiento de fallos | per-task environment | rollback plan | contenedor o timeout como minimo
 RPA: Re-Pin After compaction | tras CADA compactacion recargar N1+rol+skills+agentes | 65% fallos = drift | bloque <<RE-ANCHOR>>
 CPD: Fundamentos Competicion | checklist edges+invariants+BigO ANTES de codear | diagnose→repair→regenerate | dual verification
+ADV: Verificacion adversarial SIEMPRE | atacante (halla gaps) → steelman (defiende+propone) → juez (veredicto+disenso) | T siempre ultimo movimiento | 1/5 "resuelto" es incorrecto: fortalecer antes de confiar
 ```
 
 ---
@@ -69,7 +70,7 @@ parafrasean — Ribeiro: el compliance es pattern matching fragil).
 |-----|--------|---------|------|
 | PRC | Proceso e investigacion | RSF, IDP, FRS, SPE, UPG, POC | CHECK |
 | ARC | Arquitectura y codigo | ARQ, SOL, CMP, DEM, NAM, TYP, IMM, MAG, FSZ, AGR | CHECK |
-| QLT | Calidad y testing | TST, PBT, GATE, CPD | CHECK |
+| QLT | Calidad y testing | TST, PBT, GATE, CPD, ADV | CHECK |
 | SEC | Seguridad y aislamiento | SEG, SBX | CHECK |
 | DOC | Documentacion y commits | DOC, CMT, SVE | CHECK |
 | CTX | Contexto y tokens | CEN, TKN | CHECK |
@@ -115,7 +116,7 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 | __ARQ__ | Hexagonal ports/adapters + DI. __KISS__ (Keep It Simple): preferir la solucion obvia. __DRY__ (Don't Repeat Yourself): extraer logica repetida a utils. __YAGNI__ (You Aren't Gonna Need It): no anadir configuracion para futuros casos hipoteticos. Type hints publicas. Pathlib siempre. |
 | __SEG__ | Secrets 0 hardcode: `os.getenv()`. Logs mask PII/data. Input sanitize. SQL parametrizada. No `eval()/exec()`. `sys.path.insert(1,)` nunca `insert(0,)`. Bandit + pip-audit en CI. |
 | __DOC__ | Docstrings ES: Args/Returns/Raises (NumPy style). README/CHANGELOG ES. Codigo EN. Docs 1:1 en API/interfaz changes. `Griffe` para autodoc moderno (reemplaza legacy sphinx.ext.autodoc). Validar docs AI-generated con `pytest-examples` o doctest. |
-| __TST__ | pytest framework. Core coverage >=80% (line+branch `--cov-branch`; 100% line con 60% branch = tests decorativos). New feature = new test + integration. Pre-commit gates. 0 `except Exception: pass` sin logger. __Adversarial TDD__ (AdverTest arXiv:2602.08146): loop test-vs-mutante co-evolutivo (M genera mutantes context-aware que hackean blind-spots de T; T los mata; +8.56% fault-detection, +63% vs EvoSuite); supervivientes = senal (no repetir mutantes en zonas ya cubiertas). __Mutation testing__ con `mutmut`/`cosmic-ray`: MS>=70% merge, objetivo >=85% nightly; suite manual dirigida donde mutmut da falsos negativos (imports de paquete). __Pairwise t=2__ (70-98% fallos son 1-2-way, NIST): covering array sobre variables discretizadas; subir a t=4-6 si hay supervivientes (fallos son <=6-way; 36626->1818, -95%). __BVA por variable__: min-1/min/min+1/max-1/max/max+1/0/""/None/NaN/overflow (~15% fallos boundary, 7x densidad). __Snapshot__ con `syrupy` para outputs grandes. |
+| __TST__ | pytest framework. Core coverage >=80% (line+branch `--cov-branch`; 100% line con 60% branch = tests decorativos). New feature = new test + integration. Pre-commit gates. 0 `except Exception: pass` sin logger. __Adversarial TDD__ (AdverTest arXiv:2602.08146): loop test-vs-mutante co-evolutivo (M genera mutantes context-aware que hackean blind-spots de T; T los mata; +8.56% fault-detection, +63% vs EvoSuite); supervivientes = senal (no repetir mutantes en zonas ya cubiertas). __SWE-ABS__ (arXiv:2603.00520): asumir inflacion (1/5 "resuelto" es incorrecto); two-stage: slicing a regiones no testeadas + patches plausibles-pero-incorrectos como adversarios (rechaza 19.71%; top 78.80%→62.20%). __RvB loop__ (red→reporte→patch→verificacion): iterar hasta que el exploit no reproduce (`verified_fixed`). __Mutation testing__ con `mutmut`/`cosmic-ray`: MS>=70% merge, objetivo >=85% nightly; suite manual dirigida donde mutmut da falsos negativos (imports de paquete). __Pairwise t=2__ (70-98% fallos son 1-2-way, NIST): covering array sobre variables discretizadas; subir a t=4-6 si hay supervivientes (fallos son <=6-way; 36626->1818, -95%). __BVA por variable__: min-1/min/min+1/max-1/max/max+1/0/""/None/NaN/overflow (~15% fallos boundary, 7x densidad). __Snapshot__ con `syrupy` para outputs grandes. |
 | __OPS__ | Timeout >=30s I/O. Retry 3x exponential backoff + jitter. Circuit breaker. __OpenTelemetry__ para tracing distribuido (OTLP exporter). Log JSON estructurado con `trace_id`, `span_id`, `request_id` (structlog). Fallback plan. Health checks: liveness vs readiness. __Prometheus metrics__ para SLO. WAL obligatorio antes de tool-calls costosos. __Trunk-based__ (DORA elite): integrate-daily (ninguna rama vive >1 dia), squash merge, merge != release (dark ship con `FeatureFlags`, `SWARMIND_FF_*=1`); CI T1 (<90s) como green-trunk gate. |
 | __DOR__ | __DORA como SLO (elite: deploy on-demand, lead <1h, CFR <5%, MTTR <1h)__: medir deploy frequency, lead time commit→verde, change failure rate (TST + mutation MS≥70%, no solo coverage) y time-to-restore (rollback plan SBX por fan-out). Solo 19% de equipos son elite (DORA 2024); el tier low crece 17%→25%: sin platform team se cae al low. |
 | __CMT__ | Conventional commit `type(scope): msg #ISSUE`. <=72 chars. Pre-commit hook: secrets+size+lint+test. __Conventional Comments__ para comentarios de PR. __Signed commits__ (GPG/SSH) en ramas main. |
@@ -157,6 +158,8 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 > Contiene: checklists ARQ, SEG, DOC, TST, OPS, ERR, CMT, QLT, FDE, EVO, UPG, TYP,
 > IMM, SOL, MAG, FSZ, NAM, CMP, DEM, FRS + MAPA DE ROLES->CATEGORIAS + ABREVIACIONES.
 > Cargar SOLO si el agente necesita detalles de implementacion, tabla de roles o abreviaciones.
+> Sesiones locales 9B (ctx 16K): inyectar `.opencode/core/base_principles.min.md`
+> (solo N1) en vez de este archivo.
 
 ### UPG - Upgrade Continuo (regla universal para TODO stack)
 

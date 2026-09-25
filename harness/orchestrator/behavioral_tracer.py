@@ -27,6 +27,8 @@ from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from harness.common import short_hash
+
 logger = logging.getLogger(__name__)
 
 
@@ -71,12 +73,11 @@ class TraceSession:
         La huella se basa en las decisiones tomadas, no en el output.
         Permite identificar si el mismo agente esta actuando consistentemente.
         """
-        import hashlib
         sig = "|".join(
             f"{d.action}:{d.chosen}:{d.confidence:.2f}"
             for d in self.decisions
         )
-        return hashlib.sha256(sig.encode()).hexdigest()[:16]
+        return short_hash(sig, 16)
 
 
 class BehavioralTracer:

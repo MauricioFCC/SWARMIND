@@ -104,3 +104,38 @@ def test_dual_verify_empty_cases() -> None:
     report = dual_verify(sorted, sorted, [])
     assert report.passed is True
     assert report.cases == 0
+
+
+def test_dual_verify_fresh_set_not_stale() -> None:
+    """Set vigente (as_of reciente) no marca stale."""
+    import datetime
+
+    today = datetime.datetime.now(datetime.UTC).date().isoformat()
+    report = dual_verify(sorted, sorted, [[2, 1]], as_of=today)
+    assert report.passed is True
+    assert report.stale is False
+
+
+def test_dual_verify_old_set_stale() -> None:
+    """Set viejo (>540 dias) marca stale (contaminacion posible)."""
+    report = dual_verify(sorted, sorted, [[2, 1]], as_of="2020-01-01")
+    assert report.passed is True
+    assert report.stale is True
+
+
+def test_dual_verify_no_date_no_stale() -> None:
+    """Sin as_of no hay control de vigencia (compat)."""
+    report = dual_verify(sorted, sorted, [[2, 1]])
+    assert report.stale is False
+
+
+def test_dual_verify_boundary_exact_days() -> None:
+    """Exactamente freshness_days NO es stale (gate > estricto)."""
+    import datetime
+
+    edge = (
+        datetime.datetime.now(datetime.UTC).date()
+        - datetime.timedelta(days=540)
+    ).isoformat()
+    report = dual_verify(sorted, sorted, [[2, 1]], as_of=edge)
+    assert report.stale is False

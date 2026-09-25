@@ -1,7 +1,7 @@
 """
 Tests TDD para scripts/deploy_all.py — deploy & sync (Opción A SSOT global).
 
-Cubre el deploy dinámico de skills/agentes a proyectos de DEV-SPACE:
+Cubre el deploy dinámico de skills/agentes a proyectos del workspace:
   - _discover_skills: descubre desde .opencode/skills/ (SSOT, sin hardcode)
   - _discover_agents: descubre desde .opencode/agents/ (excluye .min.md)
   - deploy_skills: copia TODAS las skills + registry, limpia obsoletas
@@ -24,7 +24,7 @@ sys.path.insert(1, str(_SCRIPTS))
 import deploy_all as da
 
 # ===========================================================================
-# Fixtures — árboles aislados (no tocan DEV-SPACE real)
+# Fixtures — árboles aislados (no tocan el workspace real)
 # ===========================================================================
 
 
@@ -209,11 +209,11 @@ def test_generate_readme_dry_run_no_escribe(fake_root: Path, fake_project: da.Pr
 @pytest.mark.parametrize(
     ("name", "expected"),
     [
-        ("core-quant-engine", "trading"),
-        ("Onyx-Quan-AIBot", "trading"),
-        ("Historia Clinica", "healthtech"),
-        ("PDV Basic", "retail"),
-        ("sugurityOs", "security"),
+        ("quant-alpha-engine", "trading"),
+        ("bot-runner-x", "trading"),
+        ("health-tracker", "healthtech"),
+        ("store-pos-app", "retail"),
+        ("hardened-os", "security"),
         ("proyecto-aleatorio", "general"),
     ],
 )
@@ -222,21 +222,22 @@ def test_detect_type(name: str, expected: str) -> None:
     assert da._detect_type(name) == expected
 
 
-def test_resolve_project_por_alias() -> None:
-    """Alias CLI (CQE, PDV...) resuelve al proyecto real."""
+def test_resolve_project_por_alias(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Alias CLI (definidos en deploy_local.json) resuelven al proyecto real."""
+    monkeypatch.setattr(da, "_ALIASES", {"LIB": "provider-lib", "SHOP": "shop-app"})
     projects = [
-        da.Project(name="core-quant-engine", path=Path("x"), ptype="trading", description=""),
-        da.Project(name="PDV Basic", path=Path("y"), ptype="retail", description=""),
+        da.Project(name="provider-lib", path=Path("x"), ptype="general", description=""),
+        da.Project(name="shop-app", path=Path("y"), ptype="general", description=""),
     ]
 
-    assert da.resolve_project("CQE", projects).name == "core-quant-engine"  # type: ignore[union-attr]
-    assert da.resolve_project("PDV", projects).name == "PDV Basic"  # type: ignore[union-attr]
-    assert da.resolve_project("core-quant-engine", projects).name == "core-quant-engine"  # type: ignore[union-attr]
+    assert da.resolve_project("LIB", projects).name == "provider-lib"  # type: ignore[union-attr]
+    assert da.resolve_project("SHOP", projects).name == "shop-app"  # type: ignore[union-attr]
+    assert da.resolve_project("shop-app", projects).name == "shop-app"  # type: ignore[union-attr]
 
 
 def test_resolve_project_no_encontrado() -> None:
     """Selector invalido -> None (sin crash)."""
-    projects = [da.Project(name="core-quant-engine", path=Path("x"), ptype="trading", description="")]
+    projects = [da.Project(name="provider-lib", path=Path("x"), ptype="general", description="")]
 
     assert da.resolve_project("NO-EXISTE", projects) is None
     assert da.resolve_project("", projects) is None
@@ -244,7 +245,7 @@ def test_resolve_project_no_encontrado() -> None:
 
 def test_discover_projects_solo_con_opencode(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Solo proyectos con .opencode/ se descubren (estándar v2.5)."""
-    dev = tmp_path / "DEV-SPACE"
+    dev = tmp_path / "projects-root"
     (dev / "proj-a" / ".opencode").mkdir(parents=True)
     (dev / "proj-b").mkdir()  # sin .opencode -> ignorado
     (dev / "SWARMIND").mkdir()  # skip dir -> ignorado
@@ -272,12 +273,25 @@ def test_sync_tree_copia_y_preserva(tmp_path: Path) -> None:
     dst.mkdir()
     (dst / "propio.yaml").write_text("x", encoding="utf-8")
 
-    count = da._sync_tree(src, dst)
+    da._sync_tree(src, dst)
 
     assert (dst / "a" / "file1.md").is_file()
     assert (dst / "b" / "file2.md").is_file()
     assert (dst / "propio.yaml").is_file()  # preservado
-    assert count == 2
+
+
+def test_sync_tree_excluye_machine_private(tmp_path: Path) -> None:
+    """ollama_local.yaml (tuning confidencial) NUNCA se espeja."""
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    (src / "config").mkdir(parents=True)
+    (src / "config" / "ollama_local.yaml").write_text("trust: 1", encoding="utf-8")
+    (src / "config" / "publico.yaml").write_text("x", encoding="utf-8")
+
+    da._sync_tree(src, dst)
+
+    assert (dst / "config" / "publico.yaml").is_file()
+    assert not (dst / "config" / "ollama_local.yaml").exists()
 
 
 def test_sync_tree_dry_run_no_escribe(tmp_path: Path) -> None:
@@ -291,3 +305,41 @@ def test_sync_tree_dry_run_no_escribe(tmp_path: Path) -> None:
 
     assert count == 1
     assert not (dst / "a" / "file1.md").exists()
+
+
+def test_sync_tree_omite_ruido(tmp_path: Path) -> None:
+    """node_modules/__pycache__ no se sincronizan (ruido de arranque)."""
+    src = tmp_path / "src"
+    dst = tmp_path / "dst"
+    (src / "node_modules" / "dep").mkdir(parents=True)
+    (src / "node_modules" / "dep" / "index.js").write_text("x", encoding="utf-8")
+    (src / "core").mkdir(parents=True)
+    (src / "core" / "__pycache__").mkdir(parents=True)
+    (src / "core" / "__pycache__" / "m.pyc").write_text("x", encoding="utf-8")
+    (src / "core" / "ok.py").write_text("x", encoding="utf-8")
+
+    count = da._sync_tree(src, dst)
+
+    assert count == 1
+    assert (dst / "core" / "ok.py").is_file()
+    assert not (dst / "node_modules").exists()
+    assert not (dst / "core" / "__pycache__").exists()
+
+
+def test_seed_node_modules_solo_si_falta(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Siembra node_modules una vez; si existe, no toca nada."""
+    src_nm = tmp_path / "src_nm"
+    (src_nm / "dep").mkdir(parents=True)
+    (src_nm / "dep" / "index.js").write_text("x", encoding="utf-8")
+    monkeypatch.setattr(da, "_ROOT", tmp_path)
+    (tmp_path / ".opencode").mkdir()
+    import shutil as _shutil
+
+    _shutil.copytree(src_nm, tmp_path / ".opencode" / "node_modules")
+    dst = tmp_path / "proj" / ".opencode"
+
+    assert da._seed_node_modules(dst) > 0
+    assert (dst / "node_modules" / "dep" / "index.js").is_file()
+    assert da._seed_node_modules(dst) == 0  # segunda vez: no-op

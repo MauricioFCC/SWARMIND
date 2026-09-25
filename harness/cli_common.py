@@ -1,16 +1,16 @@
 ﻿"""
-CLI Common â€” Funcionalidad compartida entre run.py y delegate.py.
+CLI Common — Funcionalidad compartida entre run.py y delegate.py.
 
-Extrae lÃ³gica duplicada de ambos entrypoints en un solo lugar,
-aplicando el patrÃ³n DRY. Incluye:
+Extrae lógica duplicada de ambos entrypoints en un solo lugar,
+aplicando el patrón DRY. Incluye:
   - setup_logging()
-  - parse_message() â€” parsing de @rol y !comandos
+  - parse_message() — parsing de @rol y !comandos
   - load_vector_store()
   - print_banner()
   - ANSI helpers
   - First-run detection
 
-REFACTOR: Elimina ~150 lÃ­neas de cÃ³digo duplicado entre run.py y delegate.py.
+REFACTOR: Elimina ~150 líneas de código duplicado entre run.py y delegate.py.
 """
 from __future__ import annotations
 
@@ -31,12 +31,12 @@ def setup_logging(level: int = logging.INFO) -> logging.Logger:
     """
     Configura logging estructurado (JSON) para todos los entrypoints.
     
-    Usa el mÃ³dulo observability/logging.py que proporciona:
+    Usa el módulo observability/logging.py que proporciona:
     - Formato JSON estructurado
     - Correlation IDs para trazabilidad
     - RED metrics (Rate, Errors, Duration)
     
-    Si el mÃ³dulo no estÃ¡ disponible, fallback a basicConfig tradicional.
+    Si el módulo no está disponible, fallback a basicConfig tradicional.
     """
     try:
         from harness.observability.logging import setup_structured_logging
@@ -56,7 +56,7 @@ def get_harness_root() -> Path:
 
 
 def get_project_root() -> Path:
-    """Retorna la ruta absoluta a la raÃ­z del proyecto."""
+    """Retorna la ruta absoluta a la raíz del proyecto."""
     return get_harness_root().parent
 
 
@@ -117,10 +117,10 @@ def parse_message(task: str) -> tuple[str | None, str]:
     """
     Parsea un mensaje extrayendo @rol: y !comandos.
     
-    AHORA CON AUTO-DETECCIÃ“N: si no hay @ explÃ­cito, detecta el rol
-    automÃ¡ticamente por el contenido del mensaje usando los roles universales:
-      - @builder: implementaciÃ³n (Rust, Go, Python, Web, Mobile, Trading, Infra)
-      - @scientist: investigaciÃ³n, papers, AI/ML, patrones
+    AHORA CON AUTO-DETECCIÓN: si no hay @ explícito, detecta el rol
+    automáticamente por el contenido del mensaje usando los roles universales:
+      - @builder: implementación (Rust, Go, Python, Web, Mobile, Trading, Infra)
+      - @scientist: investigación, papers, AI/ML, patrones
       - @guardian: calidad, seguridad, riesgo, docs, operaciones
       - @evolve: auto-mejora del sistema
       - @coordinator: default (analiza y delega)
@@ -135,7 +135,7 @@ def parse_message(task: str) -> tuple[str | None, str]:
     if task.startswith("!"):
         return None, task
 
-    # @rol: texto â€” ruteo explÃ­cito (backward compatible)
+    # @rol: texto — ruteo explícito (backward compatible)
     match = re.match(r"@(\w[\w-]*)\s*:\s*(.*)", task.strip())
     if match:
         return match.group(1), match.group(2).strip()
@@ -145,7 +145,7 @@ def parse_message(task: str) -> tuple[str | None, str]:
     if match:
         return match.group(1), match.group(2).strip()
 
-    # Auto-detecciÃ³n: sin @, detectar rol por contenido
+    # Auto-detección: sin @, detectar rol por contenido
     # Delegamos a DelegationEngine.auto_route()
     try:
         from harness.orchestrator.delegation_engine import DelegationEngine
@@ -179,7 +179,7 @@ def load_vector_store(db_path: str | None = None) -> Any:
         Instancia de LanceVectorStore
 
     Raises:
-        ImportError: Si LanceDB no estÃ¡ instalado
+        ImportError: Si LanceDB no está instalado
         RuntimeError: Si no se puede conectar
     """
     from harness.memory_rag.lance_vector_store import LanceVectorStore
@@ -197,7 +197,7 @@ def load_vector_store(db_path: str | None = None) -> Any:
 # ---------------------------------------------------------------------------
 
 def check_first_run(harness_root: Path) -> bool:
-    """Detecta si es primera ejecuciÃ³n y guÃ­a al usuario en la configuraciÃ³n."""
+    """Detecta si es primera ejecución y guía al usuario en la configuración."""
     marker_file = harness_root / ".harness_initialized"
     if marker_file.exists():
         return False
