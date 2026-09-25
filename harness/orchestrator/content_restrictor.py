@@ -79,7 +79,7 @@ def restrict_markdown(raw: str) -> str:
             "WHERE: restrict_markdown"
         )
     text = raw.strip()
-    if text.startswith("{") or text.startswith("["):
+    if text.startswith(("{", "[")):
         try:
             data = json.loads(text)
         except json.JSONDecodeError:

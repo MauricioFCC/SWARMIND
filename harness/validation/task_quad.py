@@ -77,8 +77,7 @@ def check_quad(task: dict) -> QuadReport:
         )
     missing = [f for f in QUAD_FIELDS if not _has_content(task.get(f))]
     owner = task.get("dueno")
-    if isinstance(owner, (list, tuple, set, dict)):
+    if isinstance(owner, (list, tuple, set, dict)) and "dueno" not in missing:
         # Tres responsables = nadie responsable: un solo nombre.
-        if "dueno" not in missing:
-            missing.append("dueno")
+        missing.append("dueno")
     return QuadReport(passed=not missing, missing=tuple(missing))
