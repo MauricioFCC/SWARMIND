@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import logging
 
-from ._types import (
+from .mcp_types import (
     DEFAULT_STATELESS_TIMEOUT,
     DEFAULT_TIMEOUT,
     HEADER_METHOD,

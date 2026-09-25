@@ -12,7 +12,7 @@ import time
 import uuid
 from typing import Any
 
-from ._types import (
+from .mcp_types import (
     DEFAULT_TIMEOUT,
     HEADER_METHOD,
     HEADER_NAME,
