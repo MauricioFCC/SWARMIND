@@ -58,7 +58,7 @@ class TestDeadCode:
                 str(HARNESS),
                 str(WHITELIST),
                 "--exclude",
-                EXCLUDE,
+                "*/test_*.py,harness/parallel/io_fusion.py",
                 "--min-confidence",
                 str(MIN_CONFIDENCE),
             ],

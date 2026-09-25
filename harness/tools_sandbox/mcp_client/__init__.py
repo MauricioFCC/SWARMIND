@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import logging
 
+from .core import MCPClient
 from .mcp_types import (
     DEFAULT_STATELESS_TIMEOUT,
     DEFAULT_TIMEOUT,
@@ -36,7 +37,6 @@ from .mcp_types import (
     MCPTool,
     MCPToolError,
 )
-from .core import MCPClient
 
 logger = logging.getLogger("harness.tools_sandbox.mcp_client")
 
