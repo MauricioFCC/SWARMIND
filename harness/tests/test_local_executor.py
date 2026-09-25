@@ -226,7 +226,7 @@ def test_keep_alive_passed_to_generate() -> None:
     class _KAClient(_FakeClient):
         def generate(self, model: str, prompt: str, **kwargs):
             seen.update(kwargs)
-            return {"response": "ok", "model": model}
+            return {"response": "respuesta local con keep_alive", "model": model}
 
     class _KATiers(_FakeTiers):
         def keep_alive_for(self, tier) -> str:
@@ -239,3 +239,40 @@ def test_keep_alive_passed_to_generate() -> None:
     out = ex.execute("resume esto")
     assert out.executed_locally is True
     assert seen.get("keep_alive") == "0"
+
+
+def test_is_degenerate_output_cases() -> None:
+    """Verificacion final: vacia/enana/repetitiva = degenerada; texto sano = ok."""
+    from harness.model_router.local_executor import _is_degenerate_output
+
+    assert _is_degenerate_output("") is True
+    assert _is_degenerate_output("   ") is True
+    assert _is_degenerate_output("ok") is True
+    assert _is_degenerate_output("aaaaaaaaaa") is True
+    assert _is_degenerate_output("respuesta local completa") is False
+    assert _is_degenerate_output("  resumen: tres puntos clave  ") is False
+
+
+def test_degenerate_output_falls_back_to_cloud() -> None:
+    """Salida degenerada del tier -> cloud con reason accionable (MetaRoute)."""
+    ex = _executor(client=_FakeClient(output="zzzzzzzzzz"))
+    out = ex.execute("resume esto")
+    assert out.executed_locally is False
+    assert "degenerada" in out.reason.lower()
+    assert ex.cloud_tasks == 1
+
+
+def test_unsloth_degenerate_falls_to_ollama() -> None:
+    """Unsloth degenerado no cuenta: cae a Ollama sano."""
+    ollama = _FakeClient()
+
+    class _DegenerateUnsloth(_FakeUnsloth):
+        def generate(self, model: str, prompt: str, **kwargs) -> str:
+            self.calls.append(prompt)
+            return "qqqqqqqqqq"
+
+    ex = _executor(client=ollama, unsloth_client=_DegenerateUnsloth())
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert out.output == "respuesta local"
+    assert ex.local_tasks == 1

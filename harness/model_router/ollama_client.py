@@ -205,6 +205,7 @@ class OllamaClient:
         prompt: str,
         keep_alive: str = DEFAULT_KEEP_ALIVE,
         images: list[str] | None = None,
+        options: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Genera texto con el modelo local (POST /api/generate, sin stream).
 
@@ -213,6 +214,9 @@ class OllamaClient:
             prompt: Texto de entrada para el modelo.
             keep_alive: Tiempo que el modelo permanece en RAM ("5m", "0").
             images: Lista opcional de imagenes base64 para modelos vision.
+            options: Opciones Modelfile por llamada (num_ctx, num_predict,
+                temperature, top_p, repeat_penalty, think...). None = defaults
+                del modelo (incluye num_ctx horneado si existe).
 
         Returns:
             Dict JSON completo de respuesta de Ollama (incluye "response").
@@ -229,13 +233,19 @@ class OllamaClient:
         }
         if images:
             body["images"] = images
+        if options:
+            body["options"] = dict(options)
         data = self._request("POST", "/api/generate", body=body)
         error = data.get("error")
         if error and not data.get("response"):
             raise _build_error("Ollama reporto error en generate", str(error), f"POST /api/generate (model={model})")
         return data
 
-    def chat(self, model: str, messages: list[dict], keep_alive: str = DEFAULT_KEEP_ALIVE) -> dict[str, Any]:
+    def chat(
+        self, model: str, messages: list[dict],
+        keep_alive: str = DEFAULT_KEEP_ALIVE,
+        options: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Mantiene una conversacion con el modelo local (POST /api/chat).
 
         Args:
@@ -243,6 +253,7 @@ class OllamaClient:
             messages: Mensajes de chat con formato Ollama
                 (ej. [{"role": "user", "content": "hola"}]).
             keep_alive: Tiempo que el modelo permanece en RAM ("5m", "0").
+            options: Opciones Modelfile por llamada (ver generate()).
 
         Returns:
             Dict JSON de respuesta, incluye "message.content".
@@ -255,6 +266,8 @@ class OllamaClient:
             "messages": messages,
             "keep_alive": keep_alive,
         }
+        if options:
+            body["options"] = dict(options)
         data = self._request("POST", "/api/chat", body=body)
         error = data.get("error")
         if error:

@@ -194,6 +194,29 @@ def test_generate_includes_images_when_provided(mocker: MockerFixture) -> None:
     assert body["images"] == ["aGVsbG8=", "d29ybGQ="]
 
 
+def test_generate_omits_options_when_none(mocker: MockerFixture) -> None:
+    """generate sin options → el body no incluye la clave (defaults del modelo)."""
+    mock_request = _patch_transport(
+        mocker,
+        response=_FakeResponse(200, {"response": "ok"}),
+    )
+    _client().generate(model="llama3.2:3b", prompt="x")
+    body = mock_request.call_args.kwargs["json"]
+    assert "options" not in body
+
+
+def test_generate_forwards_options_when_provided(mocker: MockerFixture) -> None:
+    """generate con options → el body las reenvia (num_ctx/num_predict/think)."""
+    mock_request = _patch_transport(
+        mocker,
+        response=_FakeResponse(200, {"response": "ok"}),
+    )
+    opts = {"num_ctx": 8192, "num_predict": 256, "temperature": 0.2}
+    _client().generate(model="llama3.2:3b", prompt="x", options=opts)
+    body = mock_request.call_args.kwargs["json"]
+    assert body["options"] == opts
+
+
 def test_generate_raises_ollama_error_on_ollama_body_error(mocker: MockerFixture) -> None:
     """generate → OllamaError cuando Ollama responde {"error": ...} en el body."""
     _patch_transport(
@@ -246,6 +269,23 @@ def test_chat_posts_messages_and_returns_dict(mocker: MockerFixture) -> None:
     assert body["model"] == "llama3.2:3b"
     assert body["messages"] == messages
     assert _url_of(mock_request.call_args).endswith("/api/chat")
+
+
+def test_chat_forwards_options_when_provided(mocker: MockerFixture) -> None:
+    """chat con options → el body las reenvia (mismo contrato que generate)."""
+    messages = [{"role": "user", "content": "hola"}]
+    mock_request = _patch_transport(
+        mocker,
+        response=_FakeResponse(
+            200, {"message": {"role": "assistant", "content": "adiós"}}
+        ),
+    )
+    _client().chat(
+        model="llama3.2:3b", messages=messages,
+        options={"num_predict": 128},
+    )
+    body = mock_request.call_args.kwargs["json"]
+    assert body["options"] == {"num_predict": 128}
 
 
 # ---------------------------------------------------------------------------

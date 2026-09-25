@@ -57,6 +57,32 @@ def _fits_vram_for(model: str) -> bool:
 
 logger = logging.getLogger("harness.model_router.local_executor")
 
+#: Salida minima aceptable (MetaRoute: verificar al final de la ruta).
+MIN_LOCAL_OUTPUT_CHARS = 8
+#: Ratio maximo del caracter dominante (degeneracion tipica SLM: "aaaa...").
+MAX_REPEAT_RATIO = 0.5
+
+
+def _is_degenerate_output(output: str) -> bool:
+    """True si la salida es vacia, enana o repetitiva (verificacion final).
+
+    Barata y sin LLM: las tareas cerradas exigen contenido real; una
+    salida degenerada predice alucinacion y debe escalar a cloud.
+
+    Args:
+        output: Texto ya generado por el modelo local.
+
+    Returns:
+        True si debe descartarse (vacia, <8 chars o repeticion >50%).
+    """
+    from collections import Counter
+
+    text = output.strip()
+    if len(text) < MIN_LOCAL_OUTPUT_CHARS:
+        return True
+    top_count = Counter(text).most_common(1)[0][1]
+    return top_count / len(text) > MAX_REPEAT_RATIO
+
 #: Allowlist de tareas cerradas (substrings ES/EN, sin fragmentos ambiguos).
 CLOSED_TASK_PATTERNS: tuple[str, ...] = (
     "resum", "formatea", "format", "extrae", "extract", "traduce",
@@ -170,6 +196,12 @@ class LocalExecutor:
         except Exception as exc:  # noqa: BLE001 - fallback a Ollama, no crash
             logger.warning("local_executor: Unsloth fallo (%s), sigue Ollama", exc)
             return None
+        if _is_degenerate_output(str(output)):
+            logger.warning(
+                "local_executor: Unsloth %s devolvio salida degenerada, "
+                "sigue Ollama", model,
+            )
+            return None
         self._local_tasks += 1
         logger.info("local_executor: tarea cerrada en Unsloth %s (0 tokens cloud)", model)
         return LocalExecutionResult(
@@ -191,7 +223,8 @@ class LocalExecutor:
         """Ejecuta la tarea en local si es cerrada, si no deriva a cloud.
 
         Orden de gates: tarea cerrada? -> Ollama disponible? -> tier no-None?
-        -> cabe en ventana (anti-loop compactacion)? Cualquier fallo
+        -> cabe en ventana (anti-loop compactacion)? -> VRAM? -> salida no
+        degenerada (verificacion final MetaRoute)? Cualquier fallo
         (incluida excepcion del modelo) deriva a cloud con reason
         accionable, sin lanzar.
 
@@ -253,6 +286,19 @@ class LocalExecutor:
                 reason=f"fallo del modelo local ({exc}): fallback a cloud",
             )
         output = str(data.get("response", "")) if isinstance(data, dict) else str(data)
+        if _is_degenerate_output(output):
+            self._cloud_tasks += 1
+            logger.warning(
+                "local_executor: %s devolvio salida degenerada "
+                "(verificacion final), fallback a cloud", model,
+            )
+            return LocalExecutionResult(
+                output="", executed_locally=False,
+                reason=(
+                    f"salida degenerada de {model} (verificacion final): "
+                    "fallback a cloud"
+                ),
+            )
         self._local_tasks += 1
         logger.info("local_executor: tarea cerrada en %s (0 tokens cloud)", model)
         return LocalExecutionResult(
