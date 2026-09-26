@@ -38,17 +38,29 @@ def _handle_iteration_end(cmd: str, harness_root, quick_fn=None, auto_fn=None) -
         auto_fn: Handler automatico inyectado (DI para tests hermeticos;
             default: el real del modulo).
     """
-    flags = _rc._parse_iteration_flags(cmd)
+    flags = _parse_iteration_flags(cmd)
 
-    # Redirect to quick/auto mode if flagged. Los handlers se resuelven
-    # por DI (inyectados) con fallback al real del modulo: el test no
-    # depende de identidad de modulo en sys.modules (robusto en suites
-    # grandes con re-imports), y el producto gana inversion de control.
+    # Redirect to quick/auto mode if flagged. Resolucion en 2 niveles:
+    # 1) DI (quick_fn/auto_fn inyectados, tests hermeticos, sin mocks);
+    # 2) late-binding via _get_pkg_attr (respeta
+    #    patch("harness.run_commands._handle_iteration_quick/auto") y es
+    #    robusto a re-imports/purgas de sys.modules como las de
+    #    test_lazy_loading: _get_pkg_attr lee sys.modules al llamar).
     if flags["quick"]:
-        (quick_fn or _handle_iteration_quick)(cmd, harness_root)
+        if quick_fn is not None:
+            quick_fn(cmd, harness_root)
+        else:
+            _rc._get_pkg_attr(
+                "_handle_iteration_quick", _handle_iteration_quick
+            )(cmd, harness_root)
         return
     if flags["auto"]:
-        (auto_fn or _handle_iteration_auto)(cmd, harness_root)
+        if auto_fn is not None:
+            auto_fn(cmd, harness_root)
+        else:
+            _rc._get_pkg_attr(
+                "_handle_iteration_auto", _handle_iteration_auto
+            )(cmd, harness_root)
         return
 
     _rc.logger.info("[Harness] Iniciando pipeline de fin de iteracion...")
