@@ -43,7 +43,7 @@ class BatchOutcome:
     """Resultado de un batch acotado.
 
     Attributes:
-        results: Resultados en orden de finalizacion de aceptadas.
+        results: Resultados en orden de entrada de aceptadas (timeouts excluidos).
         shed: Tareas descartadas por cola llena.
         timeouts: Tareas que excedieron el deadline (watchdog).
     """
@@ -130,12 +130,12 @@ class BoundedParallelExecutor:
             BatchOutcome con resultados, shed y timeouts.
         """
         pending: queue.Queue = queue.Queue(maxsize=self._queue_size)
-        accepted: list[Callable[[], str]] = []
+        accepted: list[tuple[int, Callable[[], str]]] = []
         shed = 0
-        for task in tasks:
+        for index, task in enumerate(tasks):
             try:
-                pending.put_nowait(task)
-                accepted.append(task)
+                pending.put_nowait((index, task))
+                accepted.append((index, task))
             except queue.Full:
                 if self._shed_policy is ShedPolicy.DROP_OLDEST and accepted:
                     dropped = accepted.pop(0)
@@ -143,8 +143,8 @@ class BoundedParallelExecutor:
                         pending.get_nowait()
                     except queue.Empty:
                         pass
-                    pending.put_nowait(task)
-                    accepted.append(task)
+                    pending.put_nowait((index, task))
+                    accepted.append((index, task))
                     logger.warning("bounded_executor: shed oldest (backpressure)")
                     shed += 1
                     _ = dropped
@@ -153,7 +153,9 @@ class BoundedParallelExecutor:
                     shed += 1
         with self._lock:
             self._shed_total += shed
-        results: list[str] = []
+        # (indice, resultado): se ordena al final para orden de entrada
+        # determinista (semantica Executor.map), no orden de finalizacion.
+        outcomes: list[tuple[int, str]] = []
         timeouts = 0
         lock = threading.Lock()
         threads: list[threading.Thread] = []
@@ -163,7 +165,7 @@ class BoundedParallelExecutor:
             nonlocal timeouts
             while True:
                 try:
-                    fn = pending.get_nowait()
+                    index, fn = pending.get_nowait()
                 except queue.Empty:
                     return
                 outcome = self._run_with_deadline(fn, timeout_s)
@@ -171,7 +173,7 @@ class BoundedParallelExecutor:
                     if outcome is None:
                         timeouts += 1
                     else:
-                        results.append(outcome)
+                        outcomes.append((index, outcome))
 
         for _ in range(min(self._max_workers, len(accepted))):
             thread = threading.Thread(target=_worker, daemon=True)
@@ -179,6 +181,7 @@ class BoundedParallelExecutor:
             threads.append(thread)
         for thread in threads:
             thread.join(timeout=timeout_s * len(accepted) + 5.0)
+        results = [result for _, result in sorted(outcomes)]
         with self._lock:
             self._executed += len(results)
             self._timeouts += timeouts
