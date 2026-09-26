@@ -518,7 +518,7 @@ jobs:
 
       - name: Upload coverage a Codecov
         if: always()
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
@@ -577,7 +577,7 @@ jobs:
 
       - name: Upload coverage regresion a Codecov
         if: always()
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
