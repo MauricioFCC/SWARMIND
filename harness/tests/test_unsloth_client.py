@@ -187,3 +187,14 @@ def test_empty_prompt_raises() -> None:
     """Prompt vacio falla accionable."""
     with pytest.raises(ValueError, match="WHAT"):
         _client().generate("m", "   ")
+
+
+def test_file_scheme_rejected_without_network(mocker) -> None:
+    """Esquema file: se rechaza antes de urlopen (B310/SSRF)."""
+    import urllib.request
+
+    spy = mocker.patch.object(urllib.request, "urlopen", side_effect=AssertionError("no debe haber red"))
+    bad = UnslothClient(UnslothConfig(base_url="file:///etc/passwd"))
+    with pytest.raises(UnslothError, match="WHAT"):
+        bad.list_models()
+    spy.assert_not_called()

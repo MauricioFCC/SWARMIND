@@ -19,11 +19,15 @@ Uso:
 from __future__ import annotations
 
 import logging
+import urllib.parse
 import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
 
 logger = logging.getLogger("harness.model_router.unsloth_client")
+
+#: Esquemas permitidos para urlopen (B310: file:/custom schemes bloqueados).
+ALLOWED_URL_SCHEMES: tuple[str, ...] = ("http", "https")
 
 #: Puertos candidatos (el de la sesion actual primero si se conoce).
 CANDIDATE_PORTS: tuple[int, ...] = (61767, 8080, 8000, 5000)
@@ -35,6 +39,29 @@ DEFAULT_TIMEOUT_S = 180.0
 
 class UnslothError(RuntimeError):
     """Error de comunicacion con Unsloth (WHAT+WHY+WHERE en mensaje)."""
+
+
+def _validate_http_url(url: str, base_url: str) -> str:
+    """Valida esquema http/https antes de urlopen (B310/SSRF).
+
+    Args:
+        url: URL completa a validar.
+        base_url: Base configurada (contexto del error).
+
+    Returns:
+        La misma URL si el esquema es http/https.
+
+    Raises:
+        UnslothError: Si el esquema no es http/https (file:, ftp:, etc.).
+    """
+    scheme = urllib.parse.urlsplit(url).scheme.lower()
+    if scheme not in ALLOWED_URL_SCHEMES:
+        raise UnslothError(
+            f"WHAT: esquema {scheme!r} no permitido en {url}. "
+            f"WHY: solo http/https (bloquea file:/custom schemes). "
+            f"WHERE: UnslothClient ({base_url})"
+        )
+    return url
 
 
 @dataclass(frozen=True)
@@ -67,13 +94,14 @@ def _get(path: str, base_url: str, api_key: str | None, timeout: float) -> dict:
     """
     import json
 
-    url = base_url.rstrip("/") + path
+    url = _validate_http_url(base_url.rstrip("/") + path, base_url)
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        # URL ya validada a http/https en _validate_http_url (B310/SSRF).
+        with urllib.request.urlopen(request, timeout=timeout) as response:  # nosec B310
             if response.status != 200:
                 raise UnslothError(
                     f"WHAT: HTTP {response.status} en {url}. "
@@ -233,11 +261,16 @@ class UnslothClient:
         if self._config.api_key:
             headers["Authorization"] = f"Bearer {self._config.api_key}"
         request = urllib.request.Request(
-            self._config.base_url.rstrip("/") + "/v1/chat/completions",
-            data=body, headers=headers,
+            _validate_http_url(
+                self._config.base_url.rstrip("/") + "/v1/chat/completions",
+                self._config.base_url,
+            ),
+            data=body,
+            headers=headers,
         )
         try:
-            with urllib.request.urlopen(request, timeout=timeout_s) as response:
+            # URL ya validada a http/https en _validate_http_url (B310/SSRF).
+            with urllib.request.urlopen(request, timeout=timeout_s) as response:  # nosec B310
                 if response.status != 200:
                     raise UnslothError(
                         f"WHAT: HTTP {response.status} generando. "
