@@ -142,6 +142,7 @@ class BoundedParallelExecutor:
                     try:
                         pending.get_nowait()
                     except queue.Empty:
+                        # Carrera benigna: un worker ya dreno la cola; nada que descartar.
                         pass
                     pending.put_nowait((index, task))
                     accepted.append((index, task))
