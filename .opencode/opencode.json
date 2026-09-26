@@ -1,6 +1,44 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": [".opencode/core/base_principles.md"],
+  "instructions": [
+    ".opencode/core/base_principles.md"
+  ],
+  "model": "ollama/qwen38-9b-16k",
+  "agent": {
+    "coordinator": {
+      "mode": "primary",
+      "permission": {
+        "task": {
+          "*": "ask",
+          "builder-*": "allow",
+          "scientist-*": "allow",
+          "guardian-*": "allow"
+        }
+      }
+    },
+    "builder": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "allow",
+        "bash": "ask"
+      }
+    },
+    "guardian": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "deny",
+        "bash": "allow"
+      }
+    },
+    "scientist": {
+      "mode": "subagent",
+      "permission": {
+        "edit": "deny",
+        "bash": "ask",
+        "webfetch": "allow"
+      }
+    }
+  },
   "provider": {
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
@@ -9,31 +47,38 @@
         "baseURL": "http://localhost:11434/v1"
       },
       "models": {
-        "qwen3:4b": {
-          "name": "qwen3:4b (local fast)",
-          "reasoning": false,
-          "tools": true
-        },
-        "deepseek-r1:8b": {
-          "name": "deepseek-r1:8b (local quality)",
+        "qwen38-9b-16k": {
+          "name": "Qwen3.8 9B Q4 quality (ctx 16K baked)",
           "reasoning": true,
           "tools": true
         },
-        "qwen2.5-coder:7b": {
-          "name": "qwen2.5-coder:7b (local coding)",
+        "qwopus-9b-16k": {
+          "name": "Qwopus3.5 9B Q4 coding (ctx 16K baked)",
           "reasoning": false,
+          "tools": true
+        },
+        "minicpm5-2b-32k": {
+          "name": "MiniCPM5 2B Q8 fast (ctx 32K baked)",
+          "reasoning": false,
+          "tools": true
+        },
+        "glm-z1-9b-16k": {
+          "name": "GLM-Z1 9B Q4 reasoning (ctx 16K baked)",
+          "reasoning": true,
           "tools": true
         }
       }
     }
   },
   "skills": {
-    "paths": [".opencode/skills"]
+    "paths": [
+      ".opencode/skills"
+    ]
   },
   "compaction": {
     "auto": true,
     "prune": true,
-    "reserved": 10000
+    "reserved": 2000
   },
   "tool_output": {
     "max_lines": 200,

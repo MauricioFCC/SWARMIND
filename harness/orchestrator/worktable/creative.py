@@ -86,7 +86,7 @@ class CreativeWorktable:
         for idea in ideas:
             score = idea.novelty * 0.4 + idea.feasibility * 0.6
             # Penalizar si no cumple restricciones
-            for constraint in constraints[:2]:
+            for _constraint in constraints[:2]:
                 score *= 0.8
             idea.selected = score > 0.5
             scored.append(idea)

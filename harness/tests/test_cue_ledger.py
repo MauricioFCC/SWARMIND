@@ -65,5 +65,26 @@ def test_savings_metric() -> None:
 
 
 def test_empty_ledger_renders_empty() -> None:
-    """Ledger vacio renderiza indice vacio sin error."""
+    """Ledger vacio renderiza cadena vacia."""
     assert CueLedger().render_index() == ""
+
+
+def test_valid_at_filters_by_bitemporal_range() -> None:
+    """valid_at filtra por rango [valid_from, valid_to) con None abierto."""
+    ledger = CueLedger()
+    ledger.register("siempre", source="a")
+    ledger.register("acotado", source="b",
+                    valid_from="2026-01-01", valid_to="2026-06-01")
+    assert [e.cue for e in ledger.valid_at("2026-03-01")] == ["siempre", "acotado"]
+    assert [e.cue for e in ledger.valid_at("2026-09-01")] == ["siempre"]
+    assert [e.cue for e in ledger.valid_at("2025-01-01")] == ["siempre"]
+
+
+def test_valid_at_rejects_inverted_range() -> None:
+    """Rango valid_to < valid_from lanza ValueError accionable."""
+    import pytest
+
+    ledger = CueLedger()
+    with pytest.raises(ValueError, match="rango invalido"):
+        ledger.register("mal", source="c",
+                        valid_from="2026-06-01", valid_to="2026-01-01")

@@ -46,10 +46,33 @@ class _FakeClient:
         return {"response": self._output, "model": model}
 
 
+class _FakeUnsloth:
+    """UnslothClient fake (generate retorna str directo)."""
+
+    def __init__(self, available: bool = True, models: list | None = None) -> None:
+        self._available = available
+        self._models = models if models is not None else ["unsloth/m1"]
+        self.calls: list[str] = []
+
+    def is_available(self) -> bool:
+        return self._available
+
+    def list_models(self) -> list[str]:
+        return list(self._models)
+
+    def generate(self, model: str, prompt: str, **kwargs) -> str:
+        self.calls.append(prompt)
+        return "respuesta unsloth"
+
+
 def _executor(**kw):
     from harness.model_router.ollama_tiers import CapabilityTier
 
     tiers = _FakeTiers(kw.pop("tier", CapabilityTier.FAST))
+    # VRAM hermetica por DI: sin GPU real en tests (inmune a purgas de
+    # sys.modules como las de test_lazy_loading). El escenario sin-VRAM
+    # se cubre con vram_check explicito en sus propios tests.
+    kw.setdefault("vram_check", lambda model: True)
     return LocalExecutor(client=kw.pop("client", _FakeClient()), tiers=tiers, **kw)
 
 
@@ -121,6 +144,15 @@ def test_result_is_frozen() -> None:
         out.output = "x"  # type: ignore[misc]
 
 
+def test_oversized_task_falls_back_to_cloud() -> None:
+    """Tarea que excede la ventana no va a local (anti-loop/OOM)."""
+    ex = _executor()
+    out = ex.execute("resume esto: " + "x" * 20000)
+    assert out.executed_locally is False
+    assert "ventana" in out.reason.lower()
+    assert ex.cloud_tasks == 1
+
+
 def test_savings_metric() -> None:
     """Contadores de ahorro auditables (tareas y tokens cloud evitados)."""
     ex = _executor()
@@ -128,3 +160,119 @@ def test_savings_metric() -> None:
     ex.execute("disena la arquitectura")
     assert ex.local_tasks == 1
     assert ex.cloud_tasks == 1
+
+
+def test_unsloth_preferred_over_ollama() -> None:
+    """Unsloth disponible => se usa primero (0 tokens cloud)."""
+    ollama = _FakeClient()
+    unsloth = _FakeUnsloth()
+    ex = _executor(client=ollama, unsloth_client=unsloth)
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert out.output == "respuesta unsloth"
+    assert len(unsloth.calls) == 1
+    assert ollama.calls == []
+
+
+def test_unsloth_down_falls_to_ollama() -> None:
+    """Unsloth caido => fallback a Ollama (no a cloud directo)."""
+    ollama = _FakeClient()
+    ex = _executor(client=ollama, unsloth_client=_FakeUnsloth(available=False))
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert out.output == "respuesta local"
+    assert len(ollama.calls) == 1
+
+
+def test_unsloth_explicit_model() -> None:
+    """unsloth_model override usa ese modelo."""
+    unsloth = _FakeUnsloth(models=["a", "b"])
+    ex = _executor(client=_FakeClient(), unsloth_client=unsloth,
+                   unsloth_model="b")
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert "b" in out.model
+
+
+def test_vram_guard_blocks_without_vram() -> None:
+    """Sin VRAM para el modelo va a cloud (anti-OOM)."""
+    ex = _executor(vram_check=lambda model: False)
+    out = ex.execute("resume esto")
+    assert out.executed_locally is False
+    assert "vram" in out.reason.lower()
+
+
+def test_unsloth_blocked_without_vram_falls_to_ollama() -> None:
+    """Unsloth grande sin VRAM no genera: cae a Ollama (anti-OOM)."""
+    ollama = _FakeClient()
+    unsloth = _FakeUnsloth(models=["unsloth/gemma-4-26B"])
+    ex = _executor(
+        client=ollama, unsloth_client=unsloth,
+        vram_check=lambda model: not str(model).startswith("unsloth:"),
+    )
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert out.output == "respuesta local"
+    assert unsloth.calls == []
+    assert len(ollama.calls) == 1
+
+
+def test_keep_alive_passed_to_generate() -> None:
+    """El keep_alive del tier viaja al generate (descarga en grandes)."""
+    from harness.model_router.ollama_tiers import CapabilityTier
+
+    seen: dict = {}
+
+    class _KAClient(_FakeClient):
+        def generate(self, model: str, prompt: str, **kwargs):
+            seen.update(kwargs)
+            return {"response": "respuesta local con keep_alive", "model": model}
+
+    class _KATiers(_FakeTiers):
+        def keep_alive_for(self, tier) -> str:
+            return "0"
+
+    ex = LocalExecutor(
+        client=_KAClient(), tiers=_KATiers(CapabilityTier.FAST),
+        vram_check=lambda model: True,
+    )
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert seen.get("keep_alive") == "0"
+
+
+def test_is_degenerate_output_cases() -> None:
+    """Verificacion final: vacia/enana/repetitiva = degenerada; texto sano = ok."""
+    from harness.model_router.local_executor import _is_degenerate_output
+
+    assert _is_degenerate_output("") is True
+    assert _is_degenerate_output("   ") is True
+    assert _is_degenerate_output("ok") is True
+    assert _is_degenerate_output("aaaaaaaaaa") is True
+    assert _is_degenerate_output("respuesta local completa") is False
+    assert _is_degenerate_output("  resumen: tres puntos clave  ") is False
+
+
+def test_degenerate_output_falls_back_to_cloud() -> None:
+    """Salida degenerada del tier -> cloud con reason accionable (MetaRoute)."""
+    ex = _executor(client=_FakeClient(output="zzzzzzzzzz"))
+    out = ex.execute("resume esto")
+    assert out.executed_locally is False
+    assert "degenerada" in out.reason.lower()
+    assert ex.cloud_tasks == 1
+
+
+def test_unsloth_degenerate_falls_to_ollama() -> None:
+    """Unsloth degenerado no cuenta: cae a Ollama sano."""
+    ollama = _FakeClient()
+
+    class _DegenerateUnsloth(_FakeUnsloth):
+        def generate(self, model: str, prompt: str, **kwargs) -> str:
+            self.calls.append(prompt)
+            return "qqqqqqqqqq"
+
+    ex = _executor(client=ollama, unsloth_client=_DegenerateUnsloth())
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert out.output == "respuesta local"
+    assert ex.local_tasks == 1

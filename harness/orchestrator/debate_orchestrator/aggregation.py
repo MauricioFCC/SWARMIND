@@ -10,7 +10,7 @@ class _AggregationMixin:
     """Helpers de agregacion compartidos por las estrategias de debate."""
     @staticmethod
     def _text_similarity(a: str, b: str) -> float:
-        """Compute word-overlap similarity between two strings (0.0â€“1.0)."""
+        """Compute word-overlap similarity between two strings (0.0–1.0)."""
         if not a or not b:
             return 0.0
         words_a = set(a.lower().split())
@@ -87,7 +87,7 @@ class _AggregationMixin:
         # Pick the longest output as the most detailed
         best = max(outputs.items(), key=lambda x: len(x[1]))
         return (
-            f"[SÃ­ntesis de {len(outputs)} agente(s)]\n"
+            f"[Síntesis de {len(outputs)} agente(s)]\n"
             f"Respuesta principal ({best[0]}):\n{best[1]}"
         )
 

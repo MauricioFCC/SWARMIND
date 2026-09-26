@@ -1788,7 +1788,7 @@ fail_under = 62     # Jul 2026: 71.56% (excedido)
 
 ---
 
-## 15. Modulos Frontier 2026 (ADR-0065..0073)
+## 15. Modulos Frontier 2026 (ADR-0065..0080)
 
 Anadidos sep-2026 (detalle en `docs/src/es/adr/`, indice en `docs/src/es/adr/README.md`):
 
@@ -1802,8 +1802,24 @@ Anadidos sep-2026 (detalle en `docs/src/es/adr/`, indice en `docs/src/es/adr/REA
 | Batch vote | `orchestrator/batch_vote.py` | 0073 | k votos en 1 llamada (parametro n, input 1× vs k×) + fallback |
 | Structured enforcer | `orchestrator/structured_enforcer.py` | 0073 | JSON schema + retries con feedback (99.9% adherencia) |
 | Ollama CODING tier | `model_router/ollama_tiers.py` | 0069 | `qwen2.5-coder:7b` con precedencia sobre QUALITY |
-| PEC universal | `scripts/apply_pec.py` | 0072 | persona experta + canon frontera en las 34 skills (171 tests) |
-| Principios v3.0.0 | `.opencode/core/base_principles.md` | 0070 | RPA + CPD + taxonomia CHECK/GUIDE (8 categorias, IDs estables) |
+| PEC universal | `scripts/apply_pec.py` | 0072 | persona experta + canon frontera en las 35 skills (176 tests) |
+| Principios v3.1.0 | `.opencode/core/base_principles.md` | 0070 | RPA + CPD + taxonomia CHECK/GUIDE (8 categorias, IDs estables) |
+
+## 16. Skills/Agentes, Tooling y Validación (ADR-0075..0080)
+
+| Modulo | Ruta | ADR | Resumen |
+|--------|------|-----|---------|
+| Skill composition | `context/skill_composition.py` | 0075 | `calls:` lazy + anti-ciclos + tiers invocation + poda set-compatibility |
+| Competence model | `orchestrator/competence_model.py` | 0075 | Beta posterior por agente×skill + Thompson + imp@k (integrado en AgentSelector) |
+| Fanout gate | `orchestrator/fanout_gate.py` | 0075 | anti-sobre-descomposición: baseline ≥80% → single (en voting y planner) |
+| Tool output filter | `orchestrator/tool_output_filter.py` | 0076 | wrapper rtk (−90% output bash, opt-in passthrough) |
+| Idempotency guard | `orchestrator/idempotency_guard.py` | 0076 | dedup de efectos por (key, hash-payload) + replay cache |
+| Verify-replan gate | `orchestrator/verify_replan_gate.py` | 0079 | umbrales VMAO (STOP ≥80% o 75%+50%) |
+| Trace viewer | `orchestrator/trace_viewer.py` | 0079 | export trace.jsonl + replay determinista sin LLM |
+| Skill agent-rigor | `.opencode/skills/agent-rigor/` | 0079 | gates pre-merge, anti-pintar-verde, MS≥70% (PEC-35) |
+| Spec gate | `validation/cp_spec_gate.py` | 0080 | 4 pilares pre-código (edges/invariants/complexity/io_constraints) |
+| Dual verify | `validation/dual_verify.py` | 0080 | fast vs brute-force con mismatches indexados |
+| Backup Drive | `scripts/backup_to_gdrive.py` | — | robocopy /E idempotente, sensibles opt-in SEG |
 
 ---
 

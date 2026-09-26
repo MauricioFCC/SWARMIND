@@ -27,11 +27,11 @@ from .registry import _RegistryMixin
 
 
 class MultiAPIProvider(_RegistryMixin, _ExecutionMixin):
-    """AbstracciÃ³n multi-provider con failover automÃ¡tico y balanceo de carga.
+    """Abstracción multi-provider con failover automático y balanceo de carga.
 
-    Gestiona mÃºltiples proveedores LLM (OpenAI, Anthropic, Google, Mistral,
-    DeepSeek) con registro dinÃ¡mico, health checks periÃ³dicos, round-robin
-    por tier, tracking de costos y mÃ©tricas de latencia P50/P95/P99.
+    Gestiona múltiples proveedores LLM (OpenAI, Anthropic, Google, Mistral,
+    DeepSeek) con registro dinámico, health checks periódicos, round-robin
+    por tier, tracking de costos y métricas de latencia P50/P95/P99.
 
     Ejemplo:
         mcp = MultiAPIProvider()
@@ -48,7 +48,7 @@ class MultiAPIProvider(_RegistryMixin, _ExecutionMixin):
     def __init__(self) -> None:
         """Inicializa el gestor multi-provider.
 
-        WHY: Se requiere un estado compartido para proveedores, mÃ©tricas y
+        WHY: Se requiere un estado compartido para proveedores, métricas y
         controles de costo a nivel de instancia.
         WHERE: Constructor de MultiAPIProvider.
         """

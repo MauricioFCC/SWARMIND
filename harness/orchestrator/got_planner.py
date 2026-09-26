@@ -15,13 +15,13 @@ Basado en:
 
 from __future__ import annotations
 
-import hashlib
 import logging
 import random
 import time
 from collections.abc import AsyncGenerator
 from enum import Enum
 
+from harness.common import short_hash
 from harness.orchestrator.thought_graph import Thought, ThoughtGraph
 
 logger = logging.getLogger(__name__)
@@ -424,7 +424,7 @@ class GoTPlanner:
             Hash hexadecimal.
         """
         raw: str = f"{time.time_ns()}{random.random()}"
-        return hashlib.sha256(raw.encode()).hexdigest()[:16]
+        return short_hash(raw, 16)
 
     def get_stats(self) -> dict[str, int]:
         """Retorna estadisticas del planificador.

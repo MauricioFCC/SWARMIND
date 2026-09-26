@@ -46,15 +46,15 @@ class _ExecutionMixin:
             model: Nombre del modelo a ejecutar.
             prompt: Texto de entrada para el modelo.
             fallback: Si es True, intenta failover a otros proveedores.
-            agent_role: Rol del agente (para lÃ­mite de tokens).
-            max_tokens: MÃ¡ximo de tokens de salida (opcional, sobreescribe
+            agent_role: Rol del agente (para límite de tokens).
+            max_tokens: Máximo de tokens de salida (opcional, sobreescribe
                 el valor por rol).
 
         Returns:
-            ExecutionResult con el resultado de la ejecuciÃ³n.
+            ExecutionResult con el resultado de la ejecución.
 
         WHY: Abstrae la complejidad de elegir proveedor, manejar fallos
-        y reintentar automÃ¡ticamente.
+        y reintentar automáticamente.
         WHERE: execute en MultiAPIProvider.
         """
         if max_tokens is None:
@@ -70,8 +70,8 @@ class _ExecutionMixin:
                 model=model,
                 duration_ms=0,
                 error=(
-                    f"Model '{model}' no encontrado en ningÃºn proveedor registrado. "
-                    "WHY: El modelo debe estar listado en algÃºn ProviderConfig.models. "
+                    f"Model '{model}' no encontrado en ningún proveedor registrado. "
+                    "WHY: El modelo debe estar listado en algún ProviderConfig.models. "
                     "WHERE: execute"
                 ),
             )
@@ -93,20 +93,20 @@ class _ExecutionMixin:
         agent_role: str = "*",
         max_tokens: int | None = None,
     ) -> ExecutionResult:
-        """Ejecuta un modelo intentando mÃºltiples proveedores en orden.
+        """Ejecuta un modelo intentando múltiples proveedores en orden.
 
-        A diferencia de execute(), este mÃ©todo ITERA sobre todos los
+        A diferencia de execute(), este método ITERA sobre todos los
         proveedores registrados que tengan el modelo, en orden de tier
         (premium > standard > budget), hasta que uno responda exitosamente.
 
         Args:
             model: Nombre del modelo a ejecutar.
             prompt: Texto de entrada.
-            agent_role: Rol del agente para lÃ­mite de tokens.
-            max_tokens: MÃ¡ximo de tokens de salida.
+            agent_role: Rol del agente para límite de tokens.
+            max_tokens: Máximo de tokens de salida.
 
         Returns:
-            ExecutionResult con el primer resultado exitoso, o el Ãºltimo
+            ExecutionResult con el primer resultado exitoso, o el último
             error si todos fallan.
         """
         return self.execute(
@@ -134,10 +134,10 @@ class _ExecutionMixin:
             primary_provider: Proveedor primario.
             fallback: Habilitar failover.
             agent_role: Rol del agente.
-            max_tokens: LÃ­mite de tokens de salida.
+            max_tokens: Límite de tokens de salida.
 
         Returns:
-            ExecutionResult del primer Ã©xito o Ãºltimo error.
+            ExecutionResult del primer éxito o último error.
         """
         # Construir la secuencia de proveedores a intentar
         candidates = [primary_provider]
@@ -187,7 +187,7 @@ class _ExecutionMixin:
             last_error = result.error
             self._record_error(provider_name, result.error or "Unknown error")
             logger.warning(
-                "Provider '%s' fallÃ³ para modelo '%s': %s. "
+                "Provider '%s' falló para modelo '%s': %s. "
                 "WHY: Failover al siguiente proveedor. "
                 "WHERE: _execute_with_chain",
                 provider_name, model, result.error,
@@ -202,8 +202,8 @@ class _ExecutionMixin:
             duration_ms=round(elapsed, 2),
             error=(
                 f"Todos los proveedores fallaron para modelo '{model}'. "
-                f"Ãšltimo error: {last_error}. "
-                "WHY: La cadena de failover se agotÃ³. "
+                f"Último error: {last_error}. "
+                "WHY: La cadena de failover se agotó. "
                 "WHERE: _execute_with_chain"
             ),
         )
@@ -216,14 +216,14 @@ class _ExecutionMixin:
         prompt: str,
         max_tokens: int,
     ) -> ExecutionResult:
-        """Ejecuta el prompt en un proveedor especÃ­fico usando su API.
+        """Ejecuta el prompt en un proveedor específico usando su API.
 
         Args:
             provider_name: Nombre del proveedor.
-            config: ConfiguraciÃ³n del proveedor.
+            config: Configuración del proveedor.
             model: Modelo a usar.
             prompt: Prompt de entrada.
-            max_tokens: MÃ¡ximo de tokens de salida.
+            max_tokens: Máximo de tokens de salida.
 
         Returns:
             ExecutionResult del proveedor.
@@ -245,7 +245,7 @@ class _ExecutionMixin:
                 provider=provider_name,
             )
 
-        # Normalizar nombre a minÃºsculas para identificar tipo de API
+        # Normalizar nombre a minúsculas para identificar tipo de API
         pname = provider_name.lower()
 
         try:
@@ -256,9 +256,9 @@ class _ExecutionMixin:
             elif pname in ("openai", "mistral", "deepseek", "zenfree"):
                 result = self._execute_openai_compat(config, api_key, model, prompt, max_tokens)
             else:
-                # Intento genÃ©rico OpenAI-compatible
+                # Intento genérico OpenAI-compatible
                 logger.debug(
-                    "Provider '%s' no tiene handler especÃ­fico, usando OpenAI-compat. "
+                    "Provider '%s' no tiene handler específico, usando OpenAI-compat. "
                     "WHERE: _execute_on_provider",
                     provider_name,
                 )

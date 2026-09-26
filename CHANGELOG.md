@@ -2,6 +2,28 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-09-08/09] ADR-0074..0080 + agent-rigor + opencode local + merge a main
+
+### Skills y agentes
+- **35 skills** (nueva `agent-rigor`: gates pre-merge, anti-pintar-verde, MS≥70%; PEC + registry + 176 tests PEC).
+- **Composición de skills** (ADR-0075): `calls:` lazy + anti-ciclos + tiers `invocation:` + poda set-compatibility; piloto `swarm-release-ops → security-audit`.
+- **Competencia Beta/Thompson** en `AgentSelector` (re-rank con evidencia) + `fanout_gate` en `vote_on_task` y `adaptive_planner` (baseline ≥80% → single).
+- **Permisos por agente** en `opencode.json` (coordinator primary; builder/guardian/scientist least-privilege).
+- **opencode local por defecto** (este equipo): `"model": "ollama/qwen3:4b"` + 6 modelos registrados.
+
+### Routing, contexto y validación
+- **ADR-0074**: `artifact_store`, `cue_ledger` (−42%), `compaction_calibration` (AgeMem), `model_efficiency_report`.
+- **ADR-0076**: `tool_output_filter` (rtk), `idempotency_guard`, `structured_enforcer` strict keys, `TgrepBackend`; principios TOOLING (Python/bash, PowerShell prohibido).
+- **ADR-0078**: `LocalExecutor` (triviales en local, 0 tokens cloud) + `pressure()` + `prune_then_summarize` + R1 en WFP.
+- **ADR-0079**: `verify_replan_gate` (VMAO) + `trace_viewer` (replay sin LLM).
+- **ADR-0080**: `cp_spec_gate` (4 pilares) + `dual_verify` (fast vs brute-force).
+- **Ollama**: filtro `is_frontier_only()` (None → cloud justificado).
+
+### Infra y docs
+- **PR #16 mergeado a `main`** (`d3934fe`): required {lint, test, security} verdes; CodeQL v4; threads resueltos.
+- **Backup a Google Drive**: `scripts/backup_to_gdrive.py` (robocopy /E idempotente, excludes junk, sensibles opt-in SEG).
+- **Principios v3.1.0** + TDD adversarial (ADR-0077); **5276 tests**, 211 archivos de test; ruff/vulture 0.
+
 ## [2026-09-07] Frontier harvest ADR-0065..0073 + PEC universal + CI verdes
 
 ### Skills

@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from .constants import (
+from .mcp_types import (
     DEFAULT_STATELESS_TIMEOUT,
     MCP_VERSION,
     STATELESS_DISCOVER_RPC,

@@ -163,7 +163,7 @@ class TaskOrchestrator(_BroadcastingMixin):
     async def process_completion(
         self, session_id: str, subtask_id: str, result: str,
     ) -> OrchestratorResult:
-        """Procesa la finalizaciÃ³n de una subtask con self-healing (async).
+        """Procesa la finalización de una subtask con self-healing (async).
 
         Args:
             session_id: The session ID.
@@ -180,10 +180,10 @@ class TaskOrchestrator(_BroadcastingMixin):
         session = self._session_ctx.get_session(session_id)
         if not session:
             StructuredLogRecord.warning(
-                "session_not_found", message=f"SesiÃ³n {session_id} no encontrada",
+                "session_not_found", message=f"Sesión {session_id} no encontrada",
                 session_id=session_id,
             )
-            return self._error("SesiÃ³n no encontrada")
+            return self._error("Sesión no encontrada")
 
         healing = self._get_healing(session_id)
         healing.record_progress()

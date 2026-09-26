@@ -1,5 +1,5 @@
 ﻿"""
-Skill Generator â€” Hermes-inspired auto-skill creation.
+Skill Generator — Hermes-inspired auto-skill creation.
 
 When a multi-step task succeeds with >= 5 tool calls, the SkillGenerator
 auto-generates a SKILL.md file in .opencode/skills/auto/ and registers it

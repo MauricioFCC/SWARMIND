@@ -1,5 +1,5 @@
 ﻿"""
-FTS Search â€” Full-text search sobre memoria (inspirado en FTS5 de Hermes Agent).
+FTS Search — Full-text search sobre memoria (inspirado en FTS5 de Hermes Agent).
 
 Hermes Agent usa SQLite FTS5 para busqueda full-text sobre todas las sesiones.
 Nosotros implementamos una capa similar sobre LanceDB, con soporte para:

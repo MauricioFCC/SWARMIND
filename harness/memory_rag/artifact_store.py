@@ -16,12 +16,13 @@ Uso:
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+
+from harness.common import short_hash
 
 logger = logging.getLogger("harness.memory_rag.artifact_store")
 
@@ -62,7 +63,7 @@ def _handle_for(content: str) -> str:
     Returns:
         Handle hexadecimal corto (determinista por contenido).
     """
-    return hashlib.sha256(content.encode("utf-8")).hexdigest()[:_HASH_LEN]
+    return short_hash(content, _HASH_LEN)
 
 
 class ArtifactStore:
@@ -151,5 +152,9 @@ class ArtifactStore:
                 f"limpiada). WHERE: ArtifactStore.retrieve (dir={self._cache_dir})"
             )
         payload = json.loads(path.read_text(encoding="utf-8"))
-        lines = str(payload.get("content", "")).splitlines()
-        return "\n".join(lines[offset:])
+        content = str(payload.get("content", ""))
+        lines = content.splitlines()
+        out = "\n".join(lines[offset:])
+        if content.endswith("\n") and out:
+            out += "\n"
+        return out

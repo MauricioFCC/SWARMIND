@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 
 @dataclass
 class AgentPerformanceRecord:
-    """Registro de rendimiento de un agente en una sesiÃ³n."""
+    """Registro de rendimiento de un agente en una sesión."""
     session_id: str
     agent_name: str
     task: str = ""
@@ -80,7 +80,7 @@ class SkillEffectivenessRecord:
 
 @dataclass
 class TelemetryEventRecord:
-    """Registro de un evento de telemetrÃ­a."""
+    """Registro de un evento de telemetría."""
     event_type: str
     session_id: str = ""
     agent: str = ""
@@ -108,7 +108,7 @@ class TelemetryEventRecord:
 
 @dataclass
 class SessionKPIRecord:
-    """KPIs agregados de una sesiÃ³n completa."""
+    """KPIs agregados de una sesión completa."""
     session_id: str
     task: str = ""
     project: str = ""

@@ -74,7 +74,7 @@ class _StrategiesMixin:
             rounds.append(round2)
 
         else:
-            # Single round â€” pick best by agreement directly
+            # Single round — pick best by agreement directly
             winner_output, winner_agreement = self._majority_winner(all_outputs)
 
         # Determine final answer
@@ -245,7 +245,7 @@ class _StrategiesMixin:
             round2.critique_feedback[critic] = critique
             feedback_so_far[critic] = critique
             self._log_agent_message(session_id, critic, task, critique, round_num=2, phase="critique")
-            round2.confidence = 0.4  # critique phase â€” lower confidence
+            round2.confidence = 0.4  # critique phase — lower confidence
             rounds.append(round2)
 
         # --- Round 3 (optional): Refinement by primary ---

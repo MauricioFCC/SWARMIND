@@ -1,5 +1,5 @@
 ﻿"""
-SkillBundler â€” Dynamic Agent Composition from Skill Registry.
+SkillBundler — Dynamic Agent Composition from Skill Registry.
 
 Implementacion del patron SIGMA (Skill-Incidence Graphs, arXiv:2606.19758):
 Agentes como bundles de skills reusables, compuestos dinamicamente segun la tarea.
@@ -8,7 +8,7 @@ Agentes como bundles de skills reusables, compuestos dinamicamente segun la tare
 Usage:
     bundler = SkillBundler()
     agents = bundler.compose("Desarrollar API REST en Rust con autenticacion JWT")
-    # â†’ [AgentConfig(name="builder", skills=["rust-lang", "architecture", "security-audit"]), ...]
+    # → [AgentConfig(name="builder", skills=["rust-lang", "architecture", "security-audit"]), ...]
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ _SKILL_REGISTRY_PATH = Path(__file__).resolve().parent.parent.parent / ".opencod
 # Skill to Agent Mapping (SIGMA incidence matrix)
 # ---------------------------------------------------------------------------
 
-# Mapa de skills â†’ agente primario que deberia ejecutarlos
+# Mapa de skills → agente primario que deberia ejecutarlos
 SKILL_TO_AGENT: dict[str, str] = {
     "alpha-research": "scientist",
     "evolve": "evolve",
@@ -47,9 +47,28 @@ SKILL_TO_AGENT: dict[str, str] = {
     "architecture": "scientist",
     "data-science": "scientist",
     "security-audit": "guardian",
+    "agent-rigor": "guardian",
+    "atdd-spec": "builder",
+    "behavioral-economics": "scientist",
+    "business-strategy": "scientist",
+    "communication": "builder",
+    "creative-design": "builder",
+    "devops-infra": "builder",
+    "diagram-design": "builder",
+    "education": "scientist",
+    "ethics": "guardian",
+    "linguistics": "scientist",
+    "physical-sciences": "scientist",
+    "process-over-tools": "coordinator",
+    "project-management": "builder",
+    "psychology": "scientist",
+    "risk-intelligence": "scientist",
+    "sociology": "scientist",
+    "sustainability": "scientist",
+    "swarm-release-ops": "builder",
 }
 
-# Mapa de dominios â†’ skills relevantes
+# Mapa de dominios → skills relevantes
 DOMAIN_SKILLS: dict[str, list[str]] = {
     "web": ["frontend-uiux", "security-audit", "rust-lang"],
     "api": ["architecture", "rust-lang", "security-audit", "data-science"],
@@ -64,7 +83,8 @@ DOMAIN_SKILLS: dict[str, list[str]] = {
     "legal": ["legal-doc", "science-doc"],
     "health": ["healthtech", "data-science", "security-audit"],
     "retail": ["pos-retail", "frontend-uiux", "security-audit"],
-    "devops": ["rust-lang", "security-audit"],
+    "devops": ["rust-lang", "security-audit", "devops-infra", "swarm-release-ops"],
+    "quality": ["agent-rigor", "atdd-spec", "security-audit"],
     "general": ["architecture", "security-audit", "data-science", "rust-lang"],
 }
 
@@ -84,6 +104,7 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
     "health": ["health-record", "salud", "hospital", "paciente", "hipaa"],
     "retail": ["retail", "punto de venta", "pos", "tienda", "inventario", "facturacion"],
     "devops": ["devops", "ci/cd", "deploy", "kubernetes", "docker", "infraestructura"],
+    "quality": ["quality gate", "mutation testing", "code review", " QA ", " TDD ", "cobertura"],
 }
 
 
@@ -209,7 +230,7 @@ class SkillBundler:
         domain = self.detect_domain(task)
         selected_skills = self.select_skills(domain, task)
 
-        # Construir matriz de incidencia skills â†’ agentes
+        # Construir matriz de incidencia skills → agentes
         agent_bundles: dict[str, list[str]] = {a: [] for a in available_agents}
         for skill in selected_skills:
             primary_agent = SKILL_TO_AGENT.get(skill)

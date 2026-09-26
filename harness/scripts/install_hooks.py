@@ -1,5 +1,5 @@
 """
-install_hooks.py â€” Git pre-commit hook installer for the Swarmind Harness.
+install_hooks.py — Git pre-commit hook installer for the Swarmind Harness.
 
 Installs a **self-contained local** pre-commit hook that runs the
 end-of-iteration pipeline. The hook is project-local and does NOT
@@ -25,7 +25,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# â”€â”€ Paths (relative to this installer script) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Paths (relative to this installer script) ──────────────────────────
 _HERE = Path(__file__).resolve().parent            # harness/scripts/
 _HARNESS_ROOT = _HERE.parent                        # harness/
 _PROJECT_ROOT = _HARNESS_ROOT.parent                # project root (where .git lives)
@@ -35,10 +35,10 @@ _HOOK_PATH = _HOOKS_DIR / "pre-commit"
 _BACKUP_PATH = _HOOKS_DIR / "pre-commit.Swarmind.bak"
 _STATUS_PATH = _HARNESS_ROOT / "db" / ".hook_status.json"
 
-# â”€â”€ Self-contained hook template â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Self-contained hook template ──────────────────────────────────────
 # This script is written into .git/hooks/pre-commit.
 # It uses ONLY stdlib, resolves paths relative to __file__, and is
-# fully autonomous â€” no external template dependency.
+# fully autonomous — no external template dependency.
 _LOCAL_HOOK_TEMPLATE = r'''#!/bin/sh
 # PRE-COMMIT HOOK -- Auto-generado por Swarmind Harness (portable, ADR-0035)
 # 1) QA rapido (pipeline end_of_iteration --pre-commit --quick)
@@ -83,7 +83,7 @@ exit 0
 '''
 
 
-# â”€â”€ ANSI colours â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── ANSI colours ──────────────────────────────────────────────────────
 _RED = "\033[91m"
 _GREEN = "\033[92m"
 _YELLOW = "\033[93m"
@@ -138,7 +138,7 @@ def _print(*args, **kwargs) -> None:
         print(*safe_args, **kwargs)
 
 
-# â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Helpers ───────────────────────────────────────────────────────────
 
 def _is_git_repo() -> bool:
     """Check if PROJECT_ROOT is inside a git repository."""
@@ -214,7 +214,7 @@ def _prompt_yes_no(prompt: str, default: str = "Y") -> bool:
         return default == "Y"
 
 
-# â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ── Public API ────────────────────────────────────────────────────────
 
 def install_hook() -> bool:
     """Install the self-contained local pre-commit hook.
@@ -232,14 +232,14 @@ def install_hook() -> bool:
 
     _HOOKS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # â”€â”€ Backup existing hook / legacy migration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Backup existing hook / legacy migration ────────────────────
     if _HOOK_PATH.exists():
         if _is_legacy_hook():
             _print()
-            _print(f"  {_warn('[!]')} Se detectÃ³ un hook legacy apuntando al template Swarmind.")
+            _print(f"  {_warn('[!]')} Se detectó un hook legacy apuntando al template Swarmind.")
             _print(f"  {_warn('[!]')} Este hook deja de funcionar si el template se mueve o elimina.")
             _print()
-            if _prompt_yes_no("  Â¿Migrar a hook local autocontenido?", default="Y"):
+            if _prompt_yes_no("  ¿Migrar a hook local autocontenido?", default="Y"):
                 _print(f"  {_ok('[OK]')} Migrando a hook local...")
                 if not _BACKUP_PATH.exists():
                     shutil.copy2(str(_HOOK_PATH), str(_BACKUP_PATH))
@@ -255,9 +255,9 @@ def install_hook() -> bool:
             else:
                 _print(f"  {_warn('[WARN]')} Backup ya existe: {_BACKUP_PATH}")
     else:
-        _print(f"  {_ok('[OK]')} No habÃ­a hook previo.")
+        _print(f"  {_ok('[OK]')} No había hook previo.")
 
-    # â”€â”€ Write the new self-contained hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Write the new self-contained hook ──────────────────────────
     try:
         with open(_HOOK_PATH, "w", encoding="utf-8", newline="\n") as f:
             f.write(_LOCAL_HOOK_TEMPLATE)
@@ -269,8 +269,8 @@ def install_hook() -> bool:
         _print()
         _print(f"  {_ok('[OK]')} Hook LOCAL instalado: {_HOOK_PATH}")
         _print()
-        _print(f"  {_bold('Hook autocontenido â€” no depende de rutas externas.')}")
-        _print(f"  {_bold('En cada commit ejecutarÃ¡ (modo rÃ¡pido):')}")
+        _print(f"  {_bold('Hook autocontenido — no depende de rutas externas.')}")
+        _print(f"  {_bold('En cada commit ejecutará (modo rápido):')}")
         _print("    harness/scripts/end_of_iteration.py --pre-commit --quick")
         _print()
         _print("  Para saltar el hook: git commit --no-verify")
@@ -300,10 +300,10 @@ def uninstall_hook() -> bool:
         _print(f"  {_ok('[OK]')} Hook original restaurado desde backup.")
     elif is_ours:
         _HOOK_PATH.unlink()
-        _print(f"  {_ok('[OK]')} Hook eliminado (no habÃ­a backup previo).")
+        _print(f"  {_ok('[OK]')} Hook eliminado (no había backup previo).")
     else:
         _print(f"  {_warn('[WARN]')} El hook actual no fue instalado por Swarmind Harness.")
-        _print(f"  {_warn('[WARN]')} No se modificÃ³. Backup disponible: {_BACKUP_PATH}")
+        _print(f"  {_warn('[WARN]')} No se modificó. Backup disponible: {_BACKUP_PATH}")
         return False
 
     _save_status(False)
@@ -356,7 +356,7 @@ def show_status() -> None:
 
     _print()
     _print(f"  {_bold('Estado del Hook Pre-Commit')}")
-    _print(f"  {'â”€' * 50}")
+    _print(f"  {'─' * 50}")
 
     if not is_git:
         _print(f"  {_err('[ERROR]')} No es un repositorio Git.")
@@ -378,9 +378,9 @@ def show_status() -> None:
 
     last_run = _get_last_run_info()
     if last_run:
-        _print(f"  Ãšltimo:   {last_run}")
+        _print(f"  Último:   {last_run}")
     elif installed:
-        _print(f"  Ãšltimo:   {_warn('Sin ejecuciones registradas')}")
+        _print(f"  Último:   {_warn('Sin ejecuciones registradas')}")
 
     last_status_update = status.get("timestamp", "")
     if last_status_update:

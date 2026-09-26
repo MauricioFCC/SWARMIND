@@ -244,7 +244,7 @@ def main() -> None:
         logger.info("")
         logger.info("Siguiente paso (opcional):")
         logger.info("  python scripts/deploy_all.py --dry-run   # Ver proyectos a desplegar")
-        logger.info("  python scripts/deploy_all.py             # Desplegar a proyectos DEV-SPACE")
+        logger.info("  python scripts/deploy_all.py             # Desplegar a proyectos del workspace")
         logger.info("  python scripts/config_swarmind.py        # Menú de configuración")
         logger.info("  python scripts/backup_memory.py --list   # Ver backups de memoria")
         sys.exit(0)

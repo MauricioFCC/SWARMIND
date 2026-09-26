@@ -1,4 +1,4 @@
-﻿"""Hermes Agent Builder â€” Construye agentes que funcionan, elimina el resto.
+﻿"""Hermes Agent Builder — Construye agentes que funcionan, elimina el resto.
 
 Observa la cognition store (asi_cognition_store) buscando patrones de tareas
 exitosas. Cuando un tipo de tarea se repite N veces con alta puntuacion,

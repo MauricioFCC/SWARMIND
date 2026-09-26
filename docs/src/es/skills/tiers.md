@@ -3,7 +3,7 @@
 > Fuente: paper **"@skills: Attention Is All You Have"** (arXiv:2608.12610) + **ADR-0053** (`harness/context/skill_residency.py`) + SkillsBench (retrieval colapsa 29.6%@5 → 3.3%@100).
 
 ## El problema
-Cada skill instalada paga **50–280 tokens en CADA mensaje** (standing tax) y compite por **<100 slots confiables de auto-trigger**. Con 34 skills y 5270 tokens si todas fueran INSTALLED, el modelo install-all estrangula el ecosistema.
+Cada skill instalada paga **50–280 tokens en CADA mensaje** (standing tax) y compite por **<100 slots confiables de auto-trigger**. Con 35 skills y ~5400 tokens si todas fueran INSTALLED, el modelo install-all estrangula el ecosistema.
 
 ## Los tres tiers
 
@@ -13,9 +13,9 @@ Cada skill instalada paga **50–280 tokens en CADA mensaje** (standing tax) y c
 | **SAVED** | 0 tokens | Copia vendida al proyecto (`.atskills/`); playbooks del equipo (10–30) |
 | **INSTALLED** | frontmatter (~50–100 tok) | Solo lo que debe disparar sin ser pedido; **máximo 10** |
 
-## Recomendación 2026-09-07 (34 skills, PEC universal)
+## Recomendación 2026-09-07 (35 skills, PEC universal)
 - **INSTALLED (≤10):** las de uso diario del harness (coordinator/builder/guardian): `architecture`, `security-audit`, `data-science`, `evolve`, `frontend-uiux`, `rust-lang`, `devops-infra`, `swarm-release-ops`, `atdd-spec`, `quant-trading` (ajustar por proyecto).
-- **REFERENCE (resto):** dominio y long tail, invocación explícita por nombre.
+- **REFERENCE (resto, incl. `agent-rigor`):** dominio y long tail, invocación explícita por nombre.
 - **PEC universal (ADR-0072):** todas las skills llevan `PERSONA & CANON` (persona experta + canon frontera por especialidad + anti-hedging) — el canon aplica igual en REFERENCE que INSTALLED (se lee al punto de uso).
 - **Fusionadas:** `responsive-ui` → `frontend-uiux` v1.2.0 (2026-09-06).
 

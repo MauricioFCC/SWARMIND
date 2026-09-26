@@ -19,10 +19,11 @@ Uso:
 
 from __future__ import annotations
 
-import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+
+from harness.common import short_hash
 
 logger = logging.getLogger("harness.memory_rag.cue_ledger")
 
@@ -43,12 +44,43 @@ class CueEntry:
         source: Procedencia (ruta o id).
         content_hash: Hash del contenido del source en el momento del registro.
         registered_at: Timestamp del registro (del clock inyectado).
+        ttl_s: Tiempo de vida en segundos (None = no expira; CL-Bench:
+            lessons stale son el fallo #1 de memoria).
+        valid_from: Inicio de validez en el mundo (ISO YYYY-MM-DD o None).
+        valid_to: Fin de validez en el mundo (ISO o None = vigente).
     """
 
     cue: str
     source: str
     content_hash: str
     registered_at: float
+    ttl_s: float | None = None
+    valid_from: str | None = None
+    valid_to: str | None = None
+
+    def is_expired(self, now: float) -> bool:
+        """True si el TTL vencio respecto a ``now``.
+
+        Args:
+            now: Timestamp actual del clock.
+
+        Returns:
+            False si no tiene TTL o aun esta vigente.
+        """
+        return self.ttl_s is not None and (now - self.registered_at) > self.ttl_s
+
+    def valid_at(self, iso_date: str) -> bool:
+        """True si el hecho es valido en la fecha ISO dada (bitemporal).
+
+        Args:
+            iso_date: Fecha YYYY-MM-DD a evaluar.
+
+        Returns:
+            True si valid_from <= fecha < valid_to (None = abierto).
+        """
+        if self.valid_from is not None and iso_date < self.valid_from:
+            return False
+        return not (self.valid_to is not None and iso_date >= self.valid_to)
 
 
 def _content_hash(source: str) -> str:
@@ -66,7 +98,7 @@ def _content_hash(source: str) -> str:
         basis = f"{source}:{stat.st_mtime_ns}:{stat.st_size}"
     else:
         basis = source
-    return hashlib.sha256(basis.encode("utf-8")).hexdigest()[:_HASH_LEN]
+    return short_hash(basis, _HASH_LEN)
 
 
 class CueLedger:
@@ -90,6 +122,12 @@ class CueLedger:
         self._entries: list[CueEntry] = []
         self._injected: set[str] = set()
         self._dedup_hits = 0
+        self._pruned_expired = 0
+
+    @property
+    def pruned_expired(self) -> int:
+        """Cues expirados podados (metrica anti-stale CL-Bench)."""
+        return self._pruned_expired
 
     @property
     def dedup_hits(self) -> int:
@@ -101,18 +139,25 @@ class CueLedger:
         """Tokens ahorrados por dedup (cue vs contenido completo)."""
         return self._dedup_hits * (_FULL_CONTENT_TOKENS - _CUE_TOKENS)
 
-    def register(self, cue: str, source: str) -> CueEntry:
-        """Registra un hecho con su procedencia.
+    def register(
+        self, cue: str, source: str, ttl_s: float | None = None,
+        valid_from: str | None = None, valid_to: str | None = None,
+    ) -> CueEntry:
+        """Registra un hecho con su procedencia, TTL y validez bitemporal.
 
         Args:
             cue: Hecho corto (no vacio).
             source: Ruta o id de procedencia (no vacio).
+            ttl_s: Tiempo de vida en segundos (None = no expira).
+            valid_from: Inicio de validez ISO (None = siempre).
+            valid_to: Fin de validez ISO (None = vigente).
 
         Returns:
             CueEntry registrado.
 
         Raises:
-            ValueError: Si cue o source estan vacios (WHAT+WHY+WHERE).
+            ValueError: Si cue/source vacios o el rango es invalido
+                (WHAT+WHY+WHERE).
         """
         if not cue.strip():
             raise ValueError(
@@ -126,14 +171,40 @@ class CueLedger:
                 "WHY: la procedencia es la clave del staleness check. "
                 "WHERE: CueLedger.register"
             )
+        if valid_from is not None and valid_to is not None and valid_to < valid_from:
+            raise ValueError(
+                f"WHAT: rango invalido ({valid_from}..{valid_to}). "
+                "WHY: valid_to anterior a valid_from no cubre ningun dia. "
+                "WHERE: CueLedger.register"
+            )
         entry = CueEntry(
             cue=cue.strip(),
             source=source.strip(),
             content_hash=_content_hash(source),
             registered_at=self._clock(),
+            ttl_s=ttl_s,
+            valid_from=valid_from,
+            valid_to=valid_to,
         )
         self._entries.append(entry)
         return entry
+
+    def _live_entries(self) -> list[CueEntry]:
+        """Entradas vigentes (poda expiradas con metrica).
+
+        Returns:
+            Lista sin cues con TTL vencido.
+        """
+        now = self._clock()
+        live: list[CueEntry] = []
+        for entry in self._entries:
+            if entry.is_expired(now):
+                self._pruned_expired += 1
+                logger.debug("cue_ledger: cue expirado podado: %s", entry.cue)
+            else:
+                live.append(entry)
+        self._entries = live
+        return live
 
     def render_index(self) -> str:
         """Renderiza el indice compacto (cue + procedencia).
@@ -144,7 +215,7 @@ class CueLedger:
         if not self._entries:
             return ""
         lines = ["[cue-ledger] hechos vivos:"]
-        for entry in self._entries:
+        for entry in self._live_entries():
             lines.append(f"- {entry.cue} (src: {entry.source})")
         return "\n".join(lines)
 
@@ -167,7 +238,7 @@ class CueLedger:
                 "WHERE: CueLedger.inject"
             )
         index = self.render_index()
-        digest = hashlib.sha256(index.encode("utf-8")).hexdigest()[:_HASH_LEN]
+        digest = short_hash(index, _HASH_LEN)
         if digest in self._injected:
             self._dedup_hits += 1
             logger.debug("cue_ledger: inyeccion duplicada evitada (sesion=%s)", session_id)
@@ -186,6 +257,17 @@ class CueLedger:
             if _content_hash(entry.source) != entry.content_hash:
                 stale.append(entry)
         return stale
+
+    def valid_at(self, iso_date: str) -> list[CueEntry]:
+        """Cues validos en la fecha ISO dada (tiempo bitemporal).
+
+        Args:
+            iso_date: Fecha YYYY-MM-DD a evaluar.
+
+        Returns:
+            Entradas vigentes ese dia (orden de registro).
+        """
+        return [e for e in self._entries if e.valid_at(iso_date)]
 
     def reset(self) -> None:
         """Limpia el dedup (llamar tras cada compaction/re-anchor).

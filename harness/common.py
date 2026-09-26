@@ -16,6 +16,9 @@ Includes:
 
 from __future__ import annotations
 
+import hashlib
+import json
+from datetime import UTC, datetime
 from typing import Any, ClassVar
 
 import numpy as np
@@ -282,3 +285,62 @@ def truncate_by_budget(
         used += item_tokens
 
     return kept
+
+
+# ---------------------------------------------------------------------------
+# Hash / tiempo / JSON seguro (unifica 6+ sitios duplicados)
+# ---------------------------------------------------------------------------
+
+
+def short_hash(content: str, length: int = 12) -> str:
+    """Hash corto determinista (handles de artifacts/snapshots/traces).
+
+    Unifica el patron `sha256(...).hexdigest()[:N]` repetido en
+    artifact_store, cue_ledger, session_snapshot, prompt_cache_builder,
+    behavioral_tracer y got_planner.
+
+    Args:
+        content: Texto a hashear.
+        length: Longitud del hex (>= 1).
+
+    Returns:
+        Prefijo hexadecimal (determinista por contenido).
+
+    Raises:
+        ValueError: Si length < 1 (WHAT+WHY+WHERE).
+    """
+    if length < 1:
+        raise ValueError(
+            f"WHAT: length invalido: {length}. "
+            "WHY: se necesita al menos 1 char de hash. "
+            "WHERE: short_hash"
+        )
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()[:length]
+
+
+def utc_now_iso() -> str:
+    """Timestamp UTC ISO-8601 actual (unifica 99 sitios).
+
+    Returns:
+        `datetime.now(UTC).isoformat()`.
+    """
+    return datetime.now(UTC).isoformat()
+
+
+def safe_json_loads(text: object, default: Any = None) -> Any:
+    """JSON parse defensivo (unifica 15 try/except repetidos).
+
+    Args:
+        text: Texto JSON o valor ya parseado (se retorna tal cual si no
+            es str).
+        default: Valor si falla el parse (None por defecto).
+
+    Returns:
+        Objeto parseado, el valor original si no es str, o default.
+    """
+    if not isinstance(text, str):
+        return text
+    try:
+        return json.loads(text)
+    except (json.JSONDecodeError, TypeError):
+        return default

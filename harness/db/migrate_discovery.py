@@ -1,9 +1,9 @@
 ﻿"""
-DB Migration Discovery â€” Descubrimiento recursivo de colecciones y schemas.
+DB Migration Discovery — Descubrimiento recursivo de colecciones y schemas.
 
-ExtraÃ­do de migrate_db.py para separar concerns.
+Extraído de migrate_db.py para separar concerns.
 
-PatrÃ³n RECURSIVO:
+Patrón RECURSIVO:
   - discover_collections_recursive(): descubre colecciones LanceDB recursivamente
   - detect_format(): compara schemas entre versiones
   - probe_db(): inspecciona una base de datos

@@ -155,14 +155,15 @@ def is_frontier_only(task: str) -> bool:
     task_lower = task.lower()
     return any(kw in task_lower for kw in _FRONTIER_ONLY_KEYWORDS)
 
-# Modelos por defecto por tier (2026, FRS 2026-08-14: qwen3/3-vl/3-embedding;
-# configurables via YAML .opencode/config/ollama_models.yaml).
+# Modelos por defecto por tier (flota 2026-09-21, nombres canonicos hf.co;
+# cada blob un solo nombre, sin alias locales: el repo se puchea a GitHub.
+# Configurables via YAML .opencode/config/ollama_models.yaml).
 _DEFAULT_TIER_MODELS: dict[CapabilityTier, str] = {
-    CapabilityTier.FAST: "qwen3:4b",
-    CapabilityTier.QUALITY: "deepseek-r1:8b",
+    CapabilityTier.FAST: "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0",
+    CapabilityTier.QUALITY: "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
     CapabilityTier.EMBEDDING: "qwen3-embedding:0.6b",
     CapabilityTier.VISION: "qwen3-vl:4b",
-    CapabilityTier.CODING: "qwen2.5-coder:7b",
+    CapabilityTier.CODING: "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M",
 }
 
 
@@ -369,6 +370,18 @@ class OllamaTierRouter:
                 f"WHERE: model_for() en ollama_tiers.py."
             )
         return spec.model
+
+    def keep_alive_for(self, tier: CapabilityTier) -> str:
+        """Devuelve el keep_alive del tier (del YAML; default "5m").
+
+        Args:
+            tier: Tier de capacidad.
+
+        Returns:
+            keep_alive ("5m", "0", ...) o "5m" si el tier no existe.
+        """
+        spec = self._specs.get(tier)
+        return spec.keep_alive if spec is not None else "5m"
 
     def tier_for_task(self, task: str) -> CapabilityTier | None:
         """Clasifica una tarea por capacidad usando keywords (sin LLM).

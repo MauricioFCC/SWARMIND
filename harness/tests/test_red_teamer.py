@@ -66,7 +66,7 @@ class TestGenerateVectors:
         rt = RedTeamer()
         vectors = rt.generate_vectors("target")
         tipos = {v.attack_type for v in vectors}
-        assert ATTACK_TYPES <= tipos
+        assert tipos >= ATTACK_TYPES
 
     def test_vectores_llevan_el_target(self):
         """Todos los vectores deben conservar el target atacado."""

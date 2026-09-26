@@ -1,4 +1,4 @@
-﻿"""MultiHarnessCLI â€” Interfaz de linea de comandos para Multi-Harness.
+﻿"""MultiHarnessCLI — Interfaz de linea de comandos para Multi-Harness.
 
 Provee los comandos !harness para exportar, detectar, validar y monitorear
 la compatibilidad multi-runtime de Swarmind.
@@ -150,19 +150,19 @@ def cmd_status(project_root: Path | None = None) -> dict[str, Any]:
 
     # Mostrar resumen en consola
     print(f"\n{'='*60}")
-    print("  Multi-Harness Status â€” Swarmind")
+    print("  Multi-Harness Status — Swarmind")
     print(f"{'='*60}")
-    print(f"  Runtime activo: {active.display_name} {'âœ…' if active.detected else 'â¬œ'}")
+    print(f"  Runtime activo: {active.display_name} {'✅' if active.detected else '⬜'}")
     if active.config_path:
         print(f"  Config: {active.config_path}")
     print(f"\n  Runtimes detectados ({len(detected)}):")
     for rt in detected:
-        print(f"    âœ… {rt.display_name} ({rt.config_dir}/)")
+        print(f"    ✅ {rt.display_name} ({rt.config_dir}/)")
     print(f"\n  Todos los runtimes ({len(ADAPTER_MAP)-1}):")
     for name in ADAPTER_MAP:
         if name == "all":
             continue
-        detected_flag = "âœ…" if any(rt.name == name for rt in detected) else "â¬œ"
+        detected_flag = "✅" if any(rt.name == name for rt in detected) else "⬜"
         print(f"    {detected_flag} {name}")
     print(f"{'='*60}\n")
 
@@ -184,7 +184,7 @@ def cmd_detect(project_root: Path | None = None) -> RuntimeInfo:
     print(f"Runtime detectado: {runtime.display_name}")
     print(f"  Nombre interno: {runtime.name}")
     print(f"  Directorio config: {runtime.config_dir}")
-    print(f"  Detectado: {'âœ… Si' if runtime.detected else 'â¬œ No'}")
+    print(f"  Detectado: {'✅ Si' if runtime.detected else '⬜ No'}")
     if runtime.config_path:
         print(f"  Archivo config: {runtime.config_path}")
     if runtime.version:
@@ -221,17 +221,17 @@ def cmd_validate(project_root: Path | None = None) -> bool:
             errors: list[str] = adapter.validate()
             if errors:
                 all_valid = False
-                print(f"  âŒ {name}: {len(errors)} error(es)")
+                print(f"  ❌ {name}: {len(errors)} error(es)")
                 for err in errors:
                     print(f"     - {err}")
             else:
-                print(f"  âœ… {name}: estructura valida")
+                print(f"  ✅ {name}: estructura valida")
         except Exception as exc:  # noqa: BLE001
             all_valid = False
-            print(f"  âŒ {name}: error cargando adaptador: {exc}")
+            print(f"  ❌ {name}: error cargando adaptador: {exc}")
 
     print(f"{'='*60}")
-    print(f"  Resultado: {'âœ… TODO VALIDO' if all_valid else 'âŒ HAY ERRORES'}")
+    print(f"  Resultado: {'✅ TODO VALIDO' if all_valid else '❌ HAY ERRORES'}")
     print(f"{'='*60}\n")
 
     return all_valid

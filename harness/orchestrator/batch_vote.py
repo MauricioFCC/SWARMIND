@@ -164,3 +164,68 @@ def _majority(
         return None, False
     quorum_met = count / len(votes) > quorum_ratio
     return (top if quorum_met else None), quorum_met
+
+
+@dataclass(frozen=True)
+class StakeVoteResult:
+    """Resultado de votacion ponderada por stakes (wagering, ADR-0085).
+
+    Attributes:
+        winner: Respuesta con mayor stake acumulado (None si empate exacto).
+        total_stake: Suma de stakes (auditable como ventaja esperada).
+        weights: Mapa respuesta -> stake acumulado.
+    """
+
+    winner: str | None
+    total_stake: float
+    weights: dict[str, float]
+
+
+def stake_weighted_vote(
+    votes: tuple[str, ...], stakes: tuple[float, ...]
+) -> StakeVoteResult:
+    """Votacion independiente ponderada por stakes de confianza (sin debate).
+
+    WHAT: Suma stakes por respuesta; gana el mayor acumulado. Sin rondas
+    de debate (KalshiBench: el consenso deliberativo degrada a 76% por
+    sycophancy; la agregacion independiente no).
+    WHY: Frontera (wagering arXiv:2607.04389): el stake en equilibrio
+    equivale a la ventaja esperada del agente; ponderar por stake supera
+    a la mayoria plana cuando pocos calibrados discrepan de muchos dudosos.
+    WHERE: `batch_vote` cuando cada voto trae confianza; fallback a
+    mayoria plana si no hay stakes.
+
+    Args:
+        votes: Respuestas (una por agente).
+        stakes: Confianza 0..1 por voto (misma longitud).
+
+    Returns:
+        StakeVoteResult con ganador, stake total y pesos.
+
+    Raises:
+        ValueError: Si longitudes difieren o stakes fuera de [0, 1].
+    """
+    if len(votes) != len(stakes):
+        raise ValueError(
+            f"WHAT: {len(votes)} votos vs {len(stakes)} stakes. "
+            "WHY: cada voto necesita su stake de confianza. "
+            "WHERE: stake_weighted_vote"
+        )
+    for stake in stakes:
+        if not (0.0 <= stake <= 1.0):
+            raise ValueError(
+                f"WHAT: stake invalido: {stake}. "
+                "WHY: el stake es confianza, debe estar en [0, 1]. "
+                "WHERE: stake_weighted_vote"
+            )
+    weights: dict[str, float] = {}
+    for vote, stake in zip(votes, stakes):
+        weights[vote] = weights.get(vote, 0.0) + stake
+    if not weights:
+        return StakeVoteResult(winner=None, total_stake=0.0, weights={})
+    ranked = sorted(weights.items(), key=lambda kv: (-kv[1], kv[0]))
+    tie = len(ranked) > 1 and ranked[0][1] == ranked[1][1]
+    winner = None if tie else ranked[0][0]
+    return StakeVoteResult(
+        winner=winner, total_stake=sum(stakes), weights=dict(weights)
+    )

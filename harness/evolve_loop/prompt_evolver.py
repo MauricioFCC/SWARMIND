@@ -1,4 +1,4 @@
-﻿"""Prompt Evolver â€” GEPA-inspired prompt mutation and evaluation.
+﻿"""Prompt Evolver — GEPA-inspired prompt mutation and evaluation.
 
 Creates mutated variants of agent profile prompts, evaluates them against
 a test task, and promotes the winner to replace the original profile.
@@ -49,9 +49,9 @@ class PromptEvolver:
     Mutates, evaluates, and promotes agent profile prompts.
 
     Workflow:
-      1. ``mutate_prompt(agent_profile_path)`` â€” Read original, create 3 variants.
-      2. ``evaluate_mutants(original, mutants, test_task)`` â€” Score each.
-      3. ``promote_winner(winner_path)`` â€” Replace original, log in LanceDB.
+      1. ``mutate_prompt(agent_profile_path)`` — Read original, create 3 variants.
+      2. ``evaluate_mutants(original, mutants, test_task)`` — Score each.
+      3. ``promote_winner(winner_path)`` — Replace original, log in LanceDB.
     """
 
     def __init__(self, vector_store: LanceVectorStore | None = None) -> None:
