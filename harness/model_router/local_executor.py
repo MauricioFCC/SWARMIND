@@ -61,6 +61,15 @@ logger = logging.getLogger("harness.model_router.local_executor")
 MIN_LOCAL_OUTPUT_CHARS = 8
 #: Ratio maximo del caracter dominante (degeneracion tipica SLM: "aaaa...").
 MAX_REPEAT_RATIO = 0.5
+#: Techo de generacion por tarea cerrada (anti-desborde KV: la reserva del
+#: gate es RESPONSE_RESERVE_TOKENS; las cerradas son resumentes/cortas).
+CLOSED_TASK_NUM_PREDICT = 512
+#: Sin reasoning en cerradas: el <think> consume el presupuesto y relentiza
+#: (medido: MiniCPM5 vuelca CoT antes de responder); la respuesta directa basta.
+CLOSED_TASK_THINK = False
+#: Prefijo de tarea cerrada: suprime chachara meta (que agota num_predict
+#: y deja la respuesta truncada); el modelo va directo al contenido.
+CLOSED_TASK_PREFIX = "Responde de forma directa y breve, sin rodeos: "
 
 
 def _is_degenerate_output(output: str) -> bool:
@@ -277,7 +286,13 @@ class LocalExecutor:
             )
         keep_alive = _tier_keep_alive(self._tiers, tier)
         try:
-            data = self._client.generate(model, task, keep_alive=keep_alive)
+            data = self._client.generate(
+                model, CLOSED_TASK_PREFIX + task, keep_alive=keep_alive,
+                options={
+                    "num_predict": CLOSED_TASK_NUM_PREDICT,
+                    "think": CLOSED_TASK_THINK,
+                },
+            )
         except Exception as exc:  # noqa: BLE001 - fallback a cloud, no crash
             self._cloud_tasks += 1
             logger.warning("local_executor: fallo local (%s), fallback a cloud", exc)

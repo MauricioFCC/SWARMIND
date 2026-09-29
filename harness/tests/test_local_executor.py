@@ -43,6 +43,7 @@ class _FakeClient:
 
     def generate(self, model: str, prompt: str, **kwargs) -> dict:
         self.calls.append(prompt)
+        self.last_kwargs = kwargs
         return {"response": self._output, "model": model}
 
 
@@ -215,6 +216,20 @@ def test_unsloth_blocked_without_vram_falls_to_ollama() -> None:
     assert out.output == "respuesta local"
     assert unsloth.calls == []
     assert len(ollama.calls) == 1
+
+
+def test_generate_caps_num_predict() -> None:
+    """La ruta local acota num_predict (anti-desborde KV, reserva del gate)."""
+    from harness.model_router.local_executor import CLOSED_TASK_NUM_PREDICT
+
+    assert CLOSED_TASK_NUM_PREDICT == 512
+    client = _FakeClient()
+    out = _executor(client=client).execute("resume esto")
+    assert out.executed_locally is True
+    assert client.last_kwargs["options"] == {"num_predict": 512, "think": False}
+    assert client.calls == [
+        "Responde de forma directa y breve, sin rodeos: resume esto"
+    ]
 
 
 def test_keep_alive_passed_to_generate() -> None:
