@@ -20,6 +20,8 @@ from __future__ import annotations
 
 import logging
 
+from harness.model_router.fleet_manifest import model_entry
+
 logger = logging.getLogger("harness.model_router.model_windows")
 
 #: num_ctx default honesto (default real de Ollama, medido 2026-09-29).
@@ -57,14 +59,20 @@ _MODEL_WINDOWS: tuple[tuple[str, int], ...] = (
 
 
 def recommend_num_ctx(model: str) -> int:
-    """Recomienda num_ctx para un modelo (match por substring, case-insensitive).
+    """Recomienda num_ctx para un modelo.
+
+    Prioridad: manifiesto de flota (SSOT medida, ADR-0101) -> tabla medida
+    de fallback (modelos ajenos a la flota) -> default honesto (4096).
 
     Args:
         model: Nombre/tag del modelo.
 
     Returns:
-        Ventana recomendada, o DEFAULT_NUM_CTX si es desconocido.
+        Ventana a solicitar, o DEFAULT_NUM_CTX si es desconocido.
     """
+    entry = model_entry(model)
+    if entry is not None:
+        return entry.num_ctx
     lowered = model.lower()
     for key, window in _MODEL_WINDOWS:
         if key in lowered:

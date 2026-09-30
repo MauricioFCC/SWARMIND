@@ -226,7 +226,9 @@ def test_generate_caps_num_predict() -> None:
     client = _FakeClient()
     out = _executor(client=client).execute("resume esto")
     assert out.executed_locally is True
-    assert client.last_kwargs["options"] == {"num_predict": 512, "think": False}
+    assert client.last_kwargs["options"] == {
+        "num_predict": 512, "think": False, "num_ctx": 4096,
+    }
     assert client.calls == [
         "Responde de forma directa y breve, sin rodeos: resume esto"
     ]

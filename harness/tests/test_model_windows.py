@@ -17,16 +17,23 @@ from harness.model_router.model_windows import (
 
 
 def test_recommend_measured_defaults() -> None:
-    """Blobs canonicos: default real 4096 (medido, no aspiracional)."""
+    """Modelos ajenos a la flota: default real 4096 (medido)."""
     assert recommend_num_ctx("hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0") == 4096
     assert recommend_num_ctx("llama3.2:3b") == 4096
     assert recommend_num_ctx("qwen3:4b") == 4096
-    assert recommend_num_ctx("hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0") == 4096
 
 
-def test_recommend_big_models_measured() -> None:
-    """9B canonicos: 4096 medidos (5.3GB/4096 en `ollama ps`)."""
-    assert recommend_num_ctx("hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M") == 4096
+def test_recommend_fleet_windows_declared() -> None:
+    """Modelos de flota: ventana declarada en el manifiesto (SSOT, ADR-0101)."""
+    assert recommend_num_ctx("hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0") == 8192
+    assert recommend_num_ctx("hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M") == 16384
+    assert recommend_num_ctx(
+        "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M"
+    ) == 16384
+
+
+def test_recommend_non_fleet_measured() -> None:
+    """9B ajenos a la flota mantienen la tabla medida de fallback (4096)."""
     assert recommend_num_ctx("deepseek-r1:8b") == 4096
 
 
@@ -52,11 +59,14 @@ def test_fits_small_task() -> None:
 
 
 def test_overflow_goes_cloud() -> None:
-    """Prompt que excede la ventana medida no va a local (evita el volcado)."""
+    """Prompt que excede la ventana declarada no va a local (evita el volcado)."""
     assert fits_in_window("llama3.2:3b", task_chars=50_000) is False
-    # 12K chars = 3000 tok + 2500 sistema > 4096 - reserva: antes pasaba.
+    # 9B de flota: 16384 - 1024 reserva = 15360; 2500 + 60000/4 = 17500 > 15360.
     assert fits_in_window("hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
-                          task_chars=12_000) is False
+                          task_chars=60_000) is False
+    # Y una tarea moderada SI cabe en la ventana declarada (16K real).
+    assert fits_in_window("hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
+                          task_chars=8_000) is True
 
 
 def test_baked_window_admits_more() -> None:

@@ -29,10 +29,12 @@ def _store(monkeypatch, values: dict) -> dict:
 
 
 def test_limits_contract_one_model_no_parallel() -> None:
-    """Contrato anti-OOM 8GB: 1 modelo residente, sin paralelismo."""
+    """Contrato anti-OOM 8GB: 1 residente, sin paralelo, KV comprimida."""
     assert eg.OLLAMA_VRAM_LIMITS == {
         "OLLAMA_MAX_LOADED_MODELS": "1",
         "OLLAMA_NUM_PARALLEL": "1",
+        "OLLAMA_FLASH_ATTENTION": "1",
+        "OLLAMA_KV_CACHE_TYPE": "q8_0",
     }
 
 
@@ -69,7 +71,11 @@ def test_ensure_only_writes_missing(monkeypatch) -> None:
     monkeypatch.setattr(eg, "_write_user_env", fake_write)
     ok, _ = eg.ensure_ollama_limits()
     assert ok is True
-    assert written == {"OLLAMA_NUM_PARALLEL": "1"}
+    assert written == {
+        "OLLAMA_NUM_PARALLEL": "1",
+        "OLLAMA_FLASH_ATTENTION": "1",
+        "OLLAMA_KV_CACHE_TYPE": "q8_0",
+    }
 
 
 def test_ensure_false_when_write_fails(monkeypatch) -> None:

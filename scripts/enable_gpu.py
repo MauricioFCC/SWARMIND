@@ -39,9 +39,13 @@ CUDA_INDEX = "https://download.pytorch.org/whl/cu126"
 #: Sin topes Ollama mantiene 3 modelos residentes (default) y atiende en
 #: paralelo: 2x9B Q4 + desktop = OOM (nvlddmkm 153). Con MAX=1 el servidor
 #: descarga por LRU antes de cargar otro (un 9B Q4 cabe sobrado).
+#: Flash Attention + KV q8_0 comprimen la cache (~1/2 KV): medido, el 9B a
+#: 16K baja de 5.7GB a 5.15GB (~0.55GB de headroom anti-OOM).
 OLLAMA_VRAM_LIMITS = {
     "OLLAMA_MAX_LOADED_MODELS": "1",
     "OLLAMA_NUM_PARALLEL": "1",
+    "OLLAMA_FLASH_ATTENTION": "1",
+    "OLLAMA_KV_CACHE_TYPE": "q8_0",
 }
 
 

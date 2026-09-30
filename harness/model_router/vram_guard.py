@@ -18,6 +18,8 @@ import logging
 import shutil
 import subprocess
 
+from harness.model_router.fleet_manifest import model_entry
+
 logger = logging.getLogger("harness.model_router.vram_guard")
 
 #: VRAM ocupada estimada por modelo (MB, pesos Q4/Q8 + KV tipica).
@@ -64,6 +66,9 @@ def _footprint_key(model: str) -> str:
 def footprint_mb(model: str, default: int = 6600) -> int:
     """VRAM estimada del modelo (conservadora si desconocido).
 
+    Prioridad: manifiesto de flota (SSOT medida, ADR-0101) -> tabla de
+    footprints de fallback (modelos ajenos a la flota) -> default.
+
     Args:
         model: Nombre/tag.
         default: Valor si no hay match (peor caso 9B Q4).
@@ -71,6 +76,9 @@ def footprint_mb(model: str, default: int = 6600) -> int:
     Returns:
         MB estimados.
     """
+    entry = model_entry(model)
+    if entry is not None:
+        return entry.vram_mb
     key = _footprint_key(model)
     return MODEL_FOOTPRINT_MB.get(key, default)
 

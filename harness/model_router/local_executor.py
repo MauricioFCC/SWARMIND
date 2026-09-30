@@ -21,7 +21,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from harness.model_router.model_windows import fits_in_window
+from harness.model_router.model_windows import fits_in_window, recommend_num_ctx
 from harness.model_router.vram_guard import fits_in_vram, footprint_mb, free_vram_mb
 
 
@@ -291,6 +291,7 @@ class LocalExecutor:
                 options={
                     "num_predict": CLOSED_TASK_NUM_PREDICT,
                     "think": CLOSED_TASK_THINK,
+                    "num_ctx": recommend_num_ctx(model),
                 },
             )
         except Exception as exc:  # noqa: BLE001 - fallback a cloud, no crash
