@@ -1,11 +1,10 @@
 """Tests para model_windows — presupuesto de ventana anti-volcado (ADR-0092).
 
-Medido 2026-09-29 (`ollama ps` CONTEXT + `ollama show` sin PARAMETER):
-los blobs canonicos hf.co corren con el default 4096, NO 8192. El guard
-valida sistema+tarea+respuesta acotada contra la ventana MEDIDA antes de
-ejecutar en local (antes admitia 2x y el KV desbordaba con residentes).
+Tras el BSOD VIDEO_TDR_FAILURE (0x116) del 2026-10-01 (9B + ctx 16384 +
+Vulkan en 8GB), el default honesto es 8192 (`gpu_guard.SAFE_CTX_MAX`): 16384
+NO es seguro en 8GB. El guard valida sistema+tarea+respuesta acotada contra
+la ventana MEDIDA antes de ejecutar en local.
 """
-
 
 from harness.model_router.model_windows import (
     DEFAULT_NUM_CTX,
@@ -15,70 +14,64 @@ from harness.model_router.model_windows import (
     recommend_num_ctx,
 )
 
+_FAST = "hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL"
+_MIMO = "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS"
+_QWOPUS = "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M"
+_ORNITH = "hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M"
+
+
+def test_default_ctx_is_safe_ceiling() -> None:
+    """El default es 8192 (techo anti-TDR); 16384 NO es seguro en 8GB."""
+    assert DEFAULT_NUM_CTX == 8192
+
 
 def test_retired_models_fall_to_default() -> None:
-    """Retirados/no-flota: sin clave en la tabla, caen al default honesto 4096.
+    """Retirados/no-flota: sin clave en la tabla, caen al default 8192.
 
-    Bonsai, olmoe, lfm2.5, llama3.2, qwen3:4b, qwen2.5-coder y deepseek-r1
-    se eliminaron de la tabla 2026-09-30 (no instalados ni en flota). No
-    deben recuperar una ventana propia por accidente.
+    MiniCPM5, Qwen3.8 y Opus-Distill se retiraron 2026-10-01 y no deben
+    recuperar una ventana propia (ni 16K/32K horneados) por accidente.
     """
     for retired in (
-        "hf.co/dealignai/Bonsai-2-27B-1bit-CRACK-GGUF:TQ1_0",
-        "hf.co/mradermacher/OLMoE-1B-7B-0125-Instruct-Distill-ot114k-batch32-i1-GGUF:IQ4_NL",
-        "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0",
+        "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0",
+        "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
+        "hf.co/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF:Q4_K_M",
+        "qwen38-9b-16k",
+        "minicpm5-2b-32k",
+        "opus-distill-9b-16k",
         "llama3.2:3b",
-        "qwen3:4b",
         "qwen2.5-coder:7b",
-        "deepseek-r1:8b",
     ):
         assert recommend_num_ctx(retired) == DEFAULT_NUM_CTX, retired
 
 
 def test_recommend_fleet_windows_declared() -> None:
-    """Modelos de flota: ventana declarada en el manifiesto (SSOT, ADR-0101)."""
-    assert recommend_num_ctx("hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0") == 8192
-    assert recommend_num_ctx("hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M") == 16384
-    assert recommend_num_ctx(
-        "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M"
-    ) == 16384
-
-
-def test_recommend_foreign_family_fallback() -> None:
-    """La familia Qwen3.5 (ajena al manifiesto) usa la tabla de fallback 16K."""
-    assert recommend_num_ctx("qwen3.5-9b-ajeno") == 16384
-
-
-def test_recommend_baked_ctx_short_names() -> None:
-    """Nombres cortos con ctx horneado: 16384 medido (`ollama show`)."""
-    assert recommend_num_ctx("qwen38-9b-16k") == 16384
+    """La flota declara su ventana segura: 4B=8192, 9B=4096 (SSOT, ADR-0101)."""
+    assert recommend_num_ctx(_FAST) == 8192
+    assert recommend_num_ctx(_MIMO) == 4096
+    assert recommend_num_ctx(_QWOPUS) == 4096
+    assert recommend_num_ctx(_ORNITH) == 4096
+    assert recommend_num_ctx("qwen3-embedding:0.6b") == 8192
+    assert recommend_num_ctx("qwen3-vl:4b") == 8192
 
 
 def test_recommend_unknown_defaults() -> None:
-    """Modelo desconocido usa el default honesto (default real Ollama)."""
+    """Modelo desconocido usa el default seguro (anti-TDR)."""
     assert recommend_num_ctx("algun-modelo-futuro:99b") == DEFAULT_NUM_CTX
-    assert DEFAULT_NUM_CTX == 4096
 
 
 def test_fits_small_task() -> None:
     """Tarea chica + sistema cabe con la reserva de respuesta intacta."""
-    assert fits_in_window("hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0", task_chars=200) is True
+    assert fits_in_window(_FAST, task_chars=200) is True
 
 
 def test_overflow_goes_cloud() -> None:
     """Prompt que excede la ventana declarada no va a local (evita el volcado)."""
     assert fits_in_window("llama3.2:3b", task_chars=50_000) is False
-    # 9B de flota: 16384 - 1024 reserva = 15360; 2500 + 60000/4 = 17500 > 15360.
-    assert fits_in_window("hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
-                          task_chars=60_000) is False
-    # Y una tarea moderada SI cabe en la ventana declarada (16K real).
-    assert fits_in_window("hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
-                          task_chars=8_000) is True
-
-
-def test_baked_window_admits_more() -> None:
-    """Ventana horneada 16K si admite tareas que en 4096 irian a cloud."""
-    assert fits_in_window("qwen38-9b-16k", task_chars=40_000) is True
+    # Ornith 9B: ventana 4096 - 1024 reserva = 3072; una tarea de 60K chars
+    # (15000 tok) NO cabe y va a cloud.
+    assert fits_in_window(_ORNITH, task_chars=60_000) is False
+    # Tarea chica SI cabe en la ventana de 4096.
+    assert fits_in_window(_ORNITH, task_chars=1_000) is True
 
 
 def test_system_budget_documented() -> None:
@@ -89,4 +82,4 @@ def test_system_budget_documented() -> None:
 
 def test_empty_task_fits() -> None:
     """Tarea vacia cabe (no falla el guard)."""
-    assert fits_in_window("qwen3:4b", task_chars=0) is True
+    assert fits_in_window("modelo-ajeno:1b", task_chars=0) is True

@@ -44,7 +44,7 @@ CUDA_INDEX = "https://download.pytorch.org/whl/cu126"
 #: como backend con WDDM (menos robusto que CUDA), (c) keep_alive manteniendo
 #: el modelo residente. Estos topes son el CONTRATO ANTI-TDR:
 #:   - CONTEXT_LENGTH=8192: el 9B Q4 a 8K cabe con margen (~5.5GB + KV).
-#:     NO subir a 16384 en 8GB (ver scripts/gpu_guard.safe_num_ctx).
+#:     NO subir a 16384 en 8GB (ver harness/model_router/gpu_guard.safe_num_ctx).
 #:   - VULKAN=false: fuerza el backend CUDA en NVIDIA (Vulkan en WDDM
 #:     degrada y contribuye al TDR).
 #:   - KEEP_ALIVE=0: descarga inmediata, sin residencia acumulada.

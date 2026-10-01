@@ -3,7 +3,7 @@
   "instructions": [
     ".opencode/core/base_principles.md"
   ],
-  "model": "ollama/qwen38-9b-16k",
+  "model": "ollama/hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL",
   "agent": {
     "coordinator": {
       "mode": "primary",
@@ -47,25 +47,53 @@
         "baseURL": "http://localhost:11434/v1"
       },
       "models": {
-        "qwen38-9b-16k": {
-          "name": "Qwen3.8 9B Q4 quality (ctx 16K baked)",
-          "reasoning": true,
-          "tools": true
-        },
-        "qwopus-v3-9b-16k": {
-          "name": "Qwopus3.5-9B v3 Q4 coding (frontera 2026)",
+        "hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL": {
+          "name": "Qwen3.5 4B UD-Q4_K_XL fast",
           "reasoning": false,
-          "tools": true
+          "tools": true,
+          "options": {
+            "num_ctx": 8192
+          }
         },
-        "minicpm5-2b-32k": {
-          "name": "MiniCPM5 2B Q8 fast (ctx 32K baked)",
-          "reasoning": false,
-          "tools": true
-        },
-        "opus-distill-9b-16k": {
-          "name": "Qwen3.5-9B Claude-Opus-Distill v2 (razonamiento)",
+        "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS": {
+          "name": "MiMo-V2.6 Distill Qwen 9B IQ4_XS quality",
           "reasoning": true,
-          "tools": true
+          "tools": true,
+          "options": {
+            "num_ctx": 4096
+          }
+        },
+        "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M": {
+          "name": "Qwopus3.5-9B v3 Q4_K_M coding (frontera 2026)",
+          "reasoning": false,
+          "tools": true,
+          "options": {
+            "num_ctx": 4096
+          }
+        },
+        "hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M": {
+          "name": "Ornith-1.5 9B Q4_K_M reasoning",
+          "reasoning": true,
+          "tools": true,
+          "options": {
+            "num_ctx": 4096
+          }
+        },
+        "qwen3-embedding:0.6b": {
+          "name": "qwen3-embedding 0.6B RAG",
+          "reasoning": false,
+          "tools": true,
+          "options": {
+            "num_ctx": 8192
+          }
+        },
+        "qwen3-vl:4b": {
+          "name": "qwen3-vl 4B vision",
+          "reasoning": false,
+          "tools": true,
+          "options": {
+            "num_ctx": 8192
+          }
         }
       }
     }

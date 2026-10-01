@@ -28,14 +28,20 @@ def _store(monkeypatch, values: dict) -> dict:
     return values
 
 
-def test_limits_contract_one_model_no_parallel() -> None:
-    """Contrato anti-OOM 8GB: 1 residente, sin paralelo, KV comprimida, ctx 16K."""
+def test_limits_contract_anti_tdr() -> None:
+    """Contrato anti-TDR 8GB: 1 residente, sin paralelo, KV comprimida, ctx 8192.
+
+    El BSOD VIDEO_TDR_FAILURE (0x116) del 2026-10-01 lo causo ctx 16384 +
+    Vulkan + modelo residente; este test fija el techo seguro.
+    """
     assert eg.OLLAMA_VRAM_LIMITS == {
         "OLLAMA_MAX_LOADED_MODELS": "1",
         "OLLAMA_NUM_PARALLEL": "1",
         "OLLAMA_FLASH_ATTENTION": "1",
         "OLLAMA_KV_CACHE_TYPE": "q8_0",
-        "OLLAMA_CONTEXT_LENGTH": "16384",
+        "OLLAMA_CONTEXT_LENGTH": "8192",
+        "OLLAMA_KEEP_ALIVE": "0",
+        "OLLAMA_VULKAN": "false",
     }
 
 
@@ -76,7 +82,9 @@ def test_ensure_only_writes_missing(monkeypatch) -> None:
         "OLLAMA_NUM_PARALLEL": "1",
         "OLLAMA_FLASH_ATTENTION": "1",
         "OLLAMA_KV_CACHE_TYPE": "q8_0",
-        "OLLAMA_CONTEXT_LENGTH": "16384",
+        "OLLAMA_CONTEXT_LENGTH": "8192",
+        "OLLAMA_KEEP_ALIVE": "0",
+        "OLLAMA_VULKAN": "false",
     }
 
 

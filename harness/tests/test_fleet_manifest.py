@@ -16,7 +16,8 @@ from harness.model_router.fleet_manifest import (
     model_entry,
     tier_entry,
 )
-from harness.model_router.model_windows import DEFAULT_NUM_CTX, recommend_num_ctx
+from harness.model_router.gpu_guard import SAFE_CTX_MAX
+from harness.model_router.model_windows import recommend_num_ctx
 from harness.model_router.vram_guard import footprint_mb
 
 _CONFIG = (
@@ -46,26 +47,35 @@ def test_footprint_derives_from_manifest() -> None:
         assert footprint_mb(entry.id) == entry.vram_mb, entry.id
 
 
-def test_no_fleet_model_falls_to_default() -> None:
-    """Ningun modelo de flota cae en el default (deriva invisible)."""
+def test_fleet_ctx_within_safe_ceiling() -> None:
+    """Toda la flota respeta el techo anti-TDR de 8192 (post-BSOD 0x116).
+
+    Los 9B (~6.6GB) declaran 4096 para dejar KV headroom en 8GB; el techo
+    es un MAXIMO, no un objetivo.
+    """
     for entry in FLEET:
-        assert recommend_num_ctx(entry.id) != DEFAULT_NUM_CTX, entry.id
+        assert entry.num_ctx <= SAFE_CTX_MAX, entry.id
+        assert recommend_num_ctx(entry.id) <= SAFE_CTX_MAX, entry.id
 
 
 def test_windows_and_budget_fit_gpu() -> None:
     """Ventana y VRAM declaradas caben en el presupuesto de 8GB (NF / anti-OOM)."""
     for entry in FLEET:
-        assert entry.num_ctx <= 32768, entry.id
+        assert entry.num_ctx <= SAFE_CTX_MAX, entry.id
         assert entry.vram_mb <= GPU_BUDGET_MB, entry.id
 
 
-def test_baked_variants_resolve_to_fleet() -> None:
-    """Las variantes locales con ctx horneado resuelven a su tier."""
-    assert recommend_num_ctx("qwopus-v3-9b-16k") == 16384
-    assert recommend_num_ctx("opus-distill-9b-16k") == 16384
-    assert recommend_num_ctx("qwen38-9b-16k") == 16384
-    assert model_entry("qwopus-v3-9b-16k") is not None
-    assert model_entry("opus-distill-9b-16k") is not None
+def test_canonical_ids_resolve_to_their_entry() -> None:
+    """Cada id canonico de la flota se resuelve a su propia entrada."""
+    for entry in FLEET:
+        assert model_entry(entry.id) is entry, entry.id
+
+
+def test_retired_aliases_no_longer_resolve() -> None:
+    """Los alias cortos retirados 2026-10-01 ya no matchean (evita deriva)."""
+    for retired in ("qwopus-v3-9b-16k", "qwen38-9b-16k",
+                    "opus-distill-9b-16k", "minicpm5-2b-32k"):
+        assert model_entry(retired) is None, retired
 
 
 def test_unknown_model_returns_none() -> None:

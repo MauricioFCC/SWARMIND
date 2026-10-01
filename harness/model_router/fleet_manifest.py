@@ -13,7 +13,9 @@ WHERE: `model_windows.recommend_num_ctx` (ventana), `vram_guard.footprint_mb`
 (presupuesto), `local_executor` (options.num_ctx). El YAML de config sigue
 siendo el cableado de runtime y los tests verifican que coincida.
 
-Medido 2026-09-30 (RTX 4060 8GB, Ollama 0.34.4, `ollama ps` + `/api/show`).
+Medido 2026-10-01 (RTX 4060 8GB, Ollama 0.34.4). Tras el BSOD
+VIDEO_TDR_FAILURE (0x116) del 2026-10-01 (9B + ctx 16384 + Vulkan en 8GB)
+TODA la flota corre a `num_ctx=8192` y `keep_alive="0"` salvo el tier fast.
 """
 
 from __future__ import annotations
@@ -45,28 +47,31 @@ class FleetModel:
     matches: tuple[str, ...]
 
 
-#: Flota canonica. Los `num_ctx` son los valores que la ruta local solicita
-#: (verificado: 16384 en 9B Q4 -> 5.15GB con KV comprimida, 5.7GB sin ella).
+#: Flota canonica 2026-10-01. `num_ctx` escalado por TAMANO del modelo:
+#: los 9B Q4 (~6.1-6.7GB) van a 4096 para dejar KV headroom en 8GB; el 4B
+#: (3.6GB) admite 8192. Techo duro anti-TDR: `gpu_guard.SAFE_CTX_MAX=8192`.
+#: 16384 NO es seguro (causa del BSOD 0x116 del 2026-10-01).
+#: `keep_alive="0"` en TODOS: sin residencia no hay solape de modelos.
 FLEET: tuple[FleetModel, ...] = (
     FleetModel(
-        id="hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0",
-        tier="fast", num_ctx=8192, vram_mb=2700, keep_alive="5m",
-        matches=("minicpm5", "minicpm"),
+        id="hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL",
+        tier="fast", num_ctx=8192, vram_mb=3600, keep_alive="0",
+        matches=("unsloth/qwen3.5-4b", "qwen3.5-4b", "ud-q4_k_xl"),
     ),
     FleetModel(
-        id="hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
-        tier="quality", num_ctx=16384, vram_mb=5800, keep_alive="0",
-        matches=("qwen3.8", "qwen38"),
+        id="hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS",
+        tier="quality", num_ctx=4096, vram_mb=6100, keep_alive="0",
+        matches=("bartowski/mimo", "mimo-v2.6", "mimo"),
     ),
     FleetModel(
         id="hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M",
-        tier="coding", num_ctx=16384, vram_mb=6600, keep_alive="0",
-        matches=("qwopus3.5-9b-v3", "qwopus-v3", "qwopus3.5", "qwopus"),
+        tier="coding", num_ctx=4096, vram_mb=6600, keep_alive="0",
+        matches=("jackrong/qwopus3.5-9b-v3", "qwopus3.5-9b-v3", "qwopus3.5-9b"),
     ),
     FleetModel(
-        id="hf.co/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF:Q4_K_M",
-        tier="reasoning", num_ctx=16384, vram_mb=6600, keep_alive="0",
-        matches=("claude-4.6-opus", "opus-distill", "claude-opus-distill"),
+        id="hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M",
+        tier="reasoning", num_ctx=4096, vram_mb=6700, keep_alive="0",
+        matches=("ornith-ai/ornith", "ornith-1.5"),
     ),
     FleetModel(
         id="qwen3-embedding:0.6b",

@@ -59,22 +59,26 @@ _DIM_KEYWORDS: dict[str, frozenset[str]] = {
     }),
 }
 
-#: Perfiles builtin de los instalados (priors por benchmark; calibrables).
-#: Fuentes: Qwen2.5/3 reports (MMLU/HumanEval; GSM8K deprecado por saturacion/
-#: contaminacion — usar MATH-500/AIME como gate), MiniCPM-SALA 0.951
-#: HumanEval (llm-stats), LXT (solo 4/15 predicen prod).
+#: Perfiles builtin de los 6 modelos actuales (priors por benchmark; calibrables).
+#: Fuentes: reportes Qwen3.5/Qwen3/MiMo/Ornith (MMLU/HumanEval; GSM8K deprecado
+#: por saturacion/contaminacion — usar MATH-500/AIME como gate), LXT (solo 4/15
+#: predicen prod). Retirados 2026-10-01: MiniCPM5, Qwen3.8, Opus-Distill.
 _BUILTIN: tuple[tuple[str, float, str, dict[str, float]], ...] = (
     ("hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M",
-     9.0, "Q4", {"coding": 0.92, "reasoning": 0.78, "math": 0.72,
-                 "multilingual": 0.75, "agentic": 0.75}),
-    ("hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
-     9.0, "Q4", {"coding": 0.75, "reasoning": 0.85, "math": 0.85,
-                 "multilingual": 0.80, "agentic": 0.75}),
-    ("hf.co/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF:Q4_K_M",
-     9.0, "Q4", {"coding": 0.82, "reasoning": 0.90, "math": 0.82,
-                 "multilingual": 0.80, "agentic": 0.85}),
-    ("hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0", 2.0, "Q8",
-     {"coding": 0.60, "reasoning": 0.60, "multilingual": 0.65, "agentic": 0.55}),
+     9.0, "Q4", {"coding": 0.94, "reasoning": 0.78, "math": 0.74,
+                 "multilingual": 0.75, "agentic": 0.72}),
+    ("hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M",
+     9.0, "Q4", {"coding": 0.78, "reasoning": 0.92, "math": 0.85,
+                 "multilingual": 0.78, "agentic": 0.80}),
+    ("hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS",
+     9.0, "Q4", {"coding": 0.80, "reasoning": 0.82, "math": 0.82,
+                 "multilingual": 0.78, "agentic": 0.88}),
+    ("hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL",
+     4.0, "Q4", {"coding": 0.70, "reasoning": 0.62, "math": 0.60,
+                 "multilingual": 0.75, "agentic": 0.60}),
+    ("qwen3-embedding:0.6b", 0.6, "Q4",
+     {"coding": 0.20, "reasoning": 0.25, "multilingual": 0.85,
+      "agentic": 0.30}),
     ("qwen3-vl:4b", 4.0, "Q4",
      {"coding": 0.50, "reasoning": 0.60, "multilingual": 0.60,
       "agentic": 0.55, "vision": 0.90}),

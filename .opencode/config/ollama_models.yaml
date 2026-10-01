@@ -1,15 +1,16 @@
 # Ollama local delegation — tiers por capacidad (minimiza tokens cloud)
-# Flota 2026-09-30 (RTX 4060 8GB, nombres canonicos hf.co; cada blob un solo
-# nombre, sin alias locales). Frontera: coding y reasoning actualizados.
-#   fast:      MiniCPM5-2B Q8_0 — borradores, tareas simples
-#   quality:   Qwen3.8-9B distill Q4_K_M — razonamiento general
-#   coding:    Qwopus3.5-9B-v3 Q4_K_M — codigo (HumanEval 87.8)
-#   reasoning: Qwen3.5-9B Claude-Opus-Distill-v2 — agente (-20% tokens)
+# Flota 2026-10-01 (RTX 4060 8GB, nombres canonicos hf.co; cada blob un solo
+# nombre, sin alias locales). Reemplazo post-BSOD VIDEO_TDR_FAILURE (0x116):
+# TODOS los tiers a num_ctx=8192, NO 16384 (el 9B + 16K + Vulkan en 8GB
+# agoto la GPU el 2026-10-01). El techo vive en gpu_guard.SAFE_CTX_MAX.
+#   fast:      Qwen3.5-4B UD-Q4_K_XL — borradores, tareas simples
+#   quality:   MiMo-V2.6-Distill-Qwen-9B IQ4_XS — calidad/agente
+#   coding:    Qwopus3.5-9B-v3 Q4_K_M — codigo (se mantiene)
+#   reasoning: Ornith-1.5-9B Q4_K_M — razonamiento (fuera del enum YAML)
 #   embedding: qwen3-embedding:0.6b — RAG (auto_pull lo restaura si se usa)
 #   vision:    qwen3-vl:4b — imagenes/alt-text (auto_pull lo restaura si se usa)
-# El servidor fija OLLAMA_CONTEXT_LENGTH=16384 (scripts/enable_gpu.py): la
-# ventana por defecto es 16K sin variantes "16k baked". El harness igual
-# envia num_ctx explicito por options (fleet_manifest.py = SSOT).
+# El servidor fija OLLAMA_CONTEXT_LENGTH=8192 (scripts/enable_gpu.py). El
+# harness igual envia num_ctx explicito por options (fleet_manifest.py = SSOT).
 ollama:
   base_url: "http://localhost:11434"
   timeout: 60
@@ -18,9 +19,9 @@ ollama:
   # demanda (y con el guard de gpu_guard.py). NO reactivar en 8GB.
   warm_on_start: []
   tiers:
-    fast:      {model: "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0",                          keep_alive: "5m", auto_pull: true}
-    quality:   {model: "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",                keep_alive: "0", auto_pull: true}
-    coding:    {model: "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M",                     keep_alive: "0", auto_pull: true}
+    fast:      {model: "hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL",                keep_alive: "0", auto_pull: true}
+    quality:   {model: "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS",  keep_alive: "0", auto_pull: true}
+    coding:    {model: "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M",             keep_alive: "0", auto_pull: true}
     embedding: {model: "qwen3-embedding:0.6b", keep_alive: "0", auto_pull: true}
     vision:    {model: "qwen3-vl:4b",          keep_alive: "0", auto_pull: true}
 # Politica local-first con supervision cloud como oraculo 1% (ADR-0084/0097):

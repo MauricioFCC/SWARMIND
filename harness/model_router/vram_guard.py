@@ -22,13 +22,16 @@ from harness.model_router.fleet_manifest import model_entry
 
 logger = logging.getLogger("harness.model_router.vram_guard")
 
-#: VRAM ocupada estimada por modelo (MB, pesos Q4/Q8 + KV tipica).
+#: VRAM ocupada estimada por modelo (MB, pesos Q4/Q8 + KV tipica). Claves de
+#: las familias de la flota 2026-10-01 (el manifiesto GANA) + familias ajenas
+#: que el usuario pudiera servir por Unsloth. Los retirados (minicpm5, qwen3.8)
+#: se eliminan para que caigan al default conservador.
 MODEL_FOOTPRINT_MB: dict[str, int] = {
-    "qwen3.8": 5800,
-    "qwen38": 5800,  # nombre corto con ctx horneado (mismos pesos 9B Q4)
+    "qwen3.5-4b": 3600,
+    "mimo": 6100,
     "qwopus": 6600,
+    "ornith": 6700,
     "glm": 6200,
-    "minicpm5": 2700,
     "lfm2.5": 2900,
     "llama3.2": 2000,
     "qwen3:4b": 2600,

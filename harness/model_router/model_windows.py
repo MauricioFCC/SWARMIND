@@ -7,8 +7,10 @@ WHY: Bug real x2: (1) con ~17K tokens de sistema+skills el modelo entra en
 loop de compactacion y vuelca la GPU; (2) medido 2026-09-29 (`ollama ps`
 CONTEXT + `ollama show` sin PARAMETER): los blobs canonicos hf.co corren
 con el default 4096, NO 8192 — el gate anterior admitia 2x de mas y el
-KV desbordaba con otro residente (nvlddmkm 153). Ventana honesta +
-respuesta acotada (num_predict) = sin desborde posible.
+KV desbordaba con otro residente (nvlddmkm 153). El 2026-10-01 un 9B Q4 a
+ctx 16384 + Vulkan sobre 8GB provoco VIDEO_TDR_FAILURE (0x116) -> BSOD: el
+techo anti-TDR queda en 8192 (`gpu_guard.SAFE_CTX_MAX`) y 16384 NO es seguro
+en 8GB. Ventana honesta + respuesta acotada (num_predict) = sin desborde.
 WHERE: `LocalExecutor` (gate previo + options num_predict) y
 `opencode.json` (modelos cortos con ctx horneado).
 
@@ -24,8 +26,9 @@ from harness.model_router.fleet_manifest import model_entry
 
 logger = logging.getLogger("harness.model_router.model_windows")
 
-#: num_ctx default honesto (default real de Ollama, medido 2026-09-29).
-DEFAULT_NUM_CTX = 4096
+#: num_ctx default para modelos desconocidos. Igual al techo anti-TDR: en
+#: 8GB pedir mas de 8192 (p. ej. 16384) es lo que desencadeno el BSOD 0x116.
+DEFAULT_NUM_CTX = 8192
 #: Reserva para respuesta: el techo de lo que LocalExecutor permite generar
 #: (CLOSED_TASK_NUM_PREDICT) con margen x2. Nada local puede pedir mas alla.
 RESPONSE_RESERVE_TOKENS = 1024
@@ -37,18 +40,13 @@ SYSTEM_BUDGET_LEAN = 2500
 #: Ratio chars/token para estimar.
 _CHARS_PER_TOKEN = 4
 
-#: Ventana de FALLBACK por familia (RTX 4060 8GB; primera coincidencia gana:
-#: especificos antes). Los modelos de flota resuelven por manifiesto (SSOT,
-#: ADR-0101), que GANA sobre esta tabla; aqui solo quedan familias ajenas que
-#: el usuario pudiera instalar (los retirados se eliminaron 2026-09-30).
+#: Ventana de FALLBACK por familia ajena a la flota (RTX 4060 8GB; primera
+#: coincidencia gana). Los modelos de flota resuelven por manifiesto (SSOT,
+#: ADR-0101), que GANA sobre esta tabla. TODA entrada respeta el techo
+#: anti-TDR de 8192; el resto de familias cae al default (8192).
 _MODEL_WINDOWS: tuple[tuple[str, int], ...] = (
-    ("qwen38", 16384),        # alias corto con ctx horneado (medido 2026-09-29)
-    ("minicpm", 32768),       # alias minicpm5-2b-32k mide 32768 (canonical: manifiesto 8192)
-    ("qwen3-embedding", 4096),
-    ("qwen3-vl", 4096),
-    ("qwen3.8", 16384),       # manifiesto gana (medido 16K, no 8K)
-    ("qwopus", 16384),        # manifiesto gana (medido 16384)
-    ("qwen3.5", 16384),       # familia reasoning 9B (medido 16K)
+    ("qwen3-embedding", 8192),
+    ("qwen3-vl", 8192),
 )
 
 

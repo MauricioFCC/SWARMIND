@@ -78,15 +78,29 @@ def test_profile_is_frozen() -> None:
 def test_load_builtin_profiles(tmp_path) -> None:
     """Sin YAML: perfiles builtin de la flota vigente (6 modelos, sin retirados).
 
-    Bonsai-2-27B fue retirado 2026-09-30 (binario eliminado, no adoptable),
-    por eso el builtin queda en 5 perfiles y no debe reincorporarse.
+    Flota 2026-10-01: Qwopus3.5-v3 (coding), Ornith (reasoning), MiMo
+    (agentic), Qwen3.5-4B (fast), qwen3-embedding y qwen3-vl. Los retirados
+    (MiniCPM5, Qwen3.8, Opus-Distill) no deben reaparecer.
     """
     profiles = load_profiles(None)
     ids = {p.model_id for p in profiles}
-    assert len(profiles) >= 5
-    assert any("Qwen3.8" in i or "qwen" in i.lower() for i in ids)
-    assert any("MiniCPM5" in i for i in ids)
-    assert not any("Bonsai" in i for i in ids)
+    assert len(profiles) == 6
+    assert any("Qwopus3.5-9B-v3" in i for i in ids)
+    assert any("Ornith" in i for i in ids)
+    assert any("MiMo" in i for i in ids)
+    assert any("Qwen3.5-4B" in i for i in ids)
+    assert not any("MiniCPM5" in i or "Qwen3.8" in i or "Opus" in i for i in ids)
+
+
+def test_builtin_priors_route_by_strength() -> None:
+    """Los priors priorizan coding->Qwopus, reasoning->Ornith, agentic->MiMo."""
+    router = load_profiles(None)
+    coding = route_by_capability("implementar funcion con pytest y refactor", router)
+    assert "Qwopus3.5-9B-v3" in coding.model_id
+    reasoning = route_by_capability("disenar arquitectura con tradeoffs", router)
+    assert "Ornith" in reasoning.model_id
+    agentic = route_by_capability("investiga y busca comparativas", router)
+    assert "MiMo" in agentic.model_id
 
 
 def test_local_confidence_constant() -> None:

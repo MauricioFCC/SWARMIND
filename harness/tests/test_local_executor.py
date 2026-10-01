@@ -74,6 +74,9 @@ def _executor(**kw):
     # sys.modules como las de test_lazy_loading). El escenario sin-VRAM
     # se cubre con vram_check explicito en sus propios tests.
     kw.setdefault("vram_check", lambda model: True)
+    # Sin dato de GPU (None) no hay degradacion por gpu_guard en los tests
+    # genericos; la degradacion se prueba con free_vram explicito.
+    kw.setdefault("free_vram", lambda: None)
     return LocalExecutor(client=kw.pop("client", _FakeClient()), tiers=tiers, **kw)
 
 
@@ -227,7 +230,7 @@ def test_generate_caps_num_predict() -> None:
     out = _executor(client=client).execute("resume esto")
     assert out.executed_locally is True
     assert client.last_kwargs["options"] == {
-        "num_predict": 512, "think": False, "num_ctx": 4096,
+        "num_predict": 512, "think": False, "num_ctx": 8192,
     }
     assert client.calls == [
         "Responde de forma directa y breve, sin rodeos: resume esto"
@@ -293,3 +296,28 @@ def test_unsloth_degenerate_falls_to_ollama() -> None:
     assert out.executed_locally is True
     assert out.output == "respuesta local"
     assert ex.local_tasks == 1
+
+
+def test_low_vram_degrades_to_smallest_text_model() -> None:
+    """Sin VRAM para el tier pedido, gpu_guard degrada al 4B (anti-TDR)."""
+    from harness.model_router.ollama_tiers import CapabilityTier
+
+    client = _FakeClient()
+    ex = _executor(
+        client=client, tier=CapabilityTier.QUALITY, free_vram=lambda: 4300,
+    )
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert "Qwen3.5-4B" in out.model or "qwen3.5-4b" in out.model
+    # La ventana enviada respeta el techo anti-TDR.
+    assert client.last_kwargs["options"]["num_ctx"] <= 8192
+
+
+def test_high_vram_keeps_requested_model() -> None:
+    """Con VRAM holgada no hay degradacion (se respeta el tier)."""
+    from harness.model_router.ollama_tiers import CapabilityTier
+
+    ex = _executor(tier=CapabilityTier.QUALITY, free_vram=lambda: 16000)
+    out = ex.execute("resume esto")
+    assert out.executed_locally is True
+    assert out.model == "fake-quality"

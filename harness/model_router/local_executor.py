@@ -21,7 +21,9 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from harness.model_router.model_windows import fits_in_window, recommend_num_ctx
+from harness.model_router.fleet_manifest import FLEET
+from harness.model_router.gpu_guard import pick_safe_model, safe_num_ctx, should_degrade
+from harness.model_router.model_windows import fits_in_window
 from harness.model_router.vram_guard import fits_in_vram, footprint_mb, free_vram_mb
 
 
@@ -70,6 +72,9 @@ CLOSED_TASK_THINK = False
 #: Prefijo de tarea cerrada: suprime chachara meta (que agota num_predict
 #: y deja la respuesta truncada); el modelo va directo al contenido.
 CLOSED_TASK_PREFIX = "Responde de forma directa y breve, sin rodeos: "
+#: Tiers generativos validos como destino de degradacion anti-TDR (excluye
+#: embedding/vision: no sirven para tareas de texto).
+_LOCAL_TEXT_TIERS: tuple[str, ...] = ("fast", "quality", "coding", "reasoning")
 
 
 def _is_degenerate_output(output: str) -> bool:
@@ -151,7 +156,7 @@ class LocalExecutor:
 
     def __init__(
         self, client, tiers, unsloth_client=None, unsloth_model=None,
-        vram_check=None,
+        vram_check=None, free_vram=None,
     ) -> None:
         """Inicializa el ejecutor con cliente, router y backend preferente.
 
@@ -161,12 +166,15 @@ class LocalExecutor:
             unsloth_client: Cliente Unsloth opcional (primero en orden).
             unsloth_model: Override de modelo Unsloth (None = auto).
             vram_check: Gate anti-OOM inyectable (None = guard real).
+            free_vram: Proveedor de VRAM libre inyectable (None = nvidia-smi);
+                los tests lo fijan para ser hermeticos.
         """
         self._client = client
         self._tiers = tiers
         self._unsloth = unsloth_client
         self._unsloth_model = unsloth_model
         self._vram_check = vram_check or _fits_vram_for
+        self._free_vram = free_vram or free_vram_mb
         self._local_tasks = 0
         self._cloud_tasks = 0
 
@@ -266,6 +274,16 @@ class LocalExecutor:
                 reason="tarea frontier-only: requiere cloud (TKN justificado)",
             )
         model = self._tiers.model_for(tier)
+        free = self._free_vram()
+        if should_degrade(model, free):
+            candidates = [e.id for e in FLEET if e.tier in _LOCAL_TEXT_TIERS]
+            safe_model = pick_safe_model(model, candidates, free)
+            if safe_model != model:
+                logger.warning(
+                    "local_executor: %s no cabe con %s MB libres (anti-TDR); "
+                    "degrado a %s", model, free, safe_model,
+                )
+                model = safe_model
         if not fits_in_window(model, task_chars=len(task)):
             self._cloud_tasks += 1
             return LocalExecutionResult(
@@ -291,7 +309,7 @@ class LocalExecutor:
                 options={
                     "num_predict": CLOSED_TASK_NUM_PREDICT,
                     "think": CLOSED_TASK_THINK,
-                    "num_ctx": recommend_num_ctx(model),
+                    "num_ctx": safe_num_ctx(model, free),
                 },
             )
         except Exception as exc:  # noqa: BLE001 - fallback a cloud, no crash

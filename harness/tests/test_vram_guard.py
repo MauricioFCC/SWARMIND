@@ -16,14 +16,17 @@ from harness.model_router.vram_guard import (
 
 
 def test_footprints_documented() -> None:
-    """Footprints conocidos (MB en VRAM con Q4/Q8)."""
-    assert MODEL_FOOTPRINT_MB["qwen3.8"] == 5800
-    assert MODEL_FOOTPRINT_MB["qwen38"] == 5800
+    """Footprints conocidos de la flota 2026-10-01 (MB en VRAM con Q4/Q8)."""
+    assert MODEL_FOOTPRINT_MB["qwen3.5-4b"] == 3600
+    assert MODEL_FOOTPRINT_MB["mimo"] == 6100
     assert MODEL_FOOTPRINT_MB["qwopus"] == 6600
-    assert MODEL_FOOTPRINT_MB["minicpm5"] == 2700
+    assert MODEL_FOOTPRINT_MB["ornith"] == 6700
     assert MODEL_FOOTPRINT_MB["gemma-4"] == 16000
     assert MODEL_FOOTPRINT_MB["26b"] == 16000
     assert MODEL_FOOTPRINT_MB["bonsai"] == 6000
+    # Familias retiradas 2026-10-01: ya no tienen clave propia.
+    assert "minicpm5" not in MODEL_FOOTPRINT_MB
+    assert "qwen3.8" not in MODEL_FOOTPRINT_MB
 
 
 def test_unsloth_model_ids_resolve() -> None:
@@ -31,7 +34,8 @@ def test_unsloth_model_ids_resolve() -> None:
     from harness.model_router.vram_guard import footprint_mb
 
     assert footprint_mb("unsloth:unsloth/gemma-4-26B") == 16000
-    assert footprint_mb("unsloth:qwen38-9b-16k") == 5800
+    assert footprint_mb("unsloth:qwen3.5-4b-UD-Q4_K_XL") == 3600
+    assert footprint_mb("unsloth:ornith-1.5-9b") == 6700
 
 
 def test_26b_never_fits_8gb() -> None:
@@ -78,6 +82,6 @@ def test_keep_alive_for_tier() -> None:
     router = OllamaTierRouter.load_from_yaml(
         __import__("pathlib").Path(".opencode/config/ollama_models.yaml")
     )
-    assert router.keep_alive_for(CapabilityTier.FAST) == "5m"
+    assert router.keep_alive_for(CapabilityTier.FAST) == "0"
     assert router.keep_alive_for(CapabilityTier.QUALITY) == "0"
     assert router.keep_alive_for(CapabilityTier.CODING) == "0"

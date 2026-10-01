@@ -33,6 +33,27 @@ _RETIRED = (
     "qwen2.5-coder", "deepseek-r1", "glm-z1", "deepseek-v4-flash",
 )
 
+#: Retirados 2026-10-01 (BSOD TDR): el coordinador borrara sus blobs DESPUES
+#: de este cambio, asi que durante la transicion se toleran en `ollama list`
+#: sin que el test de huerfanos falle. Una vez borrados, esta lista sobra.
+_TRANSITIONAL = (
+    "minicpm", "qwen3.8", "qwen38", "opus-distill", "claude-4.6-opus",
+    "qwopus-v3-9b-16k",
+)
+
+
+def _is_transitional(name: str) -> bool:
+    """True si el instalado es un retirado 2026-10-01 pendiente de borrado.
+
+    Args:
+        name: Nombre/tag instalado en Ollama.
+
+    Returns:
+        True si contiene alguna clave de `_TRANSITIONAL`.
+    """
+    lowered = name.lower()
+    return any(key in lowered for key in _TRANSITIONAL)
+
 
 def _fetch_installed() -> tuple[str, ...] | None:
     """Nombres instalados via /api/tags (None si Ollama no responde).
@@ -87,7 +108,9 @@ def test_installed_models_belong_to_fleet(installed_models: tuple[str, ...]) -> 
     aliases = _declared_aliases()
     orphans = [
         name for name in installed_models
-        if model_entry(name) is None and name not in aliases
+        if model_entry(name) is None
+        and name not in aliases
+        and not _is_transitional(name)
     ]
     assert not orphans, f"instalados sin declarar: {orphans}"
 
