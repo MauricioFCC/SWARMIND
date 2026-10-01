@@ -7,7 +7,7 @@ models:
   # "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M":
   #   caps: {coding: 0.80}
   #   trust: 1.0
-  # "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M":
+  # "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M":
   #   trust: 0.9
 # Politica local-first (sobreescribe local_first de ollama_models.yaml):
 # local_first:

@@ -8,8 +8,8 @@ cloud (TKN): solo se paga frontier/cloud cuando la tarea lo requiere
 Tiers (patrón del usuario, SSOT .opencode/config/ollama_models.yaml):
 - 🟢 FAST      (fast):      borradores, tareas simples, extracción, formateo
 - 🔵 QUALITY   (quality):   calidad de texto, resúmenes, redacción
-- 🟣 EMBEDDING (embedding): RAG, búsqueda semántica (nomic-embed-text)
-- 🟡 VISION    (vision):    leer imágenes, alt-text (llava)
+- 🟣 EMBEDDING (embedding): RAG, búsqueda semántica (qwen3-embedding:0.6b)
+- 🟡 VISION    (vision):    leer imágenes, alt-text (qwen3-vl:4b)
 - 🟠 CODING    (coding):    implementar, refactorizar, debuggear, tests
 
 Diseño (integra con el repo sin romper):
@@ -266,6 +266,9 @@ def _specs_from_yaml(ollama_cfg: dict) -> dict[CapabilityTier, OllamaTierSpec]:
     tiers_cfg = ollama_cfg.get("tiers")
     if not isinstance(tiers_cfg, dict):
         return specs
+    # CapabilityTier(str, Enum) ES iterable (un Enum itera sus miembros);
+    # CodeQL infiere el subtipo str y emite un falso positivo.
+    # codeql[py/non-iterable-in-for-loop]
     for tier in CapabilityTier:
         entry = tiers_cfg.get(tier.value)
         if not isinstance(entry, dict):

@@ -5,21 +5,30 @@ Enterprise-grade validation for AI-generated code and decisions.
 Las funciones de chequeo individuales se encuentran en ``guardrails_checks.py``
 para mantener este archivo por debajo del limite de 500 lineas.
 """
-import re
-import json
-from typing import Callable, Dict, Any, Tuple, List, Optional
-from dataclasses import dataclass, field
-from enum import Enum
+from collections.abc import Callable
+from typing import Any
 
-from .guardrails_base import GuardrailSeverity, GuardrailResult
+from .guardrails_base import GuardrailResult, GuardrailSeverity
 from .guardrails_checks import (
-    check_architecture_pattern, check_dependency_injection, check_resilience_patterns,
-    check_no_secrets, check_no_pii_in_logs, check_sql_injection_safe,
-    check_conventional_commit, check_docs_for_public_api, check_tests_for_new_features,
-    check_discovery_admin, check_discovery_data, check_discovery_infra,
-    check_cost_budget, check_cost_usage, check_mcp_connectivity,
-    check_three_whys_diagnostic, check_rag_groundedness, check_rag_context_relevance,
+    check_architecture_pattern,
+    check_conventional_commit,
+    check_cost_budget,
+    check_cost_usage,
+    check_dependency_injection,
+    check_discovery_admin,
+    check_discovery_data,
+    check_discovery_infra,
+    check_docs_for_public_api,
+    check_mcp_connectivity,
+    check_no_pii_in_logs,
+    check_no_secrets,
+    check_rag_context_relevance,
     check_rag_faithfulness,
+    check_rag_groundedness,
+    check_resilience_patterns,
+    check_sql_injection_safe,
+    check_tests_for_new_features,
+    check_three_whys_diagnostic,
 )
 
 
@@ -28,19 +37,19 @@ class GuardrailPipeline:
 
     def __init__(self):
         """Inicializa la instancia de la clase."""
-        self._pre_checks: List[Tuple[str, Callable]] = []
-        self._post_checks: List[Tuple[str, Callable]] = []
-        self._results: List[GuardrailResult] = []
+        self._pre_checks: list[tuple[str, Callable]] = []
+        self._post_checks: list[tuple[str, Callable]] = []
+        self._results: list[GuardrailResult] = []
 
-    def add_pre(self, rule_id: str, fn: Callable[[Dict], GuardrailResult]):
+    def add_pre(self, rule_id: str, fn: Callable[[dict], GuardrailResult]):
         """Anade un check pre-ejecucion."""
         self._pre_checks.append((rule_id, fn))
 
-    def add_post(self, rule_id: str, fn: Callable[[str, Dict], GuardrailResult]):
+    def add_post(self, rule_id: str, fn: Callable[[str, dict], GuardrailResult]):
         """Anade un check post-ejecucion."""
         self._post_checks.append((rule_id, fn))
 
-    def run_pre(self, context: Dict[str, Any]) -> Tuple[bool, List[GuardrailResult]]:
+    def run_pre(self, context: dict[str, Any]) -> tuple[bool, list[GuardrailResult]]:
         """Ejecuta todos los checks pre-ejecucion."""
         self._results = []
         blocked = False
@@ -51,14 +60,14 @@ class GuardrailPipeline:
                 self._results.append(result)
                 if result.severity == GuardrailSeverity.BLOCK and not result.passed:
                     blocked = True
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - los checks son plugins; cualquier fallo se degrada a WARN
                 self._results.append(GuardrailResult(
                     passed=False, severity=GuardrailSeverity.WARN,
-                    message=f"Error ejecutando {rule_id}: {str(e)}", rule_id=rule_id
+                    message=f"Error ejecutando {rule_id}: {e!s}", rule_id=rule_id
                 ))
         return not blocked, self._results
 
-    def run_post(self, output: str, context: Dict[str, Any]) -> Tuple[bool, List[GuardrailResult]]:
+    def run_post(self, output: str, context: dict[str, Any]) -> tuple[bool, list[GuardrailResult]]:
         """Ejecuta todos los checks post-ejecucion."""
         results = []
         blocked = False
@@ -69,15 +78,15 @@ class GuardrailPipeline:
                 results.append(result)
                 if result.severity == GuardrailSeverity.BLOCK and not result.passed:
                     blocked = True
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - los checks son plugins; cualquier fallo se degrada a WARN
                 results.append(GuardrailResult(
                     passed=False, severity=GuardrailSeverity.WARN,
-                    message=f"Error ejecutando {rule_id}: {str(e)}", rule_id=rule_id
+                    message=f"Error ejecutando {rule_id}: {e!s}", rule_id=rule_id
                 ))
         self._results.extend(results)
         return not blocked, results
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Obtiene resumen de resultados para logging/observabilidad."""
         return {
             "total_checks": len(self._results),
@@ -123,7 +132,7 @@ guardrails.add_post("RAG-002", check_rag_context_relevance)
 guardrails.add_post("RAG-003", check_rag_faithfulness)
 
 
-def run_full_pipeline(user_message: str, generated_code: str, context: Dict) -> Dict[str, Any]:
+def run_full_pipeline(user_message: str, generated_code: str, context: dict) -> dict[str, Any]:
     """Ejecuta el pipeline completo de guardrails.
 
     Returns:

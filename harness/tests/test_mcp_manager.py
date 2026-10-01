@@ -19,6 +19,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from harness.tools_sandbox import mcp_manager as mcp_manager_module
 from harness.tools_sandbox.mcp_client import MCPResult, MCPTool
 from harness.tools_sandbox.mcp_manager import MCPManager, MCPServerConfig
 
@@ -36,7 +37,7 @@ def manager() -> MCPManager:
 @pytest.fixture
 def mock_client() -> MagicMock:
     """Fixture: mock de MCPClient."""
-    with patch("harness.tools_sandbox.mcp_manager.MCPClient") as mock:
+    with patch.object(mcp_manager_module, "MCPClient") as mock:
         instance = mock.return_value
         instance.is_connected.return_value = False
         instance.connect.return_value = True
@@ -186,7 +187,6 @@ class TestEnableDisable:
 class TestLoadServers:
     """Tests de load_servers()."""
 
-    @pytest.mark.xfail(reason="Flaky por polución entre tests (test_mcp_client corre primero)")
     def test_load_success(self, manager: MCPManager) -> None:
         """load_servers exitoso debe cargar servidores y conectar."""
         import yaml
@@ -200,7 +200,7 @@ class TestLoadServers:
                     {"name": "filesystem", "url": "http://localhost:3100", "tools": ["read", "write"], "enabled": True},
                     {"name": "database", "url": "http://localhost:3200", "tools": ["query"], "enabled": False},
                 ],
-            }), patch("harness.tools_sandbox.mcp_manager.MCPClient") as mock_cls:
+            }), patch.object(mcp_manager_module, "MCPClient") as mock_cls:
                 instance = mock_cls.return_value
                 instance.is_connected.return_value = False
                 instance.connect.return_value = True
@@ -251,14 +251,13 @@ class TestLoadServers:
 class TestConnectAll:
     """Tests de connect_all()."""
 
-    @pytest.mark.xfail(reason="Flaky por polución entre tests")
     def test_connect_all_success(self, manager: MCPManager) -> None:
         """connect_all debe conectar servidores habilitados."""
         manager.register_server("srv1", "http://localhost:3100", enabled=True)
         manager.register_server("srv2", "http://localhost:3200", enabled=True)
         manager.register_server("srv3", "http://localhost:3300", enabled=False)
 
-        with patch("harness.tools_sandbox.mcp_manager.MCPClient") as mock_cls:
+        with patch.object(mcp_manager_module, "MCPClient") as mock_cls:
             instance = mock_cls.return_value
             instance.is_connected.return_value = False
             instance.connect.return_value = True
@@ -270,13 +269,12 @@ class TestConnectAll:
             assert "srv3" not in manager._clients
             assert instance.connect.call_count == 2
 
-    @pytest.mark.xfail(reason="Flaky por polución entre tests")
     def test_connect_all_some_fail(self, manager: MCPManager) -> None:
         """connect_all debe contar solo conexiones exitosas."""
         manager.register_server("srv1", "http://localhost:3100", enabled=True)
         manager.register_server("srv2", "http://localhost:3200", enabled=True)
 
-        with patch("harness.tools_sandbox.mcp_manager.MCPClient") as mock_cls:
+        with patch.object(mcp_manager_module, "MCPClient") as mock_cls:
             instances = [MagicMock(), MagicMock()]
             instances[0].is_connected.return_value = False
             instances[0].connect.return_value = True
@@ -297,7 +295,7 @@ class TestConnectAll:
         mock_cli.is_connected.return_value = True
         manager._clients["srv1"] = mock_cli
 
-        with patch("harness.tools_sandbox.mcp_manager.MCPClient") as mock_cls:
+        with patch.object(mcp_manager_module, "MCPClient") as mock_cls:
             connected = manager.connect_all()
             assert connected == 1
             mock_cls.assert_not_called()  # No crea nuevo cliente
@@ -308,14 +306,13 @@ class TestConnectAll:
         connected = manager.connect_all()
         assert connected == 0
 
-    @pytest.mark.xfail(reason="Flaky por polución entre tests")
     def test_connect_all_invalidates_index(self, manager: MCPManager) -> None:
         """connect_all exitoso debe invalidar el índice."""
         manager.register_server("srv1", "http://localhost:3100", enabled=True)
         manager._tool_index = {"some_tool": MCPTool(name="some_tool")}
         manager._index_ts = 12345.0
 
-        with patch("harness.tools_sandbox.mcp_manager.MCPClient") as mock_cls:
+        with patch.object(mcp_manager_module, "MCPClient") as mock_cls:
             instance = mock_cls.return_value
             instance.is_connected.return_value = False
             instance.connect.return_value = True

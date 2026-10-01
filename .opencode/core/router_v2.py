@@ -13,15 +13,15 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .router_a2a import (
+    DEFAULT_A2A_CARDS,
     A2ACard,
     A2ADiscoveryRecord,
     A2AHandoffRequest,
     A2AHandoffResponse,
     A2ARegistry,
-    DEFAULT_A2A_CARDS,
     a2a_registry,
     init_default_a2a_registry,
 )
@@ -70,10 +70,10 @@ class ExecutionTrace:
     trace_id: str
     user_message: str
     start_time: float
-    agent_chain: List[str] = field(default_factory=list)
-    decisions: List[Dict[str, Any]] = field(default_factory=list)
-    guardrail_results: List[Dict] = field(default_factory=list)
-    token_usage: Dict[str, int] = field(default_factory=dict)
+    agent_chain: list[str] = field(default_factory=list)
+    decisions: list[dict[str, Any]] = field(default_factory=list)
+    guardrail_results: list[dict] = field(default_factory=list)
+    token_usage: dict[str, int] = field(default_factory=dict)
     final_state: AgentState = AgentState.ROUTING
 
     def add_decision(self, agent: str, reason: str, confidence: float):
@@ -86,7 +86,7 @@ class ExecutionTrace:
         })
         self.agent_chain.append(agent)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize trace to dictionary."""
         return {
             "trace_id": self.trace_id,
@@ -106,19 +106,19 @@ class ExecutionTrace:
 class Orchestrator:
     """Orquestador principal con estado, observabilidad y escalación."""
 
-    def __init__(self, config: Optional[Dict] = None):
+    def __init__(self, config: dict | None = None):
         """Initialize with optional configuration."""
         self.config = config or {}
-        self.active_traces: Dict[str, ExecutionTrace] = {}
+        self.active_traces: dict[str, ExecutionTrace] = {}
         self._rules = sorted(ROUTING_RULES, key=lambda r: -r.priority)
 
     def _generate_trace_id(self, message: str) -> str:
         """Generate unique trace ID for observability."""
-        timestamp = datetime.now().isoformat()
+        timestamp = datetime.now().isoformat()  # noqa: DTZ005 - naive local; cambiar tz alteraria trace_id/output
         content = f"{message}{timestamp}{time.time()}"
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
-    def _detect_intent(self, message: str) -> Tuple[str, float, str]:
+    def _detect_intent(self, message: str) -> tuple[str, float, str]:
         """
         Detect message intent and select target agent.
 
@@ -131,7 +131,7 @@ class Orchestrator:
                 return rule.target_agent, confidence, rule.id
         return "project-manager", 0.0, "FB-001"
 
-    def _build_context(self, message: str, trace: ExecutionTrace) -> Dict[str, Any]:
+    def _build_context(self, message: str, trace: ExecutionTrace) -> dict[str, Any]:
         """Build enriched context for the target agent."""
         return {
             "user_message": message,
@@ -144,7 +144,7 @@ class Orchestrator:
             "previous_decisions": trace.decisions[-3:],
         }
 
-    def process(self, user_message: str, context_override: Optional[Dict] = None) -> Dict[str, Any]:
+    def process(self, user_message: str, context_override: dict | None = None) -> dict[str, Any]:
         """
         Process a user message and determine the action to take.
 
@@ -184,7 +184,7 @@ class Orchestrator:
             "transitions": list(node.transitions.keys()),
             "metadata": {
                 "rule_matched": rule_id,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": datetime.now().isoformat(),  # noqa: DTZ005 - naive local (formato de trace)
                 "requires_guardrails": self.config.get("enable_guardrails", True)
             }
         }
@@ -192,7 +192,7 @@ class Orchestrator:
         return response
 
     def _build_escalation_response(self, trace: ExecutionTrace,
-                                   message: str, confidence: float) -> Dict[str, Any]:
+                                   message: str, confidence: float) -> dict[str, Any]:
         """Build escalation response routing to project-manager."""
         return {
             "trace_id": trace.trace_id,
@@ -212,7 +212,7 @@ class Orchestrator:
         }
 
     def transition(self, trace_id: str, condition: str,
-                   output: str, context: Dict) -> Optional[Dict[str, Any]]:
+                   output: str, context: dict) -> dict[str, Any] | None:
         """
         Process a transition based on the current agent's condition.
 
@@ -288,7 +288,7 @@ class Orchestrator:
             "trace_id": trace_id
         }
 
-    def get_trace(self, trace_id: str) -> Optional[Dict[str, Any]]:
+    def get_trace(self, trace_id: str) -> dict[str, Any] | None:
         """Get complete trace for debugging/observability."""
         trace = self.active_traces.get(trace_id)
         return trace.to_dict() if trace else None
@@ -307,13 +307,13 @@ class Orchestrator:
     # A2A Protocol Integration — Agent Discovery & Handoff
     # ------------------------------------------------------------------
 
-    def a2a_discover(self, capability: str, min_trust: str = "internal") -> List[Dict[str, Any]]:
+    def a2a_discover(self, capability: str, min_trust: str = "internal") -> list[dict[str, Any]]:
         """Discover agents by capability using the A2A registry."""
         records = a2a_registry.discover_by_capability(capability, min_trust)
         return [r.card.to_dict() for r in records]
 
     def a2a_handoff(self, from_agent: str, to_agent: str, trace_id: str,
-                    payload: Dict[str, Any], priority: int = 1) -> A2AHandoffResponse:
+                    payload: dict[str, Any], priority: int = 1) -> A2AHandoffResponse:
         """Initiate a formal A2A handoff between agents."""
         request = A2AHandoffRequest(
             from_agent=from_agent, to_agent=to_agent, trace_id=trace_id,
@@ -325,7 +325,7 @@ class Orchestrator:
         """Register an agent's capability card (e.g., for custom agents)."""
         return a2a_registry.register(card)
 
-    def a2a_get_registry_summary(self) -> Dict[str, Any]:
+    def a2a_get_registry_summary(self) -> dict[str, Any]:
         """Get A2A registry health and discovery summary."""
         return a2a_registry.get_registry_summary()
 
@@ -335,7 +335,7 @@ class Orchestrator:
 # =============================================================================
 
 
-def _load_project_config() -> Dict[str, Any]:
+def _load_project_config() -> dict[str, Any]:
     """Load config from project_config.yaml with fallback to generic defaults."""
     import os
     config_path = os.path.join(
@@ -374,12 +374,12 @@ def _load_project_config() -> Dict[str, Any]:
 orchestrator = Orchestrator(config=_load_project_config())
 
 
-def route_message(user_message: str, **kwargs) -> Dict[str, Any]:
+def route_message(user_message: str, **kwargs) -> dict[str, Any]:
     """Helper function for quick message routing."""
     return orchestrator.process(user_message, context_override=kwargs)
 
 
-def get_agent_prompt(agent: str, user_message: str, context: Dict) -> str:
+def get_agent_prompt(agent: str, user_message: str, context: dict) -> str:
     """
     Build optimized prompt for a specific agent.
     (Integration with prompt_optimizer)

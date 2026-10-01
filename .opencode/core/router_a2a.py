@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -18,14 +18,14 @@ class A2ACard:
     agent_name: str
     version: str = "1.0.0"
     description: str = ""
-    capabilities: List[str] = field(default_factory=list)
+    capabilities: list[str] = field(default_factory=list)
     input_schema: str = "text/markdown"
     output_schema: str = "text/markdown"
     trust_level: str = "internal"  # internal, partner, external
     rate_limit: int = 100
     endpoint: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """To dict."""
         return {
             "agent_name": self.agent_name, "version": self.version,
@@ -56,12 +56,12 @@ class A2AHandoffRequest:
     from_agent: str
     to_agent: str
     trace_id: str
-    payload: Dict[str, Any]
-    context: Dict[str, Any] = field(default_factory=dict)
+    payload: dict[str, Any]
+    context: dict[str, Any] = field(default_factory=dict)
     priority: int = 1  # 1=normal, 2=urgent, 3=critical
     timeout_seconds: int = 300
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """To dict."""
         return {
             "from_agent": self.from_agent, "to_agent": self.to_agent,
@@ -76,10 +76,10 @@ class A2AHandoffResponse:
     accepted: bool
     trace_id: str
     reason: str = ""
-    result: Optional[Dict[str, Any]] = None
-    suggested_alternative: Optional[str] = None
+    result: dict[str, Any] | None = None
+    suggested_alternative: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """To dict."""
         return {
             "accepted": self.accepted, "trace_id": self.trace_id,
@@ -96,8 +96,8 @@ class A2ARegistry:
 
     def __init__(self):
         """Initialize empty registry."""
-        self._agents: Dict[str, A2ADiscoveryRecord] = {}
-        self._discovery_log: List[Dict] = []
+        self._agents: dict[str, A2ADiscoveryRecord] = {}
+        self._discovery_log: list[dict] = []
 
     def register(self, card: A2ACard) -> bool:
         """Register or update an agent's capability card."""
@@ -114,7 +114,7 @@ class A2ARegistry:
         self._discovery_log.append({"action": "register", "agent": card.agent_name, "timestamp": now})
         return True
 
-    def discover_by_capability(self, capability: str, min_trust: str = "internal") -> List[A2ADiscoveryRecord]:
+    def discover_by_capability(self, capability: str, min_trust: str = "internal") -> list[A2ADiscoveryRecord]:
         """Find agents that advertise a specific capability."""
         trust_levels = {"internal": 0, "partner": 1, "external": 2}
         min_level = trust_levels.get(min_trust, 0)
@@ -129,11 +129,11 @@ class A2ARegistry:
                 results.append(record)
         return results
 
-    def get_agent(self, name: str) -> Optional[A2ADiscoveryRecord]:
+    def get_agent(self, name: str) -> A2ADiscoveryRecord | None:
         """Get agent by name."""
         return self._agents.get(name)
 
-    def list_agents(self) -> List[str]:
+    def list_agents(self) -> list[str]:
         """List all registered agent names."""
         return list(self._agents.keys())
 
@@ -170,7 +170,7 @@ class A2ARegistry:
             reason=f"Handoff accepted: {request.from_agent} -> {request.to_agent}",
         )
 
-    def get_registry_summary(self) -> Dict[str, Any]:
+    def get_registry_summary(self) -> dict[str, Any]:
         """Get registry summary."""
         return {
             "total_agents": len(self._agents),

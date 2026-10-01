@@ -8,12 +8,9 @@ activo y consultas por rol.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Self
 
 from .models import BelbinRole, CollaborationProtocol, MintzbergCoordination
-
-if TYPE_CHECKING:
-    from .core import OrganizationalLayer
 
 
 class _RolesMixin:
@@ -127,7 +124,7 @@ class _RolesMixin:
         return [agent for agent, r in self._roles.items() if r == role]
 
     @classmethod
-    def from_preset_belbin(cls) -> OrganizationalLayer:
+    def from_preset_belbin(cls) -> Self:
         """Asigna los cinco roles Belbin a agentes con coordinación por
         ajuste mutuo. Es el preset por defecto en IMACS.
 
@@ -148,7 +145,7 @@ class _RolesMixin:
     from_preset_default = from_preset_belbin
 
     @classmethod
-    def from_preset_adhocracy(cls) -> OrganizationalLayer:
+    def from_preset_adhocracy(cls) -> Self:
         """Crea capa con preset Adhocracy.
 
         Equipo flexible con supervisión directa, ideal para generación
@@ -166,7 +163,7 @@ class _RolesMixin:
         return layer
 
     @classmethod
-    def from_preset_three_departments(cls) -> OrganizationalLayer:
+    def from_preset_three_departments(cls) -> Self:
         """Crea capa con preset Three Departments (Tang dynasty).
 
         Inspirado en el sistema ministerial Tang con roles jerárquicos

@@ -135,6 +135,12 @@ ignore = ["EXE001"]
 "harness/tests/test_validate_skills.py" = ["E402"]
 "harness/**/__init__.py" = ["E402"]
 "harness/run_commands/__init__.py" = ["F403"]
+# .opencode/core/router_v2.py es un hub de re-export backward-compat documentado
+# en su docstring: re-exporta simbolos de router_a2a/router_scoring. Los imports
+# marcados F401 son re-exports intencionales (consumidos via
+# harness/orchestrator/delegation_engine.py y opencode.core). Un modulo de
+# tooling propagado a proyectos hermanos; --fix no debe borrarlos.
+".opencode/core/router_v2.py" = ["F401"]
 
 # ---------------------------------------------------------------------------
 # Vulture (detección de código muerto)

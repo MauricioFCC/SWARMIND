@@ -3,22 +3,20 @@ Guardrail check functions — extracted from guardrails.py for file size complia
 Each function is a standalone check that returns a GuardrailResult.
 """
 import re
-from typing import Dict, Any, Tuple
 
 from .guardrails_base import GuardrailResult, GuardrailSeverity
-
 
 # =============================================================================
 # ARCHITECTURE CHECKS
 # =============================================================================
 
-def check_architecture_pattern(context: Dict) -> GuardrailResult:
+def check_architecture_pattern(context: dict) -> GuardrailResult:
     """Verifica que el codigo siga el patron arquitectonico requerido."""
     pattern = context.get("required_pattern", "hexagonal")
     code = context.get("generated_code", "")
     if pattern == "hexagonal":
-        has_ports = bool(re.search(r"(class\s+\w+Port|Protocol|ABC|@abstractmethod)", code, re.I))
-        has_adapters = bool(re.search(r"(class\s+\w+Adapter|implements|extends)", code, re.I))
+        has_ports = bool(re.search(r"(class\s+\w+Port|Protocol|ABC|@abstractmethod)", code, re.IGNORECASE))
+        has_adapters = bool(re.search(r"(class\s+\w+Adapter|implements|extends)", code, re.IGNORECASE))
         if not has_ports and not has_adapters:
             return GuardrailResult(
                 passed=False, severity=GuardrailSeverity.WARN,
@@ -32,7 +30,7 @@ def check_architecture_pattern(context: Dict) -> GuardrailResult:
     )
 
 
-def check_dependency_injection(context: Dict) -> GuardrailResult:
+def check_dependency_injection(context: dict) -> GuardrailResult:
     """Verifica uso de inyeccion de dependencias en lugar de hardcoding."""
     code = context.get("generated_code", "")
     dangerous_patterns = [
@@ -41,9 +39,10 @@ def check_dependency_injection(context: Dict) -> GuardrailResult:
     ]
     violations = []
     for pattern in dangerous_patterns:
-        if re.search(pattern, code):
-            if not re.search(r"def\s+__init__\s*\([^)]*:\s*\w+(Port|Protocol|Client)?", code):
-                violations.append(pattern)
+        if re.search(pattern, code) and not re.search(
+            r"def\s+__init__\s*\([^)]*:\s*\w+(Port|Protocol|Client)?", code
+        ):
+            violations.append(pattern)
     if violations:
         return GuardrailResult(
             passed=False, severity=GuardrailSeverity.WARN,
@@ -57,7 +56,7 @@ def check_dependency_injection(context: Dict) -> GuardrailResult:
     )
 
 
-def check_resilience_patterns(context: Dict) -> GuardrailResult:
+def check_resilience_patterns(context: dict) -> GuardrailResult:
     """Verifica patrones de resiliencia en operaciones I/O."""
     code = context.get("generated_code", "")
     io_operations = ["request", "execute", "submit", "fetch", "query", "connect"]
@@ -67,7 +66,7 @@ def check_resilience_patterns(context: Dict) -> GuardrailResult:
             r"timeout\s*=", r"retry", r"Retry", r"backoff",
             r"circuit_breaker", r"CircuitBreaker", r"max_attempts"
         ]
-        has_resilience = any(re.search(p, code, re.I) for p in resilience_patterns)
+        has_resilience = any(re.search(p, code, re.IGNORECASE) for p in resilience_patterns)
         if not has_resilience:
             return GuardrailResult(
                 passed=False, severity=GuardrailSeverity.WARN,
@@ -85,7 +84,7 @@ def check_resilience_patterns(context: Dict) -> GuardrailResult:
 # SECURITY CHECKS (CRITICAL)
 # =============================================================================
 
-def check_no_secrets(output: str, context: Dict) -> GuardrailResult:
+def check_no_secrets(output: str, context: dict) -> GuardrailResult:
     """Bloquea codigo con secrets hardcodeados."""
     secret_patterns = [
         r"(?i)(api[_-]?key|apikey)\s*[:=]\s*['\"][a-zA-Z0-9_\-]{16,}['\"]",
@@ -109,7 +108,7 @@ def check_no_secrets(output: str, context: Dict) -> GuardrailResult:
     )
 
 
-def check_no_pii_in_logs(output: str, context: Dict) -> GuardrailResult:
+def check_no_pii_in_logs(output: str, context: dict) -> GuardrailResult:
     """Verifica que no se expongan datos personales en logs."""
     pii_patterns = [
         r"logging\.[^)]*['\"].*?(email|correo|correo_electronico)['\"].*?\+",
@@ -117,7 +116,7 @@ def check_no_pii_in_logs(output: str, context: Dict) -> GuardrailResult:
         r"print\([^)]*['\"].*?(password|clave|secret)['\"].*?\)",
     ]
     for pattern in pii_patterns:
-        if re.search(pattern, output, re.I):
+        if re.search(pattern, output, re.IGNORECASE):
             return GuardrailResult(
                 passed=False, severity=GuardrailSeverity.BLOCK,
                 message="Posible exposicion de PII en logs",
@@ -130,7 +129,7 @@ def check_no_pii_in_logs(output: str, context: Dict) -> GuardrailResult:
     )
 
 
-def check_sql_injection_safe(output: str, context: Dict) -> GuardrailResult:
+def check_sql_injection_safe(output: str, context: dict) -> GuardrailResult:
     """Verifica que las queries SQL usen parametros, no string formatting."""
     if "SELECT" not in output.upper() and "INSERT" not in output.upper():
         return GuardrailResult(
@@ -143,7 +142,7 @@ def check_sql_injection_safe(output: str, context: Dict) -> GuardrailResult:
         r"cursor\.execute\s*\([^,]+%\s*\(",
     ]
     for pattern in dangerous:
-        if re.search(pattern, output, re.I):
+        if re.search(pattern, output, re.IGNORECASE):
             return GuardrailResult(
                 passed=False, severity=GuardrailSeverity.BLOCK,
                 message="Query SQL vulnerable a inyeccion",
@@ -160,7 +159,7 @@ def check_sql_injection_safe(output: str, context: Dict) -> GuardrailResult:
 # COMMIT CHECKS
 # =============================================================================
 
-def check_conventional_commit(output: str, context: Dict) -> GuardrailResult:
+def check_conventional_commit(output: str, context: dict) -> GuardrailResult:
     """Verifica que los mensajes de commit sigan Conventional Commits."""
     if "git commit" not in output.lower() and "commit" not in context.get("action", ""):
         return GuardrailResult(
@@ -169,7 +168,7 @@ def check_conventional_commit(output: str, context: Dict) -> GuardrailResult:
         )
     valid_types = ["feat", "fix", "docs", "style", "refactor", "test", "chore", "build", "ci"]
     commit_pattern = rf"^\s*({'|'.join(valid_types)})"
-    if not re.search(commit_pattern, output, re.I | re.M):
+    if not re.search(commit_pattern, output, re.IGNORECASE | re.MULTILINE):
         return GuardrailResult(
             passed=False, severity=GuardrailSeverity.WARN,
             message="Mensaje de commit sin tipo Conventional",
@@ -182,10 +181,10 @@ def check_conventional_commit(output: str, context: Dict) -> GuardrailResult:
     )
 
 
-def check_docs_for_public_api(output: str, context: Dict) -> GuardrailResult:
+def check_docs_for_public_api(output: str, context: dict) -> GuardrailResult:
     """Verifica que funciones/clases publicas tengan docstrings."""
-    public_defs = re.findall(r"^(?:async\s+)?def\s+([a-z][a-zA-Z0-9_]*)\s*\(", output, re.M)
-    public_classes = re.findall(r"^class\s+([A-Z][a-zA-Z0-9_]*)\s*[:\(]", output, re.M)
+    public_defs = re.findall(r"^(?:async\s+)?def\s+([a-z][a-zA-Z0-9_]*)\s*\(", output, re.MULTILINE)
+    public_classes = re.findall(r"^class\s+([A-Z][a-zA-Z0-9_]*)\s*[:\(]", output, re.MULTILINE)
     public_defs = [d for d in public_defs if not d.startswith("_")]
     public_classes = [c for c in public_classes if not c.startswith("_")]
     if not public_defs and not public_classes:
@@ -207,7 +206,7 @@ def check_docs_for_public_api(output: str, context: Dict) -> GuardrailResult:
     )
 
 
-def check_tests_for_new_features(output: str, context: Dict) -> GuardrailResult:
+def check_tests_for_new_features(output: str, context: dict) -> GuardrailResult:
     """Sugiere anadir tests para nuevas funcionalidades."""
     new_logic_patterns = [r"def\s+(?!test_)\w+\(", r"class\s+\w+\(", r"if\s+.*:"]
     has_new_logic = any(re.search(p, output) for p in new_logic_patterns)
@@ -234,7 +233,7 @@ def check_tests_for_new_features(output: str, context: Dict) -> GuardrailResult:
 # DISCOVERY CHECKS — FDE Pre-Flight Gate
 # =============================================================================
 
-def check_discovery_admin(context: Dict) -> GuardrailResult:
+def check_discovery_admin(context: dict) -> GuardrailResult:
     """Verifica que se hayan definido reglas de negocio, SLAs y dominio."""
     rules = context.get("business_rules", {})
     has_rules = bool(rules) or bool(context.get("domain"))
@@ -251,7 +250,7 @@ def check_discovery_admin(context: Dict) -> GuardrailResult:
     )
 
 
-def check_discovery_data(context: Dict) -> GuardrailResult:
+def check_discovery_data(context: dict) -> GuardrailResult:
     """Verifica fuentes de datos, schemas, calidad y lineage."""
     has_sources = bool(context.get("data_sources"))
     has_schemas = bool(context.get("data_schema"))
@@ -268,10 +267,9 @@ def check_discovery_data(context: Dict) -> GuardrailResult:
     )
 
 
-def check_discovery_infra(context: Dict) -> GuardrailResult:
+def check_discovery_infra(context: dict) -> GuardrailResult:
     """Verifica target de despliegue, red, dependencias y seguridad."""
     has_target = bool(context.get("deploy_target"))
-    has_deps = bool(context.get("dependencies"))
     if not has_target:
         return GuardrailResult(
             passed=False, severity=GuardrailSeverity.WARN,
@@ -289,7 +287,7 @@ def check_discovery_infra(context: Dict) -> GuardrailResult:
 # COST GUARDRAILS — Budget & Token Usage
 # =============================================================================
 
-def check_cost_budget(context: Dict) -> GuardrailResult:
+def check_cost_budget(context: dict) -> GuardrailResult:
     """Verifica que la solicitud tenga un presupuesto de tokens/costo definido."""
     budget = context.get("cost_budget") or context.get("token_budget")
     if budget is None:
@@ -322,7 +320,7 @@ def check_cost_budget(context: Dict) -> GuardrailResult:
     )
 
 
-def check_cost_usage(output: str, context: Dict) -> GuardrailResult:
+def check_cost_usage(output: str, context: dict) -> GuardrailResult:
     """Verifica que el uso de costo/tokens no exceda el presupuesto definido."""
     budget = context.get("cost_budget") or context.get("token_budget")
     if budget is None:
@@ -343,13 +341,13 @@ def check_cost_usage(output: str, context: Dict) -> GuardrailResult:
         r'(?:total_)?cost[\s_:=]+([0-9]+\.?[0-9]*)\s*(?:USD|usd|\$)',
     ]
     for pattern in cost_patterns:
-        match = re.search(pattern, output, re.I)
+        match = re.search(pattern, output, re.IGNORECASE)
         if match:
             total_cost = float(match.group(1))
             break
 
     token_pattern = r'(?:token_usage|total_tokens|tokens_used)[\s_:=]+([0-9]+)'
-    token_match = re.search(token_pattern, output, re.I)
+    token_match = re.search(token_pattern, output, re.IGNORECASE)
     if token_match:
         token_usage = int(token_match.group(1))
 
@@ -387,12 +385,12 @@ def check_cost_usage(output: str, context: Dict) -> GuardrailResult:
 # MCP INTEGRATION CHECKS
 # =============================================================================
 
-def check_mcp_connectivity(context: Dict) -> GuardrailResult:
+def check_mcp_connectivity(context: dict) -> GuardrailResult:
     """Verifica que servidores MCP esten configurados si la tarea requiere tools externas."""
     task = context.get("user_message", "") or context.get("task", "")
     has_mcp_tools_context = bool(context.get("mcp_tools") or context.get("mcp_servers"))
     task_needs_external = bool(
-        re.search(r"(search|fetch|scrape|lookup|query\s+api|external|tool|browse|web)", task, re.I)
+        re.search(r"(search|fetch|scrape|lookup|query\s+api|external|tool|browse|web)", task, re.IGNORECASE)
     )
     if not task_needs_external and not has_mcp_tools_context:
         return GuardrailResult(
@@ -414,9 +412,8 @@ def check_mcp_connectivity(context: Dict) -> GuardrailResult:
         if isinstance(server, dict):
             if not server.get("url") and not server.get("endpoint"):
                 invalid_servers.append(str(server))
-        elif isinstance(server, str):
-            if not server.startswith(("http", "https", "mcp:")):
-                invalid_servers.append(server)
+        elif isinstance(server, str) and not server.startswith(("http", "https", "mcp:")):
+            invalid_servers.append(server)
     if invalid_servers:
         return GuardrailResult(
             passed=False, severity=GuardrailSeverity.WARN,
@@ -435,7 +432,7 @@ def check_mcp_connectivity(context: Dict) -> GuardrailResult:
 # THREE WHYS — Root Cause Diagnostic
 # =============================================================================
 
-def check_three_whys_diagnostic(output: str, context: Dict) -> GuardrailResult:
+def check_three_whys_diagnostic(output: str, context: dict) -> GuardrailResult:
     """Verifica que outputs de post-mortem/error incluyan analisis Three Whys."""
     if "fail" not in output.lower() and "error" not in output.lower() and "issue" not in output.lower():
         return GuardrailResult(
@@ -443,7 +440,7 @@ def check_three_whys_diagnostic(output: str, context: Dict) -> GuardrailResult:
             message="✅ Three Whys: no aplica (no es analisis de fallo)", rule_id="WHYS-001"
         )
     why_pattern = r"(why\s+\d|1st why|2nd why|3rd why|cause.*cause.*cause|root because)"
-    has_three_whys = bool(re.search(why_pattern, output, re.I))
+    has_three_whys = bool(re.search(why_pattern, output, re.IGNORECASE))
     if not has_three_whys:
         return GuardrailResult(
             passed=False, severity=GuardrailSeverity.WARN,
@@ -461,7 +458,7 @@ def check_three_whys_diagnostic(output: str, context: Dict) -> GuardrailResult:
 # RAG TRIAD CHECKS — Groundedness, Context Relevance, Faithfulness
 # =============================================================================
 
-def check_rag_groundedness(output: str, context: Dict) -> GuardrailResult:
+def check_rag_groundedness(output: str, context: dict) -> GuardrailResult:
     """Verifica que el output este fundamentado en las fuentes proporcionadas."""
     sources = context.get("sources") or context.get("source_documents") or context.get("context_sources", [])
     if not sources:
@@ -474,7 +471,7 @@ def check_rag_groundedness(output: str, context: Dict) -> GuardrailResult:
         r"referenc(?:e|ing)\s+\w+", r"based on.*(?:source|document|data)",
         r"cited in", r"as stated in",
     ]
-    has_grounding = any(re.search(p, output, re.I) for p in grounding_patterns)
+    has_grounding = any(re.search(p, output, re.IGNORECASE) for p in grounding_patterns)
     if not has_grounding:
         return GuardrailResult(
             passed=False, severity=GuardrailSeverity.WARN,
@@ -488,7 +485,7 @@ def check_rag_groundedness(output: str, context: Dict) -> GuardrailResult:
     )
 
 
-def check_rag_context_relevance(output: str, context: Dict) -> GuardrailResult:
+def check_rag_context_relevance(output: str, context: dict) -> GuardrailResult:
     """Verifica que el output use efectivamente el contexto proporcionado."""
     context_text = context.get("context") or context.get("context_text", "")
     sources = context.get("sources") or context.get("source_documents", [])
@@ -524,7 +521,7 @@ def check_rag_context_relevance(output: str, context: Dict) -> GuardrailResult:
     )
 
 
-def check_rag_faithfulness(output: str, context: Dict) -> GuardrailResult:
+def check_rag_faithfulness(output: str, context: dict) -> GuardrailResult:
     """Verifica que el output no contradiga las fuentes."""
     sources = context.get("sources") or context.get("source_documents") or context.get("context_sources", [])
     if not sources:
@@ -539,7 +536,7 @@ def check_rag_faithfulness(output: str, context: Dict) -> GuardrailResult:
         r"In my (?:opinion|experience|view)",
         r"I (?:guess|speculate|presume|suppose)",
     ]
-    has_hallucination_marker = any(re.search(p, output, re.I) for p in hallucination_patterns)
+    has_hallucination_marker = any(re.search(p, output, re.IGNORECASE) for p in hallucination_patterns)
     if has_hallucination_marker:
         return GuardrailResult(
             passed=False, severity=GuardrailSeverity.WARN,

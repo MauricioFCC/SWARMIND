@@ -60,14 +60,23 @@ Guía completa: [docs/src/es/guide/opcion-a-ssot-global.md](../guide/opcion-a-ss
 
 ---
 
-## 1c. Delegación local Ollama (4-tier, TKN)
+## 1c. Delegación local Ollama (flota 2026, TKN)
 
-Tareas simples/RAG/visión se delegan a **modelos locales** vía Ollama
+Tareas simples/RAG/visión se delegan a la **flota local** vía Ollama
 (`harness/model_router/ollama_client.py` — cliente HTTP real + `ollama_tiers.py`
-— router por capacidad): fast `qwen3:4b`, quality `deepseek-r1:8b`, coding
-`qwen2.5-coder:7b`, embedding `qwen3-embedding:0.6b` (RAG, 1024 dims), vision
-`qwen3-vl:4b`. Config sin hardcode en `.opencode/config/ollama_models.yaml`
-(`keep_alive` "5m", `auto_pull` true, `warm_on_start`). Degrada a cloud
+— router por capacidad). El **SSOT medido** es
+`harness/model_router/fleet_manifest.py` (id canónico, tier, `num_ctx`,
+`vram_mb`, `keep_alive`), cableado a runtime por
+`.opencode/config/ollama_models.yaml`: fast `MiniCPM5-2B Q8_0`, quality
+`Qwen3.8-9B-Distill Q4_K_M` (16K), coding `Qwopus3.5-9B-v3 Q4_K_M` (16K),
+reasoning `Qwen3.5-9B Claude-Opus-Distill-v2 Q4_K_M` (16K), embedding
+`qwen3-embedding:0.6b` (RAG, 1024 dims), vision `qwen3-vl:4b`.
+
+El servidor fija `OLLAMA_CONTEXT_LENGTH=16384` (+ `OLLAMA_MAX_LOADED_MODELS=1`,
+`OLLAMA_NUM_PARALLEL=1`, `OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KV_CACHE_TYPE=q8_0`)
+en `scripts/enable_gpu.py`: no hacen falta variantes "16k baked" (liberan ~17.4 GB).
+El escalado por verificación (`model_router/escalation_policy.py`) decide
+aceptar/escalar/cloud tras cada generación local. Degrada a cloud
 (ModelRouter/SlmRouter) si Ollama no está disponible.
 
 ## 1d. Integraciones: anydoc + patrones deepseek-harness

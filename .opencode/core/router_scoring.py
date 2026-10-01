@@ -5,8 +5,11 @@ Extracted from router_v2.py for file size compliance.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from .router_v2 import Orchestrator
 
 
 @dataclass
@@ -18,22 +21,22 @@ class MultiAgentPattern:
     Loop: agente se repite hasta que condition se cumple.
     """
     pattern_type: str  # "sequential" | "parallel" | "loop"
-    agents: List[str]
+    agents: list[str]
     merge_strategy: str = "last"
-    condition: Optional[str] = None
+    condition: str | None = None
     max_iterations: int = 5
 
     def validate(self) -> bool:
         """Validate pattern configuration."""
-        if self.pattern_type == "sequential" and len(self.agents) < 2:
-            return False
-        if self.pattern_type in ("parallel", "loop") and len(self.agents) < 1:
-            return False
+        if self.pattern_type == "sequential":
+            return len(self.agents) >= 2
+        if self.pattern_type in ("parallel", "loop"):
+            return len(self.agents) >= 1
         return True
 
 
 # Predefined patterns
-MULTI_AGENT_PATTERNS: Dict[str, MultiAgentPattern] = {
+MULTI_AGENT_PATTERNS: dict[str, MultiAgentPattern] = {
     "strategy_to_deploy": MultiAgentPattern(
         pattern_type="sequential",
         agents=["quant-developer", "risk-manager", "software-engineer"],
@@ -67,15 +70,15 @@ MULTI_AGENT_PATTERNS: Dict[str, MultiAgentPattern] = {
 class RoutingRule:
     """Routing rule with keyword patterns and priorities."""
     id: str
-    keywords: List[str]
-    regex_patterns: List[str]
+    keywords: list[str]
+    regex_patterns: list[str]
     target_agent: str
     priority: int = 1
     min_confidence: float = 0.6
     requires_context: bool = False
-    escalation_path: Optional[str] = None
+    escalation_path: str | None = None
 
-    def matches(self, message: str) -> Tuple[bool, float]:
+    def matches(self, message: str) -> tuple[bool, float]:
         """Check if message matches this rule and compute confidence."""
         msg_lower = message.lower()
         score = 0.0
@@ -83,7 +86,7 @@ class RoutingRule:
             if kw.lower() in msg_lower:
                 score += 0.3
         for pattern in self.regex_patterns:
-            if re.search(pattern, msg_lower, re.I):
+            if re.search(pattern, msg_lower, re.IGNORECASE):
                 score += 0.5
         confidence = min(1.0, score)
         return confidence >= self.min_confidence, confidence
@@ -140,14 +143,14 @@ ROUTING_RULES = [
 class RoutingNode:
     """Node in the routing graph."""
     agent: str
-    transitions: Dict[str, str]
+    transitions: dict[str, str]
     fallback: str = "project-manager"
     max_retries: int = 2
     timeout_seconds: int = 300
 
 
 # Routing graph
-ROUTING_GRAPH: Dict[str, RoutingNode] = {
+ROUTING_GRAPH: dict[str, RoutingNode] = {
     "project-manager": RoutingNode(agent="project-manager", transitions={
         "needs_implementation": "quant-developer", "needs_research": "quant-scientist",
         "needs_risk_review": "risk-manager", "needs_software": "software-engineer",
@@ -200,7 +203,7 @@ ROUTING_GRAPH: Dict[str, RoutingNode] = {
 
 
 def execute_sequential_pattern(pattern: MultiAgentPattern, user_message: str,
-                                context: Dict, orchestrator: 'Orchestrator') -> Dict[str, Any]:
+                                context: dict, orchestrator: Orchestrator) -> dict[str, Any]:
     """Execute agents sequentially. Output of N is input of N+1."""
     trace_id = None
     accumulated_output = user_message
@@ -218,7 +221,7 @@ def execute_sequential_pattern(pattern: MultiAgentPattern, user_message: str,
 
 
 def execute_parallel_pattern(pattern: MultiAgentPattern, user_message: str,
-                              context: Dict, orchestrator: 'Orchestrator') -> Dict[str, Any]:
+                              context: dict, orchestrator: Orchestrator) -> dict[str, Any]:
     """Execute agents in parallel. Merge outputs according to strategy."""
     import concurrent.futures
     outputs = {}
@@ -231,7 +234,7 @@ def execute_parallel_pattern(pattern: MultiAgentPattern, user_message: str,
             agent = futures[future]
             try:
                 outputs[agent] = future.result()
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - aislar fallo de un agente sin abortar el fan-out
                 outputs[agent] = {"error": str(e)}
     merged = {}
     if pattern.merge_strategy == "last":
@@ -252,7 +255,7 @@ def execute_parallel_pattern(pattern: MultiAgentPattern, user_message: str,
 
 
 def execute_loop_pattern(pattern: MultiAgentPattern, user_message: str,
-                          context: Dict, orchestrator: 'Orchestrator') -> Dict[str, Any]:
+                          context: dict, orchestrator: Orchestrator) -> dict[str, Any]:
     """Execute agent in loop until condition or max_iterations."""
     iteration = 0
     last_output = user_message
@@ -262,7 +265,7 @@ def execute_loop_pattern(pattern: MultiAgentPattern, user_message: str,
         last_output = response.get("output", str(response))
         history.append({"iteration": iteration, "output_summary": last_output[:200]})
         iteration += 1
-        if pattern.condition and re.search(pattern.condition, last_output, re.I):
+        if pattern.condition and re.search(pattern.condition, last_output, re.IGNORECASE):
             break
     return {
         "pattern": "loop", "agent": pattern.agents[0] if pattern.agents else "unknown",

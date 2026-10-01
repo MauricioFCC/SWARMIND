@@ -2,11 +2,11 @@
 Skill Registry with semantic versioning, contracts & dependency tracking.
 Enterprise pattern for managing AI agent skills with validation.
 """
-from dataclasses import dataclass, field
-from typing import Dict, Optional, List, Any, Set
-from enum import Enum
 import json
 import re
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any
 
 
 class SkillStatus(Enum):
@@ -23,22 +23,22 @@ class SkillContract:
     name: str
     version: str  # SemVer: MAJOR.MINOR.PATCH
     description: str
-    input_schema: Dict[str, Any]
-    output_schema: Dict[str, Any]
-    preconditions: List[str]
-    postconditions: List[str]
-    requires_tools: List[str]
-    dependencies: List[str] = field(default_factory=list)
+    input_schema: dict[str, Any]
+    output_schema: dict[str, Any]
+    preconditions: list[str]
+    postconditions: list[str]
+    requires_tools: list[str]
+    dependencies: list[str] = field(default_factory=list)
     status: SkillStatus = SkillStatus.ACTIVE
     author: str = "onyx-team"
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     
     def validate_version(self) -> bool:
         """Valida que la versión siga SemVer."""
         pattern = r"^\d+\.\d+\.\d+(-[\w.]+)?(\+[\w.]+)?$"
         return bool(re.match(pattern, self.version))
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serializa el contrato para almacenamiento/transferencia."""
         return {
             "name": self.name,
@@ -59,10 +59,10 @@ class SkillContract:
 class SkillRegistry:
     """Registro centralizado de skills con validación de contratos y versionado."""
     
-    def __init__(self, schema_path: Optional[str] = None):
+    def __init__(self, schema_path: str | None = None):
         """Inicializa la instancia de la clase."""
-        self._skills: Dict[str, SkillContract] = {}
-        self._versions: Dict[str, List[str]] = {}
+        self._skills: dict[str, SkillContract] = {}
+        self._versions: dict[str, list[str]] = {}
         self._schema_path = schema_path
         self._load_schema()
     
@@ -101,7 +101,7 @@ class SkillRegistry:
         
         return True
     
-    def get(self, name: str, version: Optional[str] = None) -> Optional[SkillContract]:
+    def get(self, name: str, version: str | None = None) -> SkillContract | None:
         """
         Obtiene un skill por nombre y versión opcional.
         
@@ -125,7 +125,7 @@ class SkillRegistry:
         
         return self._skills.get(f"{name}@{version}") or self._skills.get(name)
     
-    def list_available(self, status: Optional[SkillStatus] = None) -> List[Dict[str, str]]:
+    def list_available(self, status: SkillStatus | None = None) -> list[dict[str, str]]:
         """Lista skills disponibles con metadatos básicos."""
         result = []
         for name, contract in self._skills.items():
@@ -140,7 +140,7 @@ class SkillRegistry:
             })
         return result
     
-    def validate_input(self, name: str, data: Dict[str, Any]) -> tuple[bool, str]:
+    def validate_input(self, name: str, data: dict[str, Any]) -> tuple[bool, str]:
         """
         Valida que los datos de entrada cumplan con el esquema del skill.
         
@@ -199,18 +199,18 @@ class SkillRegistry:
             return True  # Tipo desconocido, asumir válido
         return isinstance(value, expected_type)
     
-    def get_dependency_graph(self, skill_name: str) -> Dict[str, List[str]]:
+    def get_dependency_graph(self, skill_name: str) -> dict[str, list[str]]:
         """Obtiene el grafo de dependencias para un skill.
 
         Returns un diccionario con las dependencias transitivas del skill
         especificado. Si el skill no existe, retorna un dict vacio.
         """
-        graph: Dict[str, List[str]] = {}
-        visited: Set[str] = set()
+        graph: dict[str, list[str]] = {}
+        visited: set[str] = set()
         self._traverse_deps(skill_name, graph, visited)
         return graph
 
-    def _traverse_deps(self, name: str, graph: Dict[str, List[str]], visited: Set[str]) -> None:
+    def _traverse_deps(self, name: str, graph: dict[str, list[str]], visited: set[str]) -> None:
         """Recorre recursivamente las dependencias de un skill.
 
         Args:
@@ -237,13 +237,13 @@ def register_skill(
     name: str,
     version: str,
     description: str,
-    input_schema: Dict,
-    output_schema: Dict,
-    preconditions: List[str],
-    postconditions: List[str],
-    requires_tools: List[str],
-    dependencies: List[str] = None,
-    tags: List[str] = None
+    input_schema: dict,
+    output_schema: dict,
+    preconditions: list[str],
+    postconditions: list[str],
+    requires_tools: list[str],
+    dependencies: list[str] | None = None,
+    tags: list[str] | None = None
 ) -> bool:
     """Función helper para registrar un skill rápidamente."""
     contract = SkillContract(

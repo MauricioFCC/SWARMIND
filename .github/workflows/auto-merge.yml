@@ -2,7 +2,10 @@ name: Auto-merge on green
 
 # Activa auto-merge en PRs que no son drafts y cuyos checks requeridos
 # (lint, test, security) ya estan pasando. Cuando todos los status checks
-# lleguen a "success" el PR se fusiona automaticamente.
+# requeridos lleguen a "success" GitHub fusiona el PR automaticamente:
+# la accion enable-pull-request-automerge registra la intencion de merge y es
+# el propio GitHub quien espera a los required checks (no hace falta un job
+# extra que escuche check_run).
 #
 # Seguridad:
 #   - Solo activa auto-merge en PRs desde la misma repo (no forks)
@@ -10,11 +13,10 @@ name: Auto-merge on green
 #   - El merge final sigue requiriendo las branch protections (CODEOWNERS,
 #     approvals si estan configuradas, conversaciones resueltas).
 #
-# Comportamiento:
-#   - En PR opened/reopened/synchronize: revisa checks pendientes
-#   - Si los 3 checks requeridos (lint, test, security) ya pasaron en el
-#     ultimo commit, llama a la API para activar auto-merge
-#   - Si no, espera a que la check "completed" corra y reintenta
+# Historial (deuda corregida): el job `check-completion` usaba
+# `peter-evans/find-pull-request-action@v2`, cuyo repositorio fue eliminado
+# (404 "repository not found" en el run #36207651021). Se elimino el job
+# redundante: el auto-merge nativo ya espera a los checks requeridos.
 
 on:
   pull_request:
@@ -22,25 +24,19 @@ on:
       - opened
       - reopened
       - synchronize
-    # Solo procesa PRs que ya estan listos (no drafts)
-  # Tambien escucha a checks que terminan (no solo al PR en si)
-  check_run:
-    types: [completed]
+      - ready_for_review
 
 permissions:
   # Necesario para llamar a la API de auto-merge
   pull-requests: write
-  # Necesario para reportar el status en el check summary
-  checks: read
   # enable-pull-request-automerge (v3) llama a la API de auto-merge y
   # requiere contents: write (con read: "Resource not accessible by integration")
   contents: write
 
 jobs:
   auto-merge:
-    # Solo corre para PRs (no cuando viene de check_run)
+    # Solo PRs listos (no drafts), de la misma repo y no de dependabot.
     if: >
-      github.event_name == 'pull_request' &&
       github.event.pull_request.draft == false &&
       github.event.pull_request.head.repo.full_name == github.event.repository.full_name &&
       github.event.pull_request.user.login != 'dependabot[bot]' &&
@@ -55,27 +51,4 @@ jobs:
           # Pull request number del evento
           pull-request-number: ${{ github.event.pull_request.number }}
           # Estrategia de merge: squash (recomendado para linear history)
-          merge-method: squash
-
-  # Job 2: cuando un check_required termina, intenta activar auto-merge
-  # si TODOS los checks requeridos ya pasaron.
-  check-completion:
-    if: >
-      github.event_name == 'check_run' &&
-      github.event.check_run.conclusion == 'success'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Find PRs for this commit
-        id: find-pr
-        uses: peter-evans/find-pull-request-action@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit: ${{ github.event.check_run.head_sha }}
-          # Solo PRs abiertos (no merged/closed)
-      - name: Enable auto-merge on PR
-        if: steps.find-pr.outputs.pull-request-number
-        uses: peter-evans/enable-pull-request-automerge@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          pull-request-number: ${{ steps.find-pr.outputs.pull-request-number }}
           merge-method: squash

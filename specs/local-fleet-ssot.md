@@ -14,8 +14,9 @@ Criterio de exito: `recommend_num_ctx(tier.model) == tier.num_ctx`,
 ## Contexto (medido 2026-09-30, RTX 4060 8GB, Ollama 0.34.4)
 
 - Tiers canonicos (`hf.co/...`) corren con el default **4096** (no 8192).
-- Variantes con ctx horneado (`qwen38-9b-16k`=16384, `qwopus-9b-16k`=16384,
-  `glm-z1-9b-16k`=16384, `minicpm5-2b-32k`=32768) SI traen la ventana.
+- El servidor fija `OLLAMA_CONTEXT_LENGTH=16384` (`scripts/enable_gpu.py`) +
+  el harness envia `num_ctx` explicito por `options`: las variantes con ctx
+  horneado quedaron **retiradas 2026-09-30** (liberan ~17.4 GB de disco).
 - `num_ctx` via `options` sobre el nombre canonico FUNCIONA (verificado en
   servidor temporal): 16384 -> 5.15GB, 8192 -> 4.98GB (con KV comprimida).
 - KV comprimida (`OLLAMA_FLASH_ATTENTION=1` + `OLLAMA_KV_CACHE_TYPE=q8_0`)

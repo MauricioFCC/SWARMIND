@@ -75,10 +75,11 @@ Las **estrategias de planificacion** disponibles estan documentadas en [Dynamic 
 - **Resiliencia**: Si un agente falla, los demas continuan
 - **Paralelismo**: Niveles independientes se ejecutan simultaneamente
 - **Trazabilidad**: Cada decision queda registrada en el SessionContext
-- **Delegacion local (Ollama 4-tier)**: tareas simples/RAG/vision se resuelven con
-  modelos locales 2026 (`qwen3:4b`, `deepseek-r1:8b`, `qwen2.5-coder:7b`,
-  `qwen3-embedding:0.6b`, `qwen3-vl:4b`) — 0 tokens cloud (TKN), con degradacion
-  automatica a cloud si Ollama no esta disponible
+- **Delegacion local (flota Ollama 2026)**: tareas simples/RAG/vision se resuelven con
+  la flota local (`MiniCPM5-2B`, `Qwen3.8-9B-Distill`, `Qwopus3.5-9B-v3`,
+  `Qwen3.5-9B-Claude-Opus-Distill-v2`, `qwen3-embedding:0.6b`, `qwen3-vl:4b`;
+  SSOT en `model_router/fleet_manifest.py`, ventana 16K por servidor) — 0 tokens
+  cloud (TKN), con degradacion automatica a cloud si Ollama no esta disponible
 
 ## Modulos recientes (2026-08-18)
 
