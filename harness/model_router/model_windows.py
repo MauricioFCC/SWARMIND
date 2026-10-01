@@ -54,7 +54,6 @@ _MODEL_WINDOWS: tuple[tuple[str, int], ...] = (
     ("qwen3.8", 4096),        # medido: 5.3GB/4096 (no 8K)
     ("qwopus", 4096),         # familia default (variante -16k horneada: sin medir)
     ("qwen3.5", 4096),
-    ("glm-z1", 4096),
 )
 
 

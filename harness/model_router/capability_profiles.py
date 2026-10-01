@@ -64,27 +64,23 @@ _DIM_KEYWORDS: dict[str, frozenset[str]] = {
 #: contaminacion — usar MATH-500/AIME como gate), MiniCPM-SALA 0.951
 #: HumanEval (llm-stats), LXT (solo 4/15 predicen prod).
 _BUILTIN: tuple[tuple[str, float, str, dict[str, float]], ...] = (
-    ("hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M",
-     9.0, "Q4", {"coding": 0.90, "reasoning": 0.70, "math": 0.65,
-                 "multilingual": 0.70, "agentic": 0.65}),
+    ("hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M",
+     9.0, "Q4", {"coding": 0.92, "reasoning": 0.78, "math": 0.72,
+                 "multilingual": 0.75, "agentic": 0.75}),
     ("hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
      9.0, "Q4", {"coding": 0.75, "reasoning": 0.85, "math": 0.85,
                  "multilingual": 0.80, "agentic": 0.75}),
-    ("hf.co/Jackrong/Qwen3.5-9B-DeepSeek-V4-Flash-GGUF:Q4_K_M",
-     9.0, "Q4", {"coding": 0.80, "reasoning": 0.85, "math": 0.80,
-                 "multilingual": 0.80, "agentic": 0.80}),
-    ("hf.co/unsloth/GLM-Z1-9B-0414-GGUF:UD-Q4_K_XL",
-     9.0, "Q4", {"coding": 0.70, "reasoning": 0.90, "math": 0.85,
-                 "multilingual": 0.75, "agentic": 0.75}),
+    ("hf.co/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF:Q4_K_M",
+     9.0, "Q4", {"coding": 0.82, "reasoning": 0.90, "math": 0.82,
+                 "multilingual": 0.80, "agentic": 0.85}),
     ("hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0", 2.0, "Q8",
      {"coding": 0.60, "reasoning": 0.60, "multilingual": 0.65, "agentic": 0.55}),
     ("qwen3-vl:4b", 4.0, "Q4",
      {"coding": 0.50, "reasoning": 0.60, "multilingual": 0.60,
       "agentic": 0.55, "vision": 0.90}),
-    # Bonsai-2-27B ternario (Qwen3.8-27B, 5.54GB, bench pub. avg 76.11,
-    # AIME>87): STANDBY — stock Ollama no carga PTQ1_0 ("unsupported tensor"),
-    # requiere fork llama.cpp de PrismML. GGUF aparcado en .ollama/manual.
-    # NO poner en tiers activos (auto_pull fallaria).
+    # Bonsai-2-27B ternario: RETIRADO (binario .gguf eliminado 2026-09-30;
+    # stock Ollama no carga PTQ1_0 y el peso "CRACK" era abliterated). Se
+    # conserva el perfil como referencia historica, NO como tier activo.
     ("hf.co/dealignai/Bonsai-2-27B-1bit-CRACK-GGUF:TQ1_0", 27.0, "TQ1_0",
      {"coding": 0.80, "reasoning": 0.85, "math": 0.85,
       "multilingual": 0.80, "agentic": 0.75}),
