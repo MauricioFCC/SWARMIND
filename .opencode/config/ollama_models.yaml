@@ -13,7 +13,10 @@
 ollama:
   base_url: "http://localhost:11434"
   timeout: 60
-  warm_on_start: [fast]   # precargar al arrancar
+  # warm_on_start VACIO a proposito: precargar al arrancar sumaba VRAM en el
+  # boot y contribuyo al BSOD TDR 2026-10-01. Los modelos se cargan bajo
+  # demanda (y con el guard de gpu_guard.py). NO reactivar en 8GB.
+  warm_on_start: []
   tiers:
     fast:      {model: "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0",                          keep_alive: "5m", auto_pull: true}
     quality:   {model: "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",                keep_alive: "0", auto_pull: true}

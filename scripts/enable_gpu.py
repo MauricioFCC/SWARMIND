@@ -36,21 +36,28 @@ TORCH_VERSION = "torch==2.13.0"
 CUDA_INDEX = "https://download.pytorch.org/whl/cu126"
 
 #: Topes VRAM del servidor Ollama (RTX 4060 8GB, WDDM).
-#: Sin topes Ollama mantiene 3 modelos residentes (default) y atiende en
-#: paralelo: 2x9B Q4 + desktop = OOM (nvlddmkm 153). Con MAX=1 el servidor
-#: descarga por LRU antes de cargar otro (un 9B Q4 cabe sobrado).
-#: Flash Attention + KV q8_0 comprimen la cache (~1/2 KV): medido, el 9B a
-#: 16K baja de 5.7GB a 5.15GB (~0.55GB de headroom anti-OOM).
-#: CONTEXT_LENGTH=16384 fija la ventana por defecto del servidor (medido:
-#: `llama_context: n_ctx = 16384`): elimina las variantes "16k baked" (un
-#: manifiesto extra por modelo) sin tocar el cliente. El harness igual
-#: envia num_ctx explicito por options (cinturon y tirantes).
+#:
+#: INCIDENTE 2026-10-01 (postmortem blameless, specs/postmortem_bsod_tdr_ollama.md):
+#: un 9B Q4 (~6.6GB) + ctx 16384 + **Vulkan** sobre 8GB agoto los recursos de
+#: GPU -> VIDEO_TDR_FAILURE (0x116, STATUS_INSUFFICIENT_RESOURCES) -> BSOD +
+#: memdump. Culpables: (a) OLLAMA_CONTEXT_LENGTH=16384 (KV extra), (b) Vulkan
+#: como backend con WDDM (menos robusto que CUDA), (c) keep_alive manteniendo
+#: el modelo residente. Estos topes son el CONTRATO ANTI-TDR:
+#:   - CONTEXT_LENGTH=8192: el 9B Q4 a 8K cabe con margen (~5.5GB + KV).
+#:     NO subir a 16384 en 8GB (ver scripts/gpu_guard.safe_num_ctx).
+#:   - VULKAN=false: fuerza el backend CUDA en NVIDIA (Vulkan en WDDM
+#:     degrada y contribuye al TDR).
+#:   - KEEP_ALIVE=0: descarga inmediata, sin residencia acumulada.
+#:   - MAX_LOADED=1 / NUM_PARALLEL=1: un solo modelo, una sola secuencia.
+#:   - FLASH_ATTENTION=1 + KV q8_0: comprimen la cache (~1/2 KV).
 OLLAMA_VRAM_LIMITS = {
     "OLLAMA_MAX_LOADED_MODELS": "1",
     "OLLAMA_NUM_PARALLEL": "1",
     "OLLAMA_FLASH_ATTENTION": "1",
     "OLLAMA_KV_CACHE_TYPE": "q8_0",
-    "OLLAMA_CONTEXT_LENGTH": "16384",
+    "OLLAMA_CONTEXT_LENGTH": "8192",
+    "OLLAMA_KEEP_ALIVE": "0",
+    "OLLAMA_VULKAN": "false",
 }
 
 
