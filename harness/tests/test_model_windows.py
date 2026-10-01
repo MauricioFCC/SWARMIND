@@ -16,11 +16,23 @@ from harness.model_router.model_windows import (
 )
 
 
-def test_recommend_measured_defaults() -> None:
-    """Modelos ajenos a la flota: default real 4096 (medido)."""
-    assert recommend_num_ctx("hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0") == 4096
-    assert recommend_num_ctx("llama3.2:3b") == 4096
-    assert recommend_num_ctx("qwen3:4b") == 4096
+def test_retired_models_fall_to_default() -> None:
+    """Retirados/no-flota: sin clave en la tabla, caen al default honesto 4096.
+
+    Bonsai, olmoe, lfm2.5, llama3.2, qwen3:4b, qwen2.5-coder y deepseek-r1
+    se eliminaron de la tabla 2026-09-30 (no instalados ni en flota). No
+    deben recuperar una ventana propia por accidente.
+    """
+    for retired in (
+        "hf.co/dealignai/Bonsai-2-27B-1bit-CRACK-GGUF:TQ1_0",
+        "hf.co/mradermacher/OLMoE-1B-7B-0125-Instruct-Distill-ot114k-batch32-i1-GGUF:IQ4_NL",
+        "hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0",
+        "llama3.2:3b",
+        "qwen3:4b",
+        "qwen2.5-coder:7b",
+        "deepseek-r1:8b",
+    ):
+        assert recommend_num_ctx(retired) == DEFAULT_NUM_CTX, retired
 
 
 def test_recommend_fleet_windows_declared() -> None:
@@ -32,19 +44,14 @@ def test_recommend_fleet_windows_declared() -> None:
     ) == 16384
 
 
-def test_recommend_non_fleet_measured() -> None:
-    """9B ajenos a la flota mantienen la tabla medida de fallback (4096)."""
-    assert recommend_num_ctx("deepseek-r1:8b") == 4096
+def test_recommend_foreign_family_fallback() -> None:
+    """La familia Qwen3.5 (ajena al manifiesto) usa la tabla de fallback 16K."""
+    assert recommend_num_ctx("qwen3.5-9b-ajeno") == 16384
 
 
 def test_recommend_baked_ctx_short_names() -> None:
     """Nombres cortos con ctx horneado: 16384 medido (`ollama show`)."""
     assert recommend_num_ctx("qwen38-9b-16k") == 16384
-
-
-def test_recommend_olmoe_arch_limit() -> None:
-    """OLMoE (4K arquitectura) recomienda 4096."""
-    assert recommend_num_ctx("hf.co/mradermacher/OLMoE-1B-7B-0125-Instruct-Distill-ot114k-batch32-i1-GGUF:IQ4_NL") == 4096
 
 
 def test_recommend_unknown_defaults() -> None:

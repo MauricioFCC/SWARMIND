@@ -37,23 +37,18 @@ SYSTEM_BUDGET_LEAN = 2500
 #: Ratio chars/token para estimar.
 _CHARS_PER_TOKEN = 4
 
-#: Ventana MEDIDA por modelo/familia (RTX 4060 8GB; `ollama ps` CONTEXT y
-#: `ollama show` 2026-09-29; primera coincidencia gana: especificos antes).
+#: Ventana de FALLBACK por familia (RTX 4060 8GB; primera coincidencia gana:
+#: especificos antes). Los modelos de flota resuelven por manifiesto (SSOT,
+#: ADR-0101), que GANA sobre esta tabla; aqui solo quedan familias ajenas que
+#: el usuario pudiera instalar (los retirados se eliminaron 2026-09-30).
 _MODEL_WINDOWS: tuple[tuple[str, int], ...] = (
-    ("olmoe", 4096),          # arquitectura 4K (techo duro)
-    ("qwen38", 16384),        # nombre corto con ctx horneado (medido)
-    ("bonsai", 16384),        # 27B ternario 5.5GB + KV hibrida pequena; solo via fork
-    ("lfm2.5", 4096),         # blob canonico: default Ollama (no 8K)
-    ("minicpm", 4096),        # medido: 2.6GB/4096 (no 32K)
-    ("llama3.2", 4096),
-    ("qwen3:4b", 4096),
+    ("qwen38", 16384),        # alias corto con ctx horneado (medido 2026-09-29)
+    ("minicpm", 32768),       # alias minicpm5-2b-32k mide 32768 (canonical: manifiesto 8192)
     ("qwen3-embedding", 4096),
     ("qwen3-vl", 4096),
-    ("qwen2.5-coder", 4096),
-    ("deepseek-r1", 4096),
-    ("qwen3.8", 4096),        # medido: 5.3GB/4096 (no 8K)
-    ("qwopus", 4096),         # familia default (variante -16k horneada: sin medir)
-    ("qwen3.5", 4096),
+    ("qwen3.8", 16384),       # manifiesto gana (medido 16K, no 8K)
+    ("qwopus", 16384),        # manifiesto gana (medido 16384)
+    ("qwen3.5", 16384),       # familia reasoning 9B (medido 16K)
 )
 
 

@@ -78,12 +78,6 @@ _BUILTIN: tuple[tuple[str, float, str, dict[str, float]], ...] = (
     ("qwen3-vl:4b", 4.0, "Q4",
      {"coding": 0.50, "reasoning": 0.60, "multilingual": 0.60,
       "agentic": 0.55, "vision": 0.90}),
-    # Bonsai-2-27B ternario: RETIRADO (binario .gguf eliminado 2026-09-30;
-    # stock Ollama no carga PTQ1_0 y el peso "CRACK" era abliterated). Se
-    # conserva el perfil como referencia historica, NO como tier activo.
-    ("hf.co/dealignai/Bonsai-2-27B-1bit-CRACK-GGUF:TQ1_0", 27.0, "TQ1_0",
-     {"coding": 0.80, "reasoning": 0.85, "math": 0.85,
-      "multilingual": 0.80, "agentic": 0.75}),
 )
 
 

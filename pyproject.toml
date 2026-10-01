@@ -86,6 +86,7 @@ markers = [
     "slow: tests lentos (>1s) que requieren integracion real",
     "integration: tests que dependen de LanceDB real u otros servicios externos",
     "unit: tests unitarios puros sin dependencias externas (default)",
+    "local_only: tests que requieren Ollama local (skip si no responde)",
 ]
 
 [tool.coverage.run]

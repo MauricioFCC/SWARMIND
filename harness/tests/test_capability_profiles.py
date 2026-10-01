@@ -76,12 +76,17 @@ def test_profile_is_frozen() -> None:
 
 
 def test_load_builtin_profiles(tmp_path) -> None:
-    """Sin YAML: perfiles builtin de los instalados (flota 2026-09-21: 6+1 standby)."""
+    """Sin YAML: perfiles builtin de la flota vigente (6 modelos, sin retirados).
+
+    Bonsai-2-27B fue retirado 2026-09-30 (binario eliminado, no adoptable),
+    por eso el builtin queda en 5 perfiles y no debe reincorporarse.
+    """
     profiles = load_profiles(None)
     ids = {p.model_id for p in profiles}
-    assert len(profiles) >= 6
+    assert len(profiles) >= 5
     assert any("Qwen3.8" in i or "qwen" in i.lower() for i in ids)
-    assert any("Bonsai" in i for i in ids)
+    assert any("MiniCPM5" in i for i in ids)
+    assert not any("Bonsai" in i for i in ids)
 
 
 def test_local_confidence_constant() -> None:
