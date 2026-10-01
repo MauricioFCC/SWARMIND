@@ -163,7 +163,7 @@ _DEFAULT_TIER_MODELS: dict[CapabilityTier, str] = {
     CapabilityTier.QUALITY: "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
     CapabilityTier.EMBEDDING: "qwen3-embedding:0.6b",
     CapabilityTier.VISION: "qwen3-vl:4b",
-    CapabilityTier.CODING: "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M",
+    CapabilityTier.CODING: "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M",
 }
 
 

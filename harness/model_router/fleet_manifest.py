@@ -59,14 +59,14 @@ FLEET: tuple[FleetModel, ...] = (
         matches=("qwen3.8", "qwen38"),
     ),
     FleetModel(
-        id="hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M",
+        id="hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M",
         tier="coding", num_ctx=16384, vram_mb=6600, keep_alive="0",
-        matches=("qwopus3.5", "qwopus"),
+        matches=("qwopus3.5-9b-v3", "qwopus-v3", "qwopus3.5", "qwopus"),
     ),
     FleetModel(
-        id="hf.co/unsloth/GLM-Z1-9B-0414-GGUF:UD-Q4_K_XL",
-        tier="reasoning", num_ctx=16384, vram_mb=6200, keep_alive="0",
-        matches=("glm-z1", "glm_z1"),
+        id="hf.co/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF:Q4_K_M",
+        tier="reasoning", num_ctx=16384, vram_mb=6600, keep_alive="0",
+        matches=("claude-4.6-opus", "opus-distill", "claude-opus-distill"),
     ),
     FleetModel(
         id="qwen3-embedding:0.6b",
@@ -82,6 +82,7 @@ FLEET: tuple[FleetModel, ...] = (
 
 
 #: Tiers declarados en el cableado de runtime (`.opencode/config/ollama_models.yaml`).
+#: El manifiesto es un superset (incluye reasoning, sin tier en el enum).
 YAML_TIERS: tuple[str, ...] = (
     "fast", "quality", "coding", "embedding", "vision",
 )

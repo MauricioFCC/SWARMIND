@@ -52,8 +52,8 @@
           "reasoning": true,
           "tools": true
         },
-        "qwopus-9b-16k": {
-          "name": "Qwopus3.5 9B Q4 coding (ctx 16K baked)",
+        "qwopus-v3-9b-16k": {
+          "name": "Qwopus3.5-9B v3 Q4 coding (frontera 2026)",
           "reasoning": false,
           "tools": true
         },
@@ -62,8 +62,8 @@
           "reasoning": false,
           "tools": true
         },
-        "glm-z1-9b-16k": {
-          "name": "GLM-Z1 9B Q4 reasoning (ctx 16K baked)",
+        "opus-distill-9b-16k": {
+          "name": "Qwen3.5-9B Claude-Opus-Distill v2 (razonamiento)",
           "reasoning": true,
           "tools": true
         }

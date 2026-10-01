@@ -61,10 +61,11 @@ def test_windows_and_budget_fit_gpu() -> None:
 
 def test_baked_variants_resolve_to_fleet() -> None:
     """Las variantes locales con ctx horneado resuelven a su tier."""
+    assert recommend_num_ctx("qwopus-v3-9b-16k") == 16384
+    assert recommend_num_ctx("opus-distill-9b-16k") == 16384
     assert recommend_num_ctx("qwen38-9b-16k") == 16384
-    assert recommend_num_ctx("qwopus-9b-16k") == 16384
-    assert recommend_num_ctx("glm-z1-9b-16k") == 16384
-    assert model_entry("qwen38-9b-16k") is not None
+    assert model_entry("qwopus-v3-9b-16k") is not None
+    assert model_entry("opus-distill-9b-16k") is not None
 
 
 def test_unknown_model_returns_none() -> None:

@@ -41,11 +41,16 @@ CUDA_INDEX = "https://download.pytorch.org/whl/cu126"
 #: descarga por LRU antes de cargar otro (un 9B Q4 cabe sobrado).
 #: Flash Attention + KV q8_0 comprimen la cache (~1/2 KV): medido, el 9B a
 #: 16K baja de 5.7GB a 5.15GB (~0.55GB de headroom anti-OOM).
+#: CONTEXT_LENGTH=16384 fija la ventana por defecto del servidor (medido:
+#: `llama_context: n_ctx = 16384`): elimina las variantes "16k baked" (un
+#: manifiesto extra por modelo) sin tocar el cliente. El harness igual
+#: envia num_ctx explicito por options (cinturon y tirantes).
 OLLAMA_VRAM_LIMITS = {
     "OLLAMA_MAX_LOADED_MODELS": "1",
     "OLLAMA_NUM_PARALLEL": "1",
     "OLLAMA_FLASH_ATTENTION": "1",
     "OLLAMA_KV_CACHE_TYPE": "q8_0",
+    "OLLAMA_CONTEXT_LENGTH": "16384",
 }
 
 

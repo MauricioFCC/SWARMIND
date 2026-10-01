@@ -28,7 +28,7 @@ def test_recommend_fleet_windows_declared() -> None:
     assert recommend_num_ctx("hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0") == 8192
     assert recommend_num_ctx("hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M") == 16384
     assert recommend_num_ctx(
-        "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M"
+        "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M"
     ) == 16384
 
 

@@ -23,7 +23,7 @@ DEFAULT_FAST_MODEL = "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0"
 DEFAULT_QUALITY_MODEL = "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M"
 DEFAULT_EMBEDDING_MODEL = "qwen3-embedding:0.6b"
 DEFAULT_VISION_MODEL = "qwen3-vl:4b"
-DEFAULT_CODING_MODEL = "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M"
+DEFAULT_CODING_MODEL = "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M"
 
 
 def _client() -> MagicMock:
@@ -247,7 +247,7 @@ embedding:
 vision:
   model: qwen3-vl:4b
 coding:
-  model: hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M
+  model: hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M
 """.strip(),
         encoding="utf-8",
     )
@@ -271,13 +271,13 @@ def test_load_from_yaml_with_missing_file_uses_defaults(tmp_path: Path) -> None:
 
 
 def test_load_from_yaml_reads_repo_ssot() -> None:
-    """El SSOT real (.opencode/config/ollama_models.yaml) carga los 5 tiers."""
+    """El SSOT real (.opencode/config/ollama_models.yaml) carga los 6 tiers."""
     repo_root = Path(__file__).resolve().parents[2]
     ssot = repo_root / ".opencode" / "config" / "ollama_models.yaml"
     router = OllamaTierRouter.load_from_yaml(ssot)
     assert router.model_for(CapabilityTier.FAST) == "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0"
     assert router.model_for(CapabilityTier.QUALITY) == "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M"
-    assert router.model_for(CapabilityTier.CODING) == "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M"
+    assert router.model_for(CapabilityTier.CODING) == "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M"
     assert router.model_for(CapabilityTier.EMBEDDING) == "qwen3-embedding:0.6b"
     assert router.model_for(CapabilityTier.VISION) == "qwen3-vl:4b"
 
