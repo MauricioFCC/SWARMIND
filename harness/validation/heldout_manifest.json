@@ -1,0 +1,12 @@
+[
+  {
+    "id": "fix-evidence-contract",
+    "node_ids": ["harness/tests/test_fix_evidence.py::test_valid_fix_passes"],
+    "description": "contrato del gate anti-pintar-verde"
+  },
+  {
+    "id": "weakening-detection",
+    "node_ids": ["harness/tests/test_fix_evidence.py::test_removed_assert_is_weakening"],
+    "description": "deteccion de assert eliminado"
+  }
+]
