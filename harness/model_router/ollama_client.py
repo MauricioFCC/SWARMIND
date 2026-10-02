@@ -20,7 +20,11 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_BASE_URL = "http://localhost:11434"
 DEFAULT_TIMEOUT = 60.0
-DEFAULT_KEEP_ALIVE = "5m"
+#: Residencia por defecto de un modelo en VRAM. "0" = descarga inmediata.
+#: En 8GB la residencia acumulada es riesgo de TDR/OOM (BSOD 0x116 2026-10-01):
+#: el manifiesto de flota declara "0" en TODOS los tiers; este default lo
+#: refleja. Para warm explicito, pasar keep_alive="5m" en la llamada.
+DEFAULT_KEEP_ALIVE = "0"
 AVAILABILITY_TIMEOUT = 2.0
 UNLOAD_KEEP_ALIVE = 0
 

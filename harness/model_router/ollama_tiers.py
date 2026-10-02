@@ -45,7 +45,7 @@ except ImportError as _import_err:
         _import_err,
     )
 
-    DEFAULT_KEEP_ALIVE = "5m"
+    DEFAULT_KEEP_ALIVE = "0"
 
     class OllamaClient:
         """Stub transitorio de OllamaClient (API mínima, sin red).

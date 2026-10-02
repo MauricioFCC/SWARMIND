@@ -115,7 +115,7 @@ def test_default_constants_match_public_contract() -> None:
     """Verifica que las constantes públicas del contrato existen con sus valores."""
     assert DEFAULT_BASE_URL == "http://localhost:11434"
     assert DEFAULT_TIMEOUT == 60.0
-    assert DEFAULT_KEEP_ALIVE == "5m"
+    assert DEFAULT_KEEP_ALIVE == "0"
 
 
 # ---------------------------------------------------------------------------

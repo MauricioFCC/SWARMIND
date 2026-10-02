@@ -36,10 +36,7 @@ _RETIRED = (
 #: Retirados 2026-10-01 (BSOD TDR): el coordinador borrara sus blobs DESPUES
 #: de este cambio, asi que durante la transicion se toleran en `ollama list`
 #: sin que el test de huerfanos falle. Una vez borrados, esta lista sobra.
-_TRANSITIONAL = (
-    "minicpm", "qwen3.8", "qwen38", "opus-distill", "claude-4.6-opus",
-    "qwopus-v3-9b-16k",
-)
+_TRANSITIONAL: tuple[str, ...] = ()
 
 
 def _is_transitional(name: str) -> bool:
