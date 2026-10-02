@@ -5,11 +5,11 @@
 ## [2026-09-30] Flota frontera 2026 + ventana 16K por servidor + escalado por verificación
 
 ### Flota local y SSOT
-- **Flota frontera 2026** — SSOT medida en `harness/model_router/fleet_manifest.py` (id canónico, tier, `num_ctx`, `vram_mb`, `keep_alive`): fast `MiniCPM5-2B Q8_0`, quality `Qwen3.8-9B-Distill Q4_K_M` (16K), coding `Qwopus3.5-9B-v3 Q4_K_M` (16K), reasoning `Qwen3.5-9B Claude-Opus-Distill-v2 Q4_K_M` (16K), embedding `qwen3-embedding:0.6b`, vision `qwen3-vl:4b`. `recommend_num_ctx`/`footprint_mb` derivan del manifiesto; invariantes en `test_fleet_manifest.py`.
+- **Flota frontera 2026** — SSOT medida en `harness/model_router/fleet_manifest.py` (id canónico, tier, `num_ctx`, `vram_mb`, `keep_alive`): fast `Qwen3.5-4B UD-Q4_K_XL`, quality `MiMo-V2.6-Distill-Qwen-9B IQ4_XS` (4K), coding `Qwopus3.5-9B-v3 Q4_K_M` (4K), reasoning `Ornith-1.5-9B Q4_K_M` (4K), embedding `qwen3-embedding:0.6b`, vision `qwen3-vl:4b`. `recommend_num_ctx`/`footprint_mb` derivan del manifiesto; invariantes en `test_fleet_manifest.py`.
 - **Cableado de runtime** `.opencode/config/ollama_models.yaml` (nombres canónicos hf.co, sin alias locales) validado contra el manifiesto.
 
 ### GPU y servidor
-- **Ventana 16K + topes anti-OOM** (`scripts/enable_gpu.py`): `OLLAMA_CONTEXT_LENGTH=16384` + `OLLAMA_MAX_LOADED_MODELS=1` + `OLLAMA_NUM_PARALLEL=1` + `OLLAMA_FLASH_ATTENTION=1` + `OLLAMA_KV_CACHE_TYPE=q8_0`. Elimina las variantes "16k baked" (**libera ~17.4 GB** de disco); el cliente igual envía `options.num_ctx` explícito.
+- **Ventana 16K + topes anti-OOM** (`scripts/enable_gpu.py`): `OLLAMA_CONTEXT_LENGTH=8192` + `OLLAMA_MAX_LOADED_MODELS=1` + `OLLAMA_NUM_PARALLEL=1` + `OLLAMA_FLASH_ATTENTION=1` + `OLLAMA_KV_CACHE_TYPE=q8_0`. Elimina las variantes "16k baked" (**libera ~17.4 GB** de disco); el cliente igual envía `options.num_ctx` explícito.
 
 ### Política de escalado
 - **Escalado por verificación** (`harness/model_router/escalation_policy.py`): verificador estructural barato + confianza verbalizada → `accept`/`escalate` (fast→quality→coding→reasoning)/`cloud`; verificar pesa más que clasificar (MetaRoute; UCCI small→large).

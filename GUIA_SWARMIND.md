@@ -706,17 +706,17 @@ modelo por **capacidad** según la tarea, con heurística sin LLM.
 
 | Tier | Modelo | Uso típico |
 |------|--------|------------|
-| ⚡ **fast** | `MiniCPM5-2B Q8_0` | Borradores, tareas simples |
-| 🧠 **quality** | `Qwen3.8-9B-Distill Q4_K_M` (16K) | Razonamiento, calidad de texto |
-| 💻 **coding** | `Qwopus3.5-9B-v3 Q4_K_M` (16K) | Generación de código |
-| 🧩 **reasoning** | `Qwen3.5-9B Claude-Opus-Distill-v2 Q4_K_M` (16K) | Agente, razonamiento profundo |
+| ⚡ **fast** | `Qwen3.5-4B UD-Q4_K_XL` | Borradores, tareas simples |
+| 🧠 **quality** | `MiMo-V2.6-Distill-Qwen-9B IQ4_XS` (4K) | Razonamiento, calidad de texto |
+| 💻 **coding** | `Qwopus3.5-9B-v3 Q4_K_M` (4K) | Generación de código |
+| 🧩 **reasoning** | `Ornith-1.5-9B Q4_K_M` (4K) | Agente, razonamiento profundo |
 | 🔎 **embedding** | `qwen3-embedding:0.6b` | RAG / búsqueda semántica (1024 dims) |
 | 👁️ **vision** | `qwen3-vl:4b` | Imágenes, alt-text |
 
 El **SSOT medido** de la flota es `harness/model_router/fleet_manifest.py`
 (id, tier, `num_ctx`, `vram_mb`, `keep_alive`); el cableado de runtime vive en
 `.opencode/config/ollama_models.yaml` (validado por `test_fleet_manifest.py`).
-El servidor fija `OLLAMA_CONTEXT_LENGTH=16384` en `scripts/enable_gpu.py` (más
+El servidor fija `OLLAMA_CONTEXT_LENGTH=8192` en `scripts/enable_gpu.py` (más
 `MAX_LOADED_MODELS=1`, `NUM_PARALLEL=1`, `FLASH_ATTENTION=1`, `KV_CACHE_TYPE=q8_0`):
 la ventana por defecto es 16K sin variantes "16k baked".
 
@@ -737,7 +737,7 @@ el tope.
 
 ```bash
 # Instalar un modelo manualmente (el harness tambien auto-instala con auto_pull)
-ollama pull hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0
+ollama pull hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL
 ollama pull qwen3-embedding:0.6b
 
 # Ver modelos cargados en memoria (keep_alive "5m": warm/unload)

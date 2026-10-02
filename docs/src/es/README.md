@@ -23,7 +23,7 @@
 | Skills/agentes | skill_composition (calls + invocation + compat) + competence_model (Beta/Thompson) |
 | Contexto | artifact_store + cue_ledger + compaction_calibration + prune_then_summarize |
 | Tooling | rtk wrapper + idempotency_guard + scripts Python/bash (PowerShell prohibido, corrompe UTF-8) |
-| opencode local | default `ollama/qwen38-9b-16k` + 4 modelos registrados + permisos por agente |
+| opencode local | default `ollama/hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL` + 5 modelos registrados + permisos por agente |
 | Flota local (SSOT) | `harness/model_router/fleet_manifest.py` (6 modelos: fast/quality/coding/reasoning/embedding/vision) + ventana 16K por servidor |
 | Escalado local | `escalation_policy.py` (verificador estructural + confianza verbalizada → accept/escalate/cloud) |
 | Modulos Orchestrator | 19 paquetes / 142 modulos |
@@ -120,14 +120,14 @@ Swarmind compite con **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (4
 - **Verify-replan + trazas** (ADR-0079): `verify_replan_gate.py` (VMAO) + `trace_viewer.py` (replay sin LLM) + permisos por agente en `opencode.json` + skill `agent-rigor`.
 - **Competición aplicada** (ADR-0080): `cp_spec_gate.py` (4 pilares) + `dual_verify.py` (fast vs brute-force).
 - **Tooling Linux-first** (ADR-0076): wrapper `rtk` (−90% output bash) + `idempotency_guard` (distributed systems); scripts Python/bash (PowerShell prohibido, corrompe UTF-8).
-- **opencode local por defecto** (este equipo): `"model": "ollama/qwen38-9b-16k"` + 4 modelos registrados.
+- **opencode local por defecto** (este equipo): `"model": "ollama/hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL"` + 4 modelos registrados.
 - **CI 3-tier verdes**: required {lint, test, security} PASS (extras dev en CI, SDO+presupuesto skills, safety con ignore CVE-2025-33228 falso-positivo).
 - **main sincronizado**: PR #16 mergeado a `main` (`d3934fe`); ADRs 0065-0080 versionados local (pre-push los bloquea, correcto por diseño).
 
 ### Cambios Septiembre 30 2026 (flota frontera + escalado por verificación)
 
-- **Flota local frontera 2026** — SSOT medida en `harness/model_router/fleet_manifest.py` (id canónico, tier, `num_ctx`, `vram_mb`, `keep_alive`): fast `MiniCPM5-2B Q8_0`, quality `Qwen3.8-9B-Distill Q4_K_M` (16K), coding `Qwopus3.5-9B-v3 Q4_K_M` (16K), reasoning `Qwen3.5-9B Claude-Opus-Distill-v2 Q4_K_M` (16K), embedding `qwen3-embedding:0.6b`, vision `qwen3-vl:4b`. Cableado a runtime en `.opencode/config/ollama_models.yaml` (validado por `test_fleet_manifest.py`).
-- **Ventana 16K por servidor** — `scripts/enable_gpu.py` persiste cinco topes: `OLLAMA_CONTEXT_LENGTH=16384`, `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KV_CACHE_TYPE=q8_0`. Elimina las variantes "16k baked" (libre ~17.4 GB de disco) sin tocar el cliente; el harness igual envía `options.num_ctx` explícito.
+- **Flota local frontera 2026** — SSOT medida en `harness/model_router/fleet_manifest.py` (id canónico, tier, `num_ctx`, `vram_mb`, `keep_alive`): fast `Qwen3.5-4B UD-Q4_K_XL`, quality `MiMo-V2.6-Distill-Qwen-9B IQ4_XS` (4K), coding `Qwopus3.5-9B-v3 Q4_K_M` (4K), reasoning `Ornith-1.5-9B Q4_K_M` (4K), embedding `qwen3-embedding:0.6b`, vision `qwen3-vl:4b`. Cableado a runtime en `.opencode/config/ollama_models.yaml` (validado por `test_fleet_manifest.py`).
+- **Ventana 16K por servidor** — `scripts/enable_gpu.py` persiste cinco topes: `OLLAMA_CONTEXT_LENGTH=8192`, `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KV_CACHE_TYPE=q8_0`. Elimina las variantes "16k baked" (libre ~17.4 GB de disco) sin tocar el cliente; el harness igual envía `options.num_ctx` explícito.
 - **Escalado por verificación** — `harness/model_router/escalation_policy.py`: verificador estructural (vacío/enano/degenerado/JSON inválido) + confianza verbalizada → `accept`, `escalate` en la escalera (fast → quality → coding → reasoning) o `cloud` en el tope; verificar pesa más que clasificar (MetaRoute 2026).
 
 ### Cambios Agosto 2026
@@ -136,7 +136,7 @@ Swarmind compite con **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (4
 - **ParallelExecutor**: fan-out paralelo nativo (ThreadPoolExecutor `max_workers=3`) + voting gobernado.
 - **GPU CUDA 12.6** habilitada (torch 2.13.0+cu126): search x10.9, embeddings 41us/msg.
 - **Memoria central SSOT** portable (`Memory_Proyects` via `MEMORY_ROOT`), 7.5 GB liberados, backup automatico.
-- **Delegación local Ollama (flota 2026)**: tareas simples/RAG/visión con la flota local (`MiniCPM5-2B`, `Qwen3.8-9B-Distill`, `Qwopus3.5-9B-v3`, `Qwen3.5-9B-Claude-Opus-Distill-v2`, `qwen3-embedding:0.6b`, `qwen3-vl:4b`) — 0 tokens cloud (TKN), degradación a cloud automática.
+- **Delegación local Ollama (flota 2026)**: tareas simples/RAG/visión con la flota local (`Qwen3.5-4B`, `MiMo-V2.6-Distill-Qwen-9B`, `Qwopus3.5-9B-v3`, `Ornith-1.5-9B`, `qwen3-embedding:0.6b`, `qwen3-vl:4b`) — 0 tokens cloud (TKN), degradación a cloud automática.
 - **Integración anydoc** (`harness/memory_rag/doc_converter.py` + `doc_ingester.py`): binarios → Markdown → RAG con **21 extensiones** (pdf/docx/pptx/xlsx/odt/epub/rtf/csv…), `AnyDocConverter` lazy (firecrawl-anydoc>=0.1.9), `DocumentConversionError(path, reason)` sin tragar errores; ingesta con `rag_ingest.py --include-docs` o `!rag ingest --docs`.
 - **Patrones deepseek-harness**: plugin lifecycle (`PluginBase` con `on_load`/`on_unload`/`events`, `ToolRegistry` con `event_bus` DI + suscripción automática `on_{event}`, `load_all`/`unload_all` idempotentes) + session replay (`SessionReplay` export markdown/json, `SessionNotFoundError`) — 59 tests nuevos (30 plugin + 29 replay), registry 94%, session_replay 100%.
 - **Arquitecturas RAG frontier (5 evaluadas)**: **Híbrido RRF** (`hybrid_retriever.py` — fusión vector denso + BM25 disperso con Reciprocal Rank Fusion k=60) y **Correctivo CRAG** (`corrective_retriever.py` — validación de calidad pre-generación con query rewrite/fallback, arXiv:2401.15884) IMPLEMENTADOS; **GraphRAG** (knowledge_graph + PageRank de TokenBudgetRouter) y **Agentic RAG** (orchestrator multi-agente) CUBIERTOS; **Multimodal** PARCIAL vía anydoc. 22 tests nuevos.

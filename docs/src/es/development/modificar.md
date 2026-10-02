@@ -67,12 +67,12 @@ Tareas simples/RAG/visión se delegan a la **flota local** vía Ollama
 — router por capacidad). El **SSOT medido** es
 `harness/model_router/fleet_manifest.py` (id canónico, tier, `num_ctx`,
 `vram_mb`, `keep_alive`), cableado a runtime por
-`.opencode/config/ollama_models.yaml`: fast `MiniCPM5-2B Q8_0`, quality
-`Qwen3.8-9B-Distill Q4_K_M` (16K), coding `Qwopus3.5-9B-v3 Q4_K_M` (16K),
-reasoning `Qwen3.5-9B Claude-Opus-Distill-v2 Q4_K_M` (16K), embedding
+`.opencode/config/ollama_models.yaml`: fast `Qwen3.5-4B UD-Q4_K_XL`, quality
+`MiMo-V2.6-Distill-Qwen-9B IQ4_XS` (4K), coding `Qwopus3.5-9B-v3 Q4_K_M` (4K),
+reasoning `Ornith-1.5-9B Q4_K_M` (4K), embedding
 `qwen3-embedding:0.6b` (RAG, 1024 dims), vision `qwen3-vl:4b`.
 
-El servidor fija `OLLAMA_CONTEXT_LENGTH=16384` (+ `OLLAMA_MAX_LOADED_MODELS=1`,
+El servidor fija `OLLAMA_CONTEXT_LENGTH=8192` (+ `OLLAMA_MAX_LOADED_MODELS=1`,
 `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KV_CACHE_TYPE=q8_0`)
 en `scripts/enable_gpu.py`: no hacen falta variantes "16k baked" (liberan ~17.4 GB).
 El escalado por verificación (`model_router/escalation_policy.py`) decide
