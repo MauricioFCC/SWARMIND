@@ -35,23 +35,207 @@ Uso:
     python scripts/deploy_all.py --dry-run         # Simular sin escribir
     python scripts/deploy_all.py --project ALIAS   # Solo un proyecto (alias o nombre)
     python scripts/deploy_all.py --sync-only       # Solo sync, sin regenerar README
+    python scripts/deploy_all.py --force-mirror    # Ignora politica, espeja (escape hatch)
     python scripts/deploy_all.py --sync-global     # Solo sync del global opencode
     python scripts/deploy_all.py --sync-harness-global  # Sync harness al global opencode
+
+Politica por proyecto (no destructiva): ``<proyecto>/.opencode/deploy.yaml``
+  skills:   { mode: mirror|add-only|skip, exclude: [globs] }
+  opencode: { exclude: [rutas relativas a .opencode/] }
+Sin el archivo se aplica ``mirror`` (compat) con warning. El guard anti-TDR
+aborta escribir ``num_ctx=16384`` (BSOD 0x116) y marca el proyecto blocked.
 """
 
 from __future__ import annotations
 
+import fnmatch
 import json
 import logging
 import os
+import re
 import shutil
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
+import yaml
+
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Politica de deploy por proyecto (no destructiva, configurable)
+# ---------------------------------------------------------------------------
+
+#: Ruta del archivo de politica opcional, relativa a la raiz del proyecto.
+_POLICY_RELPATH = Path(".opencode") / "deploy.yaml"
+
+#: Modos validos para la propagacion de skills.
+_SKILL_MODES = frozenset({"mirror", "add-only", "skip"})
+
+#: Contextos maximos prohibidos por el guard anti-TDR (BSOD 0x116).
+_FORBIDDEN_CONTEXT_PATTERNS = (
+    re.compile(r"""num_ctx["']?\s*[:=]\s*16384"""),
+    re.compile(r"""OLLAMA_CONTEXT_LENGTH["']?\s*[:=]\s*16384"""),
+)
+
+#: Nombres exactos de archivos cuyo contenido vigila el guard anti-TDR.
+_GUARDED_FILES = frozenset({"opencode.json", "ollama_models.yaml"})
+
+#: Glob de archivos machine-private cuyo contenido tambien vigila el guard.
+_GUARDED_FILE_GLOB = "ollama_local*.yaml"
+
+#: Subarbol de skills: lo gestiona deploy_skills (no _sync_tree) para que la
+#: politica por proyecto (skip/add-only/mirror) sea la unica autoridad.
+_SKILLS_SUBTREE_PATTERNS = ("skills", "skills/**")
+
+#: Proyectos ya avisados por falta de deploy.yaml (warning una sola vez).
+_POLICY_WARNED: set[str] = set()
+
+
+@dataclass(frozen=True)
+class DeployPolicy:
+    """Politica de propagacion declarada en ``<proyecto>/.opencode/deploy.yaml``.
+
+    Args:
+        skills_mode: ``mirror`` (borra+sobrescribe, compat), ``add-only``
+            (solo anade skills faltantes) o ``skip`` (no toca skills).
+        skills_exclude: Globs de skills que NUNCA se borran ni sobrescriben.
+        opencode_exclude: Globs (relativos a ``.opencode/``) que ``_sync_tree``
+            no copia ni borra.
+    """
+
+    skills_mode: str = "mirror"
+    skills_exclude: tuple[str, ...] = field(default_factory=tuple)
+    opencode_exclude: tuple[str, ...] = field(default_factory=tuple)
+
+
+def _load_deploy_policy(project: Project, force_mirror: bool = False) -> DeployPolicy:
+    """Carga la politica del proyecto (o default seguro ``mirror``).
+
+    Si ``--force-mirror`` esta activo ignora el archivo y devuelve mirror.
+    Si el archivo no existe, aplica ``mirror`` (compat) y avisa UNA vez por
+    proyecto. Si es ilegible o trae un modo invalido, degrada a ``mirror``.
+
+    Args:
+        project: Proyecto destino.
+        force_mirror: Escape hatch que ignora la politica declarada.
+
+    Returns:
+        DeployPolicy efectiva para el proyecto.
+    """
+    if force_mirror:
+        logger.info("  ⚙️  politica ignorada (--force-mirror) para %s", project.name)
+        return DeployPolicy()
+    path = project.path / _POLICY_RELPATH
+    if not path.is_file():
+        _warn_missing_policy(project)
+        return DeployPolicy()
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        logger.warning(
+            "  ⚠️  deploy.yaml ilegible en %s (%s). WHY: no puedo leer la "
+            "politica. WHERE: _load_deploy_policy. Aplico mirror (compat).",
+            path, exc,
+        )
+        return DeployPolicy()
+    if not isinstance(data, dict):
+        logger.warning("  ⚠️  deploy.yaml sin mapa raiz en %s. WHERE: _load_deploy_policy", path)
+        return DeployPolicy()
+
+    raw_skills = data.get("skills") or {}
+    raw_opencode = data.get("opencode") or {}
+    mode = str(raw_skills.get("mode", "mirror")) if isinstance(raw_skills, dict) else "mirror"
+    if mode not in _SKILL_MODES:
+        logger.warning(
+            "  ⚠️  skills.mode invalido '%s' en %s (validos: %s). WHERE: deploy.yaml. Uso mirror.",
+            mode, path, ", ".join(sorted(_SKILL_MODES)),
+        )
+        mode = "mirror"
+    excludes = _as_str_tuple(raw_skills.get("exclude")) if isinstance(raw_skills, dict) else ()
+    opencode_excludes = _as_str_tuple(raw_opencode.get("exclude")) if isinstance(raw_opencode, dict) else ()
+    return DeployPolicy(
+        skills_mode=mode,
+        skills_exclude=excludes,
+        opencode_exclude=opencode_excludes,
+    )
+
+
+def _as_str_tuple(value: object) -> tuple[str, ...]:
+    """Normaliza una lista YAML de globs a tupla de strings.
+
+    Args:
+        value: Valor crudo (lista, None o escalar).
+
+    Returns:
+        Tupla de strings; vacia si el valor no es lista.
+    """
+    if not isinstance(value, (list, tuple)):
+        return ()
+    return tuple(str(item) for item in value if str(item).strip())
+
+
+def _warn_missing_policy(project: Project) -> None:
+    """Avisa una sola vez que el proyecto no declara politica.
+
+    Args:
+        project: Proyecto sin ``.opencode/deploy.yaml``.
+    """
+    key = str(project.path)
+    if key in _POLICY_WARNED:
+        return
+    _POLICY_WARNED.add(key)
+    logger.warning(
+        "  ⚠️  %s sin .opencode/deploy.yaml: aplico skills mode=mirror (compat). "
+        "WHY: sin politica, el deploy borra skills curadas (caso Onyx 17->35). "
+        "WHERE: _load_deploy_policy. Declara skills.mode para conservar curacion.",
+        project.name,
+    )
+
+
+def _is_excluded(rel_path: str, patterns: tuple[str, ...]) -> bool:
+    """Indica si una ruta relativa coincide con algun glob de exclusion.
+
+    Args:
+        rel_path: Ruta relativa (relativa a ``.opencode/`` o al nombre de skill).
+        patterns: Globs estilo fnmatch.
+
+    Returns:
+        True si la ruta debe excluirse.
+    """
+    rel_posix = rel_path.replace("\\", "/")
+    return any(fnmatch.fnmatch(rel_posix, pattern) for pattern in patterns)
+
+
+def _is_guarded_file(name: str) -> bool:
+    """Indica si el archivo cae bajo el guard anti-TDR.
+
+    Args:
+        name: Nombre base del archivo.
+
+    Returns:
+        True si es opencode.json, ollama_models.yaml u ollama_local*.yaml.
+    """
+    return name in _GUARDED_FILES or fnmatch.fnmatch(name, _GUARDED_FILE_GLOB)
+
+
+def _violates_context_guard(path: Path) -> bool:
+    """Detecta el contexto prohibido (num_ctx/OLLAMA_CONTEXT_LENGTH 16384).
+
+    Args:
+        path: Archivo fuente a inspeccionar.
+
+    Returns:
+        True si el contenido contiene un contexto prohibido; False si no
+        existe, no es texto o no coincide.
+    """
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return False
+    return any(pattern.search(text) for pattern in _FORBIDDEN_CONTEXT_PATTERNS)
 
 # ---------------------------------------------------------------------------
 # Config (rutas portables, ADR-0035)
@@ -350,27 +534,44 @@ def _restore_config(
 # ---------------------------------------------------------------------------
 
 
-def _sync_tree(src: Path, dst: Path, dry_run: bool = False) -> int:
+def _sync_tree(
+    src: Path,
+    dst: Path,
+    dry_run: bool = False,
+    exclude: tuple[str, ...] = (),
+    blocked: list[str] | None = None,
+    _rel: str = "",
+) -> int:
     """Sync espejo preservador: actualiza src→dst sin borrar archivos propios.
 
     Copia/sobreescribe los archivos de ``src`` en ``dst``. Los archivos o
     directorios presentes en ``dst`` pero ausentes en ``src`` (config propia
-    del proyecto) NO se borran. Devuelve cuántos archivos se actualizaron.
+    del proyecto) NO se borran. Respeta ``exclude`` (globs relativos al
+    origen) y el guard anti-TDR (aborta la escritura de archivos con
+    ``num_ctx=16384``, BSOD 0x116).
 
     Args:
         src: Directorio fuente (Swarmind).
         dst: Directorio destino (proyecto).
         dry_run: Si True, solo simula (no escribe).
+        exclude: Globs (relativos a ``src``) que no se copian ni borran.
+        blocked: Lista donde se anotan los destinos bloqueados por el guard.
+        _rel: Ruta relativa acumulada (uso interno de la recursion).
 
     Returns:
-        Número de archivos copiados.
+        Número de archivos copiados (excluye los bloqueados).
     """
     if not src.is_dir():
         return 0
-    dst.mkdir(parents=True, exist_ok=True)
+    if not dry_run:
+        dst.mkdir(parents=True, exist_ok=True)
 
     count = 0
     for item in src.iterdir():
+        rel = f"{_rel}/{item.name}" if _rel else item.name
+        if _is_excluded(rel, exclude):
+            logger.debug("sync: excluido por politica: %s", rel)
+            continue
         if item.name in _SKIP_FILES:
             logger.debug("sync: archivo machine-private excluido: %s", item.name)
             continue
@@ -379,26 +580,18 @@ def _sync_tree(src: Path, dst: Path, dry_run: bool = False) -> int:
             continue
         target = dst / item.name
         if item.is_dir():
-            if target.exists() and target.is_dir() and not target.is_symlink():
-                count += _sync_tree(item, target, dry_run)
-            else:
-                if not dry_run:
-                    shutil.copytree(
-                        item, target, dirs_exist_ok=True,
-                        ignore=shutil.ignore_patterns(*_SYNC_SKIP_DIRS),
-                    )
-                    # copytree no filtra machine-private: purgar del arbol nuevo
-                    for stale in target.rglob("*"):
-                        if stale.is_file() and stale.name in _SKIP_FILES:
-                            stale.unlink()
-                            logger.debug("sync: purgado machine-private: %s", stale)
-                count += sum(
-                    1 for _ in item.rglob("*")
-                    if _.is_file() and not any(
-                        part in _SYNC_SKIP_DIRS for part in _.relative_to(item).parts
-                    )
-                )
+            count += _sync_tree(item, target, dry_run, exclude, blocked, rel)
         else:
+            if _is_guarded_file(item.name) and _violates_context_guard(item):
+                if blocked is not None:
+                    blocked.append(str(target))
+                logger.error(
+                    "  🚫 BLOQUEADO: no escribo %s — contiene num_ctx=16384. "
+                    "WHY: ese contexto disparo VIDEO_TDR_FAILURE (BSOD 0x116) en GPU 8GB. "
+                    "WHERE: _sync_tree / guard anti-TDR. Corrige la fuente a 8192.",
+                    target,
+                )
+                continue
             if not dry_run:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(item, target)
@@ -411,57 +604,134 @@ def _sync_tree(src: Path, dst: Path, dry_run: bool = False) -> int:
 # ---------------------------------------------------------------------------
 
 
-def deploy_skills(project: Project, dry_run: bool) -> int:
-    """Despliega TODAS las skills de la fuente + skills_registry completo.
+def deploy_skills(
+    project: Project,
+    dry_run: bool,
+    policy: DeployPolicy | None = None,
+    force_mirror: bool = False,
+) -> int:
+    """Despliega skills segun la politica del proyecto (no destructiva).
 
-    Todos los proyectos reciben las skills reales de la fuente (SSOT,
-    descubiertas dinámicamente de .opencode/skills/ — sin lista hardcode).
-    Limpia skills obsoletas no presentes en la fuente (excepto auto/).
+    Modos:
+      - ``mirror``   : comportamiento historico (copia+sobrescribe, limpia
+        obsoletas). Es el default cuando no hay ``deploy.yaml`` (compat).
+      - ``add-only`` : NO borra skills existentes; solo anade las faltantes
+        (nunca sobrescribe una existente). Preserva ``skills_registry.yaml``.
+      - ``skip``     : no toca ``skills/`` en absoluto (curacion intocable).
+
+    ``skills.exclude`` aplica en los 3 modos, tambien a la limpieza.
 
     Args:
         project: Proyecto destino.
         dry_run: Si True, solo simula.
+        policy: Politica efectiva; si es None se carga de ``deploy.yaml``.
+        force_mirror: Escape hatch que fuerza ``mirror`` ignorando la politica.
 
     Returns:
-        Número de skills desplegados.
+        Número de skills desplegadas (copiadas o anadidas).
     """
-    allowed = set(_discover_skills())
+    if policy is None:
+        policy = _load_deploy_policy(project, force_mirror=force_mirror)
+    mode = policy.skills_mode
+    excludes = policy.skills_exclude
     target = project.path / ".opencode" / "skills"
     src_skills = _ROOT / ".opencode" / "skills"
 
+    if mode == "skip":
+        logger.info("    ⏭️  skills: SKIPPED (curado) — politica mode=skip")
+        return 0
+
+    allowed = [s for s in _discover_skills() if not _is_excluded(s, excludes)]
+
     if dry_run:
-        logger.info("    🔍 skills a desplegar (%d) — potencia total", len(allowed))
+        logger.info("    🔍 skills [%s]: %d a desplegar", mode, len(allowed))
         return len(allowed)
 
     target.mkdir(parents=True, exist_ok=True)
 
-    # Limpiar skills obsoletas (no en la fuente, no auto/)
-    cleaned = 0
-    for skill_dir in target.iterdir():
-        if skill_dir.is_dir() and skill_dir.name not in allowed and skill_dir.name != "auto":
-            shutil.rmtree(skill_dir)
-            cleaned += 1
-            logger.info("    🗑️  removed skill obsoleta: %s", skill_dir.name)
+    deployed = _deploy_skill_dirs(src_skills, target, allowed, mode)
+    cleaned = _clean_obsolete_skills(target, set(allowed), excludes) if mode == "mirror" else 0
+    _sync_skills_registry(src_skills, target, mode)
 
-    # Copiar las skills desde la fuente
-    copied = 0
+    logger.info(
+        "    📦 skills [%s]: %d desplegadas, %d obsoletas limpiadas",
+        mode, deployed, cleaned,
+    )
+    return deployed
+
+
+def _deploy_skill_dirs(
+    src_skills: Path, target: Path, allowed: list[str], mode: str
+) -> int:
+    """Copia/anade los directorios de skills permitidos.
+
+    Args:
+        src_skills: Directorio fuente de skills (SSOT).
+        target: Directorio destino ``skills/`` del proyecto.
+        allowed: Nombres de skills permitidos (ya filtrados por exclude).
+        mode: ``mirror`` (sobrescribe) o ``add-only`` (respeta existentes).
+
+    Returns:
+        Número de skills desplegadas.
+    """
+    deployed = 0
     for skill_name in sorted(allowed):
         src = src_skills / skill_name
-        if src.is_dir():
-            dst = target / skill_name
-            if dst.exists():
-                shutil.rmtree(dst)
-            shutil.copytree(src, dst)
-            copied += 1
+        if not src.is_dir():
+            continue
+        dst = target / skill_name
+        if mode == "add-only" and dst.exists():
+            logger.debug("    ⏭️  skill curada preservada (add-only): %s", skill_name)
+            continue
+        if dst.exists():
+            shutil.rmtree(dst)
+        shutil.copytree(src, dst)
+        deployed += 1
+    return deployed
 
-    # skills_registry.yaml completo desde la fuente
+
+def _clean_obsolete_skills(
+    target: Path, allowed: set[str], excludes: tuple[str, ...]
+) -> int:
+    """Elimina skills del destino ausentes en la fuente (respeta exclude/auto).
+
+    Args:
+        target: Directorio ``skills/`` del proyecto.
+        allowed: Nombres de skills de la fuente (ya filtrados por exclude).
+        excludes: Globs que NUNCA se borran.
+
+    Returns:
+        Número de skills obsoletas eliminadas.
+    """
+    cleaned = 0
+    for skill_dir in target.iterdir():
+        if not skill_dir.is_dir():
+            continue
+        name = skill_dir.name
+        if name == "auto" or name in allowed or _is_excluded(name, excludes):
+            continue
+        shutil.rmtree(skill_dir)
+        cleaned += 1
+        logger.info("    🗑️  removed skill obsoleta: %s", name)
+    return cleaned
+
+
+def _sync_skills_registry(src_skills: Path, target: Path, mode: str) -> None:
+    """Copia ``skills_registry.yaml`` salvo en add-only con registry existente.
+
+    Args:
+        src_skills: Directorio fuente de skills (SSOT).
+        target: Directorio ``skills/`` del destino.
+        mode: Modo de skills efectivo.
+    """
     registry_src = src_skills / "skills_registry.yaml"
-    if registry_src.is_file():
-        shutil.copy2(registry_src, target / "skills_registry.yaml")
-
-    logger.info("    📦 skills: %d copiados, %d obsoletas limpiadas, registry actualizado",
-                copied, cleaned)
-    return copied
+    if not registry_src.is_file():
+        return
+    registry_dst = target / "skills_registry.yaml"
+    if mode == "add-only" and registry_dst.exists():
+        logger.info("    ⏭️  skills_registry.yaml preservado (add-only)")
+        return
+    shutil.copy2(registry_src, registry_dst)
 
 
 # ---------------------------------------------------------------------------
@@ -574,20 +844,30 @@ def deploy_project(
     project: Project,
     dry_run: bool = False,
     sync_only: bool = False,
+    force_mirror: bool = False,
 ) -> dict:
     """Despliega el mirror local completo a un proyecto.
+
+    Carga la politica de ``<proyecto>/.opencode/deploy.yaml`` y la respeta:
+    las skills se gobiernan por ``deploy_skills`` (excluidas de ``_sync_tree``)
+    y ``opencode.exclude`` filtra el arbol del cerebro. El guard anti-TDR
+    puede marcar el proyecto como ``blocked`` si la fuente trae ``num_ctx``
+    16384 (evita re-propagar el BSOD 0x116).
 
     Args:
         project: Proyecto destino.
         dry_run: Si True, solo simula (no escribe nada).
         sync_only: Si True, no regenera README.
+        force_mirror: Escape hatch que ignora la politica y aplica mirror.
 
     Returns:
-        Dict con estadísticas del deploy.
+        Dict con estadísticas del deploy (``status``: ok|blocked|skipped).
     """
     if not project.path.exists():
         logger.warning("  ❌ Project path not found: %s", project.path)
         return {"name": project.name, "status": "skipped", "reason": "path_not_found"}
+
+    policy = _load_deploy_policy(project, force_mirror=force_mirror)
 
     logger.info("")
     logger.info("=" * 60)
@@ -600,9 +880,15 @@ def deploy_project(
     if not dry_run:
         saved_files, saved_dirs = _backup_config(project)
 
-    # 2. Sync .opencode/ (cerebro mirror — agents, skills, core, config)
+    # 2. Sync .opencode/ (cerebro mirror — agents, core, config). El subarbol
+    #    skills/ se excluye: lo gobierna la politica via deploy_skills.
     logger.info("📁 .opencode/ — syncing cerebro mirror...")
-    opencode_count = _sync_tree(_ROOT / ".opencode", project.path / ".opencode", dry_run)
+    hidden = tuple(policy.opencode_exclude) + _SKILLS_SUBTREE_PATTERNS
+    blocked: list[str] = []
+    opencode_count = _sync_tree(
+        _ROOT / ".opencode", project.path / ".opencode", dry_run,
+        exclude=hidden, blocked=blocked,
+    )
     opencode_count += _seed_node_modules(project.path / ".opencode", dry_run)
     logger.info("  ✅ .opencode/: %d archivos %s", opencode_count, "(simulado)" if dry_run else "")
 
@@ -612,9 +898,9 @@ def deploy_project(
     logger.info("📁 harness/ — SKIPPED (una sola copia en opencode global, estandar v2.5)")
     harness_count = 0
 
-    # 4. Skills: todas (descubrimiento dinamico) + registry completo (limpia obsoletas)
-    logger.info("🧠 skills — potencia total...")
-    skills_count = deploy_skills(project, dry_run)
+    # 4. Skills: segun politica (mirror/add-only/skip + exclude)
+    logger.info("🧠 skills — politica: %s", policy.skills_mode)
+    skills_count = deploy_skills(project, dry_run, policy=policy)
     logger.info("  ✅ skills: %d %s", skills_count, "(simulado)" if dry_run else "")
 
     # 5. Restaurar config propia
@@ -627,13 +913,16 @@ def deploy_project(
         generate_readme(project, dry_run)
         logger.info("  ✅ README.md %s", "(simulado)" if dry_run else "actualizado")
 
+    status = "blocked" if blocked else "ok"
+    if blocked:
+        logger.error("  ⛔ %s BLOCKED por guard anti-TDR (%d escrituras)", project.name, len(blocked))
     return {
         "name": project.name,
         "type": project.ptype,
         "opencode_files": opencode_count,
         "harness_files": harness_count,
         "skills_deployed": skills_count,
-        "status": "ok",
+        "status": status,
     }
 
 
@@ -759,6 +1048,8 @@ def main() -> None:
     parser.add_argument("--project", "-p", type=str, help="Solo un proyecto (alias o nombre)")
     parser.add_argument("--sync-only", action="store_true", help="Solo sync, no regenerar README")
     parser.add_argument("--skip-hermes", action="store_true", help="No sincronizar memoria Hermes")
+    parser.add_argument("--force-mirror", action="store_true",
+                        help="Ignora la politica y aplica mirror a todos (escape hatch)")
     parser.add_argument("--sync-global", action="store_true",
                         help="Solo sincronizar el global opencode (no tocar proyectos)")
     parser.add_argument("--sync-harness-global", action="store_true",
@@ -800,10 +1091,16 @@ def main() -> None:
             logger.error("  ❌ Proyecto no encontrado: %s", args.project)
             logger.error("     Usa: %s", ", ".join(sorted(_ALIASES)))
             return
-        all_stats.append(deploy_project(selected, dry_run=args.dry_run, sync_only=args.sync_only))
+        all_stats.append(deploy_project(
+            selected, dry_run=args.dry_run, sync_only=args.sync_only,
+            force_mirror=args.force_mirror,
+        ))
     else:
         for project in projects:
-            all_stats.append(deploy_project(project, dry_run=args.dry_run, sync_only=args.sync_only))
+            all_stats.append(deploy_project(
+                project, dry_run=args.dry_run, sync_only=args.sync_only,
+                force_mirror=args.force_mirror,
+            ))
 
     if not args.skip_hermes:
         all_stats.append(sync_hermes_memory(dry_run=args.dry_run))
@@ -816,6 +1113,12 @@ def main() -> None:
     for s in all_stats:
         if s.get("status") == "skipped":
             logger.info("  ⏭️  %-25s | %s", s.get("name", "?"), s.get("reason", ""))
+            continue
+        if s.get("status") == "blocked":
+            logger.error(
+                "  ⛔ %-25s | BLOCKED por guard anti-TDR (num_ctx=16384)",
+                s.get("name", "?"),
+            )
             continue
         logger.info(
             "  ✅ %-25s | type=%-10s | .opencode=%-5d harness=%-5d skills=%d",

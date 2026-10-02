@@ -34,6 +34,12 @@ Uso:
     python scripts/sync_opencode_global.py --quiet      # Sin log (hook)
     python scripts/sync_opencode_global.py --cerebro    # Solo cerebro (agents/skills/core)
     python scripts/sync_opencode_global.py --motor      # Solo motor (harness)
+    python scripts/sync_opencode_global.py --force      # Espeja (BORRA curacion global)
+
+Curacion global (no destructivo por defecto): si el global tiene
+directorios de ``skills/`` o ``agents/`` que NO estan en la fuente, sin
+``--force`` el sync los PRESERVA y reporta SKIPPED (curacion global
+preservada). Con ``--force`` los elimina para espejar la fuente.
 """
 
 from __future__ import annotations
@@ -67,6 +73,10 @@ _GLOBAL = Path(os.environ.get(
 # Partes del cerebro que se sincronizan al global
 _BRAIN_DIRS = ["agents", "skills", "core"]
 _REGISTRY_FILE = "skills/skills_registry.yaml"
+
+# Partes del cerebro que el usuario puede curar: sin --force NO se borran
+# los directorios presentes en el global pero ausentes en la fuente.
+_CURATED_PARTS = frozenset({"skills", "agents"})
 
 # Directorios del motor (harness) que se sincronizan al global.
 # Se excluyen datos runtime (db/, tests locales, caches).
@@ -179,6 +189,60 @@ def _sync_dir(src: Path, dst: Path, dry_run: bool = False, mode: str = "copy") -
     return count
 
 
+def _find_orphans(src: Path, dst: Path) -> list[Path]:
+    """Lista directorios/archivos del global ausentes en la fuente.
+
+    Args:
+        src: Directorio fuente (SWARMIND/.opencode/<parte>).
+        dst: Directorio del global (~/.config/opencode/<parte>).
+
+    Returns:
+        Lista ordenada de entradas de ``dst`` que no existen en ``src``.
+    """
+    if not dst.is_dir():
+        return []
+    src_names = {p.name for p in src.iterdir()} if src.is_dir() else set()
+    return sorted(p for p in dst.iterdir() if p.name not in src_names)
+
+
+def _gate_curated_orphans(
+    part: str, src: Path, dst: Path, dry_run: bool, force: bool
+) -> int:
+    """Protege (o elimina con --force) la curacion del global.
+
+    Args:
+        part: Nombre de la parte sincronizada (skills, agents, core).
+        src: Directorio fuente.
+        dst: Directorio destino en el global.
+        dry_run: Si True, solo simula.
+        force: Si True, elimina los huerfanos (espeja la fuente).
+
+    Returns:
+        Número de huerfanos eliminados (0 si se preservaron).
+    """
+    if part not in _CURATED_PARTS:
+        return 0
+    orphans = _find_orphans(src, dst)
+    if not orphans:
+        return 0
+    if not force:
+        logger.warning(
+            "  ⏭️  %-10s SKIPPED (curacion global preservada): %d entradas "
+            "curadas no estan en la fuente. WHY: borrarlas perderia tu curacion. "
+            "WHERE: sync_global. Usa --force para espejar (las borra).",
+            part, len(orphans),
+        )
+        return 0
+    for orphan in orphans:
+        if not dry_run:
+            if orphan.is_dir():
+                shutil.rmtree(orphan)
+            else:
+                orphan.unlink()
+        logger.info("  🗑️  %-10s eliminado del global (--force): %s", part, orphan.name)
+    return len(orphans)
+
+
 def _sync_harness_to_global(dry_run: bool = False) -> int:
     """Sincroniza el motor (harness/) a ~/.config/opencode/harness.
 
@@ -245,7 +309,7 @@ def _ensure_memory_central(dry_run: bool = False) -> dict:
 
 def sync_global(dry_run: bool = False, quiet: bool = False,
                 cerebro: bool = False, motor: bool = False,
-                mode: str = "copy") -> dict:
+                mode: str = "copy", force: bool = False) -> dict:
     """Sincroniza el cerebro Swarmind a la config global de opencode.
 
     Args:
@@ -254,6 +318,8 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
         cerebro: Si True, solo sincroniza cerebro (agents/skills/core/registry).
         motor: Si True, solo sincroniza motor (harness/).
         mode: "copy" (default) o "symlink" (reflejo instantáneo).
+        force: Si True, elimina directorios curados del global ausentes en la
+            fuente; sin el, los preserva (SKIPPED, curacion global preservada).
 
     Returns:
         Dict con estadísticas por parte del cerebro.
@@ -277,7 +343,11 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
             src = _SRC_OPENCODE / part
             dst = _GLOBAL / part
             count = _sync_dir(src, dst, dry_run=dry_run, mode=mode)
+            # Curacion: sin --force no se borran dirs del global ausentes en la fuente.
+            removed = _gate_curated_orphans(part, src, dst, dry_run, force)
             stats[part] = count
+            if removed:
+                stats[f"{part}_removed"] = removed
             if not quiet:
                 logger.info("  ✓ %-10s %d archivos %s", part, count, "(simulado)" if dry_run else "")
 
@@ -321,10 +391,13 @@ def main() -> None:
     parser.add_argument("--motor", action="store_true", help="Solo motor (harness)")
     parser.add_argument("--mode", choices=["copy", "symlink"], default="copy",
                         help="Modo sync: copy (default) o symlink (reflejo instantáneo)")
+    parser.add_argument("--force", action="store_true",
+                        help="Espeja: BORRA skills/agents curados del global ausentes en la fuente")
     args = parser.parse_args()
 
     sync_global(dry_run=args.dry_run, quiet=args.quiet,
-                cerebro=args.cerebro, motor=args.motor, mode=args.mode)
+                cerebro=args.cerebro, motor=args.motor, mode=args.mode,
+                force=args.force)
 
 
 if __name__ == "__main__":
