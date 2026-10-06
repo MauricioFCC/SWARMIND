@@ -3,7 +3,7 @@ name: process-over-tools
 domain: orchestration
 version: 1.0.0
 project_agnostic: true
-description: "Usar cuando se evalúa adoptar herramienta, modelo o agente en el proyecto: aplica el principio 'la diferencia no es la herramienta, es el proceso' — antes de adoptar, define objetivo, responsable, datos, medición y escalado, y enrútalo al harness. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se evalúa adoptar herramienta, modelo o agente en el proyecto: define objetivo, responsable, datos, medición y escalado, y enrútalo al harness. Alcance: adopcion de tools en el harness; para mejora del sistema ver evolve. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 ---
 

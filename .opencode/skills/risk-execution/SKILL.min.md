@@ -1,6 +1,6 @@
 ---
 name: risk-execution
-description: "Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica. Alcance: implementacion tactica; para doctrina institucional ver hedgefund. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 ---
 

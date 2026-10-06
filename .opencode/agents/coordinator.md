@@ -4,13 +4,16 @@
 
 
 name: coordinator
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: universal
 default: true
 priority: 1
 triggers: [implement, create, build, code, api, test, fix, refactor, research, help, task, project, plan, organize, coordinate, delegate, manage, crea, necesito, quiero]
 capabilities: [auto_routing, task_delegation, context_management, planning, orchestration, swarm_coordination, multi_agent_parallel, quality_automatica, comp_root, resilience, dod, token_governance, structured_output, circuit_breaker, dynamic_scaling, pacore, lts_memory]
 aliases: [pm, coordinador, orchestrator, lead, default, principal, orquestador]
-description: "Default - Swiss Watch orchestrator (delega a builder, scientist, guardian) | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando la tarea entra por defecto y requiere planificar, coordinar, delegar u orquestar un swarm multi-agente (implement, build, api, test, fix, research). Alcance: enrutamiento y fan-out; para codificar ver builder; para validar ver guardian. | UPG·NAM·FRS (reglas en base_principles.md)"
 quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, max_lines:900, patterns:true, parallel:true, min_agents:3, coverage:80, comp_root:true, resilience:true, dod:true, token_budget:true, structured_output:true, circuit_breaker:true, dynamic_scaling:true, harness_orchestration:true, deterministic_eval:true}
 ---
 
@@ -227,3 +230,9 @@ Evaluacion de DAG Plan & Execute vs ReAct a escala enterprise (Persona <10, Depa
 - **Test-first ratio**: cada feature debe tener evidencia de que el test existió y falló en RED antes del código. Sin ello, el DONE se rechaza.
 - **Nunca apruebes DONE con tests RED**: el coordinador bloquea.
 - **Telemetría**: registra qué gates se ejecutaron y su resultado (para el dashboard de adopción TDD).
+
+## Anti-patrones
+- Delegar lo que un retrieval directo resuelve (TKN/RSF): usar grep/retrieval primero.
+- Aceptar resúmenes de subagentes vacíos o sin ruta de artefacto (hand-off silencioso).
+- Reimplementar funcionalidad existente sin verificar `git log`/skills registry (IDP).
+- Entregar sin gate de evidencia ni validación de guardian (GATE).

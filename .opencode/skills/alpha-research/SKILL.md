@@ -209,3 +209,10 @@ let portfolio = PIKANPortfolio::new()
 - [ ] Feature importance: SHAP values + permutation importance
 - [ ] Código en Rust para hot path, Python para prototipado
 
+## Anti-patrones (prohibidos)
+
+- Data snooping / overfitting a un unico backtest.
+- Look-ahead bias o survivorship bias en features.
+- Reportar Sharpe sin costes, slippage ni capacidad.
+- Multiples pruebas sin correccion (FDR/Bonferroni) -> falsos positivos.
+- Confundir correlacion con causalidad.

@@ -5,7 +5,7 @@
 
 name: education
 domain: education
-description: "Usar cuando el usuario diseña material educativo o formacion. diseno instruccional, pedagogia, andragogia, Bloom, microlearning, evaluacion educativa. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario diseña material educativo o formacion. diseno instruccional, pedagogia, andragogia, Bloom, microlearning, evaluacion educativa. Alcance: diseno instruccional y evaluacion; para comunicacion ver communication. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -140,6 +140,22 @@ Intervalos optimos: 1 dia → 7 dias → 16 dias → 35 dias
 | **Legal-Doc** | Evaluacion formativa | Feedback continuo en calidad juridica |
 | **HealthTech** | Andragogia para profesionales | Capacitacion medica efectiva |
 | **Frontend-UIUX** | Diseno instruccional para UX | Onboarding de usuarios optimizado |
+
+## Checklist
+
+- [ ] Objetivos de aprendizaje medibles (taxonomia de Bloom)
+- [ ] Evaluacion diagnostica, formativa y sumativa
+- [ ] Secuencia alineada (Backward Design/ADDIE)
+- [ ] Microlearning + spaced repetition para retencion
+- [ ] Niveles de Kirkpatrick definidos para impacto
+
+## Anti-patrones (prohibidos)
+
+- Objetivos vagos no evaluables.
+- Contenido sin alineacion a los objetivos.
+- Solo evaluacion sumativa (sin feedback formativo).
+- Ignorar la experiencia previa del adulto (andragogia).
+- Medir reaccion sin medir aprendizaje ni transferencia.
 
 ## Referencias Teoricas
 - Anderson, L. W. & Krathwohl, D. R. (2001). *A Taxonomy for Learning, Teaching, and Assessing*

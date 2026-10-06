@@ -5,7 +5,7 @@
 
 name: healthtech
 domain: healthtech
-description: "Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos. Alcance: salud digital y sistemas clinicos; para seguridad general ver security-audit. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -66,3 +66,20 @@ Se activa automáticamente cuando el `router` detecta keywords del dominio healt
 - Audit trail en cada operación CRUD de datos sensibles.
 - Documentación de consentimiento y privacidad.
 - Tests de seguridad (OWASP Top 10 health-specific).
+
+## Checklist
+
+- [ ] PHI/PII cifrados en reposo y en transito
+- [ ] Audit trail en cada operacion sobre datos clinicos
+- [ ] Consentimiento explicito y retencion definida
+- [ ] Interoperabilidad HL7 FHIR R4 / DICOM
+- [ ] Control de acceso por rol (physician/admin)
+- [ ] Tests de seguridad health-specific (OWASP)
+
+## Anti-patrones (prohibidos)
+
+- PHI/PII sin cifrar o expuestos en logs.
+- Operar sin consentimiento ni audit trail.
+- Acceso a datos clinicos sin rol autorizado.
+- Formatos propietarios en vez de FHIR.
+- Ignorar la jurisdiccion (HIPAA/GDPR-Salud).

@@ -1,7 +1,7 @@
 ---
 name: diagram-design
 domain: frontend
-description: "Usar cuando el usuario pide un diagrama visual editorial. arquitectura, flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar, org chart, mermaid, drawio, SVG, diagrama. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario pide un diagrama visual editorial. arquitectura, flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar, org chart, mermaid, drawio, SVG, diagrama. Alcance: diagramas visuales editoriales; para arquitectura ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
 version: 1.1.0
 project_agnostic: true
 inherit:
@@ -129,7 +129,7 @@ Before rendering, state the plan in one short message: the chosen visual type (a
 
 ---
 
-## 4. Universal Anti-patterns (resumen — tabla completa en core.md)
+## 4. Anti-patrones universales (resumen — tabla completa en core.md)
 
 These mark "AI slop" schematics of any type:
 
@@ -181,6 +181,15 @@ Always produce a single self-contained `.html` file: embedded CSS, inline SVG, s
 Export to PNG/SVG, imports (drawio/mermaid), templates and the full pre-output checklist: see [`advanced.md`](advanced.md).
 
 ---
+
+## Checklist
+
+- [ ] Tipo visual (de los 27) y patron semantico elegidos
+- [ ] Presupuesto de complejidad respetado (<=9 nodos, <=12 flechas)
+- [ ] Conectores ortogonales, sin diagonales ni cruces sin bridge
+- [ ] Accesible: role=img, aria-labelledby, title, IDs prefijados
+- [ ] Style guide confirmado (no defaults en proyecto con marca)
+- [ ] Salida: HTML autocontenido con SVG inline
 
 ## Rutas de carga (progressive disclosure)
 

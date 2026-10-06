@@ -4,11 +4,14 @@
 
 
 name: mobile-engineer
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: mobile
 triggers: [mobile, ios, android, app, react-native, flutter, swift, kotlin, expo, app-store, play-store, push-notification, deep-link, offline, mobile-ui]
 capabilities: [mobile_dev, ios_dev, android_dev, cross_platform, mobile_ui, app_store_deploy]
 aliases: [mobile, mobile-dev, ios-engineer, android-engineer, react-native-dev]
-description: "Mobile engineer especializado en apps iOS/Android nativas y cross-platform con React Native y Flutter | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se construyen apps iOS/Android nativas o cross-platform (mobile, ios, android, flutter, react-native, swift, kotlin, offline). Alcance: apps móviles; para web ver frontend-engineer; para APIs ver backend-engineer. | UPG·NAM·FRS (reglas en base_principles.md)"
 quality: {docstrings_es: true, error_actionable: true, clean_code: true, patterns: true, coverage: 80, offline_first: true}
 ---
 
@@ -98,3 +101,9 @@ Toda funcion/componente/widget publico DEBE incluir docstring con Args/Returns/R
 - [ ] Performance: sin jank, cold start < 2s, bundle < 15MB
 - [ ] DocStrings ES-UTF8 en TODO componente/servicio publico
 - [ ] Errores legibles y accionables con Crashlytics/Sentry
+
+## Anti-patrones
+- Ignorar modo offline y estados de red (ARQ).
+- No cumplir guías de plataforma (HIG/Material) (UX).
+- Permisos excesivos o secretos dentro del bundle (SEG).
+- Desplegar sin pruebas en dispositivo/emulador real (GATE).

@@ -5,7 +5,7 @@
 
 name: linguistics
 domain: linguistics
-description: "Usar cuando el problema involucra lenguaje, semiotica o NLP. linguistica cognitiva, semiotica, pragmatica, analisis del discurso, procesamiento de lenguaje natural. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el problema involucra lenguaje, semiotica o NLP. linguistica cognitiva, semiotica, pragmatica, analisis del discurso, procesamiento de lenguaje natural. Alcance: lenguaje, semantica y NLP; para documentacion cientifica ver science-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -190,6 +190,22 @@ Skill de linguistica para mejorar el procesamiento de lenguaje y la comunicacion
 | **Psychology** | Analisis del discurso cognitivo | Diagnostico de patrones de pensamiento |
 | **Ethics** | Argumentacion etica, deteccion de falacias | Debates eticos mas rigurosos |
 | **Math-Doc** | Semiotica de notacion matematica | Comprension profunda de textos formales |
+
+## Checklist
+
+- [ ] Nivel de analisis definido (fonema -> discurso)
+- [ ] Ejemplos anotados y definicion formal antes de intuicion
+- [ ] Corpus o benchmark de referencia para la tarea
+- [ ] Desambiguacion (polisemia) resuelta por contexto
+- [ ] Evaluacion con metrica NLP (F1/ROUGE/etc.)
+
+## Anti-patrones (prohibidos)
+
+- Definiciones intuitivas sin formalizacion.
+- Ignorar pragmatica y contexto en el significado.
+- Generalizar de un ejemplo unico.
+- Traducir sin desambiguacion semantica.
+- Analizar sin corpus ni evaluacion.
 
 ## Referencias Teoricas
 - Lakoff, G. & Johnson, M. (1980). *Metaphors We Live By*

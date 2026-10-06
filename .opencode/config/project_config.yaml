@@ -78,7 +78,7 @@ HARNESS:
     - session_kpis
     - agent_interactions
   agent_count: 24
-  skill_count: 35
+  skill_count: 36
   model_routing: "hybrid (local Ollama + cloud API)"
   hitl_enabled: true
   gateway_modes: ["cli"]
@@ -109,6 +109,30 @@ AGENTS:
     - frontend-engineer
     - guardian
     - mobile-engineer
+    - platform-engineer
+    - product-manager
+    - qa-engineer
+    - release-ops
+    - researcher
+    - reviewer
+    - scientist
+    - security-engineer
+    - test-writer
+    - token-budget-auditor
+    - architect
+    - backend-engineer
+    - builder
+    - coordinator
+    - data-engineer
+    - database-administrator
+    - devops
+    - evolve
+    - evolve-analyzer
+    - evolve-engineer
+    - evolve-researcher
+    - frontend-engineer
+    - guardian
+    - mobile-engineer
     - product-manager
     - platform-engineer
     - qa-engineer
@@ -121,8 +145,44 @@ AGENTS:
     - token-budget-auditor
 
 SKILLS:
-  total: 35
+  total: 36
   skill_list:
+    - ads-optimizer
+    - agent-rigor
+    - alpha-research
+    - architecture
+    - atdd-spec
+    - behavioral-economics
+    - business-strategy
+    - communication
+    - creative-design
+    - data-science
+    - devops-infra
+    - diagram-design
+    - education
+    - ethics
+    - evolve
+    - frontend-uiux
+    - healthtech
+    - hedgefund
+    - legal-doc
+    - linguistics
+    - math-doc
+    - physical-sciences
+    - pos-retail
+    - process-over-tools
+    - project-management
+    - psychology
+    - quant-trading
+    - risk-execution
+    - risk-intelligence
+    - rust-lang
+    - science-doc
+    - security-audit
+    - skill-engineering
+    - sociology
+    - sustainability
+    - swarm-release-ops
     - ads-optimizer
     - agent-rigor
     - alpha-research

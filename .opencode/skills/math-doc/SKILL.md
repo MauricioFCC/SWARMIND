@@ -5,7 +5,7 @@
 
 name: math-doc
 domain: math
-description: "Usar cuando el usuario necesita analisis matematico o formulas. papers matematicos, LaTeX, demostraciones, estadistica, algebra, calculo, modelado matematico. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario necesita analisis matematico o formulas. papers matematicos, LaTeX, demostraciones, estadistica, algebra, calculo, modelado matematico. Alcance: analisis matematico y formulas; para papers cientificos ver science-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -70,3 +70,19 @@ Se activa automáticamente cuando el `router` detecta keywords del dominio matem
 - Análisis estadístico con interpretación correcta de significancia
 - Resúmenes técnicos con extracción precisa de ecuaciones y fórmulas
 - Conversión bidireccional LaTeX ↔ Markdown con fidelidad de notación
+
+## Checklist
+
+- [ ] Notacion LaTeX preservada y unificada
+- [ ] Demostracion con hipotesis -> pasos -> conclusion
+- [ ] Saltos logicos detectados y justificados
+- [ ] Significancia corregida por multiples comparaciones
+- [ ] Reproducibilidad de resultados evaluada
+
+## Anti-patrones (prohibidos)
+
+- 'Es obvio' sin demostracion.
+- Saltos logicos no justificados.
+- p-valores sin correccion multiple.
+- Notacion inconsistente en el documento.
+- Extraer formulas sin validarlas contra el texto.

@@ -5,7 +5,7 @@
 
 name: communication
 domain: communication
-description: "Usar cuando el usuario necesita comunicacion profesional o persuasiva. escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural, liderazgo. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario necesita comunicacion profesional o persuasiva. escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural, liderazgo. Alcance: comunicacion profesional y persuasiva; para material educativo ver education. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -37,3 +37,19 @@ Skill de comunicacion profesional para redaccion ejecutiva, presentaciones efect
 - `!comm present <tema>` — Estructurar presentacion
 - `!comm story <mensaje>` — Storytelling
 - `!comm negotiate <contexto>` — Estrategia de negociacion
+
+## Checklist
+
+- [ ] BLUF: conclusion en la primera linea
+- [ ] Audiencia y tono definidos
+- [ ] Datos citados y visualizacion adecuada
+- [ ] Llamado a la accion explicito
+- [ ] Mensaje adaptado al canal (email/deck/charla)
+
+## Anti-patrones (prohibidos)
+
+- Enterrar la conclusion al final.
+- Storytelling sin datos que lo sustenten.
+- Jargon innecesario para la audiencia.
+- Presentacion sin un mensaje unico.
+- Negociacion sin BATNA.

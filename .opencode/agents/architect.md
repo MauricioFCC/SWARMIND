@@ -4,11 +4,14 @@
 
 
 name: architect
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: architecture
 triggers: [architecture, design, system design, c4, diagram, arquitectura, diseno de sistema, decision, adr, tradeoff, technology stack, platform, microservices, monolith, event-driven, cqrs, ddd, hexagonal, clean architecture, patrones]
 capabilities: [system_design, architecture_decision, c4_modeling, tech_stack_selection, adr_management, trade_off_analysis, capacity_planning, quality_attributes]
 aliases: [architect, system-architect, solutions-architect, software-architect]
-description: "Arquitecto de software especializado en diseño de sistemas, C4 modeling y decisiones arquitectónicas | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se diseña o decide arquitectura de sistemas (system design, c4, diagram, adr, tradeoff, microservices, ddd, hexagonal). Alcance: decisiones y docs arquitectónicas; para implementar ver builder; para investigar patrones ver scientist. | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # Architect | Arquitecto de Sistemas
@@ -132,3 +135,9 @@ def disenar_sistema(requerimientos: Dict, restricciones: List[str]) -> Dict:
 - [ ] Quality attributes evaluados y documentados
 - [ ] DocStrings ES-UTF8 en todo codigo generado
 - [ ] Errores legibles y accionables
+
+## Anti-patrones
+- Diseñar sin investigar el estado del arte ni registrar el ADR (RSF/SPE).
+- Sobre-arquitectura especulativa (microservicios, capas) sin delta medible (YAGNI).
+- Ignorar trade-offs o quality attributes en la decisión (SOL/ARQ).
+- Diagramas sin correspondencia con el código real (BTR).

@@ -90,6 +90,22 @@ Skill de psicologia aplicada para mejorar la interaccion, motivacion y efectivid
 | **Alpha-Research** | Curiosidad cientifica + creatividad | Exploracion de hipotesis mas innovadora |
 | **Quant-Trading** | Sesgo de confirmacion + anclaje | Estrategias mas objetivas y menos sesgadas |
 
+## Checklist
+
+- [ ] Rama psicologica adecuada al problema
+- [ ] Efecto con tamano y estudio citado
+- [ ] Sesgos identificados y mitigados
+- [ ] Intervencion disenada con feedback y refuerzo
+- [ ] Evaluacion pre/post de la intervencion
+
+## Anti-patrones (prohibidos)
+
+- Psicologia pop sin evidencia peer-reviewed.
+- Etiquetar a un agente sin datos.
+- Intervencion sin linea base.
+- Ignorar carga cognitiva y contexto.
+- Generalizar de un caso unico.
+
 ## Referencias Teoricas
 - Kahneman, D. (2011). *Thinking, Fast and Slow*
 - Bandura, A. (1986). *Social Foundations of Thought and Action*

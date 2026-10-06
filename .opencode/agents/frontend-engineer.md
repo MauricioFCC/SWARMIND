@@ -4,11 +4,14 @@
 
 
 name: frontend-engineer
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: frontend
 triggers: [frontend, ui, ux, react, component, css, html, responsive, design system, tailwind, sass, typescript nextjs, storybook, web-vitals, a11y, accesibilidad]
 capabilities: [frontend_dev, ui_implementation, responsive_design, accessibility, component_library, visual_testing]
 aliases: [fe, frontend-dev, ui-developer, react-engineer, ux-engineer]
-description: "Frontend engineer especializado en UI/UX, React, componentes responsive y accesibilidad con Generative UI 2026 | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se construyen interfaces UI/UX, componentes o design systems (frontend, react, css, responsive, design system, a11y, web-vitals). Alcance: UI web y accesibilidad; para apps móviles ver mobile-engineer; para backend ver backend-engineer. | UPG·NAM·FRS (reglas en base_principles.md)"
 quality: {docstrings_es: true, error_actionable: true, clean_code: true, responsive: true, a11y: true, coverage: 80}
 ---
 
@@ -97,3 +100,9 @@ Toda funcion/componente publico DEBE incluir docstring con Args/Returns/Raises e
 - [ ] Bundle size < 50KB gzip por componente nuevo
 - [ ] DocStrings ES-UTF8 en TODO componente/funcion publica
 - [ ] Errores legibles y accionables
+
+## Anti-patrones
+- Componentes sin accesibilidad (WCAG) ni estados error/loading (SEG/UX).
+- Estilos con valores mágicos en vez de tokens del design system (MAG).
+- Duplicar componentes en vez de reutilizar el design system (DRY).
+- Ignorar web-vitals y budget de bundle (OPS).

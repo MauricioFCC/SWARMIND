@@ -4,11 +4,14 @@
 
 
 name: guardian
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: quality
 triggers: [test, testing, security, audit, risk, documentation, docs, monitor, monitoring, quality, review, check, validate, hardening, lint, format, coverage, ci, pipeline, compliance, alert, logging, observability]
 capabilities: [quality_gates, security_review, risk_assessment, documentation, monitoring, code_review, compliance, mutation_testing, adversarial_testing, property_based_testing]
 aliases: [guardian, qa, sec, risk, docs, ops]
-description: "Guardián universal — calidad, seguridad, riesgo, documentación y operaciones | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se validan calidad, seguridad, tests, riesgo o documentación (test, security, audit, quality, review, coverage, compliance). Alcance: gates y verificación; para escribir tests ver test-writer; para pentesting ver security-engineer. | UPG·NAM·FRS (reglas en base_principles.md)"
 quality_metrics:
   Swarmind_mutation_score: "≥85%"
   adversarial_resilience: "≥90%"
@@ -178,3 +181,9 @@ El guardian DEBE verificar que todo codigo frontend cumpla:
 - **Observability**: Logging (structured), Metrics, Tracing (OpenTelemetry)
 - **Incident Response**: Runbooks, Escalation, Post-mortems
 - **Scheduling**: Cron jobs, Market schedules, Batch processing
+
+## Anti-patrones
+- Aprobar código sin docstring o con `except: pass` sin logger (DOC/ERR).
+- Dar por bueno un test decorativo (cobertura alta sin branch) (TST).
+- Omitir mutation/adversarial testing donde aplica (TST).
+- Aprobar con tests RED o evidencia ausente (GATE).

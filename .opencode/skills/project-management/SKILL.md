@@ -5,7 +5,7 @@
 
 name: project-management
 domain: management
-description: "Usar cuando el usuario gestiona proyectos o metodologias. Scrum, Kanban, planificacion, seguimiento, riesgos, estimaciones, stakeholders. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario gestiona proyectos o metodologias. Scrum, Kanban, planificacion, seguimiento, riesgos, estimaciones, stakeholders. Alcance: gestion y metodologias de proyecto; para estrategia ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -40,3 +40,20 @@ Skill de gestion de proyectos con metodologias agiles y tradicionales.
 - `!pm risk <contexto>` — Matriz de riesgos
 - `!pm retrospective` — Facilitar retrospectiva
 - `!pm estimate <tarea>` — Estimacion
+
+## Checklist
+
+- [ ] Objetivo y alcance con WBS
+- [ ] Hitos medibles y fechas
+- [ ] Riesgos top-3 con mitigacion
+- [ ] Estimacion por evidencia (no optimista)
+- [ ] Cadencia de seguimiento y reporting
+- [ ] Plan de comunicacion a stakeholders
+
+## Anti-patrones (prohibidos)
+
+- Estimar sin datos historicos ni incertidumbre.
+- Plan sin riesgos ni mitigacion.
+- 'Todo va bien' sin evidencia de avance.
+- Alcance creciente sin control de cambios.
+- Stakeholders informados tarde.

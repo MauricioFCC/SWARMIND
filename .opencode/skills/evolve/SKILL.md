@@ -4,7 +4,7 @@
 
 
 name: evolve
-description: "Usar cuando el usuario quiere mejorar el sistema o sus skills. auto-mejora, evolucion, ASI-Evolve, aprendizaje continuo, mejora de skills, FDE, meta-aprendizaje. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario quiere mejorar el sistema o sus skills. auto-mejora, evolucion, ASI-Evolve, aprendizaje continuo, mejora de skills, FDE, meta-aprendizaje. Alcance: mejora del sistema y sus skills; para disciplina pre-merge ver agent-rigor. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 3.1.0
@@ -188,6 +188,23 @@ El loop Evolve incorpora los siguientes frameworks de frontera para auto-mejora:
 | **Socratic-SWE** | Failure Registry: registrar cada fallo en `harness/db/failures.jsonl` (failure_type, error_msg, root_cause, resolution, skill_derived). El loop lee el registry → distilla en skills → genera tareas dirigidas que address capability gaps. +7.80 SWE-bench tras 3 iteraciones. Skills deduplicados por similaridad semántica |
 | **Proof-or-Stop** | Evidence-Gated: cada output del loop es un CLAIM; solo avanza a DONE cuando evidencia fresca satisface el gate (T1 deterministic + T2 LLM-judge). 0 false-DONE. Payment de spec-first: `specs/<task>.md` con exit criteria ANTES de ejecutar |
 | **Pondero CI-gates** | 3-tier gates: T1 (<90s, blocks merge: lint+test+security), T2 (<10min, LLM-judge/mutation), T3 (<60min, regression notify). Spec y evals cambian juntos (SVE) |
+
+## Checklist
+
+- [ ] Delta real con stakeholder definido (FDE)
+- [ ] Hipotesis con metrica y criterio de exito antes de experimentar
+- [ ] Registro en Experiment DB (score, config, resultado)
+- [ ] Leccion destilada en Cognition Store
+- [ ] Rollback si el lift <= 0
+- [ ] Validacion strict tras promover (validate_skills/audit)
+
+## Anti-patrones (prohibidos)
+
+- Promover una variante sin evidencia de lift.
+- Reescribir a ciegas sin diagnostico del audit.
+- Ignorar el failure registry.
+- Optimizar una metrica local con regresion global.
+- Perder el best snapshot sin plan de rollback.
 
 ## 🔗 ENLACES
 

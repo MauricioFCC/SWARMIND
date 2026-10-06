@@ -5,7 +5,7 @@
 
 name: business-strategy
 domain: business
-description: "Usar cuando el usuario pide analisis estrategico o modelo de negocio. DOFA, SWOT, Porter, canvas, plan de negocio, ROI, KPIs, OKRs, posicionamiento. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario pide analisis estrategico o modelo de negocio. DOFA, SWOT, Porter, canvas, plan de negocio, ROI, KPIs, OKRs, posicionamiento. Alcance: estrategia y modelo de negocio; para gestion de proyectos ver project-management. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -42,6 +42,22 @@ Skill para analisis estrategico, modelos de negocio y toma de decisiones empresa
 - `!biz okr <objetivo>` — Definir OKRs
 - `!biz roi <inversion>` — Calcular ROI
 - `!biz strategy <situacion>` — Plan estrategico
+
+## Checklist
+
+- [ ] Analisis externo e interno (DOFA/PESTEL/Porter)
+- [ ] Unit economics y ROI con supuestos explicitos
+- [ ] OKRs medibles con baseline y horizonte
+- [ ] 7 dimensiones IA evaluadas si aplica adopcion
+- [ ] Riesgos top-3 con mitigacion
+
+## Anti-patrones (prohibidos)
+
+- Estrategia sin unit economics ni supuestos.
+- OKRs sin baseline ni metrica de resultado.
+- Copiar un modelo sin validar contexto ni industria.
+- Confundir plan con estrategia (sin tradeoffs).
+- Proyectar crecimiento lineal sin evidencia.
 
 ## Referencias
 - Porter Five Forces

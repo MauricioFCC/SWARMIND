@@ -5,7 +5,7 @@ calls: [security-audit]
 domain: swarm-release-ops
 version: 1.0.0
 project_agnostic: true
-description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. Alcance: releases y CI/CD del repo SWARMIND; para infra generica ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Requiere gh (GitHub CLI) y uv; repo MauricioFCC/SWARMIND'
 ---
@@ -99,3 +99,12 @@ uv run safety check -r /tmp/requirements.txt --output text
 - Parches cosmeticos a tests para "pintar verde": el test debe poder fallar.
 - Asumir `python-version: 3.11` en setup-python cuando el proyecto exige
   `>=3.12` (uv descarga/usa el requerido, pero el pin miente).
+
+## Checklist
+
+- [ ] CI T1 verde (lint, tests, seguridad) antes de merge
+- [ ] Lockfile auditado (no el sistema) y sin CVEs HIGH
+- [ ] Branch protection y auto-merge configurados
+- [ ] Tests portables Windows/Linux
+- [ ] Version/changelog actualizados
+- [ ] Rollback documentado

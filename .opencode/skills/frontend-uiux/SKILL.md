@@ -2,7 +2,7 @@
 
 name: frontend-uiux
 domain: frontend
-description: "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. Alcance: UI/UX y design systems; para diagramas visuales ver diagram-design. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+; node.js para tooling frontend'
 version: 1.2.0
@@ -158,6 +158,14 @@ Principios **POUR**: Perceivable, Operable, Understandable, Robust. 10 reglas fi
 - [ ] WCAG 2.2 AA audit: 0 critical violations
 
 ---
+
+## Anti-patrones (prohibidos)
+
+- Generar UI sin investigar el estado del arte (RSF).
+- Ignorar WCAG 2.2 AA (contraste, foco, teclado).
+- Design-code drift (tokens hardcodeados vs sistema).
+- >7 opciones por pantalla o jerarquia visual plana.
+- Entregar sin estados loading/empty/error.
 
 ## Rutas de carga (progressive disclosure)
 

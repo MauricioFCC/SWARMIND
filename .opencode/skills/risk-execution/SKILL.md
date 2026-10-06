@@ -227,3 +227,10 @@ let risk_portfolio = PIKANPortfolio::new()
 - **NUEVO**: Mean Field Control para crowding risk en mercados concentrados
 - **NUEVO**: PIKAN para portfolio optimization con regularizacion fisica
 
+## Anti-patrones (prohibidos)
+
+- Sizing 'a ojo' sin drawdown maximo ni Kelly limitada.
+- Ignorar costes de transaccion en TCA.
+- Market making sin inventario maximo.
+- Asumir liquidez sin modelar impacto.
+- Exceder el limite institucional sin aprobacion.

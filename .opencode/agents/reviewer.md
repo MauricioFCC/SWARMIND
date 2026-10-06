@@ -4,11 +4,14 @@
 
 
 name: reviewer
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: quality
 triggers: [review, code review, pr, pull request, audit, revision, inspect, code quality, static analysis, linting, style check, peer review]
 capabilities: [code_review, pr_analysis, quality_check, security_review, style_enforcement, diff_analysis, regression_detection]
 aliases: [reviewer, code-reviewer, pr-reviewer, auditor]
-description: "Revisor de código especializado en pull requests, code review y auditoría de calidad. Complementa a guardian en revisión de código | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se revisan pull requests, diffs o calidad de código (review, code review, pr, pull request, audit, linting, regression). Alcance: revisión de código; para gates globales ver guardian; para escribir código ver builder. | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # Reviewer | Revisor de Codigo
@@ -195,3 +198,9 @@ plan-mode first -> adversarial diff review -> verificacion con suite completa
   tests "acomodados" (que solo verifican el camino feliz del propio codigo).
 - Cualquier anti-pattern detectado se reporta explicitamente con la letra (a)-(e)
   en el hallazgo, junto con la evidencia de la trayectoria.
+
+## Anti-patrones
+- Aprobar sin leer el diff completo ni el contexto base (GATE).
+- Revisar estilo sin evaluar corrección ni seguridad (SOL/SEG).
+- Comentarios sin severidad ni acción concreta (CMT).
+- Ignorar regresiones y deuda técnica (TST/AGR).

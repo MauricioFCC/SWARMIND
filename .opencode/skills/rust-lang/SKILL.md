@@ -4,7 +4,7 @@
 
 
 name: rust-lang
-description: "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes. Alcance: Rust y sistemas seguros; para arquitectura de sistemas ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Requiere toolchain Rust (cargo/rustc)'
 version: 1.0.0
@@ -311,3 +311,19 @@ fn my_rust_lib(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
 > 💡 **Nota**: Este skill complementa a hedgefund, quant-trading y risk-execution. Rust es el lenguaje de implementacion para sistemas de baja latencia, alta concurrencia y mision critica. Todo codigo Rust debe cumplir con los principios universales de base_principles.md.
 
+## Checklist
+
+- [ ] Ownership/borrowing resuelto sin unsafe innecesario
+- [ ] Errores con Result (sin panic en libreria)
+- [ ] Concurrencia segura (Send/Sync, sin data races)
+- [ ] clippy/fmt sin warnings
+- [ ] Tests unitarios e integracion
+- [ ] FFI con Python acotado y seguro
+
+## Anti-patrones (prohibidos)
+
+- unsafe sin justificacion ni auditoria.
+- unwrap/expect en rutas de produccion.
+- Clones masivos por pelear con el borrow checker.
+- Bloquear el runtime async.
+- Ignorar lifetimes y provocar leaks.

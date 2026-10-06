@@ -45,3 +45,10 @@ project_agnostic: true
 - Overfitting: `WalkForwardOptimizer::min_ratio(0.8)` mínimo
 - Drawdown: stop automático si `portfolio_risk::measures::drawdown() > max_dd`
 
+## Anti-patrones (prohibidos)
+
+- `unwrap()` en el hot path de trading (usar `Result`/`expect`).
+- Loguear API keys, tokens o secretos.
+- Backtest sin costes, slippage ni fees.
+- Overfitting de la optimizacion (sin walk-forward).
+- Ignorar el limite de drawdown / Kelly.
