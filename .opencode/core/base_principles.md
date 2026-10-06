@@ -1,11 +1,11 @@
 ---
-description: Principios universales v3.3.0 - N1+N2 siempre, N3 bajo demanda + taxonomia de adherencia (IFEval/DRFR) + RPA re-anclaje post-compaction + CPD fundamentos de competicion (ADR-0070) + TDD adversarial/mutante/PBT/pairwise/BVA/metamorphic/fuzz (ADR-0077) + DORA/ShapeUp/trunk/RFC/postmortem (ADR-0083) + ADV verificacion adversarial atacante/steelman/juez + SWE-ABS/RvB
+description: Principios universales v3.4.0 - N1+N2 siempre, N3 bajo demanda + FND Foundation-First (entorno antes que producto) + taxonomia de adherencia (IFEval/DRFR) + RPA re-anclaje post-compaction + CPD fundamentos de competicion (ADR-0070) + TDD adversarial/mutante/PBT/pairwise/BVA/metamorphic/fuzz (ADR-0077) + DORA/ShapeUp/trunk/RFC/postmortem (ADR-0083) + ADV verificacion adversarial atacante/steelman/juez + SWE-ABS/RvB
 inherit:
   - core/base_principles.md
   - core/fde_principles.md
 name: base-principles
 project_agnostic: true
-version: 3.3.0
+version: 3.4.0
 ---
 
 # PRINCIPIOS UNIVERSALES | Multi-nivel
@@ -48,6 +48,7 @@ FSZ: Function Size | max 30 lineas | una responsabilidad | extraer helpers | gua
 CMP: Composition over Inheritance | preferir composicion sobre herencia | estrategia + interfaces | evitar jerarquias profundas | HAS-A sobre IS-A
 DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un punto por linea | tell dont ask
 FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | elegir la solucion mas avanzada/frontera/eficiente/confiable | al finalizar: actualizar docs + commit
+FND: Foundation-First | entorno antes que producto | walking skeleton + tracer bullet | spec + CI T1 (<90s) + gates + seguridad ANTES de features | identidad (org/dominio/registry) si publicas
 SPE: Spec-First (Proof-or-Stop) | spec ANTES de ejecutar | outcome medible | exit criteria definidos | sin spec = sin start
 GATE: Evidence-Gated Lifecycle | claim→evidence→gate | 0 false-DONE | T1 deterministic + T2 LLM-judge + T3 regression
 FAIL: Failure Registry | registrar fallos en JSONL | distillar en skills | Socratic-SWE traces→tasks | aprender de errores
@@ -68,7 +69,7 @@ parafrasean — Ribeiro: el compliance es pattern matching fragil).
 
 | Cat | Nombre | Codigos | Modo |
 |-----|--------|---------|------|
-| PRC | Proceso e investigacion | RSF, IDP, FRS, SPE, UPG, POC | CHECK |
+| PRC | Proceso e investigacion | RSF, IDP, FRS, FND, SPE, UPG, POC | CHECK |
 | ARC | Arquitectura y codigo | ARQ, SOL, CMP, DEM, NAM, TYP, IMM, MAG, FSZ, AGR | CHECK |
 | QLT | Calidad y testing | TST, PBT, GATE, CPD, ADV | CHECK |
 | SEC | Seguridad y aislamiento | SEG, SBX | CHECK |
@@ -144,6 +145,7 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 | __CMP__ | __Composition over Inheritance__ (GoF 1994): preferir COMPOSICION (HAS-A: "tiene un") sobre HERENCIA (IS-A: "es un"). Usar protocolos/ABC pequenos inyectados como componentes. Evitar jerarquias de herencia >2 niveles. Strategy pattern, State pattern, Decorator pattern son composicion. Herencia solo para tipos claramente relacionados (ej. Exception -> ValueError). Mixing composicion+herencia: subclase para especializar, composicion para variar comportamiento. |
 | __DEM__ | __Law of Demeter__ (Principle of Least Knowledge, 1987): un objeto solo habla con sus "amigos directos" (sus propios metodos, sus atributos, los metodos de los objetos que recibe como parametro, los objetos que crea). NO chains: `customer.wallet.money.total()` (3 puntos = 2 violaciones). Max 1 punto por linea: `total = customer.total_money()` (delegar). Favorece Tell-Dont-Ask: en vez de pedirle datos a un objeto y decidir por el, pedirle que el mismo decida (command/query separation). Reduce acoplamiento y facilita testing. |
 | __FRS__ | __Frontier Research & Solution (regla universal obligatoria)__: TODO requerimiento del usuario — sea cual sea — debe iniciar con __busqueda web exhaustiva__ para identificar la solucion MAS avanzada (frontera), de mejor calidad, mas eficiente y mas confiable disponible en el momento. NO resolver desde memoria o habitos: investigar primero. Criterios de eleccion: (1) frontier 2026 (papers, frameworks, tools), (2) calidad (adoptada, mantenida, documentada), (3) eficiencia (menor costo/memoria/latencia), (4) confiabilidad (estable, testada, comunidad). AL FINALIZAR toda tarea: __actualizar documentacion__ (README/CHANGELOG/ADRs si aplica) y __crear commit__ (conventional commit). |
+| __FND__ | __Foundation-First (entorno antes que producto)__: en un proyecto nuevo el PRIMER artefacto NO es una feature. Orden F0: (1) scaffolding reproducible (repo desde template, `.editorconfig`/`.gitignore`/`LICENSE`/`SECURITY.md`, lockfile, devcontainer); (2) `AGENTS.md` CORTO (~100 lineas = mapa, no manual) + constitution/principios machine-readable; (3) gates locales T1 (formatter+linter+type-checker+pre-commit) con **CI <90s** (Google: feedback casi instantaneo por check-in; DORA: CI+trunk son elite); (4) seguridad EN el scaffold (secret scanning+push protection, SAST, SBOM, branch protection, `#![forbid(unsafe_code)]`/`deny.toml`/`cargo-geiger` en Rust, `bandit`/`pip-audit` en Python); (5) ADR-0001 + ADRs de las <=3 decisiones irreversibles (Nygard) + fitness functions (Ford/Parsons/Kua); (6) **Walking Skeleton** (Cockburn) / **Tracer Bullet** (Pragmatic): slice vertical end-to-end con tests que SE CONSERVA, no prototipo; (7) **Thinnest Viable Platform**/golden path (Team Topologies; en 2026 el consumidor tambien es un agente); (8) identidad el dia 1 SOLO si publicas (org/dominio/registry; PEP 752 prefix). Fuentes: NIST SSDF SP 800-218/218A, SLSA, DORA 2025 (la IA AMPLIFICA el entorno — uno malo tambien), GitHub Spec Kit/Amazon Kiro (constitution→specify→plan→tasks), AGENTS.md (>60k repos), OpenAI harness engineering. |
 | __SPE__ | __Spec-First (Proof-or-Stop, Huang 2026) + SDD (Spec-Driven Development)__: TODO output de agente es un CLAIM, no estado. Lifecycle transitions solo avanzan cuando evidencia fresca satisface un gate predicate. Plantilla `specs/<task>.md` obligatoria ANTES de ejecutar: outcome medible, FR/NF, exit criteria, sandbox scope, rollback plan. Sin spec = sin start. Reduced false-DONE de 31/1800 a 2/1800 en ablation. __SDD__: ciclo Spec→Test→Code del skill atdd-spec (contratos SDD con pre/postcondiciones + failing_test en `harness/context/skill_contract.py`, ADR-0048); el spec define el contrato, el test failing lo fija, el codigo lo satisface — nunca codigo sin contrato. __Shape Up__: el spec es un pitch con `appetite` (tiempo fijo, scope variable) + `boundaries`; fan-out vota en betting table (gate ≥70%), lo que pierde va a cooldown (cognition + deuda AGR), no a backlog. __RFC vs ADR__: RFC si >1 dependencia/riesgo o cambia contrato publico (propuesta debatible pre-trabajo); ADR solo post-decision; cambio pequeno → PR directo con spec minima. |
 | __GATE__ | __Evidence-Gated Lifecycle (Pondero CI-for-Agents 2026)__: 3-tier gates: __T1__ deterministic (<90s, blocks merge): schema validation, lint, test, security scan. __T2__ LLM-judge (<10min, blocks merge): behavioral spec, rubric scoring, majority voting repeat:3, judge temp=0. __T3__ regression (<60min, alert-only): nightly full suite, cross-model comparison. Spec y evals cambian juntos (SVE). Cost-arithmetic para judge models. |
 | __FAIL__ | __Failure Registry (Socratic-SWE, Qu 2026)__: Cada fallo se registra en `harness/db/failures.jsonl` con: failure_type, error_msg, root_cause, resolution, skill_derived, severity. Evolve loop lee el registry → distilla en skills → genera tareas dirigidas que address capability gaps. Skills deduplicated por similaridad semántica. Solver-gradient alignment reward para task quality. +7.80 SWE-bench después de 3 iteraciones. __Postmortem blameless__ (SEV≥2, plantilla `specs/postmortem_template.md`): timeline + 5 whys (si culpa a persona, seguir preguntando) + action items con dueño+fecha; sin culpa, el sistema fallo. |
@@ -160,6 +162,45 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 > Cargar SOLO si el agente necesita detalles de implementacion, tabla de roles o abreviaciones.
 > Sesiones locales 9B (ctx 16K): inyectar `.opencode/core/base_principles.min.md`
 > (solo N1) en vez de este archivo.
+
+### FND - Foundation-First (Fase F0: entorno antes que producto)
+
+Aplica al INICIO de un proyecto nuevo (greenfield) o al adoptar un modulo
+grande. El primer commit NO es una feature: es el entorno + spec + test RED.
+Cita: `FND` o `ADR-XXXX:FND`. Fuente de la doctrina: `specs/foundation-first.md`.
+
+- [ ] **Scaffolding reproducible**: repo desde template; `.editorconfig`,
+      `.gitignore`, `LICENSE`, `README.md`, `SECURITY.md`, `CHANGELOG.md`;
+      lockfile congelado; `.devcontainer.json` (o entorno hermetic).
+- [ ] **Contrato para agentes**: `AGENTS.md` CORTO (~100 lineas = mapa, no
+      manual) + `constitution.md`/principios machine-readable del proyecto.
+      (OpenAI: ~1M LOC desde repo vacio con scaffold+AGENTS.md escritos por agente.)
+- [ ] **Gates T1 locales primero**: formatter + linter + type-checker +
+      pre-commit; **CI <90s** como green-trunk gate (Google: feedback casi
+      instantaneo por check-in; DORA: CI+trunk son capacidades elite).
+- [ ] **Seguridad en el andamiaje** (no despues): secret scanning + push
+      protection, SAST/code scanning, SBOM, dependabot; branch protection con
+      status checks; `#![forbid(unsafe_code)]`/`deny.toml`/`cargo-geiger`
+      (Rust), `bandit`/`pip-audit` (Python). (NIST SSDF 800-218/218A, SLSA, OpenSSF Scorecard.)
+- [ ] **ADR-first**: ADR-0001 "registrar decisiones" + ADRs de las <=3
+      decisiones irreversibles (lenguaje, persistencia, transporte, formato).
+      (Nygard ADR; Ford/Parsons/Kua fitness functions.)
+- [ ] **Fitness functions**: cada caracteristica arquitectonica clave tiene una
+      funcion objetiva automatizable que la protege (no una intencion).
+- [ ] **Thinnest Viable Platform / golden path**: el camino feliz (crear,
+      testear, desplegar) documentado en wiki/script; NO construir un portal.
+      (Team Topologies; en 2026 el consumidor tambien es un agente.)
+- [ ] **Walking Skeleton / Tracer Bullet**: slice vertical end-to-end con tests
+      (se CONSERVA y evoluciona, no es prototipo). (Cockburn; Pragmatic Programmer.)
+- [ ] **Spec machine-readable ANTES de features**: `specs/<feature>.md`
+      (outcome, FR/NF, exit criteria, sandbox, rollback) + primer test en RED
+      (SPE + GATE). Sin spec = sin start.
+- [ ] **Identidad el dia 1 SOLO si vas a publicar**: org en GitHub, dominio,
+      reserva de nombre en registries (crates.io/PyPI/npm; PEP 752 prefix).
+      Si es privado/renombrable: ruido, no bloquea el arranque.
+- [ ] **Verificar**: `git log` del primer commit = scaffold+spec+test; CI T1
+      verde; 0 secrets; ADR-0001 presente.
+- [ ] **Skills que aplican**: architect, devops, builder, guardian, product-manager.
 
 ### UPG - Upgrade Continuo (regla universal para TODO stack)
 

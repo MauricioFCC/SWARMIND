@@ -1,7 +1,7 @@
 ---
 name: base-principles-full
-description: Principios universales de programacion + ASI-Evolve + FDE - version COMPLETA (N1+N2+N3) para consulta bajo demanda
-version: 2.6.0
+description: Principios universales de programacion + ASI-Evolve + FDE + FND Foundation-First - version COMPLETA (N1+N2+N3) para consulta bajo demanda
+version: 2.7.0
 project_agnostic: true
 inherit:
   - core/base_principles.md
@@ -50,6 +50,7 @@ FSZ: Function Size | max 30 lineas | una responsabilidad | extraer helpers | gua
 CMP: Composition over Inheritance | preferir composicion sobre herencia | estrategia + interfaces | evitar jerarquias profundas | HAS-A sobre IS-A
 DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un punto por linea | tell dont ask
 FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | elegir la solucion mas avanzada/frontera/eficiente/confiable | al finalizar: actualizar docs + commit
+FND: Foundation-First | entorno antes que producto | walking skeleton + tracer bullet | spec + CI T1 (<90s) + gates + seguridad ANTES de features | identidad (org/dominio/registry) si publicas
 ```
 
 ---
@@ -89,10 +90,46 @@ FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | ele
 | **CMP** | **Composition over Inheritance** (GoF 1994): preferir COMPOSICION (HAS-A: "tiene un") sobre HERENCIA (IS-A: "es un"). Usar protocolos/ABC pequenos inyectados como componentes. Evitar jerarquias de herencia >2 niveles. Strategy pattern, State pattern, Decorator pattern son composicion. Herencia solo para tipos claramente relacionados (ej. Exception -> ValueError). Mixing composicion+herencia: subclase para especializar, composicion para variar comportamiento. |
 | **DEM** | **Law of Demeter** (Principle of Least Knowledge, 1987): un objeto solo habla con sus "amigos directos" (sus propios metodos, sus atributos, los metodos de los objetos que recibe como parametro, los objetos que crea). NO chains: `customer.wallet.money.total()` (3 puntos = 2 violaciones). Max 1 punto por linea: `total = customer.total_money()` (delegar). Favorece Tell-Dont-Ask: en vez de pedirle datos a un objeto y decidir por el, pedirle que el mismo decida (command/query separation). Reduce acoplamiento y facilita testing. |
 | **FRS** | **Frontier Research & Solution (regla universal obligatoria)**: TODO requerimiento del usuario — sea cual sea — debe iniciar con **busqueda web exhaustiva** para identificar la solucion MAS avanzada (frontera), de mejor calidad, mas eficiente y mas confiable disponible en el momento. NO resolver desde memoria o habitos: investigar primero. Criterios de eleccion: (1) frontier 2026 (papers, frameworks, tools), (2) calidad (adoptada, mantenida, documentada), (3) eficiencia (menor costo/memoria/latencia), (4) confiabilidad (estable, testada, comunidad). AL FINALIZAR toda tarea: **actualizar documentacion** (README/CHANGELOG/ADRs si aplica) y **crear commit** (conventional commit). |
+| **FND** | **Foundation-First (entorno antes que producto)**: en un proyecto nuevo el PRIMER artefacto NO es una feature. Orden F0: (1) scaffolding reproducible (template repo, `.editorconfig`/`.gitignore`/`LICENSE`/`SECURITY.md`, lockfile, devcontainer); (2) `AGENTS.md` CORTO (~100 lineas = mapa, no manual) + constitution/principios machine-readable; (3) gates T1 locales (formatter+linter+type-checker+pre-commit) con **CI <90s**; (4) seguridad EN el scaffold (secret scan, SAST, SBOM, branch protection, `forbid(unsafe_code)`/`deny.toml` en Rust); (5) ADR-0001 + ADRs de las <=3 decisiones irreversibles + fitness functions; (6) **Walking Skeleton**/**Tracer Bullet** end-to-end con tests (no prototipo); (7) **Thinnest Viable Platform**/golden path; (8) identidad el dia 1 SOLO si publicas. Fuentes: NIST SSDF SP 800-218/218A, SLSA, DORA 2025 (la IA amplifica el entorno), GitHub Spec Kit/Amazon Kiro, AGENTS.md (>60k repos), OpenAI harness engineering. |
 
 ---
 
 ## NIVEL 3 -- COMPLETO (referencia detallada para expandir)
+
+### FND - Foundation-First (Fase F0: entorno antes que producto)
+
+Aplica al INICIO de un proyecto nuevo (greenfield) o al adoptar un modulo
+grande. El primer commit NO es una feature: es el entorno + spec + test RED.
+Cita: `FND` o `ADR-XXXX:FND`.
+
+- [ ] **Scaffolding reproducible**: repo desde template; `.editorconfig`,
+      `.gitignore`, `LICENSE`, `README.md`, `SECURITY.md`, `CHANGELOG.md`;
+      lockfile congelado; `.devcontainer.json` (o entorno hermetic).
+- [ ] **Contrato para agentes**: `AGENTS.md` CORTO (~100 lineas = mapa, no
+      manual) + `constitution.md`/principios machine-readable del proyecto.
+- [ ] **Gates T1 locales primero**: formatter + linter + type-checker +
+      pre-commit; **CI <90s** como green-trunk gate (Google; DORA elite).
+- [ ] **Seguridad en el andamiaje**: secret scanning + push protection,
+      SAST/code scanning, SBOM, dependabot, branch protection; en Rust
+      `#![forbid(unsafe_code)]` + `deny.toml` + `cargo-geiger`; en Python
+      `bandit` + `pip-audit`. (NIST SSDF 800-218/218A, SLSA, OpenSSF Scorecard.)
+- [ ] **ADR-first**: ADR-0001 "registrar decisiones" + ADRs de las <=3
+      decisiones irreversibles. (Nygard ADR; fitness functions Ford/Parsons/Kua.)
+- [ ] **Fitness functions**: cada caracteristica arquitectonica clave tiene una
+      funcion objetiva automatizable que la protege (no una intencion).
+- [ ] **Thinnest Viable Platform / golden path**: camino feliz (crear, testear,
+      desplegar) documentado en wiki/script; NO construir un portal.
+      (Team Topologies; en 2026 el consumidor tambien es un agente.)
+- [ ] **Walking Skeleton / Tracer Bullet**: slice vertical end-to-end con tests
+      que SE CONSERVA (no prototipo). (Cockburn; Pragmatic Programmer.)
+- [ ] **Spec machine-readable ANTES de features**: `specs/<feature>.md`
+      (outcome, FR/NF, exit criteria, sandbox, rollback) + primer test en RED
+      (SPE + GATE). Sin spec = sin start.
+- [ ] **Identidad el dia 1 SOLO si vas a publicar**: org/dominio/registry
+      (crates.io/PyPI/npm; PEP 752 prefix). Si es privado: ruido, no bloquea.
+- [ ] **Verificar**: primer commit = scaffold+spec+test; CI T1 verde; 0 secrets;
+      ADR-0001 presente.
+- [ ] **Skills que aplican**: architect, devops, builder, guardian, product-manager.
 
 ### ARQ - Arquitectura
 - [ ] Hexagonal: puertos (interfaces) en domain/ -> adapters en infrastructure/

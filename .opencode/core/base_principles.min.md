@@ -3,7 +3,7 @@ name: base-principles-min
 domain: core
 description: "N1 esencial para sesiones con modelos locales 9B (ctx 16K): principios sin N2/N3. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 3.3.0
+version: 3.4.0
 project_agnostic: true
 ---
 
@@ -45,6 +45,7 @@ FSZ: Function Size | max 30 lineas | una responsabilidad | extraer helpers | gua
 CMP: Composition over Inheritance | preferir composicion sobre herencia | estrategia + interfaces | evitar jerarquias profundas | HAS-A sobre IS-A
 DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un punto por linea | tell dont ask
 FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | elegir la solucion mas avanzada/frontera/eficiente/confiable | al finalizar: actualizar docs + commit
+FND: Foundation-First | entorno antes que producto | walking skeleton + tracer bullet | spec + CI T1 (<90s) + gates + seguridad ANTES de features | identidad (org/dominio/registry) si publicas
 SPE: Spec-First (Proof-or-Stop) | spec ANTES de ejecutar | outcome medible | exit criteria definidos | sin spec = sin start
 GATE: Evidence-Gated Lifecycle | claim→evidence→gate | 0 false-DONE | T1 deterministic + T2 LLM-judge + T3 regression
 FAIL: Failure Registry | registrar fallos en JSONL | distillar en skills | Socratic-SWE traces→tasks | aprender de errores

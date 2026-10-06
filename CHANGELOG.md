@@ -2,6 +2,13 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-10-05] FND Foundation-First (principio universal) + spec de doctrina
+
+### Principios
+- **FND (Foundation-First)** — nuevo principio N1/N2/N3: "entorno antes que producto". En un proyecto nuevo el primer artefacto NO es una feature: scaffolding reproducible + `AGENTS.md` corto + gates T1 (CI <90s) + seguridad en el andamiaje + ADR-0001 + Walking Skeleton/Tracer Bullet + spec machine-readable + identidad (solo si publicas). Fuentes: NIST SSDF SP 800-218/218A, SLSA, DORA 2025, Team Topologies, GitHub Spec Kit/Amazon Kiro, AGENTS.md, OpenAI harness engineering.
+- Versionado: `base_principles.md` v3.3.0 → **v3.4.0**; `base_principles_full.md` v2.6.0 → **v2.7.0**; `base_principles.min.md` v3.3.0 → **v3.4.0**.
+- **`specs/foundation-first.md`** — doctrina F0 (checklist de 11 pasos + fuentes frontier + anti-patrones + verificación).
+
 ## [2026-09-30] Flota frontera 2026 + ventana 16K por servidor + escalado por verificación
 
 ### Flota local y SSOT
