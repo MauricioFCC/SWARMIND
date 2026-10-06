@@ -16,6 +16,11 @@ siendo el cableado de runtime y los tests verifican que coincida.
 Medido 2026-10-01 (RTX 4060 8GB, Ollama 0.34.4). Tras el BSOD
 VIDEO_TDR_FAILURE (0x116) del 2026-10-01 (9B + ctx 16384 + Vulkan en 8GB)
 TODA la flota corre a `num_ctx=8192` y `keep_alive="0"` salvo el tier fast.
+
+2026-10-05: tier coding subido de Qwopus3.5-9B-v3 a `mannix/JackOD-9B-Coder`
+(omnimerge agentico Qwen3.5-9B: LCB v6 hard ~78, MTP, Apache-2.0). Usa
+namespace de la Ollama library (no hay GGUF hf.co) y IQ4_XS (~5.3GB) para
+maximizar el KV headroom en 8GB.
 """
 
 from __future__ import annotations
@@ -64,9 +69,9 @@ FLEET: tuple[FleetModel, ...] = (
         matches=("bartowski/mimo", "mimo-v2.6", "mimo"),
     ),
     FleetModel(
-        id="hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M",
-        tier="coding", num_ctx=4096, vram_mb=6600, keep_alive="0",
-        matches=("jackrong/qwopus3.5-9b-v3", "qwopus3.5-9b-v3", "qwopus3.5-9b"),
+        id="mannix/JackOD-9B-Coder:IQ4_XS",
+        tier="coding", num_ctx=4096, vram_mb=5800, keep_alive="0",
+        matches=("mannix/jackod", "jackod-9b-coder", "jackod"),
     ),
     FleetModel(
         id="hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M",

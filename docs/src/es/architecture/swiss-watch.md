@@ -76,7 +76,7 @@ Las **estrategias de planificacion** disponibles estan documentadas en [Dynamic 
 - **Paralelismo**: Niveles independientes se ejecutan simultaneamente
 - **Trazabilidad**: Cada decision queda registrada en el SessionContext
 - **Delegacion local (flota Ollama 2026)**: tareas simples/RAG/vision se resuelven con
-  la flota local (`Qwen3.5-4B`, `MiMo-V2.6-Distill-Qwen-9B`, `Qwopus3.5-9B-v3`,
+  la flota local (`Qwen3.5-4B`, `MiMo-V2.6-Distill-Qwen-9B`, `JackOD-9B-Coder`,
   `Ornith-1.5-9B`, `qwen3-embedding:0.6b`, `qwen3-vl:4b`;
   SSOT en `model_router/fleet_manifest.py`, ventana 16K por servidor) — 0 tokens
   cloud (TKN), con degradacion automatica a cloud si Ollama no esta disponible

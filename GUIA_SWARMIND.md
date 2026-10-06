@@ -708,7 +708,7 @@ modelo por **capacidad** según la tarea, con heurística sin LLM.
 |------|--------|------------|
 | ⚡ **fast** | `Qwen3.5-4B UD-Q4_K_XL` | Borradores, tareas simples |
 | 🧠 **quality** | `MiMo-V2.6-Distill-Qwen-9B IQ4_XS` (4K) | Razonamiento, calidad de texto |
-| 💻 **coding** | `Qwopus3.5-9B-v3 Q4_K_M` (4K) | Generación de código |
+| 💻 **coding** | `JackOD-9B-Coder IQ4_XS` (4K) | Generación de código |
 | 🧩 **reasoning** | `Ornith-1.5-9B Q4_K_M` (4K) | Agente, razonamiento profundo |
 | 🔎 **embedding** | `qwen3-embedding:0.6b` | RAG / búsqueda semántica (1024 dims) |
 | 👁️ **vision** | `qwen3-vl:4b` | Imágenes, alt-text |

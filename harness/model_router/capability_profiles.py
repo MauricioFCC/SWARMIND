@@ -64,9 +64,9 @@ _DIM_KEYWORDS: dict[str, frozenset[str]] = {
 #: por saturacion/contaminacion — usar MATH-500/AIME como gate), LXT (solo 4/15
 #: predicen prod). Retirados 2026-10-01: MiniCPM5, Qwen3.8, Opus-Distill.
 _BUILTIN: tuple[tuple[str, float, str, dict[str, float]], ...] = (
-    ("hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M",
-     9.0, "Q4", {"coding": 0.94, "reasoning": 0.78, "math": 0.74,
-                 "multilingual": 0.75, "agentic": 0.72}),
+    ("mannix/JackOD-9B-Coder:IQ4_XS",
+     9.0, "Q4", {"coding": 0.96, "reasoning": 0.78, "math": 0.76,
+                 "multilingual": 0.75, "agentic": 0.84}),
     ("hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M",
      9.0, "Q4", {"coding": 0.78, "reasoning": 0.92, "math": 0.85,
                  "multilingual": 0.78, "agentic": 0.80}),

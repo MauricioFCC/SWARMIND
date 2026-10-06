@@ -5,7 +5,7 @@
 ## [2026-09-30] Flota frontera 2026 + ventana 16K por servidor + escalado por verificación
 
 ### Flota local y SSOT
-- **Flota frontera 2026** — SSOT medida en `harness/model_router/fleet_manifest.py` (id canónico, tier, `num_ctx`, `vram_mb`, `keep_alive`): fast `Qwen3.5-4B UD-Q4_K_XL`, quality `MiMo-V2.6-Distill-Qwen-9B IQ4_XS` (4K), coding `Qwopus3.5-9B-v3 Q4_K_M` (4K), reasoning `Ornith-1.5-9B Q4_K_M` (4K), embedding `qwen3-embedding:0.6b`, vision `qwen3-vl:4b`. `recommend_num_ctx`/`footprint_mb` derivan del manifiesto; invariantes en `test_fleet_manifest.py`.
+- **Flota frontera 2026** — SSOT medida en `harness/model_router/fleet_manifest.py` (id canónico, tier, `num_ctx`, `vram_mb`, `keep_alive`): fast `Qwen3.5-4B UD-Q4_K_XL`, quality `MiMo-V2.6-Distill-Qwen-9B IQ4_XS` (4K), coding `JackOD-9B-Coder IQ4_XS` (4K), reasoning `Ornith-1.5-9B Q4_K_M` (4K), embedding `qwen3-embedding:0.6b`, vision `qwen3-vl:4b`. `recommend_num_ctx`/`footprint_mb` derivan del manifiesto; invariantes en `test_fleet_manifest.py`.
 - **Cableado de runtime** `.opencode/config/ollama_models.yaml` (nombres canónicos hf.co, sin alias locales) validado contra el manifiesto.
 
 ### GPU y servidor

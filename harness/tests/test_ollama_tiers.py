@@ -23,7 +23,7 @@ DEFAULT_FAST_MODEL = "hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL"
 DEFAULT_QUALITY_MODEL = "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS"
 DEFAULT_EMBEDDING_MODEL = "qwen3-embedding:0.6b"
 DEFAULT_VISION_MODEL = "qwen3-vl:4b"
-DEFAULT_CODING_MODEL = "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M"
+DEFAULT_CODING_MODEL = "mannix/JackOD-9B-Coder:IQ4_XS"
 
 
 def _client() -> MagicMock:
@@ -247,7 +247,7 @@ embedding:
 vision:
   model: qwen3-vl:4b
 coding:
-  model: hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M
+  model: mannix/JackOD-9B-Coder:IQ4_XS
 """.strip(),
         encoding="utf-8",
     )
@@ -277,7 +277,7 @@ def test_load_from_yaml_reads_repo_ssot() -> None:
     router = OllamaTierRouter.load_from_yaml(ssot)
     assert router.model_for(CapabilityTier.FAST) == "hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL"
     assert router.model_for(CapabilityTier.QUALITY) == "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS"
-    assert router.model_for(CapabilityTier.CODING) == "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M"
+    assert router.model_for(CapabilityTier.CODING) == "mannix/JackOD-9B-Coder:IQ4_XS"
     assert router.model_for(CapabilityTier.EMBEDDING) == "qwen3-embedding:0.6b"
     assert router.model_for(CapabilityTier.VISION) == "qwen3-vl:4b"
 

@@ -16,7 +16,7 @@ from harness.model_router.model_windows import (
 
 _FAST = "hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL"
 _MIMO = "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS"
-_QWOPUS = "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M"
+_JACKOD = "mannix/JackOD-9B-Coder:IQ4_XS"
 _ORNITH = "hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M"
 
 
@@ -48,7 +48,7 @@ def test_recommend_fleet_windows_declared() -> None:
     """La flota declara su ventana segura: 4B=8192, 9B=4096 (SSOT, ADR-0101)."""
     assert recommend_num_ctx(_FAST) == 8192
     assert recommend_num_ctx(_MIMO) == 4096
-    assert recommend_num_ctx(_QWOPUS) == 4096
+    assert recommend_num_ctx(_JACKOD) == 4096
     assert recommend_num_ctx(_ORNITH) == 4096
     assert recommend_num_ctx("qwen3-embedding:0.6b") == 8192
     assert recommend_num_ctx("qwen3-vl:4b") == 8192

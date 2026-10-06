@@ -17,9 +17,9 @@ from harness.model_router.gpu_guard import (
 
 ORNITH = "hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M"
 MIMO = "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS"
-QWOPUS = "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M"
+JACKOD = "mannix/JackOD-9B-Coder:IQ4_XS"
 FAST = "hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL"
-_TEXT_MODELS = (FAST, MIMO, QWOPUS, ORNITH)
+_TEXT_MODELS = (FAST, MIMO, JACKOD, ORNITH)
 
 
 def test_constants_anti_tdr() -> None:

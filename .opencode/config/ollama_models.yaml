@@ -5,7 +5,7 @@
 # agoto la GPU el 2026-10-01). El techo vive en gpu_guard.SAFE_CTX_MAX.
 #   fast:      Qwen3.5-4B UD-Q4_K_XL — borradores, tareas simples
 #   quality:   MiMo-V2.6-Distill-Qwen-9B IQ4_XS — calidad/agente
-#   coding:    Qwopus3.5-9B-v3 Q4_K_M — codigo (se mantiene)
+#   coding:    JackOD-9B-Coder IQ4_XS — codigo agentico multi-turn (MTP)
 #   reasoning: Ornith-1.5-9B Q4_K_M — razonamiento (fuera del enum YAML)
 #   embedding: qwen3-embedding:0.6b — RAG (auto_pull lo restaura si se usa)
 #   vision:    qwen3-vl:4b — imagenes/alt-text (auto_pull lo restaura si se usa)
@@ -21,7 +21,7 @@ ollama:
   tiers:
     fast:      {model: "hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL",                keep_alive: "0", auto_pull: true}
     quality:   {model: "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS",  keep_alive: "0", auto_pull: true}
-    coding:    {model: "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M",             keep_alive: "0", auto_pull: true}
+    coding:    {model: "mannix/JackOD-9B-Coder:IQ4_XS",                         keep_alive: "0", auto_pull: true}
     embedding: {model: "qwen3-embedding:0.6b", keep_alive: "0", auto_pull: true}
     vision:    {model: "qwen3-vl:4b",          keep_alive: "0", auto_pull: true}
 # Politica local-first con supervision cloud como oraculo 1% (ADR-0084/0097):

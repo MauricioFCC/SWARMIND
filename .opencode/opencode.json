@@ -63,8 +63,8 @@
             "num_ctx": 4096
           }
         },
-        "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M": {
-          "name": "Qwopus3.5-9B v3 Q4_K_M coding (frontera 2026)",
+        "mannix/JackOD-9B-Coder:IQ4_XS": {
+          "name": "JackOD-9B-Coder IQ4_XS coding agentico (frontera 2026)",
           "reasoning": false,
           "tools": true,
           "options": {

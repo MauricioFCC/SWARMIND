@@ -68,7 +68,7 @@ Tareas simples/RAG/visión se delegan a la **flota local** vía Ollama
 `harness/model_router/fleet_manifest.py` (id canónico, tier, `num_ctx`,
 `vram_mb`, `keep_alive`), cableado a runtime por
 `.opencode/config/ollama_models.yaml`: fast `Qwen3.5-4B UD-Q4_K_XL`, quality
-`MiMo-V2.6-Distill-Qwen-9B IQ4_XS` (4K), coding `Qwopus3.5-9B-v3 Q4_K_M` (4K),
+`MiMo-V2.6-Distill-Qwen-9B IQ4_XS` (4K), coding `JackOD-9B-Coder IQ4_XS` (4K),
 reasoning `Ornith-1.5-9B Q4_K_M` (4K), embedding
 `qwen3-embedding:0.6b` (RAG, 1024 dims), vision `qwen3-vl:4b`.
 

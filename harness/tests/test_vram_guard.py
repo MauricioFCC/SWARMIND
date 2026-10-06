@@ -1,7 +1,7 @@
 """Tests para vram_guard + keep_alive por tier (anti-OOM GPU).
 
 Causa de 2 OOMs: keep_alive 5m en todos los tiers (Qwen3.8 5.8GB +
-Qwopus 6.6GB residentes = 12.4GB > 8GB) + Unsloth concurrente. Fix:
+un 9B coding 6.6GB residentes = 12.4GB > 8GB) + Unsloth concurrente. Fix:
 vram_guard antes de ejecutar + keep_alive "0" (descarga inmediata)
 en tiers grandes.
 """
@@ -19,7 +19,7 @@ def test_footprints_documented() -> None:
     """Footprints conocidos de la flota 2026-10-01 (MB en VRAM con Q4/Q8)."""
     assert MODEL_FOOTPRINT_MB["qwen3.5-4b"] == 3600
     assert MODEL_FOOTPRINT_MB["mimo"] == 6100
-    assert MODEL_FOOTPRINT_MB["qwopus"] == 6600
+    assert MODEL_FOOTPRINT_MB["jackod"] == 5800
     assert MODEL_FOOTPRINT_MB["ornith"] == 6700
     assert MODEL_FOOTPRINT_MB["gemma-4"] == 16000
     assert MODEL_FOOTPRINT_MB["26b"] == 16000

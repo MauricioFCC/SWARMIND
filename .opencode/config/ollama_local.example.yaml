@@ -7,7 +7,7 @@ models:
   # "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS":
   #   caps: {coding: 0.80}
   #   trust: 1.0
-  # "hf.co/Jackrong/Qwopus3.5-9B-v3-GGUF:Q4_K_M":
+  # "mannix/JackOD-9B-Coder:IQ4_XS":
   #   trust: 0.9
 # Politica local-first (sobreescribe local_first de ollama_models.yaml):
 # local_first:

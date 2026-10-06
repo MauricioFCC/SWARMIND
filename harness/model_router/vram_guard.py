@@ -3,7 +3,7 @@
 WHAT: `free_vram_mb()` (nvidia-smi, None si no hay GPU) + tabla de
 footprints + `fits()` con margen de seguridad.
 WHY: Causa de los OOMs: keep_alive 5m en todos los tiers mantenia
-Qwen3.8 (5.8GB) + Qwopus (6.6GB) = 12.4GB residentes en 8GB, mas
+Qwen3.8 (5.8GB) + un 9B coding (6.6GB) = 12.4GB residentes en 8GB, mas
 Unsloth concurrente. Segundo vector: `LocalExecutor` intentaba Unsloth
 PRIMERO sin gate — el llama-server cargaba modelos grandes (clase 26B)
 con Ollama residente y reventaba (nvlddmkm 153). El guard + keep_alive
@@ -29,7 +29,7 @@ logger = logging.getLogger("harness.model_router.vram_guard")
 MODEL_FOOTPRINT_MB: dict[str, int] = {
     "qwen3.5-4b": 3600,
     "mimo": 6100,
-    "qwopus": 6600,
+    "jackod": 5800,
     "ornith": 6700,
     "glm": 6200,
     "lfm2.5": 2900,
