@@ -1002,6 +1002,9 @@ def sync_hermes_memory(dry_run: bool = False) -> dict:
     Returns:
         Dict con estadísticas del sync.
     """
+    if not _LOCAL_CONFIG.get("hermes_enabled", False):
+        logger.info("  ⏭️  Hermes deshabilitado (hermes_enabled != true): sync omitido")
+        return {"name": "Hermes", "status": "skipped", "reason": "hermes_disabled"}
     hermes = Project(
         name=_HERMES_PATH.name,
         path=_HERMES_PATH,

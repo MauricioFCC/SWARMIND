@@ -30,7 +30,7 @@ OUTPUTS_DIRS:
 
 # ── FDE / EVOLVE Config ───────────────────────────────────────────────────────
 FDE_MISSION: "Proveer un harness de orquestacion multi-agente robusto, auto-curativo y auto-mejorable"
-FDE_STAKEHOLDER: "Todos los proyectos que usan Swarmind (CQE, Hermes, etc.)"
+FDE_STAKEHOLDER: "Todos los proyectos que usan Swarmind"
 FDE_METRIC: "Tests pasando + tiempo medio entre fallos + cobertura de skills"
 FDE_DAY2: "Mantenimiento por el equipo ASI-Evolve, mejora continua via cognition store"
 FDE_DELTA: "Token Economics v2026 implementado: -38% tokens, -41% costo, -44% tiempo"
@@ -60,7 +60,7 @@ TOKEN_CONFIG:
 # ── Harness Core Config ───────────────────────────────────────────────────────
 HARNESS:
   language: "Python"
-  framework: "LanceDB + MCP + Hermes bridge"
+  framework: "LanceDB + MCP"
   collections_lancedb:
     - tasks_board
     - rag_chunks
@@ -84,7 +84,7 @@ HARNESS:
   gateway_modes: ["cli"]
   scheduler_enabled: true
   evolve_loop_enabled: true
-  hermes_bridge_enabled: true
+  hermes_bridge_enabled: false
   self_healing:
     circuit_breaker: true
     timeout_seconds: 300

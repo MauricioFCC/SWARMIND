@@ -27,15 +27,13 @@ QUÉ HACE:
 
 ESTRUCTURA RESULTANTE (Memory_Proyects/):
   Memory_Proyects/
-  ├── knowledge/          # conocimiento por dominio (destino del bridge Hermes)
-  ├── 99_Hermes_Brain/    # cerebro central (sentinela de hermes_path)
-  ├── sessions/           # registros de sesiones (fuente de Dreaming)
   ├── data/
   │   └── lancedb/        # db central (SE PRESERVA con backup)
   └── backups/            # copias de seguridad (timestamp)
 
-  (syntheses/, personal/, projects/, inbox/, exports/ se eliminaron: eran
-  planned-but-unused y se recreaban en cada sync sin que ningun modulo las use.)
+  (Hermes NO se usa: knowledge/, sessions/ y 99_Hermes_Brain/ se eliminaron,
+  igual que las planned-but-unused (syntheses/personal/projects/inbox/exports).
+  Ninguna se recrea.)
 
 Uso:
     python scripts/setup_memory_central.py --dry-run          # Ver plan
@@ -63,14 +61,11 @@ _MEMORY_ROOT = Path(os.environ.get(
     str(Path.home() / "Documents" / "Memory_Proyects"),
 ))
 
-# Directorios de memoria REALMENTE usados (se construyen, preservando contenido).
-# NOTA: `syntheses`, `personal`, `projects`, `inbox` y `exports` se declaraban
-# aqui pero NINGUN modulo los lee/escribe (planned-but-unused); crearlos en cada
-# `sync_opencode_global` los hacia "reaparecer" tras borrarlos. Se excluyen.
-_MEMORY_DIRS = [
-    "knowledge", "99_Hermes_Brain", "sessions",
-    "data", "data/lancedb", "backups",
-]
+# Directorios de memoria REALMENTE usados (SSOT), se construyen preservando
+# contenido. El proyecto NO usa Hermes, asi que knowledge/, sessions/ y
+# 99_Hermes_Brain/ (bridge/dreaming/sentinela) NO se recrean; tampoco las
+# planned-but-unused (syntheses/personal/projects/inbox/exports).
+_MEMORY_DIRS = ["data", "data/lancedb", "backups"]
 
 # Directorios que NO corresponden en una carpeta de memoria pura
 # (el motor y el cerebro viven en opencode global / repo Swarmind).
@@ -264,7 +259,14 @@ def main() -> None:
     """CLI principal."""
     parser = argparse.ArgumentParser(description="Configura la memoria central de Swarmind")
     parser.add_argument("--dry-run", action="store_true", help="Solo simular (no escribe)")
-    parser.add_argument("--preserve-all", action="store_true", help="No limpiar duplicados")
+    parser.add_argument(
+        "--cleanup", action="store_true",
+        help="Limpiar duplicados de motor (opt-in; por defecto NO se borra nada)",
+    )
+    parser.add_argument(
+        "--preserve-all", action="store_true",
+        help="[compat] no limpiar duplicados (ahora es el comportamiento por defecto)",
+    )
     parser.add_argument("--backup", action="store_true", help="Solo crear backup de la db")
     parser.add_argument("--restore", type=str, metavar="DIR", help="Restaurar db desde backup")
     args = parser.parse_args()
@@ -290,20 +292,19 @@ def main() -> None:
         if not args.dry_run:
             _MEMORY_ROOT.mkdir(parents=True, exist_ok=True)
 
-    # 1. Backup de seguridad ANTES de tocar nada destructivo
-    _backup_db(dry_run=args.dry_run)
-
-    # 2. Construir estructura (idempotente)
+    # 1. Construir estructura (idempotente; NUNCA borra ni hace backup masivo).
     _build_structure(dry_run=args.dry_run)
 
-    # 3. Verificar db segura antes de limpiar
-    db_safe = _verify_db_safe(dry_run=args.dry_run)
-
-    # 4. Limpiar duplicados solo si db segura y no --preserve-all
-    if not args.preserve_all and db_safe:
-        _cleanup(dry_run=args.dry_run)
-    elif not args.preserve_all:
-        logger.info("  ⏭️  Cleanup omitido: db central no confirmada. El usuario decide.")
+    # 2. Limpiar duplicados SOLO si se pide explicitamente (--cleanup).
+    #    WHY: el cleanup borra .opencode/skills/etc.; hacerlo por defecto destruia
+    #    el mirror sin querer. El backup de ~9.8 GB tampoco es automatico
+    #    (usar --backup a proposito).
+    if args.cleanup:
+        db_safe = _verify_db_safe(dry_run=args.dry_run)
+        if db_safe:
+            _cleanup(dry_run=args.dry_run)
+        else:
+            logger.info("  ⏭️  Cleanup omitido: db central no confirmada. El usuario decide.")
 
     ok = _verify(dry_run=args.dry_run)
     if ok:
