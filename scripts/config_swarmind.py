@@ -42,6 +42,9 @@ _MEMORY_ROOT = Path(os.environ.get(
 ))
 _CONFIG_FILE = _MEMORY_ROOT / ".swarmind_config.json"
 
+# Timeout de subprocess que invocan scripts de backup/setup (segundos).
+_SUBPROCESS_TIMEOUT_SECONDS = 300
+
 _DEFAULTS = {
     "memory_root": str(_MEMORY_ROOT),
     "backup_enabled": True,
@@ -142,12 +145,14 @@ def _menu(config: dict) -> None:
             logger.info("  ▶️  Registrando tarea programada...")
             import subprocess
             cmd = [sys.executable, str(_HERE / "backup_memory.py"), "--schedule"]
-            subprocess.run(cmd, env={**os.environ, "MEMORY_ROOT": config["memory_root"]}, check=False)
+            subprocess.run(cmd, env={**os.environ, "MEMORY_ROOT": config["memory_root"]},
+                           check=False, timeout=_SUBPROCESS_TIMEOUT_SECONDS)
         elif choice == "7":
             logger.info("  ▶️  Ejecutando setup memoria central...")
             import subprocess
             cmd = [sys.executable, str(_HERE / "setup_memory_central.py")]
-            result = subprocess.run(cmd, env={**os.environ, "MEMORY_ROOT": config["memory_root"]}, check=False)
+            result = subprocess.run(cmd, env={**os.environ, "MEMORY_ROOT": config["memory_root"]},
+                                    check=False, timeout=_SUBPROCESS_TIMEOUT_SECONDS)
             if result.returncode != 0:
                 logger.error("  ❌ Setup memoria central falló")
         elif choice == "8":
@@ -156,7 +161,8 @@ def _menu(config: dict) -> None:
             logger.info("  ▶️  Backup manual...")
             import subprocess
             cmd = [sys.executable, str(_HERE / "backup_memory.py"), "--force"]
-            subprocess.run(cmd, env={**os.environ, "MEMORY_ROOT": config["memory_root"]}, check=False)
+            subprocess.run(cmd, env={**os.environ, "MEMORY_ROOT": config["memory_root"]},
+                           check=False, timeout=_SUBPROCESS_TIMEOUT_SECONDS)
         elif choice == "0":
             _save_config(config)
             logger.info("  👋 Config guardada. ¡Listo!")

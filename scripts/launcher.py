@@ -23,6 +23,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
+# Timeout de comandos del launcher (segundos): suficiente para la suite
+# completa de tests/deploy, pero acotado para evitar cuelgues.
+_COMMAND_TIMEOUT_SECONDS = 1800
+
 
 def cmd(args: list[str], desc: str = "") -> int:
     """Run a command with nice output."""
@@ -31,7 +35,13 @@ def cmd(args: list[str], desc: str = "") -> int:
         print(f"  {desc}")
         print(f"{'='*60}")
     print(f"  $ {' '.join(args)}\n")
-    result = subprocess.run(args, cwd=ROOT, check=False)
+    try:
+        result = subprocess.run(
+            args, cwd=ROOT, check=False, timeout=_COMMAND_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        print(f"\n  ❌ Timeout tras {_COMMAND_TIMEOUT_SECONDS}s")
+        return 124
     if result.returncode != 0:
         print(f"\n  ❌ Failed (exit {result.returncode})")
     else:

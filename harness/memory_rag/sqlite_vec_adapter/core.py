@@ -8,6 +8,7 @@ Sin cambios de logica.
 from __future__ import annotations
 
 import logging
+import re
 import sqlite3
 import threading
 from pathlib import Path
@@ -29,6 +30,9 @@ from .collections import _CollectionOpsMixin
 from .vectors import _VectorOpsMixin
 
 logger = logging.getLogger("harness.memory_rag.sqlite_vec_adapter")
+
+# Allowlist de identificadores de coleccion (nombres de tabla, CWE-89).
+_SAFE_IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z0-9_]{1,64}$")
 
 
 class SQLiteVecAdapter(_CollectionOpsMixin, _VectorOpsMixin):
@@ -148,11 +152,27 @@ class SQLiteVecAdapter(_CollectionOpsMixin, _VectorOpsMixin):
     def _vec_table_name(self, collection: str) -> str:
         """Retorna el nombre de tabla interna para una coleccion.
 
+        WHAT: valida ``collection`` contra la allowlist ``[A-Za-z0-9_]{1,64}``
+        y devuelve el identificador entre comillas dobles.
+        WHY: el nombre se interpola en ``CREATE/DROP/SELECT ... {tbl}``; sin
+        allowlist un nombre como ``x"; DROP TABLE y; --`` inyecta SQL (CWE-89).
+        WHERE: ``SQLiteVecAdapter._vec_table_name`` (usado por collections/vectors).
+
         Args:
             collection: Nombre de la coleccion.
 
         Returns:
-            Nombre de tabla SQLite con prefijo.
+            Identificador SQLite citado (``"_vec_<collection>"``).
+
+        Raises:
+            SQLiteVecError: Si ``collection`` no cumple la allowlist.
         """
-        safe = collection.replace('"', '""').replace("'", "''")
-        return f"{_VEC_TABLE_PREFIX}{safe}"
+        if not isinstance(collection, str) or not _SAFE_IDENTIFIER_PATTERN.match(collection):
+            raise SQLiteVecError(
+                "Identificador de coleccion invalido; "
+                f"WHAT={collection!r}; "
+                "WHY=previene inyeccion SQL en nombres de tabla (CWE-89); "
+                "WHERE=_vec_table_name; "
+                "EXPECTED=^[A-Za-z0-9_]{1,64}$"
+            )
+        return f'"{_VEC_TABLE_PREFIX}{collection}"'

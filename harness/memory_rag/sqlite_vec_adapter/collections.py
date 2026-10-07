@@ -93,7 +93,7 @@ class _CollectionOpsMixin:
             try:
                 assert self._conn is not None
                 tbl = self._vec_table_name(name)
-                # tbl sanitizado por _vec_table_name
+                # tbl validado por allowlist y citado con comillas dobles
                 self._conn.execute(f"DROP TABLE IF EXISTS {tbl}")  # nosec B608
                 # tabla interna, valor parametrizado
                 self._conn.execute(f"DELETE FROM {_META_TABLE} WHERE name = ?", (name,))  # nosec B608
@@ -209,7 +209,7 @@ class _CollectionOpsMixin:
             assert self._conn is not None
             tbl = self._vec_table_name(collection)
             cursor = self._conn.execute(
-                # tbl sanitizado por _vec_table_name
+                # tbl validado por allowlist y citado con comillas dobles
                 f"SELECT id, vector, metadata, created_at FROM {tbl}"  # nosec B608
             )
             records: list[dict[str, Any]] = []

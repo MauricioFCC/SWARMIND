@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -23,6 +24,11 @@ from .exceptions import CollectionNotFoundError
 from .models import _Collection, _StoredItem
 
 logger = logging.getLogger("harness.memory_rag.lance_vector_store")
+
+# Allowlist de nombres de campo para clausulas WHERE (CWE-943).
+_FILTER_KEY_PATTERN = re.compile(r"^[A-Za-z0-9_]{1,64}$")
+# Caracteres prohibidos en valores string: cierran/escapan el literal SQL.
+_UNSAFE_FILTER_CHARS = ("'", '"', "\\")
 
 
 class _LanceDBBackendMixin:
@@ -88,6 +94,72 @@ class _LanceDBBackendMixin:
         tbl.add(rows)
         return ids
 
+    @staticmethod
+    def _is_safe_filter_value(value: Any) -> bool:
+        """Indica si un valor de filtro es seguro para interpolar en SQL.
+
+        WHAT: comprueba que ``value`` sea escalar y que, si es string, no
+        contenga comillas ni backslash.
+        WHY: evita inyeccion de predicados en los filtros de LanceDB (CWE-943).
+        WHERE: ``_LanceDBBackendMixin._update_records_lancedb``.
+
+        Args:
+            value: Valor de filtro a inspeccionar.
+
+        Returns:
+            True si el valor puede interpolarse sin riesgo.
+        """
+        if isinstance(value, str):
+            return not any(ch in value for ch in _UNSAFE_FILTER_CHARS)
+        return isinstance(value, (bool, int, float)) or value is None
+
+    @classmethod
+    def _safe_where_comparison(cls, key: Any, value: Any) -> str:
+        """Construye una comparacion ``clave = valor`` segura para LanceDB.
+
+        WHAT: valida ``key`` contra una allowlist y rechaza valores string
+        con comillas o backslash antes de interpolarlos en una clausula WHERE.
+        WHY: sin validacion, un filtro como ``{"x": "a' OR '1'='1"}`` inyecta
+        predicados y altera el conjunto de registros afectados (CWE-943).
+        WHERE: ``_LanceDBBackendMixin._update_records_lancedb``.
+
+        Args:
+            key: Nombre de campo; debe cumplir ``^[A-Za-z0-9_]{1,64}$``.
+            value: Valor escalar; los strings deben carecer de ``'``/``"``/``\\``.
+
+        Returns:
+            Fragmento de comparacion listo para unir con ``AND``.
+
+        Raises:
+            ValueError: Si la clave o el valor no son seguros.
+        """
+        if not isinstance(key, str) or not _FILTER_KEY_PATTERN.match(key):
+            raise ValueError(
+                "Filtro LanceDB invalido (key); "
+                f"WHAT=clave rechazada {key!r}; "
+                "WHY=previene inyeccion de filtros (CWE-943); "
+                "WHERE=_update_records_lancedb; "
+                "EXPECTED=^[A-Za-z0-9_]{1,64}$"
+            )
+        if isinstance(value, str):
+            if not cls._is_safe_filter_value(value):
+                raise ValueError(
+                    "Filtro LanceDB invalido (value); "
+                    f"WHAT=string rechazado {value!r}; "
+                    "WHY=previene inyeccion de filtros (CWE-943); "
+                    "WHERE=_update_records_lancedb; "
+                    "EXPECTED=sin ' \" \\\\"
+                )
+            return f"{key} = '{value}'"
+        if not cls._is_safe_filter_value(value):
+            raise ValueError(
+                "Filtro LanceDB invalido (value); "
+                f"WHAT=tipo no soportado {type(value).__name__}; "
+                "WHY=solo se permiten str/int/float/bool/None; "
+                "WHERE=_update_records_lancedb"
+            )
+        return f"{key} = {value}"
+
     def _update_records_lancedb(
         self,
         collection: str,
@@ -102,13 +174,10 @@ class _LanceDBBackendMixin:
                 f"Collection '{collection}' not found in LanceDB: {exc}"
             ) from exc
 
-        # Construir clausula WHERE desde los filtros
-        conditions = []
-        for k, v in filters.items():
-            if isinstance(v, str):
-                conditions.append(f"{k} = '{v}'")
-            else:
-                conditions.append(f"{k} = {v}")
+        # Construir clausula WHERE desde los filtros (clave/valor validados)
+        conditions = [
+            self._safe_where_comparison(k, v) for k, v in filters.items()
+        ]
         where_clause = " AND ".join(conditions)
 
         # Leer registros existentes para actualizar metadata JSON
@@ -120,6 +189,16 @@ class _LanceDBBackendMixin:
         for record in existing:
             record_id = record.get("id")
             if not record_id:
+                continue
+            # El id leido de la tabla tambien se interpola: validarlo evita
+            # que un id manipulado inyecte predicates en el UPDATE (CWE-943).
+            if not self._is_safe_filter_value(record_id):
+                logger.warning(
+                    "update_records LanceDB: id no seguro omitido en '%s' "
+                    "(WHAT=id con comillas/backslash WHY=anti-inyeccion "
+                    "WHERE=_update_records_lancedb)",
+                    collection,
+                )
                 continue
 
             # Actualizar metadata JSON si existe

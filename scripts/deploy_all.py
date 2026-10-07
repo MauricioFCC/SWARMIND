@@ -10,7 +10,7 @@ SWARMIND los sincroniza AUTOMÁTICAMENTE en cada commit (pre-commit hook →
 CADA PROYECTO conserva solo:
   - .opencode/          : mirror del cerebro (agents, skills, core, config)
   - skills/             : todas las skills (descubiertas dinamicamente) + registry completo
-  - config propia       : project_config, routing_rules, token_budgets, .env
+  - config propia       : project_config, routing_rules, token_budgets, .env.example
 
 EL MOTOR (harness/) NO se copia a los proyectos: una sola copia vive en
 opencode global (~/.config/opencode/harness). Esto elimina gigas de
@@ -23,7 +23,7 @@ Este script despliega/limpia el mirror de todos los proyectos del
 directorio raiz configurado: actualiza cerebro, elimina skills obsoletas,
 deja skills_registry.yaml completo (skills descubiertas dinamicamente) y
 preserva la configuración propia (project_config, routing_rules,
-token_budgets, federated/, db/, .env).
+token_budgets, federated/, db/, .env.example). Nunca se propaga el .env real.
 
 Seguridad (ADR-0035): rutas portables via env vars (DEV_SPACE_ROOT, ...)
 con fallback a ``Path.home()``. Nunca ``$HOME`` literal. Los nombres de
@@ -511,11 +511,12 @@ def resolve_project(selector: str, projects: list[Project]) -> Project | None:
 
 # Archivos de config propios por proyecto (se preservan SIEMPRE).
 # skills_registry.yaml NO se preserva — se regenera completo desde la fuente.
+# SEGURIDAD: NUNCA listar ".env" real aqui; solo ".env.example". El deploy no
+# debe propagar ni tocar credenciales (CWE-522, ADR-0035).
 _CONFIG_FILES = [
     ".opencode/config/project_config.yaml",
     ".opencode/config/routing_rules.yaml",
     ".opencode/config/token_budgets.yaml",
-    ".env",
     ".env.example",
 ]
 
@@ -930,7 +931,8 @@ def deploy_project(
     logger.info("📦 DEPLOYING: %s (%s) — mirror local", project.name, project.ptype)
     logger.info("=" * 60)
 
-    # 1. Backup config propia (federated/, db/, .env, config/)
+    # 1. Backup config propia (federated/, db/, .env.example, config/)
+    #    SEGURIDAD: el .env real nunca se respalda/restaura (CWE-522).
     saved_files: dict[str, bytes] = {}
     saved_dirs: dict[str, Path] = {}
     if not dry_run:
@@ -1024,7 +1026,9 @@ def sync_hermes_memory(dry_run: bool = False) -> dict:
 
     saved_files: dict[str, bytes] = {}
     if not dry_run:
-        for rel in [".opencode/skills/skills_registry.yaml", ".env", ".env.example"]:
+        # SEGURIDAD: solo ".env.example"; nunca el ".env" real con secretos
+        # (CWE-522). El sync de .opencode/ no toca el .env de la raiz.
+        for rel in [".opencode/skills/skills_registry.yaml", ".env.example"]:
             path = hermes.path / rel
             if path.is_file():
                 saved_files[rel] = path.read_bytes()
