@@ -1,21 +1,38 @@
-"""sandbox_executor.py — Sandbox efimero: Docker si existe, subprocess si no (ADR-0081).
+"""sandbox_executor.py — Sandbox efimero portable: Docker > Job Object > bwrap > subprocess.
 
-WHAT: Ejecuta comandos y scripts aislados; backend docker (contenedor efimero
-endurecido, env inyectado en runtime) o subprocess con entorno limpio
-(allowlist) y rlimits best-effort cuando docker no esta disponible. Nunca
-crashea el harness: devuelve `SandboxResult` con returncode != 0 en vez de
-propagar excepciones.
+WHAT: Ejecuta comandos y scripts aislados con deteccion automatica de backend
+por prioridad: `docker` (contenedor efimero endurecido), `windows-jobobject`
+(Job Object nativo de Windows via ctypes), `bwrap` (bubblewrap en Linux) o
+`subprocess` (env limpio + rlimits POSIX best-effort). Nunca crashea el
+harness: devuelve `SandboxResult` con returncode != 0 en vez de propagar
+excepciones.
 WHY: Frontera (OpenSandbox/Alibaba): credenciales y entorno inyectados en
 runtime, no expuestos al agente; aislamiento ante codigo generado por LLM
 (CWE-94) ejecutado por los stages PBT/mutation.
 WHERE: `pbt_stage`/`mutation_stage` (via `run_script`) y tool calls con efectos
 (via `run`).
 
-Nota de seguridad (importante): el backend `subprocess` NO es aislamiento de
-OS fuerte. Solo limpia el entorno (allowlist `SAFE_ENV_KEYS`) y aplica rlimits
-POSIX best-effort (CPU/memoria/procesos/archivo). Para aislamiento real se
-requiere el backend docker (o microVM); en Windows `start_new_session` y los
-rlimits no existen y se degrada con `logger.debug` sin abortar.
+Prioridad de backends (`_detect_backend`):
+    1. `docker`            — si `shutil.which("docker")` existe.
+    2. `windows-jobobject` — si `os.name == "nt"` y `kernel32` expone
+       `CreateJobObjectW` (portable, sin deps, sin Docker).
+    3. `bwrap`             — si `shutil.which("bwrap")` existe (Linux).
+    4. `subprocess`        — fallback universal (deteccion debil).
+
+Aislamiento por backend:
+    - `docker`: red/FS/caps/privilegios/pids/memoria/tmpfs (fuerte).
+    - `windows-jobobject`: recursos (memoria ~2 GiB, max 128 procesos), kill
+      tree al cerrar el job (`KILL_ON_JOB_CLOSE`) y env limpio. NO aísla FS ni
+      red: es una barrera de recursos + limpieza de arbol, no un sandbox de OS
+      fuerte.
+    - `bwrap`: namespaces (red/PID/FS) con binds read-only (fuerte, Linux).
+    - `subprocess`: solo env limpio (allowlist `SAFE_ENV_KEYS`) y rlimits POSIX
+      best-effort. NO es aislamiento de OS fuerte; en Windows cae aqui cuando
+      el Job Object no esta disponible.
+
+Nota de seguridad: en Windows `start_new_session` y los rlimits no existen; el
+backend `windows-jobobject` cubre parcialmente ese hueco con un Job Object
+nativo (recursos + kill-tree + env limpio), pero NO aísla filesystem ni red.
 
 Uso:
     ex = SandboxExecutor()
@@ -38,6 +55,48 @@ logger = logging.getLogger("harness.validation.sandbox_executor")
 
 #: Timeout default de ejecucion (segundos).
 DEFAULT_TIMEOUT_S = 120.0
+
+# ---------------------------------------------------------------------------
+# Backends disponibles y prioridad (deteccion en `_detect_backend`)
+# ---------------------------------------------------------------------------
+
+#: Backend docker (contenedor efimero endurecido).
+BACKEND_DOCKER = "docker"
+#: Backend Windows Job Object (nativo, portable, sin Docker).
+BACKEND_JOB_OBJECT = "windows-jobobject"
+#: Backend bubblewrap (namespaces en Linux).
+BACKEND_BWRAP = "bwrap"
+#: Backend subprocess (fallback universal, deteccion debil).
+BACKEND_SUBPROCESS = "subprocess"
+
+# ---------------------------------------------------------------------------
+# Windows Job Object (portable, sin deps: ctypes sobre kernel32)
+# ---------------------------------------------------------------------------
+
+#: Clase de informacion `JobObjectExtendedLimitInformation` de SetInformationJobObject.
+JOB_OBJECT_EXTENDED_LIMIT_INFORMATION = 9
+#: Maximo de procesos activos simultaneos en el job (anti fork-bomb).
+JOB_OBJECT_ACTIVE_PROCESS = 128
+#: Limite de memoria total del job (bytes).
+JOB_OBJECT_MEMORY_BYTES = 2 * 1024**3
+#: Flag de creacion de proceso: sin ventana de consola.
+CREATE_NO_WINDOW = 0x08000000
+#: `JOB_OBJECT_LIMIT_*`: mata el arbol al cerrar el ultimo handle del job.
+JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000
+#: `JOB_OBJECT_LIMIT_*`: aplica `ActiveProcessLimit`.
+JOB_OBJECT_LIMIT_ACTIVE_PROCESS = 0x8
+#: `JOB_OBJECT_LIMIT_*`: aplica `JobMemoryLimit`.
+JOB_OBJECT_LIMIT_JOB_MEMORY = 0x200
+#: `JOB_OBJECT_LIMIT_*`: mata el proceso ante excepcion no manejada.
+JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION = 0x400
+
+#: Flags de limite combinados aplicados SIEMPRE al Job Object.
+JOB_OBJECT_LIMIT_FLAGS = (
+    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+    | JOB_OBJECT_LIMIT_ACTIVE_PROCESS
+    | JOB_OBJECT_LIMIT_JOB_MEMORY
+    | JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION
+)
 
 # ---------------------------------------------------------------------------
 # Endurecimiento docker (CWE-94: aislamiento de codigo no confiable)
@@ -187,6 +246,148 @@ def _build_rlimit_preexec(timeout_s: float) -> Callable[[], None]:
     return _apply_limits
 
 
+# ---------------------------------------------------------------------------
+# Windows Job Object: carga perezosa de kernel32 y structs ctypes
+# ---------------------------------------------------------------------------
+
+#: Cache del modulo kernel32 (None si no aplica/falla); `_KERNEL32_LOADED`
+#: evita reintentar la carga en cada llamada.
+_KERNEL32: object | None = None
+_KERNEL32_LOADED = False
+
+
+def _load_kernel32() -> object | None:
+    """Carga `kernel32` de forma perezosa SOLO en Windows.
+
+    Returns:
+        DLL `kernel32` si `os.name == "nt"` y expone `CreateJobObjectW`;
+        `None` en Linux/macOS o si la carga falla (nunca lanza).
+    """
+    global _KERNEL32, _KERNEL32_LOADED
+    if _KERNEL32_LOADED:
+        return _KERNEL32
+    _KERNEL32_LOADED = True
+    if os.name != "nt":
+        return None
+    try:
+        import ctypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    except (OSError, AttributeError, ImportError):
+        logger.warning("sandbox_executor: kernel32 no disponible; sin Job Object")
+        return None
+    if not hasattr(kernel32, "CreateJobObjectW"):
+        logger.warning("sandbox_executor: kernel32 sin CreateJobObjectW")
+        return None
+    _KERNEL32 = kernel32
+    return kernel32
+
+
+#: Cache de las structs ctypes del Job Object (definidas perezosamente).
+_JOB_STRUCTS: dict[str, type] | None = None
+
+
+def _jobobject_structs() -> dict[str, type]:
+    """Define y cachea las structs ctypes del Job Object (Windows-only).
+
+    Returns:
+        Dict con `EXTENDED_LIMIT` (`JOBOBJECT_EXTENDED_LIMIT_INFORMATION`),
+        `BASIC_LIMIT` y `IO_COUNTERS` mapeados 1:1 al layout C de Windows.
+    """
+    global _JOB_STRUCTS
+    if _JOB_STRUCTS is not None:
+        return _JOB_STRUCTS
+    import ctypes
+    from ctypes import wintypes
+
+    class _IO_COUNTERS(ctypes.Structure):
+        """Contadores de I/O del job (`IO_COUNTERS`)."""
+
+        _fields_ = [
+            ("ReadOperationCount", ctypes.c_ulonglong),
+            ("WriteOperationCount", ctypes.c_ulonglong),
+            ("OtherOperationCount", ctypes.c_ulonglong),
+            ("ReadTransferCount", ctypes.c_ulonglong),
+            ("WriteTransferCount", ctypes.c_ulonglong),
+            ("OtherTransferCount", ctypes.c_ulonglong),
+        ]
+
+    class _JOBOBJECT_BASIC_LIMIT_INFORMATION(ctypes.Structure):
+        """Limites basicos del job (`JOBOBJECT_BASIC_LIMIT_INFORMATION`)."""
+
+        _fields_ = [
+            ("PerProcessUserTimeLimit", ctypes.c_longlong),
+            ("PerJobUserTimeLimit", ctypes.c_longlong),
+            ("LimitFlags", wintypes.DWORD),
+            ("MinimumWorkingSetSize", ctypes.c_size_t),
+            ("MaximumWorkingSetSize", ctypes.c_size_t),
+            ("ActiveProcessLimit", wintypes.DWORD),
+            ("Affinity", ctypes.c_size_t),
+            ("PriorityClass", wintypes.DWORD),
+            ("SchedulingClass", wintypes.DWORD),
+        ]
+
+    class _JOBOBJECT_EXTENDED_LIMIT_INFORMATION(ctypes.Structure):
+        """Limites extendidos del job (`JOBOBJECT_EXTENDED_LIMIT_INFORMATION`)."""
+
+        _fields_ = [
+            ("BasicLimitInformation", _JOBOBJECT_BASIC_LIMIT_INFORMATION),
+            ("IoInfo", _IO_COUNTERS),
+            ("ProcessMemoryLimit", ctypes.c_size_t),
+            ("JobMemoryLimit", ctypes.c_size_t),
+            ("PeakProcessMemoryUsed", ctypes.c_size_t),
+            ("PeakJobMemoryUsed", ctypes.c_size_t),
+        ]
+
+    _JOB_STRUCTS = {
+        "IO_COUNTERS": _IO_COUNTERS,
+        "BASIC_LIMIT": _JOBOBJECT_BASIC_LIMIT_INFORMATION,
+        "EXTENDED_LIMIT": _JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+    }
+    return _JOB_STRUCTS
+
+
+def _configure_kernel32(kernel32: object) -> None:
+    """Declara prototypes de kernel32 (evita truncar handles de 64 bits).
+
+    Args:
+        kernel32: DLL kernel32 (o fake compatible con atributos `argtypes`/
+            `restype`).
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+    kernel32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
+    kernel32.SetInformationJobObject.restype = wintypes.BOOL
+    kernel32.SetInformationJobObject.argtypes = [
+        wintypes.HANDLE,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+    ]
+    kernel32.AssignProcessToJobObject.restype = wintypes.BOOL
+    kernel32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+    kernel32.CloseHandle.restype = wintypes.BOOL
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+
+
+def _detect_backend() -> str:
+    """Detecta el backend disponible por prioridad (nunca lanza).
+
+    Returns:
+        `BACKEND_DOCKER` > `BACKEND_JOB_OBJECT` (Windows) > `BACKEND_BWRAP`
+        (Linux) > `BACKEND_SUBPROCESS`.
+    """
+    if shutil.which(BACKEND_DOCKER) is not None:
+        return BACKEND_DOCKER
+    if os.name == "nt" and _load_kernel32() is not None:
+        return BACKEND_JOB_OBJECT
+    if shutil.which(BACKEND_BWRAP) is not None:
+        return BACKEND_BWRAP
+    return BACKEND_SUBPROCESS
+
+
 class SandboxExecutor:
     """Ejecutor aislado con deteccion de backend (docker > subprocess).
 
@@ -201,11 +402,11 @@ class SandboxExecutor:
             image: Imagen del contenedor efimero (solo backend docker).
         """
         self._image = image
-        self._backend = "docker" if shutil.which("docker") is not None else "subprocess"
+        self._backend = _detect_backend()
 
     @property
     def backend(self) -> str:
-        """Backend activo ("docker" o "subprocess")."""
+        """Backend activo (`docker`, `windows-jobobject`, `bwrap` o `subprocess`)."""
         return self._backend
 
     def run(
@@ -260,7 +461,7 @@ class SandboxExecutor:
         script = Path(script_path)
         self._validate_request([str(script)], timeout_s)
         parent = script.parent
-        if self._backend == "docker":
+        if self._backend == BACKEND_DOCKER:
             cmd = [PYTHON_IN_CONTAINER, f"{SANDBOX_WORKDIR}/{script.name}"]
             return self._execute(
                 cmd, timeout_s, env or {}, parent, image or self._image
@@ -312,9 +513,225 @@ class SandboxExecutor:
         Returns:
             SandboxResult del backend ejecutado.
         """
-        if self._backend == "docker":
+        if self._backend == BACKEND_DOCKER:
             return self._run_docker(cmd, timeout_s, env, workdir, image or self._image)
+        if self._backend == BACKEND_JOB_OBJECT:
+            return self._run_windows_jobobject(cmd, timeout_s, env, workdir)
+        if self._backend == BACKEND_BWRAP:
+            return self._run_bwrap(cmd, timeout_s, env, workdir)
         return self._run_subprocess(cmd, timeout_s, env, workdir)
+
+    def _run_windows_jobobject(
+        self,
+        cmd: list[str],
+        timeout_s: float,
+        env: dict[str, str] | None,
+        workdir: Path | None = None,
+    ) -> SandboxResult:
+        """Ejecuta el hijo dentro de un Windows Job Object (portable, sin Docker).
+
+        Crea un Job Object, fija `JOBOBJECT_EXTENDED_LIMIT_INFORMATION` (kill
+        on close, limite de procesos y memoria), lanza el hijo con env limpio y
+        lo asigna al job. Al cerrar el handle del job, `KILL_ON_JOB_CLOSE` mata
+        todo el arbol de procesos. NO aísla filesystem ni red. Si el Job Object
+        no se puede crear/fijar/asignar (p. ej. el proceso ya vive en un job sin
+        breakaway), degrada a `_run_subprocess` con `logger.warning` (nunca
+        crashea).
+
+        Args:
+            cmd: Comando y argumentos.
+            timeout_s: Timeout en segundos (> 0).
+            env: Variables inyectadas en runtime (nunca al contexto).
+            workdir: Directorio de trabajo del hijo (opcional).
+
+        Returns:
+            SandboxResult (timeout -> returncode 124, sin lanzar).
+        """
+        import ctypes
+
+        kernel32 = _load_kernel32()
+        if kernel32 is None:
+            logger.warning(
+                "sandbox_executor: Kernel32 sin Job Object; degrada a subprocess"
+            )
+            return self._run_subprocess(cmd, timeout_s, env, workdir)
+
+        _configure_kernel32(kernel32)
+        structs = _jobobject_structs()
+        job = kernel32.CreateJobObjectW(None, None)
+        if not job:
+            logger.warning(
+                "sandbox_executor: CreateJobObjectW fallo (errno=%s); degrada a subprocess",
+                ctypes.get_last_error() if os.name == "nt" else "n/a",
+            )
+            return self._run_subprocess(cmd, timeout_s, env, workdir)
+
+        try:
+            self._apply_job_limits(kernel32, ctypes, structs, job)
+            proc = self._spawn_job_child(cmd, env, workdir)
+            if not kernel32.AssignProcessToJobObject(job, proc._handle):
+                logger.warning(
+                    "sandbox_executor: AssignProcessToJobObject fallo; "
+                    "degrada a subprocess"
+                )
+                proc.kill()
+                proc.communicate()
+                return self._run_subprocess(cmd, timeout_s, env, workdir)
+            return self._collect_job_result(proc, timeout_s)
+        finally:
+            kernel32.CloseHandle(job)
+
+    @staticmethod
+    def _apply_job_limits(
+        kernel32: object,
+        ctypes_module: object,
+        structs: dict[str, type],
+        job: object,
+    ) -> None:
+        """Fija los limites extendidos del Job Object (best-effort, no aborta).
+
+        Args:
+            kernel32: DLL kernel32 (o fake compatible).
+            ctypes_module: Modulo `ctypes` (inyectado para monkeypatch/test).
+            structs: Structs del Job Object (`EXTENDED_LIMIT`).
+            job: Handle del Job Object.
+        """
+        extended = structs["EXTENDED_LIMIT"]()
+        extended.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_FLAGS
+        extended.BasicLimitInformation.ActiveProcessLimit = JOB_OBJECT_ACTIVE_PROCESS
+        extended.JobMemoryLimit = JOB_OBJECT_MEMORY_BYTES
+        ok = kernel32.SetInformationJobObject(
+            job,
+            JOB_OBJECT_EXTENDED_LIMIT_INFORMATION,
+            ctypes_module.byref(extended),
+            ctypes_module.sizeof(extended),
+        )
+        if not ok:
+            logger.warning(
+                "sandbox_executor: SetInformationJobObject fallo (errno=%s)",
+                ctypes_module.get_last_error() if os.name == "nt" else "n/a",
+            )
+
+    @staticmethod
+    def _spawn_job_child(
+        cmd: list[str], env: dict[str, str] | None, workdir: Path | None
+    ) -> subprocess.Popen:
+        """Lanza el hijo sin ventana de consola, env limpio y cwd acotado.
+
+        Args:
+            cmd: Comando y argumentos.
+            env: Variables extra inyectadas (allowlist + estas).
+            workdir: Directorio de trabajo (opcional).
+
+        Returns:
+            Proceso hijo (`subprocess.Popen`) pendiente de asignar al job.
+        """
+        return subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=_build_safe_env(env),
+            cwd=str(workdir) if workdir is not None else None,
+            creationflags=CREATE_NO_WINDOW,
+        )
+
+    @staticmethod
+    def _collect_job_result(
+        proc: subprocess.Popen, timeout_s: float
+    ) -> SandboxResult:
+        """Espera al hijo del job y normaliza el resultado (timeout -> 124).
+
+        Args:
+            proc: Proceso hijo ya asignado al job.
+            timeout_s: Timeout en segundos.
+
+        Returns:
+            SandboxResult con backend `windows-jobobject`.
+        """
+        try:
+            stdout, stderr = proc.communicate(timeout=timeout_s)
+        except subprocess.TimeoutExpired:
+            logger.warning(
+                "sandbox_executor: timeout jobobject tras %.0fs", timeout_s
+            )
+            proc.kill()
+            proc.communicate()
+            return SandboxResult(
+                stdout="",
+                stderr=f"timeout tras {timeout_s}s",
+                returncode=124,
+                backend=BACKEND_JOB_OBJECT,
+            )
+        return SandboxResult(
+            stdout=stdout or "",
+            stderr=stderr or "",
+            returncode=proc.returncode,
+            backend=BACKEND_JOB_OBJECT,
+        )
+
+    def _run_bwrap(
+        self,
+        cmd: list[str],
+        timeout_s: float,
+        env: dict[str, str] | None,
+        workdir: Path | None = None,
+    ) -> SandboxResult:
+        """Ejecuta con bubblewrap (namespaces) en Linux; fallback si falta workdir.
+
+        Args:
+            cmd: Comando y argumentos.
+            timeout_s: Timeout en segundos.
+            env: Variables inyectadas en runtime.
+            workdir: Directorio a montar read-only y usar como cwd; si es
+                `None` no hay raiz que aislar y se degrada a `_run_subprocess`.
+
+        Returns:
+            SandboxResult con backend `bwrap` (timeout -> returncode 124).
+        """
+        if workdir is None:
+            logger.warning(
+                "sandbox_executor: backend bwrap requiere workdir; "
+                "degrada a subprocess"
+            )
+            return self._run_subprocess(cmd, timeout_s, env, workdir)
+        parent = str(workdir)
+        bwrap_cmd = [
+            BACKEND_BWRAP,
+            "--unshare-all",
+            "--die-with-parent",
+            "--new-session",
+            "--ro-bind", parent, parent,
+            "--proc", "/proc",
+            "--dev", "/dev",
+            "--tmpfs", "/tmp",
+            "--chdir", parent,
+            "--",
+            *cmd,
+        ]
+        try:
+            proc = subprocess.run(
+                bwrap_cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout_s,
+                check=False,
+                env=_build_safe_env(env),
+            )
+            return SandboxResult(
+                stdout=proc.stdout or "",
+                stderr=proc.stderr or "",
+                returncode=proc.returncode,
+                backend=BACKEND_BWRAP,
+            )
+        except subprocess.TimeoutExpired:
+            logger.warning("sandbox_executor: timeout bwrap tras %.0fs", timeout_s)
+            return SandboxResult(
+                stdout="",
+                stderr=f"timeout tras {timeout_s}s",
+                returncode=124,
+                backend=BACKEND_BWRAP,
+            )
 
     def _run_subprocess(
         self,

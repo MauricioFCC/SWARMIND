@@ -20,6 +20,7 @@ from harness.memory_rag.turbovec_adapter import (
     is_available as turbovec_available,
 )
 from harness.orchestrator.structured_enforcer import action_first_instruction
+from harness.validation import sandbox_executor
 from harness.validation.sandbox_executor import (
     SandboxExecutor,
     SandboxResult,
@@ -88,10 +89,11 @@ def test_action_first_instruction_format() -> None:
 
 
 def test_sandbox_fallback_without_docker(monkeypatch) -> None:
-    """Sin docker usa subprocess aislado (nunca crashea el harness)."""
+    """Sin docker ni Job Object usa subprocess aislado (nunca crashea)."""
     import shutil
 
     monkeypatch.setattr(shutil, "which", lambda _: None)
+    monkeypatch.setattr(sandbox_executor, "_load_kernel32", lambda: None)
     ex = SandboxExecutor()
     assert ex.backend == "subprocess"
     out = ex.run(["python", "-c", "print(41+1)"])
