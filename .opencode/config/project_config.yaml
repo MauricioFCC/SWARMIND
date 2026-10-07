@@ -84,7 +84,6 @@ HARNESS:
   gateway_modes: ["cli"]
   scheduler_enabled: true
   evolve_loop_enabled: true
-  hermes_bridge_enabled: false
   self_healing:
     circuit_breaker: true
     timeout_seconds: 300

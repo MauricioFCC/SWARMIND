@@ -312,30 +312,6 @@ def _handle_watch_mode(harness_root: Path) -> None:
         _rc._safe_print(f"\n  {_rc._cyan('[WATCH]')} Watch mode detenido.")
 
 
-# ── Hermes commands ────────────────────────────────────────────────
-
-
-def _handle_hermes(cmd: str) -> None:
-    """Handle !hermes sync and !hermes stats."""
-    from harness.memory_rag.hermes_bridge import HermesBridge
-
-    sub = cmd[len("!hermes"):].strip()
-    if sub == "sync":
-        bridge = HermesBridge()
-        result = bridge.sync_all()
-        _rc.logger.info("[Hermes] Sync complete: %s", result)
-    elif sub == "stats":
-        bridge = HermesBridge()
-        stats = bridge.get_stats()
-        _rc.logger.info("[Hermes] Bridge stats: %s", stats)
-    elif sub in ("", "help"):
-        _rc.logger.info("[Hermes] Commands:")
-        _rc.logger.info("  !hermes sync    - Bidirectional sync Swarmind <-> shared_memory")
-        _rc.logger.info("  !hermes stats   - Show bridge statistics")
-    else:
-        _rc.logger.info("[Hermes] Unknown subcommand: '%s'. Try '!hermes sync' or '!hermes stats'.", sub)
-
-
 # ── Guardrails helper ──────────────────────────────────────────────
 
 
@@ -378,7 +354,6 @@ __all__ = [
     "_check_hitl",
     "_get_files_to_watch",
     "_handle_evolve_mutate",
-    "_handle_hermes",
     "_handle_hooks_status",
     "_handle_schedule_add",
     "_handle_schedule_list",
@@ -391,7 +366,6 @@ __all__ = [
     "_check_hitl",
     "_get_files_to_watch",
     "_handle_evolve_mutate",
-    "_handle_hermes",
     "_handle_hooks_status",
     "_handle_schedule_add",
     "_handle_schedule_list",

@@ -51,7 +51,6 @@ harness/db/_archived/
 harness/db/import/
 harness/db/iteration_reports/
 harness/db/failures.jsonl
-99_Hermes_Brain/lancedb_data/
 memory_rag/*.db
 
 # Environment
@@ -81,7 +80,6 @@ desktop.ini
 *.log
 outputs/
 logs/
-99_Hermes_Brain/logs/
 
 # Coverage
 .coverage

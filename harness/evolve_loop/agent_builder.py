@@ -1,4 +1,4 @@
-"""Hermes Agent Builder — Construye agentes que funcionan, elimina el resto.
+"""Agent Builder — Construye agentes que funcionan, elimina el resto.
 
 Observa la cognition store (asi_cognition_store) buscando patrones de tareas
 exitosas. Cuando un tipo de tarea se repite N veces con alta puntuacion,
@@ -170,7 +170,7 @@ def _render_profile(
     capabilities_block = "".join(f"- {cap}\n" for cap in capabilities)
     triggers_block = "".join(f"- {trig}\n" for trig in triggers[:5])
     footer = (
-        f"*Generado por Hermes AgentBuilder el "
+        f"*Generado por AgentBuilder el "
         f"{datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}*\n"
     )
     return (

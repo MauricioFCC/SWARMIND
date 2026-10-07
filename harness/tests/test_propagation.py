@@ -1,5 +1,5 @@
 """
-Tests de propagacion — verifican que los 5 proyectos tengan configuracion correcta.
+Tests de propagacion — verifican que los 4 proyectos tengan configuracion correcta.
 
 Cubre:
 - routing_rules.yaml sin agentes fantasma
@@ -45,7 +45,6 @@ PROJECTS: dict[str, Path] = {
     "HealthApp": _project_root("HEALTHAPP_ROOT", "Documents", "projects", "health-app"),
     "TradeBot": _project_root("TRADEBOT_ROOT", "Documents", "projects", "trade-bot"),
     "RetailApp": _project_root("RETAILAPP_ROOT", "Documents", "projects", "retail-app"),
-    "Hermes": _project_root("HERMES_ROOT", "Documents", "shared_memory"),
 }
 
 # Agentes fantasma que NO deben aparecer en routing_rules.yaml
@@ -76,7 +75,6 @@ EXPECTED_SKILLS: dict[str, list[str]] = {
     "HealthApp": ["evolve", "healthtech", "hedgefund", "legal-doc", "science-doc"],
     "TradeBot": ["alpha-research", "evolve", "hedgefund", "math-doc", "quant-trading", "risk-execution", "science-doc"],
     "RetailApp": ["evolve", "hedgefund", "legal-doc", "pos-retail"],
-    "Hermes": ["evolve", "healthtech", "hedgefund", "legal-doc", "math-doc", "pos-retail", "quant-trading", "risk-execution", "science-doc"],
 }
 
 
@@ -171,14 +169,3 @@ class TestTestFiles:
         tests_dir = PROJECTS[name] / "harness" / "tests"
         test_files = list(tests_dir.glob("test_*.py"))
         assert len(test_files) >= 40, f"{name} tiene solo {len(test_files)} tests"
-
-
-@pytest.mark.skip(reason="Requiere el proyecto Hermes desplegado")
-class TestHermesSpecific:
-    """Tests especificos para Hermes (memoria central)."""
-
-    def test_hermes_has_max_skills(self) -> None:
-        """Hermes debe tener la mayor cantidad de skills (9)."""
-        skills_dir = PROJECTS["Hermes"] / ".opencode" / "skills"
-        count = sum(1 for _ in skills_dir.iterdir() if _.is_dir())
-        assert count >= 8, f"Hermes solo tiene {count} skills"

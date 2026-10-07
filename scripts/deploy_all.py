@@ -274,11 +274,6 @@ _DEV_SPACE = Path(os.environ.get(
     "DEV_SPACE_ROOT",
     str(_LOCAL_CONFIG.get("dev_space_root") or (Path.home() / "projects")),
 ))
-_HERMES_PATH = Path(
-    os.environ.get("MEMORY_ROOT")
-    or str(_LOCAL_CONFIG.get("hermes_path") or "")
-    or str(Path.home() / "Memory_Proyects")
-)
 _GLOBAL = Path(os.environ.get(
     "OPENCODE_GLOBAL_DIR",
     str(Path.home() / ".config" / "opencode"),
@@ -850,16 +845,6 @@ python harness/run.py '!health'
 
 ---
 
-## 🔗 Memoria Federada
-
-Comparte conocimiento entre proyectos mediante la memoria central:
-
-```bash
-python scripts/agentic_bridge_sync.py
-```
-
----
-
 *Generado por Swarmind Harness — {datetime.now(UTC).strftime('%Y-%m-%d')}*
 """
     if not dry_run:
@@ -985,87 +970,6 @@ def deploy_project(
 
 
 # ---------------------------------------------------------------------------
-# Memoria principal (Hermes)
-# ---------------------------------------------------------------------------
-
-
-def sync_hermes_memory(dry_run: bool = False) -> dict:
-    """Actualiza la memoria principal Hermes_Memory_Proyects.
-
-    Estándar v2.5: sincroniza .opencode/ preservando la estructura de
-    memoria propia (knowledge/, 99_Hermes_Brain/, sessions/). harness/ NO se
-    copia (vive en opencode global).
-
-    Args:
-        dry_run: Si True, solo simula.
-
-    Returns:
-        Dict con estadísticas del sync.
-    """
-    if not _LOCAL_CONFIG.get("hermes_enabled", False):
-        logger.info("  ⏭️  Hermes deshabilitado (hermes_enabled != true): sync omitido")
-        return {"name": "Hermes", "status": "skipped", "reason": "hermes_disabled"}
-    hermes = Project(
-        name=_HERMES_PATH.name,
-        path=_HERMES_PATH,
-        ptype="general",
-        description="Repositorio central de memoria y conocimiento multi-proyecto",
-    )
-    if not hermes.path.exists():
-        logger.warning("  ❌ Hermes memory not found: %s", hermes.path)
-        return {"name": "Hermes", "status": "skipped", "reason": "path_not_found"}
-
-    logger.info("")
-    logger.info("=" * 60)
-    logger.info("🧠 HERMES MEMORY: %s", hermes.path)
-    logger.info("=" * 60)
-
-    # Memoria propia de Hermes que NUNCA se toca
-    hermes_preserve = {
-        "knowledge", "syntheses", "99_Hermes_Brain", "personal",
-        "sessions", "projects", "inbox", "templates", "infra", "quality",
-        "core", "scripts", "memory_rag",
-    }
-
-    saved_files: dict[str, bytes] = {}
-    if not dry_run:
-        # SEGURIDAD: solo ".env.example"; nunca el ".env" real con secretos
-        # (CWE-522). El sync de .opencode/ no toca el .env de la raiz.
-        for rel in [".opencode/skills/skills_registry.yaml", ".env.example"]:
-            path = hermes.path / rel
-            if path.is_file():
-                saved_files[rel] = path.read_bytes()
-
-    # Sync .opencode/ preservando skills_registry (restaurado después)
-    opencode_count = _sync_tree(_ROOT / ".opencode", hermes.path / ".opencode", dry_run)
-    opencode_count += _seed_node_modules(hermes.path / ".opencode", dry_run)
-
-    # harness/ NO se copia a Hermes (estándar v2.5: vive en opencode global)
-    logger.info("📁 harness/ — SKIPPED (una sola copia en opencode global, estandar v2.5)")
-    harness_count = 0
-
-    if not dry_run:
-        for rel, data in saved_files.items():
-            path = hermes.path / rel
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(data)
-        for name in hermes_preserve:
-            (hermes.path / name).mkdir(parents=True, exist_ok=True)
-
-    logger.info("  ✅ .opencode/: %d archivos", opencode_count)
-    logger.info("  ✅ harness/: SKIPPED (solo en opencode global)")
-    logger.info("  ✅ Memoria propia preservada (%d dirs)", len(hermes_preserve))
-    return {
-        "name": "Hermes",
-        "type": "memory",
-        "opencode_files": opencode_count,
-        "harness_files": harness_count,
-        "skills_deployed": 0,
-        "status": "ok",
-    }
-
-
-# ---------------------------------------------------------------------------
 # Sync harness al global opencode (estándar v2.5)
 # ---------------------------------------------------------------------------
 
@@ -1110,7 +1014,6 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="Solo simular (no escribe)")
     parser.add_argument("--project", "-p", type=str, help="Solo un proyecto (alias o nombre)")
     parser.add_argument("--sync-only", action="store_true", help="Solo sync, no regenerar README")
-    parser.add_argument("--skip-hermes", action="store_true", help="No sincronizar memoria Hermes")
     parser.add_argument("--force-mirror", action="store_true",
                         help="Ignora la politica y aplica mirror a todos (escape hatch)")
     parser.add_argument("--sync-global", action="store_true",
@@ -1164,9 +1067,6 @@ def main() -> None:
                 project, dry_run=args.dry_run, sync_only=args.sync_only,
                 force_mirror=args.force_mirror,
             ))
-
-    if not args.skip_hermes:
-        all_stats.append(sync_hermes_memory(dry_run=args.dry_run))
 
     # Summary
     logger.info("")

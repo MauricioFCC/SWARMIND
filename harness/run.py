@@ -97,7 +97,6 @@ from harness.run_commands import (
     _handle_db_rollback,
     _handle_db_stats,
     _handle_evolve_mutate,
-    _handle_hermes,
     _handle_hooks_install,
     _handle_hooks_status,
     _handle_hooks_uninstall,
@@ -209,8 +208,6 @@ def _handle_command(cmd: str) -> None:
         pruner = AgentPruner()
         pruned = pruner.prune_underperforming(dry_run=dry_run)
         logger.info("[AgentPrune] Removed: %s", pruned)
-    elif cmd.startswith("!hermes"):
-        _handle_hermes(cmd)
     else:
         logger.info("[Harness] Comando desconocido: %s", cmd)
 

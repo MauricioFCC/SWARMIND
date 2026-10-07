@@ -23,7 +23,8 @@ SEGURIDAD:
   - Nunca borra la db de producción.
   - Los backups viven en <MEMORY_ROOT>/backups/lancedb_<timestamp>.
   - Rotación automática: conserva solo los `backup_keep` más recientes.
-  - Backup es copia completa (no incremental) — simple y confiable.
+  - Backup = colecciones NO volatiles (excluye `semantic_cache` y
+    `agent_workspace_logs`: cache/logs regenerables que sumaban ~9.8 GB).
 
 Uso:
     python scripts/backup_memory.py                 # Backup (respeta intervalo)
@@ -61,6 +62,19 @@ _MEMORY_ROOT = Path(os.environ.get(
 _CONFIG_FILE = _MEMORY_ROOT / ".swarmind_config.json"
 _DB_DIR = _MEMORY_ROOT / "data" / "lancedb"
 _BACKUP_ROOT = _MEMORY_ROOT / "backups"
+
+#: Colecciones VOLATILES excluidas del backup (cache/logs regenerables).
+#: Dominan el tamano (semantic_cache ~5 GB + agent_workspace_logs ~4.6 GB) y no
+#: aportan valor restaurable: copiarlas hacia el backup lento y gigante (~9.8 GB).
+_BACKUP_EXCLUDE_COLLECTIONS: frozenset[str] = frozenset({
+    "semantic_cache",
+    "agent_workspace_logs",
+})
+
+#: Patron de exclusion derivado para ``shutil.ignore_patterns``.
+_BACKUP_IGNORE_PATTERNS: tuple[str, ...] = tuple(
+    f"{name}.lance" for name in sorted(_BACKUP_EXCLUDE_COLLECTIONS)
+)
 
 _DEFAULTS = {
     "memory_root": str(_MEMORY_ROOT),
@@ -172,13 +186,17 @@ def _do_backup(force: bool = False, dry_run: bool = False) -> bool:
             )
             return False
 
-    # Crear backup
+    # Crear backup (excluyendo colecciones volatiles: cache/logs regenerables)
     ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     backup_dir = _BACKUP_ROOT / f"lancedb_{ts}"
     if not dry_run:
         backup_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(_DB_DIR, backup_dir / "lancedb", dirs_exist_ok=True)
+        shutil.copytree(
+            _DB_DIR, backup_dir / "lancedb", dirs_exist_ok=True,
+            ignore=shutil.ignore_patterns(*_BACKUP_IGNORE_PATTERNS),
+        )
     logger.info("  🛡️  Backup creado: %s %s", backup_dir, "(simulado)" if dry_run else "")
+    logger.info("      Excluidas (volatiles): %s", ", ".join(sorted(_BACKUP_EXCLUDE_COLLECTIONS)))
 
     # Rotación
     keep = config.get("backup_keep", 5)

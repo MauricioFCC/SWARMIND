@@ -101,13 +101,6 @@ def context_assembler(vector_store):
 
 
 @pytest.fixture
-def hermes_bridge():
-    """HermesBridge."""
-    from harness.memory_rag.hermes_bridge import HermesBridge
-    return HermesBridge()
-
-
-@pytest.fixture
 def cognition_sync(vector_store):
     """CognitionSync."""
     from harness.evolve_loop.cognition_sync import CognitionSync

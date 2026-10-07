@@ -2,8 +2,8 @@
 Memory Configuration — configuración modular del sistema de memoria.
 
 Permite:
-  - Configurar rutas de LanceDB y shared_memory
-  - Cambiar backend (LanceDB / memoria / Hermes)
+  - Configurar rutas de LanceDB y de la memoria central
+  - Cambiar backend (LanceDB / memoria)
   - Ajustar dimensiones de embedding
   - Activar/desactivar colecciones de telemetría y KPIs
 
@@ -13,12 +13,11 @@ Uso:
     # Default: usa LanceDB en harness/db/lancedb/
     config = MemoryConfig()
     
-    # Custom: apunta a shared_memory (rutas portables via MEMORY_ROOT/
-    # LANCEDB_PATH/HERMES_PATH o el .swarmind_config.json de la memoria central)
+    # Custom: apunta a la memoria central (rutas portables via MEMORY_ROOT/
+    # LANCEDB_PATH o el .swarmind_config.json de la memoria central)
     config = MemoryConfig(
         backend="lancedb",
         lancedb_path="<ruta-a-lancedb>",
-        hermes_path="<ruta-a-shared-memory>",
     )
     
     # Modo memoria (sin persistencia)
@@ -42,11 +41,10 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 # Rutas canonicas por convencion (SIEMPRE overrideables via env:
-# MEMORY_ROOT / LANCEDB_PATH / HERMES_PATH). No son hardcode de produccion:
+# MEMORY_ROOT / LANCEDB_PATH). No son hardcode de produccion:
 # son el fallback documentado cuando no hay config explicita.
 _MEMORY_ROOT_ENV = "MEMORY_ROOT"
 _LANCEDB_PATH_ENV = "LANCEDB_PATH"
-_HERMES_PATH_ENV = "HERMES_PATH"
 _DOCUMENTS_DIR = "Documents"
 _DEFAULT_MEMORY_ROOT = "Memory_Proyects"
 
@@ -120,7 +118,6 @@ def _memory_root_from_config() -> str | None:
 class MemoryBackend(str, Enum):
     LANCEDB = "lancedb"          # LanceDB (default, recomendado)
     MEMORY = "memory"            # In-memory (sin persistencia, tests)
-    HERMES = "hermes"            # shared_memory (estructura de carpetas)
 
 
 class TelemetryLevel(str, Enum):
@@ -141,19 +138,16 @@ class MemoryConfig:
     Attributes:
         backend: Backend de almacenamiento.
         lancedb_path: Ruta a la base LanceDB.
-        hermes_path: Ruta raíz de shared_memory.
         embedding_dim: Dimensión de vectores de embedding.
         allow_fallback: Permitir fallback a memoria si LanceDB no está.
         telemetry_level: Nivel de telemetría a registrar.
         kpi_collections: Conjunto de colecciones KPI activas.
         auto_create_collections: Crear colecciones automáticamente al iniciar.
-        enable_hermes_bridge: Sincronizar con shared_memory.
     """
     backend: MemoryBackend = MemoryBackend.LANCEDB
 
     # Rutas
     lancedb_path: str = ""
-    hermes_path: str = ""
 
     # Embeddings
     embedding_dim: int = 384
@@ -162,7 +156,6 @@ class MemoryConfig:
     allow_fallback: bool = False
     telemetry_level: TelemetryLevel = TelemetryLevel.BASIC
     auto_create_collections: bool = True
-    enable_hermes_bridge: bool = False
 
     # Colecciones KPI activas (por defecto todas activas)
     kpi_collections: set[str] = field(default_factory=lambda: {
@@ -190,43 +183,11 @@ class MemoryConfig:
                 base = Path(__file__).resolve().parent.parent  # harness/
                 self.lancedb_path = str(base / "db" / "lancedb")
 
-        # Resolver hermes_path si está configurado (resiliente sin HOME)
-        if not self.hermes_path:
-            # Si la memoria central tiene 99_Hermes_Brain, es el hermes_path
-            if memory_root and (Path(memory_root) / "99_Hermes_Brain").is_dir():
-                self.hermes_path = memory_root
-            elif _HERMES_PATH_ENV in os.environ:
-                candidate = Path(os.environ.get(_HERMES_PATH_ENV, ""))
-                if candidate.exists():
-                    self.hermes_path = str(candidate)
-
-    @property
-    def hermes_brain_path(self) -> str:
-        """Ruta al cerebro de Hermes (LanceDB dentro de Hermes)."""
-        if self.hermes_path:
-            return str(Path(self.hermes_path) / "99_Hermes_Brain" / "lancedb_data")
-        return ""
-
-    @property
-    def hermes_config_path(self) -> str:
-        """Ruta a los configs de Hermes."""
-        if self.hermes_path:
-            return str(Path(self.hermes_path) / "99_Hermes_Brain" / "configs")
-        return ""
-
-    @property
-    def is_hermes_available(self) -> bool:
-        """Checkea si shared_memory está accesible."""
-        if not self.hermes_path or not self.enable_hermes_bridge:
-            return False
-        return Path(self.hermes_path).exists()
-
     def to_dict(self) -> dict:
         d = asdict(self)
         d["kpi_collections"] = list(d["kpi_collections"])
         d["backend"] = self.backend.value
         d["telemetry_level"] = self.telemetry_level.value
-        d["is_hermes_available"] = self.is_hermes_available
         return d
 
     @classmethod
@@ -245,13 +206,11 @@ class MemoryConfig:
         return cls(
             backend=MemoryBackend(os.environ.get("MEMORY_BACKEND", "lancedb")),
             lancedb_path=os.environ.get(_LANCEDB_PATH_ENV, ""),
-            hermes_path=os.environ.get(_HERMES_PATH_ENV, ""),
             embedding_dim=int(os.environ.get("EMBEDDING_DIM", "384")),
             allow_fallback=os.environ.get("MEMORY_FALLBACK", "false").lower() == "true",
             telemetry_level=TelemetryLevel(
                 os.environ.get("TELEMETRY_LEVEL", "basic")
             ),
-            enable_hermes_bridge=os.environ.get("HERMES_BRIDGE", "false").lower() == "true",
         )
 
 
@@ -275,10 +234,9 @@ def set_memory_config(config: MemoryConfig) -> None:
     global _GLOBAL_CONFIG
     _GLOBAL_CONFIG = config
     logger.info(
-        "Memory config updated: backend=%s, lancedb=%s, hermes=%s",
+        "Memory config updated: backend=%s, lancedb=%s",
         config.backend.value,
         config.lancedb_path,
-        config.hermes_path or "not configured",
     )
 
 

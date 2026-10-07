@@ -76,6 +76,12 @@ _CLEANUP_DIRS = [
     "__pycache__",
 ]
 
+#: Colecciones volatiles excluidas del backup (cache/logs regenerables que
+#: suman ~9.8 GB; no aportan valor restaurable).
+_BACKUP_EXCLUDE_COLLECTIONS: frozenset[str] = frozenset({
+    "semantic_cache", "agent_workspace_logs",
+})
+
 
 def _count_lance_collections(db_dir: Path) -> int:
     """Cuenta colecciones .lance válidas en un directorio de db.
@@ -109,7 +115,12 @@ def _backup_db(dry_run: bool = False) -> Path | None:
     backup_dir = _MEMORY_ROOT / "backups" / f"lancedb_{ts}"
     if not dry_run:
         backup_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(db, backup_dir / "lancedb", dirs_exist_ok=True)
+        shutil.copytree(
+            db, backup_dir / "lancedb", dirs_exist_ok=True,
+            ignore=shutil.ignore_patterns(
+                *[f"{name}.lance" for name in sorted(_BACKUP_EXCLUDE_COLLECTIONS)]
+            ),
+        )
     logger.info("  🛡️  Backup creado: %s %s", backup_dir, "(simulado)" if dry_run else "")
     return backup_dir
 

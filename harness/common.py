@@ -71,7 +71,7 @@ def fallback_embedding(text: str, dim: int = EMBEDDING_DIM) -> np.ndarray:
 
     SRC: unifica las 13+ implementaciones identicas en:
         agent_bus.py, scheduler.py, context_assembler.py, semantic_cache.py,
-        hermes_bridge.py, agent_dispatcher.py, embedding_service.py,
+        agent_dispatcher.py, embedding_service.py,
         doc_ingester.py, skill_generator.py, prompt_evolver.py,
         cognition_sync.py, agent_notes.py, etc.
 

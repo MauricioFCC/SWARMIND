@@ -9,7 +9,7 @@ Consolidación asíncrona de memoria inspirada en Anthropic Dreaming (May 2026):
   - Copy-on-write: la consolidación escribe un NUEVO store; el origen no cambia.
   - Idempotencia: consolidate() es puro y determinista.
 
-Diseñado para correr FUERA del path de latencia (script async / sync_hermes).
+Diseñado para correr FUERA del path de latencia (script async / background).
 """
 
 from __future__ import annotations
@@ -197,7 +197,7 @@ class DreamingConsolidator:
         """Normaliza una entrada al contrato interno de DreamingConsolidator.
 
         Acepta tanto el esquema canónico (content, reference_count, age_days,
-        updated_at) como el esquema de sesiones Hermes (description, refs,
+        updated_at) como el esquema de sesiones de memoria (description, refs,
         created_at). Solo rellena campos ausentes — nunca pisa valores
         existentes — por lo que es idempotente.
 
