@@ -27,18 +27,15 @@ QUÉ HACE:
 
 ESTRUCTURA RESULTANTE (Memory_Proyects/):
   Memory_Proyects/
-  ├── knowledge/          # conocimiento por dominio
-  ├── syntheses/          # sintesis de sesiones
-  ├── 99_Hermes_Brain/    # cerebro central
-  ├── personal/           # notas personales
-  ├── projects/           # memoria por proyecto
-  ├── sessions/           # registros de sesiones
-  ├── inbox/              # entradas entrantes
-  ├── exports/            # exportaciones
+  ├── knowledge/          # conocimiento por dominio (destino del bridge Hermes)
+  ├── 99_Hermes_Brain/    # cerebro central (sentinela de hermes_path)
+  ├── sessions/           # registros de sesiones (fuente de Dreaming)
   ├── data/
   │   └── lancedb/        # db central (SE PRESERVA con backup)
-  ├── backups/            # copias de seguridad (timestamp)
-  └── README.md
+  └── backups/            # copias de seguridad (timestamp)
+
+  (syntheses/, personal/, projects/, inbox/, exports/ se eliminaron: eran
+  planned-but-unused y se recreaban en cada sync sin que ningun modulo las use.)
 
 Uso:
     python scripts/setup_memory_central.py --dry-run          # Ver plan
@@ -66,11 +63,13 @@ _MEMORY_ROOT = Path(os.environ.get(
     str(Path.home() / "Documents" / "Memory_Proyects"),
 ))
 
-# Directorios de memoria (se construyen siempre, preservando contenido)
+# Directorios de memoria REALMENTE usados (se construyen, preservando contenido).
+# NOTA: `syntheses`, `personal`, `projects`, `inbox` y `exports` se declaraban
+# aqui pero NINGUN modulo los lee/escribe (planned-but-unused); crearlos en cada
+# `sync_opencode_global` los hacia "reaparecer" tras borrarlos. Se excluyen.
 _MEMORY_DIRS = [
-    "knowledge", "syntheses", "99_Hermes_Brain", "personal",
-    "projects", "sessions", "inbox", "exports", "data",
-    "data/lancedb", "backups",
+    "knowledge", "99_Hermes_Brain", "sessions",
+    "data", "data/lancedb", "backups",
 ]
 
 # Directorios que NO corresponden en una carpeta de memoria pura

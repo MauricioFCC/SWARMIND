@@ -993,8 +993,8 @@ def sync_hermes_memory(dry_run: bool = False) -> dict:
     """Actualiza la memoria principal Hermes_Memory_Proyects.
 
     Estándar v2.5: sincroniza .opencode/ preservando la estructura de
-    memoria propia (knowledge/, syntheses/, 99_Hermes_Brain/, personal/,
-    sessions/). harness/ NO se copia (vive en opencode global).
+    memoria propia (knowledge/, 99_Hermes_Brain/, sessions/). harness/ NO se
+    copia (vive en opencode global).
 
     Args:
         dry_run: Si True, solo simula.

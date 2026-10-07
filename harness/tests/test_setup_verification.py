@@ -116,6 +116,14 @@ def test_ensure_memory_structure_crea_estructura_completa(tmp_path: Path) -> Non
     assert result["root"] == tmp_path
 
 
+def test_ensure_memory_structure_no_crea_dirs_planned_unused(tmp_path: Path) -> None:
+    """No recrea carpetas planned-but-unused (evita que 'reaparezcan' al borrarlas)."""
+    setup_memory_central.ensure_memory_structure(memory_root=tmp_path)
+
+    for rel in ("syntheses", "personal", "projects", "inbox", "exports"):
+        assert not (tmp_path / rel).exists(), f"No debe recrear {rel} (unused)"
+
+
 def test_ensure_memory_structure_idempotente(tmp_path: Path) -> None:
     """Segunda llamada no crea nada nuevo (no destructivo, preserva db)."""
     setup_memory_central.ensure_memory_structure(memory_root=tmp_path)
