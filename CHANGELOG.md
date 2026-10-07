@@ -2,6 +2,16 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-10-07] Calibración probabilística + fingerprint de opciones (Misellium→Swarmind)
+
+### Nuevos módulos
+- **`harness/evals/calibration.py`** — calibración de confianza: `calibrate(outcomes) -> CalibrationReport` con **Brier**, **ECE**, **MCE**, `hit_rate` y bins. Bineado **equal-mass por defecto** (frontera 2026: los LLM se concentran en confianzas altas y el ancho fijo sesga el ECE); `equal_width` opcional. `is_well_calibrated` (Brier ≤0.20 ∧ ECE ≤0.10).
+- **`harness/model_router/options_fingerprint.py`** — `options_fingerprint(GenerationOptions) -> sha256` (clave de cache/invalidación), `deterministic_options` (temp 0 + seed 42) y `should_be_deterministic` (json/tool_call/structured).
+
+### Tests
+- `test_calibration.py` (12) + `test_options_fingerprint.py` (7): forecast perfecto, sobreconfianza, ECE a mano, validaciones, equal-mass/width, estabilidad y sensibilidad del hash.
+- Origen: análisis de `Misellium-Edge-AI/docs` (research-swarmind-harness/quality/frontier) + investigación frontera 2026.
+
 ## [2026-10-05] FND Foundation-First (principio universal) + spec de doctrina
 
 ### Principios
