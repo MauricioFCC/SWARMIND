@@ -110,15 +110,14 @@ class _LayerExecutorMixin:
                 output=response if self._config.verbose_trace else None,
                 retries=1 if retry else 0,
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             latency = (time.perf_counter() - start) * 1000
             error_msg = f"Error en LLM call: {exc}"
-            logger.error(
+            logger.exception(
                 "[AIFactory] %s | model=%s WHAT=LLM call failed "
-                "WHY=%s WHERE=_execute_llm",
+                "WHERE=_execute_llm",
                 error_msg,
                 model,
-                exc,
             )
             return LayerTrace(
                 layer_name=f"LLM:{model}",
@@ -152,15 +151,14 @@ class _LayerExecutorMixin:
                 input=query if self._config.verbose_trace else None,
                 output=output_data,
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             latency = (time.perf_counter() - start) * 1000
             error_msg = f"Error en RAG retrieval: {exc}"
-            logger.error(
+            logger.exception(
                 "[AIFactory] %s | query=%s WHAT=RAG retrieval failed "
-                "WHY=%s WHERE=_execute_rag",
+                "WHERE=_execute_rag",
                 error_msg,
                 query[:60],
-                exc,
             )
             return LayerTrace(
                 layer_name="RAG:VectorDB",
@@ -193,15 +191,14 @@ class _LayerExecutorMixin:
                 input=task if self._config.verbose_trace else None,
                 output=result if self._config.verbose_trace else None,
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             latency = (time.perf_counter() - start) * 1000
             error_msg = f"Error en Agent execution: {exc}"
-            logger.error(
+            logger.exception(
                 "[AIFactory] %s | task=%s WHAT=Agent execution failed "
-                "WHY=%s WHERE=_execute_agent",
+                "WHERE=_execute_agent",
                 error_msg,
                 task[:60],
-                exc,
             )
             return LayerTrace(
                 layer_name="Agent:ReAct",
@@ -239,15 +236,14 @@ class _LayerExecutorMixin:
                 input=context if self._config.verbose_trace else None,
                 output=output_str if self._config.verbose_trace else None,
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             latency = (time.perf_counter() - start) * 1000
             error_msg = f"Error en MCP call '{tool_name}': {exc}"
-            logger.error(
+            logger.exception(
                 "[AIFactory] %s | tool=%s WHAT=MCP call failed "
-                "WHY=%s WHERE=_execute_mcp",
+                "WHERE=_execute_mcp",
                 error_msg,
                 tool_name,
-                exc,
             )
             return LayerTrace(
                 layer_name=f"MCP:{tool_name}",
@@ -285,14 +281,13 @@ class _LayerExecutorMixin:
                 ),
             )
             return trace, report
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             latency = (time.perf_counter() - start) * 1000
             error_msg = f"Error en Evals: {exc}"
-            logger.error(
+            logger.exception(
                 "[AIFactory] %s WHAT=Evals execution failed "
-                "WHY=%s WHERE=_execute_evals",
+                "WHERE=_execute_evals",
                 error_msg,
-                exc,
             )
             return LayerTrace(
                 layer_name="Evals:Continuous",

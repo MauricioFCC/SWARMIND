@@ -69,8 +69,13 @@ class _PersistenceMixin:
                 try:
                     strategy = PlanStrategy(s_value)
                     self._best_strategies[key] = (strategy, confidence)
-                except ValueError:
-                    pass
+                except ValueError as exc:
+                    logger.warning(
+                        "WHAT=estrategia persistida descartada '%s' WHY=valor no "
+                        "reconocido por PlanStrategy (%s) WHERE=_PersistenceMixin._load",
+                        s_value,
+                        exc,
+                    )
 
         except (json.JSONDecodeError, OSError) as e:
             logger.warning("AdaptivePlanner: error loading stats: %s", e)

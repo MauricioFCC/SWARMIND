@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 import time
 from collections.abc import Callable
 from typing import Any
@@ -24,6 +25,8 @@ from harness.orchestrator.structured_log import StructuredLogRecord
 from harness.orchestrator.task_planner import TaskPlanner
 
 from .broadcasting import _BroadcastingMixin
+
+logger = logging.getLogger(__name__)
 
 
 class TaskOrchestrator(_BroadcastingMixin):
@@ -287,8 +290,12 @@ class TaskOrchestrator(_BroadcastingMixin):
                 self._shaped_cache._threshold = max(0.80, ct - 0.02)
             elif hr < 0.5:
                 self._shaped_cache._threshold = min(0.95, ct + 0.02)
-        except (TypeError, ValueError, AttributeError):
-            pass
+        except (TypeError, ValueError, AttributeError) as exc:
+            logger.warning(
+                "WHAT=no se pudo ajustar el threshold del ShapedCache "
+                "WHY=atributos no numericos (%s) WHERE=TaskOrchestrator._check_cache",
+                exc,
+            )
         return None
 
     def _dedup(self, message: str) -> OrchestratorResult | None:

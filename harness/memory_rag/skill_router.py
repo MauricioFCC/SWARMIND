@@ -18,6 +18,8 @@ from typing import Any
 
 import numpy as np
 
+from harness.common import fallback_embedding
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -68,9 +70,15 @@ class SkillRouter:
         self._build_skill_vectors()
 
     def _default_embedding(self, text: str) -> np.ndarray:
-        """Fallback embedding: hash-based determinista (no requiere API)."""
-        np.random.seed(hash(text) % (2**31))
-        return np.random.randn(384).astype(np.float32)
+        """Fallback embedding: delega en ``harness.common.fallback_embedding``.
+
+        Args:
+            text: Texto a embedder.
+
+        Returns:
+            Vector normalizado de dimension 384.
+        """
+        return fallback_embedding(text)
 
     def _build_skill_vectors(self) -> None:
         """Pre-computa vectores para cada skill."""

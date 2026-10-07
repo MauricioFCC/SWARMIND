@@ -14,6 +14,7 @@ from typing import Any
 
 import numpy as np
 
+from harness.common import fallback_embedding
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 
 logger = logging.getLogger(__name__)
@@ -321,18 +322,12 @@ class CognitionSync:
 
     @staticmethod
     def _default_embedding(text: str) -> np.ndarray:
-        """
-        Fallback embedding: character-level frequency vector.
+        """Fallback embedding: delega en ``harness.common.fallback_embedding``.
 
-        Produces a fixed-size normalised vector from printable-ASCII
-        character counts.  Not semantically meaningful but keeps the
-        system functional without an external embedding model.
+        Args:
+            text: Texto a embedder.
+
+        Returns:
+            Vector normalizado de dimension 384 (``_EMBEDDING_DIM``).
         """
-        vec = np.zeros(_EMBEDDING_DIM, dtype=np.float32)
-        for i, ch in enumerate(text.encode("utf-8", errors="replace")):
-            idx = (i * 7 + ch) % _EMBEDDING_DIM
-            vec[idx] += 1.0
-        norm = np.linalg.norm(vec)
-        if norm > 0:
-            vec /= norm
-        return vec
+        return fallback_embedding(text, dim=_EMBEDDING_DIM)

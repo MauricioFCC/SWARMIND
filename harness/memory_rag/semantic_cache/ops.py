@@ -10,10 +10,9 @@ import hashlib
 import json
 import logging
 from datetime import UTC, datetime
+from typing import Any
 
-import numpy as np
-
-from harness.common import EMPTY_VECTOR
+from harness.common import EMPTY_VECTOR, fallback_embedding
 
 from .constants import (
     COLLECTION_SEMANTIC_CACHE,
@@ -179,39 +178,16 @@ class _SemanticCacheOpsMixin:
             return True
 
     @staticmethod
-    def _default_embedding(text: str) -> np.ndarray:
-        """
-        Embedding deterministico mejorado con SHA256 + modulo.
+    def _default_embedding(text: str) -> Any:
+        """Fallback embedding: delega en ``harness.common.fallback_embedding``.
 
-        Mezcla el hash SHA256 del texto completo con la posicion y valor
-        de cada byte para producir un vector mas discriminativo que la
-        simple frecuencia de caracteres.
+        Args:
+            text: Texto a embedder.
 
         Returns:
             Vector numpy normalizado de dimension ``DEFAULT_EMBEDDING_DIM``.
         """
-        if not text:
-            return np.zeros(DEFAULT_EMBEDDING_DIM, dtype=np.float32)
-
-        vec = np.zeros(DEFAULT_EMBEDDING_DIM, dtype=np.float32)
-        data = text.encode("utf-8", errors="replace")
-
-        # Semilla global derivada del SHA256 del texto completo
-        digest = hashlib.sha256(data).digest()
-        seed_high = int.from_bytes(digest[:8], "little")
-        seed_low = int.from_bytes(digest[8:16], "little")
-
-        for i, byte_val in enumerate(data):
-            # Combinacion no-lineal: posicion + byte + semillas SHA256
-            mix = (i * 7 + byte_val * 3 + seed_high + (seed_low >> (i & 7)))
-            idx = mix % DEFAULT_EMBEDDING_DIM
-            vec[idx] += 1.0 + (byte_val / 255.0)
-
-        norm = np.linalg.norm(vec)
-        if norm > 0:
-            vec /= norm
-
-        return vec
+        return fallback_embedding(text, dim=DEFAULT_EMBEDDING_DIM)
 
     def _ensure_collection(self) -> None:
         """

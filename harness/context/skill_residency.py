@@ -23,6 +23,8 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
+from harness.common import estimate_tokens as _canonical_estimate_tokens
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -37,9 +39,6 @@ TARGET_RESIDENT_MAX = 10
 
 #: Rango observado de tokens que cuesta la descripcion de una skill instalada.
 DESC_TOKEN_RANGE = (50, 280)
-
-#: Heuristica de tokenizacion: ~4 caracteres por token (GPT-style).
-CHARS_PER_TOKEN = 4
 
 #: Nombre estandar del archivo de skill (formato Agent Skills).
 SKILL_FILENAME = "SKILL.md"
@@ -98,13 +97,16 @@ class ResidencyReport:
 def estimate_tokens(text: str) -> int:
     """Estima el numero de tokens de un texto (~4 chars/token).
 
+    Delega en ``harness.common.estimate_tokens`` (fuente unica) con cota
+    inferior 0: aqui el frontmatter vacio debe costar 0 tokens.
+
     Args:
         text: Texto a medir.
 
     Returns:
         Tokens estimados (minimo 0).
     """
-    return max(0, len(text) // CHARS_PER_TOKEN)
+    return _canonical_estimate_tokens(text, minimum=0)
 
 
 def _extract_frontmatter(skill_md: Path) -> str:

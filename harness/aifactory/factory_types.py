@@ -10,6 +10,13 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+#: Umbral de aprobacion de una dimension en la evaluacion simulada.
+EVAL_PASS_THRESHOLD = 0.7
+#: Minimo de factuality bajo el cual se recomienda grounding check.
+EVAL_FACTUALITY_MIN = 0.9
+#: Minimo de coherence bajo el cual se recomienda revisar el output.
+EVAL_COHERENCE_MIN = 0.85
+
 """AIFactory — Orquestador del AI Factory Stack 7-capas.
 
 Integra y orquesta las 7 capas de produccion AI:
@@ -451,16 +458,16 @@ def _simulate_evals(
         "coherence": 0.90,
     }
     total = len(dimensions)
-    passed = sum(1 for v in dimensions.values() if v >= 0.7)
+    passed = sum(1 for v in dimensions.values() if v >= EVAL_PASS_THRESHOLD)
     pass_rate = passed / total if total > 0 else 0.0
 
     recommendations = []
-    if dimensions.get("factuality", 1.0) < 0.9:
+    if dimensions.get("factuality", 1.0) < EVAL_FACTUALITY_MIN:
         recommendations.append(
             "Mejorar verificacion factual: habilitar grounding check "
             "contra knowledge base."
         )
-    if dimensions.get("coherence", 1.0) < 0.85:
+    if dimensions.get("coherence", 1.0) < EVAL_COHERENCE_MIN:
         recommendations.append(
             "Revisar coherencia del output: considerar aumento de "
             "temperatura del LLM o refinamiento del prompt."

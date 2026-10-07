@@ -5,6 +5,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
+#: Fuente unica de la heuristica chars/token y del estimador de tokens.
+#: Se re-exportan aqui para mantener la API publica de ``compression_types``.
+from harness.common import CHARS_PER_TOKEN, estimate_tokens  # noqa: F401
+
 # ---------------------------------------------------------------------------
 # Constantes
 # ---------------------------------------------------------------------------
@@ -13,7 +17,6 @@ DEFAULT_TARGET_RATIO = 0.5
 ACTIVATION_THRESHOLD_TOKENS = 64
 DEFAULT_MAX_CONTEXT_TOKENS = 8000
 JSON_WHITESPACE_PATTERN = re.compile(r':\s+')
-CHARS_PER_TOKEN = 4
 METHOD_AUTO = "auto"
 METHOD_EXTRACTIVE = "extractive"
 METHOD_ABSTRACTIVE = "abstractive"
@@ -72,22 +75,6 @@ FILLER_PATTERNS: list[tuple] = [
     (r"In other words", "I.e."),
 ]
 
-
-def estimate_tokens(text: str) -> int:
-    """Estima tokens usando tiktoken o fallback a chars/4.
-
-    Args:
-        text: Texto a estimar.
-
-    Returns:
-        Numero estimado de tokens.
-    """
-    try:
-        import tiktoken
-        enc = tiktoken.get_encoding("cl100k_base")
-        return len(enc.encode(text))
-    except ImportError:
-        return max(1, len(text) // CHARS_PER_TOKEN)
 
 # ---------------------------------------------------------------------------
 # Dataclasses
