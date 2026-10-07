@@ -365,7 +365,8 @@ class Project:
     Args:
         name: Nombre real de la carpeta del proyecto.
         path: Ruta absoluta del proyecto.
-        ptype: Tipo inferido (trading, healthtech, retail, security, general).
+        ptype: Tipo inferido (trading, healthtech, retail, security,
+            database, rust, general).
         description: Descripción usada en el README generado.
     """
 
@@ -380,16 +381,69 @@ class Project:
 # ---------------------------------------------------------------------------
 
 
-def _detect_type(name: str) -> str:
-    """Infiera el tipo de proyecto desde el nombre de la carpeta.
+#: Keywords genericos (nombre de carpeta) que sugieren base de datos/storage.
+_DB_NAME_KEYWORDS = ("db", "data", "store", "vector", "lance", "kv", "sql")
+
+#: Keywords en miembros/deps del workspace Cargo que indican storage/query.
+_DB_WORKSPACE_KEYWORDS = ("storage", "query", "vector", "store", "lance", "db")
+
+
+def _cargo_declares_storage(cargo_path: Path) -> bool:
+    """Indica si el Cargo.toml declara un workspace con crates de storage/query.
+
+    Best-effort generico (sin nombres de proyectos): parsea ``[workspace]``
+    con tomllib (stdlib) y busca keywords en miembros + dependencias; si el
+    parseo falla, hace fallback a busqueda de keywords en el texto crudo.
+
+    Args:
+        cargo_path: Ruta al Cargo.toml de la raiz del proyecto.
+
+    Returns:
+        True si el workspace menciona crates de storage/query/vector.
+    """
+    try:
+        text = cargo_path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return False
+    try:
+        import tomllib
+
+        workspace = tomllib.loads(text).get("workspace") or {}
+        members = " ".join(str(m) for m in workspace.get("members") or [])
+        deps = " ".join(str(d) for d in (workspace.get("dependencies") or {}))
+        blob = f"{members} {deps}"
+    except (ValueError, AttributeError):
+        blob = text
+    lowered = blob.lower()
+    return any(k in lowered for k in _DB_WORKSPACE_KEYWORDS)
+
+
+def _detect_type(name: str, project_dir: Path | None = None) -> str:
+    """Infiere el tipo de proyecto desde el nombre y el layout (Cargo-aware).
+
+    Regla (generica, sin nombres privados):
+    1. Senal DB fuerte (Cargo + keywords db/data/store/vector/lance/kv/sql en
+       el nombre O workspace que declara storage/query) -> ``database``.
+    2. Dominios explicitos por nombre -> trading/healthtech/retail/security.
+    3. Cargo generico (sin senal DB) -> ``rust``.
+    4. Default -> ``general``.
 
     Args:
         name: Nombre de la carpeta del proyecto.
+        project_dir: Raiz del proyecto (para detectar Cargo.toml).
+            None = solo reglas por nombre (compat hacia atras).
 
     Returns:
-        Tipo: trading, healthtech, retail, security o general (default).
+        Tipo: database, trading, healthtech, retail, security, rust o
+        general (default).
     """
     lower = name.lower()
+    has_cargo = project_dir is not None and (Path(project_dir) / "Cargo.toml").is_file()
+    if has_cargo and (
+        any(k in lower for k in _DB_NAME_KEYWORDS)
+        or _cargo_declares_storage(Path(project_dir) / "Cargo.toml")
+    ):
+        return "database"
     if any(k in lower for k in ("quant", "alpha", "trading", "bot")):
         return "trading"
     if any(k in lower for k in ("clinica", "health", "historia", "salud")):
@@ -398,6 +452,8 @@ def _detect_type(name: str) -> str:
         return "retail"
     if any(k in lower for k in ("security", "seguridad", "harden")):
         return "security"
+    if has_cargo:
+        return "rust"
     return "general"
 
 
@@ -424,7 +480,7 @@ def discover_projects() -> list[Project]:
         projects.append(Project(
             name=entry.name,
             path=entry,
-            ptype=_detect_type(entry.name),
+            ptype=_detect_type(entry.name, entry),
             description=f"Proyecto {entry.name} gestionado por Swarmind Harness",
         ))
     return projects
