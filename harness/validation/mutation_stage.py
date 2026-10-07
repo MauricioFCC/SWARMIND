@@ -31,11 +31,11 @@ from __future__ import annotations
 import ast
 import logging
 import random
-import subprocess
-import sys
 import tempfile
 from pathlib import Path
 from typing import Any
+
+from harness.validation.sandbox_executor import SandboxExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -300,27 +300,23 @@ def _find_equivalent(tree: ast.Module, original: ast.AST) -> ast.AST | None:
 
 
 def _run_in_subprocess(code: str) -> tuple[int, str]:
-    """Ejecuta codigo Python en subprocess aislado desde archivo temporal.
+    """Ejecuta codigo Python en sandbox aislado desde archivo temporal.
+
+    El script (codigo generado por LLM) se ejecuta via `SandboxExecutor`
+    (docker endurecido si esta disponible; subprocess con entorno limpio y
+    rlimits best-effort si no). Nunca lanza: un timeout se reporta como
+    returncode 124.
 
     Args:
         code: Codigo Python completo (source + test).
 
     Returns:
-        (returncode, stdout+stderr combinado).
-
-    Raises:
-        TimeoutExpired: Si la ejecucion excede EXEC_TIMEOUT_S.
+        (returncode, stdout+stderr combinado). Timeout -> returncode 124.
     """
     with tempfile.TemporaryDirectory() as tmp_dir:
         script_path = Path(tmp_dir) / "mutant_check.py"
         script_path.write_text(code, encoding="utf-8")
-        result = subprocess.run(
-            [sys.executable, str(script_path)],
-            capture_output=True,
-            text=True,
-            timeout=EXEC_TIMEOUT_S,
-            check=False,
-        )
+        result = SandboxExecutor().run_script(script_path, timeout_s=EXEC_TIMEOUT_S)
         return result.returncode, (result.stdout + result.stderr)
 
 
@@ -395,12 +391,8 @@ def run_mutation_stage(
         error_msg = ""
         try:
             mut_rc, mut_out = _run_in_subprocess(mutant_code)
-        except subprocess.TimeoutExpired:
-            # Timeout del mutante = comportamiento distinto -> killed
-            killed += 1
-            killed_flag = True
-            error_msg = "timeout"
         except Exception as e:  # noqa: BLE001
+            # Error inesperado del sandbox = comportamiento distinto -> killed
             killed += 1
             killed_flag = True
             error_msg = f"{type(e).__name__}: {e}"[:100]
