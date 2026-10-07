@@ -1,8 +1,23 @@
-"""Cliente HTTP real para la API local de Ollama (localhost:11434).
+"""Cliente HTTP local del harness (localhost:11434).
 
-Permite al harness delegar tareas a modelos locales (minimizando tokens
-cloud): generar/chat, embeddings, precarga/descarga de RAM, listado de
-modelos, instalacion bajo demanda y consulta de capacidades.
+NOTA DE MIGRACION: este modulo conserva el nombre ``ollama_client`` y la
+clase :class:`OllamaClient` (los llamadores y los tests dependen de ambos),
+pero desde 2026 habla la API **OpenAI-compatible** ``/v1`` que exponen
+Ollama, llama-server y llama-swap, en lugar de la API nativa ``/api/*``.
+Cambiar el protocolo por dentro (patron hexagonal) mantiene el contrato
+publico.
+
+Metodos migrados a ``/v1``:
+
+* ``is_available`` y ``list_models`` usan ``GET /v1/models``.
+* ``generate`` y ``chat`` usan ``POST /v1/chat/completions``.
+* ``capabilities`` devuelve metadatos deterministas (OpenAI no expone
+  ``/api/show``).
+* ``loaded_models`` usa ``GET /running`` de llama-swap (best-effort).
+
+Los helpers de ciclo de vida ``embed``/``warm``/``unload``/``pull``
+conservan la API nativa de Ollama porque OpenAI-compatible no define
+equivalentes y llama-swap no los expone.
 
 Toda la comunicacion pasa por ``_request``, que centraliza la gestion de
 errores HTTP y traduce fallos a :class:`OllamaError` con contexto
@@ -28,6 +43,19 @@ DEFAULT_KEEP_ALIVE = "0"
 AVAILABILITY_TIMEOUT = 2.0
 UNLOAD_KEEP_ALIVE = 0
 
+#: Endpoints OpenAI-compatibles (Ollama /v1, llama-server, llama-swap).
+MODELS_PATH = "/v1/models"
+CHAT_COMPLETIONS_PATH = "/v1/chat/completions"
+EMBEDDINGS_PATH = "/v1/embeddings"
+#: Formato de codificacion de embeddings de la API OpenAI ("float" | "base64").
+EMBEDDING_ENCODING_FORMAT = "float"
+#: Endpoint informativo de llama-swap: modelos cargados en memoria.
+RUNNING_PATH = "/running"
+#: Identificador del backend que reporta capabilities() (OpenAI no expone show).
+BACKEND_NAME = "openai-compatible"
+#: Traduccion de opciones Ollama a su campo OpenAI equivalente en el body.
+OPTION_ALIASES: dict[str, str] = {"num_predict": "max_tokens"}
+
 
 def _build_error(what: str, why: str, where: str) -> OllamaError:
     """Construye un OllamaError con mensaje que incluye contexto WHAT+WHY+WHERE.
@@ -41,6 +69,79 @@ def _build_error(what: str, why: str, where: str) -> OllamaError:
         Excepcion OllamaError lista para lanzar.
     """
     return OllamaError(f"{what} | why: {why} | where: {where}")
+
+
+def _extract_message_content(data: dict[str, Any], endpoint: str, model: str) -> str:
+    """Extrae ``choices[0].message.content`` del formato OpenAI.
+
+    Args:
+        data: JSON de respuesta de ``/v1/chat/completions``.
+        endpoint: Endpoint HTTP consultado (contexto de error).
+        model: Modelo consultado (contexto de error).
+
+    Returns:
+        Texto del mensaje del asistente; "" si ``content`` es null.
+
+    Raises:
+        OllamaError: Si la respuesta no trae ``choices[0].message``.
+    """
+    try:
+        message = data["choices"][0]["message"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise _build_error(
+            "Respuesta OpenAI sin choices[0].message", str(exc), f"{endpoint} (model={model})"
+        ) from exc
+    if not isinstance(message, dict):
+        raise _build_error(
+            "Respuesta OpenAI sin choices[0].message",
+            "message no es un objeto",
+            f"{endpoint} (model={model})",
+        )
+    return str(message.get("content") or "")
+
+
+def _apply_options(body: dict[str, Any], options: dict[str, Any] | None) -> None:
+    """Fusiona opciones tipo Ollama en un body OpenAI-compatible.
+
+    OpenAI no conoce ``num_ctx``/``num_gpu``/``keep_alive``: viajan como
+    campos extra que llama-server/llama-swap ignoran y Ollama respeta.
+    ``num_predict`` se traduce al campo estandar ``max_tokens``.
+
+    Args:
+        body: Body a completar; se mutan solo las claves presentes.
+        options: Opciones del llamador; None o {} no hace nada.
+    """
+    if not options:
+        return
+    for key, value in options.items():
+        body[OPTION_ALIASES.get(key, key)] = value
+
+
+def _parse_running_models(data: object) -> list[str]:
+    """Normaliza las variantes de ``GET /running`` de llama-swap a nombres.
+
+    llama-swap ha devuelto tres formas: ``{"running": ["m1"]}``,
+    ``{"running": [{"model": "m1", "state": "ready"}]}`` y ``{"model": "m1"}``.
+
+    Args:
+        data: JSON devuelto por ``GET /running`` (puede no ser dict).
+
+    Returns:
+        Nombres de modelo cargados; [] si el formato viene vacio o ajeno.
+    """
+    if not isinstance(data, dict):
+        return []
+    running = data.get("running")
+    if isinstance(running, list):
+        names: list[str] = []
+        for item in running:
+            if isinstance(item, str) and item:
+                names.append(item)
+            elif isinstance(item, dict) and item.get("model"):
+                names.append(str(item["model"]))
+        return names
+    model = data.get("model")
+    return [str(model)] if isinstance(model, str) and model else []
 
 
 class OllamaError(RuntimeError):
@@ -103,11 +204,11 @@ class OllamaClient:
         body: dict[str, Any] | None = None,
         timeout: float | None = None,
     ) -> dict[str, Any]:
-        """Ejecuta una peticion HTTP contra Ollama y traduce fallos a OllamaError.
+        """Ejecuta una peticion HTTP contra el backend y traduce fallos a OllamaError.
 
         Args:
             method: Verbo HTTP ("GET" o "POST").
-            path: Ruta del endpoint (ej. "/api/tags").
+            path: Ruta del endpoint (ej. "/v1/models").
             body: Payload JSON opcional para la peticion.
             timeout: Timeout en segundos; si es None usa el del cliente.
 
@@ -157,48 +258,55 @@ class OllamaClient:
     # Disponibilidad y listado
     # ------------------------------------------------------------------
     def is_available(self) -> bool:
-        """Comprueba si la API de Ollama responde usando un timeout corto de 2s.
+        """Comprueba si la API responde con un timeout corto de 2s.
 
-        Usa la cache de tags si esta fresca (evita 1 HTTP por routing).
+        Habla la API OpenAI-compatible (GET /v1/models); usa la cache de
+        tags si esta fresca (evita 1 HTTP por routing).
 
         Returns:
-            True si el endpoint /api/tags respondio correctamente,
-            False si hubo cualquier error (incluye Ollama apagado).
+            True si GET /v1/models respondio correctamente, False si hubo
+            cualquier error (incluye el backend apagado).
         """
         if self._cached_tags() is not None:
             return True
         try:
-            self._request("GET", "/api/tags", timeout=AVAILABILITY_TIMEOUT)
+            self._request("GET", MODELS_PATH, timeout=AVAILABILITY_TIMEOUT)
         except OllamaError as exc:
-            logger.debug("Ollama no disponible (WHAT: health check fallido; WHERE: is_available; WHY: %s)", exc)
+            logger.debug("Backend no disponible (WHAT: health check fallido; WHERE: is_available; WHY: %s)", exc)
             return False
         return True
 
     def list_models(self) -> list[str]:
-        """Devuelve los nombres de los modelos instalados en Ollama.
+        """Devuelve los ids de los modelos instalados (GET /v1/models).
 
         Returns:
-            Lista con los nombres de los modelos (GET /api/tags).
+            Lista con los ids de los modelos (``data[].id``).
 
         Raises:
-            OllamaError: Si Ollama no responde o devuelve status != 200.
+            OllamaError: Si el backend no responde o devuelve status != 200.
         """
-        data = self._request("GET", "/api/tags")
-        models = [model["name"] for model in data.get("models", []) if model.get("name")]
+        data = self._request("GET", MODELS_PATH)
+        models = [model["id"] for model in data.get("data", []) if model.get("id")]
         self._store_tags(models)
         return models
 
     def loaded_models(self) -> list[str]:
-        """Devuelve los nombres de los modelos actualmente cargados en RAM.
+        """Devuelve los modelos cargados en RAM (best-effort, nunca lanza).
+
+        Usa ``GET /running`` de llama-swap, que no forma parte del estandar
+        OpenAI. Si el backend no lo expone (Ollama nativo, llama-server) o
+        falla, devuelve [] sin lanzar: es informacion de diagnostico, no un
+        contrato de inferencia.
 
         Returns:
-            Lista con los modelos en memoria (GET /api/ps).
-
-        Raises:
-            OllamaError: Si Ollama no responde o devuelve status != 200.
+            Lista de modelos cargados; [] si el endpoint no existe o falla.
         """
-        data = self._request("GET", "/api/ps")
-        return [model["name"] for model in data.get("models", []) if model.get("name")]
+        try:
+            data = self._request("GET", RUNNING_PATH, timeout=AVAILABILITY_TIMEOUT)
+        except OllamaError as exc:
+            logger.debug("loaded_models: /running no disponible (%s); se asume []", exc)
+            return []
+        return _parse_running_models(data)
 
     # ------------------------------------------------------------------
     # Inferencia
@@ -210,94 +318,119 @@ class OllamaClient:
         keep_alive: str = DEFAULT_KEEP_ALIVE,
         images: list[str] | None = None,
         options: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        """Genera texto con el modelo local (POST /api/generate, sin stream).
+    ) -> str:
+        """Genera texto (POST /v1/chat/completions, sin stream).
+
+        OpenAI no tiene un endpoint /completions fiable en todos los
+        backends, asi que un prompt unico viaja como un mensaje de chat
+        ``{"role": "user", "content": prompt}``.
 
         Args:
-            model: Nombre del modelo Ollama (ej. "llama3.2:3b").
+            model: Id del modelo (ej. "llama3.2:3b").
             prompt: Texto de entrada para el modelo.
-            keep_alive: Tiempo que el modelo permanece en RAM ("5m", "0").
-            images: Lista opcional de imagenes base64 para modelos vision.
-            options: Opciones Modelfile por llamada (num_ctx, num_predict,
-                temperature, top_p, repeat_penalty, think...). None = defaults
-                del modelo (incluye num_ctx horneado si existe).
+            keep_alive: Residencia en RAM; viaja como campo extra (Ollama lo
+                respeta; llama-server/llama-swap lo ignoran).
+            images: Imagenes base64 opcionales para modelos vision; viajan
+                como campo extra "images" del body.
+            options: Opciones tipo Ollama por llamada (num_ctx, num_gpu,
+                keep_alive, temperature, num_predict...). Se fusionan en el
+                body: ``num_predict`` -> ``max_tokens``; el resto como campos
+                extra. None = defaults del modelo.
 
         Returns:
-            Dict JSON completo de respuesta de Ollama (incluye "response").
+            Texto generado (``choices[0].message.content``).
 
         Raises:
-            OllamaError: Si la llamada falla o Ollama reporta "error" sin
-                respuesta de texto.
+            OllamaError: Si la llamada falla o la respuesta no trae contenido.
         """
         body: dict[str, Any] = {
             "model": model,
-            "prompt": prompt,
-            "keep_alive": keep_alive,
+            "messages": [{"role": "user", "content": prompt}],
             "stream": False,
+            "keep_alive": keep_alive,
         }
         if images:
-            body["images"] = images
-        if options:
-            body["options"] = dict(options)
-        data = self._request("POST", "/api/generate", body=body)
+            body["images"] = list(images)
+        _apply_options(body, options)
+        data = self._request("POST", CHAT_COMPLETIONS_PATH, body=body)
         error = data.get("error")
-        if error and not data.get("response"):
-            raise _build_error("Ollama reporto error en generate", str(error), f"POST /api/generate (model={model})")
-        return data
+        if error:
+            raise _build_error(
+                "Backend reporto error en generate", str(error),
+                f"POST {CHAT_COMPLETIONS_PATH} (model={model})",
+            )
+        return _extract_message_content(data, CHAT_COMPLETIONS_PATH, model)
 
     def chat(
         self, model: str, messages: list[dict],
         keep_alive: str = DEFAULT_KEEP_ALIVE,
         options: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        """Mantiene una conversacion con el modelo local (POST /api/chat).
+    ) -> str:
+        """Mantiene una conversacion (POST /v1/chat/completions).
 
         Args:
-            model: Nombre del modelo Ollama.
-            messages: Mensajes de chat con formato Ollama
+            model: Id del modelo.
+            messages: Mensajes con formato OpenAI/Ollama
                 (ej. [{"role": "user", "content": "hola"}]).
-            keep_alive: Tiempo que el modelo permanece en RAM ("5m", "0").
-            options: Opciones Modelfile por llamada (ver generate()).
+            keep_alive: Residencia en RAM (campo extra).
+            options: Opciones por llamada; temperature/max_tokens/seed se
+                envian como campos estandar y el resto como extra (ver
+                generate()).
 
         Returns:
-            Dict JSON de respuesta, incluye "message.content".
+            Texto del asistente (``choices[0].message.content``).
 
         Raises:
-            OllamaError: Si la llamada falla o Ollama reporta "error".
+            OllamaError: Si la llamada falla o la respuesta no trae contenido.
         """
         body: dict[str, Any] = {
             "model": model,
             "messages": messages,
+            "stream": False,
             "keep_alive": keep_alive,
         }
-        if options:
-            body["options"] = dict(options)
-        data = self._request("POST", "/api/chat", body=body)
+        _apply_options(body, options)
+        data = self._request("POST", CHAT_COMPLETIONS_PATH, body=body)
         error = data.get("error")
         if error:
-            raise _build_error("Ollama reporto error en chat", str(error), f"POST /api/chat (model={model})")
-        return data
+            raise _build_error(
+                "Backend reporto error en chat", str(error),
+                f"POST {CHAT_COMPLETIONS_PATH} (model={model})",
+            )
+        return _extract_message_content(data, CHAT_COMPLETIONS_PATH, model)
 
     def embed(self, model: str, input_text: str | list[str]) -> list[list[float]]:
-        """Genera embeddings del texto con el modelo local (POST /api/embed).
+        """Genera embeddings del texto con el modelo local (POST /v1/embeddings).
+
+        Migrado de la API nativa de Ollama (`/api/embed`) a la API
+        OpenAI-compatible: `input` puede ser texto unico o lista, y la respuesta
+        llega en `data[].embedding` indexada por `index`.
 
         Args:
-            model: Nombre del modelo Ollama con capacidad de embedding.
+            model: Nombre del modelo con capacidad de embedding.
             input_text: Texto unico o lista de textos a vectorizar.
 
         Returns:
-            Lista de vectores de embedding, uno por texto de entrada.
+            Lista de vectores de embedding, uno por texto de entrada (mismo orden).
 
         Raises:
-            OllamaError: Si la llamada falla o el modelo no soporta embed.
+            OllamaError: Si la llamada falla o el modelo no soporta embeddings.
         """
         body: dict[str, Any] = {
             "model": model,
             "input": input_text,
-            "keep_alive": DEFAULT_KEEP_ALIVE,
+            "encoding_format": EMBEDDING_ENCODING_FORMAT,
         }
-        data = self._request("POST", "/api/embed", body=body)
-        return [[float(value) for value in vector] for vector in data.get("embeddings", [])]
+        data = self._request("POST", EMBEDDINGS_PATH, body=body)
+        items = data.get("data", [])
+        if not isinstance(items, list):
+            return []
+        # Orden estable por `index`: la API OpenAI no garantiza el orden de llegada.
+        ordered = sorted(items, key=lambda item: item.get("index", 0))
+        return [
+            [float(value) for value in item.get("embedding", [])]
+            for item in ordered
+        ]
 
     # ------------------------------------------------------------------
     # Ciclo de vida en RAM
@@ -365,32 +498,33 @@ class OllamaClient:
             raise _build_error("Ollama reporto error en pull", str(error), f"POST /api/pull (model={model})")
         return data.get("status") == "success" or bool(data)
 
-    def capabilities(self, model: str) -> list[str]:
-        """Devuelve las capacidades del modelo (POST /api/show con body model).
+    def capabilities(self, model: str) -> dict[str, Any]:
+        """Devuelve metadatos deterministas del modelo (sin endpoint).
+
+        La API OpenAI-compatible no expone un endpoint tipo ``/api/show``,
+        por lo que no hay lista real de capacidades. Se devuelve un dict
+        minimo y estable para no romper a los llamadores que solo necesitan
+        identificar el backend.
 
         Args:
-            model: Nombre del modelo Ollama a inspeccionar.
+            model: Id del modelo a inspeccionar.
 
         Returns:
-            Lista de capacidades soportadas ("completion", "vision", "embed").
-
-        Raises:
-            OllamaError: Si la llamada falla o el modelo no existe.
+            Dict con "model" y "backend" ("openai-compatible").
         """
-        data = self._request("POST", "/api/show", body={"model": model})
-        return list(data.get("capabilities", []))
+        return {"model": model, "backend": BACKEND_NAME}
 
     def has_capability(self, model: str, capability: str) -> bool:
-        """Comprueba si el modelo soporta una capacidad concreta.
+        """Comprueba si el modelo expone una clave de capability conocida.
+
+        En OpenAI-compatible no se pueden enumerar capacidades reales; el
+        unico dato disponible son las claves de ``capabilities()``.
 
         Args:
-            model: Nombre del modelo Ollama.
-            capability: Capacidad a verificar ("vision", "embed", "completion").
+            model: Id del modelo.
+            capability: Clave a verificar (ej. "backend").
 
         Returns:
-            True si la capacidad esta en la lista del modelo.
-
-        Raises:
-            OllamaError: Si no se pueden consultar las capacidades.
+            True si la clave esta presente en ``capabilities(model)``.
         """
         return capability in self.capabilities(model)

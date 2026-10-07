@@ -2,7 +2,7 @@
 
 Compara la flota DECLARADA (`fleet_manifest.FLEET` + tiers de
 `.opencode/config/ollama_models.yaml`) con lo que Ollama tiene instalado
-(`http://localhost:11434/api/tags`). Objetivo: cazar en esta maquina los
+(`http://localhost:11434/v1/models`, API OpenAI-compatible). Objetivo: cazar en esta maquina los
 modelos retirados que reaparecen, los instalados ajenos a la flota o los
 tiers que se desdeclaran. No rompe CI: si Ollama no responde hace `skip`.
 """
@@ -24,7 +24,7 @@ from harness.model_router.vram_guard import footprint_mb
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 _CONFIG_YAML = _PROJECT_ROOT / ".opencode" / "config" / "ollama_models.yaml"
 _OPENCODE_JSON = _PROJECT_ROOT / ".opencode" / "opencode.json"
-_TAGS_URL = "http://localhost:11434/api/tags"
+_MODELS_URL = "http://localhost:11434/v1/models"
 _TIMEOUT_SECONDS = 3
 
 #: Familias retiradas 2026-09-30: no deben volver a estar instaladas.
@@ -53,19 +53,19 @@ def _is_transitional(name: str) -> bool:
 
 
 def _fetch_installed() -> tuple[str, ...] | None:
-    """Nombres instalados via /api/tags (None si Ollama no responde).
+    """Nombres instalados via /v1/models (None si Ollama no responde).
 
     Returns:
-        Tupla de nombres, o None si el daemon no esta disponible.
+        Tupla de ids de modelo, o None si el daemon no esta disponible.
     """
     try:
-        resp = requests.get(_TAGS_URL, timeout=_TIMEOUT_SECONDS)
+        resp = requests.get(_MODELS_URL, timeout=_TIMEOUT_SECONDS)
         resp.raise_for_status()
         payload: dict[str, Any] = resp.json()
     except (requests.RequestException, ValueError):
         return None
-    models = payload.get("models", [])
-    return tuple(str(item.get("name", "")) for item in models if item.get("name"))
+    models = payload.get("data", [])
+    return tuple(str(item.get("id", "")) for item in models if item.get("id"))
 
 
 def _yaml_tiers() -> dict[str, dict[str, Any]]:

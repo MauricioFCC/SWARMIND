@@ -123,10 +123,11 @@ def test_default_constants_match_public_contract() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_is_available_returns_true_when_tags_ok(mocker: MockerFixture) -> None:
-    """is_available → True cuando GET /api/tags responde 200."""
-    _patch_transport(mocker, response=_FakeResponse(200, {"models": []}))
+def test_is_available_returns_true_when_models_ok(mocker: MockerFixture) -> None:
+    """is_available → True cuando GET /v1/models responde 200."""
+    mock_request = _patch_transport(mocker, response=_FakeResponse(200, {"data": []}))
     assert _client().is_available() is True
+    assert _url_of(mock_request.call_args).endswith("/v1/models")
 
 
 def test_is_available_returns_false_on_connection_error(mocker: MockerFixture) -> None:
@@ -149,17 +150,17 @@ def test_is_available_returns_false_on_timeout(mocker: MockerFixture) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_list_models_extracts_names_from_tags(mocker: MockerFixture) -> None:
-    """list_models extrae los nombres de modelo de GET /api/tags."""
+def test_list_models_extracts_ids_from_v1_models(mocker: MockerFixture) -> None:
+    """list_models extrae los ids de modelo de GET /v1/models (data[].id)."""
     mock_request = _patch_transport(
         mocker,
         response=_FakeResponse(
-            200, {"models": [{"name": "llama3.2:3b"}, {"name": "qwen2.5:14b"}]}
+            200, {"data": [{"id": "llama3.2:3b"}, {"id": "qwen2.5:14b"}]}
         ),
     )
     names = _client().list_models()
     assert names == ["llama3.2:3b", "qwen2.5:14b"]
-    assert _url_of(mock_request.call_args).endswith("/api/tags")
+    assert _url_of(mock_request.call_args).endswith("/v1/models")
 
 
 # ---------------------------------------------------------------------------
@@ -167,27 +168,27 @@ def test_list_models_extracts_names_from_tags(mocker: MockerFixture) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_generate_posts_correct_body_and_returns_response(mocker: MockerFixture) -> None:
-    """generate envía body con model/prompt/keep_alive/stream=false y devuelve dict."""
+def test_generate_posts_single_user_message_and_returns_text(mocker: MockerFixture) -> None:
+    """generate envía un mensaje user a /v1/chat/completions y devuelve el texto."""
     mock_request = _patch_transport(
         mocker,
-        response=_FakeResponse(200, {"response": "hola"}),
+        response=_FakeResponse(200, {"choices": [{"message": {"content": "hola"}}]}),
     )
     result = _client().generate(model="llama3.2:3b", prompt="di hola")
-    assert result == {"response": "hola"}
+    assert result == "hola"
     body = mock_request.call_args.kwargs["json"]
     assert body["model"] == "llama3.2:3b"
-    assert body["prompt"] == "di hola"
+    assert body["messages"] == [{"role": "user", "content": "di hola"}]
     assert body["keep_alive"] == DEFAULT_KEEP_ALIVE
     assert body["stream"] is False
-    assert _url_of(mock_request.call_args).endswith("/api/generate")
+    assert _url_of(mock_request.call_args).endswith("/v1/chat/completions")
 
 
 def test_generate_includes_images_when_provided(mocker: MockerFixture) -> None:
     """generate con images → el body incluye la lista de imágenes base64."""
     mock_request = _patch_transport(
         mocker,
-        response=_FakeResponse(200, {"response": "ok"}),
+        response=_FakeResponse(200, {"choices": [{"message": {"content": "ok"}}]}),
     )
     _client().generate(model="llava:7b", prompt="describe", images=["aGVsbG8=", "d29ybGQ="])
     body = mock_request.call_args.kwargs["json"]
@@ -195,26 +196,29 @@ def test_generate_includes_images_when_provided(mocker: MockerFixture) -> None:
 
 
 def test_generate_omits_options_when_none(mocker: MockerFixture) -> None:
-    """generate sin options → el body no incluye la clave (defaults del modelo)."""
+    """generate sin options → el body no incluye campos extra ni max_tokens."""
     mock_request = _patch_transport(
         mocker,
-        response=_FakeResponse(200, {"response": "ok"}),
+        response=_FakeResponse(200, {"choices": [{"message": {"content": "ok"}}]}),
     )
     _client().generate(model="llama3.2:3b", prompt="x")
     body = mock_request.call_args.kwargs["json"]
-    assert "options" not in body
+    assert "max_tokens" not in body
+    assert "num_ctx" not in body
 
 
 def test_generate_forwards_options_when_provided(mocker: MockerFixture) -> None:
-    """generate con options → el body las reenvia (num_ctx/num_predict/think)."""
+    """generate con options → num_predict a max_tokens y num_ctx como campo extra."""
     mock_request = _patch_transport(
         mocker,
-        response=_FakeResponse(200, {"response": "ok"}),
+        response=_FakeResponse(200, {"choices": [{"message": {"content": "ok"}}]}),
     )
     opts = {"num_ctx": 8192, "num_predict": 256, "temperature": 0.2}
     _client().generate(model="llama3.2:3b", prompt="x", options=opts)
     body = mock_request.call_args.kwargs["json"]
-    assert body["options"] == opts
+    assert body["max_tokens"] == 256
+    assert body["num_ctx"] == 8192
+    assert body["temperature"] == 0.2
 
 
 def test_generate_raises_ollama_error_on_ollama_body_error(mocker: MockerFixture) -> None:
@@ -234,6 +238,22 @@ def test_generate_raises_ollama_error_on_non_200_status(mocker: MockerFixture) -
         _client().generate(model="llama3.2:3b", prompt="x")
 
 
+def test_generate_raises_ollama_error_without_choices(mocker: MockerFixture) -> None:
+    """generate → OllamaError cuando la respuesta no trae choices[0].message."""
+    _patch_transport(mocker, response=_FakeResponse(200, {"id": "x"}))
+    with pytest.raises(OllamaError):
+        _client().generate(model="llama3.2:3b", prompt="x")
+
+
+def test_generate_returns_empty_string_when_content_is_null(mocker: MockerFixture) -> None:
+    """generate → "" cuando choices[0].message.content es null."""
+    _patch_transport(
+        mocker,
+        response=_FakeResponse(200, {"choices": [{"message": {"content": None}}]}),
+    )
+    assert _client().generate(model="llama3.2:3b", prompt="x") == ""
+
+
 def test_generate_raises_ollama_error_with_context_on_connection_error(
     mocker: MockerFixture,
 ) -> None:
@@ -246,7 +266,7 @@ def test_generate_raises_ollama_error_with_context_on_connection_error(
         _client().generate(model="llama3.2:3b", prompt="x")
     message = str(exc_info.value)
     assert "connection" in message.lower()
-    assert "/api/generate" in message
+    assert "/v1/chat/completions" in message
 
 
 # ---------------------------------------------------------------------------
@@ -254,30 +274,30 @@ def test_generate_raises_ollama_error_with_context_on_connection_error(
 # ---------------------------------------------------------------------------
 
 
-def test_chat_posts_messages_and_returns_dict(mocker: MockerFixture) -> None:
-    """chat envía messages por POST /api/chat y devuelve el dict de respuesta."""
+def test_chat_posts_messages_and_returns_text(mocker: MockerFixture) -> None:
+    """chat envía messages a /v1/chat/completions y devuelve el texto."""
     messages = [{"role": "user", "content": "hola"}]
     mock_request = _patch_transport(
         mocker,
         response=_FakeResponse(
-            200, {"message": {"role": "assistant", "content": "adiós"}}
+            200, {"choices": [{"message": {"role": "assistant", "content": "adiós"}}]}
         ),
     )
     result = _client().chat(model="llama3.2:3b", messages=messages)
-    assert result["message"]["content"] == "adiós"
+    assert result == "adiós"
     body = mock_request.call_args.kwargs["json"]
     assert body["model"] == "llama3.2:3b"
     assert body["messages"] == messages
-    assert _url_of(mock_request.call_args).endswith("/api/chat")
+    assert _url_of(mock_request.call_args).endswith("/v1/chat/completions")
 
 
 def test_chat_forwards_options_when_provided(mocker: MockerFixture) -> None:
-    """chat con options → el body las reenvia (mismo contrato que generate)."""
+    """chat con options → num_predict se mapea a max_tokens (contrato OpenAI)."""
     messages = [{"role": "user", "content": "hola"}]
     mock_request = _patch_transport(
         mocker,
         response=_FakeResponse(
-            200, {"message": {"role": "assistant", "content": "adiós"}}
+            200, {"choices": [{"message": {"role": "assistant", "content": "adiós"}}]}
         ),
     )
     _client().chat(
@@ -285,7 +305,8 @@ def test_chat_forwards_options_when_provided(mocker: MockerFixture) -> None:
         options={"num_predict": 128},
     )
     body = mock_request.call_args.kwargs["json"]
-    assert body["options"] == {"num_predict": 128}
+    assert body["max_tokens"] == 128
+    assert "options" not in body
 
 
 # ---------------------------------------------------------------------------
@@ -294,10 +315,18 @@ def test_chat_forwards_options_when_provided(mocker: MockerFixture) -> None:
 
 
 def test_embed_returns_list_of_float_lists(mocker: MockerFixture) -> None:
-    """embed devuelve list[list[float]] desde {"embeddings": [[...]]}."""
+    """embed devuelve list[list[float]] desde {"data": [{"embedding": [...]}]}."""
     _patch_transport(
         mocker,
-        response=_FakeResponse(200, {"embeddings": [[0.1, 0.2], [0.3, 0.4]]}),
+        response=_FakeResponse(
+            200,
+            {
+                "data": [
+                    {"index": 0, "embedding": [0.1, 0.2]},
+                    {"index": 1, "embedding": [0.3, 0.4]},
+                ]
+            },
+        ),
     )
     embeddings = _client().embed(model="nomic-embed-text", input_text="hola")
     assert embeddings == [[0.1, 0.2], [0.3, 0.4]]
@@ -362,16 +391,37 @@ def test_unload_posts_keep_alive_zero(mocker: MockerFixture) -> None:
     assert body["keep_alive"] == 0
 
 
-def test_loaded_models_extracts_names_from_ps(mocker: MockerFixture) -> None:
-    """loaded_models extrae nombres de modelo de GET /api/ps."""
+def test_loaded_models_extracts_names_from_running(mocker: MockerFixture) -> None:
+    """loaded_models extrae nombres de modelo de GET /running (llama-swap)."""
     mock_request = _patch_transport(
         mocker,
         response=_FakeResponse(
-            200, {"models": [{"name": "llama3.2:3b", "size": 100}]}
+            200, {"running": [{"model": "llama3.2:3b", "state": "ready"}]}
         ),
     )
     assert _client().loaded_models() == ["llama3.2:3b"]
-    assert _url_of(mock_request.call_args).endswith("/api/ps")
+    assert _url_of(mock_request.call_args).endswith("/running")
+
+
+def test_loaded_models_supports_string_list_running(mocker: MockerFixture) -> None:
+    """loaded_models acepta la variante {"running": ["m1", "m2"]} de llama-swap."""
+    _patch_transport(
+        mocker,
+        response=_FakeResponse(200, {"running": ["m1", "m2"]}),
+    )
+    assert _client().loaded_models() == ["m1", "m2"]
+
+
+def test_loaded_models_returns_empty_when_running_missing(mocker: MockerFixture) -> None:
+    """loaded_models devuelve [] sin lanzar si /running no existe (informativo)."""
+    _patch_transport(mocker, response=_FakeResponse(404, {"error": "not found"}))
+    assert _client().loaded_models() == []
+
+
+def test_loaded_models_returns_empty_on_connection_error(mocker: MockerFixture) -> None:
+    """loaded_models devuelve [] sin lanzar ante ConnectionError (best-effort)."""
+    _patch_transport(mocker, error=requests.exceptions.ConnectionError("down"))
+    assert _client().loaded_models() == []
 
 
 def test_pull_posts_stream_false_and_returns_true(mocker: MockerFixture) -> None:
@@ -392,33 +442,29 @@ def test_pull_posts_stream_false_and_returns_true(mocker: MockerFixture) -> None
 # ---------------------------------------------------------------------------
 
 
-def test_capabilities_extracts_from_show(mocker: MockerFixture) -> None:
-    """capabilities extrae la lista de capacidades de POST /api/show."""
-    mock_request = _patch_transport(
-        mocker,
-        response=_FakeResponse(200, {"capabilities": ["vision", "chat"]}),
-    )
+def test_capabilities_returns_deterministic_metadata_without_http(
+    mocker: MockerFixture,
+) -> None:
+    """capabilities devuelve metadatos deterministas sin llamar a /api/show."""
+    mock_request = _patch_transport(mocker, response=_FakeResponse(200, {}))
     caps = _client().capabilities(model="llava:7b")
-    assert caps == ["vision", "chat"]
-    assert _url_of(mock_request.call_args).endswith("/api/show")
+    assert caps == {"model": "llava:7b", "backend": "openai-compatible"}
+    assert mock_request.call_count == 0
 
 
-def test_has_capability_checks_membership(mocker: MockerFixture) -> None:
-    """has_capability → True solo si la capacidad está en la lista de /api/show."""
-    _patch_transport(
-        mocker,
-        response=_FakeResponse(200, {"capabilities": ["vision", "chat"]}),
-    )
+def test_has_capability_checks_metadata_keys(mocker: MockerFixture) -> None:
+    """has_capability → True solo si la clave está en capabilities (OpenAI)."""
+    _patch_transport(mocker, response=_FakeResponse(200, {}))
     client = _client()
-    assert client.has_capability(model="llava:7b", capability="vision") is True
-    assert client.has_capability(model="llava:7b", capability="tools") is False
+    assert client.has_capability(model="llava:7b", capability="backend") is True
+    assert client.has_capability(model="llava:7b", capability="vision") is False
 
 
 def test_list_models_populates_cache(mocker: MockerFixture) -> None:
     """list_models guarda en cache; is_available reusa sin HTTP (TTL 60s)."""
     mock_request = _patch_transport(
         mocker,
-        response=_FakeResponse(200, {"models": [{"name": "qwen3:4b"}]}),
+        response=_FakeResponse(200, {"data": [{"id": "qwen3:4b"}]}),
     )
     client = _client()
     assert client.list_models() == ["qwen3:4b"]
@@ -430,7 +476,7 @@ def test_cache_expired_refetches(mocker: MockerFixture) -> None:
     """Cache expirada vuelve a HTTP (TTL vencido)."""
     mock_request = _patch_transport(
         mocker,
-        response=_FakeResponse(200, {"models": []}),
+        response=_FakeResponse(200, {"data": []}),
     )
     client = _client()
     assert client.is_available() is True
