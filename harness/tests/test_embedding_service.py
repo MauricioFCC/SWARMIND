@@ -388,10 +388,16 @@ class TestEnsureModel:
 class TestEdgeCases:
     """Tests de edge cases varios."""
 
+    @pytest.mark.xfail(
+        strict=True,
+        reason="BUG: BatchedEmbeddingService no implementa stop(); el loop "
+        "de batching no tiene apagado publico (reportado, sin editar produccion).",
+    )
     def test_loop_cleanup_on_stop(self, service):
-        """Al detener el loop, _running debe ser False."""
-        service._running = False
-        assert True
+        """Al detener el loop con stop(), _running debe quedar en False."""
+        service._running = True
+        service.stop()
+        assert service._running is False
 
     def test_embed_sync_with_non_ascii(self, service):
         """Textos con solo caracteres no ASCII deben funcionar."""

@@ -108,8 +108,12 @@ def test_include_tests_flag(tmp_path) -> None:
 
 
 def test_extract_symbols_accepts_preloaded_text(tmp_path) -> None:
-    """Pasar `text` evita releer y produce los mismos simbolos."""
+    """Pasar `text` usa SOLO ese contenido, ignorando lo que hay en el archivo."""
     target = tmp_path / "m.py"
-    source = "def pre(x: int) -> int:\n    return x\n"
-    target.write_text(source, encoding="utf-8")
-    assert extract_symbols(target, "m.py", text=source) == extract_symbols(target, "m.py")
+    target.write_text("def from_file() -> None:\n    pass\n", encoding="utf-8")
+    preloaded = "def from_text(x: int) -> int:\n    return x\n"
+
+    names = {symbol.name for symbol in extract_symbols(target, "m.py", text=preloaded)}
+
+    assert "from_text" in names
+    assert "from_file" not in names
