@@ -142,3 +142,7 @@ def test_compute_score_with_empty_input_returns_zero() -> None:
 - [ ] DocStrings ES-UTF8 en TODO test/fixture/helper.
 - [ ] Errores legibles y accionables.
 - [ ] Sugerencia green entregada al implementador (opcional pero recomendada).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

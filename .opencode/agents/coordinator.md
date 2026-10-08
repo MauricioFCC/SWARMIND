@@ -236,3 +236,7 @@ Evaluacion de DAG Plan & Execute vs ReAct a escala enterprise (Persona <10, Depa
 - Aceptar resúmenes de subagentes vacíos o sin ruta de artefacto (hand-off silencioso).
 - Reimplementar funcionalidad existente sin verificar `git log`/skills registry (IDP).
 - Entregar sin gate de evidencia ni validación de guardian (GATE).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

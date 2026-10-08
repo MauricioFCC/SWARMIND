@@ -200,3 +200,7 @@ Aplicar estas técnicas para análisis profundo de documentos:
 - [ ] Validación estadística (no una sola corrida/semilla).
 - [ ] Novedad y limitaciones declaradas.
 - [ ] Evidencia reproducible (artefactos/comando).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

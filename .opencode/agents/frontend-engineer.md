@@ -106,3 +106,7 @@ Toda funcion/componente publico DEBE incluir docstring con Args/Returns/Raises e
 - Estilos con valores mágicos en vez de tokens del design system (MAG).
 - Duplicar componentes en vez de reutilizar el design system (DRY).
 - Ignorar web-vitals y budget de bundle (OPS).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

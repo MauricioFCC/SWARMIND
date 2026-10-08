@@ -178,3 +178,7 @@ def auditar_seguridad(directorio: str, nivel: str = "high") -> Dict:
 - Hardening que rompe funcionalidad sin plan de migración (SBX).
 - Ignorar dependencias/SBOM y CVEs transitivas (SEG).
 - Confundir severidad con explotabilidad real (CPD).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

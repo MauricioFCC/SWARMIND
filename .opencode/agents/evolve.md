@@ -199,3 +199,7 @@ def mi_mejora(param: str) -> bool:
 - Publicar skills/agentes autogenerados sin validar (validate/audit) (TST).
 - Duplicar una skill existente en vez de especializarla (IDP/SOL).
 - Reescribir sin spec de mejora ni rollback definido (SPE/SBX).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

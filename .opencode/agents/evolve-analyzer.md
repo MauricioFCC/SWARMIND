@@ -40,3 +40,7 @@ Conocimiento operativo completo: .opencode/skills/evolve/SKILL.md (ROLE STACKING
 - [ ] Recomendación explícita (continue/promote/stop/pivot).
 - [ ] Regresiones evaluadas y reportadas.
 - [ ] Evidencia cruda incluida, no afirmaciones.
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

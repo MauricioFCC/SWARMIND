@@ -99,3 +99,7 @@ Toda funcion/endpoint publico DEBE incluir docstring con Args/Returns/Raises en 
 - SQL construido por concatenación en vez de parametrizado (SEG).
 - Acoplar lógica de negocio al framework o a la base de datos (DIP/SOL).
 - Reimplementar un servicio/endpoint ya existente (IDP).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

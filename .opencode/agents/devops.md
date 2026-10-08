@@ -165,3 +165,7 @@ def configurar_pipeline(repo: str, ambiente: str) -> Dict:
 - Pipelines sin gates de seguridad ni tests (GATE).
 - Despliegues sin rollback plan (SBX).
 - Secretos en repositorio o logs sin enmascarar (SEG).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

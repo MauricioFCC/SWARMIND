@@ -23,6 +23,7 @@ description: "Usar cuando se diseña una plataforma interna, golden paths o self
 ### Thinnest Viable Platform
 | Principio | Aplicación |
 |-----------|-----------|
+| **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |
 | **Mínimo viable** | Hacer lo mínimo, lo mejor posible (Skelton & Pais) |
 | **Self-service** | Todo operativo sin ticket: templates, scripts, docs |
 | **Golden paths** | Camino pavimentado por defecto; salida libre documentada |

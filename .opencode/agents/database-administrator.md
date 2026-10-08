@@ -105,3 +105,7 @@ Toda funcion/procedimiento/script de BD DEBE incluir docstring con Args/Returns/
 - Consultas sin índices ni EXPLAIN ANALYZE en rutas calientes (ARQ).
 - SQL dinámico por concatenación de strings (SEG).
 - Backups sin prueba de restore verificada (OPS).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

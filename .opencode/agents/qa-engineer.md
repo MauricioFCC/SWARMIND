@@ -115,3 +115,7 @@ Toda funcion test/suite/fixture DEBE incluir docstring con descripcion de lo que
 - Suites lentas sin aislamiento ni datos deterministas (OPS).
 - Ignorar fallos intermitentes (flaky) en vez de ponerlos en cuarentena (FAIL).
 - Medir cobertura sin branch ni mutation (TST).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

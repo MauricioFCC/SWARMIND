@@ -187,3 +187,7 @@ El guardian DEBE verificar que todo codigo frontend cumpla:
 - Dar por bueno un test decorativo (cobertura alta sin branch) (TST).
 - Omitir mutation/adversarial testing donde aplica (TST).
 - Aprobar con tests RED o evidencia ausente (GATE).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

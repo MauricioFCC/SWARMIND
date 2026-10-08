@@ -141,3 +141,7 @@ def disenar_sistema(requerimientos: Dict, restricciones: List[str]) -> Dict:
 - Sobre-arquitectura especulativa (microservicios, capas) sin delta medible (YAGNI).
 - Ignorar trade-offs o quality attributes en la decisión (SOL/ARQ).
 - Diagramas sin correspondencia con el código real (BTR).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

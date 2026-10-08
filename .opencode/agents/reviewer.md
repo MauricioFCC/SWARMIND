@@ -204,3 +204,7 @@ plan-mode first -> adversarial diff review -> verificacion con suite completa
 - Revisar estilo sin evaluar corrección ni seguridad (SOL/SEG).
 - Comentarios sin severidad ni acción concreta (CMT).
 - Ignorar regresiones y deuda técnica (TST/AGR).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

@@ -41,3 +41,7 @@ Conocimiento operativo completo: .opencode/skills/evolve/SKILL.md (ROLE STACKING
 - [ ] expected_improvement medible y parent_ids declarados.
 - [ ] Sin duplicar mejoras ya aplicadas.
 - [ ] Justificación basada en patrones previos.
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

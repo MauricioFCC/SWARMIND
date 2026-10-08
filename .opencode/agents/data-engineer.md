@@ -192,3 +192,7 @@ def crear_pipeline_ventas(origen: str, destino: str, incremental: bool = True) -
 - ETL sin data quality checks ni monitoreo (GATE).
 - Cargar todo en memoria por falta de partitioning/streaming (ARQ).
 - SQL o credenciales hardcodeados en el pipeline (SEG).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

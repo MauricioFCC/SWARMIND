@@ -1,11 +1,11 @@
 ---
-description: Principios universales v3.4.0 - N1+N2 siempre, N3 bajo demanda + FND Foundation-First (entorno antes que producto) + taxonomia de adherencia (IFEval/DRFR) + RPA re-anclaje post-compaction + CPD fundamentos de competicion (ADR-0070) + TDD adversarial/mutante/PBT/pairwise/BVA/metamorphic/fuzz (ADR-0077) + DORA/ShapeUp/trunk/RFC/postmortem (ADR-0083) + ADV verificacion adversarial atacante/steelman/juez + SWE-ABS/RvB
+description: Principios universales v3.5.0 - N1+N2 siempre, N3 bajo demanda + FND Foundation-First (entorno antes que producto) + taxonomia de adherencia (IFEval/DRFR) + RPA re-anclaje post-compaction + CPD fundamentos de competicion (ADR-0070) + TDD adversarial/mutante/PBT/pairwise/BVA/metamorphic/fuzz (ADR-0077) + DORA/ShapeUp/trunk/RFC/postmortem (ADR-0083) + ADV verificacion adversarial atacante/steelman/juez + SWE-ABS/RvB + convenciones de codigo Clean Architecture/validacion de input/fail-fast tipado/AAA/atomicos (ADR-0098)
 inherit:
   - core/base_principles.md
   - core/fde_principles.md
 name: base-principles
 project_agnostic: true
-version: 3.4.0
+version: 3.5.0
 ---
 
 # PRINCIPIOS UNIVERSALES | Multi-nivel
@@ -15,14 +15,14 @@ N1+N2 siempre inyectados; N3 bajo demanda (ver seccion final).
 
 ---
 
-## NIVEL 1 -- ESENCIAL (7 lineas, ~65 tokens, siempre inyectado)
+## NIVEL 1 -- ESENCIAL (siempre inyectado; reglas atomicas CHECK)
 
 ```md
 RSF: Research First | investigar ANTES de ejecutar | vanguardia se renueva sola
 IDP: Idempotencia | si ya esta implementado NO reimplementar | solo mejorar
 ERR: Errores legibles y accionables | WHAT+WHY+WHERE | sin except silencioso
 ARQ: hexagonal + DI | KISS <500 | DRY | type hints | pathlib
-SEG: 0 secrets | validate input | mask logs | parametriza SQL | sys.path.insert(1)
+SEG: 0 secrets | mask logs | parametriza SQL | sys.path.insert(1)
 DOC: docstrings ES OBLIGATORIAS | 0 funciones sin docstring | template Args/Returns/Raises
 TST: core >=80% | TDD adversarial (test vs mutante) + mutantes + PBT + pairwise | coverage es piso no techo | pre-commit gates | 0 except silenciosos | logger.warning()
 CMT: conventional commit type(scope): descripcion
@@ -56,6 +56,11 @@ SBX: Sandboxing | aislamiento de fallos | per-task environment | rollback plan |
 RPA: Re-Pin After compaction | tras CADA compactacion recargar N1+rol+skills+agentes | 65% fallos = drift | bloque <<RE-ANCHOR>>
 CPD: Fundamentos Competicion | checklist edges+invariants+BigO ANTES de codear | diagnose→repair→regenerate | dual verification
 ADV: Verificacion adversarial SIEMPRE | atacante (halla gaps) → steelman (defiende+propone) → juez (veredicto+disenso) | T siempre ultimo movimiento | 1/5 "resuelto" es incorrecto: fortalecer antes de confiar
+CLA: Clean Architecture | Presentation->Application->Domain<-Infrastructure | domain puro (0 frameworks/DB) | ports/adapters + DIP
+VAL: Input Validation | TODO input externo (HTTP/CLI) validado contra schema ANTES del dominio | Zod/Pydantic
+FST: Fail-Fast tipado | errores tipados con cause + contexto | nunca swallow ni mensaje generico
+AAA: Test AAA | Arrange-Act-Assert | 1 test = 1 criterio | mocks (0 DB/red real en unit)
+ATM: Atomic Changes | 1 commit/PR = 1 preocupacion logica
 ```
 
 ---
@@ -69,13 +74,13 @@ parafrasean — Ribeiro: el compliance es pattern matching fragil).
 
 | Cat | Nombre | Codigos | Modo |
 |-----|--------|---------|------|
-| PRC | Proceso e investigacion | RSF, IDP, FRS, FND, SPE, UPG, POC | CHECK |
-| ARC | Arquitectura y codigo | ARQ, SOL, CMP, DEM, NAM, TYP, IMM, MAG, FSZ, AGR | CHECK |
-| QLT | Calidad y testing | TST, PBT, GATE, CPD, ADV | CHECK |
-| SEC | Seguridad y aislamiento | SEG, SBX | CHECK |
+| PRC | Proceso e investigacion | RSF, IDP, FRS, FND, SPE, UPG, POC, ATM (ADR-0098) | CHECK |
+| ARC | Arquitectura y codigo | ARQ, SOL, CMP, DEM, NAM, TYP, IMM, MAG, FSZ, AGR, CLA (ADR-0098) | CHECK |
+| QLT | Calidad y testing | TST, PBT, GATE, CPD, ADV, AAA (ADR-0098) | CHECK |
+| SEC | Seguridad y aislamiento | SEG, SBX, VAL (ADR-0098) | CHECK |
 | DOC | Documentacion y commits | DOC, CMT, SVE | CHECK |
 | CTX | Contexto y tokens | CEN, TKN | CHECK |
-| GOV | Gobernanza y evidencia | ERR, FAIL, BTR, EVO, FDE, DOR | CHECK |
+| GOV | Gobernanza y evidencia | ERR, FAIL, BTR, EVO, FDE, DOR, FST (ADR-0098) | CHECK |
 | SYS | Sistema y evolucion | WFP, MCL, MKS, RPA | GUIDE |
 
 Reglas de uso (DRFR + SID + FollowBench):
@@ -150,6 +155,11 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 | __GATE__ | __Evidence-Gated Lifecycle (Pondero CI-for-Agents 2026)__: 3-tier gates: __T1__ deterministic (<90s, blocks merge): schema validation, lint, test, security scan. __T2__ LLM-judge (<10min, blocks merge): behavioral spec, rubric scoring, majority voting repeat:3, judge temp=0. __T3__ regression (<60min, alert-only): nightly full suite, cross-model comparison. Spec y evals cambian juntos (SVE). Cost-arithmetic para judge models. |
 | __FAIL__ | __Failure Registry (Socratic-SWE, Qu 2026)__: Cada fallo se registra en `harness/db/failures.jsonl` con: failure_type, error_msg, root_cause, resolution, skill_derived, severity. Evolve loop lee el registry → distilla en skills → genera tareas dirigidas que address capability gaps. Skills deduplicated por similaridad semántica. Solver-gradient alignment reward para task quality. +7.80 SWE-bench después de 3 iteraciones. __Postmortem blameless__ (SEV≥2, plantilla `specs/postmortem_template.md`): timeline + 5 whys (si culpa a persona, seguir preguntando) + action items con dueño+fecha; sin culpa, el sistema fallo. |
 | __SBX__ | __Sandboxing (Docker Sandboxes + Cloudflare Dynamic Workers 2026)__: Aislamiento de fallos: cada fan-out task puede correr en entorno aislado. Docker microVM para coding agents (Claude Code, Codex, OpenCode) con `--dangerously-skip-permissions`. Cloudflare V8 isolates: 100x más rápido que containers (ms startup, MB memory). Python-native: Pyodide/WASM para tool execution. Governance layer: network policies, filesystem controls. Rollback plan obligatorio antes de ejecutar. |
+| __CLA__ | Clean Architecture (ADR-0098): direccion de dependencias `Presentation->Application->Domain<-Infrastructure`. El dominio es puro (0 imports de frameworks/DB); la infraestructura implementa los ports del dominio via DIP. Complementa ARQ (hexagonal). |
+| __VAL__ | Input Validation (ADR-0098): TODO input externo (HTTP/CLI) se valida contra un schema ANTES de tocar el dominio (Zod/Pydantic). Complementa SEG (validate input). |
+| __FST__ | Fail-Fast tipado (ADR-0098): errores tipados con `cause` + contexto; nunca swallow ni mensaje generico (`raise ... from error` en Python). Complementa ERR (WHAT+WHY+WHERE). |
+| __AAA__ | Test AAA (ADR-0098): Arrange-Act-Assert, 1 test = 1 criterio; mocks en unit (0 DB/red real). Complementa TST. |
+| __ATM__ | Atomic Changes (ADR-0098): 1 commit/PR = 1 preocupacion logica. Complementa CMT. |
 
 ---
 
