@@ -804,6 +804,18 @@ def generate_readme(project: Project, dry_run: bool) -> bool:
     Returns:
         True si el README fue (o sería) actualizado.
     """
+    # Respeta READMEs mantenidos a mano: si el fichero empieza por el marcador
+    # sentinel, NO se regenera (evita sobrescribir contenido curado del proyecto).
+    readme_path = project.path / "README.md"
+    if readme_path.is_file():
+        try:
+            head = readme_path.read_text(encoding="utf-8", errors="replace")[:256]
+        except OSError:
+            head = ""
+        if "<!-- hand-maintained README" in head:
+            logger.info("    ->  README.md SKIPPED (marcador hand-maintained)")
+            return False
+
     skills = _discover_skills()
     agents = _discover_agents()
 
@@ -848,7 +860,7 @@ python harness/run.py '!health'
 *Generado por Swarmind Harness — {datetime.now(UTC).strftime('%Y-%m-%d')}*
 """
     if not dry_run:
-        (project.path / "README.md").write_text(content, encoding="utf-8")
+        readme_path.write_text(content, encoding="utf-8")
     return True
 
 
