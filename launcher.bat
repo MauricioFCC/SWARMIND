@@ -71,11 +71,9 @@ echo %B%  ║                                      ║%RESET%
 echo %B%  ║  %W% 1) 🧪  Run Tests%RESET%                 %B%║%RESET%
 echo %B%  ║  %W% 2) 📊  Test Coverage%RESET%             %B%║%RESET%
 echo %B%  ║  %W% 3) 🚀  Deploy to All Projects%RESET%    %B%║%RESET%
-echo %B%  ║  %W% 4) 📤  Export to Google Drive%RESET%    %B%║%RESET%
 echo %B%  ║  %W% 5) 📋  List Tests%RESET%                %B%║%RESET%
 echo %B%  ║  %W% 6) 🔧  Lint Code (ruff)%RESET%          %B%║%RESET%
 echo %B%  ║  %W% 7) ⚡  GPU Info%RESET%                   %B%║%RESET%
-echo %B%  ║  %W% 8) 📦  Export + ZIP%RESET%               %B%║%RESET%
 echo %B%  ║  %W% 0)  🚪  Exit%RESET%                     %B%║%RESET%
 echo %B%  ║                                      ║%RESET%
 echo %B%  ╚══════════════════════════════════════╝%RESET%
@@ -85,11 +83,9 @@ set /p "choice=%C%  › %RESET%"
 if "%choice%"=="1" goto run_tests
 if "%choice%"=="2" goto run_coverage
 if "%choice%"=="3" goto run_deploy
-if "%choice%"=="4" goto run_export
 if "%choice%"=="5" goto list_tests
 if "%choice%"=="6" goto run_lint
 if "%choice%"=="7" goto gpu_info
-if "%choice%"=="8" goto run_export_zip
 if "%choice%"=="0" goto end
 goto menu
 
@@ -123,14 +119,6 @@ echo.
 pause
 goto banner
 
-:run_export
-cls
-echo %B%  📤 Exporting to Google Drive...%RESET%
-echo.
-%PYTHON_CMD% scripts/export_to_drive.py
-echo.
-pause
-goto banner
 
 :list_tests
 cls
@@ -161,14 +149,6 @@ echo.
 pause
 goto banner
 
-:run_export_zip
-cls
-echo %B%  📦 Export to Google Drive + ZIP...%RESET%
-echo.
-%PYTHON_CMD% scripts/export_to_drive.py
-echo.
-pause
-goto banner
 
 :: ── End ──────────────────────────────────────────────────────────────────
 :end

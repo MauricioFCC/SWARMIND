@@ -1,22 +1,15 @@
 ﻿# Exportacion, Backup y Deploy — Swarmind
 
-> **Destino:** `<EXPORT_BASE>` (configurable via `EXPORT_BASE` en el script, default `~/GoogleDrive/DEV/exports/`)  
+> **Destino:** `<EXPORT_BASE>` (configurable por env; portable Windows/macOS/Linux)
 > **Scripts:** Todos en `scripts/`
+
+> **Nota (2026-10-08):** `scripts/export_to_drive.py` y `scripts/backup_to_gdrive.py`
+> fueron eliminados (tenian rutas de maquina y funcionalidad de Drive especifica
+> del autor). Usa `export_all_projects.py` o `export_archive.py`.
 
 ---
 
-## 1. Exportar Swarmind a Google Drive
-
-```bash
-python scripts/export_to_drive.py              # Export + ZIP
-python scripts/export_to_drive.py --dry-run    # Simular
-python scripts/export_to_drive.py --keep       # Conservar carpeta temporal
-```
-
-Usa `git ls-files`. Excluye `.venv`, `__pycache__`, `.git`, `.env`.  
-**Output:** `Swarmind_YYYY-MM-DD.zip`
-
-## 2. Exportar Todos los Proyectos (6)
+## 1. Exportar Todos los Proyectos
 
 ```bash
 python scripts/export_all_projects.py
@@ -25,7 +18,7 @@ python scripts/export_all_projects.py
 Exporta Swarmind, CQE, HC, Onyx, PDV y Alfa con ZIPs fechados.  
 **Seguridad:** Lista blanca — solo elimina ZIPs de proyectos conocidos.
 
-## 3. Deploy a Proyectos
+## 2. Deploy a Proyectos
 
 ```bash
 python scripts/deploy_all.py                    # Completo
@@ -37,7 +30,7 @@ Sincroniza `.opencode/` y `harness/` a: quant-engine, health-record, Onyx, pos-s
 Optimiza skills por tipo (trading, healthtech, retail, general) y genera README.md personalizado.  
 **Backup de configs:** Restaura `project_config.yaml`, `routing_rules.yaml`, `skills_registry.yaml`. Routing obsoleto con agentes fantasma se descarta.
 
-## 4. Exportacion Universal
+## 3. Exportacion Universal
 
 ```bash
 python scripts/export_archive.py                          # Default tar.gz
@@ -47,7 +40,7 @@ python scripts/export_archive.py --output ../backups/     # Destino custom
 
 Genera manifiesto .txt con listado completo y estadisticas.
 
-## 5. Session Log & Memoria Federada
+## 4. Session Log & Memoria Federada
 
 ```bash
 python scripts/session_log.py add "Titulo" -c "Detalle" -d "dominio"   # Guardar
@@ -57,7 +50,7 @@ python scripts/Swarmind_bridge_sync.py             # Sync memoria entre proyecto
 python scripts/Swarmind_bridge_sync.py --status    # Ver estado del bridge
 ```
 
-## 6. Estructura de Exports
+## 5. Estructura de Exports
 
 ```
 <EXPORT_BASE>/

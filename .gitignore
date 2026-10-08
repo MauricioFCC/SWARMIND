@@ -25,11 +25,12 @@ scripts/deploy_routing_fix.py
 # export_all_projects.py ya NO se ignora (2026-08-08): es portable via
 # Path.home() + env vars (SWARMIND_EXPORT_BASE/DEV_SPACE_ROOT) sin rutas
 # hardcodeadas del autor, y protege ZIPs externos por regla universal
-# (solo toca {tag}_YYYY-MM-DD.zip de proyectos detectados). Los demas
-# scripts de export mantienen paths del autor y se quedan ignorados.
+# (solo toca {tag}_YYYY-MM-DD.zip de proyectos detectados).
+# export_to_drive.py y backup_to_gdrive.py ELIMINADOS (2026-10-08): su
+# funcionalidad de Drive se retiro; usa export_all_projects.py / export_archive.py.
+# export_archive.py mantiene paths del autor y se queda ignorado.
 scripts/export_archive.py
-scripts/export_to_drive.py
-# push.bat: wrapper de export_to_drive.py (Push to Drive) — path del autor
+# push.bat: wrapper legacy del autor (Push to Drive) — path del autor
 push.bat
 
 # Python
@@ -95,6 +96,7 @@ exports/
 
 # Doc build output
 docs/book/
+docs/adr
 
 # CI / Tooling
 .installed/

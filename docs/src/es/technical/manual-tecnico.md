@@ -1819,7 +1819,6 @@ Anadidos sep-2026 (detalle en `docs/src/es/adr/`, indice en `docs/src/es/adr/REA
 | Skill agent-rigor | `.opencode/skills/agent-rigor/` | 0079 | gates pre-merge, anti-pintar-verde, MS≥70% (PEC-35) |
 | Spec gate | `validation/cp_spec_gate.py` | 0080 | 4 pilares pre-código (edges/invariants/complexity/io_constraints) |
 | Dual verify | `validation/dual_verify.py` | 0080 | fast vs brute-force con mismatches indexados |
-| Backup Drive | `scripts/backup_to_gdrive.py` | — | robocopy /E idempotente, sensibles opt-in SEG |
 
 ---
 
