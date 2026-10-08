@@ -6,10 +6,25 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any, Protocol
 
-if TYPE_CHECKING:
-    from .router_v2 import Orchestrator
+
+class OrchestratorProtocol(Protocol):
+    """Contrato minimo del orquestador que consumen los patrones.
+
+    Se define localmente (en vez de importar `Orchestrator` de `router_v2`)
+    para romper el ciclo de importacion a nivel de modulo que CodeQL detecta
+    y aplicar inversion de dependencias: los patrones dependen de una
+    abstraccion, no de la implementacion concreta.
+    """
+
+    def process(
+        self,
+        user_message: str,
+        context_override: dict | None = None,
+    ) -> dict[str, Any]:
+        """Procesa un mensaje y devuelve la respuesta estructurada."""
+        ...
 
 
 @dataclass
@@ -203,7 +218,7 @@ ROUTING_GRAPH: dict[str, RoutingNode] = {
 
 
 def execute_sequential_pattern(pattern: MultiAgentPattern, user_message: str,
-                                context: dict, orchestrator: Orchestrator) -> dict[str, Any]:
+                                context: dict, orchestrator: OrchestratorProtocol) -> dict[str, Any]:
     """Execute agents sequentially. Output of N is input of N+1."""
     trace_id = None
     accumulated_output = user_message
@@ -221,7 +236,7 @@ def execute_sequential_pattern(pattern: MultiAgentPattern, user_message: str,
 
 
 def execute_parallel_pattern(pattern: MultiAgentPattern, user_message: str,
-                              context: dict, orchestrator: Orchestrator) -> dict[str, Any]:
+                              context: dict, orchestrator: OrchestratorProtocol) -> dict[str, Any]:
     """Execute agents in parallel. Merge outputs according to strategy."""
     import concurrent.futures
     outputs = {}
@@ -255,7 +270,7 @@ def execute_parallel_pattern(pattern: MultiAgentPattern, user_message: str,
 
 
 def execute_loop_pattern(pattern: MultiAgentPattern, user_message: str,
-                          context: dict, orchestrator: Orchestrator) -> dict[str, Any]:
+                          context: dict, orchestrator: OrchestratorProtocol) -> dict[str, Any]:
     """Execute agent in loop until condition or max_iterations."""
     iteration = 0
     last_output = user_message

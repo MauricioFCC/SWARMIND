@@ -47,6 +47,7 @@ import os
 import shutil
 import subprocess
 import sys
+import sysconfig
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -107,11 +108,16 @@ SANDBOX_MEMORY = "256m"
 #: Limite de procesos del contenedor (anti fork-bomb).
 SANDBOX_PIDS = "128"
 #: Tmpfs efimero: read-write, sin exec, sin suid, con tamano acotado.
-SANDBOX_TMPFS = "/tmp:rw,noexec,nosuid,size=64m"
+#: `/tmp` es la ruta DENTRO del contenedor (tmpfs efimero), no un temp del host.
+SANDBOX_TMPFS = "/tmp:rw,noexec,nosuid,size=64m"  # nosec B108
 #: Usuario sin privilegios (nobody:nogroup).
 SANDBOX_USER = "65534:65534"
 #: Punto de montaje read-only del workdir dentro del contenedor.
 SANDBOX_WORKDIR = "/work"
+#: Punto de montaje read-only del site-packages del host dentro del contenedor.
+#: WHY: la imagen base (python:3.12-slim) no trae las deps del proyecto
+#: (hypothesis, etc.); el codigo generado por el agente las necesita.
+SANDBOX_SITE_PACKAGES = "/opt/sandbox-site"
 #: Interprete Python disponible en la imagen docker por defecto.
 PYTHON_IN_CONTAINER = "python"
 
@@ -372,6 +378,50 @@ def _configure_kernel32(kernel32: object) -> None:
     kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
 
 
+def _host_site_packages() -> Path | None:
+    """Devuelve el site-packages del interprete actual (venv) si existe.
+
+    Se monta read-only dentro del contenedor docker via `PYTHONPATH` para que
+    el codigo generado (p. ej. tests del stage PBT) pueda importar las
+    dependencias del proyecto, ausentes de la imagen base slim.
+
+    Returns:
+        Ruta al site-packages del host, o None si no es un directorio valido
+        (nunca lanza: el mount es best-effort).
+    """
+    try:
+        purelib = sysconfig.get_paths().get("purelib")
+    except (KeyError, OSError):
+        return None
+    if not purelib:
+        return None
+    path = Path(purelib)
+    return path if path.is_dir() else None
+
+
+def _ensure_docker_readable(workdir: Path, script: Path) -> None:
+    """Relaja permisos del mount docker para el usuario sin privilegios.
+
+    El contenedor corre como `nobody` (uid 65534). Los directorios temporales
+    (`tempfile.TemporaryDirectory`) nacen 0o700, por lo que el usuario del
+    contenedor no puede atravesarlos y `python /work/<script>` falla con
+    "Permission denied" tanto en baseline como en mutante: el returncode
+    identico enmascara el kill y hunde el kill rate a 0.
+
+    Args:
+        workdir: Directorio montado en `/work` (se hace 0o755).
+        script: Script dentro del workdir (se hace 0o644).
+    """
+    for path, mode in ((workdir, 0o755), (script, 0o644)):
+        try:
+            path.chmod(mode)
+        except OSError as e:
+            logger.warning(
+                "sandbox_executor: chmod fallo en %s (WHAT=permiso permisivo "
+                "WHY=%s WHERE=_ensure_docker_readable)", path, e,
+            )
+
+
 def _detect_backend() -> str:
     """Detecta el backend disponible por prioridad (nunca lanza).
 
@@ -462,6 +512,7 @@ class SandboxExecutor:
         self._validate_request([str(script)], timeout_s)
         parent = script.parent
         if self._backend == BACKEND_DOCKER:
+            _ensure_docker_readable(parent, script)
             cmd = [PYTHON_IN_CONTAINER, f"{SANDBOX_WORKDIR}/{script.name}"]
             return self._execute(
                 cmd, timeout_s, env or {}, parent, image or self._image
@@ -696,6 +747,7 @@ class SandboxExecutor:
             )
             return self._run_subprocess(cmd, timeout_s, env, workdir)
         parent = str(workdir)
+        # `/tmp` es un tmpfs efimero DENTRO del namespace bwrap, no un temp del host.
         bwrap_cmd = [
             BACKEND_BWRAP,
             "--unshare-all",
@@ -704,7 +756,7 @@ class SandboxExecutor:
             "--ro-bind", parent, parent,
             "--proc", "/proc",
             "--dev", "/dev",
-            "--tmpfs", "/tmp",
+            "--tmpfs", "/tmp",  # nosec B108
             "--chdir", parent,
             "--",
             *cmd,
@@ -789,6 +841,34 @@ class SandboxExecutor:
                 backend="subprocess",
             )
 
+    @staticmethod
+    def _site_packages_mount(runtime_env: dict[str, str]) -> list[str]:
+        """Monta el site-packages del host y lo expone via PYTHONPATH.
+
+        Permite importar las dependencias del proyecto (hypothesis, etc.)
+        dentro de la imagen slim. Solo aplica en POSIX: la sintaxis de
+        bind-mount `origen:destino` de docker no soporta rutas Windows.
+
+        Args:
+            runtime_env: Entorno del contenedor (se inyecta `PYTHONPATH`).
+
+        Returns:
+            Fragmento de `docker run` con el bind-mount read-only del
+            site-packages (lista vacia si no aplica).
+        """
+        if os.name != "posix":
+            return []
+        site_packages = _host_site_packages()
+        if site_packages is None:
+            return []
+        existing = runtime_env.get("PYTHONPATH", "")
+        runtime_env["PYTHONPATH"] = (
+            f"{SANDBOX_SITE_PACKAGES}:{existing}"
+            if existing
+            else SANDBOX_SITE_PACKAGES
+        )
+        return ["-v", f"{site_packages}:{SANDBOX_SITE_PACKAGES}:ro"]
+
     def _run_docker(
         self,
         cmd: list[str],
@@ -813,14 +893,16 @@ class SandboxExecutor:
         Returns:
             SandboxResult del contenedor (timeout -> returncode 124).
         """
+        runtime_env = dict(env)
         docker_cmd = ["docker", "run", "--rm", *DOCKER_HARDENING]
-        for key, value in env.items():
-            docker_cmd += ["-e", f"{key}={value}"]
         if workdir is not None:
             docker_cmd += [
                 "-v", f"{workdir}:{SANDBOX_WORKDIR}:ro",
                 "--workdir", SANDBOX_WORKDIR,
             ]
+            docker_cmd += self._site_packages_mount(runtime_env)
+        for key, value in runtime_env.items():
+            docker_cmd += ["-e", f"{key}={value}"]
         docker_cmd += [image or self._image, *cmd]
         try:
             proc = subprocess.run(

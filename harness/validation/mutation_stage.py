@@ -46,8 +46,13 @@ logger = logging.getLogger(__name__)
 # Maximo de tipos de mutacion probados por nodo (0..5)
 MAX_MUTATION_TYPES: int = 6
 
-# Timeout de ejecucion de cada mutante (segundos)
-EXEC_TIMEOUT_S: float = 5.0
+# Semilla fija de la mutacion: sin ella `random` elige operadores distintos
+# en cada corrida (local vs CI) y el kill rate deja de ser reproducible.
+MUTATION_SEED: int = 0x5EED
+
+# Timeout de ejecucion de cada mutante (segundos). Holgado para tolerar el
+# arranque/pull del contenedor docker en backend aislado.
+EXEC_TIMEOUT_S: float = 30.0
 
 # Operadores aritmeticos alternativos al mutar un BinOp
 ARITHMETIC_ALTERNATIVES: tuple[str, ...] = ("+", "-", "*", "/", "%")
@@ -75,16 +80,24 @@ MUTABLE_NODE_TYPES: tuple[type[ast.AST], ...] = (
 )
 
 
-def _mutate_node(node: ast.AST, mutation_idx: int) -> ast.AST | None:
+def _mutate_node(
+    node: ast.AST,
+    mutation_idx: int,
+    rng: random.Random | None = None,
+) -> ast.AST | None:
     """Aplica una mutacion REAL a un nodo AST segun su tipo.
 
     Args:
         node: Nodo AST original a mutar.
         mutation_idx: Indice de tipo de mutacion (0..5).
+        rng: Generador aleatorio inyectado para reproducibilidad. Si es None
+            se usa uno sembrado con `MUTATION_SEED`.
 
     Returns:
         Nodo mutado, o None si este tipo de mutacion no aplica al nodo.
     """
+    if rng is None:
+        rng = random.Random(MUTATION_SEED)
     mut_type = mutation_idx % MAX_MUTATION_TYPES
 
     if mut_type == 0 and isinstance(node, ast.BinOp):
@@ -97,7 +110,7 @@ def _mutate_node(node: ast.AST, mutation_idx: int) -> ast.AST | None:
             return None
         return ast.BinOp(
             left=node.left,
-            op=_make_binop(random.choice(alternatives)),
+            op=_make_binop(rng.choice(alternatives)),
             right=node.right,
         )
 
@@ -110,7 +123,7 @@ def _mutate_node(node: ast.AST, mutation_idx: int) -> ast.AST | None:
         if not alternatives:
             return None
         new_ops = list(node.ops)
-        new_ops[0] = random.choice(alternatives)
+        new_ops[0] = rng.choice(alternatives)
         return ast.Compare(left=node.left, ops=new_ops, comparators=node.comparators)
 
     if mut_type == 2 and isinstance(node, ast.BoolOp):
@@ -129,7 +142,7 @@ def _mutate_node(node: ast.AST, mutation_idx: int) -> ast.AST | None:
         if isinstance(val, bool):
             new_val = not val
         elif isinstance(val, (int, float)):
-            new_val = val + random.choice((-1, 1))
+            new_val = val + rng.choice((-1, 1))
         else:
             new_val = val
         if new_val == val:
@@ -195,16 +208,24 @@ def _replace_node(tree: ast.Module, original: ast.AST, replacement: ast.AST) -> 
                         return
 
 
-def mutate_source(source: str, num_mutants: int = 5) -> list[str]:
+def mutate_source(
+    source: str,
+    num_mutants: int = 5,
+    seed: int = MUTATION_SEED,
+) -> list[str]:
     """
     Genera N variantes mutadas REALES del codigo fuente Python.
 
     Aplica cada mutacion al AST (reemplazo real del nodo) y re-serializa el
     arbol mutado. Los mutantes resultantes SIEMPRE difieren del original.
+    La seleccion de nodos y de operadores usa un RNG sembrado (`seed`) para
+    que el conjunto de mutantes sea DETERMINISTA y reproducible entre
+    local y CI.
 
     Args:
         source: Código fuente Python (string).
         num_mutants: Numero de mutantes a generar (default 5).
+        seed: Semilla del generador aleatorio (default `MUTATION_SEED`).
 
     Returns:
         Lista de strings con codigo mutado (diferente del original).
@@ -237,12 +258,13 @@ def mutate_source(source: str, num_mutants: int = 5) -> list[str]:
         logger.warning("No mutable nodes found in source")
         return []
 
+    rng = random.Random(seed)
     sampled_count = min(len(mutable_nodes), num_mutants)
-    sampled_nodes = random.sample(mutable_nodes, sampled_count)
+    sampled_nodes = rng.sample(mutable_nodes, sampled_count)
 
     for original_node in sampled_nodes:
         for mut_idx in range(MAX_MUTATION_TYPES):
-            mutated = _mutate_node(original_node, mut_idx)
+            mutated = _mutate_node(original_node, mut_idx, rng)
             if mutated is None:
                 continue
 

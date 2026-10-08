@@ -16,7 +16,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 
@@ -62,6 +62,10 @@ _task_id_list = st.lists(
 class TestCacheEntryProperties:
     """Propiedades de CacheEntry (invariantes de estructura de datos)."""
 
+    # mutmut ejecuta pytest dentro de `mutants/` y reinstala/rerun del mismo
+    # callable; Hypothesis lo detecta como "multiple executors" y aborta la
+    # clean test. Es un artefacto del runner de mutacion, no un bug del test.
+    @settings(suppress_health_check=[HealthCheck.differing_executors])
     @given(
         prompt_hash=st.text(min_size=1, max_size=64),
         prompt_text=st.text(min_size=0, max_size=500),
