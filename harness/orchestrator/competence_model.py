@@ -26,6 +26,10 @@ logger = logging.getLogger("harness.orchestrator.competence_model")
 #: Prior alpha/beta (Beta(1,1) = uniforme; neutro).
 PRIOR_ALPHA = 1.0
 PRIOR_BETA = 1.0
+#: Masa total del prior; se descuenta para contar OBSERVACIONES reales.
+PRIOR_TOTAL = PRIOR_ALPHA + PRIOR_BETA
+#: Constante k del peso por evidencia (n/(n+k)); mayor = mas conservador.
+EVIDENCE_SMOOTHING_K = 10.0
 #: Snapshot cada N updates para imp@k.
 DEFAULT_SNAPSHOT_EVERY = 10
 
@@ -48,6 +52,32 @@ class BetaPosterior:
         """Media de la Beta (exitos / total)."""
         total = self.successes + self.failures
         return self.successes / total if total > 0 else 0.0
+
+    @property
+    def observations(self) -> float:
+        """Observaciones reales del par (excluye la masa del prior Beta(1,1)).
+
+        Returns:
+            max(0, successes + failures - PRIOR_TOTAL); 0.0 si no hay datos.
+        """
+        return max(0.0, self.successes + self.failures - PRIOR_TOTAL)
+
+    def evidence_weight(self, smoothing: float = EVIDENCE_SMOOTHING_K) -> float:
+        """Peso de confianza por evidencia acumulada: n/(n+k).
+
+        Escala el bonus de competencia para que una sola observacion no
+        revierta un keyword fuerte (WHAT/WHY del hardening de seleccion).
+
+        Args:
+            smoothing: Constante k de suavizado (mayor = mas conservador).
+
+        Returns:
+            n / (n + smoothing), o 0.0 si no hay observaciones reales.
+        """
+        sample_size = self.observations
+        if sample_size <= 0:
+            return 0.0
+        return sample_size / (sample_size + smoothing)
 
 
 class CompetenceModel:

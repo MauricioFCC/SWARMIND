@@ -115,6 +115,41 @@ _CLOSED_TASK_RE = re.compile(
 #: Falsos positivos conocidos: contienen el verbo como substring sin ser tarea
 #: cerrada ("presume", "cuentagotas").
 _CLOSED_TASK_FALSE_POSITIVES: tuple[str, ...] = ("presume", "cuentagotas")
+#: Senales de contexto financiero/quant: una tarea de dominio financiero NO es
+#: cerrada. Sin esto, "position sizing para la cuenta" (donde "cuenta" matchea
+#: "cuent\w*" = contar) se clasificaba como cerrada y descartaba TODAS las
+#: skills (falso positivo de la sonda adversarial del coordinator).
+_FINANCE_CONTEXT_SIGNALS: tuple[str, ...] = (
+    "position sizing", "capital", "portfolio", "riesgo", "mandato",
+    "stop loss", "drawdown", "alpha", "factor", "backtest", "rebalanceo",
+    "asignacion", "asignación",
+)
+#: Contexto que convierte "cuenta/cuentas" en sustantivo financiero (frente al
+#: verbo contar): solo entonces desactiva la clasificacion cerrada.
+_FINANCE_ACCOUNT_CONTEXT: tuple[str, ...] = ("fondo", "cartera", "cuenta de")
+#: "cuenta"/"cuentas" como palabra (no el verbo "contar\w*").
+_FINANCE_ACCOUNT_RE = re.compile(r"\bcuentas?\b")
+
+
+def _has_finance_context(lowered: str) -> bool:
+    """True si la tarea tiene contexto financiero/quant (no es cerrada).
+
+    Desactiva la clasificacion cerrada en tareas de dominio financiero: ni el
+    verbo "contar" ni "cuenta" como sustantivo (junto a fondo/cartera/cuenta
+    de) deben descartar skills de position sizing, riesgo o cartera.
+
+    Args:
+        lowered: Tarea normalizada a minusculas.
+
+    Returns:
+        True si aparece una senal financiera, o "cuenta/cuentas" acompanada de
+        fondo/cartera/cuenta de.
+    """
+    if any(signal in lowered for signal in _FINANCE_CONTEXT_SIGNALS):
+        return True
+    if _FINANCE_ACCOUNT_RE.search(lowered) is None:
+        return False
+    return any(context in lowered for context in _FINANCE_ACCOUNT_CONTEXT)
 
 
 @dataclass(frozen=True)
@@ -141,18 +176,23 @@ def is_closed_task(task: str) -> bool:
 
     Matching endurecido (B3): el verbo debe respetar limite de palabra, de
     modo que "presume" (contiene "resum") o "cuentagotas" (contiene "cuenta")
-    no disparen falsos positivos; ademas se excluyen los conocidos.
+    no disparen falsos positivos; ademas se excluyen los conocidos. El
+    contexto financiero/quant (position sizing, capital, riesgo, etc.)
+    desactiva la clasificacion: "cuenta" como sustantivo no debe marcar como
+    cerrada una tarea substantiva y descartar sus skills.
 
     Args:
         task: Descripcion de la tarea (case-insensitive).
 
     Returns:
-        True si matchea la allowlist de tareas cerradas.
+        True si matchea la allowlist de tareas cerradas sin contexto financiero.
     """
     lowered = task.lower()
     if _CLOSED_TASK_RE.search(lowered) is None:
         return False
-    return not any(false_positive in lowered for false_positive in _CLOSED_TASK_FALSE_POSITIVES)
+    if any(false_positive in lowered for false_positive in _CLOSED_TASK_FALSE_POSITIVES):
+        return False
+    return not _has_finance_context(lowered)
 
 
 class LocalExecutor:

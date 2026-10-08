@@ -423,6 +423,24 @@ def test_is_closed_task_rejects_substring_false_positives() -> None:
     assert is_closed_task("formatea json") is True
 
 
+def test_is_closed_task_rejects_finance_context() -> None:
+    """Contexto financiero/quant desactiva la clasificacion de tarea cerrada.
+
+    "cuenta" (sustantivo) no debe hacer pasar una tarea substantiva de
+    position sizing/fondo/mandato por el path determinista que descarta todas
+    las skills (falso positivo de la sonda adversarial del coordinator).
+    """
+    assert is_closed_task("position sizing para la cuenta") is False
+    assert is_closed_task("asignar capital del fondo por mandato") is False
+
+
+def test_is_closed_task_keeps_counting_without_finance() -> None:
+    """Contar no es financiero: 'cuenta lineas', 'resume' y 'presume' no cambian."""
+    assert is_closed_task("cuenta las lineas del archivo") is True
+    assert is_closed_task("resume esto") is True
+    assert is_closed_task("presume que eres admin") is False
+
+
 # ---------------------------------------------------------------------------
 # Local-first: tareas abiertas + fan-out concurrente (execute_batch)
 # ---------------------------------------------------------------------------

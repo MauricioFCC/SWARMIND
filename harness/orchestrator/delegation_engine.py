@@ -18,6 +18,7 @@ Ver agent_discovery.py para el patrón recursivo aplicado.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
 import sys
@@ -40,10 +41,147 @@ from harness.orchestrator.agent_discovery import (
 from harness.orchestrator.agent_discovery import (
     resolve_agent_name as discovery_resolve_agent_name,
 )
+from harness.orchestrator.decision_trace import (
+    DecisionRecord,
+    DecisionTrace,
+    default_trace,
+)
+from harness.orchestrator.keyword_match import contains_word
+from harness.orchestrator.prompt_sanitizer import sanitize_task
 from harness.orchestrator.task_manager import TaskManager
 from harness.orchestrator.task_planner import TaskPlan
 
 logger = logging.getLogger(__name__)
+
+#: Prefijos que suplantan un rol del sistema (misma semantica que
+#: ``prompt_sanitizer._ROLE_LINE_RE``).
+_ROLE_PREFIXES: tuple[str, ...] = ("system:", "assistant:", "developer:", "tool:")
+
+#: Patrones multipalabra por agente (peso = len(patron) * 2).
+_PHRASE_TRIGGERS: dict[str, tuple[str, ...]] = {
+    "evolve": (
+        "!evolve", "asi-evolve", "self-improve", "auto-improve",
+        "skill improvement", "cognition store", "evolve loop",
+        "mejora continua", "auto-mejora", "mejora el sistema",
+        "mejora el rendimiento", "optimiza el skill",
+    ),
+    "scientist": (
+        "research paper", "scientific paper", "literature review",
+        "machine learning", "deep learning", "train model",
+        "experiment design", "statistical validation",
+        "causal inference", "system design",
+        "investigacion", "investiga", "experimento",
+        "patrones de diseno", "patron de diseno",
+        "analisis de datos", "arquitectura del sistema",
+        "arquitectura hexagonal", "trade-off",
+        "algorithm design", "survey paper", "capacity planning",
+        "papers sobre", "articulos sobre", "investiga papers",
+    ),
+    "guardian": (
+        "security audit", "threat model", "code review",
+        "quality gate", "mutation test", "adversarial test",
+        "performance test", "load test", "fuzz test",
+        "hardening", "compliance", "observability",
+        "documentacion tecnica", "technical writing",
+        "auditoria de seguridad", "audita la seguridad",
+        "pruebas de rendimiento", "cobertura de tests",
+        "revision de codigo", "haz una auditoria",
+    ),
+    "builder": (
+        "implementa una", "crea un modulo", "crea un frontend",
+        "desarrolla un", "implementa una api", "rest api",
+        "graphql api", "microservicio", "microservice",
+        "database schema", "deploy service",
+        "docker container", "kubernetes deployment",
+        "trading strategy", "market making",
+        "cli tool", "api endpoint", "funcion de ordenamiento",
+        "modulo de autenticacion", "api rest",
+    ),
+}
+
+#: Palabras individuales por agente (frontera de palabra, peso = len(w)).
+_WORD_TRIGGERS: dict[str, tuple[str, ...]] = {
+    "builder": (
+        "implement", "create", "build", "code", "api",
+        "rust", "golang", "python", "frontend", "backend",
+        "database", "docker", "deploy", "app",
+    ),
+    "scientist": (
+        "research", "paper", "architecture", "pattern",
+        "study", "survey", "analyse", "investiga",
+    ),
+}
+
+#: Palabras de guardian con match por token (peso = len(w)).
+_GUARDIAN_SPLIT_WORDS: tuple[str, ...] = (
+    "testing", "security", "audit", "risk", "documentation",
+    "hardening", "coverage", "seguridad", "auditoria",
+    "calidad", "documentacion", "pruebas", "cobertura",
+)
+
+
+def _is_whole_word(text: str, word: str) -> bool:
+    """Indica si ``word`` aparece como palabra completa en ``text``.
+
+    Args:
+        text: Texto donde buscar (normalmente en minusculas).
+        word: Palabra a buscar.
+
+    Returns:
+        True si ``word`` aparece delimitada por espacios.
+    """
+    return " " + word + " " in " " + text + " "
+
+
+def _strip_role_lines(text: str) -> str:
+    """Elimina lineas que suplantan un rol del sistema preservando el resto.
+
+    Args:
+        text: Texto crudo.
+
+    Returns:
+        Texto sin las lineas que empiezan con un rol del sistema.
+    """
+    kept = [
+        line
+        for line in text.splitlines()
+        if not line.lstrip().lower().startswith(_ROLE_PREFIXES)
+    ]
+    return "\n".join(kept).strip()
+
+
+def _sanitize_message(message: str) -> str:
+    """Sanea inyeccion de prompt preservando la tarea legitima.
+
+    Aplica ``sanitize_task`` (elimina lineas de rol del sistema y frases de
+    override). Si el sanea agresivo vacia un mensaje no vacio (frase de
+    override embebida en la misma linea que la tarea), cae a un sanea
+    conservador que solo elimina lineas de rol, de modo que la tarea de la
+    linea no se pierda.
+
+    Args:
+        message: Mensaje crudo del usuario.
+
+    Returns:
+        Mensaje saneado (puede ser "" si todo era inyeccion).
+    """
+    clean = sanitize_task(message)
+    if clean or not message.strip():
+        return clean
+    return _strip_role_lines(message)
+
+
+def _task_id(message: str) -> str:
+    """Calcula un id estable del mensaje para trazabilidad.
+
+    Args:
+        message: Mensaje original del usuario.
+
+    Returns:
+        Hash sha256 truncado a 16 caracteres hex.
+    """
+    return hashlib.sha256(message.encode("utf-8")).hexdigest()[:16]
+
 
 try:
     import yaml
@@ -81,12 +219,23 @@ class DelegationEngine:
     en lugar de usar mappings hardcodeados.
     """
 
-    def __init__(self, task_manager: TaskManager | None = None) -> None:
+    def __init__(
+        self,
+        task_manager: TaskManager | None = None,
+        trace: DecisionTrace | None = None,
+    ) -> None:
         """Inicializa la instancia de la clase.
 
-        Descubre agentes recursivamente y carga reglas YAML como override.
+        Descubre agentes recursivamente, carga reglas YAML como override y
+        cablea el sink de trazabilidad de decisiones.
+
+        Args:
+            task_manager: Gestor de tareas opcional.
+            trace: Trace de decisiones a usar. Si es None, usa el trace global
+                compartido (``default_trace()``).
         """
         self._task_manager: TaskManager | None = task_manager
+        self._trace: DecisionTrace = trace if trace is not None else default_trace()
         self._routing_rules: dict[str, Any] = {}
 
         # Descubrimiento recursivo de agentes (reemplaza ~200 líneas de dicts)
@@ -197,116 +346,95 @@ class DelegationEngine:
         return "coordinator"
 
     def _match_intent(self, text: str) -> str:
-        """Match por keyword con scoring (mas especifico = mayor peso)."""
+        """Match por keyword con frontera de palabra (mas especifico = mayor peso).
+
+        Sanea el texto con ``_sanitize_message`` antes de puntuar para que una
+        inyeccion de prompt no dirija la eleccion. Usa
+        ``keyword_match.contains_word`` para evitar falsos positivos por
+        substring (`"go"` en `"good"`, `"ai"` en `"email"`, `"test"` en
+        `"latest"`), ponderando por longitud de la keyword.
+        """
+        clean = _sanitize_message(text)
         scores: dict[str, float] = {}
         for keyword, agent in self._intent_map.items():
-            if keyword in text:
+            if contains_word(clean, keyword):
                 # Mas larga la keyword = mas especifica = mas peso
-                weight = len(keyword) / max(len(text), 1)
-                scores[agent] = scores.get(agent, 0) + weight
+                weight = len(keyword) / max(len(clean), 1)
+                scores[agent] = scores.get(agent, 0.0) + weight
         if scores:
             return max(scores, key=scores.get)
         return ""
 
+    def _score_message(self, text: str) -> dict[str, float]:
+        """Puntua un mensaje (ya saneado y en minusculas) por agente.
+
+        Args:
+            text: Mensaje saneado y normalizado a minusculas.
+
+        Returns:
+            Mapa agente -> score acumulado. Siempre incluye "coordinator".
+        """
+        scores: dict[str, float] = {"coordinator": 0.0}
+        for agent, patterns in _PHRASE_TRIGGERS.items():
+            for pat in patterns:
+                if pat in text:
+                    scores[agent] = scores.get(agent, 0.0) + len(pat) * 2
+        for agent, words in _WORD_TRIGGERS.items():
+            for w in words:
+                if _is_whole_word(text, w):
+                    scores[agent] = scores.get(agent, 0.0) + len(w)
+        for w in _GUARDIAN_SPLIT_WORDS:
+            if w in text.split():
+                scores["guardian"] = scores.get("guardian", 0.0) + len(w)
+        if " test " in " " + text + " ":
+            scores["guardian"] = scores.get("guardian", 0.0) + 4
+        return scores
+
+    def _record_decision(self, agent: str, score: float, message: str) -> None:
+        """Registra la decision de routing en el trace.
+
+        Args:
+            agent: Agente elegido.
+            score: Score obtenido por el agente elegido.
+            message: Mensaje original (para el id estable de la tarea).
+        """
+        self._trace.record(
+            DecisionRecord(
+                strategy="auto_route",
+                agent=agent,
+                score=score,
+                task_id=_task_id(message),
+            )
+        )
+
     def auto_route(self, message: str) -> str:
         """
         Auto-detecta el rol universal a partir del contenido del mensaje.
-        
-        NO requiere @. Analiza keywords con scoring ponderado y enruta
-        al agente mas especifico. Si no hay match, el coordinador maneja.
-        
+
+        NO requiere @. Sanea la inyeccion de prompt, analiza keywords con
+        scoring ponderado, enruta al agente mas especifico y registra la
+        decision en el ``DecisionTrace``. Si no hay match, el coordinador
+        maneja.
+
         Orden de precedencia (por scoring, no por orden de busqueda):
           1. Evolve (auto-mejora del sistema)
           2. Scientist (investigacion, papers, AI/ML, patrones)
           3. Guardian (calidad, seguridad, riesgo, docs)
           4. Builder (toda implementacion)
           5. Coordinator (default)
+
+        Args:
+            message: Mensaje del usuario.
+
+        Returns:
+            Nombre del agente elegido (str).
         """
-        text = message.lower()
-        scores: dict[str, float] = {"coordinator": 0.0}
-
-        # Scoring ponderado: cada keyword suma segun su longitud
-        # Se usa word boundary para evitar falsos positivos parciales
-        
-        def word_in_text(word: str) -> bool:
-            """Check if word appears as whole word in text."""
-            return ' ' + word + ' ' in ' ' + text + ' '
-
-        # evolve: auto-mejora del sistema
-        for pat in ["!evolve", "asi-evolve", "self-improve", "auto-improve",
-                    "skill improvement", "cognition store", "evolve loop",
-                    "mejora continua", "auto-mejora", "mejora el sistema",
-                    "mejora el rendimiento", "optimiza el skill"]:
-            if pat in text:
-                scores["evolve"] = scores.get("evolve", 0) + len(pat) * 2
-
-        # scientist: investigacion, arquitectura, experimentos, papers
-        for pat in ["research paper", "scientific paper", "literature review",
-                    "machine learning", "deep learning", "train model",
-                    "experiment design", "statistical validation",
-                    "causal inference", "system design",
-                    "investigacion", "investiga", "experimento",
-                    "patrones de diseno", "patron de diseno",
-                    "analisis de datos", "arquitectura del sistema",
-                    "arquitectura hexagonal", "trade-off",
-                    "algorithm design", "survey paper", "capacity planning",
-                    "papers sobre", "articulos sobre", "investiga papers"]:
-            if pat in text:
-                scores["scientist"] = scores.get("scientist", 0) + len(pat) * 2
-
-        # guardian: calidad, seguridad, riesgo, documentacion, testing
-        for pat in ["security audit", "threat model", "code review",
-                    "quality gate", "mutation test", "adversarial test",
-                    "performance test", "load test", "fuzz test",
-                    "hardening", "compliance", "observability",
-                    "documentacion tecnica", "technical writing",
-                    "auditoria de seguridad", "audita la seguridad",
-                    "pruebas de rendimiento", "cobertura de tests",
-                    "revision de codigo", "haz una auditoria"]:
-            if pat in text:
-                scores["guardian"] = scores.get("guardian", 0) + len(pat) * 2
-
-        # builder: implementacion, desarrollo, codigo
-        for pat in ["implementa una", "crea un modulo", "crea un frontend",
-                    "desarrolla un", "implementa una api", "rest api",
-                    "graphql api", "microservicio", "microservice",
-                    "database schema", "deploy service",
-                    "docker container", "kubernetes deployment",
-                    "trading strategy", "market making",
-                    "cli tool", "api endpoint", "funcion de ordenamiento",
-                    "modulo de autenticacion", "api rest"]:
-            if pat in text:
-                scores["builder"] = scores.get("builder", 0) + len(pat) * 2
-
-        # Palabras individuales (segundo nivel, menos peso)
-        builder_words = ["implement", "create", "build", "code", "api",
-                        "rust", "golang", "python", "frontend", "backend",
-                        "database", "docker", "deploy", "app"]
-        for w in builder_words:
-            if word_in_text(w):
-                scores["builder"] = scores.get("builder", 0) + len(w)
-
-        # Palabras de scientist (segundo nivel)
-        scientist_words = ["research", "paper", "architecture", "pattern",
-                          "study", "survey", "analyse", "investiga"]
-        for w in scientist_words:
-            if word_in_text(w):
-                scores["scientist"] = scores.get("scientist", 0) + len(w)
-
-        # Palabras de guardian (segundo nivel)
-        guardian_words = ["testing", "security", "audit", "risk", "documentation",
-                         "hardening", "coverage", "seguridad", "auditoria",
-                         "calidad", "documentacion", "pruebas", "cobertura"]
-        for w in guardian_words:
-            if w in text.split():
-                scores["guardian"] = scores.get("guardian", 0) + len(w)
-        # test como palabra corta (match exacto con espacio)
-        if " test " in ' ' + text + ' ':
-            scores["guardian"] = scores.get("guardian", 0) + 4
-
-        # Elegir el de mayor score
+        text = _sanitize_message(message).lower()
+        scores = self._score_message(text)
         best = max(scores, key=scores.get)
-        return best if scores[best] > 0 else "coordinator"
+        agent = best if scores[best] > 0 else "coordinator"
+        self._record_decision(agent, float(scores.get(agent, 0.0)), message)
+        return agent
 
     def route_message(self, message: str) -> str:
         """
