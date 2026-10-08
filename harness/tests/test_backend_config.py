@@ -193,8 +193,9 @@ def test_discover_executable_uses_platform_candidates(clean_env, monkeypatch, tm
     candidate = tmp_path / "llama-swap.exe"
     candidate.write_text("x", encoding="utf-8")
     monkeypatch.setattr(backend_config.shutil, "which", lambda name: None)
+    # Ambos conjuntos devuelven el candidato: el test es agnostico de plataforma.
     monkeypatch.setattr(backend_config, "_windows_executable_candidates", lambda: (candidate,))
-    monkeypatch.setattr(backend_config, "_posix_executable_candidates", lambda: ())
+    monkeypatch.setattr(backend_config, "_posix_executable_candidates", lambda: (candidate,))
     assert discover_executable() == candidate
 
 
