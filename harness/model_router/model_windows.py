@@ -22,13 +22,15 @@ from __future__ import annotations
 
 import logging
 
+from harness.model_router.backend_config import GpuBudget
 from harness.model_router.fleet_manifest import model_entry
 
 logger = logging.getLogger("harness.model_router.model_windows")
 
-#: num_ctx default para modelos desconocidos. Igual al techo anti-TDR: en
-#: 8GB pedir mas de 8192 (p. ej. 16384) es lo que desencadeno el BSOD 0x116.
-DEFAULT_NUM_CTX = 8192
+#: num_ctx default para modelos desconocidos. DERIVADO del techo anti-TDR del
+#: `GpuBudget` por defecto: en 8GB pedir mas de 8192 (p. ej. 16384) es lo que
+#: desencadeno el BSOD 0x116.
+DEFAULT_NUM_CTX = GpuBudget().safe_ctx_max
 #: Reserva para respuesta: el techo de lo que LocalExecutor permite generar
 #: (CLOSED_TASK_NUM_PREDICT) con margen x2. Nada local puede pedir mas alla.
 RESPONSE_RESERVE_TOKENS = 1024
@@ -54,7 +56,7 @@ def recommend_num_ctx(model: str) -> int:
     """Recomienda num_ctx para un modelo.
 
     Prioridad: manifiesto de flota (SSOT medida, ADR-0101) -> tabla medida
-    de fallback (modelos ajenos a la flota) -> default honesto (4096).
+    de fallback (modelos ajenos a la flota) -> default honesto (8192).
 
     Args:
         model: Nombre/tag del modelo.

@@ -17,6 +17,7 @@ import pytest
 import requests
 from pytest_mock import MockerFixture
 
+from harness.model_router.backend_config import BackendConfig
 from harness.model_router.ollama_client import (
     DEFAULT_BASE_URL,
     DEFAULT_KEEP_ALIVE,
@@ -112,10 +113,20 @@ def _url_of(call: Any) -> str:
 
 
 def test_default_constants_match_public_contract() -> None:
-    """Verifica que las constantes públicas del contrato existen con sus valores."""
-    assert DEFAULT_BASE_URL == "http://localhost:11434"
+    """Las constantes públicas existen y la URL base deriva del SSOT BackendConfig."""
+    assert DEFAULT_BASE_URL == BackendConfig.from_env().base_url
     assert DEFAULT_TIMEOUT == 60.0
     assert DEFAULT_KEEP_ALIVE == "0"
+
+
+def test_env_local_base_url_changes_default(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """SWARMIND_LOCAL_BASE_URL cambia la URL base por defecto del cliente."""
+    monkeypatch.setenv("SWARMIND_LOCAL_BASE_URL", "http://127.0.0.1:9999")
+    mock_request = _patch_transport(mocker, response=_FakeResponse(200, {"data": []}))
+    assert OllamaClient().is_available() is True
+    assert _url_of(mock_request.call_args).startswith("http://127.0.0.1:9999")
 
 
 # ---------------------------------------------------------------------------
@@ -184,6 +195,85 @@ def test_generate_posts_single_user_message_and_returns_text(mocker: MockerFixtu
     assert _url_of(mock_request.call_args).endswith("/v1/chat/completions")
 
 
+def test_generate_falls_back_to_reasoning_content_when_content_empty(
+    mocker: MockerFixture,
+) -> None:
+    """generate devuelve reasoning_content si content viene vacio (Qwen3.5 think)."""
+    _patch_transport(
+        mocker,
+        response=_FakeResponse(
+            200,
+            {"choices": [{"message": {"content": "", "reasoning_content": "CoT"}}]},
+        ),
+    )
+    result = _client().generate(model="qwen3-5-4b-gguf-ud-q4-k-xl", prompt="di hola")
+    assert result == "CoT"
+
+
+def test_generate_strips_think_wrappers_from_reasoning_content(
+    mocker: MockerFixture,
+) -> None:
+    """generate limpia <think>...</think> del fallback y deja el crudo accesible."""
+    raw = "<think>pasos internos</think>La respuesta es 42"
+    _patch_transport(
+        mocker,
+        response=_FakeResponse(
+            200, {"choices": [{"message": {"content": "", "reasoning_content": raw}}]}
+        ),
+    )
+    client = _client()
+    assert client.generate(model="qwen3:4b", prompt="x") == "La respuesta es 42"
+    assert client.last_reasoning_content == raw
+
+
+def test_generate_strips_thinking_process_label(mocker: MockerFixture) -> None:
+    """generate quita el prefijo 'Thinking Process:' del reasoning_content."""
+    _patch_transport(
+        mocker,
+        response=_FakeResponse(
+            200,
+            {"choices": [{"message": {"content": "", "reasoning_content": "Thinking Process: listo"}}]},
+        ),
+    )
+    assert _client().generate(model="qwen3:4b", prompt="x") == "listo"
+
+
+def test_generate_returns_raw_reasoning_when_wrappers_leave_nothing(
+    mocker: MockerFixture,
+) -> None:
+    """generate devuelve el crudo si limpiar los envoltorios no deja texto."""
+    raw = "<think>solo pensamiento</think>"
+    _patch_transport(
+        mocker,
+        response=_FakeResponse(
+            200, {"choices": [{"message": {"content": "", "reasoning_content": raw}}]}
+        ),
+    )
+    client = _client()
+    assert client.generate(model="qwen3:4b", prompt="x") == raw
+    assert client.last_reasoning_content == raw
+
+
+def test_generate_exposes_last_reasoning_content_even_with_content(
+    mocker: MockerFixture,
+) -> None:
+    """generate deja el reasoning_content crudo aunque content traiga la respuesta."""
+    _patch_transport(
+        mocker,
+        response=_FakeResponse(
+            200, {"choices": [{"message": {"content": "answer", "reasoning_content": "razono"}}]}
+        ),
+    )
+    client = _client()
+    assert client.generate(model="qwen3:4b", prompt="x") == "answer"
+    assert client.last_reasoning_content == "razono"
+
+
+def test_last_reasoning_content_is_none_before_generating() -> None:
+    """last_reasoning_content es None mientras no se haya generado nada."""
+    assert _client().last_reasoning_content is None
+
+
 def test_generate_includes_images_when_provided(mocker: MockerFixture) -> None:
     """generate con images → el body incluye la lista de imágenes base64."""
     mock_request = _patch_transport(
@@ -219,6 +309,34 @@ def test_generate_forwards_options_when_provided(mocker: MockerFixture) -> None:
     assert body["max_tokens"] == 256
     assert body["num_ctx"] == 8192
     assert body["temperature"] == 0.2
+
+
+def test_generate_translates_think_option_to_chat_template_kwargs(
+    mocker: MockerFixture,
+) -> None:
+    """generate con options think=False → think nativo + enable_thinking=False."""
+    mock_request = _patch_transport(
+        mocker,
+        response=_FakeResponse(200, {"choices": [{"message": {"content": "ok"}}]}),
+    )
+    _client().generate(model="qwen3:4b", prompt="x", options={"think": False})
+    body = mock_request.call_args.kwargs["json"]
+    assert body["think"] is False
+    assert body["chat_template_kwargs"] == {"enable_thinking": False}
+
+
+def test_generate_think_true_keeps_native_and_enables_thinking(
+    mocker: MockerFixture,
+) -> None:
+    """generate con options think=True → enable_thinking=True para llama.cpp."""
+    mock_request = _patch_transport(
+        mocker,
+        response=_FakeResponse(200, {"choices": [{"message": {"content": "ok"}}]}),
+    )
+    _client().generate(model="qwen3:4b", prompt="x", options={"think": True})
+    body = mock_request.call_args.kwargs["json"]
+    assert body["think"] is True
+    assert body["chat_template_kwargs"]["enable_thinking"] is True
 
 
 def test_generate_raises_ollama_error_on_ollama_body_error(mocker: MockerFixture) -> None:
@@ -267,6 +385,33 @@ def test_generate_raises_ollama_error_with_context_on_connection_error(
     message = str(exc_info.value)
     assert "connection" in message.lower()
     assert "/v1/chat/completions" in message
+
+
+def test_generate_translates_generic_request_exception(mocker: MockerFixture) -> None:
+    """generate → OllamaError con WHAT+WHY+WHERE ante un RequestException no clasificado."""
+    _patch_transport(mocker, error=requests.exceptions.TooManyRedirects("loop"))
+    with pytest.raises(OllamaError) as exc_info:
+        _client().generate(model="llama3.2:3b", prompt="x")
+    message = str(exc_info.value)
+    assert "TooManyRedirects" in message
+    assert "loop" in message
+    assert "/v1/chat/completions" in message
+
+
+def test_generate_translates_ssl_error_to_ollama_error(mocker: MockerFixture) -> None:
+    """SSLError (subclase de ConnectionError) tambien se traduce a OllamaError."""
+    _patch_transport(mocker, error=requests.exceptions.SSLError("certificado caducado"))
+    with pytest.raises(OllamaError) as exc_info:
+        _client().generate(model="llama3.2:3b", prompt="x")
+    message = str(exc_info.value)
+    assert "certificado caducado" in message
+    assert "/v1/chat/completions" in message
+
+
+def test_is_available_returns_false_on_invalid_url(mocker: MockerFixture) -> None:
+    """is_available → False (sin excepcion cruda) si requests lanza InvalidURL."""
+    _patch_transport(mocker, error=requests.exceptions.InvalidURL("url rota"))
+    assert _client().is_available() is False
 
 
 # ---------------------------------------------------------------------------
@@ -360,32 +505,48 @@ def test_embed_with_list_input_posts_list_body(mocker: MockerFixture) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_warm_posts_empty_prompt_and_returns_true_on_load(mocker: MockerFixture) -> None:
-    """warm → POST /api/generate con prompt vacío; True si done_reason == 'load'."""
-    mock_request = _patch_transport(
-        mocker,
-        response=_FakeResponse(200, {"done_reason": "load"}),
-    )
+def test_warm_posts_single_token_chat_completion(mocker: MockerFixture) -> None:
+    """warm → POST /v1/chat/completions con max_tokens=1 y stream=False."""
+    mock_request = _patch_transport(mocker, response=_FakeResponse(200, {}))
     assert _client().warm(model="llama3.2:3b") is True
     body = mock_request.call_args.kwargs["json"]
     assert body["model"] == "llama3.2:3b"
-    assert body["prompt"] == ""
+    assert body["messages"] == [{"role": "user", "content": "."}]
+    assert body["max_tokens"] == 1
+    assert body["stream"] is False
     assert body["keep_alive"] == DEFAULT_KEEP_ALIVE
+    assert _url_of(mock_request.call_args).endswith("/v1/chat/completions")
 
 
-def test_warm_returns_false_when_done_reason_not_load(mocker: MockerFixture) -> None:
-    """warm → False cuando done_reason no es 'load'."""
-    _patch_transport(
-        mocker,
-        response=_FakeResponse(200, {"done_reason": "stop"}),
-    )
-    assert _client().warm(model="llama3.2:3b") is False
+def test_warm_raises_ollama_error_on_http_failure(mocker: MockerFixture) -> None:
+    """warm → OllamaError cuando el backend responde status != 200."""
+    _patch_transport(mocker, response=_FakeResponse(500, {"error": "boom"}))
+    with pytest.raises(OllamaError):
+        _client().warm(model="llama3.2:3b")
 
 
-def test_unload_posts_keep_alive_zero(mocker: MockerFixture) -> None:
-    """unload → POST con keep_alive=0 para descargar el modelo de memoria."""
+def test_unload_uses_llama_swap_endpoint(mocker: MockerFixture) -> None:
+    """unload → POST /api/models/unload/<model> (llama-swap) y devuelve True."""
     mock_request = _patch_transport(mocker, response=_FakeResponse(200, {}))
     assert _client().unload(model="llama3.2:3b") is True
+    url = _url_of(mock_request.call_args)
+    assert "/api/models/unload" in url
+    assert url.endswith("/api/models/unload/llama3.2:3b")
+    assert mock_request.call_count == 1
+
+
+def test_unload_falls_back_to_native_api_when_swap_missing(
+    mocker: MockerFixture,
+) -> None:
+    """unload → fallback a /api/generate keep_alive=0 si llama-swap no lo expone."""
+    mock_request = mocker.patch("requests.request")
+    mock_request.side_effect = [
+        _FakeResponse(404, {"error": "not found"}),
+        _FakeResponse(200, {}),
+    ]
+    assert _client().unload(model="llama3.2:3b") is True
+    assert mock_request.call_count == 2
+    assert _url_of(mock_request.call_args).endswith("/api/generate")
     body = mock_request.call_args.kwargs["json"]
     assert body["model"] == "llama3.2:3b"
     assert body["keep_alive"] == 0

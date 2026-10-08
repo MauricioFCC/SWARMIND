@@ -500,6 +500,7 @@ class TestMain:
              patch("harness.run.LanceVectorStore"), \
              patch("harness.orchestrator.task_orchestrator.TaskOrchestrator"), \
              patch("harness.run.HITLGuard"), \
+             patch("harness.run._try_local_execution", return_value=None), \
              patch.object(Path, "exists", return_value=True):
             yield
 

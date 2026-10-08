@@ -590,8 +590,10 @@ class TestModelRouting:
 
     @pytest.fixture(autouse=True)
     def patch_router(self):
-        """Parchea ModelRouter (import lazy dentro de la funcion)."""
-        with patch("harness.model_router.router.ModelRouter") as m:
+        """Parchea ModelRouter y el probe de backend local (hermetico)."""
+        with patch("harness.model_router.router.ModelRouter") as m, \
+             patch("harness.run_commands.handlers_extra._local_backend_available",
+                   return_value=True):
             yield m
 
     def test_force_cloud(self, patch_router):

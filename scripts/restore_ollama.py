@@ -51,9 +51,51 @@ FLEET_MANIFEST_PATH = REPO_ROOT / "harness" / "model_router" / "fleet_manifest.p
 ENABLE_GPU_PATH = SCRIPTS_DIR / "enable_gpu.py"
 FLEET_MODULE_NAME = "swarmind_fleet_manifest"
 ENABLE_GPU_MODULE_NAME = "swarmind_enable_gpu"
+BACKEND_CONFIG_PATH = REPO_ROOT / "harness" / "model_router" / "backend_config.py"
+BACKEND_CONFIG_MODULE_NAME = "swarmind_backend_config"
 
-#: Endpoints del servidor Ollama local.
-OLLAMA_API_BASE = "http://localhost:11434"
+
+def _load_module(module_name: str, path: Path) -> ModuleType:
+    """Carga un modulo desde una ruta sin contaminar `sys.path`.
+
+    Args:
+        module_name: Nombre logico para el modulo cargado.
+        path: Ruta absoluta al archivo `.py`.
+
+    Returns:
+        El modulo ya ejecutado.
+
+    Raises:
+        FileNotFoundError: Si `path` no existe.
+        ImportError: Si no se puede construir el spec/loader.
+    """
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"no existe {path}. WHY: falta el SSOT o la ruta es incorrecta. "
+            "WHERE: scripts/restore_ollama.py::_load_module"
+        )
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(
+            f"no se pudo crear spec para {path}. WHERE: restore_ollama._load_module"
+        )
+    module = importlib.util.module_from_spec(spec)
+    # `dataclasses` resuelve cls.__module__ via sys.modules durante el decorado;
+    # hay que registrar el modulo ANTES de ejecutarlo o el dataclass falla con
+    # AttributeError: 'NoneType' object has no attribute '__dict__'.
+    sys.modules[module_name] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        sys.modules.pop(module_name, None)
+        raise
+    return module
+
+
+#: Endpoints del servidor Ollama local (base URL desde el SSOT BackendConfig).
+OLLAMA_API_BASE = _load_module(
+    BACKEND_CONFIG_MODULE_NAME, BACKEND_CONFIG_PATH
+).BackendConfig.from_env().base_url
 OLLAMA_TAGS_PATH = "/api/tags"
 OLLAMA_PULL_PATH = "/api/pull"
 OLLAMA_CLI = "ollama"
@@ -97,43 +139,6 @@ class OllamaUnavailableError(RuntimeError):
 
 class UnknownTierError(ValueError):
     """El tier pedido no existe en la flota."""
-
-
-def _load_module(module_name: str, path: Path) -> ModuleType:
-    """Carga un modulo desde una ruta sin contaminar `sys.path`.
-
-    Args:
-        module_name: Nombre logico para el modulo cargado.
-        path: Ruta absoluta al archivo `.py`.
-
-    Returns:
-        El modulo ya ejecutado.
-
-    Raises:
-        FileNotFoundError: Si `path` no existe.
-        ImportError: Si no se puede construir el spec/loader.
-    """
-    if not path.is_file():
-        raise FileNotFoundError(
-            f"no existe {path}. WHY: falta el SSOT o la ruta es incorrecta. "
-            "WHERE: scripts/restore_ollama.py::_load_module"
-        )
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    if spec is None or spec.loader is None:
-        raise ImportError(
-            f"no se pudo crear spec para {path}. WHERE: restore_ollama._load_module"
-        )
-    module = importlib.util.module_from_spec(spec)
-    # `dataclasses` resuelve cls.__module__ via sys.modules durante el decorado;
-    # hay que registrar el modulo ANTES de ejecutarlo o el dataclass falla con
-    # AttributeError: 'NoneType' object has no attribute '__dict__'.
-    sys.modules[module_name] = module
-    try:
-        spec.loader.exec_module(module)
-    except BaseException:
-        sys.modules.pop(module_name, None)
-        raise
-    return module
 
 
 def load_fleet() -> tuple[FleetModelLike, ...]:

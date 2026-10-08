@@ -27,8 +27,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-#: Presupuesto de VRAM utilizable (8GB menos el escritorio WDDM ~1GB).
-GPU_BUDGET_MB = 7000
+from harness.model_router.backend_config import GpuBudget
+
+#: Presupuesto de VRAM utilizable (8GB menos el escritorio WDDM ~1GB),
+#: DERIVADO del `GpuBudget` por defecto (SSOT, anti-TDR configurable).
+GPU_BUDGET_MB = GpuBudget().budget_mb
 
 
 @dataclass(frozen=True)
@@ -61,7 +64,11 @@ FLEET: tuple[FleetModel, ...] = (
     FleetModel(
         id="hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL",
         tier="fast", num_ctx=8192, vram_mb=3600, keep_alive="0",
-        matches=("unsloth/qwen3.5-4b", "qwen3.5-4b", "ud-q4_k_xl"),
+        matches=(
+            "unsloth/qwen3.5-4b", "qwen3.5-4b", "ud-q4_k_xl",
+            # nombre corto servido por llama-swap (guiones en vez de puntos)
+            "qwen3-5-4b", "ud-q4-k-xl",
+        ),
     ),
     FleetModel(
         id="hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS",
@@ -76,7 +83,11 @@ FLEET: tuple[FleetModel, ...] = (
     FleetModel(
         id="hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M",
         tier="reasoning", num_ctx=4096, vram_mb=6700, keep_alive="0",
-        matches=("ornith-ai/ornith", "ornith-1.5"),
+        matches=(
+            "ornith-ai/ornith", "ornith-1.5",
+            # nombre corto servido por llama-swap (guiones en vez de puntos)
+            "ornith-1-5-9b", "ornith-1-5",
+        ),
     ),
     FleetModel(
         id="qwen3-embedding:0.6b",

@@ -19,6 +19,9 @@ Uso:
 from __future__ import annotations
 
 import logging
+import re
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from harness.model_router.fleet_manifest import FLEET
@@ -97,12 +100,21 @@ def _is_degenerate_output(output: str) -> bool:
     top_count = Counter(text).most_common(1)[0][1]
     return top_count / len(text) > MAX_REPEAT_RATIO
 
-#: Allowlist de tareas cerradas (substrings ES/EN, sin fragmentos ambiguos).
+#: Allowlist de tareas cerradas (substrings ES/EN, documentacion y tests).
 CLOSED_TASK_PATTERNS: tuple[str, ...] = (
     "resum", "formatea", "format", "extrae", "extract", "traduce",
     "translat", "cuenta", "count", "convierte", "convert", "lista",
     "list files", "renombra",
 )
+#: Regex de matching endurecido (B3): exige limite de palabra en el verbo para
+#: no matchear por substring ("presume" contiene "resum", pero sin "\b" antes).
+_CLOSED_TASK_RE = re.compile(
+    r"\b(resum\w*|formate\w*|format\w*|extrae\w*|extract\w*|traduc\w*|"
+    r"translat\w*|cuent\w*|count\w*|conviert\w*|convert\w*|list\w*|renombr\w*)\b"
+)
+#: Falsos positivos conocidos: contienen el verbo como substring sin ser tarea
+#: cerrada ("presume", "cuentagotas").
+_CLOSED_TASK_FALSE_POSITIVES: tuple[str, ...] = ("presume", "cuentagotas")
 
 
 @dataclass(frozen=True)
@@ -127,6 +139,10 @@ class LocalExecutionResult:
 def is_closed_task(task: str) -> bool:
     """Detecta si la tarea es cerrada (segura para ejecucion local).
 
+    Matching endurecido (B3): el verbo debe respetar limite de palabra, de
+    modo que "presume" (contiene "resum") o "cuentagotas" (contiene "cuenta")
+    no disparen falsos positivos; ademas se excluyen los conocidos.
+
     Args:
         task: Descripcion de la tarea (case-insensitive).
 
@@ -134,7 +150,9 @@ def is_closed_task(task: str) -> bool:
         True si matchea la allowlist de tareas cerradas.
     """
     lowered = task.lower()
-    return any(pattern in lowered for pattern in CLOSED_TASK_PATTERNS)
+    if _CLOSED_TASK_RE.search(lowered) is None:
+        return False
+    return not any(false_positive in lowered for false_positive in _CLOSED_TASK_FALSE_POSITIVES)
 
 
 class LocalExecutor:
@@ -152,11 +170,20 @@ class LocalExecutor:
         unsloth_model: Modelo a usar en Unsloth (None = primero servido).
         vram_check: Gate anti-OOM (model -> bool). Default el guard real;
             inyectar lambda en tests (hermeticos sin GPU).
+        backend_manager: Gestor de ciclo de vida del backend (llama-swap).
+            Si el cliente no esta disponible, se le pide arrancarlo y
+            precargar el modelo (None = no hay autostart, comportamiento
+            previo).
+        allow_open_tasks: True = permitir tareas abiertas en local (no solo
+            la allowlist cerrada). Default False (retrocompatible).
+        max_parallel: Maximo de tareas concurrentes de ``execute_batch``
+            (default 4; se acota a >= 1 para no romper el pool).
     """
 
     def __init__(
         self, client, tiers, unsloth_client=None, unsloth_model=None,
-        vram_check=None, free_vram=None,
+        vram_check=None, free_vram=None, backend_manager=None,
+        allow_open_tasks: bool = False, max_parallel: int = 2,
     ) -> None:
         """Inicializa el ejecutor con cliente, router y backend preferente.
 
@@ -168,6 +195,11 @@ class LocalExecutor:
             vram_check: Gate anti-OOM inyectable (None = guard real).
             free_vram: Proveedor de VRAM libre inyectable (None = nvidia-smi);
                 los tests lo fijan para ser hermeticos.
+            backend_manager: Gestor de ciclo de vida (ensure_running/
+                ensure_model) opcional para arrancar el backend si cayo.
+            allow_open_tasks: Politica por defecto para tareas abiertas
+                (False = solo la allowlist cerrada).
+            max_parallel: Workers del fan-out de ``execute_batch`` (>= 1).
         """
         self._client = client
         self._tiers = tiers
@@ -175,8 +207,61 @@ class LocalExecutor:
         self._unsloth_model = unsloth_model
         self._vram_check = vram_check or _fits_vram_for
         self._free_vram = free_vram or free_vram_mb
+        self._backend_manager = backend_manager
+        self._allow_open_tasks = allow_open_tasks
+        # Acotar a >= 1: ThreadPoolExecutor exige max_workers >= 1.
+        self._max_parallel = max(1, max_parallel)
+        self._counter_lock = threading.Lock()
         self._local_tasks = 0
         self._cloud_tasks = 0
+
+    def _ensure_backend(self) -> bool:
+        """Intenta levantar el backend local si el cliente no responde.
+
+        Idempotente: delega en ``backend_manager.ensure_running()`` y
+        re-verifica ``client.is_available()``. Sin manager devuelve False
+        (comportamiento previo: fallback a cloud).
+
+        Returns:
+            True si el cliente quedo disponible tras el intento.
+        """
+        if self._backend_manager is None:
+            return False
+        try:
+            if not self._backend_manager.ensure_running():
+                return False
+        except Exception as exc:  # noqa: BLE001 - fallback a cloud, no crash
+            logger.warning(
+                "local_executor: backend_manager no pudo arrancar el backend "
+                "(%s); fallback a cloud", exc,
+            )
+            return False
+        return bool(self._client.is_available())
+
+    def _ensure_model(self, model: str) -> bool:
+        """Pide al backend precargar el modelo (arranque + swap de VRAM).
+
+        Delega en ``backend_manager.ensure_model()``; sin manager devuelve
+        True (no hay nada que garantizar). Nunca lanza: un fallo degrada a
+        fallback cloud con log accionable.
+
+        Args:
+            model: Id del modelo local a precargar.
+
+        Returns:
+            True si el modelo quedo cargado (o no hay manager); False si el
+            backend no pudo servirlo.
+        """
+        if self._backend_manager is None:
+            return True
+        try:
+            return bool(self._backend_manager.ensure_model(model))
+        except Exception as exc:  # noqa: BLE001 - fallback a cloud, no crash
+            logger.warning(
+                "local_executor: backend_manager no pudo precargar %s "
+                "(%s); fallback a cloud", model, exc,
+            )
+            return False
 
     def _try_unsloth(self, task: str) -> LocalExecutionResult | None:
         """Intenta ejecutar en Unsloth (preferente sobre Ollama).
@@ -219,7 +304,7 @@ class LocalExecutor:
                 "sigue Ollama", model,
             )
             return None
-        self._local_tasks += 1
+        self._count_local()
         logger.info("local_executor: tarea cerrada en Unsloth %s (0 tokens cloud)", model)
         return LocalExecutionResult(
             output=str(output), executed_locally=True, model=f"unsloth:{model}",
@@ -236,72 +321,201 @@ class LocalExecutor:
         """Tareas derivadas a cloud (metrica)."""
         return self._cloud_tasks
 
-    def execute(self, task: str) -> LocalExecutionResult:
+    def execute(self, task: str, allow_open: bool | None = None) -> LocalExecutionResult:
         """Ejecuta la tarea en local si es cerrada, si no deriva a cloud.
 
-        Orden de gates: tarea cerrada? -> Ollama disponible? -> tier no-None?
-        -> cabe en ventana (anti-loop compactacion)? -> VRAM? -> salida no
-        degenerada (verificacion final MetaRoute)? Cualquier fallo
-        (incluida excepcion del modelo) deriva a cloud con reason
-        accionable, sin lanzar.
+        Contrato: NUNCA lanza (B2). La allowlist se evalua fuera del try; toda
+        la seleccion + ejecucion (backend, tier, ventana, VRAM y generacion)
+        ocurre dentro de un try/except, de modo que un fallo inesperado
+        (p. ej. `free_vram` sin nvidia-smi) deriva a cloud con reason
+        accionable en lugar de propagar.
+
+        Args:
+            task: Descripcion de la tarea.
+            allow_open: Override de la politica de tareas abiertas para esta
+                llamada; None usa ``self._allow_open_tasks``.
+
+        Returns:
+            LocalExecutionResult (nunca lanza).
+        """
+        if allow_open is None:
+            allow_open = self._allow_open_tasks
+        if not allow_open and not is_closed_task(task):
+            return self._to_cloud(
+                "tarea abierta: no esta en la allowlist cerrada (cloud)"
+            )
+        try:
+            return self._select_and_execute(task)
+        except Exception as exc:  # noqa: BLE001 - contrato: nunca lanza
+            return self._unexpected_failure(exc)
+
+    def execute_batch(self, tasks: list[str]) -> list[LocalExecutionResult]:
+        """Ejecuta varias tareas locales en paralelo preservando el orden.
+
+        Fan-out concurrente con
+        ``ThreadPoolExecutor(max_workers=self._max_parallel)``; ``pool.map``
+        conserva el orden de entrada. Los contadores de ahorro se actualizan
+        bajo lock (thread-safe). Contrato: NUNCA lanza (cada tarea ya cae a
+        cloud por si misma; se blinda ademas con ``_safe_execute``).
+
+        Args:
+            tasks: Descripciones de tarea a ejecutar.
+
+        Returns:
+            Lista de resultados en el mismo orden que ``tasks`` (vacia si no
+            hay tareas).
+        """
+        if not tasks:
+            return []
+        with ThreadPoolExecutor(max_workers=self._max_parallel) as pool:
+            return list(pool.map(self._safe_execute, tasks))
+
+    def _safe_execute(self, task: str) -> LocalExecutionResult:
+        """Ejecuta una tarea sin propagar excepciones (contrato del batch).
 
         Args:
             task: Descripcion de la tarea.
 
         Returns:
-            LocalExecutionResult (nunca lanza).
+            Resultado local o cloud; nunca lanza.
         """
-        if not is_closed_task(task):
-            self._cloud_tasks += 1
-            return LocalExecutionResult(
-                output="", executed_locally=False,
-                reason="tarea abierta: no esta en la allowlist cerrada (cloud)",
-            )
+        try:
+            return self.execute(task)
+        except Exception as exc:  # noqa: BLE001 - contrato: nunca lanza
+            return self._unexpected_failure(exc)
+
+    def _select_and_execute(self, task: str) -> LocalExecutionResult:
+        """Selecciona backend/modelo y ejecuta la tarea cerrada.
+
+        Orden de gates: Unsloth? -> Ollama disponible? -> tier no-None? ->
+        cabe en ventana (anti-loop)? -> VRAM? -> backend precarga? -> generar.
+
+        Args:
+            task: Tarea cerrada ya validada por la allowlist.
+
+        Returns:
+            Resultado local o cloud con la reason de cada gate.
+        """
         unsloth_out = self._try_unsloth(task)
         if unsloth_out is not None:
             return unsloth_out
-        if not self._client.is_available():
-            self._cloud_tasks += 1
-            return LocalExecutionResult(
-                output="", executed_locally=False,
-                reason="Ollama no disponible: fallback a cloud",
-            )
+        if not self._client.is_available() and not self._ensure_backend():
+            return self._to_cloud("backend local no disponible: fallback a cloud")
         tier = self._tiers.tier_for_task(task)
         if tier is None:
-            self._cloud_tasks += 1
-            return LocalExecutionResult(
-                output="", executed_locally=False,
-                reason="tarea frontier-only: requiere cloud (TKN justificado)",
+            return self._to_cloud(
+                "tarea frontier-only: requiere cloud (TKN justificado)"
             )
         model = self._tiers.model_for(tier)
         free = self._free_vram()
-        if should_degrade(model, free):
-            candidates = [e.id for e in FLEET if e.tier in _LOCAL_TEXT_TIERS]
-            safe_model = pick_safe_model(model, candidates, free)
-            if safe_model != model:
-                logger.warning(
-                    "local_executor: %s no cabe con %s MB libres (anti-TDR); "
-                    "degrado a %s", model, free, safe_model,
-                )
-                model = safe_model
-        if not fits_in_window(model, task_chars=len(task)):
-            self._cloud_tasks += 1
-            return LocalExecutionResult(
-                output="", executed_locally=False,
-                reason=(
-                    f"prompt excede la ventana de {model} (anti-loop "
-                    "compactacion/OOM): fallback a cloud"
-                ),
-            )
+        model = self._maybe_degrade(model, free)
+        window_guard = self._window_guard(model, task)
+        if window_guard is not None:
+            return window_guard
         if not self._vram_check(model):
-            self._cloud_tasks += 1
-            return LocalExecutionResult(
-                output="", executed_locally=False,
-                reason=(
-                    f"VRAM insuficiente para {model} (anti-OOM): "
-                    "fallback a cloud"
-                ),
+            return self._to_cloud(
+                f"VRAM insuficiente para {model} (anti-OOM): fallback a cloud"
             )
+        if self._backend_manager is not None and not self._ensure_model(model):
+            return self._to_cloud(
+                f"backend no pudo precargar {model}: fallback a cloud"
+            )
+        return self._generate_locally(task, model, free, tier)
+
+    def _to_cloud(self, reason: str) -> LocalExecutionResult:
+        """Registra la derivacion y devuelve un resultado cloud.
+
+        Args:
+            reason: Motivo accionable del fallback.
+
+        Returns:
+            LocalExecutionResult no-local con el motivo.
+        """
+        self._count_cloud()
+        return LocalExecutionResult(
+            output="", executed_locally=False, reason=reason
+        )
+
+    def _count_local(self) -> None:
+        """Incrementa el contador de tareas locales de forma thread-safe."""
+        with self._counter_lock:
+            self._local_tasks += 1
+
+    def _count_cloud(self) -> None:
+        """Incrementa el contador de derivaciones a cloud (thread-safe)."""
+        with self._counter_lock:
+            self._cloud_tasks += 1
+
+    def _unexpected_failure(self, exc: Exception) -> LocalExecutionResult:
+        """Deriva a cloud ante un fallo inesperado (contrato: nunca lanza).
+
+        Args:
+            exc: Excepcion capturada en la seleccion/ejecucion local.
+
+        Returns:
+            LocalExecutionResult cloud con reason WHAT/WHY/WHERE.
+        """
+        logger.warning(
+            "local_executor: WHAT=la ruta local no se pudo completar; "
+            "WHY=%s; WHERE=LocalExecutor.execute; fallback a cloud", exc,
+        )
+        return self._to_cloud(
+            "WHAT: la ruta local no se pudo completar; "
+            f"WHY: {exc}; WHERE: LocalExecutor.execute; fallback a cloud"
+        )
+
+    def _maybe_degrade(self, model: str, free: int | None) -> str:
+        """Degrada al texto mas chico que quepa si falta VRAM (anti-TDR).
+
+        Args:
+            model: Modelo pedido por el router.
+            free: VRAM libre en MB (None = sin dato).
+
+        Returns:
+            Modelo seguro (el pedido si ya cabe).
+        """
+        if not should_degrade(model, free):
+            return model
+        candidates = [entry.id for entry in FLEET if entry.tier in _LOCAL_TEXT_TIERS]
+        safe_model = pick_safe_model(model, candidates, free)
+        if safe_model != model:
+            logger.warning(
+                "local_executor: %s no cabe con %s MB libres (anti-TDR); "
+                "degrado a %s", model, free, safe_model,
+            )
+        return safe_model
+
+    def _window_guard(self, model: str, task: str) -> LocalExecutionResult | None:
+        """Deriva a cloud si el prompt excede la ventana (anti-loop/OOM).
+
+        Args:
+            model: Modelo elegido.
+            task: Tarea original.
+
+        Returns:
+            Resultado cloud si no cabe; None si cabe y sigue el flujo.
+        """
+        if fits_in_window(model, task_chars=len(task)):
+            return None
+        return self._to_cloud(
+            f"prompt excede la ventana de {model} (anti-loop "
+            "compactacion/OOM): fallback a cloud"
+        )
+
+    def _generate_locally(
+        self, task: str, model: str, free: int | None, tier: object,
+    ) -> LocalExecutionResult:
+        """Genera en el modelo local y valida la salida (verificacion final).
+
+        Args:
+            task: Tarea cerrada.
+            model: Modelo local elegido.
+            free: VRAM libre en MB (None = sin dato).
+            tier: Tier decidido (para el keep_alive).
+
+        Returns:
+            Resultado local si la salida es sana; cloud si falla o degenera.
+        """
         keep_alive = _tier_keep_alive(self._tiers, tier)
         try:
             data = self._client.generate(
@@ -313,27 +527,21 @@ class LocalExecutor:
                 },
             )
         except Exception as exc:  # noqa: BLE001 - fallback a cloud, no crash
-            self._cloud_tasks += 1
             logger.warning("local_executor: fallo local (%s), fallback a cloud", exc)
-            return LocalExecutionResult(
-                output="", executed_locally=False,
-                reason=f"fallo del modelo local ({exc}): fallback a cloud",
+            return self._to_cloud(
+                f"fallo del modelo local ({exc}): fallback a cloud"
             )
         output = str(data.get("response", "")) if isinstance(data, dict) else str(data)
         if _is_degenerate_output(output):
-            self._cloud_tasks += 1
             logger.warning(
                 "local_executor: %s devolvio salida degenerada "
                 "(verificacion final), fallback a cloud", model,
             )
-            return LocalExecutionResult(
-                output="", executed_locally=False,
-                reason=(
-                    f"salida degenerada de {model} (verificacion final): "
-                    "fallback a cloud"
-                ),
+            return self._to_cloud(
+                f"salida degenerada de {model} (verificacion final): "
+                "fallback a cloud"
             )
-        self._local_tasks += 1
+        self._count_local()
         logger.info("local_executor: tarea cerrada en %s (0 tokens cloud)", model)
         return LocalExecutionResult(
             output=output, executed_locally=True, model=model,

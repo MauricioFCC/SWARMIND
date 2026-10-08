@@ -13,11 +13,17 @@ from __future__ import annotations
 import logging
 import subprocess
 import sys
+from pathlib import Path
+
+sys.path.insert(1, str(Path(__file__).resolve().parent.parent.parent))
+from harness.model_router.backend_config import BackendConfig
 
 logger = logging.getLogger(__name__)
 
-#: URL base del backend local (Ollama/llama-server/llama-swap).
-OLLAMA_BASE_URL = "http://localhost:11434"
+#: URL base del backend local derivada del SSOT ``BackendConfig`` (ADR-0098).
+#: Lee ``SWARMIND_LOCAL_BASE_URL`` (alias legacy ``SWARMIND_LLAMA_BASE_URL``);
+#: sin entorno cae al default local, sin literal duplicado.
+OLLAMA_BASE_URL = BackendConfig.from_env().base_url
 #: Ruta OpenAI-compatible de listado de modelos.
 MODELS_PATH = "/v1/models"
 #: Timeout de las comprobaciones de CLI y API (segundos).
