@@ -20,6 +20,18 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 
+# mutmut copia los tests a `mutants/` y ejecuta pytest en dos pasadas dentro
+# del mismo proceso (collect + clean test); cada test @given se re-ejecuta con
+# una instancia distinta de la clase y Hypothesis dispara
+# HealthCheck.differing_executors. Es un artefacto del runner de mutacion, no
+# un bug del test. Se suprime a nivel de modulo: en pytest normal cada test
+# corre una sola vez y la supresion no tiene efecto.
+settings.register_profile(
+    "swarmind_suppress_executors",
+    suppress_health_check=[HealthCheck.differing_executors],
+)
+settings.load_profile("swarmind_suppress_executors")
+
 from harness.memory_rag.semantic_cache import (
     DEFAULT_TTL_SECONDS,
     CacheEntry,
@@ -62,10 +74,6 @@ _task_id_list = st.lists(
 class TestCacheEntryProperties:
     """Propiedades de CacheEntry (invariantes de estructura de datos)."""
 
-    # mutmut ejecuta pytest dentro de `mutants/` y reinstala/rerun del mismo
-    # callable; Hypothesis lo detecta como "multiple executors" y aborta la
-    # clean test. Es un artefacto del runner de mutacion, no un bug del test.
-    @settings(suppress_health_check=[HealthCheck.differing_executors])
     @given(
         prompt_hash=st.text(min_size=1, max_size=64),
         prompt_text=st.text(min_size=0, max_size=500),
