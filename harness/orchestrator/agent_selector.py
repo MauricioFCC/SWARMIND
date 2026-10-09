@@ -195,7 +195,13 @@ class AgentSelector:
         Returns:
             None.
         """
-        task_id = hashlib.sha1(sanitized.encode("utf-8")).hexdigest()[:TASK_ID_LENGTH]
+        # WHAT: fingerprint determinista del mensaje (no es material crypto).
+        # WHY: sha1 aqui identifica el trace (ADR-0033), no protege secreto;
+        #      usedforsecurity=False lo declara (B324) y libera FIPS.
+        # WHERE: _record_decision.
+        task_id = hashlib.sha1(
+            sanitized.encode("utf-8"), usedforsecurity=False
+        ).hexdigest()[:TASK_ID_LENGTH]
         best_score = max(scores.values(), default=0.0)
         agent = selected[0] if selected else "abstain"
         self._trace.record(
