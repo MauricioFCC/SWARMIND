@@ -8,7 +8,6 @@ Usage:
     python scripts/launcher.py test          # Run tests
     python scripts/launcher.py cov           # Coverage
     python scripts/launcher.py deploy        # Deploy to projects
-    python scripts/launcher.py export        # Export to Drive
     python scripts/launcher.py lint          # Ruff lint
     python scripts/launcher.py gpu           # GPU info
     python scripts/launcher.py menu          # Interactive menu
@@ -23,6 +22,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
+# Timeout de comandos del launcher (segundos): suficiente para la suite
+# completa de tests/deploy, pero acotado para evitar cuelgues.
+_COMMAND_TIMEOUT_SECONDS = 1800
+
 
 def cmd(args: list[str], desc: str = "") -> int:
     """Run a command with nice output."""
@@ -31,7 +34,13 @@ def cmd(args: list[str], desc: str = "") -> int:
         print(f"  {desc}")
         print(f"{'='*60}")
     print(f"  $ {' '.join(args)}\n")
-    result = subprocess.run(args, cwd=ROOT, check=False)
+    try:
+        result = subprocess.run(
+            args, cwd=ROOT, check=False, timeout=_COMMAND_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        print(f"\n  ❌ Timeout tras {_COMMAND_TIMEOUT_SECONDS}s")
+        return 124
     if result.returncode != 0:
         print(f"\n  ❌ Failed (exit {result.returncode})")
     else:
@@ -61,13 +70,6 @@ def do_deploy(args: list[str]) -> int:
     return cmd([
         sys.executable, "scripts/deploy_all.py",
     ] + args, desc="Deploying to Projects")
-
-
-def do_export(args: list[str]) -> int:
-    """Export to Google Drive with ZIP."""
-    return cmd([
-        sys.executable, "scripts/export_to_drive.py",
-    ] + args, desc="Exporting to Google Drive")
 
 
 def do_lint(args: list[str]) -> int:
@@ -120,7 +122,7 @@ def main():
         description="Swarmind Multi-Agent System Launcher"
     )
     parser.add_argument("command", nargs="?", default="menu",
-        choices=["test", "cov", "deploy", "export", "lint", "gpu",
+        choices=["test", "cov", "deploy", "lint", "gpu",
                  "list", "menu", "fast"],
         help="Command to execute")
     parser.add_argument("args", nargs=argparse.REMAINDER,
@@ -132,7 +134,6 @@ def main():
         "test":   lambda: do_test(args.args),
         "cov":    lambda: do_cov(args.args),
         "deploy": lambda: do_deploy(args.args),
-        "export": lambda: do_export(args.args),
         "lint":   lambda: do_lint(args.args),
         "gpu":    lambda: do_gpu(),
         "list":   lambda: do_list_tests(),

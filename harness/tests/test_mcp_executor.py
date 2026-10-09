@@ -70,10 +70,20 @@ class TestInit:
         exe = MCPExecutor(default_timeout=60)
         assert exe.default_timeout == 60
 
-    def test_allowed_commands_none(self) -> None:
-        """allowed_commands=None debe permitir todos los comandos."""
+    def test_default_allowlist_is_deny_by_default(self) -> None:
+        """Sin argumentos, la allowlist segura excluye 'shell' (CWE-78)."""
         exe = MCPExecutor()
-        assert exe.allowed_commands is None
+        assert exe.allowed_commands is not None
+        assert "shell" not in exe.allowed_commands
+        assert set(exe.allowed_commands) == {"pytest", "python", "echo"}
+
+    def test_allowed_commands_none_means_deny_all(self) -> None:
+        """allowed_commands=None explicito debe DENEGAR todas las tools."""
+        exe = MCPExecutor(allowed_commands=None)
+        assert exe.allowed_commands == []
+        result = exe.execute_tool("echo", {"message": "x"})
+        assert result.success is False
+        assert "not in the allowed list" in result.error
 
     def test_allowed_commands_list(self) -> None:
         """Debe aceptar lista de comandos permitidos."""
@@ -349,8 +359,8 @@ class TestExecuteTool:
         assert "not in the allowed list" in result.error
         assert result.exit_code == -1
 
-    def test_allowed_commands_none_means_all(self, executor: MCPExecutor) -> None:
-        """execute_tool con allowed_commands=None debe ejecutar comandos conocidos sin restricción."""
+    def test_default_allowlist_executes_safe_tools(self, executor: MCPExecutor) -> None:
+        """execute_tool con la allowlist segura por defecto ejecuta tools seguras."""
         mock_proc = MagicMock()
         mock_proc.communicate.return_value = ("ok", "")
         mock_proc.returncode = 0
@@ -359,6 +369,13 @@ class TestExecuteTool:
             result = executor.execute_tool("echo", {})
 
         assert result.success is True
+
+    def test_default_allowlist_denies_shell(self, executor: MCPExecutor) -> None:
+        """execute_tool debe denegar 'shell' por defecto (fuera de allowlist)."""
+        result = executor.execute_tool("shell", {"command": "echo hi"})
+
+        assert result.success is False
+        assert "not in the allowed list" in result.error
 
     def test_unknown_tool_returns_error(self, executor: MCPExecutor) -> None:
         """execute_tool con tool desconocida debe retornar error sin ejecutar subprocess."""

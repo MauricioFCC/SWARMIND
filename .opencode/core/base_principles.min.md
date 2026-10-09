@@ -3,7 +3,7 @@ name: base-principles-min
 domain: core
 description: "N1 esencial para sesiones con modelos locales 9B (ctx 16K): principios sin N2/N3. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 3.3.0
+version: 3.5.0
 project_agnostic: true
 ---
 
@@ -19,7 +19,7 @@ RSF: Research First | investigar ANTES de ejecutar | vanguardia se renueva sola
 IDP: Idempotencia | si ya esta implementado NO reimplementar | solo mejorar
 ERR: Errores legibles y accionables | WHAT+WHY+WHERE | sin except silencioso
 ARQ: hexagonal + DI | KISS <500 | DRY | type hints | pathlib
-SEG: 0 secrets | validate input | mask logs | parametriza SQL | sys.path.insert(1)
+SEG: 0 secrets | mask logs | parametriza SQL | sys.path.insert(1)
 DOC: docstrings ES OBLIGATORIAS | 0 funciones sin docstring | template Args/Returns/Raises
 TST: core >=80% | TDD adversarial (test vs mutante) + mutantes + PBT + pairwise | coverage es piso no techo | pre-commit gates | 0 except silenciosos | logger.warning()
 CMT: conventional commit type(scope): descripcion
@@ -45,6 +45,7 @@ FSZ: Function Size | max 30 lineas | una responsabilidad | extraer helpers | gua
 CMP: Composition over Inheritance | preferir composicion sobre herencia | estrategia + interfaces | evitar jerarquias profundas | HAS-A sobre IS-A
 DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un punto por linea | tell dont ask
 FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | elegir la solucion mas avanzada/frontera/eficiente/confiable | al finalizar: actualizar docs + commit
+FND: Foundation-First | entorno antes que producto | walking skeleton + tracer bullet | spec + CI T1 (<90s) + gates + seguridad ANTES de features | identidad (org/dominio/registry) si publicas
 SPE: Spec-First (Proof-or-Stop) | spec ANTES de ejecutar | outcome medible | exit criteria definidos | sin spec = sin start
 GATE: Evidence-Gated Lifecycle | claim→evidence→gate | 0 false-DONE | T1 deterministic + T2 LLM-judge + T3 regression
 FAIL: Failure Registry | registrar fallos en JSONL | distillar en skills | Socratic-SWE traces→tasks | aprender de errores
@@ -52,4 +53,9 @@ SBX: Sandboxing | aislamiento de fallos | per-task environment | rollback plan |
 RPA: Re-Pin After compaction | tras CADA compactacion recargar N1+rol+skills+agentes | 65% fallos = drift | bloque <<RE-ANCHOR>>
 CPD: Fundamentos Competicion | checklist edges+invariants+BigO ANTES de codear | diagnose→repair→regenerate | dual verification
 ADV: Verificacion adversarial SIEMPRE | atacante (halla gaps) → steelman (defiende+propone) → juez (veredicto+disenso) | T siempre ultimo movimiento | 1/5 "resuelto" es incorrecto: fortalecer antes de confiar
+CLA: Clean Architecture | Presentation->Application->Domain<-Infrastructure | domain puro (0 frameworks/DB) | ports/adapters + DIP
+VAL: Input Validation | TODO input externo (HTTP/CLI) validado contra schema ANTES del dominio | Zod/Pydantic
+FST: Fail-Fast tipado | errores tipados con cause + contexto | nunca swallow ni mensaje generico
+AAA: Test AAA | Arrange-Act-Assert | 1 test = 1 criterio | mocks (0 DB/red real en unit)
+ATM: Atomic Changes | 1 commit/PR = 1 preocupacion logica
 ```

@@ -5,7 +5,7 @@
 
 name: creative-design
 domain: design
-description: "Usar cuando el usuario busca ideacion o diseno creativo. design thinking, ideacion, prototipado, branding, identidad visual, UX, brainstorming. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario busca ideacion o diseno creativo. design thinking, ideacion, prototipado, branding, identidad visual, UX, brainstorming. Alcance: ideacion y diseno creativo; para UI/design systems ver frontend-uiux. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -35,3 +35,19 @@ Skill de pensamiento creativo, design thinking, branding y diseno visual.
 - `!design thinking <problema>` — Sesion de Design Thinking
 - `!design brand <valores>` — Propuesta de branding
 - `!design prototype <idea>` — Prototipado rapido
+
+## Checklist
+
+- [ ] Brief que traduce negocio en objetivo visual
+- [ ] Maximo 2-3 conceptos con rationale
+- [ ] Identidad escalable (tokens/variantes)
+- [ ] Prototipo testeable con usuario
+- [ ] Iteracion segun feedback
+
+## Anti-patrones (prohibidos)
+
+- Brainstorm sin curaduria (sin concepto elegido).
+- Seguir la tendencia por moda, no por encaje.
+- Branding sin sistema reusable.
+- Prototipo sin usuario ni criterio de exito.
+- Presentar 10 opciones sin recomendacion.

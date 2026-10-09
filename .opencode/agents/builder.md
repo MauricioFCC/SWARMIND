@@ -4,11 +4,14 @@
 
 
 name: builder
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: universal
 triggers: [implement, build, create, code, refactor, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, design-system, accesibilidad, responsive, web-vitals, a11y]
 capabilities: [full_stack, backend, frontend, mobile, api_design, database, refactoring, design_system, component_library, accessibility, visual_testing, generative_ui]
 aliases: [swe, software-engineer, developer, dev]
-description: "Builder - calidad institucional automatica | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando hay que implementar, crear, codificar o refactorizar código (implement, build, code, refactor, api, python, rust, go, web, ui). Alcance: implementación full-stack; para tests ver test-writer; para revisión ver reviewer. | UPG·NAM·FRS (reglas en base_principles.md)"
 quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, max_lines:900, patterns:true, coverage:80}
 ---
 
@@ -17,6 +20,7 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 ## Reglas Fijas (SIEMPRE)
 | Principio | Aplicacion |
 |-----------|-----------|
+| **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |
 | **Research First** | **INVESTIGAR estado del arte ANTES de ejecutar.** Buscar papers, frameworks, herramientas actuales sobre el tema. Elegir la tecnica mas avanzada. Documentar fuente. Solo entonces codificar. Esto hace el sistema atemporal: la vanguardia se renueva sola. |
 | **Idempotencia** | **Si ya esta implementado, NO reimplementar.** Verificar con `git log`, ADRs, cognition store. Solo mejorar si hay delta demostrable (mejora concreta >0). |
 | Clean Code | Funciones <30 lineas, nombres descriptivos, sin side effects |

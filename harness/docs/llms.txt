@@ -6,19 +6,15 @@
 
 - ["""Harness — Multi-agent orchestration engine with LanceDB memory, C.A.S.E. evaluation, GEPA mutation, and procedural me...](harness/__init__.py)
 - ["""Permite ejecutar: python -m harness"""](harness/__main__.py)
-- [AGENTS.md — Onyx Multi-Agent System (Hermes-style manifest)](harness/AGENTS.md)
 - [!/usr/bin/env python3](harness/delegate.py)
 - [Evolve Analyzer](harness/docs/llms-full.txt)
 - [Swarmind Harness](harness/docs/llms.txt)
-- [!/usr/bin/env python3](harness/hermes_bridge.py)
 - [site_name: Onyx Multi-Agent System](harness/mkdocs.yml)
 - [Swarmind — Multi-Agent Evolutionary Harness](harness/README.md)
 - [1. Vector database (new name)](harness/reset_state.py)
 - [---------------------------------------------------------------------------](harness/run.py)
-- [── DB Commands ──────────────────────────────────────────────────────](harness/run_commands.py)
-- [!/usr/bin/env python3](harness/run_hermes.py)
+- ["" DB Commands ""](harness/run_commands.py)
 - ["""Cron-based task scheduler with JSON persistence.](harness/scheduler.py)
-- [Swarmind Hermes Integration](harness/skills/Swarmind-hermes.md)
 
 ## Agents (.opencode/)
 
@@ -102,7 +98,6 @@
 ## Model Router
 
 - ["""](harness/model_router/__init__.py)
-- [Try Hermes config system](harness/model_router/hermes_adapter.py)
 - [decision.source == "cloud"](harness/model_router/router.py)
 - [Model Router Configuration](harness/model_router/router_config.yaml)
 
@@ -141,7 +136,6 @@
 - [Directorios y patrones a excluir completamente](harness/scripts/generate_llms_txt.py)
 - [LanceDB es obligatorio, no opcional](harness/scripts/init.py)
 - [── Paths (relative to this installer script) ──────────────────────────](harness/scripts/install_hooks.py)
-- [!/usr/bin/env python3](harness/scripts/setup_hermes.py)
 
 ## OpenCode Config
 

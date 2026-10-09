@@ -5,7 +5,7 @@
 
 name: ethics
 domain: philosophy
-description: "Usar cuando la decision involucra etica de IA o valores. alineamiento, marcos eticos, agentes autonomos, decisiones automaticas, filosofia de la mente, sesgo etico. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando la decision involucra etica de IA o valores. alineamiento, marcos eticos, agentes autonomos, decisiones automaticas, filosofia de la mente, sesgo etico. Alcance: etica de IA y alineamiento; para riesgos emergentes ver risk-intelligence. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -173,6 +173,22 @@ Accion propuesta
 | **Risk-Execution** | Arbol de decision etica | Evaluacion de riesgo con dimension moral |
 | **Evolve** | Alineamiento de valores | Mejora continua dentro de limites eticos |
 | **Alpha-Research** | Beneficencia + responsabilidad | Investigacion con impacto social positivo |
+
+## Checklist
+
+- [ ] Arbol de decision etica aplicado (legal/etico/transparente/sesgos/privacidad)
+- [ ] Marco normativo citado (NIST AI RMF/ISO 42001)
+- [ ] Sesgos evaluados y mitigados (fairness metrics)
+- [ ] Transparencia y auditabilidad de la decision
+- [ ] Impacto y reversibilidad evaluados
+
+## Anti-patrones (prohibidos)
+
+- Responder 'depende' sin veredicto accionable.
+- Ignorar privacidad y minimizacion de datos.
+- Aceptar sesgos sin medirlos.
+- Decision irreversible sin precaucion.
+- Alineamiento declarado sin auditoria.
 
 ## Referencias Teoricas
 - Russell, S. (2019). *Human Compatible: AI and the Problem of Control*

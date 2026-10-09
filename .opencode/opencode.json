@@ -1,12 +1,14 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": [
-    ".opencode/core/base_principles.md"
+    ".opencode/core/base_principles.min.md"
   ],
-  "model": "ollama/qwen38-9b-16k",
+  "model": "llamacpp/qwen2.5-coder-3b-iq4-xs",
+  "small_model": "llamacpp/qwen2.5-coder-3b-iq4-xs",
   "agent": {
     "coordinator": {
       "mode": "primary",
+      "model": "opencode-go/deepseek-v4.1-flash",
       "permission": {
         "task": {
           "*": "ask",
@@ -18,6 +20,7 @@
     },
     "builder": {
       "mode": "subagent",
+      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs",
       "permission": {
         "edit": "allow",
         "bash": "ask"
@@ -25,6 +28,7 @@
     },
     "guardian": {
       "mode": "subagent",
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m",
       "permission": {
         "edit": "deny",
         "bash": "allow"
@@ -32,40 +36,64 @@
     },
     "scientist": {
       "mode": "subagent",
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m",
       "permission": {
         "edit": "deny",
         "bash": "ask",
         "webfetch": "allow"
       }
+    },
+    "reviewer": {
+      "model": "llamacpp/deepseek-r1-distill-qwen-7b-q2-k"
     }
   },
   "provider": {
-    "ollama": {
+    "llamacpp": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "Ollama (local)",
+      "name": "llama.cpp (llama-swap local :11434)",
       "options": {
-        "baseURL": "http://localhost:11434/v1"
+        "baseURL": "http://127.0.0.1:11434/v1"
       },
       "models": {
-        "qwen38-9b-16k": {
-          "name": "Qwen3.8 9B Q4 quality (ctx 16K baked)",
-          "reasoning": true,
-          "tools": true
-        },
-        "qwopus-9b-16k": {
-          "name": "Qwopus3.5 9B Q4 coding (ctx 16K baked)",
+        "qwen2.5-coder-3b-iq4-xs": {
+          "name": "qwen2.5-coder-3b-iq4-xs (coding)",
           "reasoning": false,
-          "tools": true
+          "tools": true,
+          "options": {
+            "num_ctx": 36864
+          }
         },
-        "minicpm5-2b-32k": {
-          "name": "MiniCPM5 2B Q8 fast (ctx 32K baked)",
-          "reasoning": false,
-          "tools": true
-        },
-        "glm-z1-9b-16k": {
-          "name": "GLM-Z1 9B Q4 reasoning (ctx 16K baked)",
+        "phi-4-mini-instruct-q4-k-m": {
+          "name": "phi-4-mini-instruct-q4-k-m (reasoning/general)",
           "reasoning": true,
-          "tools": true
+          "tools": true,
+          "options": {
+            "num_ctx": 36864
+          }
+        },
+        "qwen3-5-4b-gguf-ud-q4-k-xl": {
+          "name": "qwen3-5-4b-gguf-ud-q4-k-xl (fast)",
+          "reasoning": true,
+          "tools": true,
+          "options": {
+            "num_ctx": 36864
+          }
+        },
+        "deepseek-r1-distill-qwen-7b-q2-k": {
+          "name": "deepseek-r1-distill-qwen-7b-q2-k (deep)",
+          "reasoning": true,
+          "tools": true,
+          "options": {
+            "num_ctx": 36864
+          }
+        },
+        "qwen3-embedding-0-6b": {
+          "name": "qwen3-embedding-0-6b (embeddings/RAG)",
+          "reasoning": false,
+          "tools": false,
+          "options": {
+            "num_ctx": 8192
+          }
         }
       }
     }

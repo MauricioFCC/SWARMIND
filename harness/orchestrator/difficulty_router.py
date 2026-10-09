@@ -23,6 +23,12 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
+# Umbrales de score (exclusivos) que separan los niveles de complejidad.
+TRIVIAL_SCORE_MAX = 0.1
+SIMPLE_SCORE_MAX = 0.25
+MODERATE_SCORE_MAX = 0.45
+COMPLEX_SCORE_MAX = 0.7
+
 
 # ---------------------------------------------------------------------------
 # Enums
@@ -366,13 +372,13 @@ class DifficultyRouter:
         self, score: float, features: ComplexityFeatures,
     ) -> ComplexityLevel:
         """Clasifica el nivel de complejidad desde el score."""
-        if score < 0.1:
+        if score < TRIVIAL_SCORE_MAX:
             return ComplexityLevel.TRIVIAL
-        elif score < 0.25:
+        elif score < SIMPLE_SCORE_MAX:
             return ComplexityLevel.SIMPLE
-        elif score < 0.45:
+        elif score < MODERATE_SCORE_MAX:
             return ComplexityLevel.MODERATE
-        elif score < 0.7:
+        elif score < COMPLEX_SCORE_MAX:
             return ComplexityLevel.COMPLEX
         else:
             return ComplexityLevel.VERY_COMPLEX

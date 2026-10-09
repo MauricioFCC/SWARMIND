@@ -1,7 +1,7 @@
 ---
 name: healthtech
 domain: healthtech
-description: "Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos. Alcance: salud digital y sistemas clinicos; para seguridad general ver security-audit. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 version: 1.0.0
 project_agnostic: true

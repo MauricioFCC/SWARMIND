@@ -81,8 +81,6 @@ _USAGE_LINES: tuple[str, ...] = (
     "  !rag ingest                 Ingiere codigo fuente como RAG",
     "  !rag ingest --dir <path>    Ingiere solo un directorio",
     "  !rag stats                  Estadisticas de la BD RAG",
-    "  !hermes sync                Sync bidireccional Swarmind <-> shared_memory",
-    "  !hermes stats               Estadisticas del puente Hermes",
     "",
 )
 

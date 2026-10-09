@@ -103,8 +103,8 @@ class CliGateway(MessageGateway):
             prefix = f"[{message.channel}] {message.role}:"
             print(f"{prefix} {message.content}", flush=True)
             return True
-        except OSError as exc:
-            logger.error("CLI send failed: %s", exc)
+        except OSError:
+            logger.exception("WHAT=fallo al escribir en stdout WHERE=CLIGateway.send")
             return False
 
     def receive(self) -> list[Message]:
@@ -189,8 +189,8 @@ class SlackGateway(MessageGateway):
                 text=f"[{message.role}] {message.content}",
             )
             return True
-        except Exception as exc:  # noqa: BLE001
-            logger.error("Slack send failed: %s", exc)
+        except Exception:
+            logger.exception("WHAT=fallo el envio por Slack WHERE=SlackGateway.send")
             return False
 
     def receive(self) -> list[Message]:
@@ -272,8 +272,8 @@ class TelegramGateway(MessageGateway):
         except ImportError:
             logger.warning("requests library not installed. Install with: pip install requests")
             return False
-        except Exception as exc:  # noqa: BLE001
-            logger.error("Telegram send error: %s", exc)
+        except Exception:
+            logger.exception("WHAT=fallo el envio por Telegram WHERE=TelegramGateway.send")
             return False
 
     def receive(self) -> list[Message]:

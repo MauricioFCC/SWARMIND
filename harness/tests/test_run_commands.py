@@ -2,7 +2,7 @@
 Tests para harness/run_commands.py — command handlers del Harness CLI.
 
 Cubre: RAG commands, DB commands, iteration commands, hooks, evolve,
-schedule, model routing, HITL, watch mode, hermes, guardrails, ANSI helpers.
+schedule, model routing, HITL, watch mode, guardrails, ANSI helpers.
 """
 from __future__ import annotations
 
@@ -590,8 +590,10 @@ class TestModelRouting:
 
     @pytest.fixture(autouse=True)
     def patch_router(self):
-        """Parchea ModelRouter (import lazy dentro de la funcion)."""
-        with patch("harness.model_router.router.ModelRouter") as m:
+        """Parchea ModelRouter y el probe de backend local (hermetico)."""
+        with patch("harness.model_router.router.ModelRouter") as m, \
+             patch("harness.run_commands.handlers_extra._local_backend_available",
+                   return_value=True):
             yield m
 
     def test_force_cloud(self, patch_router):
@@ -802,53 +804,6 @@ class TestHandleWatchMode:
             patch.object(he_mod._rc.time, "time", return_value=100.0):
 
             he_mod._handle_watch_mode(harness_dir)
-
-
-# ===================================================================
-# Hermes Commands
-# ===================================================================
-
-class TestHermes:
-    """Tests para _handle_hermes."""
-
-    @pytest.fixture(autouse=True)
-    def patch_hermes(self):
-        """Parchea HermesBridge (import lazy dentro de la funcion)."""
-        with patch("harness.memory_rag.hermes_bridge.HermesBridge") as m:
-            yield m
-
-    def test_hermes_sync(self, patch_hermes):
-        """!hermes sync debe ejecutar sync_all."""
-        mock_bridge = MagicMock()
-        mock_bridge.sync_all.return_value = {"synced": 10}
-        patch_hermes.return_value = mock_bridge
-        from harness.run_commands import _handle_hermes
-        _handle_hermes("!hermes sync")
-        mock_bridge.sync_all.assert_called_once()
-
-    def test_hermes_stats(self, patch_hermes):
-        """!hermes stats debe ejecutar get_stats."""
-        mock_bridge = MagicMock()
-        mock_bridge.get_stats.return_value = {"docs": 5}
-        patch_hermes.return_value = mock_bridge
-        from harness.run_commands import _handle_hermes
-        _handle_hermes("!hermes stats")
-        mock_bridge.get_stats.assert_called_once()
-
-    def test_hermes_empty(self, patch_hermes):
-        """!hermes sin subcomando debe mostrar ayuda."""
-        from harness.run_commands import _handle_hermes
-        _handle_hermes("!hermes")
-
-    def test_hermes_help(self, patch_hermes):
-        """!hermes help debe mostrar ayuda."""
-        from harness.run_commands import _handle_hermes
-        _handle_hermes("!hermes help")
-
-    def test_hermes_unknown(self, patch_hermes):
-        """!hermes <subcomando desconocido> debe loggear warning."""
-        from harness.run_commands import _handle_hermes
-        _handle_hermes("!hermes invalid_sub")
 
 
 # ===================================================================

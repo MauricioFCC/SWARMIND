@@ -71,7 +71,7 @@ def fallback_embedding(text: str, dim: int = EMBEDDING_DIM) -> np.ndarray:
 
     SRC: unifica las 13+ implementaciones identicas en:
         agent_bus.py, scheduler.py, context_assembler.py, semantic_cache.py,
-        hermes_bridge.py, agent_dispatcher.py, embedding_service.py,
+        agent_dispatcher.py, embedding_service.py,
         doc_ingester.py, skill_generator.py, prompt_evolver.py,
         cognition_sync.py, agent_notes.py, etc.
 
@@ -104,7 +104,7 @@ def fallback_embedding(text: str, dim: int = EMBEDDING_DIM) -> np.ndarray:
 # ---------------------------------------------------------------------------
 
 
-def estimate_tokens(text: str) -> int:
+def estimate_tokens(text: str, minimum: int = 1) -> int:
     """
     Token estimation: usa tiktoken si disponible, fallback a chars/4.
 
@@ -118,13 +118,16 @@ def estimate_tokens(text: str) -> int:
 
     Args:
         text: Texto a estimar.
+        minimum: Cota inferior del resultado (default: 1). Los modulos
+            que auditan frontmatter vacio pasan ``minimum=0`` para que
+            el texto vacio cueste 0 tokens.
 
     Returns:
-        Numero estimado de tokens (minimo 1).
+        Numero estimado de tokens (>= ``minimum``).
     """
     if _TIKTOKEN_AVAILABLE and _TIKTOKEN_ENCODING is not None:
-        return len(_TIKTOKEN_ENCODING.encode(text))
-    return max(1, len(text) // int(CHARS_PER_TOKEN))
+        return max(minimum, len(_TIKTOKEN_ENCODING.encode(text)))
+    return max(minimum, len(text) // int(CHARS_PER_TOKEN))
 
 
 # ---------------------------------------------------------------------------

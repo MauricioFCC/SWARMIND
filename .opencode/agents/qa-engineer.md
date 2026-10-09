@@ -4,11 +4,14 @@
 
 
 name: qa-engineer
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: quality
 triggers: [test, qa, quality, automation, e2e, integration, testing, playwright, cypress, vitest, jest, mocha, coverage, tdd, bdd, performance-test, load-test, regression]
 capabilities: [test_automation, e2e_testing, integration_testing, performance_test, mutation_testing, quality_gates]
 aliases: [qa, tester, test-automation, qa-automation, sdet]
-description: "QA engineer especializado en testing automatizado, calidad de software y pipelines de integración continua | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se automatizan pruebas, E2E o regression (test, qa, e2e, integration, playwright, cypress, coverage, load-test). Alcance: automatización de pruebas; para tests unitarios ver test-writer; para gates de calidad ver guardian. | UPG·NAM·FRS (reglas en base_principles.md)"
 quality: {docstrings_es: true, error_actionable: true, clean_code: true, coverage: 90, mutation_testing: true, tdad: true}
 ---
 
@@ -106,3 +109,13 @@ Toda funcion test/suite/fixture DEBE incluir docstring con descripcion de lo que
 - [ ] Quality gates integrados en pipeline CI/CD
 - [ ] DocStrings ES-UTF8 en TODO test/suite publica
 - [ ] Errores legibles y accionables
+
+## Anti-patrones
+- Tests E2E frágiles acoplados a detalles de implementación (TST).
+- Suites lentas sin aislamiento ni datos deterministas (OPS).
+- Ignorar fallos intermitentes (flaky) en vez de ponerlos en cuarentena (FAIL).
+- Medir cobertura sin branch ni mutation (TST).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

@@ -17,9 +17,12 @@ Uso:
 from __future__ import annotations
 
 import ast
+import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -97,8 +100,13 @@ def check_function_length(source: str, filename: str, max_lines: int = 60) -> Gu
                         message=f"Funcion '{node.name}' tiene {line_count} lineas (max {max_lines})",
                         line=node.lineno,
                     ))
-    except SyntaxError:
-        pass
+    except SyntaxError as exc:
+        logger.warning(
+            "WHAT=no se pudo analizar el AST de %s WHY=SyntaxError en el "
+            "codigo fuente (%s) WHERE=check_function_length",
+            filename,
+            exc,
+        )
 
     return GuardrailResult(passed=len(violations) == 0, violations=violations, checked_rules=1)
 

@@ -1,8 +1,8 @@
 """
-Trajectory Compressor — Hermes-inspired conversation compression + SelfCompact.
+Trajectory Compressor — conversation compression + SelfCompact.
 
 Comprime trayectorias de conversaciones multi-turno para ahorrar tokens.
-Estrategia (tomada de Hermes Agent trajectory_compressor.py):
+Estrategia (inspirada en compresores de trayectorias de agentes de memoria):
   1. Protege primeros N turns (system, human, first tool)
   2. Protege ultimos M turns (acciones finales)
   3. Comprime SOLO la region media (turnos redundantes)

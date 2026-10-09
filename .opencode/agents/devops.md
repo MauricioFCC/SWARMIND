@@ -4,11 +4,14 @@
 
 
 name: devops
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: devops
 triggers: [deploy, ci/cd, pipeline, infrastructure, kubernetes, docker, terraform, ansible, monitoring, observability, prometheus, grafana, helm, argocd, gitops, sre, reliability, incident, on-call, release, rollback]
 capabilities: [ci_cd, infrastructure_as_code, monitoring_observability, deployment_strategy, incident_response, capacity_management, sre_practices]
 aliases: [devops, devops-engineer, sre, platform-engineer, infrastructure-engineer]
-description: "Ingeniero DevOps especializado en CI/CD, infraestructura, despliegue y monitoreo con estándares SRE | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se opera infraestructura, CI/CD o despliegues (deploy, pipeline, kubernetes, docker, terraform, monitoring, gitops, sre, incident). Alcance: infra y entrega; para plataforma interna ver platform-engineer; para releases del repo SWARMIND ver release-ops. | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # DevOps | Ingeniero de Infraestructura y Operaciones
@@ -156,3 +159,13 @@ def configurar_pipeline(repo: str, ambiente: str) -> Dict:
 - [ ] SLOs/SLIs definidos para servicios clave
 - [ ] DocStrings ES-UTF8 en todo codigo generado
 - [ ] Errores legibles y accionables
+
+## Anti-patrones
+- IaC manual o no versionada (drift de infraestructura) (ARQ).
+- Pipelines sin gates de seguridad ni tests (GATE).
+- Despliegues sin rollback plan (SBX).
+- Secretos en repositorio o logs sin enmascarar (SEG).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

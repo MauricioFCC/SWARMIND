@@ -1,7 +1,7 @@
 """
 Plugin System — Auto-discovery de tools y extensiones.
 
-Inspirado en Hermes Agent: los tools se registran llamando a
+Los tools se registran llamando a
 registry.register() al importarse. discover_all() importa todos
 los .py en harness/plugins/tools/ automaticamente.
 

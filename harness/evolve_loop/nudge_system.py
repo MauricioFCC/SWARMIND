@@ -1,6 +1,6 @@
-﻿"""Nudge System — Auto-persistencia de contexto (inspirado en Hermes Agent nudges).
+﻿"""Nudge System — Auto-persistencia de contexto (nudges periodicos).
 
-Hermes Agent tiene un sistema de "nudges" periodicos donde el agente persiste
+Los agentes de memoria usan "nudges" periodicos donde el agente persiste
 automaticamente contexto importante a la memoria de largo plazo.
 
 Nosotros implementamos:

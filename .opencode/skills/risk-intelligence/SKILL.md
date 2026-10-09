@@ -5,7 +5,7 @@
 
 name: risk-intelligence
 domain: risk
-description: "Usar cuando el usuario analiza riesgos emergentes. CRO Forum, riesgos tecnologicos, geopoliticos, climaticos, salud, financieros. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario analiza riesgos emergentes. CRO Forum, riesgos tecnologicos, geopoliticos, climaticos, salud, financieros. Alcance: riesgos emergentes y escenarios; para riesgo de mercado ver risk-execution. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -44,6 +44,22 @@ utilizando el framework CRO Forum 2026: Major Trends and Emerging Risk Radar.
 - `!risk climate` — Riesgos climaticos y ambientales
 - `!risk health` — Riesgos de salud publica
 - `!risk finance` — Riesgos financieros (debt, liquidity)
+
+## Checklist
+
+- [ ] Riesgo con probabilidad, impacto y horizonte
+- [ ] Leading indicators definidos
+- [ ] Escenarios (base/estres) y early warnings
+- [ ] Mapa de concentracion e interdependencias
+- [ ] Plan de mitigacion con responsable
+
+## Anti-patrones (prohibidos)
+
+- 'Podria pasar' sin probabilidad ni impacto.
+- Ignorar interdependencias entre riesgos.
+- Analizar solo riesgo financiero.
+- Radar sin leading indicators.
+- Riesgo sin owner ni accion.
 
 ## Referencias
 - CRO Forum 2026: Emerging Risks Initiative

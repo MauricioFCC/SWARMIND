@@ -16,17 +16,28 @@ Niveles de activacion:
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from enum import Enum
 
 from harness.orchestrator.competence_model import CompetenceModel
+from harness.orchestrator.decision_trace import (
+    DecisionRecord,
+    DecisionTrace,
+    default_trace,
+)
+from harness.orchestrator.keyword_match import contains_word, score_keywords
+from harness.orchestrator.prompt_sanitizer import sanitize_task
 
 logger = logging.getLogger(__name__)
 
-#: Evidencia minima (datos + prior) para que el re-rank compita con keywords.
-MIN_EVIDENCE_FOR_RERANK = 2.0
-#: Peso del bonus de competencia en el re-rank (Thompson sobre keywords).
+#: Observaciones REALES minimas (excluye el prior Beta(1,1)) para re-rankear.
+#: Con menos, el re-rank es identidad (no corrompe el ranking por keyword).
+MIN_EVIDENCE_FOR_RERANK = 1.0
+#: Peso maximo del bonus de competencia (escalado por evidencia n/(n+k)).
 COMPETENCE_BONUS_WEIGHT = 1.0
+#: Longitud del `task_id` determinista derivado del mensaje saneado.
+TASK_ID_LENGTH = 12
 
 
 class ActivationLevel(str, Enum):
@@ -41,27 +52,32 @@ class ActivationLevel(str, Enum):
 # Keywords que determinan que agente se necesita
 AGENT_KEYWORDS: dict[str, list[str]] = {
     "builder": [
-        "implement", "build", "code", "api", "endpoint", "rust", "go", "python",
-        "typescript", "javascript", "web", "mobile", "frontend", "backend",
-        "database", "sql", "query", "migracion", "deploy", "docker",
-        "algoritmo", "modulo", "funcion", "clase", "refactor", "fix", "bug",
+        "implement", "implementa", "implementar", "build", "code", "api",
+        "endpoint", "rust", "go", "python", "typescript", "javascript",
+        "web", "mobile", "frontend", "backend", "database", "sql", "query",
+        "migracion", "deploy", "docker", "algoritmo", "modulo", "funcion",
+        "clase", "refactor", "fix", "bug", "crea", "crear", "desarrolla",
+        "desarrollar", "construye", "construir",
     ],
     "scientist": [
         "research", "investigar", "investiga", "study", "analyze", "analysis",
         "architecture", "design", "pattern", "paper", "algoritmo",
         "ml", "ai", "machine learning", "experiment", "hypothesis",
-        "comparar", "evaluar", "proponer", "recomendar",
-        "investigacion", "analisis",
+        "comparar", "compara", "evaluar", "evalua", "proponer", "propone",
+        "recomendar", "recomienda", "investigacion", "analisis", "analiza",
+        "analizar", "estudia", "estudiar", "disena", "disenar",
     ],
     "guardian": [
-        "test", "testing", "coverage", "cobertura", "pruebas",
-        "security", "seguridad", "audit", "vulnerabilidad",
-        "quality", "calidad", "review", "revisar", "validate",
-        "document", "documentar", "docs", "readme",
+        "test", "tests", "testing", "coverage", "cobertura", "pruebas",
+        "prueba", "security", "seguridad", "audit", "audita", "auditoria",
+        "vulnerabilidad", "quality", "calidad", "review", "revisa", "revisar",
+        "revision", "validate", "valida", "validacion", "verifica",
+        "verificacion", "document", "documenta", "documentar",
+        "documentacion", "docs", "readme",
     ],
     "evolve": [
-        "evolve", "improve", "optimize", "optimizar",
-        "skill", "cognition", "learn", "aprender",
+        "evolve", "evoluciona", "improve", "optimize", "optimiza", "optimizar",
+        "mejora", "mejorar", "skill", "cognition", "learn", "aprender",
         "auto-mejora", "self-improve", "evolution",
     ],
 }
@@ -96,6 +112,7 @@ class AgentSelector:
         self,
         default_level: ActivationLevel = ActivationLevel.STANDARD,
         competence: CompetenceModel | None = None,
+        trace: DecisionTrace | None = None,
     ):
         """Inicializa el selector con opcion de competencia evidenciada.
 
@@ -104,49 +121,114 @@ class AgentSelector:
             competence: Modelo Beta/Thompson (agente x skill) opcional;
                 si hay evidencia, re-rankea con bonus Thompson sobre el
                 score keyword (ADR-0075: evidencia > keywords fijas).
+            trace: Traza de decisiones donde registrar cada `select`; si es
+                `None` usa el trace global `default_trace()` (ADR-0033).
         """
         self._default_level = default_level
         self._competence = competence
+        self._trace = trace if trace is not None else default_trace()
 
-    def select(self, message: str, skill: str = "general") -> list[str]:
+    def select(
+        self, message: str, skill: str = "general", abstain: bool = True
+    ) -> list[str]:
         """
         Selecciona agentes basado en el mensaje (y evidencia si la hay).
+
+        Matching por frontera de palabra (`keyword_match`): `"go"` no matchea
+        `"good"`, `"ai"` no matchea `"email"`, `"test"` no matchea `"latest"`.
+
+        Abstention: si NINGUN agente tiene score > 0 (tarea fuera de dominio),
+        retorna `[]` para que el coordinator decida, en vez de forzar `builder`
+        (ADR-0077). Mensaje vacio conserva el contrato `["builder"]`.
 
         Args:
             message: Tarea del usuario.
             skill: Skill para el re-rank de competencia (default "general").
+            abstain: Si True (default), fuera de dominio devuelve `[]`. Si
+                False, conserva la retrocompatibilidad (fuerza `builder`).
 
         Returns:
-            Lista de agentes a activar (ordenada por relevancia).
+            Lista de agentes a activar (vacia si abstention).
         """
         if not message:
             return ["builder"]
 
-        msg_lower = message.lower()
+        # 0. Saneado anti-inyeccion ANTES de detectar/rankear (VER prompt_sanitizer).
+        sanitized = sanitize_task(message)
+        if not sanitized:
+            logger.info("agent_selector: abstention (input solo inyeccion)")
+            agents = [] if abstain else ["builder"]
+            self._record_decision(sanitized, agents, {})
+            return agents
 
         # 1. Detectar nivel de activacion
-        level = self._detect_level(msg_lower)
+        level = self._detect_level(sanitized)
 
-        # 2. Puntuar relevancia de cada agente
-        scores = self._score_agents(msg_lower)
+        # 2. Puntuar relevancia de cada agente (frontera de palabra)
+        scores = self._score_agents(sanitized)
 
-        # 3. Re-rank con competencia evidenciada (anti-collapse Thompson)
+        # 3. Re-rank con competencia evidenciada (solo con evidencia real)
         scores = self._rerank_with_competence(scores, skill)
 
-        # 4. Seleccionar segun nivel
-        return self._select_by_level(scores, level)
+        # 4. Abstention: sin senal de dominio, no forzar agente
+        if abstain and all(score <= 0.0 for score in scores.values()):
+            logger.info("agent_selector: abstention (fuera de dominio)")
+            selected: list[str] = []
+        else:
+            # 5. Seleccionar segun nivel
+            selected = self._select_by_level(scores, level)
+
+        # 6. Trazar la decision (strategy/agent/score/task_id) — ADR-0033
+        self._record_decision(sanitized, selected, scores)
+        return selected
+
+    def _record_decision(
+        self, sanitized: str, selected: list[str], scores: dict[str, float]
+    ) -> None:
+        """Registra la decision de seleccion en el trace configurado.
+
+        Args:
+            sanitized: Mensaje ya saneado (fuente del `task_id` determinista).
+            selected: Agentes elegidos; si esta vacio la decision es abstention.
+            scores: Scores por agente (se registra el mejor como `score`).
+
+        Returns:
+            None.
+        """
+        # WHAT: fingerprint determinista del mensaje (no es material crypto).
+        # WHY: sha1 aqui identifica el trace (ADR-0033), no protege secreto;
+        #      usedforsecurity=False lo declara (B324) y libera FIPS.
+        # WHERE: _record_decision.
+        task_id = hashlib.sha1(
+            sanitized.encode("utf-8"), usedforsecurity=False
+        ).hexdigest()[:TASK_ID_LENGTH]
+        best_score = max(scores.values(), default=0.0)
+        agent = selected[0] if selected else "abstain"
+        self._trace.record(
+            DecisionRecord(
+                strategy="agent_selector",
+                agent=agent,
+                score=best_score,
+                task_id=task_id,
+            )
+        )
 
     def _rerank_with_competence(
         self, scores: dict[str, float], skill: str
     ) -> dict[str, float]:
         """Ajusta los scores keyword con la competencia evidenciada.
 
+        El guard se basa en OBSERVACIONES REALES (`BetaPosterior.observations`,
+        excluye el prior Beta(1,1)); con 0 observaciones la re-ordenacion es
+        identidad. El bonus escala por evidencia (`n/(n+k)`) para que una sola
+        observacion no revierta un keyword fuerte.
+
         Args:
             scores: Scores keyword por agente (0.0-1.0).
             skill: Skill para la posterior (agente x skill).
 
         Returns:
-            Scores ajustados; identidad si no hay modelo o evidencia minima.
+            Scores ajustados; identidad si no hay modelo o evidencia real.
         """
         if self._competence is None:
             return scores
@@ -161,48 +243,47 @@ class AgentSelector:
                     "agent_selector: sin posterior para (%s, %s)", agent, skill
                 )
                 continue
-            if (posterior.successes + posterior.failures) < MIN_EVIDENCE_FOR_RERANK:
-                continue  # sin evidencia: no compite con keywords
-            bonus = posterior.mean * COMPETENCE_BONUS_WEIGHT
+            if posterior.observations < MIN_EVIDENCE_FOR_RERANK:
+                continue  # sin evidencia real: no compite con keywords
+            bonus = (
+                posterior.mean
+                * COMPETENCE_BONUS_WEIGHT
+                * posterior.evidence_weight()
+            )
             adjusted[agent] = min(1.0, adjusted[agent] + bonus)
             logger.debug(
-                "agent_selector: bonus competencia %s=%.2f (mean=%.2f)",
-                agent, bonus, posterior.mean,
+                "agent_selector: bonus competencia %s=%.2f (mean=%.2f, n=%.0f)",
+                agent, bonus, posterior.mean, posterior.observations,
             )
         return adjusted
 
-    def _detect_level(self, msg_lower: str) -> ActivationLevel:
-        """Detecta nivel de activacion basado en el mensaje."""
-        # Palabras de complejidad
-        for w in COMPLEX_INDICATORS:
-            if w in msg_lower:
+    def _detect_level(self, message: str) -> ActivationLevel:
+        """Detecta nivel de activacion con frontera de palabra (DRY)."""
+        for indicator in COMPLEX_INDICATORS:
+            if contains_word(message, indicator):
                 return ActivationLevel.SWARM
 
-        for w in SIMPLE_INDICATORS:
-            if w in msg_lower:
+        for indicator in SIMPLE_INDICATORS:
+            if contains_word(message, indicator):
                 return ActivationLevel.MINIMAL
 
-        # Deteccion por cantidad de verbos tecnicos
-        tech_verbs = 0
-        for agent_kws in AGENT_KEYWORDS.values():
-            for kw in agent_kws:
-                if kw in msg_lower:
-                    tech_verbs += 1
-
+        # Deteccion por cantidad de keywords tecnicas que matchean
+        tech_verbs = sum(
+            score_keywords(message, keywords) for keywords in AGENT_KEYWORDS.values()
+        )
         if tech_verbs >= 5:
             return ActivationLevel.SWARM
-        elif tech_verbs >= 3:
+        if tech_verbs >= 3:
             return ActivationLevel.STANDARD
-        elif tech_verbs >= 1:
+        if tech_verbs >= 1:
             return ActivationLevel.PAIRED
-        else:
-            return ActivationLevel.MINIMAL
+        return ActivationLevel.MINIMAL
 
-    def _score_agents(self, msg_lower: str) -> dict[str, float]:
-        """Puntua relevancia de cada agente (0.0 - 1.0)."""
+    def _score_agents(self, message: str) -> dict[str, float]:
+        """Puntua relevancia de cada agente (0.0 - 1.0) por frontera de palabra."""
         scores: dict[str, float] = {}
         for agent, keywords in AGENT_KEYWORDS.items():
-            score = sum(1 for kw in keywords if kw in msg_lower)
+            score = score_keywords(message, keywords)
             # Normalizar
             max_possible = len(keywords)
             scores[agent] = min(score / max(1, max_possible) * 2, 1.0)

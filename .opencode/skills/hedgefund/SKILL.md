@@ -58,3 +58,18 @@ metadata:
 
 > 💡 **Nota**: Esta skill NO reemplaza a las otras skills. Es la **doctrina fundacional** que contextualiza todas las demás. Cada skill opera DENTRO de este marco de hedge fund. El CIO (coordinator) es el guardián de esta doctrina.
 
+## Checklist
+
+- [ ] Tesis con tesis, anti-tesis, catalyst y sizing
+- [ ] Mandato unico por documento con limites de riesgo explicitos
+- [ ] Hipotesis falseable (H0/H1) antes de invertir recursos
+- [ ] Validacion out-of-sample y datos que respalden la decision
+- [ ] Stop-loss / limite de drawdown definido por posicion
+
+## Anti-patrones (prohibidos)
+
+- Decision sin respaldo de datos (BLOCK).
+- Exceder el limite de riesgo sin aprobacion del Board.
+- Codigo nuevo sin test (posicion sin stop-loss).
+- Hipotesis no falseable.
+- Validar solo in-sample (overfitting).

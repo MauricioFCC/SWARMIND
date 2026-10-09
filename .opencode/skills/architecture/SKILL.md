@@ -4,7 +4,7 @@
 
 
 name: architecture
-description: "Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones. Alcance: diseno y decisiones de arquitectura; para infraestructura y despliegue ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -88,3 +88,20 @@ metadata:
 ---
 
 > 💡 **Nota**: Esta skill es agnostica al lenguaje y framework. El patron arquitectonico se selecciona segun las restricciones del dominio, no por moda. Todo cambio arquitectonico debe tener ADR asociado. La arquitectura evoluciona, no se impone.
+
+## Checklist
+
+- [ ] Dependencias sin ciclos; capas respetadas (domain no importa infra)
+- [ ] Decision mayor documentada en un ADR
+- [ ] Fitness function que protege la caracteristica clave
+- [ ] Interfaces publicas con type hints
+- [ ] Modulos < 500 lineas y funciones < 60 lineas
+- [ ] Cobertura de tests en la capa core
+
+## Anti-patrones (prohibidos)
+
+- Dependencia circular entre modulos (BLOCK).
+- Domain importando infrastructure (violacion de capa).
+- Arquitectura por moda sin restricciones de dominio.
+- Cambio arquitectonico mayor sin ADR.
+- Menu de opciones sin veredicto ni tradeoffs.

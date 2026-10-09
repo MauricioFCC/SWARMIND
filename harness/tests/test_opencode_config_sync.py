@@ -155,6 +155,10 @@ class TestProjectConfigSync:
                             for elt in node.value.elts:
                                 if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                                     real_collections.add(elt.value)
+                        elif isinstance(node.value, ast.Dict):
+                            for key in node.value.keys:
+                                if isinstance(key, ast.Constant) and isinstance(key.value, str):
+                                    real_collections.add(key.value)
         if not real_collections:
             pytest.skip("No se pudieron extraer colecciones")
         config = load_yaml(PROJECT_CONFIG)

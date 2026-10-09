@@ -4,13 +4,16 @@
 
 
 name: evolve
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: self-improvement
 triggers: [evolve, self-improve, improve, optimize, automate, skill, cognition, learn, adapt]
 capabilities: [self_improvement, skill_generation, cognition_sync, agent_evolution, experiment_design,
   token_economics, harness_optimization, rl_scaling, spec_regression_safety, role_adaptation,
   forward_deployment, task_autobuild]
 aliases: [evolve]
-description: "Meta-agente de auto-mejora del sistema — orquesta ASI-Evolve con Token Economics, RL Scaling y FDE | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se quiere auto-mejorar el sistema, sus skills o agentes (evolve, improve, optimize, skill, cognition, learn, adapt). Alcance: meta-evolución ASI-Evolve; para validar calidad ver guardian; para feature nueva ver builder. | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 # EVOLVE: Meta-agente de auto-mejora continua
 
@@ -190,3 +193,13 @@ def mi_mejora(param: str) -> bool:
 
 ---
 *Evolve: Cada mejora debe pagar sus propios tokens. Sin delta medible, no hay deploy.*
+
+## Anti-patrones
+- Evolucionar sin métrica de Skill Lift ni evaluación paired (GATE).
+- Publicar skills/agentes autogenerados sin validar (validate/audit) (TST).
+- Duplicar una skill existente en vez de especializarla (IDP/SOL).
+- Reescribir sin spec de mejora ni rollback definido (SPE/SBX).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

@@ -6,7 +6,7 @@
 name: security-audit
 invocation: skill
 domain: security
-description: "Usar cuando el usuario audita seguridad o cumple estandares. OWASP, STRIDE, SOC2, ISO27001, SAST, DAST, threat modeling, SBOM, pentesting. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario audita seguridad o cumple estandares. OWASP, STRIDE, SOC2, ISO27001, SAST, DAST, threat modeling, SBOM, pentesting. Alcance: auditoria AppSec/DevSecOps; para infraestructura ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Requiere herramientas SAST/DAST (bandit, semgrep) y red'
 version: 1.0.0
@@ -72,6 +72,23 @@ y compliance.
 - `!security sbom` — Generar SBOM del proyecto
 - `!security review-deps` — Revisar dependencias por CVEs conocidos
 - `!security harden <config>` — Sugerencias de hardening para configuracion
+
+## Checklist
+
+- [ ] Hallazgo con CWE/CVE, severidad (CVSS) y remediacion
+- [ ] SAST + DAST ejecutados sobre el alcance
+- [ ] Dependencias y SBOM revisados por CVEs
+- [ ] Threat model STRIDE por componente
+- [ ] Secrets scanning y 0 hardcode
+- [ ] Gating en CI bajo umbral de severidad
+
+## Anti-patrones (prohibidos)
+
+- Reportar 'revisar seguridad' sin hallazgo concreto.
+- Escanear solo el codigo y no las dependencias.
+- Ignorar autorizacion/autenticacion (solo inyeccion).
+- Remediar sin prueba de no-regresion (RvB).
+- Exponer secretos en reportes o logs.
 
 ## Referencias
 - OWASP Top 10 2021

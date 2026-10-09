@@ -59,35 +59,29 @@ _DIM_KEYWORDS: dict[str, frozenset[str]] = {
     }),
 }
 
-#: Perfiles builtin de los instalados (priors por benchmark; calibrables).
-#: Fuentes: Qwen2.5/3 reports (MMLU/HumanEval; GSM8K deprecado por saturacion/
-#: contaminacion — usar MATH-500/AIME como gate), MiniCPM-SALA 0.951
-#: HumanEval (llm-stats), LXT (solo 4/15 predicen prod).
+#: Perfiles builtin de los 6 modelos actuales (priors por benchmark; calibrables).
+#: Fuentes: reportes Qwen3.5/Qwen3/MiMo/Ornith (MMLU/HumanEval; GSM8K deprecado
+#: por saturacion/contaminacion — usar MATH-500/AIME como gate), LXT (solo 4/15
+#: predicen prod). Retirados 2026-10-01: MiniCPM5, Qwen3.8, Opus-Distill.
 _BUILTIN: tuple[tuple[str, float, str, dict[str, float]], ...] = (
-    ("hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M",
-     9.0, "Q4", {"coding": 0.90, "reasoning": 0.70, "math": 0.65,
-                 "multilingual": 0.70, "agentic": 0.65}),
-    ("hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
-     9.0, "Q4", {"coding": 0.75, "reasoning": 0.85, "math": 0.85,
-                 "multilingual": 0.80, "agentic": 0.75}),
-    ("hf.co/Jackrong/Qwen3.5-9B-DeepSeek-V4-Flash-GGUF:Q4_K_M",
-     9.0, "Q4", {"coding": 0.80, "reasoning": 0.85, "math": 0.80,
-                 "multilingual": 0.80, "agentic": 0.80}),
-    ("hf.co/unsloth/GLM-Z1-9B-0414-GGUF:UD-Q4_K_XL",
-     9.0, "Q4", {"coding": 0.70, "reasoning": 0.90, "math": 0.85,
-                 "multilingual": 0.75, "agentic": 0.75}),
-    ("hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0", 2.0, "Q8",
-     {"coding": 0.60, "reasoning": 0.60, "multilingual": 0.65, "agentic": 0.55}),
+    ("mannix/JackOD-9B-Coder:IQ4_XS",
+     9.0, "Q4", {"coding": 0.96, "reasoning": 0.78, "math": 0.76,
+                 "multilingual": 0.75, "agentic": 0.84}),
+    ("hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M",
+     9.0, "Q4", {"coding": 0.78, "reasoning": 0.92, "math": 0.85,
+                 "multilingual": 0.78, "agentic": 0.80}),
+    ("hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS",
+     9.0, "Q4", {"coding": 0.80, "reasoning": 0.82, "math": 0.82,
+                 "multilingual": 0.78, "agentic": 0.88}),
+    ("hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL",
+     4.0, "Q4", {"coding": 0.70, "reasoning": 0.62, "math": 0.60,
+                 "multilingual": 0.75, "agentic": 0.60}),
+    ("qwen3-embedding:0.6b", 0.6, "Q4",
+     {"coding": 0.20, "reasoning": 0.25, "multilingual": 0.85,
+      "agentic": 0.30}),
     ("qwen3-vl:4b", 4.0, "Q4",
      {"coding": 0.50, "reasoning": 0.60, "multilingual": 0.60,
       "agentic": 0.55, "vision": 0.90}),
-    # Bonsai-2-27B ternario (Qwen3.8-27B, 5.54GB, bench pub. avg 76.11,
-    # AIME>87): STANDBY — stock Ollama no carga PTQ1_0 ("unsupported tensor"),
-    # requiere fork llama.cpp de PrismML. GGUF aparcado en .ollama/manual.
-    # NO poner en tiers activos (auto_pull fallaria).
-    ("hf.co/dealignai/Bonsai-2-27B-1bit-CRACK-GGUF:TQ1_0", 27.0, "TQ1_0",
-     {"coding": 0.80, "reasoning": 0.85, "math": 0.85,
-      "multilingual": 0.80, "agentic": 0.75}),
 )
 
 

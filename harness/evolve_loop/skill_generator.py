@@ -1,5 +1,5 @@
 ﻿"""
-Skill Generator — Hermes-inspired auto-skill creation.
+Skill Generator — auto-creacion de skills inspirada en agentes de memoria.
 
 When a multi-step task succeeds with >= 5 tool calls, the SkillGenerator
 auto-generates a SKILL.md file in .opencode/skills/auto/ and registers it
@@ -22,6 +22,7 @@ from harness.memory_rag.lance_vector_store import (
     COLLECTION_PROCEDURAL_SKILLS,
     LanceVectorStore,
 )
+from harness.orchestrator.keyword_match import contains_word, normalize
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,51 @@ WORKSPACE_ROOT = PROJECT_ROOT  # Swarmind/
 
 AUTO_SKILLS_DIR = PROJECT_ROOT / ".opencode" / "skills" / "auto"
 REGISTRY_PATH = PROJECT_ROOT / ".opencode" / "skills" / "skills_registry.yaml"
+
+
+def _resolve_skill_path(name: str) -> str:
+    """Resuelve la ruta de un skill curado por nombre.
+
+    WHAT: busca ``.opencode/skills/<name>/SKILL.md`` y, como respaldo, un glob
+    ``**/<name>/SKILL.md`` bajo la raiz de skills. WHY: el registry curado no
+    declara ``path``; sin resolverlo, el contenido leido aguas abajo queda vacio.
+
+    Args:
+        name: Nombre del skill (p. ej. ``"security-audit"``).
+
+    Returns:
+        Ruta existente (str) o ``""`` si no se encuentra.
+    """
+    if not name:
+        return ""
+    skills_root = REGISTRY_PATH.parent
+    direct = skills_root / name / "SKILL.md"
+    if direct.exists():
+        return str(direct)
+    for found in skills_root.glob(f"**/{name}/SKILL.md"):
+        if found.exists():
+            return str(found)
+    return ""
+
+#: Peso por campo al puntuar una skill contra los tokens de la query.
+_FIELD_WEIGHTS: tuple[tuple[str, float], ...] = (
+    ("name", 3.0),
+    ("domain", 2.0),
+    ("trigger", 2.0),
+    ("description", 1.0),
+)
+
+#: Score minimo para aceptar un match (evita matches accidentales por una palabra).
+_MIN_MATCH_SCORE = 1.0
+
+#: Stopwords sin señal (funcion/palabras de plantilla de las descripciones).
+_QUERY_STOPWORDS: frozenset[str] = frozenset({
+    "de", "del", "la", "el", "los", "las", "un", "una", "uno", "y", "o", "u",
+    "que", "en", "con", "para", "por", "al", "se", "su", "sus", "es", "son",
+    "como", "mas", "usar", "usuario", "cuando", "alcance", "ver", "reglas",
+    "base", "the", "a", "an", "of", "to", "and", "or", "for", "with", "on",
+    "in", "is", "are", "be", "skill", "skills",
+})
 
 
 # ---------------------------------------------------------------------------
@@ -274,40 +320,80 @@ class SkillGenerator:
     # ------------------------------------------------------------------
 
     @staticmethod
+    def _query_tokens(query: str) -> tuple[str, ...]:
+        """Tokeniza la query en palabras significativas (normalizadas, sin stopwords).
+
+        Args:
+            query: Texto de la tarea/consulta.
+
+        Returns:
+            Tupla de tokens (sin acentos, minusculas) de >= 2 caracteres y sin
+            stopwords.
+        """
+        tokens = normalize(query).split()
+        return tuple(token for token in tokens if len(token) >= 2 and token not in _QUERY_STOPWORDS)
+
+    @staticmethod
+    def _score_skill(tokens: tuple[str, ...], skill: dict[str, Any]) -> float:
+        """Puntua un skill segun cuantos tokens matchean (frontera) sus campos.
+
+        Args:
+            tokens: Tokens significativos de la query.
+            skill: Entrada del registry (name/domain/trigger/description).
+
+        Returns:
+            Score ponderado por campo (mayor = mas relevante).
+        """
+        score = 0.0
+        for field_name, weight in _FIELD_WEIGHTS:
+            field_value = str(skill.get(field_name, ""))
+            if field_value:
+                score += weight * sum(1 for token in tokens if contains_word(field_value, token))
+        return score
+
+    @staticmethod
     def find_in_registry(query: str) -> dict[str, Any] | None:
-        """Search the YAML registry for a skill matching *query*."""
+        """Busca en el registry YAML la skill que mejor matchea los tokens de *query*.
+
+        WHAT: matching por tokens (frontera de palabra, sin acentos) contra
+        name/trigger/description/domain, con peso por campo y desempate por el
+        orden del registry. WHY: exigir que la query COMPLETA fuese substring de
+        un campo era inerte en lenguaje natural ("auditoria de seguridad" no
+        encontraba ``security-audit``). WHERE: `AgentDispatcher.find_skill_for_task`.
+
+        Args:
+            query: Texto de la tarea/consulta (lenguaje natural permitido).
+
+        Returns:
+            La skill con mayor score (>= ``_MIN_MATCH_SCORE``), o ``None`` si no
+            hay match.
+        """
         if not REGISTRY_PATH.exists():
             return None
 
         try:
             with open(str(REGISTRY_PATH), "r", encoding="utf-8") as f:
                 registry = yaml.safe_load(f) or {}
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("No se pudo leer el registry de skills: %s", exc)
+            return None
+
+        tokens = SkillGenerator._query_tokens(query)
+        if not tokens:
             return None
 
         skills: list[dict[str, Any]] = registry.get("skills", [])
-        query_lower = query.lower()
-
         best: dict[str, Any] | None = None
         best_score = 0.0
-
         for skill in skills:
-            name = skill.get("name", "").lower()
-            trigger = skill.get("trigger", "").lower()
-            domain = skill.get("domain", "").lower()
-
-            score = 0.0
-            if query_lower in name:
-                score = 1.0
-            elif query_lower in trigger:
-                score = 0.8
-            elif query_lower in domain:
-                score = 0.5
-
+            score = SkillGenerator._score_skill(tokens, skill)
             if score > best_score:
                 best_score = score
                 best = skill
 
-        if best_score >= 0.7:
-            return best
-        return None
+        if best_score < _MIN_MATCH_SCORE:
+            return None
+        result = dict(best)
+        if not result.get("path"):
+            result["path"] = _resolve_skill_path(str(result.get("name", "")))
+        return result

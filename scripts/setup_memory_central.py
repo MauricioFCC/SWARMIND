@@ -27,18 +27,13 @@ QUÉ HACE:
 
 ESTRUCTURA RESULTANTE (Memory_Proyects/):
   Memory_Proyects/
-  ├── knowledge/          # conocimiento por dominio
-  ├── syntheses/          # sintesis de sesiones
-  ├── 99_Hermes_Brain/    # cerebro central
-  ├── personal/           # notas personales
-  ├── projects/           # memoria por proyecto
-  ├── sessions/           # registros de sesiones
-  ├── inbox/              # entradas entrantes
-  ├── exports/            # exportaciones
   ├── data/
   │   └── lancedb/        # db central (SE PRESERVA con backup)
-  ├── backups/            # copias de seguridad (timestamp)
-  └── README.md
+  └── backups/            # copias de seguridad (timestamp)
+
+  (Hermes NO se usa: knowledge/, sessions/ y 99_Hermes_Brain/ se eliminaron,
+  igual que las planned-but-unused (syntheses/personal/projects/inbox/exports).
+  Ninguna se recrea.)
 
 Uso:
     python scripts/setup_memory_central.py --dry-run          # Ver plan
@@ -66,12 +61,11 @@ _MEMORY_ROOT = Path(os.environ.get(
     str(Path.home() / "Documents" / "Memory_Proyects"),
 ))
 
-# Directorios de memoria (se construyen siempre, preservando contenido)
-_MEMORY_DIRS = [
-    "knowledge", "syntheses", "99_Hermes_Brain", "personal",
-    "projects", "sessions", "inbox", "exports", "data",
-    "data/lancedb", "backups",
-]
+# Directorios de memoria REALMENTE usados (SSOT), se construyen preservando
+# contenido. El proyecto NO usa Hermes, asi que knowledge/, sessions/ y
+# 99_Hermes_Brain/ (bridge/dreaming/sentinela) NO se recrean; tampoco las
+# planned-but-unused (syntheses/personal/projects/inbox/exports).
+_MEMORY_DIRS = ["data", "data/lancedb", "backups"]
 
 # Directorios que NO corresponden en una carpeta de memoria pura
 # (el motor y el cerebro viven en opencode global / repo Swarmind).
@@ -81,6 +75,12 @@ _CLEANUP_DIRS = [
     "quality", "skills", ".opencode", ".pytest_cache",
     "__pycache__",
 ]
+
+#: Colecciones volatiles excluidas del backup (cache/logs regenerables que
+#: suman ~9.8 GB; no aportan valor restaurable).
+_BACKUP_EXCLUDE_COLLECTIONS: frozenset[str] = frozenset({
+    "semantic_cache", "agent_workspace_logs",
+})
 
 
 def _count_lance_collections(db_dir: Path) -> int:
@@ -115,7 +115,12 @@ def _backup_db(dry_run: bool = False) -> Path | None:
     backup_dir = _MEMORY_ROOT / "backups" / f"lancedb_{ts}"
     if not dry_run:
         backup_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(db, backup_dir / "lancedb", dirs_exist_ok=True)
+        shutil.copytree(
+            db, backup_dir / "lancedb", dirs_exist_ok=True,
+            ignore=shutil.ignore_patterns(
+                *[f"{name}.lance" for name in sorted(_BACKUP_EXCLUDE_COLLECTIONS)]
+            ),
+        )
     logger.info("  🛡️  Backup creado: %s %s", backup_dir, "(simulado)" if dry_run else "")
     return backup_dir
 
@@ -265,7 +270,14 @@ def main() -> None:
     """CLI principal."""
     parser = argparse.ArgumentParser(description="Configura la memoria central de Swarmind")
     parser.add_argument("--dry-run", action="store_true", help="Solo simular (no escribe)")
-    parser.add_argument("--preserve-all", action="store_true", help="No limpiar duplicados")
+    parser.add_argument(
+        "--cleanup", action="store_true",
+        help="Limpiar duplicados de motor (opt-in; por defecto NO se borra nada)",
+    )
+    parser.add_argument(
+        "--preserve-all", action="store_true",
+        help="[compat] no limpiar duplicados (ahora es el comportamiento por defecto)",
+    )
     parser.add_argument("--backup", action="store_true", help="Solo crear backup de la db")
     parser.add_argument("--restore", type=str, metavar="DIR", help="Restaurar db desde backup")
     args = parser.parse_args()
@@ -291,20 +303,19 @@ def main() -> None:
         if not args.dry_run:
             _MEMORY_ROOT.mkdir(parents=True, exist_ok=True)
 
-    # 1. Backup de seguridad ANTES de tocar nada destructivo
-    _backup_db(dry_run=args.dry_run)
-
-    # 2. Construir estructura (idempotente)
+    # 1. Construir estructura (idempotente; NUNCA borra ni hace backup masivo).
     _build_structure(dry_run=args.dry_run)
 
-    # 3. Verificar db segura antes de limpiar
-    db_safe = _verify_db_safe(dry_run=args.dry_run)
-
-    # 4. Limpiar duplicados solo si db segura y no --preserve-all
-    if not args.preserve_all and db_safe:
-        _cleanup(dry_run=args.dry_run)
-    elif not args.preserve_all:
-        logger.info("  ⏭️  Cleanup omitido: db central no confirmada. El usuario decide.")
+    # 2. Limpiar duplicados SOLO si se pide explicitamente (--cleanup).
+    #    WHY: el cleanup borra .opencode/skills/etc.; hacerlo por defecto destruia
+    #    el mirror sin querer. El backup de ~9.8 GB tampoco es automatico
+    #    (usar --backup a proposito).
+    if args.cleanup:
+        db_safe = _verify_db_safe(dry_run=args.dry_run)
+        if db_safe:
+            _cleanup(dry_run=args.dry_run)
+        else:
+            logger.info("  ⏭️  Cleanup omitido: db central no confirmada. El usuario decide.")
 
     ok = _verify(dry_run=args.dry_run)
     if ok:

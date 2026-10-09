@@ -127,19 +127,111 @@ def _handle_schedule_list(store) -> None:
 
 # ── Model Routing ────────────────────────────────────────────────────
 
-def _apply_model_routing(task: str, target_agent: str, force_cloud: bool = False) -> str:
-    """Apply ModelRouter to determine local vs cloud execution.
+def _local_backend_available() -> bool:
+    """Consulta best-effort si el backend local responde (no lo arranca).
 
-    Returns the routing source ("local" or "cloud") for logging.
+    Returns:
+        True si llama.cpp/llama-swap responde; False si esta caido o si el
+        chequeo falla (nunca propaga: el routing degrada a cloud).
+    """
+    try:
+        from harness.model_router.llama_swap_manager import LlamaSwapManager
+        return bool(LlamaSwapManager().is_up())
+    except Exception as exc:  # noqa: BLE001 - best-effort, no rompe el routing
+        _rc.logger.warning(
+            "[ROUTER] WHAT=no se pudo consultar el backend local; "
+            "WHY=%s; WHERE=_local_backend_available", exc,
+        )
+        return False
+
+
+def _cloud_skip_reason(policy, force_cloud: bool, backend_available: bool) -> str:
+    """Motivo legible de por que se paga cloud (orden de precedencia).
+
+    Args:
+        policy: LocalFirstPolicy efectiva.
+        force_cloud: True si el usuario forzo cloud.
+        backend_available: True si el backend local responde.
+
+    Returns:
+        Motivo WHAT/WHY para el log de routing.
+    """
+    if force_cloud:
+        return "--force-cloud override"
+    if not policy.enabled:
+        return "politica local-first desactivada"
+    if not backend_available:
+        return "llama.cpp no disponible (backend local caido)"
+    return "sin destino local"
+
+
+def _route_local_tier(task: str, target_agent: str, router) -> str:
+    """Resuelve el tier local; frontier-only paga cloud como oraculo.
+
+    Args:
+        task: Descripcion de la tarea.
+        target_agent: Agente destino (para logs).
+        router: ModelRouter (config de fallback a cloud).
+
+    Returns:
+        "local" si hay tier; "cloud" si la tarea es frontier-only.
     """
     from harness.model_router.ollama_client import OllamaClient
     from harness.model_router.ollama_tiers import OllamaTierRouter
+
+    client = OllamaClient()
+    if client.is_available():
+        # Delegacion local 5-tier por capacidad (fast/quality/coding/
+        # embedding/vision). Tareas FRONTIER_ONLY (diseno/arquitectura/
+        # planning/sintesis/razonamiento/audit) NO se delegan: tier None.
+        tiers = OllamaTierRouter(client)
+        tier = tiers.tier_for_task(task)
+        if tier is None:
+            _rc.logger.info(
+                f"[ROUTER] @{target_agent} → oraculo cloud (frontier-only: "
+                "diseno/planning/sintesis/razonamiento/audit no se delegan; "
+                "cloud de minima intervencion, TKN justificado)"
+            )
+            return "cloud"
+        model = tiers.model_for(tier)
+        _rc.logger.info(
+            f"[ROUTER] @{target_agent} → local tier={tier.value} model={model} "
+            f"(keep_alive {tiers.model_for(tier)})"
+        )
+        return "local"
+    _rc.logger.info("[ROUTER] ⚠️  Ollama no detectado. Modelo local no disponible.")
+    if router.config.get("local", {}).get("fallback_to_cloud", True):
+        _rc.logger.info("[ROUTER] ⚠️  Fallback a cloud automatico activado.")
+    else:
+        _rc.logger.info("[ROUTER] 💡 Instala Ollama: https://ollama.com")
+        _rc.logger.info("[ROUTER] 💡 O usa --force-cloud para modo cloud")
+    return "local"
+
+
+def _apply_model_routing(task: str, target_agent: str, force_cloud: bool = False) -> str:
+    """Aplica la politica local-first y decide local vs cloud (cloud oraculo).
+
+    Args:
+        task: Descripcion de la tarea.
+        target_agent: Agente destino.
+        force_cloud: True = paga cloud sin consultar el backend local.
+
+    Returns:
+        "local" o "cloud" (fuente usada para logging/telemetria).
+    """
+    from harness.model_router.local_first import LocalFirstPolicy
     from harness.model_router.router import ModelRouter
 
-    router = ModelRouter()
-    if force_cloud:
-        _rc.logger.info(f"[ROUTER] @{target_agent} → cloud (--force-cloud override)")
+    policy = LocalFirstPolicy.from_env()
+    backend_available = not force_cloud and _local_backend_available()
+    if not policy.should_use_local(
+        backend_available=backend_available, force_cloud=force_cloud
+    ):
+        reason = _cloud_skip_reason(policy, force_cloud, backend_available)
+        _rc.logger.info(f"[ROUTER] @{target_agent} → cloud ({reason})")
         return "cloud"
+
+    router = ModelRouter()
     decision = router.route(task, target_agent)
     source = decision.source
     _rc.logger.info(
@@ -148,32 +240,7 @@ def _apply_model_routing(task: str, target_agent: str, force_cloud: bool = False
         f"[{decision.model_route.reason}]"
     )
     if source == "local":
-        # Delegación local 5-tier por capacidad (fast/quality/coding/embedding/vision).
-        # Tareas FRONTIER_ONLY (diseño/arquitectura/planning/síntesis/razonamiento/
-        # security audit/code review) NO se delegan: tier_for_task retorna None.
-        # Degrada a cloud si Ollama no está disponible (no crashea).
-        client = OllamaClient()
-        if client.is_available():
-            tiers = OllamaTierRouter(client)
-            tier = tiers.tier_for_task(task)
-            if tier is None:
-                _rc.logger.info(
-                    f"[ROUTER] @{target_agent} → frontier-only (diseño/planning/"
-                    "síntesis/razonamiento/audit): se paga cloud (TKN justificado)"
-                )
-                return "cloud"
-            model = tiers.model_for(tier)
-            _rc.logger.info(
-                f"[ROUTER] @{target_agent} → local tier={tier.value} model={model} "
-                f"(keep_alive {tiers.model_for(tier)})"
-            )
-            return "local"
-        _rc.logger.info("[ROUTER] ⚠️  Ollama no detectado. Modelo local no disponible.")
-        if router.config.get("local", {}).get("fallback_to_cloud", True):
-            _rc.logger.info("[ROUTER] ⚠️  Fallback a cloud automatico activado.")
-        else:
-            _rc.logger.info("[ROUTER] 💡 Instala Ollama: https://ollama.com")
-            _rc.logger.info("[ROUTER] 💡 O usa --force-cloud para modo cloud")
+        return _route_local_tier(task, target_agent, router)
     return source
 
 
@@ -312,30 +379,6 @@ def _handle_watch_mode(harness_root: Path) -> None:
         _rc._safe_print(f"\n  {_rc._cyan('[WATCH]')} Watch mode detenido.")
 
 
-# ── Hermes commands ────────────────────────────────────────────────
-
-
-def _handle_hermes(cmd: str) -> None:
-    """Handle !hermes sync and !hermes stats."""
-    from harness.memory_rag.hermes_bridge import HermesBridge
-
-    sub = cmd[len("!hermes"):].strip()
-    if sub == "sync":
-        bridge = HermesBridge()
-        result = bridge.sync_all()
-        _rc.logger.info("[Hermes] Sync complete: %s", result)
-    elif sub == "stats":
-        bridge = HermesBridge()
-        stats = bridge.get_stats()
-        _rc.logger.info("[Hermes] Bridge stats: %s", stats)
-    elif sub in ("", "help"):
-        _rc.logger.info("[Hermes] Commands:")
-        _rc.logger.info("  !hermes sync    - Bidirectional sync Swarmind <-> shared_memory")
-        _rc.logger.info("  !hermes stats   - Show bridge statistics")
-    else:
-        _rc.logger.info("[Hermes] Unknown subcommand: '%s'. Try '!hermes sync' or '!hermes stats'.", sub)
-
-
 # ── Guardrails helper ──────────────────────────────────────────────
 
 
@@ -378,7 +421,6 @@ __all__ = [
     "_check_hitl",
     "_get_files_to_watch",
     "_handle_evolve_mutate",
-    "_handle_hermes",
     "_handle_hooks_status",
     "_handle_schedule_add",
     "_handle_schedule_list",
@@ -391,7 +433,6 @@ __all__ = [
     "_check_hitl",
     "_get_files_to_watch",
     "_handle_evolve_mutate",
-    "_handle_hermes",
     "_handle_hooks_status",
     "_handle_schedule_add",
     "_handle_schedule_list",

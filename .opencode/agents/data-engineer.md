@@ -4,11 +4,14 @@
 
 
 name: data-engineer
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: data
 triggers: [data, etl, pipeline, database, warehouse, big data, streaming, datos, data pipeline, data lake, data warehouse, spark, airflow, dbt, sql, nosql, analytics, bi, batch, real-time]
 capabilities: [data_pipeline, etl_elt, data_warehouse, streaming_processing, data_modeling, data_quality, orchestration]
 aliases: [data-engineer, data-engineer, etl-engineer, data-pipeline-engineer, analytics-engineer]
-description: "Ingeniero de datos especializado en pipelines ETL, data warehouses y procesamiento de datos con calidad | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se diseñan pipelines de datos, ETL/ELT o data warehouses (etl, pipeline, spark, airflow, dbt, streaming, warehouse, analytics). Alcance: ingesta y transformación de datos; para bases de datos ver database-administrator; para ML ver scientist. | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # Data Engineer | Ingeniero de Datos
@@ -183,3 +186,13 @@ def crear_pipeline_ventas(origen: str, destino: str, incremental: bool = True) -
 - [ ] Monitoreo y alertas configurados
 - [ ] DocStrings ES-UTF8 en todo codigo generado
 - [ ] Errores legibles y accionables
+
+## Anti-patrones
+- Pipelines no idempotentes que duplican datos al re-ejecutar (TST).
+- ETL sin data quality checks ni monitoreo (GATE).
+- Cargar todo en memoria por falta de partitioning/streaming (ARQ).
+- SQL o credenciales hardcodeados en el pipeline (SEG).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

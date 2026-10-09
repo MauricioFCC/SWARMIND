@@ -5,7 +5,7 @@
 
 name: physical-sciences
 domain: science
-description: "Usar cuando el dominio son ciencias naturales experimentales. fisica, quimica, biologia, metodos cientificos, diseno experimental, analisis de datos cientificos. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el dominio son ciencias naturales experimentales. fisica, quimica, biologia, metodos cientificos, diseno experimental, analisis de datos cientificos. Alcance: ciencias naturales experimentales; para analisis de datos ver data-science. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -35,3 +35,19 @@ Skill de ciencias naturales para investigacion y analisis cientifico profundo.
 - `!sci chemistry <problema>` — Analisis quimico
 - `!sci biology <problema>` — Analisis biologico
 - `!sci experiment <diseno>` — Diseno experimental
+
+## Checklist
+
+- [ ] Hipotesis falsable y controles definidos
+- [ ] Incertidumbre cuantificada y propagada
+- [ ] Diseno experimental con replicas
+- [ ] Distinguir correlacion de causa
+- [ ] Datos y metodos reproducibles
+
+## Anti-patrones (prohibidos)
+
+- Presentar correlacion como causalidad.
+- Omitir barras de error / incertidumbre.
+- p-hacking o seleccion de resultados.
+- Sin grupo de control ni replicas.
+- Conclusiones mas alla del alcance de los datos.

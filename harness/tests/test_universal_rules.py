@@ -28,6 +28,7 @@ AUTO-MEJORA (evolve mode):
 """
 from __future__ import annotations
 
+import ast
 import json
 import re
 import subprocess
@@ -443,8 +444,46 @@ class TestCMP:
     """Regla CMP: composicion sobre herencia (HAS-A sobre IS-A)."""
 
     def test_no_deep_inheritance_chains(self) -> None:
-        """CMP: max 2 niveles de herencia (composicion preferida)."""
-        # Cubierto en TestSOL.test_no_class_inherits_more_than_2_levels
+        """CMP: ninguna jerarquia supera 2 niveles de herencia propios."""
+        def compute_depth(source: str) -> dict[str, int]:
+            """Profundidad por clase; bases externas aportan 0 niveles."""
+            tree = ast.parse(source)
+            bases: dict[str, list[str]] = {}
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ClassDef):
+                    bases[node.name] = [
+                        base.id for base in node.bases if isinstance(base, ast.Name)
+                    ]
+            depth: dict[str, int] = {}
+
+            def resolve(name: str) -> int:
+                if name in depth:
+                    return depth[name]
+                parents = [base for base in bases.get(name, []) if base in bases]
+                depth[name] = 1 + max((resolve(base) for base in parents), default=0)
+                return depth[name]
+
+            for name in bases:
+                resolve(name)
+            return depth
+
+        synthetic = "class A: pass\nclass B(A): pass\nclass C(B): pass\n"
+        assert max(compute_depth(synthetic).values()) > 2, (
+            "CMP: el escaner no detecta una cadena de 3 niveles (test invalido)"
+        )
+
+        violations: list[str] = []
+        for py_file in (ROOT / "harness").rglob("*.py"):
+            if "tests" in py_file.parts:
+                continue
+            try:
+                depths = compute_depth(py_file.read_text(encoding="utf-8"))
+            except (SyntaxError, ValueError):
+                continue
+            for name, value in depths.items():
+                if value > 2:
+                    violations.append(f"{py_file.relative_to(ROOT)}::{name}={value}")
+        assert not violations, "CMP: herencia >2 niveles: " + ", ".join(violations)
 
 
 # ===========================================================================

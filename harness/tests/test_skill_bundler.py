@@ -73,9 +73,9 @@ class TestSelectSkills:
         assert "security-audit" in skills
 
     def test_general_fallback(self, bundler: SkillBundler) -> None:
-        """Dominio desconocido debe usar general."""
+        """Dominio desconocido debe abstenerse (no fabrica la lista general)."""
         skills = bundler.select_skills("unknown_domain")
-        assert len(skills) > 0
+        assert skills == []
 
     def test_task_keywords_add_skills(self, bundler: SkillBundler) -> None:
         """Testing keywords deben agregar security-audit."""

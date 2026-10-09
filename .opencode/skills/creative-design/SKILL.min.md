@@ -1,7 +1,7 @@
 ---
 name: creative-design
 domain: design
-description: "Usar cuando el usuario busca ideacion o diseno creativo. design thinking, ideacion, prototipado, branding, identidad visual, UX, brainstorming. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario busca ideacion o diseno creativo. design thinking, ideacion, prototipado, branding, identidad visual, UX, brainstorming. Alcance: ideacion y diseno creativo; para UI/design systems ver frontend-uiux. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 version: 1.0.0
 project_agnostic: true

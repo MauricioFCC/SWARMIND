@@ -4,7 +4,7 @@
 
 
 name: data-science
-description: "Usar cuando el usuario trabaja con datos, ML o pipelines. pandas, numpy, scikit-learn, pytorch, feature engineering, model evaluation, GPU, analisis de datos. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario trabaja con datos, ML o pipelines. pandas, numpy, scikit-learn, pytorch, feature engineering, model evaluation, GPU, analisis de datos. Alcance: pipelines y modelos ML; para factores de alpha ver alpha-research. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+; pandas/numpy/scikit-learn/pytorch en el venv'
 version: 1.0.0
@@ -88,3 +88,19 @@ metadata:
 
 > 💡 **Nota**: Este skill integra con hedgefund para doctrina de decision cientifica y con quant-trading para estrategias cuantitativas. Prioriza pipelines modulares, experimentos reproducibles y validacion estadistica rigurosa sobre scikit-learn, PyTorch y JAX segun el problema.
 
+## Checklist
+
+- [ ] Split ANTES de cualquier transformacion (sin leakage)
+- [ ] Seed fija y pipeline reproducible
+- [ ] Validacion cruzada y baseline reportado
+- [ ] Metricas de evaluacion declaradas antes de entrenar
+- [ ] Test set usado solo para evaluacion final
+- [ ] Model card con datos, metricas y limitaciones
+
+## Anti-patrones (prohibidos)
+
+- Split despues de transformacion (data leakage).
+- Seleccion de features fuera del CV loop.
+- Test set usado en entrenamiento o tuning.
+- Overfitting (train >> test) sin regularizar.
+- Resultados sin seed ni version de datos.

@@ -23,7 +23,8 @@ SEGURIDAD:
   - Nunca borra la db de producción.
   - Los backups viven en <MEMORY_ROOT>/backups/lancedb_<timestamp>.
   - Rotación automática: conserva solo los `backup_keep` más recientes.
-  - Backup es copia completa (no incremental) — simple y confiable.
+  - Backup = colecciones NO volatiles (excluye `semantic_cache` y
+    `agent_workspace_logs`: cache/logs regenerables que sumaban ~9.8 GB).
 
 Uso:
     python scripts/backup_memory.py                 # Backup (respeta intervalo)
@@ -51,6 +52,9 @@ logger = logging.getLogger(__name__)
 
 _HERE = Path(__file__).resolve().parent
 
+# Timeout de comandos de programacion de tareas (schtasks/crontab).
+_SCHED_CMD_TIMEOUT_SECONDS = 60
+
 _MEMORY_ROOT = Path(os.environ.get(
     "MEMORY_ROOT",
     str(Path.home() / "Documents" / "Memory_Proyects"),
@@ -58,6 +62,19 @@ _MEMORY_ROOT = Path(os.environ.get(
 _CONFIG_FILE = _MEMORY_ROOT / ".swarmind_config.json"
 _DB_DIR = _MEMORY_ROOT / "data" / "lancedb"
 _BACKUP_ROOT = _MEMORY_ROOT / "backups"
+
+#: Colecciones VOLATILES excluidas del backup (cache/logs regenerables).
+#: Dominan el tamano (semantic_cache ~5 GB + agent_workspace_logs ~4.6 GB) y no
+#: aportan valor restaurable: copiarlas hacia el backup lento y gigante (~9.8 GB).
+_BACKUP_EXCLUDE_COLLECTIONS: frozenset[str] = frozenset({
+    "semantic_cache",
+    "agent_workspace_logs",
+})
+
+#: Patron de exclusion derivado para ``shutil.ignore_patterns``.
+_BACKUP_IGNORE_PATTERNS: tuple[str, ...] = tuple(
+    f"{name}.lance" for name in sorted(_BACKUP_EXCLUDE_COLLECTIONS)
+)
 
 _DEFAULTS = {
     "memory_root": str(_MEMORY_ROOT),
@@ -169,13 +186,17 @@ def _do_backup(force: bool = False, dry_run: bool = False) -> bool:
             )
             return False
 
-    # Crear backup
+    # Crear backup (excluyendo colecciones volatiles: cache/logs regenerables)
     ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     backup_dir = _BACKUP_ROOT / f"lancedb_{ts}"
     if not dry_run:
         backup_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(_DB_DIR, backup_dir / "lancedb", dirs_exist_ok=True)
+        shutil.copytree(
+            _DB_DIR, backup_dir / "lancedb", dirs_exist_ok=True,
+            ignore=shutil.ignore_patterns(*_BACKUP_IGNORE_PATTERNS),
+        )
     logger.info("  🛡️  Backup creado: %s %s", backup_dir, "(simulado)" if dry_run else "")
+    logger.info("      Excluidas (volatiles): %s", ", ".join(sorted(_BACKUP_EXCLUDE_COLLECTIONS)))
 
     # Rotación
     keep = config.get("backup_keep", 5)
@@ -222,11 +243,19 @@ def _schedule_windows(interval_hours: int) -> bool:
             sc = f"/SC DAILY /MO {days} /ST 02:00"
     else:
         sc = f"/SC HOURLY /MO {max(interval_hours, 1)}"
-    cmd = (
-        f'schtasks /Create /F /TN "{task_name}" {sc} '
-        f'/TR "\\"{python}\\" \\"{script}\\" --force"'
+    cmd = [
+        "schtasks", "/Create", "/F", "/TN", task_name,
+        *sc.split(),
+        "/TR", f'"{python}" "{script}" --force',
+    ]
+    # Lista de args + shell=False: evita inyeccion de comandos (CWE-78).
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=_SCHED_CMD_TIMEOUT_SECONDS,
     )
-    result = subprocess.run(cmd, capture_output=True, text=True, shell=True, check=False)
     if result.returncode == 0:
         logger.info("  ✅ Tarea programada registrada: %s (cada %dh)", task_name, interval_hours)
         return True
@@ -238,12 +267,18 @@ def _schedule_linux(interval_hours: int) -> bool:
     """Registra un cron job en Linux/macOS."""
     cron_line = f"0 */{max(interval_hours, 1)} * * * {sys.executable} {_HERE / 'backup_memory.py'} --force"
     try:
-        current = subprocess.run(["crontab", "-l"], capture_output=True, text=True, check=False).stdout
+        current = subprocess.run(
+            ["crontab", "-l"], capture_output=True, text=True, check=False,
+            timeout=_SCHED_CMD_TIMEOUT_SECONDS,
+        ).stdout
         if "SwarmindMemoryBackup" in current:
             logger.info("  ✅ Cron ya registrado (SwarmindMemoryBackup)")
             return True
         new_cron = current.rstrip() + "\n" + cron_line + "  # SwarmindMemoryBackup\n"
-        result = subprocess.run(["crontab", "-"], input=new_cron, capture_output=True, text=True, check=False)
+        result = subprocess.run(
+            ["crontab", "-"], input=new_cron, capture_output=True, text=True,
+            check=False, timeout=_SCHED_CMD_TIMEOUT_SECONDS,
+        )
         if result.returncode == 0:
             logger.info("  ✅ Cron registrado: %s", cron_line)
             return True
@@ -266,8 +301,8 @@ def _uninstall_schedule() -> bool:
     if os.name == "nt":
         result = subprocess.run(
             ['schtasks', '/Delete', '/F', '/TN', 'SwarmindMemoryBackup'],
-            capture_output=True, text=True, shell=True,
-            check=False,
+            capture_output=True, text=True, check=False,
+            timeout=_SCHED_CMD_TIMEOUT_SECONDS,
         )
         if result.returncode == 0:
             logger.info("  ✅ Tarea programada eliminada")
@@ -276,12 +311,18 @@ def _uninstall_schedule() -> bool:
         return False
     # Linux: filtrar linea
     try:
-        current = subprocess.run(["crontab", "-l"], capture_output=True, text=True, check=False).stdout
+        current = subprocess.run(
+            ["crontab", "-l"], capture_output=True, text=True, check=False,
+            timeout=_SCHED_CMD_TIMEOUT_SECONDS,
+        ).stdout
         filtered = "\n".join(
             line for line in current.splitlines()
             if "SwarmindMemoryBackup" not in line
         ) + "\n"
-        subprocess.run(["crontab", "-"], input=filtered, capture_output=True, text=True, check=False)
+        subprocess.run(
+            ["crontab", "-"], input=filtered, capture_output=True, text=True,
+            check=False, timeout=_SCHED_CMD_TIMEOUT_SECONDS,
+        )
         logger.info("  ✅ Cron eliminado")
         return True
     except FileNotFoundError:

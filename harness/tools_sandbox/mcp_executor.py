@@ -28,6 +28,12 @@ logger = logging.getLogger(__name__)
 _DEFAULT_TIMEOUT = 30  # seconds
 _MAX_OUTPUT_BYTES = 1_048_576  # 1 MB
 
+# Allowlist segura por defecto: NO incluye "shell" (arbitrary command exec,
+# CWE-78). Pasar ``allowed_commands=None`` de forma explicita significa
+# DENY-ALL (ninguna tool permitida) en vez de allow-all.
+DEFAULT_ALLOWED_COMMANDS: tuple[str, ...] = ("pytest", "python", "echo")
+_SHELL_TOOL = "shell"
+
 
 # ---------------------------------------------------------------------------
 # Data types
@@ -83,19 +89,24 @@ class MCPExecutor:
     def __init__(
         self,
         default_timeout: int = _DEFAULT_TIMEOUT,
-        allowed_commands: list[str] | None = None,
+        allowed_commands: list[str] | tuple[str, ...] | None = DEFAULT_ALLOWED_COMMANDS,
         workdir: str | None = None,
     ) -> None:
         """
         Args:
             default_timeout: Default timeout in seconds (default 30).
-            allowed_commands: Optional whitelist of allowed tool commands.
-                If ``None``, all commands are allowed (use with caution).
+            allowed_commands: Allowlist de tools permitidas. Por defecto
+                ``DEFAULT_ALLOWED_COMMANDS`` (``pytest``/``python``/``echo``),
+                que NO incluye ``shell`` (deny-by-default, CWE-78). Pasar
+                ``None`` explicito significa DENY-ALL (ninguna tool permitida).
             workdir: Working directory for subprocess execution.  If ``None``,
                 the current working directory is used.
         """
         self.default_timeout = default_timeout
-        self.allowed_commands = allowed_commands
+        # DENY por defecto: None => allowlist vacia (no allow-all).
+        self.allowed_commands: list[str] = (
+            [] if allowed_commands is None else list(allowed_commands)
+        )
         self.workdir = workdir
         self._execution_log: list[dict[str, Any]] = []
 
@@ -119,7 +130,8 @@ class MCPExecutor:
 
         - ``"pytest"``  → ``pytest <test_path> [args]``
         - ``"python"``  → ``python <script> [args]``
-        - ``"shell"``   → ``<command>``  (use with extreme caution)
+        - ``"shell"``   → ``<command>``  (DESHABILITADA por defecto; requiere
+          incluirla explicitamente en ``allowed_commands``)
         - ``"echo"``   → echo the params (safe testing)
 
         Args:
@@ -133,41 +145,8 @@ class MCPExecutor:
         trace_id = uuid.uuid4().hex[:12]
         start = time.perf_counter()
 
-        # Security check: whitelist
-        if (
-            self.allowed_commands is not None
-            and tool_name not in self.allowed_commands
-        ):
-            elapsed = time.perf_counter() - start
-            result = SandboxResult(
-                success=False,
-                output="",
-                error=f"Command '{tool_name}' is not in the allowed list.",
-                execution_time=round(elapsed, 4),
-                trace_id=trace_id,
-                exit_code=-1,
-            )
-            self._log_execution(tool_name, params, result)
-            return result
-
-        # Guardián anti reward-hacking (ADR-0055): filtrar el CONTENIDO de
-        # comandos shell (historial git / red saliente) antes de ejecutar.
-        if tool_name.strip().lower() == "shell":
-            guard_decision = check_command(str(params.get("command", "")))
-            if not guard_decision.allowed:
-                elapsed = time.perf_counter() - start
-                result = SandboxResult(
-                    success=False,
-                    output="",
-                    error=guard_decision.reason,
-                    execution_time=round(elapsed, 4),
-                    trace_id=trace_id,
-                    exit_code=-1,
-                )
-                self._log_execution(tool_name, params, result)
-                return result
-
-        # Resolve command
+        # Resolve command first: permite reportar "Unknown tool" aunque la
+        # allowlist deny-by-default este activa.
         try:
             cmd = self._resolve_command(tool_name, params)
         except ValueError as exc:
@@ -182,6 +161,41 @@ class MCPExecutor:
             )
             self._log_execution(tool_name, params, result)
             return result
+
+        normalized = tool_name.strip().lower()
+
+        # Security gate: allowlist deny-by-default. Si allowed_commands=None
+        # explicito, self.allowed_commands==[] => ninguna tool permitida.
+        if normalized not in self.allowed_commands:
+            elapsed = time.perf_counter() - start
+            result = SandboxResult(
+                success=False,
+                output="",
+                error=f"Command '{tool_name}' is not in the allowed list.",
+                execution_time=round(elapsed, 4),
+                trace_id=trace_id,
+                exit_code=-1,
+            )
+            self._log_execution(tool_name, params, result)
+            return result
+
+        # Guardián anti reward-hacking (ADR-0055): filtrar el CONTENIDO de
+        # comandos shell (historial git / red saliente) antes de ejecutar.
+        # La tool "shell" esta deshabilitada por defecto (fuera de la allowlist).
+        if normalized == _SHELL_TOOL:
+            guard_decision = check_command(str(params.get("command", "")))
+            if not guard_decision.allowed:
+                elapsed = time.perf_counter() - start
+                result = SandboxResult(
+                    success=False,
+                    output="",
+                    error=guard_decision.reason,
+                    execution_time=round(elapsed, 4),
+                    trace_id=trace_id,
+                    exit_code=-1,
+                )
+                self._log_execution(tool_name, params, result)
+                return result
 
         # Execute
         result = self._run_subprocess(cmd, timeout or self.default_timeout, trace_id)

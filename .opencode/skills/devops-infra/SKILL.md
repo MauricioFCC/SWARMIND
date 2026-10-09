@@ -5,7 +5,7 @@
 
 name: devops-infra
 domain: devops
-description: "Usar cuando el usuario opera infraestructura o CI/CD. Docker, Kubernetes, Terraform, CI/CD, monitoreo, observabilidad, plataforma, despliegue. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario opera infraestructura o CI/CD. Docker, Kubernetes, Terraform, CI/CD, monitoreo, observabilidad, plataforma, despliegue. Alcance: infraestructura y CI/CD generico; para releases del repo SWARMIND ver swarm-release-ops. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Requiere Docker, kubectl, terraform segun tarea; Python 3.12+'
 version: 1.0.0
@@ -42,3 +42,20 @@ Skill especializado en DevOps, infraestructura como codigo, CI/CD, contenedores,
 - `!infra k8s <service>` — Configuracion Kubernetes
 - `!infra ci/cd <tech>` — Pipeline CI/CD
 - `!infra monitor <stack>` — Configuracion de monitoreo
+
+## Checklist
+
+- [ ] IaC versionada y plan revisado antes de apply
+- [ ] Pipeline CI/CD con gates de test y seguridad
+- [ ] Observabilidad (metricas/logs/trazas OTel) configurada
+- [ ] Secrets via gestor (nunca hardcode)
+- [ ] Rollback plan y health checks definidos
+- [ ] SLOs y error budget declarados
+
+## Anti-patrones (prohibidos)
+
+- Cambios manuales en produccion (drift vs IaC).
+- Secrets en repositorio o en logs.
+- Desplegar sin rollback ni health checks.
+- Recursos sin limites (requests/limits).
+- Ignorar costes y capacidad.

@@ -2,6 +2,35 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-10-07] Calibración probabilística + fingerprint de opciones (Misellium→Swarmind)
+
+### Nuevos módulos
+- **`harness/evals/calibration.py`** — calibración de confianza: `calibrate(outcomes) -> CalibrationReport` con **Brier**, **ECE**, **MCE**, `hit_rate` y bins. Bineado **equal-mass por defecto** (frontera 2026: los LLM se concentran en confianzas altas y el ancho fijo sesga el ECE); `equal_width` opcional. `is_well_calibrated` (Brier ≤0.20 ∧ ECE ≤0.10).
+- **`harness/model_router/options_fingerprint.py`** — `options_fingerprint(GenerationOptions) -> sha256` (clave de cache/invalidación), `deterministic_options` (temp 0 + seed 42) y `should_be_deterministic` (json/tool_call/structured).
+
+### Tests
+- `test_calibration.py` (12) + `test_options_fingerprint.py` (7): forecast perfecto, sobreconfianza, ECE a mano, validaciones, equal-mass/width, estabilidad y sensibilidad del hash.
+- Origen: análisis de `Misellium-Edge-AI/docs` (research-swarmind-harness/quality/frontier) + investigación frontera 2026.
+
+## [2026-10-05] FND Foundation-First (principio universal) + spec de doctrina
+
+### Principios
+- **FND (Foundation-First)** — nuevo principio N1/N2/N3: "entorno antes que producto". En un proyecto nuevo el primer artefacto NO es una feature: scaffolding reproducible + `AGENTS.md` corto + gates T1 (CI <90s) + seguridad en el andamiaje + ADR-0001 + Walking Skeleton/Tracer Bullet + spec machine-readable + identidad (solo si publicas). Fuentes: NIST SSDF SP 800-218/218A, SLSA, DORA 2025, Team Topologies, GitHub Spec Kit/Amazon Kiro, AGENTS.md, OpenAI harness engineering.
+- Versionado: `base_principles.md` v3.3.0 → **v3.4.0**; `base_principles_full.md` v2.6.0 → **v2.7.0**; `base_principles.min.md` v3.3.0 → **v3.4.0**.
+- **`specs/foundation-first.md`** — doctrina F0 (checklist de 11 pasos + fuentes frontier + anti-patrones + verificación).
+
+## [2026-09-30] Flota frontera 2026 + ventana 16K por servidor + escalado por verificación
+
+### Flota local y SSOT
+- **Flota frontera 2026** — SSOT medida en `harness/model_router/fleet_manifest.py` (id canónico, tier, `num_ctx`, `vram_mb`, `keep_alive`): fast `Qwen3.5-4B UD-Q4_K_XL`, quality `MiMo-V2.6-Distill-Qwen-9B IQ4_XS` (4K), coding `JackOD-9B-Coder IQ4_XS` (4K), reasoning `Ornith-1.5-9B Q4_K_M` (4K), embedding `qwen3-embedding:0.6b`, vision `qwen3-vl:4b`. `recommend_num_ctx`/`footprint_mb` derivan del manifiesto; invariantes en `test_fleet_manifest.py`.
+- **Cableado de runtime** `.opencode/config/ollama_models.yaml` (nombres canónicos hf.co, sin alias locales) validado contra el manifiesto.
+
+### GPU y servidor
+- **Ventana 16K + topes anti-OOM** (`scripts/enable_gpu.py`): `OLLAMA_CONTEXT_LENGTH=8192` + `OLLAMA_MAX_LOADED_MODELS=1` + `OLLAMA_NUM_PARALLEL=1` + `OLLAMA_FLASH_ATTENTION=1` + `OLLAMA_KV_CACHE_TYPE=q8_0`. Elimina las variantes "16k baked" (**libera ~17.4 GB** de disco); el cliente igual envía `options.num_ctx` explícito.
+
+### Política de escalado
+- **Escalado por verificación** (`harness/model_router/escalation_policy.py`): verificador estructural barato + confianza verbalizada → `accept`/`escalate` (fast→quality→coding→reasoning)/`cloud`; verificar pesa más que clasificar (MetaRoute; UCCI small→large).
+
 ## [2026-09-08/09] ADR-0074..0080 + agent-rigor + opencode local + merge a main
 
 ### Skills y agentes

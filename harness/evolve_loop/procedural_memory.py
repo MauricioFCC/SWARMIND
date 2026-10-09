@@ -1,5 +1,5 @@
 """
-Procedural Memory — Hermes-inspired auto-skill generation.
+Procedural Memory — auto-generacion de skills inspirada en agentes de memoria.
 
 When a multi-step task succeeds, the system can auto-generate a SKILL.md
 file in .opencode/skills/auto/ so the agent doesn't need to re-derive

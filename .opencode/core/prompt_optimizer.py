@@ -2,10 +2,10 @@
 Token-Efficient Prompt Builder with compression, budgeting & relevance scoring.
 Enterprise optimization for LLM context management.
 """
-import re
 import os
-from typing import Dict, List, Optional, Tuple, Any
+import re
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -74,7 +74,7 @@ def estimate_tokens(text: str, model: str = "gpt-4") -> int:
     return max(1, len(text) // avg_chars_per_token)
 
 
-def compress_text(text: str, techniques: Optional[List[str]] = None, 
+def compress_text(text: str, techniques: list[str] | None = None, 
                   aggressiveness: float = 0.5) -> str:
     """
     Aplica técnicas de compresión para reducir tokens.
@@ -95,14 +95,14 @@ def compress_text(text: str, techniques: Optional[List[str]] = None,
     # 1. Eliminar frases redundantes
     if "remove_redundant_phrases" in techniques:
         for pattern, replacement in COMPRESSION_CONFIG["remove_redundant_phrases"]:
-            result = re.sub(pattern, replacement, result, flags=re.I)
+            result = re.sub(pattern, replacement, result, flags=re.IGNORECASE)
     
     # 2. Abreviar términos técnicos
     if "abbreviate_terms" in techniques:
         for full, abbr in COMPRESSION_CONFIG["abbreviate_terms"].items():
             # Solo reemplazar si hay espacio suficiente para la abreviación
             if len(full) - len(abbr) >= 3:
-                result = re.sub(rf'\b{re.escape(full)}\b', abbr, result, flags=re.I)
+                result = re.sub(rf'\b{re.escape(full)}\b', abbr, result, flags=re.IGNORECASE)
     
     # 3. Colapsar estructuras (listas, secciones repetitivas)
     if "collapse_structures" in techniques and aggressiveness > 0.3:
@@ -112,7 +112,7 @@ def compress_text(text: str, techniques: Optional[List[str]] = None,
         # Colapsar secciones de "ejemplos" si son muy largas
         if aggressiveness > 0.7:
             result = re.sub(r'(## Ejemplos?\s*\n)([\s\S]*?)(\n##|\Z)', 
-                           r'\1[Ver docs para ejemplos]\3', result, flags=re.I)
+                           r'\1[Ver docs para ejemplos]\3', result, flags=re.IGNORECASE)
     
     # 4. Remover whitespace excesivo
     result = re.sub(r'\n{3,}', '\n\n', result)
@@ -121,7 +121,7 @@ def compress_text(text: str, techniques: Optional[List[str]] = None,
     return result.strip()
 
 
-def score_relevance(content: str, query: str, context: Dict) -> float:
+def score_relevance(content: str, query: str, context: dict) -> float:
     """
     Calcula score de relevancia [0, 1] para priorizar contenido.
     
@@ -153,8 +153,8 @@ def score_relevance(content: str, query: str, context: Dict) -> float:
 def build_optimized_prompt(
     agent_role: str,
     user_message: str,
-    context: Optional[Dict] = None,
-    budget: Optional[TokenBudget] = None,
+    context: dict | None = None,
+    budget: TokenBudget | None = None,
     include_universal_principles: bool = True,
     compression_level: float = 0.5
 ) -> str:
@@ -268,8 +268,8 @@ def _load_skill_content(role: str) -> str:
 """
 
 
-def _filter_context_by_relevance(context: Dict, query: str, 
-                                  max_tokens: int) -> Optional[str]:
+def _filter_context_by_relevance(context: dict, query: str, 
+                                  max_tokens: int) -> str | None:
     """Filtra contexto por relevancia y límite de tokens."""
     if not context:
         return None
@@ -304,7 +304,7 @@ def _filter_context_by_relevance(context: Dict, query: str,
     return "\n".join(selected) if selected else None
 
 
-def _load_principles_from_file() -> Tuple[Dict[str, List[str]], Dict[str, List[str]], str]:
+def _load_principles_from_file() -> tuple[dict[str, list[str]], dict[str, list[str]], str]:
     """Carga principios desde base_principles.md. Fallback a hardcoded si no existe."""
     principles_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -331,7 +331,6 @@ def _load_principles_from_file() -> Tuple[Dict[str, List[str]], Dict[str, List[s
         "devops-sre": ["OPS", "CMT", "SEG"],
         "security-engineer": ["SEG", "CMT", "ARQ", "DOC"],
         "trading-operations": ["OPS", "CMT"],
-        "quality-gate": ["TST", "CMT", "QLT"],
         "documentation-specialist": ["DOC", "QLT"],
         "project-manager": ["CMT", "QLT"],
         "quality-gate": ["TST", "CMT", "SEG", "DOC", "QLT"],
@@ -340,7 +339,7 @@ def _load_principles_from_file() -> Tuple[Dict[str, List[str]], Dict[str, List[s
     try:
         with open(principles_path, "r", encoding="utf-8") as f:
             content = f.read()
-    except (FileNotFoundError, IOError):
+    except (OSError, FileNotFoundError):
         return fallback_principles, fallback_roles, (
             "ARQ | Hexagonal + DI. KISS <500. DRY. Type hints.\n"
             "SEG | 0 secrets. Validate input. Mask logs.\n"
@@ -352,12 +351,7 @@ def _load_principles_from_file() -> Tuple[Dict[str, List[str]], Dict[str, List[s
         )
     
     # Parse NIVEL 2 table: | Cat | Reglas |
-    principles: Dict[str, List[str]] = {}
-    nivel2_match = re.search(
-        r"\|\s*\*\*(\w+)\*\*\s*\|\s*(.+?)\s*\|",
-        content
-    )
-    # Better: parse all rows in the Nivel 2 table
+    principles: dict[str, list[str]] = {}
     nivel2_lines = re.findall(
         r"\|\s*\*\*(\w+)\*\*\s*\|\s*(.+?)\s*\|",
         content
@@ -370,7 +364,7 @@ def _load_principles_from_file() -> Tuple[Dict[str, List[str]], Dict[str, List[s
         r"\|\s*(\w[\w-]*)\s*\|\s*([\w,\s]+)\s*\|",
         content
     )
-    role_mapping: Dict[str, List[str]] = {}
+    role_mapping: dict[str, list[str]] = {}
     for role, cats in role_lines:
         if role.lower() in ("rol", "-----", "cat"):
             continue
@@ -391,7 +385,7 @@ def _load_principles_from_file() -> Tuple[Dict[str, List[str]], Dict[str, List[s
 
 
 # Cache para evitar re-lectura
-_PRINCIPLES_CACHE: Optional[Tuple] = None
+_PRINCIPLES_CACHE: tuple | None = None
 
 def _get_principles_cached() -> Any:
     global _PRINCIPLES_CACHE

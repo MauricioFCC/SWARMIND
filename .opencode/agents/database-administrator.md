@@ -4,11 +4,14 @@
 
 
 name: database-administrator
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: data
 triggers: [database, sql, nosql, migration, query, index, performance, postgresql, mysql, mongodb, redis, schema, model, sharding, replication, backup, vacuum]
 capabilities: [database_admin, query_optimization, data_modeling, migration, backup_recovery, performance_tuning]
 aliases: [dba, database-admin, data-modeler, db-specialist, data-architect]
-description: "DBA especializado en modelado, optimizacion y administracion de bases de datos relacionales y NoSQL | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se administran, modelan u optimizan bases de datos (database, sql, migration, query, index, postgresql, mongodb, backup, replication). Alcance: esquema, migraciones y performance; para ETL ver data-engineer; para servicios ver backend-engineer. | UPG·NAM·FRS (reglas en base_principles.md)"
 quality: {docstrings_es: true, error_actionable: true, clean_code: true, patterns: true, coverage: 85, data_integrity: true}
 ---
 
@@ -96,3 +99,13 @@ Toda funcion/procedimiento/script de BD DEBE incluir docstring con Args/Returns/
 - [ ] Monitoreo de performance (slow queries, connections, bloat)
 - [ ] DocStrings ES-UTF8 en TODO script/schema publico
 - [ ] Errores legibles y accionables
+
+## Anti-patrones
+- Migraciones sin rollback funcional (SBX).
+- Consultas sin índices ni EXPLAIN ANALYZE en rutas calientes (ARQ).
+- SQL dinámico por concatenación de strings (SEG).
+- Backups sin prueba de restore verificada (OPS).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

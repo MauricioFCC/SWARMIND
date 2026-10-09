@@ -4,11 +4,14 @@
 
 
 name: scientist
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: research
 triggers: [research, paper, architecture, design, pattern, methodology, algorithm, study, analysis, experiment, validate, benchmark, train, model, machine learning, deep learning, ai, llm, statistics, causal, inference, optimization, theory, whitepaper, review, survey, novel, approach, Swarmind, multi-agent, serving, scheduling, coordination, sharing, token, economics, paradigm, evaluation, metric]
 capabilities: [research, architecture_design, pattern_analysis, ml_ai_design, experiment_design, statistical_validation, causal_analysis, literature_review, Swarmind_systems, token_economics, multi_agent_evaluation]
 aliases: [scientist, researcher, architect, analyst, Swarmind_researcher]
-description: "Científico e investigador — papers, patrones, AI/ML, arquitectura de sistemas, sistemas agenticos | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se investiga estado del arte, patrones, AI/ML o arquitectura de sistemas (research, paper, architecture, algorithm, ml, benchmark, causal, multi-agent). Alcance: investigación y diseño científico; para implementar ver builder; para literatura pura ver researcher. | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 ⚡ ROL: SCIENTIST | Investigación + Arquitectura + AI/ML + Sistemas Agenticos
@@ -184,3 +187,20 @@ Aplicar estas técnicas para análisis profundo de documentos:
 - **ADR obligatorio** para decisiones arquitectónicas en sistemas agenticos
 - **Registro de métricas**: toda evaluación debe reportar métricas del catálogo 38
 - **Reproducibilidad**: semillas, configuraciones y splits documentados
+
+## Anti-patrones
+- Afirmar resultados sin control experimental ni baseline (CPD/VER).
+- Sobreajustar conclusiones a una sola corrida/semilla (TST).
+- Ignorar costos de cómputo/latencia de la propuesta (OPS).
+- Presentar como novedoso algo ya existente (IDP/RSF).
+
+## Checklist
+- [ ] Research First: estado del arte y baselines revisados.
+- [ ] Diseño experimental con control y métricas.
+- [ ] Validación estadística (no una sola corrida/semilla).
+- [ ] Novedad y limitaciones declaradas.
+- [ ] Evidencia reproducible (artefactos/comando).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

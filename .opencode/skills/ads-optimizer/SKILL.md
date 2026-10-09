@@ -5,7 +5,7 @@
 
 name: ads-optimizer
 domain: marketing
-description: "Usar cuando el usuario quiere optimizar campanas publicas digitales. Meta Ads, Google Ads, BOAD, ShapleyFlow, MetaClaw, RL bidding, ROI publicitario, conversion, targeting. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario quiere optimizar campanas publicas digitales. Meta Ads, Google Ads, BOAD, ShapleyFlow, MetaClaw, RL bidding, ROI publicitario, conversion, targeting. Alcance: optimizacion de campanas digitales; para estrategia de negocio ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -81,6 +81,23 @@ Nivel 3: dashboard consolidado
 - !meta bid <cpa_target> � Optimizar bids
 - !meta spy <competitor> � Analisis competitivo
 - !meta safety � Verificar estado de cuenta
+
+## Checklist
+
+- [ ] Estructura campaign/adset/ad definida (BOAD) con objetivo y presupuesto
+- [ ] Creativos clasificados (CLIP/ViT) antes de escalar
+- [ ] Atribucion multi-touch (Shapley/Markov), no solo last-click
+- [ ] Bids con limite de CPA/ROAS y salvaguarda de presupuesto
+- [ ] Compliance verificado contra estandares de la plataforma
+- [ ] account-safety revisado (riesgo de ban) antes de publicar
+
+## Anti-patrones (prohibidos)
+
+- Escalar presupuesto sin significancia estadistica (falsa causalidad).
+- Optimizar por last-click ignorando atribucion multi-touch.
+- Creativos duplicados sin test A/B estructurado.
+- Ignorar politicas de la plataforma (riesgo de cuenta).
+- Prometer ROI sin baseline ni metrica objetivo.
 
 ## Referencias
 - BOAD: Bandit Optimization for Agent Design

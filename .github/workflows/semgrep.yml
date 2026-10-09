@@ -14,14 +14,14 @@ jobs:
     permissions:
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Semgrep (latest OSS)
         run: pipx install semgrep
       - name: Run Semgrep (p/default)
         run: semgrep scan --config p/default --sarif-output=semgrep.sarif --severity WARNING .
         continue-on-error: true  # reporta hallazgos sin bloquear (severity alta)
       - name: Upload SARIF to code-scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: semgrep.sarif
         if: always()

@@ -97,7 +97,6 @@ from harness.run_commands import (
     _handle_db_rollback,
     _handle_db_stats,
     _handle_evolve_mutate,
-    _handle_hermes,
     _handle_hooks_install,
     _handle_hooks_status,
     _handle_hooks_uninstall,
@@ -209,8 +208,6 @@ def _handle_command(cmd: str) -> None:
         pruner = AgentPruner()
         pruned = pruner.prune_underperforming(dry_run=dry_run)
         logger.info("[AgentPrune] Removed: %s", pruned)
-    elif cmd.startswith("!hermes"):
-        _handle_hermes(cmd)
     else:
         logger.info("[Harness] Comando desconocido: %s", cmd)
 
@@ -339,19 +336,71 @@ def _display_final_output(orch_result: Any, target_agent: str, routing_source: s
                 target_agent, routing_source, orch_result.session_id)
 
 
+def _build_local_executor(
+    client, tiers, vram_check, llama_manager, policy,
+):
+    """Construye el LocalExecutor aplicando la politica local-first.
+
+    Args:
+        client: OllamaClient real o fake (DI).
+        tiers: Router de tiers; None = se construye del cliente.
+        vram_check: Gate anti-OOM inyectable (None = guard real).
+        llama_manager: Gestor del backend llama-swap (None = sin autostart).
+        policy: LocalFirstPolicy o None (retrocompatible).
+
+    Returns:
+        LocalExecutor configurado (no arranca el backend aqui).
+    """
+    from harness.model_router.local_executor import LocalExecutor
+    from harness.model_router.ollama_tiers import OllamaTierRouter
+
+    allow_open_tasks = policy.allow_open_tasks if policy is not None else False
+    return LocalExecutor(
+        client=client,
+        tiers=tiers if tiers is not None else OllamaTierRouter(client),
+        vram_check=vram_check,
+        backend_manager=llama_manager,
+        allow_open_tasks=allow_open_tasks,
+    )
+
+
+def _local_or_cloud(out, policy) -> str | None:
+    """Devuelve la respuesta local o None para que el flujo cloud siga.
+
+    Args:
+        out: LocalExecutionResult del intento local.
+        policy: LocalFirstPolicy o None (retrocompatible).
+
+    Returns:
+        Respuesta local si se ejecuto; None si local no basta (el oraculo
+        cloud toma el control cuando ``policy.cloud_oracle`` esta activo).
+    """
+    if not out.executed_locally:
+        if policy is not None and policy.cloud_oracle:
+            logger.info(
+                "[LocalExec] local no basta (%s); oraculo cloud toma el control",
+                out.reason,
+            )
+        return None
+    logger.info("[LocalExec] %s", out.reason)
+    return out.output
+
+
 def _try_local_execution(
     task: str,
     routing_source: str,
     client=None,
     tiers=None,
     vram_check=None,
+    llama_manager=None,
+    policy: Any | None = None,
 ) -> str | None:
-    """Ejecuta tareas cerradas en Ollama tras routing local + HITL (ADR-0078).
+    """Ejecuta tareas locales tras routing local + HITL (ADR-0078/0085).
 
-    Cierra el loop local: antes el routing a local era solo telemetria (el
-    modelo externo hacia el trabajo). Ahora las tareas cerradas se ejecutan
-    en el tier local (0 tokens cloud). Cualquier condicion no cumplida
-    retorna None y el flujo cloud sigue intacto (HITL ya aprobado arriba).
+    Cierra el loop local: las tareas (cerradas y, con ``policy``, abiertas
+    si ``allow_open_tasks``) se ejecutan en el tier local (0 tokens cloud).
+    El cloud actua como oraculo de minima intervencion: si local no basta,
+    se retorna None y el flujo cloud sigue intacto.
 
     Args:
         task: Descripcion de la tarea.
@@ -359,6 +408,10 @@ def _try_local_execution(
         client: OllamaClient (DI para tests; None = real).
         tiers: OllamaTierRouter (DI para tests; None = real).
         vram_check: Gate anti-OOM (DI para tests; None = guard real).
+        llama_manager: Gestor del backend llama-swap (DI para tests; None =
+            real solo cuando se usa el cliente real).
+        policy: LocalFirstPolicy (None = comportamiento previo, solo tareas
+            cerradas via allowlist).
 
     Returns:
         Respuesta del modelo local, o None si no aplica (cloud sigue).
@@ -366,28 +419,25 @@ def _try_local_execution(
     if routing_source != "local":
         return None
     try:
-        from harness.model_router.local_executor import LocalExecutor
+        from harness.model_router.llama_swap_manager import LlamaSwapManager
         from harness.model_router.ollama_client import OllamaClient
-        from harness.model_router.ollama_tiers import OllamaTierRouter
     except ImportError as exc:
         logger.warning("[LocalExec] modulos locales no disponibles: %s", exc)
         return None
     try:
-        executor = LocalExecutor(
-            client=client if client is not None else OllamaClient(),
-            tiers=tiers if tiers is not None else OllamaTierRouter(
-                client if client is not None else OllamaClient()
-            ),
-            vram_check=vram_check,
+        real_client = client if client is not None else OllamaClient()
+        backend_manager = llama_manager
+        if backend_manager is None and client is None:
+            backend_manager = LlamaSwapManager()
+        executor = _build_local_executor(
+            real_client, tiers, vram_check, backend_manager, policy
         )
-        out = executor.execute(task)
+        allow_open = policy.allow_open_tasks if policy is not None else None
+        out = executor.execute(task, allow_open=allow_open)
     except Exception as exc:  # noqa: BLE001 - fallback a cloud, nunca crashea run
         logger.warning("[LocalExec] fallo, sigue flujo cloud: %s", exc)
         return None
-    if not out.executed_locally:
-        return None
-    logger.info("[LocalExec] %s", out.reason)
-    return out.output
+    return _local_or_cloud(out, policy)
 
 
 # ---------------------------------------------------------------------------
@@ -479,7 +529,10 @@ def main() -> None:
     # Ejecucion local real (ADR-0078 cierra el loop): tras routing local +
     # HITL aprobado, las tareas cerradas se ejecutan en Ollama (0 tokens
     # cloud). Si no aplica, el flujo cloud sigue intacto.
-    local_answer = _try_local_execution(task, routing_source)
+    from harness.model_router.local_first import LocalFirstPolicy
+    local_answer = _try_local_execution(
+        task, routing_source, policy=LocalFirstPolicy.from_env()
+    )
     if local_answer is not None:
         _safe_print(f"\n  {_ok('[Local]')} Respuesta local (0 tokens cloud):")
         _safe_print(f"  {local_answer}")

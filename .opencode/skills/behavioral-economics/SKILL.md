@@ -184,6 +184,22 @@ Skill de economia del comportamiento para mejorar la toma de decisiones de agent
 | **Alpha-Research** | Sesgo de confirmacion + exploracion | Investigacion mas objetiva y diversa |
 | **Psychology** | Sesgos cognitivos + Prospect Theory | Base teorica compartida y complementaria |
 
+## Checklist
+
+- [ ] Tipo de juego identificado (cooperativo/no-cooperativo, secuencial/simultaneo)
+- [ ] Equilibrio propuesto (Nash/Shapley) con supuestos explicitos
+- [ ] Sesgos del decisor identificados y mitigados
+- [ ] Incentivos alineados con el objetivo (sin gaming)
+- [ ] Conclusion anclada a experimento o meta-analisis citado
+
+## Anti-patrones (prohibidos)
+
+- Asumir racionalidad perfecta del agente.
+- Disenar incentivos que premian una metrica proxy (Goodhart).
+- Generalizar de una anecdota sin evidencia experimental.
+- Ignorar aversion al riesgo y descuento temporal.
+- Nudge manipulador o no transparente.
+
 ## Referencias Teoricas
 - Kahneman, D. & Tversky, A. (1979). *Prospect Theory: An Analysis of Decision under Risk*
 - Thaler, R. H. & Sunstein, C. R. (2008). *Nudge: Improving Decisions About Health, Wealth, and Happiness*

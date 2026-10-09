@@ -28,14 +28,14 @@ class TestLateBinding:
 
     def test_returns_mock_when_patched(self) -> None:
         fallback = lambda: None
-        with patch("harness.run_commands._handle_hermes") as mock_fn:
-            resolved = _get_pkg_attr("_handle_hermes", fallback)
+        with patch("harness.run_commands._handle_evolve_mutate") as mock_fn:
+            resolved = _get_pkg_attr("_handle_evolve_mutate", fallback)
         assert resolved is mock_fn
 
     def test_returns_fallback_without_patch(self) -> None:
-        from harness.run_commands import _handle_hermes
+        from harness.run_commands import _handle_evolve_mutate
 
-        assert _get_pkg_attr("_handle_hermes", _handle_hermes) is _handle_hermes
+        assert _get_pkg_attr("_handle_evolve_mutate", _handle_evolve_mutate) is _handle_evolve_mutate
 
 
 class TestRunCommandDispatch:
@@ -48,7 +48,6 @@ class TestRunCommandDispatch:
             ("!evolve mutate x", "_handle_evolve_mutate"),
             ("!schedule add cron", "_handle_schedule_add"),
             ("!schedule list", "_handle_schedule_list"),
-            ("!hermes sync", "_handle_hermes"),
             # handlers_iteration
             ("!iteration end --quick", "_handle_iteration_end"),
             ("!iteration quick", "_handle_iteration_quick"),

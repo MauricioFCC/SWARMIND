@@ -326,6 +326,110 @@ def test_sync_tree_omite_ruido(tmp_path: Path) -> None:
     assert not (dst / "core" / "__pycache__").exists()
 
 
+# ===========================================================================
+# _detect_type Cargo-aware (database/rust, deteccion generica)
+# ===========================================================================
+
+
+def _make_cargo_dir(proj: Path, members: list[str] | None = None) -> Path:
+    """Crea un Cargo.toml generico en el dir (workspace si hay miembros).
+
+    Args:
+        proj: Directorio del proyecto (ya creado o no).
+        members: Miembros del workspace; None = crate simple sin workspace.
+
+    Returns:
+        Ruta del proyecto.
+    """
+    proj.mkdir(parents=True, exist_ok=True)
+    if members is None:
+        (proj / "Cargo.toml").write_text(
+            '[package]\nname = "acme-tool"\nversion = "0.1.0"\n',
+            encoding="utf-8",
+        )
+    else:
+        quoted = ", ".join(f'"{m}"' for m in members)
+        (proj / "Cargo.toml").write_text(
+            f'[workspace]\nresolver = "2"\nmembers = [{quoted}]\n',
+            encoding="utf-8",
+        )
+    return proj
+
+
+def test_detect_type_cargo_nombre_db(tmp_path: Path) -> None:
+    """Cargo.toml + nombre con keyword db/data/store/vector/lance -> database."""
+    proj = _make_cargo_dir(tmp_path / "acme-vector-db")
+
+    assert da._detect_type("acme-vector-db", proj) == "database"
+
+
+def test_detect_type_cargo_workspace_storage(tmp_path: Path) -> None:
+    """Cargo.toml workspace con miembros storage/query -> database (nombre neutro)."""
+    proj = _make_cargo_dir(
+        tmp_path / "acme-tool", members=["crates/acme-storage", "crates/acme-query"]
+    )
+
+    assert da._detect_type("acme-tool", proj) == "database"
+
+
+def test_detect_type_cargo_generico_es_rust(tmp_path: Path) -> None:
+    """Cargo.toml sin keywords ni workspace storage -> rust."""
+    proj = _make_cargo_dir(tmp_path / "acme-tool")
+
+    assert da._detect_type("acme-tool", proj) == "rust"
+
+
+def test_detect_type_cargo_precede_nombre(tmp_path: Path) -> None:
+    """El dominio explicito por nombre se conserva (trading + Cargo -> trading)."""
+    proj = _make_cargo_dir(tmp_path / "quant-bot")
+
+    assert da._detect_type("quant-bot", proj) == "trading"
+
+
+def test_detect_type_sin_cargo_regla_anterior() -> None:
+    """Sin Cargo.toml (ni dir) se aplican las reglas historicas por nombre."""
+    assert da._detect_type("quant-alpha-engine") == "trading"
+    assert da._detect_type("acme-vector-db") == "general"
+    assert da._detect_type("acme-tool") == "general"
+
+
+def test_cargo_declares_storage(tmp_path: Path) -> None:
+    """Detecta miembros storage/query; crate simple o ausente -> False."""
+    ws = _make_cargo_dir(tmp_path / "ws", members=["crates/x-storage", "crates/x-cli"])
+    simple = _make_cargo_dir(tmp_path / "simple")
+
+    assert da._cargo_declares_storage(ws / "Cargo.toml") is True
+    assert da._cargo_declares_storage(simple / "Cargo.toml") is False
+    assert da._cargo_declares_storage(tmp_path / "no-existe" / "Cargo.toml") is False
+
+
+def test_cargo_declares_storage_toml_roto_fallback(tmp_path: Path) -> None:
+    """TOML invalido con texto storage -> True via fallback de texto crudo."""
+    proj = tmp_path / "roto"
+    proj.mkdir()
+    (proj / "Cargo.toml").write_text("[workspace\nmembers = [storage!!!", encoding="utf-8")
+
+    assert da._cargo_declares_storage(proj / "Cargo.toml") is True
+
+
+def test_discover_projects_detecta_database_y_rust(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """discover_projects propaga database/rust desde el layout Cargo."""
+    dev = tmp_path / "projects-root"
+    db_proj = dev / "acme-lance-store"
+    _make_cargo_dir(db_proj, members=["crates/acme-vector"])
+    (db_proj / ".opencode").mkdir(parents=True)
+    rust_proj = dev / "acme-cli"
+    _make_cargo_dir(rust_proj)
+    (rust_proj / ".opencode").mkdir(parents=True)
+    monkeypatch.setattr(da, "_DEV_SPACE", dev)
+
+    by_name = {p.name: p.ptype for p in da.discover_projects()}
+
+    assert by_name == {"acme-cli": "rust", "acme-lance-store": "database"}
+
+
 def test_seed_node_modules_solo_si_falta(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

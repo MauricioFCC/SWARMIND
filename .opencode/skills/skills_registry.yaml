@@ -7,13 +7,13 @@ skills:
 
   - name: evolve
     domain: meta
-    description: "Usar cuando el usuario quiere mejorar el sistema o sus skills. auto-mejora, evolucion, ASI-Evolve, aprendizaje continuo, mejora de skills, FDE, meta-aprendizaje. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario quiere mejorar el sistema o sus skills. auto-mejora, evolucion, ASI-Evolve, aprendizaje continuo, mejora de skills, FDE, meta-aprendizaje. Alcance: mejora del sistema y sus skills; para disciplina pre-merge ver agent-rigor. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: healthtech
     domain: healthtech
-    description: "Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos. Alcance: salud digital y sistemas clinicos; para seguridad general ver security-audit. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
@@ -25,19 +25,19 @@ skills:
 
   - name: legal-doc
     domain: legal
-    description: "Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia. Alcance: analisis juridico y normativo; para documentacion cientifica ver science-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: math-doc
     domain: academic
-    description: "Usar cuando el usuario necesita analisis matematico o formulas. papers matematicos, LaTeX, demostraciones, estadistica, algebra, calculo, modelado matematico. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario necesita analisis matematico o formulas. papers matematicos, LaTeX, demostraciones, estadistica, algebra, calculo, modelado matematico. Alcance: analisis matematico y formulas; para papers cientificos ver science-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: pos-retail
     domain: retail
-    description: "Usar cuando el dominio es punto de venta o retail. POS, retail, e-commerce, inventario, facturacion, pagos, logistica. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el dominio es punto de venta o retail. POS, retail, e-commerce, inventario, facturacion, pagos, logistica. Alcance: POS y retail omnicanal; para estrategia de negocio ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
@@ -55,61 +55,61 @@ skills:
 
   - name: science-doc
     domain: academic
-    description: "Usar cuando el usuario analiza papers o documentacion cientifica. papers academicos, tesis, informes tecnicos, revisiones sistematicas, investigacion. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario analiza papers o documentacion cientifica. papers academicos, tesis, informes tecnicos, revisiones sistematicas, investigacion. Alcance: analisis de papers y revisiones; para matematicas ver math-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: frontend-uiux
     domain: frontend
-    description: "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. Alcance: UI/UX y design systems; para diagramas visuales ver diagram-design. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.2.0
     project_agnostic: true
 
   - name: rust-lang
     domain: systems
-    description: "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes. Alcance: Rust y sistemas seguros; para arquitectura de sistemas ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: architecture
     domain: architecture
-    description: "Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones. Alcance: diseno y decisiones de arquitectura; para infraestructura y despliegue ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: data-science
     domain: data
-    description: "Usar cuando el usuario trabaja con datos, ML o pipelines. pandas, numpy, scikit-learn, pytorch, feature engineering, model evaluation, GPU, analisis de datos. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario trabaja con datos, ML o pipelines. pandas, numpy, scikit-learn, pytorch, feature engineering, model evaluation, GPU, analisis de datos. Alcance: pipelines y modelos ML; para factores de alpha ver alpha-research. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: security-audit
     domain: security
-    description: "Usar cuando el usuario audita seguridad o cumple estandares. OWASP, STRIDE, SOC2, ISO27001, SAST, DAST, threat modeling, SBOM, pentesting. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario audita seguridad o cumple estandares. OWASP, STRIDE, SOC2, ISO27001, SAST, DAST, threat modeling, SBOM, pentesting. Alcance: auditoria AppSec/DevSecOps; para infraestructura ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: business-strategy
     domain: business
-    description: "Usar cuando el usuario pide analisis estrategico o modelo de negocio. DOFA, SWOT, Porter, canvas, plan de negocio, ROI, KPIs, OKRs, posicionamiento. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario pide analisis estrategico o modelo de negocio. DOFA, SWOT, Porter, canvas, plan de negocio, ROI, KPIs, OKRs, posicionamiento. Alcance: estrategia y modelo de negocio; para gestion de proyectos ver project-management. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: communication
     domain: communication
-    description: "Usar cuando el usuario necesita comunicacion profesional o persuasiva. escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural, liderazgo. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario necesita comunicacion profesional o persuasiva. escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural, liderazgo. Alcance: comunicacion profesional y persuasiva; para material educativo ver education. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: project-management
     domain: management
-    description: "Usar cuando el usuario gestiona proyectos o metodologias. Scrum, Kanban, planificacion, seguimiento, riesgos, estimaciones, stakeholders. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario gestiona proyectos o metodologias. Scrum, Kanban, planificacion, seguimiento, riesgos, estimaciones, stakeholders. Alcance: gestion y metodologias de proyecto; para estrategia ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: creative-design
     domain: design
-    description: "Usar cuando el usuario busca ideacion o diseno creativo. design thinking, ideacion, prototipado, branding, identidad visual, UX, brainstorming. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario busca ideacion o diseno creativo. design thinking, ideacion, prototipado, branding, identidad visual, UX, brainstorming. Alcance: ideacion y diseno creativo; para UI/design systems ver frontend-uiux. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
@@ -121,13 +121,13 @@ skills:
 
   - name: education
     domain: education
-    description: "Usar cuando el usuario diseña material educativo o formacion. diseno instruccional, pedagogia, andragogia, Bloom, microlearning, evaluacion educativa. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario diseña material educativo o formacion. diseno instruccional, pedagogia, andragogia, Bloom, microlearning, evaluacion educativa. Alcance: diseno instruccional y evaluacion; para comunicacion ver communication. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: ethics
     domain: philosophy
-    description: "Usar cuando la decision involucra etica de IA o valores. alineamiento, marcos eticos, agentes autonomos, decisiones automaticas, filosofia de la mente, sesgo etico. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando la decision involucra etica de IA o valores. alineamiento, marcos eticos, agentes autonomos, decisiones automaticas, filosofia de la mente, sesgo etico. Alcance: etica de IA y alineamiento; para riesgos emergentes ver risk-intelligence. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
@@ -139,72 +139,78 @@ skills:
 
   - name: linguistics
     domain: linguistics
-    description: "Usar cuando el problema involucra lenguaje, semiotica o NLP. linguistica cognitiva, semiotica, pragmatica, analisis del discurso, procesamiento de lenguaje natural. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el problema involucra lenguaje, semiotica o NLP. linguistica cognitiva, semiotica, pragmatica, analisis del discurso, procesamiento de lenguaje natural. Alcance: lenguaje, semantica y NLP; para documentacion cientifica ver science-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: sociology
     domain: sociology
-    description: "Usar cuando el problema involucra dinamicas sociales o de grupos. sociologia, antropologia, redes, cultura digital, grupos, sistemas multi-agente. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el problema involucra dinamicas sociales o de grupos. sociologia, antropologia, redes, cultura digital, grupos, sistemas multi-agente. Alcance: dinamicas sociales y redes; para psicologia individual ver psychology. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: devops-infra
     domain: devops
-    description: "Usar cuando el usuario opera infraestructura o CI/CD. Docker, Kubernetes, Terraform, CI/CD, monitoreo, observabilidad, plataforma, despliegue. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario opera infraestructura o CI/CD. Docker, Kubernetes, Terraform, CI/CD, monitoreo, observabilidad, plataforma, despliegue. Alcance: infraestructura y CI/CD generico; para releases del repo SWARMIND ver swarm-release-ops. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: sustainability
     domain: environment
-    description: "Usar cuando el usuario trabaja sostenibilidad o ESG. ESG, impacto ambiental, economia circular, cambio climatico, reportes sostenibilidad. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario trabaja sostenibilidad o ESG. ESG, impacto ambiental, economia circular, cambio climatico, reportes sostenibilidad. Alcance: ESG e impacto ambiental; para estrategia de negocio ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: physical-sciences
     domain: science
-    description: "Usar cuando el dominio son ciencias naturales experimentales. fisica, quimica, biologia, metodos cientificos, diseno experimental, analisis de datos cientificos. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el dominio son ciencias naturales experimentales. fisica, quimica, biologia, metodos cientificos, diseno experimental, analisis de datos cientificos. Alcance: ciencias naturales experimentales; para analisis de datos ver data-science. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: risk-intelligence
     domain: risk
-    description: "Usar cuando el usuario analiza riesgos emergentes. CRO Forum, riesgos tecnologicos, geopoliticos, climaticos, salud, financieros. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario analiza riesgos emergentes. CRO Forum, riesgos tecnologicos, geopoliticos, climaticos, salud, financieros. Alcance: riesgos emergentes y escenarios; para riesgo de mercado ver risk-execution. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: diagram-design
     domain: frontend
-    description: "Usar cuando el usuario pide un diagrama visual editorial. arquitectura, flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar, org chart, mermaid, drawio, SVG, diagrama. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario pide un diagrama visual editorial. arquitectura, flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar, org chart, mermaid, drawio, SVG, diagrama. Alcance: diagramas visuales editoriales; para arquitectura ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: ads-optimizer
     domain: advertising
-    description: "Usar cuando el usuario quiere optimizar campanas publicas digitales. Meta Ads, Google Ads, BOAD, ShapleyFlow, MetaClaw, RL bidding, ROI publicitario, conversion, targeting. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario quiere optimizar campanas publicas digitales. Meta Ads, Google Ads, BOAD, ShapleyFlow, MetaClaw, RL bidding, ROI publicitario, conversion, targeting. Alcance: optimizacion de campanas digitales; para estrategia de negocio ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: swarm-release-ops
     domain: swarm-release-ops
-    description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. Alcance: releases y CI/CD del repo SWARMIND; para infra generica ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: atdd-spec
     domain: testing
-    description: "Usar cuando se desarrolla una feature con ciclo Spec→Test→Code: especificación de comportamiento primero, tests como prompt+verificación, implementación mínima, refactor. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando se desarrolla una feature con ciclo Spec→Test→Code: especificación de comportamiento primero, tests como prompt+verificación, implementación mínima, refactor. Alcance: ciclo Spec->Test->Code; para disciplina pre-merge ver agent-rigor. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: process-over-tools
     domain: orchestration
-    description: "Usar cuando se evalúa adoptar herramienta, modelo o agente en el proyecto: aplica el principio 'la diferencia no es la herramienta, es el proceso' — antes de adoptar, define objetivo, responsable, datos, medición y escalado, y enrútalo al harness. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando se evalúa adoptar herramienta, modelo o agente en el proyecto: define objetivo, responsable, datos, medición y escalado, y enrútalo al harness. Alcance: adopcion de tools en el harness; para mejora del sistema ver evolve. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
 
   - name: agent-rigor
     domain: quality
     description: "Usar cuando el usuario exige disciplina de ingeniería pre-merge. gates deterministas, anti-atajos, tests decorativos, verificación con evidencia, mutation score. Alcance: proceso de verificación; para mejora continua ver evolve. | UPG·NAM·FRS (reglas en base_principles.md)"
+    version: 1.0.0
+    project_agnostic: true
+
+  - name: skill-engineering
+    domain: meta
+    description: "Usar cuando el usuario quiere crear, revisar, mejorar o auditar skills o agentes del harness. skill engineering, frontmatter, description pushy, progressive disclosure, routing, evaluacion, lifecycle, drift. Alcance: mejora de skills; para mejora del sistema ver evolve. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true

@@ -44,6 +44,10 @@ logger = logging.getLogger(__name__)
 _HERE = Path(__file__).resolve().parent        # Swarmind/scripts/
 _ROOT = _HERE.parent                           # Swarmind/
 
+# Timeouts de subprocess (segundos): evita cuelgues indefinidos.
+_SHORT_CMD_TIMEOUT_SECONDS = 30
+_LONG_CMD_TIMEOUT_SECONDS = 600
+
 
 def _check_python() -> bool:
     """Verifica que Python >= 3.12 está disponible.
@@ -71,7 +75,8 @@ def _check_uv() -> bool:
     """
     if shutil.which("uv"):
         logger.info("  ✅ uv: %s", subprocess.run(["uv", "--version"], capture_output=True,
-                                                  text=True, check=False).stdout.strip())
+                                                  text=True, check=False,
+                                                  timeout=_SHORT_CMD_TIMEOUT_SECONDS).stdout.strip())
         return True
     logger.info("  ⚠️  uv no encontrado. Instalando...")
     # Windows: pip install uv (más portable que winget para scripts)
@@ -80,6 +85,7 @@ def _check_uv() -> bool:
             [sys.executable, "-m", "pip", "install", "uv"],
             capture_output=True, text=True,
             check=False,
+            timeout=_LONG_CMD_TIMEOUT_SECONDS,
         )
         if result.returncode != 0:
             logger.error("  ❌ No se pudo instalar uv: %s", result.stderr[-300:])
@@ -94,7 +100,8 @@ def _check_uv() -> bool:
             logger.error("     Agrega %s a tu PATH y reintenta.", Path(sys.executable).parent)
             return False
         logger.info("  ✅ uv: %s", subprocess.run(["uv", "--version"], capture_output=True,
-                                                  text=True, check=False).stdout.strip())
+                                                  text=True, check=False,
+                                                  timeout=_SHORT_CMD_TIMEOUT_SECONDS).stdout.strip())
         return True
     except Exception as e:  # noqa: BLE001 - setup defensivo
         logger.error("  ❌ Error instalando uv: %s", e)
@@ -116,11 +123,13 @@ def _install_deps(skip_uv: bool = False) -> bool:
             [sys.executable, "-m", "pip", "install", "-e", ".", "--quiet"],
             cwd=_ROOT, capture_output=True, text=True,
             check=False,
+            timeout=_LONG_CMD_TIMEOUT_SECONDS,
         )
     else:
         logger.info("  📦 Instalando deps con uv sync...")
         result = subprocess.run(["uv", "sync", "--extra", "dev"], cwd=_ROOT,
-                                capture_output=True, text=True, check=False)
+                                capture_output=True, text=True, check=False,
+                                timeout=_LONG_CMD_TIMEOUT_SECONDS)
     if result.returncode != 0:
         logger.error("  ❌ Error instalando deps:\n%s", result.stderr[-500:])
         return False
@@ -141,7 +150,8 @@ def _sync_global(dry_run: bool) -> bool:
     cmd = [sys.executable, str(_HERE / "sync_opencode_global.py")]
     if dry_run:
         cmd.append("--dry-run")
-    result = subprocess.run(cmd, cwd=_ROOT, capture_output=True, text=True, check=False)
+    result = subprocess.run(cmd, cwd=_ROOT, capture_output=True, text=True, check=False,
+                            timeout=_LONG_CMD_TIMEOUT_SECONDS)
     print(result.stdout[-1500:])
     if result.stderr:
         print(result.stderr[-500:])

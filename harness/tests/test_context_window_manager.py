@@ -440,20 +440,24 @@ class TestContextWindowManagerOptimize:
         assert result is w
         assert w.total_tokens == before
 
-    def test_optimize_exactly_at_budget(self, manager: ContextWindowManager) -> None:
-        """optimize: exactamente en el presupuesto → sin cambios."""
-        w = manager.create_window()
-        # Crear contenido que sume ~12000 tokens (presupuesto)
-        # Sin tiktoken: chars/4, 48000 chars ≈ 12000 tokens
-        w.add_section("rag_context", "x" * 48000, max_tokens=100000)  # muy grande
-        # Pero también ponemos secciones que sumen menos
-        # Es más fácil: poner un presupuesto pequeño
-        small_mgr = ContextWindowManager(total_budget=100)
-        sw = small_mgr.create_window()
-        sw.add_section("a", "x" * 400, max_tokens=1000)  # ~100 tokens
-        small_mgr.optimize(sw)
-        # Debería truncarse ya que 400 chars ≈ 100 tokens, budget=100
-        assert True
+    def test_optimize_exactly_at_budget(self) -> None:
+        """optimize: en el presupuesto exacto no trunca; justo por encima si."""
+        at_budget = ContextWindowManager(total_budget=1000)
+        window = at_budget.create_window()
+        section = window.add_section("a", "x" * 400, max_tokens=1000)
+        window.total_budget = at_budget._window_total_tokens(window)  # exacto
+        assert not at_budget._window_over_budget(window)
+        at_budget.optimize(window)
+        assert section.content == "x" * 400
+        assert section.compressed is False
+
+        over = ContextWindowManager(total_budget=1000)
+        over_window = over.create_window()
+        over_section = over_window.add_section("a", "x" * 400, max_tokens=1000)
+        over_window.total_budget = over._window_total_tokens(over_window) - 1
+        assert over._window_over_budget(over_window)
+        over.optimize(over_window)
+        assert len(over_section.content) < 400
 
     def test_optimize_truncates_over_budget(self, small_manager: ContextWindowManager) -> None:
         """optimize: trunca secciones sobre presupuesto (estrategia 1)."""

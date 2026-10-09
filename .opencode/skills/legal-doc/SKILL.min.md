@@ -1,7 +1,7 @@
 ---
 name: legal-doc
 domain: legal
-description: "Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia. Alcance: analisis juridico y normativo; para documentacion cientifica ver science-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 version: 1.0.0
 project_agnostic: true

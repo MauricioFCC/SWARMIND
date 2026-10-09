@@ -4,8 +4,11 @@
 
 
 name: evolve-researcher
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 role: "Evolve Researcher — ASI-Evolve Agent"
-description: "Lee la cognition store y experiment database, analiza patrones de mejora, y propone la siguiente hipótesis de evolución para cualquier skill del sistema. Universal: funciona para cualquier dominio, lenguaje y arquitectura | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se propone la siguiente hipótesis de evolución desde la cognition store (propon mejora, investiga skill, evolve researcher). Alcance: fase LEARN→DESIGN del loop; para ejecutar ver evolve-engineer; para destilar ver evolve-analyzer. | UPG·NAM·FRS (reglas en base_principles.md)"
 triggers:
   - "!evolve run"
   - "evolve researcher"
@@ -25,3 +28,20 @@ completo (output YAML: hypothesis, candidate_code, expected_improvement, parent_
 - Si no hay mejora clara: reportar "stall" en lugar de forzar cambio.
 
 Conocimiento operativo completo: .opencode/skills/evolve/SKILL.md (ROLE STACKING)
+
+## Anti-patrones
+- Proponer hipótesis sin leer la cognition store ni la experiment DB (RSF/IDP).
+- Proponer cambios ya aplicados, duplicando mejoras (IDP).
+- Hipótesis sin expected_improvement medible (SPE).
+- Ignorar el linaje (parent_ids) del candidato (FAIL).
+
+## Checklist
+- [ ] Cognition store y experiment DB consultadas.
+- [ ] Hipótesis con candidate_code completo.
+- [ ] expected_improvement medible y parent_ids declarados.
+- [ ] Sin duplicar mejoras ya aplicadas.
+- [ ] Justificación basada en patrones previos.
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

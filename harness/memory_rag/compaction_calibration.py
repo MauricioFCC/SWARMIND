@@ -19,6 +19,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
+from harness.common import estimate_tokens as _canonical_estimate_tokens
 from harness.memory_rag.compaction import structured_compact
 
 logger = logging.getLogger("harness.memory_rag.compaction_calibration")
@@ -29,8 +30,6 @@ DEFAULT_TOKEN_CEILING = 6000
 DEFAULT_WARN_RATIO = 0.75
 #: Zona critical (fraccion del ceiling) -> compaction agresiva.
 DEFAULT_CRITICAL_RATIO = 0.90
-#: Ratio chars/token para estimacion rapida.
-_CHARS_PER_TOKEN = 4
 #: Repeticiones consecutivas que se conservan tras dedup.
 _MAX_REPEATED_LINES = 2
 #: Budget ratio de compaction suave (zona warn).
@@ -42,13 +41,16 @@ CRITICAL_BUDGET_RATIO = 0.4
 def estimate_tokens(text: str) -> int:
     """Estima tokens de un texto con ratio chars/token ~4.
 
+    Delega en ``harness.common.estimate_tokens`` (fuente unica) con cota
+    inferior 0 para que un texto vacio cueste 0 tokens.
+
     Args:
         text: Texto a estimar (puede ser vacio).
 
     Returns:
         Tokens estimados (>= 0).
     """
-    return max(0, len(text) // _CHARS_PER_TOKEN)
+    return _canonical_estimate_tokens(text, minimum=0)
 
 
 @dataclass(frozen=True)

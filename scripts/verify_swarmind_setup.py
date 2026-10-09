@@ -28,10 +28,14 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import subprocess
 from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
+
+# Timeout del comando setx (Windows): evita cuelgues del health-check.
+_SETX_TIMEOUT_SECONDS = 30
 
 # Rutas portables (ADR-0035): env var con fallback a Path.home()
 _GLOBAL_DIR = Path(os.environ.get(
@@ -207,7 +211,15 @@ def persist_env_vars() -> dict:
 
     if os.name == "nt":
         for k, v in set_vars.items():
-            os.system(f'setx {k} "{v}" >nul')
+            # subprocess sin shell: evita inyeccion de comandos (CWE-78) sobre
+            # los valores de PATH/PYTHONPATH (antes os.system con f-string).
+            subprocess.run(
+                ["setx", k, v],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=_SETX_TIMEOUT_SECONDS,
+            )
     else:
         rc_path = Path.home() / ".bashrc"
         lines = [f'export {k}="{v}"' for k, v in set_vars.items()]

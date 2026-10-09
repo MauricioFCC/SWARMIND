@@ -1801,7 +1801,7 @@ Anadidos sep-2026 (detalle en `docs/src/es/adr/`, indice en `docs/src/es/adr/REA
 | Session affinity | `model_router/session_affinity.py` | 0073 | tier sticky por sesion con TTL (SAAR: −79% switches) |
 | Batch vote | `orchestrator/batch_vote.py` | 0073 | k votos en 1 llamada (parametro n, input 1× vs k×) + fallback |
 | Structured enforcer | `orchestrator/structured_enforcer.py` | 0073 | JSON schema + retries con feedback (99.9% adherencia) |
-| Ollama CODING tier | `model_router/ollama_tiers.py` | 0069 | `qwen2.5-coder:7b` con precedencia sobre QUALITY |
+| Ollama CODING tier | `model_router/ollama_tiers.py` | 0069 | `JackOD-9B-Coder` con precedencia sobre QUALITY |
 | PEC universal | `scripts/apply_pec.py` | 0072 | persona experta + canon frontera en las 35 skills (176 tests) |
 | Principios v3.1.0 | `.opencode/core/base_principles.md` | 0070 | RPA + CPD + taxonomia CHECK/GUIDE (8 categorias, IDs estables) |
 
@@ -1819,7 +1819,6 @@ Anadidos sep-2026 (detalle en `docs/src/es/adr/`, indice en `docs/src/es/adr/REA
 | Skill agent-rigor | `.opencode/skills/agent-rigor/` | 0079 | gates pre-merge, anti-pintar-verde, MS≥70% (PEC-35) |
 | Spec gate | `validation/cp_spec_gate.py` | 0080 | 4 pilares pre-código (edges/invariants/complexity/io_constraints) |
 | Dual verify | `validation/dual_verify.py` | 0080 | fast vs brute-force con mismatches indexados |
-| Backup Drive | `scripts/backup_to_gdrive.py` | — | robocopy /E idempotente, sensibles opt-in SEG |
 
 ---
 

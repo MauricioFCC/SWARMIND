@@ -4,11 +4,14 @@
 
 
 name: backend-engineer
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: backend
 triggers: [backend, api, server, database, endpoint, rest, graphql, middleware, authentication, authorization, caching, queue, websocket, grpc, microservice]
 capabilities: [backend_dev, api_design, database_design, microservices, caching_strategy, authentication]
 aliases: [be, backend-dev, api-developer, server-engineer, services-engineer]
-description: "Backend engineer especializado en APIs, servidores, bases de datos y microservicios con calidad institucional | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se construyen APIs, servidores, microservicios o bases de datos (backend, rest, graphql, endpoint, middleware, caching, queue). Alcance: servicios y contratos API; para UI ver frontend-engineer; para esquemas ver database-administrator. | UPG·NAM·FRS (reglas en base_principles.md)"
 quality: {docstrings_es: true, error_actionable: true, clean_code: true, patterns: true, coverage: 85, security: true}
 ---
 
@@ -90,3 +93,13 @@ Toda funcion/endpoint publico DEBE incluir docstring con Args/Returns/Raises en 
 - [ ] Caching estrategico configurado (HTTP, Redis, CDN)
 - [ ] DocStrings ES-UTF8 en TODO endpoint/servicio publico
 - [ ] Errores legibles y accionables
+
+## Anti-patrones
+- Endpoints sin validación de entrada ni códigos HTTP semánticos (SEG/ERR).
+- SQL construido por concatenación en vez de parametrizado (SEG).
+- Acoplar lógica de negocio al framework o a la base de datos (DIP/SOL).
+- Reimplementar un servicio/endpoint ya existente (IDP).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

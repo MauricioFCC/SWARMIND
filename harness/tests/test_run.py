@@ -423,13 +423,6 @@ class TestHandleCommand:
             _handle_command("!agent prune")
         mock_pruner.prune_underperforming.assert_called_once_with(dry_run=False)
 
-    def test_hermes(self):
-        """Debe llamar _handle_hermes para !hermes."""
-        with patch("harness.run._handle_hermes") as mock_fn:
-            from harness.run import _handle_command
-            _handle_command("!hermes sync")
-        mock_fn.assert_called_once_with("!hermes sync")
-
     def test_comando_desconocido(self):
         """Debe loggear warning para comandos desconocidos."""
         with patch("harness.run.logger") as mock_log:
@@ -507,6 +500,7 @@ class TestMain:
              patch("harness.run.LanceVectorStore"), \
              patch("harness.orchestrator.task_orchestrator.TaskOrchestrator"), \
              patch("harness.run.HITLGuard"), \
+             patch("harness.run._try_local_execution", return_value=None), \
              patch.object(Path, "exists", return_value=True):
             yield
 

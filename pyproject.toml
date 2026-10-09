@@ -86,6 +86,7 @@ markers = [
     "slow: tests lentos (>1s) que requieren integracion real",
     "integration: tests que dependen de LanceDB real u otros servicios externos",
     "unit: tests unitarios puros sin dependencias externas (default)",
+    "local_only: tests que requieren Ollama local (skip si no responde)",
 ]
 
 [tool.coverage.run]
@@ -127,6 +128,7 @@ ignore = ["EXE001"]
 "harness/run.py" = ["E402"]
 "harness/scripts/*.py" = ["E402"]
 "harness/tests/test_deploy_all.py" = ["E402"]
+"harness/tests/test_enable_gpu.py" = ["E402"]
 "harness/tests/test_export_all_projects.py" = ["E402"]
 "harness/tests/test_integration.py" = ["E402"]
 "harness/tests/test_setup_verification.py" = ["E402"]
@@ -134,6 +136,12 @@ ignore = ["EXE001"]
 "harness/tests/test_validate_skills.py" = ["E402"]
 "harness/**/__init__.py" = ["E402"]
 "harness/run_commands/__init__.py" = ["F403"]
+# .opencode/core/router_v2.py es un hub de re-export backward-compat documentado
+# en su docstring: re-exporta simbolos de router_a2a/router_scoring. Los imports
+# marcados F401 son re-exports intencionales (consumidos via
+# harness/orchestrator/delegation_engine.py y opencode.core). Un modulo de
+# tooling propagado a proyectos hermanos; --fix no debe borrarlos.
+".opencode/core/router_v2.py" = ["F401"]
 
 # ---------------------------------------------------------------------------
 # Vulture (detección de código muerto)

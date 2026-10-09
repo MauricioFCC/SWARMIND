@@ -2,9 +2,9 @@
 Base types for the guardrails system.
 Extracted from guardrails.py to break circular imports with guardrails_checks.py.
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class GuardrailSeverity(Enum):
@@ -20,10 +20,10 @@ class GuardrailResult:
     passed: bool
     severity: GuardrailSeverity
     message: str
-    suggestion: Optional[str] = None
+    suggestion: str | None = None
     rule_id: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convierte el resultado a diccionario para serializacion."""
         return {
             "passed": self.passed,

@@ -207,7 +207,7 @@ class _VectorOpsMixin:
                 assert self._conn is not None
                 tbl = self._vec_table_name(collection)
                 cursor = self._conn.execute(
-                    # tbl sanitizado por _vec_table_name
+                    # tbl validado por allowlist y citado con comillas dobles
                     f"SELECT id, vector, metadata FROM {tbl}"  # nosec B608
                 )
                 results: list[tuple[str, float, dict[str, Any]]] = []
@@ -247,7 +247,7 @@ class _VectorOpsMixin:
                 assert self._conn is not None
                 tbl = self._vec_table_name(collection)
                 cursor = self._conn.execute(
-                    # tbl sanitizado, valor parametrizado
+                    # tbl validado (allowlist + comillas), valor parametrizado
                     f"SELECT id, vector, metadata, created_at FROM {tbl} WHERE id = ?",  # nosec B608
                     (vector_id,),
                 )
@@ -288,7 +288,7 @@ class _VectorOpsMixin:
                 assert self._conn is not None
                 tbl = self._vec_table_name(collection)
                 cursor = self._conn.execute(
-                    # tbl sanitizado, valor parametrizado
+                    # tbl validado (allowlist + comillas), valor parametrizado
                     f"DELETE FROM {tbl} WHERE id = ?", (vector_id,)  # nosec B608
                 )
                 deleted = cursor.rowcount > 0
@@ -328,7 +328,7 @@ class _VectorOpsMixin:
         try:
             assert self._conn is not None
             tbl = self._vec_table_name(collection)
-            # tbl sanitizado por _vec_table_name
+            # tbl validado por allowlist y citado con comillas dobles
             cursor = self._conn.execute(f"SELECT COUNT(*) FROM {tbl}")  # nosec B608
             row = cursor.fetchone()
             return int(row[0]) if row else 0

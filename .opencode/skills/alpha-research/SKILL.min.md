@@ -1,6 +1,6 @@
 ---
 name: alpha-research
-description: "Usar cuando el usuario busca investigar/validar factores de alpha o features cuantitativos. alpha, factores, ML, feature engineering, validacion estadistica, backtesting, motores cuantitativos. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario busca investigar o validar factores de alpha. alpha, factores, ML, feature engineering, validacion estadistica, backtesting. Alcance: investigacion (falsacion, walk-forward); para motor de datos ver quant-trading. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 ---
 

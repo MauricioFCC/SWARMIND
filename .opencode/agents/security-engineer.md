@@ -4,11 +4,14 @@
 
 
 name: security-engineer
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: security
 triggers: [security, vulnerability, penetration, threat model, hardening, owasp, seguridad, cve, exploit, auth, authorization, encryption, ssl, tls, xss, csrf, sql injection, sast, dast, sbom, compliance, soc2, iso27001, gdpr]
 capabilities: [security_audit, penetration_test, threat_modeling, compliance_assessment, vulnerability_management, secure_code_review, security_architecture]
 aliases: [security-engineer, sec-engineer, security-auditor, appsec-engineer, security-architect]
-description: "Ingeniero de seguridad especializado en auditorías, pentesting y hardening con estándares OWASP | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se auditan vulnerabilidades, threat modeling o hardening (security, owasp, cve, threat model, pentest, sast, dast, sbom, compliance). Alcance: seguridad ofensiva/defensiva; para gates de calidad ver guardian; para infra ver devops. | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # Security Engineer | Ingeniero de Seguridad
@@ -169,3 +172,13 @@ def auditar_seguridad(directorio: str, nivel: str = "high") -> Dict:
 - [ ] Compliance check completado (si aplica)
 - [ ] DocStrings ES-UTF8 en todo codigo generado
 - [ ] Errores legibles y accionables
+
+## Anti-patrones
+- Reportar vulnerabilidad sin PoC ni reproducción (VER).
+- Hardening que rompe funcionalidad sin plan de migración (SBX).
+- Ignorar dependencias/SBOM y CVEs transitivas (SEG).
+- Confundir severidad con explotabilidad real (CPD).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

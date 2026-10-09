@@ -1,7 +1,7 @@
 ---
 name: swarm-release-ops
 domain: swarm-release-ops
-description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. Alcance: releases y CI/CD del repo SWARMIND; para infra generica ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 version: 1.0.0
 project_agnostic: true

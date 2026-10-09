@@ -11,6 +11,11 @@ from __future__ import annotations
 
 from .models import CreativeConfig, CreativeIdea, CreativePhase
 
+#: Factor de penalizacion por restriccion incumplida (MAG: sin magic numbers).
+_CONSTRAINT_PENALTY_FACTOR = 0.8
+#: Tope de penalizaciones aplicables (comportamiento original: `constraints[:2]`).
+_MAX_CONSTRAINT_PENALTIES = 2
+
 
 class CreativeWorktable:
     """
@@ -85,9 +90,11 @@ class CreativeWorktable:
         scored = []
         for idea in ideas:
             score = idea.novelty * 0.4 + idea.feasibility * 0.6
-            # Penalizar si no cumple restricciones
-            for _constraint in constraints[:2]:
-                score *= 0.8
+            # Penalizar una vez por restriccion, hasta el tope. Se calcula como
+            # potencia para no iterar una variable no usada (CodeQL
+            # py/unused-loop-variable): 0.8**n equivale al loop original.
+            penalty_rounds = min(len(constraints), _MAX_CONSTRAINT_PENALTIES)
+            score *= _CONSTRAINT_PENALTY_FACTOR**penalty_rounds
             idea.selected = score > 0.5
             scored.append(idea)
 

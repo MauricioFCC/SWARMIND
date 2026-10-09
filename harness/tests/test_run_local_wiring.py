@@ -90,3 +90,58 @@ def test_frontier_tier_returns_none() -> None:
         client=_FakeClient(), tiers=_FakeTiers(None),
     )
     assert out is None
+
+
+# ---------------------------------------------------------------------------
+# Politica local-first (allow_open_tasks + cloud como oraculo)
+# ---------------------------------------------------------------------------
+
+
+def test_open_task_with_policy_attempts_local() -> None:
+    """Con policy.allow_open_tasks=True una tarea abierta SI intenta local."""
+    from harness.model_router.local_first import LocalFirstPolicy
+    from harness.model_router.ollama_tiers import CapabilityTier
+
+    policy = LocalFirstPolicy(enabled=True, allow_open_tasks=True)
+    out = _try_local_execution(
+        "investiga el mercado de stablecoins", "local",
+        client=_FakeClient(), tiers=_FakeTiers(CapabilityTier.FAST),
+        vram_check=lambda model: True, policy=policy,
+    )
+    assert out is not None
+    assert out.startswith("local:")
+
+
+def test_open_task_without_policy_skips() -> None:
+    """Sin policy la tarea abierta sigue descartando local (retrocompatible)."""
+    from harness.model_router.ollama_tiers import CapabilityTier
+
+    out = _try_local_execution(
+        "investiga el mercado de stablecoins", "local",
+        client=_FakeClient(), tiers=_FakeTiers(CapabilityTier.FAST),
+    )
+    assert out is None
+
+
+def test_policy_should_use_local_force_cloud() -> None:
+    """should_use_local con force_cloud=True siempre paga cloud."""
+    from harness.model_router.local_first import LocalFirstPolicy
+
+    policy = LocalFirstPolicy(enabled=True, allow_open_tasks=True)
+    assert policy.should_use_local(backend_available=True, force_cloud=True) is False
+
+
+def test_policy_should_use_local_enabled_and_up() -> None:
+    """Politica activa + backend arriba -> local preferido."""
+    from harness.model_router.local_first import LocalFirstPolicy
+
+    policy = LocalFirstPolicy(enabled=True)
+    assert policy.should_use_local(backend_available=True, force_cloud=False) is True
+
+
+def test_policy_should_use_local_backend_down() -> None:
+    """Sin backend local la politica degrada a cloud (oraculo/fallback)."""
+    from harness.model_router.local_first import LocalFirstPolicy
+
+    policy = LocalFirstPolicy(enabled=True)
+    assert policy.should_use_local(backend_available=False, force_cloud=False) is False

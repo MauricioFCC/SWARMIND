@@ -45,7 +45,7 @@ metadata:
 
 | Nivel | Contenido | Cuándo |
 |-------|-----------|--------|
-| **N1 Esencial** | ARQ: hexagonal+DI \| SEG: 0 secrets \| DOC: ES/EN \| TST ≥80% \| CMT: conventional \| FDE: bridge product↔reality \| EVO: learn→design→experiment→analyze | Siempre |
+| **N1 Esencial** | ARQ: hexagonal+DI \| SEG: 0 secrets \| DOC: ES/EN \| TST ≥80% \| CMT: conventional \| FDE: bridge product↔reality \| EVO: learn→design→experiment→analyze \| CLA+VAL+FST+AAA+ATM (ADR-0098) | Siempre |
 | **N2 Estándar** | 9 categorías expandidas (ARQ,SEG,DOC,TST,OPS,CMT,QLT,FDE,EVO) | Budget >70% |
 | **N3 Completo** | Checklist detallado + ejemplos ✅❌ por categoría | Referencia |
 

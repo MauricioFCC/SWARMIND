@@ -5,7 +5,7 @@
 
 name: science-doc
 domain: science
-description: "Usar cuando el usuario analiza papers o documentacion cientifica. papers academicos, tesis, informes tecnicos, revisiones sistematicas, investigacion. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario analiza papers o documentacion cientifica. papers academicos, tesis, informes tecnicos, revisiones sistematicas, investigacion. Alcance: analisis de papers y revisiones; para matematicas ver math-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+ para analisis de papers'
 version: 1.0.0
@@ -147,3 +147,20 @@ Al analizar un paper, extraer explícitamente el paquete de reproducibilidad:
 - **scholar-search-mcp** (si está disponible): búsqueda académica vía MCP.
 - **DOI validation**: verificar que el DOI resuelve y apunta al documento correcto.
 - **ai2 paper finder / retrieval pipelines**: alternativas de alta cobertura para el retrieval.
+
+## Checklist
+
+- [ ] Estructura IMRaD y metodologia evaluadas
+- [ ] Sesgos y limitaciones identificados
+- [ ] Cada cita validada contra la fuente (DOI)
+- [ ] Reproducibilidad clasificada (REPRODUCIBLE/PARCIAL/NO)
+- [ ] Contradicciones marcadas explicitamente
+- [ ] PRISMA/PICO en revisiones sistematicas
+
+## Anti-patrones (prohibidos)
+
+- Citas no verificadas presentadas como validas.
+- Parafrasear sin cita (plagio).
+- Confundir hallazgo con interpretacion.
+- Omitir tamanos de efecto e incertidumbre.
+- Resolver contradicciones en silencio.

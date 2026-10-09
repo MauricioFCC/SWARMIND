@@ -5,7 +5,7 @@
 
 name: sociology
 domain: sociology
-description: "Usar cuando el problema involucra dinamicas sociales o de grupos. sociologia, antropologia, redes, cultura digital, grupos, sistemas multi-agente. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el problema involucra dinamicas sociales o de grupos. sociologia, antropologia, redes, cultura digital, grupos, sistemas multi-agente. Alcance: dinamicas sociales y redes; para psicologia individual ver psychology. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -211,6 +211,22 @@ Metodo para estudiar agentes como cultura:
 | **Data-Science** | Redes de conocimiento + comunidades de practica | Colaboracion cientifica mas productiva |
 | **Communication** | Antropologia de la comunicacion digital | Mejora intercultural en comunicacion agente-humano |
 | **Legal-Doc** | Sociologia del conocimiento juridico | Mejor comprension de contexto legal |
+
+## Checklist
+
+- [ ] Perspectiva sociologica y marco teorico elegidos
+- [ ] Etapa de desarrollo grupal diagnosticada (Tuckman)
+- [ ] Metricas de red (centralidad/densidad/clustering)
+- [ ] Evidencia empirica que sostenga el analisis
+- [ ] Intervencion segun etapa (norming/performing)
+
+## Anti-patrones (prohibidos)
+
+- Generalizar de una anecdota.
+- Ignorar cultura y contexto de la red.
+- Asumir homogeneidad del grupo.
+- Diagnostico sin datos ni marco teorico.
+- Confundir estructura con agencia.
 
 ## Referencias Teoricas
 - Tuckman, B. W. (1965). *Developmental Sequence in Small Groups*

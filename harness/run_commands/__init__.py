@@ -10,7 +10,7 @@ en que submodulo este definida.
 Estructura:
 - handlers_iteration.py : comandos !iteration *
 - handlers_other.py     : comandos !db / !hooks / !rag
-- handlers_extra.py     : !evolve / !schedule / !hermes / watch mode
+- handlers_extra.py     : !evolve / !schedule / watch mode
 - colors.py             : helpers de impresion con color
 
 Uso::
@@ -45,7 +45,6 @@ from .handlers_extra import (
     _check_hitl,
     _get_files_to_watch,
     _handle_evolve_mutate,
-    _handle_hermes,
     _handle_hooks_status,
     _handle_schedule_add,
     _handle_schedule_list,
@@ -100,7 +99,6 @@ _COMMAND_TABLE: tuple[tuple[str, str, str], ...] = (
     ("!hooks status", "_handle_hooks_status", "none"),
     ("!rag ingest", "_handle_rag_ingest", "store_cmd"),
     ("!rag stats", "_handle_rag_stats", "store"),
-    ("!hermes", "_handle_hermes", "cmd"),
 )
 
 
@@ -208,7 +206,6 @@ __all__ = [
     "_handle_db_rollback",
     "_handle_db_stats",
     "_handle_evolve_mutate",
-    "_handle_hermes",
     "_handle_hooks_install",
     "_handle_hooks_status",
     "_handle_hooks_uninstall",

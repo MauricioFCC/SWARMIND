@@ -5,7 +5,7 @@
 
 name: pos-retail
 domain: pos-retail
-description: "Usar cuando el dominio es punto de venta o retail. POS, retail, e-commerce, inventario, facturacion, pagos, logistica. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el dominio es punto de venta o retail. POS, retail, e-commerce, inventario, facturacion, pagos, logistica. Alcance: POS y retail omnicanal; para estrategia de negocio ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -96,3 +96,20 @@ Pedido: DRAFT → APPROVED → PICKING → SHIPPED → DELIVERED
 - API RESTful con versionado (ej. /api/v1/pos/sale).
 - Tests de concurrencia y consistencia de stock.
 - Documentación de flujos de pago y devolución.
+
+## Checklist
+
+- [ ] Transaccion idempotente y auditada
+- [ ] Consistencia de stock (sin sobreventa) bajo concurrencia
+- [ ] Offline-first con sincronizacion
+- [ ] Pagos PCI-DSS (tokenizacion)
+- [ ] Validacion fiscal (ej. DIAN) en cada venta
+- [ ] Patrones Saga/Outbox para flujos distribuidos
+
+## Anti-patrones (prohibidos)
+
+- Venta sin descuento de stock atomico (sobreventa).
+- Datos de tarjeta almacenados sin tokenizar.
+- POS dependiente 100% de conexion.
+- Saltarse la validacion fiscal.
+- Estados de venta/pago sin trazabilidad.

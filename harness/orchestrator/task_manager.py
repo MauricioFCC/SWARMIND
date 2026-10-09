@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sqlite3
 import uuid
 from dataclasses import asdict, dataclass, field
@@ -16,6 +17,11 @@ from pathlib import Path
 from typing import Any, Literal
 
 logger = logging.getLogger(__name__)
+
+# Allowlist de task_id antes de interpolarlo en filtros LanceDB (CWE-943).
+# Los ids reales son uuid hex (``_make_id`` -> 12 hex), pero se acepta el
+# charset seguro [A-Za-z0-9_-] para no romper ids de pruebas/demo.
+_SAFE_TASK_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
 try:
     from pydantic import BaseModel, Field
@@ -119,6 +125,32 @@ def _now_iso() -> str:
 
 def _make_id() -> str:
     return uuid.uuid4().hex[:12]
+
+
+def _safe_task_id(task_id: Any) -> str | None:
+    """Valida un ``task_id`` antes de interpolarlo en un filtro.
+
+    WHAT: comprueba que ``task_id`` sea un string que cumpla la allowlist
+    ``^[A-Za-z0-9_-]{1,64}$``.
+    WHY: interpolar un id con comillas/espacios en ``.where(f"id = '{id}'")``
+    permite inyectar predicados en el filtro LanceDB (CWE-943).
+    WHERE: ``TaskManager.read_task``/``update_task``/``delete_task``/
+    ``update_status``.
+
+    Args:
+        task_id: Identificador a validar.
+
+    Returns:
+        El id si es seguro; ``None`` si no cumple la allowlist.
+    """
+    if isinstance(task_id, str) and _SAFE_TASK_ID_PATTERN.match(task_id):
+        return task_id
+    logger.warning(
+        "task_id rechazado por allowlist: WHAT=%r WHY=anti-inyeccion de "
+        "filtros (CWE-943) WHERE=_safe_task_id EXPECTED=^[A-Za-z0-9_-]{1,64}$",
+        task_id,
+    )
+    return None
 
 
 def _validate_status(status: str) -> str:
@@ -285,16 +317,19 @@ class TaskManager:
 
     def read_task(self, task_id: str) -> _TaskModel | None:
         """Retrieve a single task by its ID."""
+        safe_id = _safe_task_id(task_id)
+        if safe_id is None:
+            return None
         if not self._use_sqlite and self._table is not None:
-            # task_id es internamente generado (uuid hex), seguro contra injection
-            results = self._table.search().where(f"id = '{task_id}'").limit(1).to_pandas()
+            # safe_id validado contra allowlist (CWE-943)
+            results = self._table.search().where(f"id = '{safe_id}'").limit(1).to_pandas()
             if len(results) == 0:
                 return None
             row = results.iloc[0].to_dict()
             return self._deserialize_task(row)
         else:
             rows = self._run_sqlite_query(
-                "SELECT * FROM tasks_board WHERE id = ?", (task_id,)
+                "SELECT * FROM tasks_board WHERE id = ?", (safe_id,)
             )
             if not rows:
                 return None
@@ -305,7 +340,10 @@ class TaskManager:
 
         Accepts keyword arguments matching Task fields.
         """
-        task = self.read_task(task_id)
+        safe_id = _safe_task_id(task_id)
+        if safe_id is None:
+            return None
+        task = self.read_task(safe_id)
         if task is None:
             return None
 
@@ -322,10 +360,10 @@ class TaskManager:
         serialized = self._serialize_task(existing)
 
         if not self._use_sqlite and self._table is not None:
-            self._table.update(where=f"id = '{task_id}'", values=serialized)
+            self._table.update(where=f"id = '{safe_id}'", values=serialized)
         else:
             set_clause = ", ".join(f"{k} = ?" for k in serialized if k != "id")
-            values = [v for k, v in serialized.items() if k != "id"] + [task_id]
+            values = [v for k, v in serialized.items() if k != "id"] + [safe_id]
             self._run_sqlite_execute(
                 # keys de allowed_fields validados, valores parametrizados
                 f"UPDATE tasks_board SET {set_clause} WHERE id = ?",  # nosec B608
@@ -336,12 +374,15 @@ class TaskManager:
 
     def delete_task(self, task_id: str) -> bool:
         """Delete a task by ID. Returns True if a task was removed."""
+        safe_id = _safe_task_id(task_id)
+        if safe_id is None:
+            return False
         if not self._use_sqlite and self._table is not None:
-            result = self._table.delete(f"id = '{task_id}'")
+            result = self._table.delete(f"id = '{safe_id}'")
             return result is not None
         else:
             cursor = self._sqlite_conn.execute(
-                "DELETE FROM tasks_board WHERE id = ?", (task_id,)
+                "DELETE FROM tasks_board WHERE id = ?", (safe_id,)
             )
             self._sqlite_conn.commit()
             return cursor.rowcount > 0
@@ -413,7 +454,10 @@ class TaskManager:
     ) -> _TaskModel | None:
         """Update a task's status and log the transition automatically."""
         new_status = _validate_status(new_status)
-        task = self.read_task(task_id)
+        safe_id = _safe_task_id(task_id)
+        if safe_id is None:
+            return None
+        task = self.read_task(safe_id)
         if task is None:
             return None
 
@@ -440,10 +484,10 @@ class TaskManager:
         serialized = self._serialize_task(existing)
 
         if not self._use_sqlite and self._table is not None:
-            self._table.update(where=f"id = '{task_id}'", values=serialized)
+            self._table.update(where=f"id = '{safe_id}'", values=serialized)
         else:
             set_clause = ", ".join(f"{k} = ?" for k in serialized if k != "id")
-            values = [v for k, v in serialized.items() if k != "id"] + [task_id]
+            values = [v for k, v in serialized.items() if k != "id"] + [safe_id]
             self._run_sqlite_execute(
                 # keys validados, valores parametrizados
                 f"UPDATE tasks_board SET {set_clause} WHERE id = ?",  # nosec B608

@@ -8,8 +8,8 @@ cloud (TKN): solo se paga frontier/cloud cuando la tarea lo requiere
 Tiers (patrón del usuario, SSOT .opencode/config/ollama_models.yaml):
 - 🟢 FAST      (fast):      borradores, tareas simples, extracción, formateo
 - 🔵 QUALITY   (quality):   calidad de texto, resúmenes, redacción
-- 🟣 EMBEDDING (embedding): RAG, búsqueda semántica (nomic-embed-text)
-- 🟡 VISION    (vision):    leer imágenes, alt-text (llava)
+- 🟣 EMBEDDING (embedding): RAG, búsqueda semántica (qwen3-embedding:0.6b)
+- 🟡 VISION    (vision):    leer imágenes, alt-text (qwen3-vl:4b)
 - 🟠 CODING    (coding):    implementar, refactorizar, debuggear, tests
 
 Diseño (integra con el repo sin romper):
@@ -45,7 +45,7 @@ except ImportError as _import_err:
         _import_err,
     )
 
-    DEFAULT_KEEP_ALIVE = "5m"
+    DEFAULT_KEEP_ALIVE = "0"
 
     class OllamaClient:
         """Stub transitorio de OllamaClient (API mínima, sin red).
@@ -155,15 +155,15 @@ def is_frontier_only(task: str) -> bool:
     task_lower = task.lower()
     return any(kw in task_lower for kw in _FRONTIER_ONLY_KEYWORDS)
 
-# Modelos por defecto por tier (flota 2026-09-21, nombres canonicos hf.co;
-# cada blob un solo nombre, sin alias locales: el repo se puchea a GitHub.
+# Modelos por defecto por tier (flota 2026-10-01, nombres canonicos hf.co;
+# cada blob un solo nombre, sin alias locales: el repo se pushea a GitHub.
 # Configurables via YAML .opencode/config/ollama_models.yaml).
 _DEFAULT_TIER_MODELS: dict[CapabilityTier, str] = {
-    CapabilityTier.FAST: "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0",
-    CapabilityTier.QUALITY: "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
+    CapabilityTier.FAST: "hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL",
+    CapabilityTier.QUALITY: "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS",
     CapabilityTier.EMBEDDING: "qwen3-embedding:0.6b",
     CapabilityTier.VISION: "qwen3-vl:4b",
-    CapabilityTier.CODING: "hf.co/Jackrong/Qwopus3.5-9B-Coder-GGUF:Qwopus3.5-9B-coder-Exp-Q4_K_M",
+    CapabilityTier.CODING: "mannix/JackOD-9B-Coder:IQ4_XS",
 }
 
 
@@ -266,6 +266,9 @@ def _specs_from_yaml(ollama_cfg: dict) -> dict[CapabilityTier, OllamaTierSpec]:
     tiers_cfg = ollama_cfg.get("tiers")
     if not isinstance(tiers_cfg, dict):
         return specs
+    # CapabilityTier(str, Enum) ES iterable (un Enum itera sus miembros);
+    # CodeQL infiere el subtipo str y emite un falso positivo.
+    # codeql[py/non-iterable-in-for-loop]
     for tier in CapabilityTier:
         entry = tiers_cfg.get(tier.value)
         if not isinstance(entry, dict):

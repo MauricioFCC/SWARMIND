@@ -1,59 +1,83 @@
-"""Tests para model_windows — presupuesto de ventana anti-loop (ADR-0092).
+"""Tests para model_windows — presupuesto de ventana anti-volcado (ADR-0092).
 
-Bug real: con num_ctx default (4096) y ~17K tokens de sistema+skills, el
-modelo local entra en loop de compactacion (analiza el principio, nunca
-resuelve) y vuelca la GPU. El guard valida que el prompt quepa en la
-ventana ANTES de ejecutar en local.
+Tras el BSOD VIDEO_TDR_FAILURE (0x116) del 2026-10-01 (9B + ctx 16384 +
+Vulkan en 8GB), el default honesto es 8192 (`gpu_guard.SAFE_CTX_MAX`): 16384
+NO es seguro en 8GB. El guard valida sistema+tarea+respuesta acotada contra
+la ventana MEDIDA antes de ejecutar en local.
 """
-
 
 from harness.model_router.model_windows import (
     DEFAULT_NUM_CTX,
+    RESPONSE_RESERVE_TOKENS,
     SYSTEM_BUDGET_TOKENS,
     fits_in_window,
     recommend_num_ctx,
 )
 
-
-def test_recommend_small_models() -> None:
-    """Modelos chicos (<=4B) recomiendan 8192 (2x default, seguro en 8GB)."""
-    assert recommend_num_ctx("hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0") == 8192
-    assert recommend_num_ctx("llama3.2:3b") == 8192
-    assert recommend_num_ctx("qwen3:4b") == 8192
+_FAST = "qwen3-5-4b-gguf-ud-q4-k-xl"
+_QUALITY = "phi-4-mini-instruct-q4-k-m"
+_CODING = "qwen2.5-coder-3b-iq4-xs"
+_EMBEDDING = "qwen3-embedding-0-6b"
 
 
-def test_recommend_big_models_conservative() -> None:
-    """Modelos 7-9B recomiendan 8192 (no 16K: 6GB pesos + KV = OOM en 8GB)."""
-    assert recommend_num_ctx("hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M") == 8192
-    assert recommend_num_ctx("deepseek-r1:8b") == 8192
-
-
-def test_recommend_olmoe_arch_limit() -> None:
-    """OLMoE (4K arquitectura) recomienda 4096."""
-    assert recommend_num_ctx("hf.co/mradermacher/OLMoE-1B-7B-0125-Instruct-Distill-ot114k-batch32-i1-GGUF:IQ4_NL") == 4096
-
-
-def test_recommend_unknown_defaults() -> None:
-    """Modelo desconocido usa el default seguro."""
-    assert recommend_num_ctx("algun-modelo-futuro:99b") == DEFAULT_NUM_CTX
+def test_default_ctx_is_safe_ceiling() -> None:
+    """El default es 8192 (techo anti-TDR); 16384 NO es seguro en 8GB."""
     assert DEFAULT_NUM_CTX == 8192
 
 
+def test_retired_models_fall_to_default() -> None:
+    """Retirados/no-flota: sin clave en la tabla, caen al default 8192.
+
+    MiniCPM5, Qwen3.8 y Opus-Distill se retiraron 2026-10-01 y no deben
+    recuperar una ventana propia (ni 16K/32K horneados) por accidente.
+    """
+    for retired in (
+        "hf.co/openbmb/MiniCPM5-2B-GGUF:Q8_0",
+        "hf.co/empero-ai/Qwen3.8-9B-Distill-GGUF:Q4_K_M",
+        "hf.co/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF:Q4_K_M",
+        "qwen38-9b-16k",
+        "minicpm5-2b-32k",
+        "opus-distill-9b-16k",
+        "llama3.2:3b",
+        "qwen2.5-coder:7b",
+    ):
+        assert recommend_num_ctx(retired) == DEFAULT_NUM_CTX, retired
+
+
+def test_recommend_fleet_windows_declared() -> None:
+    """La flota reducida declara su ventana segura: 4 modelos a 8192 (ADR-0101)."""
+    assert recommend_num_ctx(_FAST) == 8192
+    assert recommend_num_ctx(_QUALITY) == 8192
+    assert recommend_num_ctx(_CODING) == 8192
+    assert recommend_num_ctx(_EMBEDDING) == 8192
+
+
+def test_recommend_unknown_defaults() -> None:
+    """Modelo desconocido usa el default seguro (anti-TDR)."""
+    assert recommend_num_ctx("algun-modelo-futuro:99b") == DEFAULT_NUM_CTX
+
+
 def test_fits_small_task() -> None:
-    """Tarea chica + sistema cabe en la ventana."""
-    assert fits_in_window("hf.co/LiquidAI/LFM2.5-2.6B-GGUF:Q8_0", task_chars=200) is True
+    """Tarea chica + sistema cabe con la reserva de respuesta intacta."""
+    assert fits_in_window(_FAST, task_chars=200) is True
 
 
 def test_overflow_goes_cloud() -> None:
-    """Prompt que excede la ventana no va a local (evita el loop)."""
+    """Prompt que excede la ventana declarada no va a local (evita el volcado)."""
     assert fits_in_window("llama3.2:3b", task_chars=50_000) is False
+    # Coding 3B: ventana 8192 - 1024 reserva = 7168; una tarea de 60K chars
+    # (15000 tok) NO cabe y va a cloud.
+    assert fits_in_window(_CODING, task_chars=60_000) is False
+    # Tarea chica SI cabe en la ventana de 8192.
+    assert fits_in_window(_CODING, task_chars=1_000) is True
 
 
 def test_system_budget_documented() -> None:
     """Los presupuestos estan documentados (full actual vs lean objetivo)."""
     assert SYSTEM_BUDGET_TOKENS >= 8000
+    assert RESPONSE_RESERVE_TOKENS >= 512
 
 
 def test_empty_task_fits() -> None:
     """Tarea vacia cabe (no falla el guard)."""
-    assert fits_in_window("qwen3:4b", task_chars=0) is True
+    assert fits_in_window("modelo-ajeno:1b", task_chars=0) is True

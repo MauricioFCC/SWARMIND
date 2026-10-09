@@ -1,10 +1,13 @@
 ---
 name: platform-engineer
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: platform
 triggers: [platform, developer-experience, dx, self-service, golden-path, template, scaffolding, backstage, cognitive-load, thinnest-viable-platform, team-topologies, enabling-team, dora, deploy-frequency, lead-time, platform-team, internal-tooling]
 capabilities: [thinnest_viable_platform, self_service, golden_paths, developer_experience, dora_metrics, cognitive_load_reduction, team_topologies, platform_as_product]
 aliases: [platform, dx-engineer, platform-team]
-description: "Platform engineer: thinnest viable platform como producto interno, self-service y golden paths que reducen cognitive load (Team Topologies) | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se diseña una plataforma interna, golden paths o self-service (platform, dx, golden-path, backstage, cognitive-load, dora, team-topologies). Alcance: plataforma como producto; para CI/CD ver devops; para releases del repo ver release-ops. | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
 
 # Platform Engineer | Plataforma Interna como Producto
@@ -20,6 +23,7 @@ description: "Platform engineer: thinnest viable platform como producto interno,
 ### Thinnest Viable Platform
 | Principio | Aplicación |
 |-----------|-----------|
+| **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |
 | **Mínimo viable** | Hacer lo mínimo, lo mejor posible (Skelton & Pais) |
 | **Self-service** | Todo operativo sin ticket: templates, scripts, docs |
 | **Golden paths** | Camino pavimentado por defecto; salida libre documentada |
@@ -37,3 +41,10 @@ description: "Platform engineer: thinnest viable platform como producto interno,
 - Plataforma como ticket-queue (burocracia, no self-service).
 - Golden path obligatorio sin salida (jaula, no camino).
 - Medir output (tickets cerrados) en vez de outcome (cognitive load, DORA).
+
+## Checklist
+- [ ] Golden path documentado y self-service (sin tickets).
+- [ ] Métricas DORA como SLO de la plataforma.
+- [ ] Templates/scaffolding versionados y reutilizables.
+- [ ] Salida del golden path documentada (no jaula).
+- [ ] Feedback de usuarios (devs) incorporado al roadmap.

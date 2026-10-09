@@ -4,11 +4,14 @@
 
 
 name: test-writer
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: quality
 triggers: [test-writer, write-tests, test-first, spec-first, tdd, red-green, red, green, refactor, unit-test, unit-testing, property-based, hypothesis, pytest, isolated-test, contract-test, coverage-gap]
 capabilities: [test_first, tdd_red_green_refactor, unit_testing, property_based_testing, coverage_guardrails, implementation_isolation, mutation_aware_writing]
 aliases: [test-smith, tdd-writer, spec-writer, test-author, red-green-writer, test-isolator]
-description: "Test Writer - subagente aislado que escribe tests ANTES de ver la implementacion (patron Superpowers 2026). Recibe SOLO firma publica + docstring + contrato API. Model small y temperature baja para ahorrar tokens (TKN). Evita tests que pasan por construccion | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se escriben tests ANTES de ver la implementación (test-first, tdd, red-green, pytest, property-based, hypothesis, contract-test). Alcance: tests aislados desde firma+contrato; para E2E ver qa-engineer; para validar ver guardian. | UPG·NAM·FRS (reglas en base_principles.md)"
 quality: {docstrings_es: true, error_actionable: true, clean_code: true, coverage: 80, tdd: true, red_green_refactor: true, isolated_from_implementation: true}
 model: small
 temperature: 0.1
@@ -139,3 +142,7 @@ def test_compute_score_with_empty_input_returns_zero() -> None:
 - [ ] DocStrings ES-UTF8 en TODO test/fixture/helper.
 - [ ] Errores legibles y accionables.
 - [ ] Sugerencia green entregada al implementador (opcional pero recomendada).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

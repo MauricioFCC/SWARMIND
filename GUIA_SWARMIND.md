@@ -702,27 +702,42 @@ minimizando el consumo de tokens cloud (TKN): `OllamaClient`
 local, y `OllamaTierRouter` (`harness/model_router/ollama_tiers.py`) elige el
 modelo por **capacidad** según la tarea, con heurística sin LLM.
 
-### Tiers por capacidad (modelos 2026 instalados)
+### Tiers por capacidad (flota 2026)
 
 | Tier | Modelo | Uso típico |
 |------|--------|------------|
-| ⚡ **fast** | `qwen3:4b` | Borradores, tareas simples |
-| 🧠 **quality** | `deepseek-r1:8b` | Razonamiento, calidad de texto |
-| 💻 **coding** | `qwen2.5-coder:7b` | Generación de código |
+| ⚡ **fast** | `Qwen3.5-4B UD-Q4_K_XL` | Borradores, tareas simples |
+| 🧠 **quality** | `MiMo-V2.6-Distill-Qwen-9B IQ4_XS` (4K) | Razonamiento, calidad de texto |
+| 💻 **coding** | `JackOD-9B-Coder IQ4_XS` (4K) | Generación de código |
+| 🧩 **reasoning** | `Ornith-1.5-9B Q4_K_M` (4K) | Agente, razonamiento profundo |
 | 🔎 **embedding** | `qwen3-embedding:0.6b` | RAG / búsqueda semántica (1024 dims) |
 | 👁️ **vision** | `qwen3-vl:4b` | Imágenes, alt-text |
+
+El **SSOT medido** de la flota es `harness/model_router/fleet_manifest.py`
+(id, tier, `num_ctx`, `vram_mb`, `keep_alive`); el cableado de runtime vive en
+`.opencode/config/ollama_models.yaml` (validado por `test_fleet_manifest.py`).
+El servidor fija `OLLAMA_CONTEXT_LENGTH=8192` en `scripts/enable_gpu.py` (más
+`MAX_LOADED_MODELS=1`, `NUM_PARALLEL=1`, `FLASH_ATTENTION=1`, `KV_CACHE_TYPE=q8_0`):
+la ventana por defecto es 16K sin variantes "16k baked".
 
 ### Cómo configurar
 
 Todo es configurable (sin hardcode) en `.opencode/config/ollama_models.yaml`:
-`base_url`, `timeout`, `warm_on_start` (precarga fast + embedding al arrancar)
+`base_url`, `timeout`, `warm_on_start` (precarga fast al arrancar)
 y por tier: `model`, `keep_alive` ("5m") y `auto_pull` (true).
+
+### Escalado por verificación
+
+`harness/model_router/escalation_policy.py` decide, tras cada generación local,
+si se **acepta** (verificador estructural + confianza verbalizada), se **escala**
+en la escalera (fast → quality → coding → reasoning) o se delega a **cloud** en
+el tope.
 
 ### Comandos
 
 ```bash
 # Instalar un modelo manualmente (el harness tambien auto-instala con auto_pull)
-ollama pull qwen3:4b
+ollama pull hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL
 ollama pull qwen3-embedding:0.6b
 
 # Ver modelos cargados en memoria (keep_alive "5m": warm/unload)

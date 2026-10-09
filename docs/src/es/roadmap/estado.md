@@ -1,9 +1,15 @@
 # Roadmap y Estado del Proyecto
 
-> Estado actual del sistema Swarmind Harness a 2026-08-11.
+> Estado actual del sistema Swarmind Harness a 2026-09-30.
 > Documento vivo que refleja el progreso, hitos y proximos objetivos.
 
-## Estado Actual (2026-08-04)
+## Estado Actual (2026-09-30)
+
+### Estado 2026-09-30 (flota frontera 2026 + ctx 16K + escalado por verificación)
+
+- **Flota local frontera 2026** — SSOT medida en `harness/model_router/fleet_manifest.py` (6 modelos con id/tier/`num_ctx`/`vram_mb`/`keep_alive`): fast `Qwen3.5-4B UD-Q4_K_XL` (8K), quality `MiMo-V2.6-Distill-Qwen-9B IQ4_XS` (4K), coding `JackOD-9B-Coder IQ4_XS` (4K), reasoning `Ornith-1.5-9B Q4_K_M` (4K), embedding `qwen3-embedding:0.6b`, vision `qwen3-vl:4b`. `recommend_num_ctx`/`footprint_mb` derivan del manifiesto; `.opencode/config/ollama_models.yaml` es el cableado de runtime validado por `test_fleet_manifest.py`.
+- **Ventana 16K por servidor (libera 17.4 GB)** — `scripts/enable_gpu.py` persiste cinco topes anti-OOM: `OLLAMA_CONTEXT_LENGTH=8192`, `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KV_CACHE_TYPE=q8_0` (9B a 16K baja de 5.7GB a 5.15GB con KV comprimida). Elimina las variantes "16k baked"; el cliente igual envía `options.num_ctx`.
+- **Escalado por verificación (ADR-0102)** — `harness/model_router/escalation_policy.py`: verificador estructural barato + confianza verbalizada → `accept`/`escalate` (fast→quality→coding→reasoning)/`cloud`; infra prerequisito para calibrar por isotonic con el journal etiquetado (verificar > clasificar, MetaRoute; UCCI small→large).
 
 ### Estado 2026-09-08/09 (ADRs 0074-0083 + agent-rigor + merge a main)
 - **PR #16 mergeado a `main`** (`d3934fe`): required {lint, test, security} verdes; CodeQL v4; 2 hilos resueltos (ellipsis→NotImplementedError + falso positivo Enum).
@@ -11,8 +17,7 @@
 (nuevo `platform-engineer`), principios v3.3.0 (ADV verificación adversarial).
 - **ADR-0083 Roles/procesos élite (APLICADO)** — agente `platform-engineer` (thinnest viable platform, DORA SLO) + `FeatureFlags` (`SWARMIND_FF_*=1`, merge≠release) + spec como pitch (`appetite`/`boundaries`/RFC en template) + postmortem blameless (`specs/postmortem_template.md`) + principios v3.3.0 (ADV atacante/steelman/juez, SWE-ABS, RvB) + **limpieza de 7 monolitos sombreados** (~4500 líneas muertas; la migración a paquetes nunca borró los originales; 433+68 tests verdes; resta `agent_kpi_tracker.py` 713L).
 - **ADR-0076 Tooling Linux-first (APLICADO)** — `tool_output_filter.py` (wrapper rtk −90% output bash, opt-in) + `idempotency_guard.py` (dedup por key+hash, replay cache) + `structured_enforcer` strict keys (anti-troyanos) + `TgrepBackend` (Microsoft, opt-in); principios TOOLING (Python/bash, PowerShell prohibido por mojibake UTF-8); dump `Randon search 9-8-2026.md` destilado (rtk 79K★, tgrep, agentic=distributed systems, K2 Horizon diferido).
-- **opencode local por defecto** — `"model": "ollama/qwen3:4b"` + 6 modelos registrados + `agent.*.permission.task` granular (coordinator primary; builder/guardian/scientist least-privilege).
-- **Backup a Google Drive** — `scripts/backup_to_gdrive.py` (robocopy /E idempotente, 11 proyectos OK, sensibles opt-in SEG).
+- **opencode local por defecto** — `"model": "llamacpp/jackod-9b-coder-iq4-xs"` + `"small_model": "llamacpp/qwen3-5-4b-gguf-ud-q4-k-xl"` vía provider `llamacpp` (llama.cpp / llama-swap en `http://127.0.0.1:11434/v1`, OpenAI-compatible) + 6 modelos registrados (nombres cortos: 4B fast, MiMo quality, JackOD coding, Ornith reasoning, embedding y vision) + `agent.*.permission.task` granular (coordinator primary; builder/guardian/scientist least-privilege).
 
 ### Estado 2026-09-06 (ADRs frontera 0065-0067 + llm-grep + gitignore ADRs)
 

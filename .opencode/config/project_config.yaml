@@ -30,7 +30,7 @@ OUTPUTS_DIRS:
 
 # ── FDE / EVOLVE Config ───────────────────────────────────────────────────────
 FDE_MISSION: "Proveer un harness de orquestacion multi-agente robusto, auto-curativo y auto-mejorable"
-FDE_STAKEHOLDER: "Todos los proyectos que usan Swarmind (CQE, Hermes, etc.)"
+FDE_STAKEHOLDER: "Todos los proyectos que usan Swarmind"
 FDE_METRIC: "Tests pasando + tiempo medio entre fallos + cobertura de skills"
 FDE_DAY2: "Mantenimiento por el equipo ASI-Evolve, mejora continua via cognition store"
 FDE_DELTA: "Token Economics v2026 implementado: -38% tokens, -41% costo, -44% tiempo"
@@ -60,7 +60,7 @@ TOKEN_CONFIG:
 # ── Harness Core Config ───────────────────────────────────────────────────────
 HARNESS:
   language: "Python"
-  framework: "LanceDB + MCP + Hermes bridge"
+  framework: "LanceDB + MCP"
   collections_lancedb:
     - tasks_board
     - rag_chunks
@@ -78,13 +78,12 @@ HARNESS:
     - session_kpis
     - agent_interactions
   agent_count: 24
-  skill_count: 35
+  skill_count: 36
   model_routing: "hybrid (local Ollama + cloud API)"
   hitl_enabled: true
   gateway_modes: ["cli"]
   scheduler_enabled: true
   evolve_loop_enabled: true
-  hermes_bridge_enabled: true
   self_healing:
     circuit_breaker: true
     timeout_seconds: 300
@@ -95,6 +94,30 @@ HARNESS:
 AGENTS:
   total: 24
   agent_list:
+    - architect
+    - backend-engineer
+    - builder
+    - coordinator
+    - data-engineer
+    - database-administrator
+    - devops
+    - evolve
+    - evolve-analyzer
+    - evolve-engineer
+    - evolve-researcher
+    - frontend-engineer
+    - guardian
+    - mobile-engineer
+    - platform-engineer
+    - product-manager
+    - qa-engineer
+    - release-ops
+    - researcher
+    - reviewer
+    - scientist
+    - security-engineer
+    - test-writer
+    - token-budget-auditor
     - architect
     - backend-engineer
     - builder
@@ -121,8 +144,44 @@ AGENTS:
     - token-budget-auditor
 
 SKILLS:
-  total: 35
+  total: 36
   skill_list:
+    - ads-optimizer
+    - agent-rigor
+    - alpha-research
+    - architecture
+    - atdd-spec
+    - behavioral-economics
+    - business-strategy
+    - communication
+    - creative-design
+    - data-science
+    - devops-infra
+    - diagram-design
+    - education
+    - ethics
+    - evolve
+    - frontend-uiux
+    - healthtech
+    - hedgefund
+    - legal-doc
+    - linguistics
+    - math-doc
+    - physical-sciences
+    - pos-retail
+    - process-over-tools
+    - project-management
+    - psychology
+    - quant-trading
+    - risk-execution
+    - risk-intelligence
+    - rust-lang
+    - science-doc
+    - security-audit
+    - skill-engineering
+    - sociology
+    - sustainability
+    - swarm-release-ops
     - ads-optimizer
     - agent-rigor
     - alpha-research

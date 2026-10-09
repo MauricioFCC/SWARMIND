@@ -4,11 +4,14 @@
 
 
 name: product-manager
+version: 1.0.0
+license: MIT
+compatibility: 'Python 3.12+; SWARMIND harness'
 domain: management
 triggers: [product, requirement, roadmap, feature, user-story, backlog, stakeholder, kpi, okr, sprint, prioritization, mvp, epic, user-research, market]
 capabilities: [product_management, requirements, roadmapping, stakeholder_management, prioritization, user_research]
 aliases: [pm, product-manager, product-owner, po, tech-pm]
-description: "Product manager especializado en requerimientos, roadmaps, stakeholders y estrategia de producto con OKRs | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se definen requerimientos, roadmaps, OKRs o priorización (product, roadmap, user-story, backlog, kpi, okr, stakeholder, mvp). Alcance: gestión de producto; para arquitectura ver architect; para implementación ver builder. | UPG·NAM·FRS (reglas en base_principles.md)"
 quality: {docstrings_es: true, error_actionable: true, documentation: true, stakeholder_driven: true, evidence_based: true}
 ---
 
@@ -101,3 +104,13 @@ Toda decision de producto, PRD o user story DEBE tener justificacion documentada
 - [ ] Metricas de exito definidas para cada feature entregado
 - [ ] Documentacion en espanol con contexto, decisiones y trade-offs
 - [ ] Errores legibles y accionables con evidencia
+
+## Anti-patrones
+- Requerimientos sin criterio de aceptación medible (SPE).
+- Roadmap sin evidencia de usuario/mercado (RSF).
+- Priorizar por opinión en vez de impacto/esfuerzo (CPD).
+- Prometer alcance sin appetite ni boundaries (Shape Up).
+
+## ADR-0098
+
+- | **ADR-0098** | Clean Architecture (CLA: dependencias Presentation->Application->Domain<-Infrastructure, domain puro) \| validacion de input (VAL) \| fail-fast tipado con cause (FST) \| tests AAA (AAA) \| cambios atomicos (ATM). Ver core/base_principles.md. |

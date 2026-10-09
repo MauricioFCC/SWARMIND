@@ -28,9 +28,9 @@ import re
 import struct
 import sys
 import zlib
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 from urllib.parse import unquote
 from xml.etree import ElementTree as ET
 
@@ -47,7 +47,7 @@ class PayloadTooLarge(ValueError):
     """Raised when compressed metadata expands beyond the supported limit."""
 
 
-def _fail(msg: str) -> "NoReturn":  # type: ignore[valid-type]
+def _fail(msg: str) -> NoReturn:
     print(f"drawio_extract: {msg}", file=sys.stderr)
     raise SystemExit(2)
 
@@ -87,7 +87,7 @@ def _inflate(payload: str) -> str | None:
     """Undo draw.io's base64 + raw-deflate + URL-encoding pipeline."""
     try:
         raw = base64.b64decode(payload, validate=False)
-    except Exception:
+    except ValueError:  # binascii.Error hereda de ValueError
         return None
     for wbits in (-15, 15, 47):
         try:
@@ -96,7 +96,7 @@ def _inflate(payload: str) -> str | None:
             _fail(
                 f"decoded diagram exceeds the {MAX_XML_BYTES // (1024 * 1024)} MiB limit"
             )
-        except Exception:
+        except zlib.error:  # se prueba el siguiente wbits; el fallo es esperado
             continue
         # draw.io URL-encodes before deflating; unquote is a no-op if it didn't.
         return unquote(text)

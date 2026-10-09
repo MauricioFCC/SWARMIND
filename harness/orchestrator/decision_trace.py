@@ -223,4 +223,48 @@ def format_decision_header(record: DecisionRecord) -> str:
     return record.to_header()
 
 
-__all__ = ["DecisionRecord", "DecisionTrace", "format_decision_header"]
+# ---------------------------------------------------------------------------
+# Trace global compartido (singleton lazy, thread-safe)
+# ---------------------------------------------------------------------------
+
+_DEFAULT_TRACE: DecisionTrace | None = None
+_DEFAULT_TRACE_LOCK = threading.Lock()
+
+
+def default_trace() -> DecisionTrace:
+    """
+    Devuelve el trace global compartido (singleton lazy, thread-safe).
+
+    Lo usan los selectores (`agent_selector`, `delegation_engine`) para dejar
+    traza de las decisiones de routing sin acoplar a cada instancia.
+
+    Returns:
+        DecisionTrace compartido del proceso.
+    """
+    global _DEFAULT_TRACE
+    if _DEFAULT_TRACE is None:
+        with _DEFAULT_TRACE_LOCK:
+            if _DEFAULT_TRACE is None:
+                _DEFAULT_TRACE = DecisionTrace()
+    return _DEFAULT_TRACE
+
+
+def reset_default_trace() -> None:
+    """
+    Reinicia el trace global (solo para tests; no usar en produccion).
+
+    Returns:
+        None.
+    """
+    global _DEFAULT_TRACE
+    with _DEFAULT_TRACE_LOCK:
+        _DEFAULT_TRACE = None
+
+
+__all__ = [
+    "DecisionRecord",
+    "DecisionTrace",
+    "default_trace",
+    "format_decision_header",
+    "reset_default_trace",
+]

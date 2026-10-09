@@ -15,6 +15,7 @@ ubicacion global re-instalable en cualquier PC nuevo.
 """
 from __future__ import annotations
 
+import subprocess
 import sys
 from pathlib import Path
 
@@ -30,21 +31,21 @@ import verify_swarmind_setup
 
 
 def _capture_system(monkeypatch: pytest.MonkeyPatch) -> list[str]:
-    """Mockea os.system para capturar setx sin escribir en el entorno real.
+    """Mockea subprocess.run para capturar setx sin tocar el entorno real.
 
     Args:
         monkeypatch: Fixture de monkeypatch de pytest.
 
     Returns:
-        Lista de comandos capturados (vacia si no se llamo system).
+        Lista de comandos capturados (join de argv; vacia si no se llamo run).
     """
     calls: list[str] = []
 
-    def fake_system(command: str) -> int:
-        calls.append(command)
-        return 0
+    def fake_run(args, *a, **k):
+        calls.append(" ".join(str(x) for x in args))
+        return subprocess.CompletedProcess(args, 0)
 
-    monkeypatch.setattr(verify_swarmind_setup.os, "system", fake_system)
+    monkeypatch.setattr(verify_swarmind_setup.subprocess, "run", fake_run)
     return calls
 
 
@@ -89,6 +90,17 @@ def test_harness_files_corresponden_a_archivos_reales() -> None:
         assert path.is_file() or is_pkg_dir, f"Entrada muerta en _HARNESS_FILES: {fname}"
 
 
+def test_harness_include_cubre_context_evals_validation() -> None:
+    """Regresion ADR-0042: el global debe incluir context, evals y validation.
+
+    Estos subpaquetes del motor se sincronizan via ``_HARNESS_INCLUDE``; si se
+    omiten, el harness global queda incompleto y los validadores/evals fallan.
+    """
+    include = sync_opencode_global._HARNESS_INCLUDE
+    for required in ("validation", "context", "evals"):
+        assert required in include, f"Falta '{required}' en _HARNESS_INCLUDE"
+
+
 # ---------------------------------------------------------------------------
 # 2. Memoria central automatica con estructura LanceDB (Causa 1 ADR-0042)
 # ---------------------------------------------------------------------------
@@ -102,6 +114,14 @@ def test_ensure_memory_structure_crea_estructura_completa(tmp_path: Path) -> Non
         assert (tmp_path / rel).is_dir(), f"Falta directorio de memoria: {rel}"
     assert result["created"] >= 1
     assert result["root"] == tmp_path
+
+
+def test_ensure_memory_structure_no_crea_dirs_planned_unused(tmp_path: Path) -> None:
+    """No recrea carpetas planned-but-unused (evita que 'reaparezcan' al borrarlas)."""
+    setup_memory_central.ensure_memory_structure(memory_root=tmp_path)
+
+    for rel in ("syntheses", "personal", "projects", "inbox", "exports"):
+        assert not (tmp_path / rel).exists(), f"No debe recrear {rel} (unused)"
 
 
 def test_ensure_memory_structure_idempotente(tmp_path: Path) -> None:

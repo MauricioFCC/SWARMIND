@@ -27,11 +27,11 @@ from __future__ import annotations
 import ast
 import logging
 import re
-import subprocess
-import sys
 import tempfile
 from pathlib import Path
 from typing import Any
+
+from harness.validation.sandbox_executor import SandboxExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -296,18 +296,12 @@ def _run_hypothesis_in_subprocess(
         script_path = Path(tmp_dir) / "pbt_check.py"
         script_path.write_text(script, encoding="utf-8")
         try:
-            result = subprocess.run(
-                [sys.executable, str(script_path)],
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
-            return False, f"Timeout after {timeout}s"
+            result = SandboxExecutor().run_script(script_path, timeout_s=timeout)
         except Exception as e:  # noqa: BLE001
             return False, f"{type(e).__name__}: {e}"
 
+    if result.returncode == 124:
+        return False, f"Timeout after {timeout}s"
     if result.returncode == 0:
         return True, ""
     return False, (result.stdout + result.stderr)[:300]

@@ -33,3 +33,12 @@ Skill de disciplina de ingeniería: commit/test/lint como gate pre-merge, anti-a
 2. Prohibido parchear el test para "pintar verde" (anti-patrón): el test es el contrato.
 3. Coverage es piso, no techo: line+branch con `--cov-branch`; mutation score ≥70% para merge.
 4. Cada fix trae su test de regresión (el mutante que lo hubiera matado).
+
+## Checklist
+
+- [ ] Gate T1 determinista ejecutado con evidencia (lint + tests)
+- [ ] Mutation score >= 70% para merge (>=85% nightly)
+- [ ] Tests no decorativos: cubren ramas, no solo lineas
+- [ ] 0 `except` silenciosos; errores con WHAT+WHY+WHERE
+- [ ] Cada fix trae su test de regresion (el mutante que lo hubiera matado)
+- [ ] Evidencia cruda citada en la respuesta (VER)
