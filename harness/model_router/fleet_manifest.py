@@ -13,14 +13,18 @@ WHERE: `model_windows.recommend_num_ctx` (ventana), `vram_guard.footprint_mb`
 (presupuesto), `local_executor` (options.num_ctx). El YAML de config sigue
 siendo el cableado de runtime y los tests verifican que coincida.
 
-Medido 2026-10-01 (RTX 4060 8GB, Ollama 0.34.4). Tras el BSOD
-VIDEO_TDR_FAILURE (0x116) del 2026-10-01 (9B + ctx 16384 + Vulkan en 8GB)
-TODA la flota corre a `num_ctx=8192` y `keep_alive="0"` salvo el tier fast.
+Flota 2026-10-08 (RTX 4060 8GB, backend llama.cpp / llama-swap en
+127.0.0.1:11434). Flota REDUCIDA a 4 modelos servidos por nombre corto +
+alias (llama-swap expone ambos): coding `qwen2.5-coder-3b-iq4-xs`, quality
+`phi-4-mini-instruct-q4-k-m`, fast `qwen3-5-4b-gguf-ud-q4-k-xl` y embedding
+`qwen3-embedding-0-6b`. Se RETIRAN jackod-9b, mimo-9b, ornith-9b y
+qwen3-vl-4b (ya no caben/utilizan en 8GB con el escritorio WDDM).
 
-2026-10-05: tier coding subido de Qwopus3.5-9B-v3 a `mannix/JackOD-9B-Coder`
-(omnimerge agentico Qwen3.5-9B: LCB v6 hard ~78, MTP, Apache-2.0). Usa
-namespace de la Ollama library (no hay GGUF hf.co) y IQ4_XS (~5.3GB) para
-maximizar el KV headroom en 8GB.
+`num_ctx`: llama-server sirve los modelos a 32768 tokens, pero el harness
+DECLARA 8192 porque el techo anti-TDR del `GpuBudget` (`gpu_guard.SAFE_CTX_MAX`)
+sigue en 8192 (el BSOD VIDEO_TDR_FAILURE 0x116 del 2026-10-01 lo fijo). El
+manifiesto es la ventana que el harness SOLICITA; no contradice al servidor.
+TODA la flota corre con `keep_alive="0"` (sin residencia: no hay solape).
 """
 
 from __future__ import annotations
@@ -39,8 +43,8 @@ class FleetModel:
     """Hechos medidos de un modelo de la flota local.
 
     Attributes:
-        id: Nombre canonico en Ollama (pullable desde el registro).
-        tier: Rol de capacidad (fast/quality/coding/reasoning/embedding/vision).
+        id: Nombre canonico servido por llama-swap (nombre corto).
+        tier: Rol de capacidad (fast/quality/coding/embedding).
         num_ctx: Ventana real que se solicita via `options.num_ctx`.
         vram_mb: VRAM pico medida (MB, conservadora sin compresion KV).
         keep_alive: Politica de residencia ("0" = descarga inmediata).
@@ -55,57 +59,69 @@ class FleetModel:
     matches: tuple[str, ...]
 
 
-#: Flota canonica 2026-10-01. `num_ctx` escalado por TAMANO del modelo:
-#: los 9B Q4 (~6.1-6.7GB) van a 4096 para dejar KV headroom en 8GB; el 4B
-#: (3.6GB) admite 8192. Techo duro anti-TDR: `gpu_guard.SAFE_CTX_MAX=8192`.
-#: 16384 NO es seguro (causa del BSOD 0x116 del 2026-10-01).
-#: `keep_alive="0"` en TODOS: sin residencia no hay solape de modelos.
+#: Flota canonica 2026-10-08 (4 modelos). `num_ctx` DECLARADO a 8192 para
+#: toda la flota: el servidor los corre a 32768 pero el techo anti-TDR del
+#: harness sigue en `gpu_guard.SAFE_CTX_MAX=8192` (BSOD 0x116 del 2026-10-01).
+#: `vram_mb` es el pico MEDIDO con KV a 8192. `keep_alive="0"` en TODOS:
+#: sin residencia no hay solape de modelos en 8GB. `id` = nombre corto que
+#: sirve llama-swap; `matches` cubre el nombre corto + el alias largo.
 FLEET: tuple[FleetModel, ...] = (
     FleetModel(
-        id="hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL",
-        tier="fast", num_ctx=8192, vram_mb=3600, keep_alive="0",
+        id="qwen3-5-4b-gguf-ud-q4-k-xl",
+        tier="fast", num_ctx=8192, vram_mb=4600, keep_alive="0",
         matches=(
-            "unsloth/qwen3.5-4b", "qwen3.5-4b", "ud-q4_k_xl",
-            # nombre corto servido por llama-swap (guiones en vez de puntos)
-            "qwen3-5-4b", "ud-q4-k-xl",
+            "qwen3-5-4b-gguf-ud-q4-k-xl",
+            # alias largo servido por llama-swap (guiones/puntos normalizados)
+            "hf.co/unsloth/qwen3.5-4b-gguf:ud-q4_k_xl",
+            "unsloth/qwen3.5-4b", "qwen3.5-4b", "ud-q4_k_xl", "ud-q4-k-xl",
         ),
     ),
     FleetModel(
-        id="hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS",
-        tier="quality", num_ctx=4096, vram_mb=6100, keep_alive="0",
-        matches=("bartowski/mimo", "mimo-v2.6", "mimo"),
-    ),
-    FleetModel(
-        id="mannix/JackOD-9B-Coder:IQ4_XS",
-        tier="coding", num_ctx=4096, vram_mb=5800, keep_alive="0",
-        matches=("mannix/jackod", "jackod-9b-coder", "jackod"),
-    ),
-    FleetModel(
-        id="hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M",
-        tier="reasoning", num_ctx=4096, vram_mb=6700, keep_alive="0",
+        id="phi-4-mini-instruct-q4-k-m",
+        tier="quality", num_ctx=8192, vram_mb=5700, keep_alive="0",
         matches=(
-            "ornith-ai/ornith", "ornith-1.5",
-            # nombre corto servido por llama-swap (guiones en vez de puntos)
-            "ornith-1-5-9b", "ornith-1-5",
+            "phi-4-mini-instruct-q4-k-m",
+            # alias largo servido por llama-swap
+            "microsoft_phi-4-mini-instruct-q4_k_m",
+            "microsoft_phi-4-mini", "phi-4-mini",
         ),
     ),
     FleetModel(
-        id="qwen3-embedding:0.6b",
-        tier="embedding", num_ctx=8192, vram_mb=400, keep_alive="0",
-        matches=("qwen3-embedding",),
+        id="qwen2.5-coder-3b-iq4-xs",
+        tier="coding", num_ctx=8192, vram_mb=3300, keep_alive="0",
+        matches=(
+            "qwen2.5-coder-3b-iq4-xs",
+            # alias largo servido por llama-swap
+            "qwen2.5-coder-3b-instruct-iq4_xs",
+            "qwen2.5-coder-3b",
+        ),
     ),
     FleetModel(
-        id="qwen3-vl:4b",
-        tier="vision", num_ctx=8192, vram_mb=2600, keep_alive="0",
-        matches=("qwen3-vl",),
+        id="qwen3-embedding-0-6b",
+        tier="embedding", num_ctx=8192, vram_mb=2100, keep_alive="0",
+        matches=(
+            "qwen3-embedding-0-6b",
+            # alias largo servido por llama-swap
+            "qwen3-embedding-0.6b-q8_0",
+            "qwen3-embedding",
+        ),
+    ),
+    FleetModel(
+        id="deepseek-r1-distill-qwen-7b-q2-k",
+        tier="deep", num_ctx=8192, vram_mb=4400, keep_alive="0",
+        matches=(
+            "deepseek-r1-distill-qwen-7b-q2-k",
+            # alias largo servido por llama-swap
+            "deepseek-r1-distill-qwen-7b-q2_k",
+        ),
     ),
 )
 
 
 #: Tiers declarados en el cableado de runtime (`.opencode/config/ollama_models.yaml`).
-#: El manifiesto es un superset (incluye reasoning, sin tier en el enum).
+#: La flota reducida 2026-10-08 tiene exactamente estos 4 tiers.
 YAML_TIERS: tuple[str, ...] = (
-    "fast", "quality", "coding", "embedding", "vision",
+    "fast", "quality", "coding", "embedding",
 )
 
 

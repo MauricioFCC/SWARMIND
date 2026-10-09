@@ -23,7 +23,7 @@
 | Skills/agentes | skill_composition (calls + invocation + compat) + competence_model (Beta/Thompson) |
 | Contexto | artifact_store + cue_ledger + compaction_calibration + prune_then_summarize |
 | Tooling | rtk wrapper + idempotency_guard + scripts Python/bash (PowerShell prohibido, corrompe UTF-8) |
-| opencode local | default `ollama/hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL` + 5 modelos registrados + permisos por agente |
+| opencode local | default `llamacpp/jackod-9b-coder-iq4-xs` (+ `small_model` 4B) via llama.cpp/llama-swap `127.0.0.1:11434/v1` + 6 modelos registrados + permisos por agente |
 | Flota local (SSOT) | `harness/model_router/fleet_manifest.py` (6 modelos: fast/quality/coding/reasoning/embedding/vision) + ventana 16K por servidor |
 | Escalado local | `escalation_policy.py` (verificador estructural + confianza verbalizada → accept/escalate/cloud) |
 | Modulos Orchestrator | 19 paquetes / 142 modulos |
@@ -120,7 +120,7 @@ Swarmind compite con **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (4
 - **Verify-replan + trazas** (ADR-0079): `verify_replan_gate.py` (VMAO) + `trace_viewer.py` (replay sin LLM) + permisos por agente en `opencode.json` + skill `agent-rigor`.
 - **Competición aplicada** (ADR-0080): `cp_spec_gate.py` (4 pilares) + `dual_verify.py` (fast vs brute-force).
 - **Tooling Linux-first** (ADR-0076): wrapper `rtk` (−90% output bash) + `idempotency_guard` (distributed systems); scripts Python/bash (PowerShell prohibido, corrompe UTF-8).
-- **opencode local por defecto** (este equipo): `"model": "ollama/hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL"` + 4 modelos registrados.
+- **opencode local por defecto** (este equipo): `"model": "llamacpp/jackod-9b-coder-iq4-xs"` (+ `"small_model": "llamacpp/qwen3-5-4b-gguf-ud-q4-k-xl"`), provider `llamacpp` sobre llama.cpp/llama-swap (`http://127.0.0.1:11434/v1`) + 6 modelos registrados por nombre corto.
 - **CI 3-tier verdes**: required {lint, test, security} PASS (extras dev en CI, SDO+presupuesto skills, safety con ignore CVE-2025-33228 falso-positivo).
 - **main sincronizado**: PR #16 mergeado a `main` (`d3934fe`); ADRs 0065-0080 versionados local (pre-push los bloquea, correcto por diseño).
 

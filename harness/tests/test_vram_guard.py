@@ -39,7 +39,10 @@ def test_unsloth_model_ids_resolve() -> None:
     from harness.model_router.vram_guard import footprint_mb
 
     assert footprint_mb("unsloth:unsloth/gemma-4-26B") == 16000
-    assert footprint_mb("unsloth:qwen3.5-4b-UD-Q4_K_XL") == 3600
+    # El manifiesto GANA sobre la tabla de fallback: el fast de flota (4B,
+    # KV a 8192) mide 4600MB (no los 3600 de la tabla legacy).
+    assert footprint_mb("unsloth:qwen3.5-4b-UD-Q4_K_XL") == 4600
+    # Retirado de la flota: cae a la tabla de fallback (ornith 6700).
     assert footprint_mb("unsloth:ornith-1.5-9b") == 6700
 
 

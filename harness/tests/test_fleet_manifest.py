@@ -50,8 +50,8 @@ def test_footprint_derives_from_manifest() -> None:
 def test_fleet_ctx_within_safe_ceiling() -> None:
     """Toda la flota respeta el techo anti-TDR de 8192 (post-BSOD 0x116).
 
-    Los 9B (~6.6GB) declaran 4096 para dejar KV headroom en 8GB; el techo
-    es un MAXIMO, no un objetivo.
+    La flota reducida 2026-10-08 declara 8192 en los 4 modelos (el servidor
+    los corre a 32768, pero el harness nunca pide mas que el techo).
     """
     for entry in FLEET:
         assert entry.num_ctx <= SAFE_CTX_MAX, entry.id
@@ -75,6 +75,25 @@ def test_retired_aliases_no_longer_resolve() -> None:
     """Los alias cortos retirados 2026-10-01 ya no matchean (evita deriva)."""
     for retired in ("qwopus-v3-9b-16k", "qwen38-9b-16k",
                     "opus-distill-9b-16k", "minicpm5-2b-32k"):
+        assert model_entry(retired) is None, retired
+
+
+def test_retired_fleet_models_no_longer_resolve() -> None:
+    """Los modelos retirados 2026-10-08 ya no matchean (flota reducida a 4).
+
+    jackod-9b, mimo-9b, ornith-9b y qwen3-vl-4b salieron de la flota; ningun
+    nombre (canonico ni corto) debe resolver a una entrada.
+    """
+    for retired in (
+        "mannix/JackOD-9B-Coder:IQ4_XS",
+        "jackod-9b-coder-iq4-xs",
+        "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS",
+        "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs",
+        "hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M",
+        "ornith-1-5-9b-gguf-q4-k-m",
+        "qwen3-vl:4b",
+        "qwen3-vl-4b",
+    ):
         assert model_entry(retired) is None, retired
 
 

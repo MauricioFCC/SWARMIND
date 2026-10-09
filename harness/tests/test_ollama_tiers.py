@@ -271,15 +271,20 @@ def test_load_from_yaml_with_missing_file_uses_defaults(tmp_path: Path) -> None:
 
 
 def test_load_from_yaml_reads_repo_ssot() -> None:
-    """El SSOT real (.opencode/config/ollama_models.yaml) carga los 6 tiers."""
+    """El SSOT real (.opencode/config/ollama_models.yaml) carga los 4 tiers.
+
+    Flota reducida 2026-10-08: el YAML declara fast/quality/coding/embedding.
+    El tier VISION no esta en el YAML y conserva el default del enum (fuera de
+    la flota local; su modelo se sirve solo si se re-habilita explicitamente).
+    """
     repo_root = Path(__file__).resolve().parents[2]
     ssot = repo_root / ".opencode" / "config" / "ollama_models.yaml"
     router = OllamaTierRouter.load_from_yaml(ssot)
-    assert router.model_for(CapabilityTier.FAST) == "hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL"
-    assert router.model_for(CapabilityTier.QUALITY) == "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS"
-    assert router.model_for(CapabilityTier.CODING) == "mannix/JackOD-9B-Coder:IQ4_XS"
-    assert router.model_for(CapabilityTier.EMBEDDING) == "qwen3-embedding:0.6b"
-    assert router.model_for(CapabilityTier.VISION) == "qwen3-vl:4b"
+    assert router.model_for(CapabilityTier.FAST) == "qwen3-5-4b-gguf-ud-q4-k-xl"
+    assert router.model_for(CapabilityTier.QUALITY) == "phi-4-mini-instruct-q4-k-m"
+    assert router.model_for(CapabilityTier.CODING) == "qwen2.5-coder-3b-iq4-xs"
+    assert router.model_for(CapabilityTier.EMBEDDING) == "qwen3-embedding-0-6b"
+    assert router.model_for(CapabilityTier.VISION) == DEFAULT_VISION_MODEL
 
 
 def test_is_frontier_only_detects_design_and_planning() -> None:

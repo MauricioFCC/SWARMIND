@@ -14,10 +14,10 @@ from harness.model_router.model_windows import (
     recommend_num_ctx,
 )
 
-_FAST = "hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL"
-_MIMO = "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS"
-_JACKOD = "mannix/JackOD-9B-Coder:IQ4_XS"
-_ORNITH = "hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M"
+_FAST = "qwen3-5-4b-gguf-ud-q4-k-xl"
+_QUALITY = "phi-4-mini-instruct-q4-k-m"
+_CODING = "qwen2.5-coder-3b-iq4-xs"
+_EMBEDDING = "qwen3-embedding-0-6b"
 
 
 def test_default_ctx_is_safe_ceiling() -> None:
@@ -45,13 +45,11 @@ def test_retired_models_fall_to_default() -> None:
 
 
 def test_recommend_fleet_windows_declared() -> None:
-    """La flota declara su ventana segura: 4B=8192, 9B=4096 (SSOT, ADR-0101)."""
+    """La flota reducida declara su ventana segura: 4 modelos a 8192 (ADR-0101)."""
     assert recommend_num_ctx(_FAST) == 8192
-    assert recommend_num_ctx(_MIMO) == 4096
-    assert recommend_num_ctx(_JACKOD) == 4096
-    assert recommend_num_ctx(_ORNITH) == 4096
-    assert recommend_num_ctx("qwen3-embedding:0.6b") == 8192
-    assert recommend_num_ctx("qwen3-vl:4b") == 8192
+    assert recommend_num_ctx(_QUALITY) == 8192
+    assert recommend_num_ctx(_CODING) == 8192
+    assert recommend_num_ctx(_EMBEDDING) == 8192
 
 
 def test_recommend_unknown_defaults() -> None:
@@ -67,11 +65,11 @@ def test_fits_small_task() -> None:
 def test_overflow_goes_cloud() -> None:
     """Prompt que excede la ventana declarada no va a local (evita el volcado)."""
     assert fits_in_window("llama3.2:3b", task_chars=50_000) is False
-    # Ornith 9B: ventana 4096 - 1024 reserva = 3072; una tarea de 60K chars
+    # Coding 3B: ventana 8192 - 1024 reserva = 7168; una tarea de 60K chars
     # (15000 tok) NO cabe y va a cloud.
-    assert fits_in_window(_ORNITH, task_chars=60_000) is False
-    # Tarea chica SI cabe en la ventana de 4096.
-    assert fits_in_window(_ORNITH, task_chars=1_000) is True
+    assert fits_in_window(_CODING, task_chars=60_000) is False
+    # Tarea chica SI cabe en la ventana de 8192.
+    assert fits_in_window(_CODING, task_chars=1_000) is True
 
 
 def test_system_budget_documented() -> None:

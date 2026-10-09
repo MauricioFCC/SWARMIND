@@ -28,9 +28,15 @@ _MODELS_URL = "http://localhost:11434/v1/models"
 _TIMEOUT_SECONDS = 3
 
 #: Familias retiradas 2026-09-30: no deben volver a estar instaladas.
+#: 2026-10-08: se suman jackod/mimo/ornith/qwen3-vl (flota reducida a 4) y
+#: se retira "qwen2.5-coder" de la lista: ahora ES parte de la flota
+#: (`qwen2.5-coder-3b-iq4-xs`, tier coding).
 _RETIRED = (
     "bonsai", "olmoe", "lfm2.5", "llama3.2", "qwen3:4b",
-    "qwen2.5-coder", "deepseek-r1", "glm-z1", "deepseek-v4-flash",
+    # "deepseek-r1:" (tag cloud); NO "deepseek-r1" a secas: la flota local
+    # tiene `deepseek-r1-distill-qwen-7b-q2-k` (Q2_K CUDA).
+    "deepseek-r1:", "glm-z1", "deepseek-v4-flash",
+    "jackod", "mimo", "ornith", "qwen3-vl",
 )
 
 #: Retirados 2026-10-01 (BSOD TDR): el coordinador borrara sus blobs DESPUES

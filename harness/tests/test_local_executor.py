@@ -302,7 +302,7 @@ def test_unsloth_degenerate_falls_to_ollama() -> None:
 
 
 def test_low_vram_degrades_to_smallest_text_model() -> None:
-    """Sin VRAM para el tier pedido, gpu_guard degrada al 4B (anti-TDR)."""
+    """Sin VRAM para el tier pedido, gpu_guard degrada al coder 3B (anti-TDR)."""
     from harness.model_router.ollama_tiers import CapabilityTier
 
     client = _FakeClient()
@@ -311,7 +311,8 @@ def test_low_vram_degrades_to_smallest_text_model() -> None:
     )
     out = ex.execute("resume esto")
     assert out.executed_locally is True
-    assert "Qwen3.5-4B" in out.model or "qwen3.5-4b" in out.model
+    # Flota 2026-10-08: el mas chico que cabe (3300MB) es el coder 3B.
+    assert out.model == "qwen2.5-coder-3b-iq4-xs"
     # La ventana enviada respeta el techo anti-TDR.
     assert client.last_kwargs["options"]["num_ctx"] <= 8192
 

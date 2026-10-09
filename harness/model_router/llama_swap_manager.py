@@ -541,8 +541,9 @@ class LlamaSwapManager:
             True si el backend acepto la orden; False si fallo o no la expone.
         """
         url = f"{self._config.base_url}{UNLOAD_PATH}"
+        # Timeout largo: descargar un 9B de VRAM tarda mas que un health check.
         try:
-            response = requests.post(url, timeout=HEALTH_TIMEOUT_S)
+            response = requests.post(url, timeout=self._config.start_timeout_s)
         except requests.RequestException as exc:
             logger.warning("llama_swap_manager: unload_all fallo (%s)", exc)
             return False
