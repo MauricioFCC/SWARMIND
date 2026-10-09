@@ -54,4 +54,33 @@ opencode:
   model: qwen2.5-coder-3b-iq4-xs
   small_model: qwen2.5-coder-3b-iq4-xs
   cloud_oracle: opencode-go/deepseek-v4.1-flash
-  agents: {coordinator: cloud_oracle, builder: qwen2.5-coder-3b-iq4-xs, guardian: phi-4-mini-instruct-q4-k-m, scientist: phi-4-mini-instruct-q4-k-m, reviewer: deepseek-r1-distill-qwen-7b-q2-k}
+  #: Mapeo agente -> modelo LOCAL explicito (subagentes sin model heredan el
+  #: del padre = cloud; asi TODA delegacion cae al local, no al oraculo).
+  #: coordinator = cloud_oracle (oraculo/guia); el resto, workers locales.
+  agents:
+    coordinator: cloud_oracle
+    builder: qwen2.5-coder-3b-iq4-xs
+    guardian: phi-4-mini-instruct-q4-k-m
+    scientist: phi-4-mini-instruct-q4-k-m
+    reviewer: deepseek-r1-distill-qwen-7b-q2-k
+    architect: phi-4-mini-instruct-q4-k-m
+    backend-engineer: qwen2.5-coder-3b-iq4-xs
+    data-engineer: qwen2.5-coder-3b-iq4-xs
+    database-administrator: qwen2.5-coder-3b-iq4-xs
+    devops: qwen2.5-coder-3b-iq4-xs
+    frontend-engineer: qwen2.5-coder-3b-iq4-xs
+    mobile-engineer: qwen2.5-coder-3b-iq4-xs
+    platform-engineer: qwen2.5-coder-3b-iq4-xs
+    product-manager: phi-4-mini-instruct-q4-k-m
+    qa-engineer: phi-4-mini-instruct-q4-k-m
+    release-ops: qwen2.5-coder-3b-iq4-xs
+    researcher: phi-4-mini-instruct-q4-k-m
+    security-engineer: qwen2.5-coder-3b-iq4-xs
+    test-writer: qwen2.5-coder-3b-iq4-xs
+    explore: phi-4-mini-instruct-q4-k-m
+    general: phi-4-mini-instruct-q4-k-m
+    evolve: phi-4-mini-instruct-q4-k-m
+    evolve-analyzer: phi-4-mini-instruct-q4-k-m
+    evolve-engineer: qwen2.5-coder-3b-iq4-xs
+    evolve-researcher: phi-4-mini-instruct-q4-k-m
+    token-budget-auditor: phi-4-mini-instruct-q4-k-m

@@ -5,46 +5,94 @@
   ],
   "model": "llamacpp/qwen2.5-coder-3b-iq4-xs",
   "small_model": "llamacpp/qwen2.5-coder-3b-iq4-xs",
+  "permission": {
+    "bash": "allow",
+    "edit": "allow",
+    "webfetch": "ask",
+    "task": "allow"
+  },
   "agent": {
     "coordinator": {
       "mode": "primary",
-      "model": "opencode-go/deepseek-v4.1-flash",
-      "permission": {
-        "task": {
-          "*": "ask",
-          "builder-*": "allow",
-          "scientist-*": "allow",
-          "guardian-*": "allow"
-        }
-      }
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "builder": {
       "mode": "subagent",
-      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs",
-      "permission": {
-        "edit": "allow",
-        "bash": "ask"
-      }
+      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
     },
     "guardian": {
       "mode": "subagent",
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m",
-      "permission": {
-        "edit": "deny",
-        "bash": "allow"
-      }
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
     },
     "scientist": {
       "mode": "subagent",
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m",
-      "permission": {
-        "edit": "deny",
-        "bash": "ask",
-        "webfetch": "allow"
-      }
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
     },
     "reviewer": {
       "model": "llamacpp/deepseek-r1-distill-qwen-7b-q2-k"
+    },
+    "architect": {
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+    },
+    "backend-engineer": {
+      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+    },
+    "data-engineer": {
+      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+    },
+    "database-administrator": {
+      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+    },
+    "devops": {
+      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+    },
+    "frontend-engineer": {
+      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+    },
+    "mobile-engineer": {
+      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+    },
+    "platform-engineer": {
+      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+    },
+    "product-manager": {
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+    },
+    "qa-engineer": {
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+    },
+    "release-ops": {
+      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+    },
+    "researcher": {
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+    },
+    "security-engineer": {
+      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+    },
+    "test-writer": {
+      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+    },
+    "explore": {
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+    },
+    "general": {
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+    },
+    "evolve": {
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+    },
+    "evolve-analyzer": {
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+    },
+    "evolve-engineer": {
+      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+    },
+    "evolve-researcher": {
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+    },
+    "token-budget-auditor": {
+      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
     }
   },
   "provider": {
