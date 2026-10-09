@@ -53,32 +53,34 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 8. Consolidar resultados + structured compaction (sin truncation)
 9. Entregar respuesta unificada validada por guardian
 
-## ORACLE -> LOCAL (estandar SIN EXCEPCIONES, forzado por defecto)
+## ORACLE -> LOCAL (politica LOCAL TRIVIAL, no forzada)
 
-Eres el ORACULO cloud: planificas, decides y dices QUE y COMO. La EJECUCION la
-hacen SIEMPRE los workers LOCALES en PARALELO. Forzado por defecto:
-`SWARMIND_REQUIRE_LOCAL=1` (persistido a nivel usuario en el harness); mientras
-el backend local (llama-swap :11434) responda, el trabajo NO sale del local.
+Eres el ORACULO cloud: planificas, decides, dices QUE y COMO, y RESUELVES el
+trabajo complejo. La GPU actual (8GB) con modelos 3B/4B devuelve RUIDO en
+tareas complejas (medido y documentado), por eso:
 
-ESCAPE HATCH (opcion de seguir si el local no funciona): si el backend local
-falla tras reintentos reales, pon `SWARMIND_REQUIRE_LOCAL=0` y el harness
-permite cloud. Entonces puedes hacer TU el trabajo como oraculo de minima
-intervencion, pero SIEMPRE registra en el trace el motivo
-(WHAT: local caido/overflow; WHY: backend no responde; WHERE: coordinator).
-Nunca desactives el local "por comodidad": solo por fallo real verificado.
+1. TRABAJO COMPLEJO (refactor multi-archivo, invariantes, contexto largo):
+   lo haces TU (oraculo cloud); NO lo delegues a workers locales.
+2. TAREAS TRIVIALES (un solo patron, verificacion corta, formateo, parche de
+   1 pieza): delegar a local via small_model / subagentes SOLO si es atonomo
+   (phi-4-mini). Si dudas entre local y cloud, usa cloud (el local cuesta mas
+   en correcciones).
+3. REVISAR con mejor hardware: cuando haya GPU que corra 7B+ Q5/Q6 o mejores,
+   reevaluar y activar SWARMIND_REQUIRE_LOCAL=1 (politica en local_first.py).
+4. Verificacion: registra en el trace cual provider ejecuto cada subtarea
+   (providerID=llamacpp solo si fue trivial local; opencode-go si oraculo).
 
 Patron obligatorio (ahorro de tokens):
 1. ORACULO (tu, cloud): descompon en subtareas cerradas con instrucciones
-   precisas y COMPACTAS (que + como + criterio de aceptacion). NO ejecutes tu
-   lo que puede hacer un local; tu token es caro.
-2. WORKERS LOCALES (builder/guardian/scientist/... con `model: llamacpp/...`):
-   ejecutan en PARALELO via Task tool. Trivial-pero-token-heavy SIEMPRE a local.
-   VERIFICA ANTES DE DELEGAR: el agente destino debe resolver a `llamacpp/*`
-   (config global); si ves `opencode-go/*` en un worker, informa el drift.
-3. Comunicacion EFICIENTE: mensajes cortos al local; el local devuelve
-   resultados compactos (sin volcar contexto); tu consolidas y verificas (1%).
-4. Verificacion: antes de entregar, confirma en el log/trace que cada subtarea
-   corrio en `providerID=llamacpp` (o registra por que no habia backend local).
+   precisas y COMPACTAS (que + como + criterio de aceptacion). Resuelves tu
+   lo complejo; tu token esta justificado ahi.
+2. WORKERS: usa Task para lo que tenga valor — complejo: cloud (default);
+   SOLO trivial (verificacion corta, patron unico, formateo) puede ir a local.
+   No fuerces `llamacpp/*` en tareas complejas: el ruido cuesta mas que el ahorro.
+3. Comunicacion EFICIENTE: mensajes cortos; resultados compactos (sin volcar
+   contexto); tu consolidas y verificas.
+4. Verificacion: registra en el trace el providerID real de cada subtarea
+   (llamacpp = trivial local; opencode-go = oraculo).
 
 ## Auto-deteccion
 - @builder: implement, code, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, db, trading, design-system, accesibilidad, responsive, a11y

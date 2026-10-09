@@ -44,43 +44,17 @@ vram_budget_mb: 8000
 safe_ctx_max: 36864
 models:
   - {id: qwen2.5-coder-3b-iq4-xs, file: "${SWARMIND_LLAMA_DIR}\\models\\Qwen2.5-Coder-3B-Instruct-IQ4_XS.gguf", ctx: 36864, flags: SAFE, role: coding, aliases: [Qwen2.5-Coder-3B-Instruct-IQ4_XS]}
-  - {id: phi-4-mini-instruct-q4-k-m, file: "${SWARMIND_LLAMA_DIR}\\models\\microsoft_Phi-4-mini-instruct-Q4_K_M.gguf", ctx: 36864, flags: SAFE, role: reasoning, aliases: [microsoft_Phi-4-mini-instruct-Q4_K_M]}
-  - {id: qwen3-5-4b-gguf-ud-q4-k-xl, file: "${SWARMIND_LLAMA_DIR}\\models\\Qwen3.5-4B-UD-Q4_K_XL.gguf", ctx: 36864, flags: SAFE, role: fast, aliases: ["hf.co/unsloth/Qwen3.5-4B-GGUF:UD-Q4_K_XL"]}
-  - {id: deepseek-r1-distill-qwen-7b-q2-k, file: "${SWARMIND_LLAMA_DIR}\\models\\DeepSeek-R1-Distill-Qwen-7B-Q2_K.gguf", ctx: 36864, flags: SAFE, role: deep, aliases: [DeepSeek-R1-Distill-Qwen-7B-Q2_K]}
+  - {id: phi-4-mini-instruct-q4-k-m, file: "${SWARMIND_LLAMA_DIR}\\models\\microsoft_Phi-4-mini-instruct-Q4_K_M.gguf", ctx: 36864, flags: SAFE, role: data, aliases: [microsoft_Phi-4-mini-instruct-Q4_K_M]}
   - {id: qwen3-embedding-0-6b, file: "${SWARMIND_LLAMA_DIR}\\models\\Qwen3-Embedding-0.6B-Q8_0.gguf", ctx: 8192, flags: SAFE, role: embedding, aliases: [Qwen3-Embedding-0.6B-Q8_0]}
 opencode:
   provider: llamacpp
   base_url: "http://127.0.0.1:11434/v1"
-  model: qwen2.5-coder-3b-iq4-xs
-  small_model: qwen2.5-coder-3b-iq4-xs
+  model: opencode-go/deepseek-v4.1-flash
+  small_model: phi-4-mini-instruct-q4-k-m
   cloud_oracle: opencode-go/deepseek-v4.1-flash
-  #: Mapeo agente -> modelo LOCAL explicito (subagentes sin model heredan el
-  #: del padre = cloud; asi TODA delegacion cae al local, no al oraculo).
-  #: coordinator = cloud_oracle (oraculo/guia); el resto, workers locales.
+  #: Politica LOCAL TRIVIAL (GPU 8GB; los 3B/4B dan ruido en tareas complejas):
+  #: default y subagentes -> cloud oraculo; SOLO small_model (phi-4-mini local)
+  #: atiende tareas triviales. Revisar con mejor hardware (SWARMIND_REQUIRE_LOCAL=1
+  #: fuerza local si se quiere, ver coordinator.md).
   agents:
     coordinator: cloud_oracle
-    builder: qwen2.5-coder-3b-iq4-xs
-    guardian: phi-4-mini-instruct-q4-k-m
-    scientist: phi-4-mini-instruct-q4-k-m
-    reviewer: deepseek-r1-distill-qwen-7b-q2-k
-    architect: phi-4-mini-instruct-q4-k-m
-    backend-engineer: qwen2.5-coder-3b-iq4-xs
-    data-engineer: qwen2.5-coder-3b-iq4-xs
-    database-administrator: qwen2.5-coder-3b-iq4-xs
-    devops: qwen2.5-coder-3b-iq4-xs
-    frontend-engineer: qwen2.5-coder-3b-iq4-xs
-    mobile-engineer: qwen2.5-coder-3b-iq4-xs
-    platform-engineer: qwen2.5-coder-3b-iq4-xs
-    product-manager: phi-4-mini-instruct-q4-k-m
-    qa-engineer: phi-4-mini-instruct-q4-k-m
-    release-ops: qwen2.5-coder-3b-iq4-xs
-    researcher: phi-4-mini-instruct-q4-k-m
-    security-engineer: qwen2.5-coder-3b-iq4-xs
-    test-writer: qwen2.5-coder-3b-iq4-xs
-    explore: phi-4-mini-instruct-q4-k-m
-    general: phi-4-mini-instruct-q4-k-m
-    evolve: phi-4-mini-instruct-q4-k-m
-    evolve-analyzer: phi-4-mini-instruct-q4-k-m
-    evolve-engineer: qwen2.5-coder-3b-iq4-xs
-    evolve-researcher: phi-4-mini-instruct-q4-k-m
-    token-budget-auditor: phi-4-mini-instruct-q4-k-m

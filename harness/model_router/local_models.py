@@ -50,10 +50,11 @@ ROLE_LABELS: Mapping[str, str] = {
     "reasoning": "reasoning/general",
     "fast": "fast",
     "deep": "deep",
+    "data": "data/signals",
     "embedding": "embeddings/RAG",
 }
 #: Roles que opencode marca como reasoning.
-REASONING_ROLES = frozenset({"reasoning", "fast", "deep"})
+REASONING_ROLES = frozenset({"reasoning", "fast", "deep", "data"})
 #: Roles que NO exponen tool-calling (embeddings).
 TOOLLESS_ROLES = frozenset({"embedding"})
 #: Techo VRAM total de la GPU (RTX 4060 8GB; anti-saturacion).
@@ -401,11 +402,18 @@ def _check_unique_ids(models: tuple[LocalModel, ...]) -> None:
 
 
 def _parse_opencode(raw: Mapping[str, Any], models: tuple[LocalModel, ...]) -> OpencodeSSOT:
-    """Parsea el bloque ``opencode`` y valida sus referencias a la flota."""
+    """Parsea el bloque ``opencode`` y valida sus referencias a la flota.
+
+    ``model`` (default del runtime) puede ser el cloud_oracle (politica LOCAL
+    TRIVIAL: el oraculo resuelve, el local atiende small_model); ``small_model``
+    SIEMPRE debe ser un modelo local declarado.
+    """
     ids = {model.id for model in models}
+    cloud_oracle = _require_str(raw, "cloud_oracle", "opencode")
     model_id = _require_str(raw, "model", "opencode")
     small_id = _require_str(raw, "small_model", "opencode")
-    _check_flota_ref("model", model_id, ids)
+    if model_id != cloud_oracle:
+        _check_flota_ref("model", model_id, ids)
     _check_flota_ref("small_model", small_id, ids)
     agents_raw = _require_mapping(raw, "agents")
     agents = {str(key): str(value) for key, value in agents_raw.items()}
@@ -414,7 +422,7 @@ def _parse_opencode(raw: Mapping[str, Any], models: tuple[LocalModel, ...]) -> O
         base_url=_require_str(raw, "base_url", "opencode"),
         model=model_id,
         small_model=small_id,
-        cloud_oracle=_require_str(raw, "cloud_oracle", "opencode"),
+        cloud_oracle=cloud_oracle,
         agents=agents,
     )
 
@@ -517,15 +525,19 @@ def _check_agents_declared(oc: OpencodeSSOT, models: tuple[LocalModel, ...]) -> 
 
 
 def _check_smallest_model(oc: OpencodeSSOT, models: tuple[LocalModel, ...]) -> None:
-    """Exige small_model = el modelo chat mas pequeno (por VRAM)."""
+    """Exige small_model entre los chats locales (politica LOCAL TRIVIAL).
+
+    Antes "el mas pequeno por VRAM"; ahora el adecuado para tareas triviales
+    con calidad (benchmark data/signals: phi-4-mini gana al 3B). Cualquier
+    chat local expuesto es valido; el oraculo cloud nunca es small_model.
+    """
     chats = [m for m in models if m.role not in TOOLLESS_ROLES and m.opencode]
     if not chats:
         return
-    smallest = min(chats, key=lambda m: footprint_mb(m.id) or 10**9)
-    if oc.small_model != smallest.id:
+    if oc.small_model not in {m.id for m in chats}:
         raise _err(
-            f"small_model={oc.small_model!r} != {smallest.id!r} (mas pequeno)",
-            "small_model debe ser el chat mas pequeno para tareas simples",
+            f"small_model={oc.small_model!r} no es un chat local {sorted(m.id for m in chats)}",
+            "small_model debe ser un modelo local de chat (trivial); el oraculo no cuenta",
         )
 
 

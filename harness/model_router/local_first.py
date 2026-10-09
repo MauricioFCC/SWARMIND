@@ -32,13 +32,15 @@ ENV_REQUIRE_LOCAL = "SWARMIND_REQUIRE_LOCAL"
 #: Defaults seguros: local-first activo, 2 en paralelo (alineado con
 #: `--parallel 2` de llama-server; mas workers solo encolan en el server),
 #: tareas abiertas permitidas (el executor gatea por tier), cloud oraculo, y
-#: REQUIRE_LOCAL (el oracle cloud pone a trabajar al local SIEMPRE en paralelo;
-#: la UNICA excepcion es que no haya backend local disponible).
+#: REQUIRE_LOCAL por defecto DESACTIVADO: mientras la GPU 8GB local (3B/4B)
+#: devuelve ruido en tareas complejas, el oraculo cloud resuelve y el local se
+#: usa SOLO para tareas triviales (small_model). Activar con SWARMIND_REQUIRE_LOCAL=1
+#: cuando exista hardware capaz (politica documentada en coordinator.md).
 DEFAULT_ENABLED = True
 DEFAULT_MAX_PARALLEL = 2
 DEFAULT_ALLOW_OPEN_TASKS = True
 DEFAULT_CLOUD_ORACLE = True
-DEFAULT_REQUIRE_LOCAL = True
+DEFAULT_REQUIRE_LOCAL = False
 
 #: Literales aceptados para booleanos de entorno.
 _TRUE_LITERALS = frozenset({"1", "true", "yes", "on", "si"})

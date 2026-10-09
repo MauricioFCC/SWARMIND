@@ -21,6 +21,7 @@ import yaml
 
 from harness.model_router.local_models import (
     SSOT_PATH,
+    _local_ref,
     build_targets,
     check_targets,
     load_config,
@@ -131,8 +132,10 @@ def test_render_opencode_provider_is_coherent() -> None:
     assert rendered["provider"] == config.opencode.provider
     assert rendered["base_url"] == config.opencode.base_url
     assert set(rendered["models"]) == exposed
-    assert rendered["model"] == f"{config.opencode.provider}/{config.opencode.model}"
-    assert rendered["small_model"] == f"{config.opencode.provider}/{config.opencode.small_model}"
+    assert rendered["model"] == _local_ref(config.opencode.model, config.opencode.provider)
+    assert rendered["small_model"] == _local_ref(
+        config.opencode.small_model, config.opencode.provider
+    )
     assert rendered["agents"]["coordinator"] == config.opencode.cloud_oracle
     for model in config.models:
         if model.opencode:
@@ -215,4 +218,5 @@ def test_merge_preserves_foreign_keys() -> None:
     assert merged["$schema"] == "https://opencode.ai/config.json"
     assert merged["skills"] == {"paths": [".opencode/skills"]}
     assert merged["agent"]["builder"]["mode"] == "subagent"
-    assert merged["agent"]["builder"]["model"].startswith(f"{config.opencode.provider}/")
+    assert merged["agent"]["builder"]["model"] == "viejo/modelo"
+    assert merged["agent"]["coordinator"]["model"] == config.opencode.cloud_oracle
