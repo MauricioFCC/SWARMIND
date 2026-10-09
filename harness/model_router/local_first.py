@@ -27,14 +27,18 @@ ENV_ENABLED = "SWARMIND_LOCAL_FIRST_ENABLED"
 ENV_MAX_PARALLEL = "SWARMIND_LOCAL_FIRST_MAX_PARALLEL"
 ENV_ALLOW_OPEN_TASKS = "SWARMIND_LOCAL_FIRST_ALLOW_OPEN_TASKS"
 ENV_CLOUD_ORACLE = "SWARMIND_LOCAL_FIRST_CLOUD_ORACLE"
+ENV_REQUIRE_LOCAL = "SWARMIND_REQUIRE_LOCAL"
 
 #: Defaults seguros: local-first activo, 2 en paralelo (alineado con
 #: `--parallel 2` de llama-server; mas workers solo encolan en el server),
-#: tareas abiertas permitidas (el executor gatea por tier) y cloud oraculo.
+#: tareas abiertas permitidas (el executor gatea por tier), cloud oraculo, y
+#: REQUIRE_LOCAL (el oracle cloud pone a trabajar al local SIEMPRE en paralelo;
+#: la UNICA excepcion es que no haya backend local disponible).
 DEFAULT_ENABLED = True
 DEFAULT_MAX_PARALLEL = 2
 DEFAULT_ALLOW_OPEN_TASKS = True
 DEFAULT_CLOUD_ORACLE = True
+DEFAULT_REQUIRE_LOCAL = True
 
 #: Literales aceptados para booleanos de entorno.
 _TRUE_LITERALS = frozenset({"1", "true", "yes", "on", "si"})
@@ -92,6 +96,8 @@ class LocalFirstPolicy:
         max_parallel: Maximo de tareas locales concurrentes (>=1).
         allow_open_tasks: True = intentar local tambien en tareas abiertas.
         cloud_oracle: True = cloud solo si local no basta (oraculo).
+        require_local: True = el oracle cloud pone a trabajar al local SIEMPRE
+            en paralelo; la UNICA excepcion es que no haya backend local.
 
     Raises:
         ValueError: Si ``max_parallel`` es menor que 1.
@@ -101,6 +107,7 @@ class LocalFirstPolicy:
     max_parallel: int = DEFAULT_MAX_PARALLEL
     allow_open_tasks: bool = DEFAULT_ALLOW_OPEN_TASKS
     cloud_oracle: bool = DEFAULT_CLOUD_ORACLE
+    require_local: bool = DEFAULT_REQUIRE_LOCAL
 
     def __post_init__(self) -> None:
         """Valida ``max_parallel`` (WHAT+WHY+WHERE si viola)."""
@@ -126,6 +133,7 @@ class LocalFirstPolicy:
             max_parallel=_env_int(ENV_MAX_PARALLEL, DEFAULT_MAX_PARALLEL),
             allow_open_tasks=_env_bool(ENV_ALLOW_OPEN_TASKS, DEFAULT_ALLOW_OPEN_TASKS),
             cloud_oracle=_env_bool(ENV_CLOUD_ORACLE, DEFAULT_CLOUD_ORACLE),
+            require_local=_env_bool(ENV_REQUIRE_LOCAL, DEFAULT_REQUIRE_LOCAL),
         )
 
     def should_use_local(self, *, backend_available: bool, force_cloud: bool) -> bool:

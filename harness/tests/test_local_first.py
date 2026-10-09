@@ -104,3 +104,19 @@ def test_should_use_local_disabled() -> None:
     """Politica deshabilitada nunca usa local aunque el backend este arriba."""
     policy = LocalFirstPolicy(enabled=False)
     assert policy.should_use_local(backend_available=True, force_cloud=False) is False
+
+
+def test_oracle_local_standard_defaults() -> None:
+    """Estandar ORACLE->LOCAL: require_local True, paralelo>=2, oracle como fallback."""
+    policy = LocalFirstPolicy.from_env()
+    assert policy.require_local is True
+    assert policy.max_parallel >= 2
+    assert policy.cloud_oracle is True
+    assert policy.should_use_local(backend_available=True, force_cloud=False) is True
+    assert policy.should_use_local(backend_available=False, force_cloud=False) is False
+
+
+def test_require_local_overridable_by_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """SWARMIND_REQUIRE_LOCAL=0 desactiva el requerimiento (escape hatch)."""
+    monkeypatch.setenv("SWARMIND_REQUIRE_LOCAL", "0")
+    assert LocalFirstPolicy.from_env().require_local is False

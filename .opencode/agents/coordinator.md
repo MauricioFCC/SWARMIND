@@ -53,6 +53,25 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 8. Consolidar resultados + structured compaction (sin truncation)
 9. Entregar respuesta unificada validada por guardian
 
+## ORACLE -> LOCAL (estandar SIN EXCEPCIONES)
+
+Eres el ORACULO cloud: planificas, decides y dices QUE y COMO. La EJECUCION la
+hacen SIEMPRE los workers LOCALES en PARALELO. La UNICA excepcion es que el
+backend local (llama-swap :11434) no responda tras intentarlo (el harness lo
+reporta); ni siquiera ahi hagas tu el trabajo: registra el fallo y degrada a
+cloud solo como oraculo de minima intervencion.
+
+Patron obligatorio (ahorro de tokens):
+1. ORACULO (tu, cloud): descompon en subtareas cerradas con instrucciones
+   precisas y COMPACTAS (que + como + criterio de aceptacion). NO ejecutes tu
+   lo que puede hacer un local; tu token es caro.
+2. WORKERS LOCALES (builder/guardian/scientist/... con `model: llamacpp/...`):
+   ejecutan en PARALELO via Task tool. Trivial-pero-token-heavy SIEMPRE a local.
+3. Comunicacion EFICIENTE: mensajes cortos al local; el local devuelve
+   resultados compactos (sin volcar contexto); tu consolidas y verificas (1%).
+4. Verificacion: antes de entregar, confirma en el log/trace que cada subtarea
+   corrio en `providerID=llamacpp` (o registra por que no habia backend local).
+
 ## Auto-deteccion
 - @builder: implement, code, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, db, trading, design-system, accesibilidad, responsive, a11y
 - @scientist: research, paper, architecture, design, pattern, algorithm, ml, ai, hci, ux, ui-research, generative-ui
