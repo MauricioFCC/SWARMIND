@@ -35,26 +35,77 @@ backend:
 flags:
   SAFE: "-ngl 99 --parallel 1 -ub 256 -b 1024 -fa on -ctk q8_0 -ctv q8_0 --jinja"
   SMALL: "-ngl 99 --parallel 2 -ub 256 -b 1024 -fa on -ctk q8_0 -ctv q8_0 --jinja"
+  #: CAPACITY: maxima FUNCIONALIDAD sobre velocidad (no-Misellium).
+  #:   -nkvo         KV cache en RAM, no en VRAM -> libera GPU y ELIMINA el
+  #:                 riesgo de TDR por crecimiento de KV (la causa del BSOD).
+  #:   -ctk/-ctv q4_0 KV a la mitad que q8_0 ("casi sin perdida" en Qwen).
+  #:   Habilitado por el guard: techo de ctx 131072 en vez de 36864.
+  #: Mas lento (atencion en CPU): el objetivo aqui es capacidad y certeza.
+  CAPACITY: "-ngl 99 --parallel 1 -ub 256 -b 1024 -fa on -ctk q4_0 -ctv q4_0 -nkvo --jinja"
 default_ctx: 36864
 default_ttl: 180
 concurrency_limit: 1
 safety_margin_mb: 1500
-reserved_tokens: 2048
+#: Presupuesto de SALIDA (max_tokens disponibles = ctx - reserved_tokens).
+#: Subido 2048 -> 4096 -> 6144: los modelos de razonamiento generan trazas
+#: largas antes de responder y con menos se agotaba dejando `content` vacio.
+#: NO afecta la VRAM: el `-c` (ctx) dimensiona la KV cache; esto solo reparte
+#: ctx entre prompt y respuesta.
+reserved_tokens: 6144
 vram_budget_mb: 8000
 safe_ctx_max: 36864
+#: Presupuesto de RAM del sistema (anti-volcado/OOM): con CAPACITY (-nkvo) el
+#: KV cache vive en RAM; 14000MB deja margen sobre los 16GB fisicos. Cada
+#: modelo declara `ram_mb` (pesos en RAM + KV si CAPACITY); medir con bench.
+ram_budget_mb: 14000
 models:
-  - {id: qwen2.5-coder-3b-iq4-xs, file: "${SWARMIND_LLAMA_DIR}\\models\\Qwen2.5-Coder-3B-Instruct-IQ4_XS.gguf", ctx: 36864, flags: SAFE, role: coding, aliases: [Qwen2.5-Coder-3B-Instruct-IQ4_XS]}
-  - {id: phi-4-mini-instruct-q4-k-m, file: "${SWARMIND_LLAMA_DIR}\\models\\microsoft_Phi-4-mini-instruct-Q4_K_M.gguf", ctx: 36864, flags: SAFE, role: data, aliases: [microsoft_Phi-4-mini-instruct-Q4_K_M]}
-  - {id: qwen3-embedding-0-6b, file: "${SWARMIND_LLAMA_DIR}\\models\\Qwen3-Embedding-0.6B-Q8_0.gguf", ctx: 8192, flags: SAFE, role: embedding, aliases: [Qwen3-Embedding-0.6B-Q8_0]}
+  #: FLOTA FINAL (2026-10-08): 3 modelos de razonamiento + embeddings.
+  #: Se retiraron qwen2.5-coder-3b y phi-4-mini-instruct: daban ruido en tareas
+  #: complejas y el instruct queda superado por su variante reasoning.
+  #: Razonamiento 9B (calidad). ctx ACOTADO a 12288: con 36864 el KV cache
+  #: empujaba el total sobre 8 GB y provocaba los desbordes/TDR.
+  - {id: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs, file: "${SWARMIND_LLAMA_DIR}\\models\\MiMo-V2.6-Distill-Qwen-9B-IQ4_XS.gguf", ctx: 12288, flags: SAFE, role: reasoning, ram_mb: 5300, aliases: [MiMo-V2.6-Distill-Qwen-9B-IQ4_XS]}
+  #: Razonamiento 3.8B (Microsoft): multi-paso, math, logica. Base del trading.
+  - {id: phi-4-mini-reasoning-q4-k-m, file: "${SWARMIND_LLAMA_DIR}\\models\\microsoft_Phi-4-mini-reasoning-Q4_K_M.gguf", ctx: 65536, flags: CAPACITY, role: reasoning, ram_mb: 5300, aliases: [microsoft_Phi-4-mini-reasoning-Q4_K_M]}
+  #: Razonamiento 4B (Alibaba, Thinking-2507): AIME2025 81.3 / GPQA 65.8.
+  #: Familia distinta a phi -> diversidad para votacion/ensemble en analisis.
+  - {id: qwen3-4b-thinking-2507-q4-k-m, file: "${SWARMIND_LLAMA_DIR}\\models\\Qwen3-4B-Thinking-2507-Q4_K_M.gguf", ctx: 65536, flags: CAPACITY, role: reasoning, ram_mb: 5300, aliases: [Qwen3-4B-Thinking-2507-Q4_K_M]}
+  #: Embeddings para RAG (Memoria SSOT). Proposito distinto al razonamiento.
+  - {id: qwen3-embedding-0-6b, file: "${SWARMIND_LLAMA_DIR}\\models\\Qwen3-Embedding-0.6B-Q8_0.gguf", ctx: 16384, flags: SAFE, role: embedding, ram_mb: 700, aliases: [Qwen3-Embedding-0.6B-Q8_0]}
 opencode:
   provider: llamacpp
   base_url: "http://127.0.0.1:11434/v1"
   model: opencode-go/deepseek-v4.1-flash
-  small_model: phi-4-mini-instruct-q4-k-m
+  small_model: phi-4-mini-reasoning-q4-k-m
   cloud_oracle: opencode-go/deepseek-v4.1-flash
-  #: Politica LOCAL TRIVIAL (GPU 8GB; los 3B/4B dan ruido en tareas complejas):
-  #: default y subagentes -> cloud oraculo; SOLO small_model (phi-4-mini local)
-  #: atiende tareas triviales. Revisar con mejor hardware (SWARMIND_REQUIRE_LOCAL=1
-  #: fuerza local si se quiere, ver coordinator.md).
+  #: Politica EXIGENCIA LOCAL SIEMPRE (flota 9B con KV en RAM via CAPACITY
+  #: /-nkvo: confiable, sin TDR). El oraculo guia; TODOS los workers resuelven
+  #: en local. Escape hatch solo si el backend falla de verdad:
+  #: SWARMIND_REQUIRE_LOCAL=0 (ver coordinator.md y local_first.py).
   agents:
     coordinator: cloud_oracle
+    architect: phi-4-mini-reasoning-q4-k-m
+    builder: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
+    guardian: phi-4-mini-reasoning-q4-k-m
+    scientist: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
+    reviewer: phi-4-mini-reasoning-q4-k-m
+    backend-engineer: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
+    data-engineer: qwen3-4b-thinking-2507-q4-k-m
+    database-administrator: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
+    devops: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
+    frontend-engineer: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
+    mobile-engineer: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
+    platform-engineer: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
+    product-manager: phi-4-mini-reasoning-q4-k-m
+    qa-engineer: phi-4-mini-reasoning-q4-k-m
+    release-ops: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
+    researcher: phi-4-mini-reasoning-q4-k-m
+    security-engineer: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
+    test-writer: phi-4-mini-reasoning-q4-k-m
+    explore: qwen3-4b-thinking-2507-q4-k-m
+    general: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
+    evolve: phi-4-mini-reasoning-q4-k-m
+    evolve-analyzer: phi-4-mini-reasoning-q4-k-m
+    evolve-engineer: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
+    evolve-researcher: phi-4-mini-reasoning-q4-k-m
+    token-budget-auditor: phi-4-mini-reasoning-q4-k-m

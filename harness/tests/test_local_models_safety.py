@@ -61,6 +61,33 @@ def test_rechaza_ctx_sobre_techo_seguro() -> None:
         validate_config(raw)
 
 
+def _capacity_model(raw: dict[str, Any]) -> dict[str, Any]:
+    """Devuelve el primer modelo con perfil CAPACITY (KV en RAM)."""
+    for model in raw["models"]:
+        if model["flags"] == "CAPACITY":
+            return model
+    raise AssertionError("la SSOT debe declarar un modelo con perfil CAPACITY")
+
+
+def test_permite_ctx_capacity_hasta_techo_ram() -> None:
+    """Perfil CAPACITY (-nkvo, KV en RAM) admite ctx 131072 (techo RAM)."""
+    raw = _raw_ssot()
+    model = _capacity_model(raw)
+    model["ctx"] = 131072
+    model["max_prompt_tokens"] = 131072 - int(raw.get("reserved_tokens", 2048))
+    validate_config(raw)  # no debe lanzar
+
+
+def test_rechaza_ctx_capacity_sobre_techo_ram() -> None:
+    """Perfil CAPACITY con ctx 131073 (sobre RAM KV) se rechaza."""
+    raw = _raw_ssot()
+    model = _capacity_model(raw)
+    model["ctx"] = 131073
+    model["max_prompt_tokens"] = 131073 - int(raw.get("reserved_tokens", 2048))
+    with pytest.raises(ValueError, match="WHAT.*WHY.*WHERE"):
+        validate_config(raw)
+
+
 def test_rechaza_prompt_que_no_cabe() -> None:
     """``max_prompt_tokens`` incoherente con ``ctx - reserved`` se rechaza."""
     raw = _raw_ssot()
@@ -75,6 +102,31 @@ def test_rechaza_vram_sin_margen() -> None:
     raw["safety_margin_mb"] = 7900
     with pytest.raises(ValueError, match="WHAT.*WHY.*WHERE"):
         validate_config(raw)
+
+
+def test_rechaza_modelo_sin_huella_ram() -> None:
+    """Un modelo sin ``ram_mb`` (KV en RAM no medido) se rechaza."""
+    raw = _raw_ssot()
+    raw["models"][0]["ram_mb"] = 0
+    with pytest.raises(ValueError, match="ram_mb"):
+        validate_config(raw)
+
+
+def test_rechaza_ram_sobre_presupuesto() -> None:
+    """``ram_mb + margen`` sobre el presupuesto RAM se rechaza (anti-volcado)."""
+    raw = _raw_ssot()
+    budget = int(raw.get("ram_budget_mb", 14000))
+    raw["models"][0]["ram_mb"] = budget  # + margen => sobre techo
+    with pytest.raises(ValueError, match="WHAT.*WHY.*WHERE"):
+        validate_config(raw)
+
+
+def test_permite_ram_con_margen() -> None:
+    """``ram_mb + margen <= presupuesto`` genera config segura."""
+    raw = _raw_ssot()
+    budget = int(raw.get("ram_budget_mb", 14000))
+    raw["models"][0]["ram_mb"] = budget - 1500 - 1  # 1MB dentro del margen
+    validate_config(raw)  # no debe lanzar
 
 
 def test_check_idempotente_tras_write(tmp_path: Path) -> None:

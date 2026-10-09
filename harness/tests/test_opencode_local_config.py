@@ -46,24 +46,25 @@ EXPECTED_PATH = "/v1"
 EXPECTED_DEFAULT_MODEL = "opencode-go/deepseek-v4.1-flash"
 #: Modelo pequeno local para tareas triviales (razonamiento 4B; benchmark
 #: data/signals: phi-4-mini gana al 3B).
-EXPECTED_SMALL_MODEL = "llamacpp/phi-4-mini-instruct-q4-k-m"
+EXPECTED_SMALL_MODEL = "llamacpp/phi-4-mini-reasoning-q4-k-m"
 #: Provider cloud del coordinator (guia/oraculo; NO es un worker local).
 EXPECTED_CLOUD_PROVIDER = "opencode-go"
 #: Presupuesto GPU (anti-TDR): cada modelo debe caber en <7000MB y se cargan
 #: de a UNO por vez (llama-swap swap + purga al cambiar de modelo).
 MAX_MODEL_VRAM_MB = 7000
-#: Huella de VRAM por modelo (espejo de `fleet_manifest.py` / `llama-swap.yaml`).
+#: Huella de VRAM por modelo (espejo `FALLBACK_VRAM_MB`; CAPACITY=KV en RAM).
 MODEL_VRAM_MB = {
-    "qwen2.5-coder-3b-iq4-xs": 3300,
-    "phi-4-mini-instruct-q4-k-m": 5700,
-    "qwen3-embedding-0-6b": 2100,
+    "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs": 6400,
+    "phi-4-mini-reasoning-q4-k-m": 2600,
+    "qwen3-4b-thinking-2507-q4-k-m": 2600,
+    "qwen3-embedding-0-6b": 3800,
 }
-#: Espejo de `llama-swap.yaml`: 3 modelos por nombre corto (SVE).
-#: (deepseek-7b-Q2 y qwen3-5-4b retirados: ruido en tareas de data/refactor.)
+#: Espejo de `llama-swap.yaml`: flota final 4 modelos (razonamiento 9B/KV).
 EXPECTED_MODELS = frozenset(
     {
-        "qwen2.5-coder-3b-iq4-xs",
-        "phi-4-mini-instruct-q4-k-m",
+        "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs",
+        "phi-4-mini-reasoning-q4-k-m",
+        "qwen3-4b-thinking-2507-q4-k-m",
         "qwen3-embedding-0-6b",
     }
 )

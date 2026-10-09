@@ -4,7 +4,7 @@
     ".opencode/core/base_principles.min.md"
   ],
   "model": "opencode-go/deepseek-v4.1-flash",
-  "small_model": "llamacpp/phi-4-mini-instruct-q4-k-m",
+  "small_model": "llamacpp/phi-4-mini-reasoning-q4-k-m",
   "permission": {
     "bash": "allow",
     "edit": "allow",
@@ -18,81 +18,81 @@
     },
     "builder": {
       "mode": "subagent",
-      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
     },
     "guardian": {
       "mode": "subagent",
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
     },
     "scientist": {
       "mode": "subagent",
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
     },
     "reviewer": {
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
     },
     "architect": {
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
     },
     "backend-engineer": {
-      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
     },
     "data-engineer": {
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/qwen3-4b-thinking-2507-q4-k-m"
     },
     "database-administrator": {
-      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
     },
     "devops": {
-      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
     },
     "frontend-engineer": {
-      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
     },
     "mobile-engineer": {
-      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
     },
     "platform-engineer": {
-      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
     },
     "product-manager": {
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
     },
     "qa-engineer": {
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
     },
     "release-ops": {
-      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
     },
     "researcher": {
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
     },
     "security-engineer": {
-      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
     },
     "test-writer": {
-      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
     },
     "explore": {
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/qwen3-4b-thinking-2507-q4-k-m"
     },
     "general": {
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
     },
     "evolve": {
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
     },
     "evolve-analyzer": {
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
     },
     "evolve-engineer": {
-      "model": "llamacpp/qwen2.5-coder-3b-iq4-xs"
+      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
     },
     "evolve-researcher": {
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
     },
     "token-budget-auditor": {
-      "model": "llamacpp/phi-4-mini-instruct-q4-k-m"
+      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
     }
   },
   "provider": {
@@ -103,20 +103,28 @@
         "baseURL": "http://127.0.0.1:11434/v1"
       },
       "models": {
-        "qwen2.5-coder-3b-iq4-xs": {
-          "name": "qwen2.5-coder-3b-iq4-xs (coding)",
-          "reasoning": false,
-          "tools": true,
-          "options": {
-            "num_ctx": 36864
-          }
-        },
-        "phi-4-mini-instruct-q4-k-m": {
-          "name": "phi-4-mini-instruct-q4-k-m (data/signals)",
+        "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs": {
+          "name": "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs (reasoning/general)",
           "reasoning": true,
           "tools": true,
           "options": {
-            "num_ctx": 36864
+            "num_ctx": 12288
+          }
+        },
+        "phi-4-mini-reasoning-q4-k-m": {
+          "name": "phi-4-mini-reasoning-q4-k-m (reasoning/general)",
+          "reasoning": true,
+          "tools": true,
+          "options": {
+            "num_ctx": 65536
+          }
+        },
+        "qwen3-4b-thinking-2507-q4-k-m": {
+          "name": "qwen3-4b-thinking-2507-q4-k-m (reasoning/general)",
+          "reasoning": true,
+          "tools": true,
+          "options": {
+            "num_ctx": 65536
           }
         },
         "qwen3-embedding-0-6b": {
@@ -124,7 +132,7 @@
           "reasoning": false,
           "tools": false,
           "options": {
-            "num_ctx": 8192
+            "num_ctx": 16384
           }
         }
       }

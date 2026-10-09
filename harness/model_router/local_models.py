@@ -59,9 +59,17 @@ REASONING_ROLES = frozenset({"reasoning", "fast", "deep", "data"})
 TOOLLESS_ROLES = frozenset({"embedding"})
 #: Techo VRAM total de la GPU (RTX 4060 8GB; anti-saturacion).
 VRAM_BUDGET_MB = 8000
+#: Techo de RAM del sistema (16GB fisicos - SO; anti-volcado/OOM).
+RAM_BUDGET_MB = 14000
 #: Techo seguro de contexto (40960 causo TDR; 36864 medido seguro en 8GB:
 #: phi-4-mini 5948MiB, qwen3.5-4b 4925MiB, deepseek-7b 5223MiB, coder-3b 3707MiB).
 SAFE_CTX_MAX = 36864
+#: Techo de contexto con la KV cache en RAM (perfil CAPACITY, flag `-nkvo`).
+#: Sin KV en VRAM el TDR por VRAM no aplica: el limite pasa a ser la RAM
+#: (16 GB en esta maquina), no los 8 GB de la GPU.
+SAFE_CTX_MAX_RAM_KV = 131072
+#: Perfiles de flags que mueven la KV cache a RAM -> habilitan ctx mayor.
+RAM_KV_FLAGS = frozenset({"CAPACITY"})
 #: Reserva fija para respuesta/sistema (ctx - reserved = max_prompt_tokens).
 RESERVED_TOKENS = 2048
 #: Concurrencia seriada (1 inferencia a la vez; 2 encolaba y saturaba).
@@ -72,9 +80,14 @@ MAX_TTL_S = 180
 FALLBACK_VRAM_MB: Mapping[str, int] = {
     "qwen2.5-coder-3b-iq4-xs": 3300,
     "phi-4-mini-instruct-q4-k-m": 5700,
+    #: Con CAPACITY (-nkvo) la KV cache vive en RAM, no en VRAM: la huella de
+    #: GPU es solo pesos + buffers de computo.
+    "phi-4-mini-reasoning-q4-k-m": 2600,
+    "qwen3-4b-thinking-2507-q4-k-m": 2600,
+    "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs": 6400,
     "qwen3-5-4b-gguf-ud-q4-k-xl": 4600,
     "deepseek-r1-distill-qwen-7b-q2-k": 4400,
-    "qwen3-embedding-0-6b": 2100,
+    "qwen3-embedding-0-6b": 3800,
 }
 
 
@@ -108,7 +121,8 @@ class LocalModel:
         file: Ruta absoluta al archivo ``.gguf``.
         ctx: Ventana de contexto real (``-c``).
         max_prompt_tokens: Techo de prompt (= ctx - reserved).
-        flags: Referencia a una clave de ``flags`` (SAFE|SMALL).
+        ram_mb: Huella de RAM del sistema (pesos + KV si CAPACITY) anti-OOM.
+        flags: Referencia a una clave de ``flags`` (SAFE|SMALL|CAPACITY).
         role: Rol de capacidad (coding|reasoning|fast|deep|embedding).
         aliases: Nombres alternos que llama-swap expone.
         opencode: True (default) para publicar en opencode; False = solo swap.
@@ -120,6 +134,7 @@ class LocalModel:
     flags: str
     role: str
     max_prompt_tokens: int = 0
+    ram_mb: int = 0
     aliases: tuple[str, ...] = ()
     opencode: bool = True
 
@@ -174,6 +189,7 @@ class LocalModelsConfig:
     reserved_tokens: int = RESERVED_TOKENS
     vram_budget_mb: int = VRAM_BUDGET_MB
     safe_ctx_max: int = SAFE_CTX_MAX
+    ram_budget_mb: int = RAM_BUDGET_MB
 
 
 # ---------------------------------------------------------------------------
@@ -236,6 +252,7 @@ def validate_config(raw: Mapping[str, Any]) -> LocalModelsConfig:
     flags = _parse_flags(_require_mapping(raw, "flags"))
     reserved = _optional_int(raw, "reserved_tokens", RESERVED_TOKENS)
     budget = _optional_int(raw, "vram_budget_mb", VRAM_BUDGET_MB)
+    ram_budget = _optional_int(raw, "ram_budget_mb", RAM_BUDGET_MB)
     safe_max = _optional_int(raw, "safe_ctx_max", SAFE_CTX_MAX)
     margin = _optional_int(raw, "safety_margin_mb", 1500)
     concurrency = _optional_int(raw, "concurrency_limit", EXPECTED_CONCURRENCY)
@@ -247,6 +264,7 @@ def validate_config(raw: Mapping[str, Any]) -> LocalModelsConfig:
     _check_ctx_ceiling(models, safe_max)
     _check_prompt_window(models, reserved)
     _check_vram_safety(models, margin, budget)
+    _check_ram_safety(models, margin, ram_budget)
     opencode = _parse_opencode(_require_mapping(raw, "opencode"), models)
     _check_agents_declared(opencode, models)
     _check_smallest_model(opencode, models)
@@ -262,6 +280,7 @@ def validate_config(raw: Mapping[str, Any]) -> LocalModelsConfig:
         reserved_tokens=reserved,
         vram_budget_mb=budget,
         safe_ctx_max=safe_max,
+        ram_budget_mb=ram_budget,
     )
 
 
@@ -377,6 +396,7 @@ def _parse_model(entry: Any, flags: Mapping[str, str], reserved: int = RESERVED_
         flags=flags_ref,
         role=_require_str(entry, "role", f"model {model_id}"),
         max_prompt_tokens=prompt_max,
+        ram_mb=_optional_int(entry, "ram_mb", 0),
         aliases=_parse_aliases(entry),
         opencode=bool(entry.get("opencode", True)),
     )
@@ -469,12 +489,19 @@ def _check_ttl(default_ttl: int) -> None:
 
 
 def _check_ctx_ceiling(models: tuple[LocalModel, ...], safe_max: int) -> None:
-    """Rechaza ctx sobre el techo seguro (40960 causo TDR)."""
+    """Rechaza ctx sobre el techo seguro, segun DONDE vive la KV cache.
+
+    WHY: el techo de 36864 existe porque la KV cache en VRAM dispara TDR en
+    8 GB con WDDM (40960 lo causo). Los perfiles de `RAM_KV_FLAGS` mueven la
+    KV a RAM con `-nkvo`: ahi ese limite no aplica, lo pone la RAM del equipo.
+    """
     for model in models:
-        if model.ctx > safe_max:
+        tope = SAFE_CTX_MAX_RAM_KV if model.flags in RAM_KV_FLAGS else safe_max
+        if model.ctx > tope:
             raise _err(
-                f"ctx={model.ctx} > safe_ctx_max={safe_max} (modelo {model.id})",
-                "subir el ctx dispara TDR en 8GB con WDDM",
+                f"ctx={model.ctx} > techo={tope} (modelo {model.id}, perfil {model.flags})",
+                "el KV en VRAM dispara TDR en 8GB con WDDM; para contextos mayores "
+                "usa el perfil CAPACITY (mueve el KV a RAM con -nkvo)",
             )
 
 
@@ -507,6 +534,28 @@ def _check_vram_safety(models: tuple[LocalModel, ...], margin: int, budget: int)
             raise _err(
                 f"huella={footprint} + margen={margin} > {budget} (modelo {model.id})",
                 "la flota no puede saturar los 8GB ni con un modelo residente",
+            )
+
+
+def _check_ram_safety(models: tuple[LocalModel, ...], margin: int, budget: int) -> None:
+    """Rechaza config que pueda volcar RAM (anti-OOM/cuelgue del sistema).
+
+    Con CAPACITY (-nkvo) el KV cache vive en RAM del sistema: cada modelo debe
+    declarar ``ram_mb`` (pesos + KV) y ``ram_mb + margen <= budget`` (16GB con
+    margen). Un modelo sin ``ram_mb`` es rechazado (fail-fast: medir y declarar).
+    """
+    for model in models:
+        if model.ram_mb <= 0:
+            raise _err(
+                f"modelo {model.id!r} sin huella RAM (ram_mb)",
+                "con CAPACITY/-nkvo el KV vive en RAM; medir con bench_profiles "
+                "y declarar ram_mb para verificar el margen anti-volcado",
+            )
+        if model.ram_mb + margin > budget:
+            raise _err(
+                f"ram_mb={model.ram_mb} + margen={margin} > {budget} "
+                f"(modelo {model.id}, perfil {model.flags})",
+                "el KV en RAM + pesos no debe arriesgar un volcado/OOM del sistema",
             )
 
 

@@ -106,11 +106,11 @@ def test_should_use_local_disabled() -> None:
     assert policy.should_use_local(backend_available=True, force_cloud=False) is False
 
 
-def test_trivial_local_policy_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Politica LOCAL TRIVIAL: require_local False (oraculo resolve; local small)."""
+def test_oracle_local_standard_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Estandar ORACLE->LOCAL: require_local True (flota 9B/KV), paralelo>=2."""
     monkeypatch.delenv("SWARMIND_REQUIRE_LOCAL", raising=False)
     policy = LocalFirstPolicy.from_env()
-    assert policy.require_local is False
+    assert policy.require_local is True
     assert policy.max_parallel >= 2
     assert policy.cloud_oracle is True
     assert policy.should_use_local(backend_available=True, force_cloud=False) is True
@@ -118,12 +118,12 @@ def test_trivial_local_policy_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_require_local_overridable_by_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """SWARMIND_REQUIRE_LOCAL=0 mantiene la politica trivial (no forzado)."""
+    """SWARMIND_REQUIRE_LOCAL=0 desactiva el requerimiento (escape hatch)."""
     monkeypatch.setenv("SWARMIND_REQUIRE_LOCAL", "0")
     assert LocalFirstPolicy.from_env().require_local is False
 
 
 def test_require_local_forced_by_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """SWARMIND_REQUIRE_LOCAL=1 fuerza local (cuando exista hardware capaz)."""
+    """SWARMIND_REQUIRE_LOCAL=1 fuerza local (default ya lo hace)."""
     monkeypatch.setenv("SWARMIND_REQUIRE_LOCAL", "1")
     assert LocalFirstPolicy.from_env().require_local is True

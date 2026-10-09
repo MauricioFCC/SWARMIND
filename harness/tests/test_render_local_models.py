@@ -205,18 +205,24 @@ def test_check_detects_drift(tmp_path: Path) -> None:
 
 
 def test_merge_preserves_foreign_keys() -> None:
-    """El merge de opencode preserva $schema/skills/permisos y setea modelos."""
+    """El merge de opencode preserva claves ajenas y setea agentes renderizados."""
     config = load_config()
     existing: dict[str, Any] = {
         "$schema": "https://opencode.ai/config.json",
         "skills": {"paths": [".opencode/skills"]},
-        "agent": {"builder": {"mode": "subagent", "model": "viejo/modelo"}},
+        "agent": {
+            "builder": {"mode": "subagent", "model": "viejo/modelo"},
+            "ghost": {"mode": "subagent", "model": "fantasma/legacy"},
+        },
     }
 
     merged = merge_opencode_document(existing, render_opencode_provider(config))
 
     assert merged["$schema"] == "https://opencode.ai/config.json"
     assert merged["skills"] == {"paths": [".opencode/skills"]}
+    # Claves renderizadas: model actualizado al local de la flota.
     assert merged["agent"]["builder"]["mode"] == "subagent"
-    assert merged["agent"]["builder"]["model"] == "viejo/modelo"
+    assert merged["agent"]["builder"]["model"].startswith("llamacpp/")
     assert merged["agent"]["coordinator"]["model"] == config.opencode.cloud_oracle
+    # Clave ajena NO renderizada: se preserva intacta.
+    assert merged["agent"]["ghost"] == {"mode": "subagent", "model": "fantasma/legacy"}
