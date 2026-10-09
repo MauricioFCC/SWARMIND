@@ -116,7 +116,7 @@
           "reasoning": true,
           "tools": true,
           "options": {
-            "num_ctx": 65536
+            "num_ctx": 32768
           }
         },
         "qwen3-4b-thinking-2507-q4-k-m": {

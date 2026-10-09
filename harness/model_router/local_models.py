@@ -88,6 +88,8 @@ FALLBACK_VRAM_MB: Mapping[str, int] = {
     "qwen3-5-4b-gguf-ud-q4-k-xl": 4600,
     "deepseek-r1-distill-qwen-7b-q2-k": 4400,
     "qwen3-embedding-0-6b": 3800,
+    #: Ternario 27B: solo pesos + buffers en VRAM (con CAPACITY la KV va a RAM).
+    "ternary-bonsai-2-27b-ptq1-0": 5900,
 }
 
 
@@ -136,6 +138,9 @@ class LocalModel:
     max_prompt_tokens: int = 0
     ram_mb: int = 0
     aliases: tuple[str, ...] = ()
+    #: Binario propio del modelo (opcional). Los pesos ternarios requieren el
+    #: fork de PrismML; el resto usa el `backend.server_exe` por defecto.
+    server_exe: str | None = None
     opencode: bool = True
 
 
@@ -398,6 +403,9 @@ def _parse_model(entry: Any, flags: Mapping[str, str], reserved: int = RESERVED_
         max_prompt_tokens=prompt_max,
         ram_mb=_optional_int(entry, "ram_mb", 0),
         aliases=_parse_aliases(entry),
+        server_exe=_expand_path(str(entry["server_exe"]), f"model {model_id}")
+        if entry.get("server_exe")
+        else None,
         opencode=bool(entry.get("opencode", True)),
     )
 
@@ -620,7 +628,7 @@ def render_llama_swap(config: LocalModelsConfig) -> str:
 def _render_model_block(model: LocalModel, config: LocalModelsConfig) -> list[str]:
     """Bloque YAML (ttl/concurrencyLimit/aliases/cmd) de llama-swap."""
     cmd = (
-        f'{config.backend.server_exe} -m "{model.file}" {config.flags[model.flags]} '
+        f'{model.server_exe or config.backend.server_exe} -m "{model.file}" {config.flags[model.flags]} '
         f"-c {model.ctx} --host {config.backend.host} --port ${{PORT}}"
     )
     block = [

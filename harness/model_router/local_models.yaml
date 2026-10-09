@@ -66,12 +66,20 @@ models:
   #: empujaba el total sobre 8 GB y provocaba los desbordes/TDR.
   - {id: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs, file: "${SWARMIND_LLAMA_DIR}\\models\\MiMo-V2.6-Distill-Qwen-9B-IQ4_XS.gguf", ctx: 12288, flags: SAFE, role: reasoning, ram_mb: 5300, aliases: [MiMo-V2.6-Distill-Qwen-9B-IQ4_XS]}
   #: Razonamiento 3.8B (Microsoft): multi-paso, math, logica. Base del trading.
-  - {id: phi-4-mini-reasoning-q4-k-m, file: "${SWARMIND_LLAMA_DIR}\\models\\microsoft_Phi-4-mini-reasoning-Q4_K_M.gguf", ctx: 65536, flags: CAPACITY, role: reasoning, ram_mb: 5300, aliases: [microsoft_Phi-4-mini-reasoning-Q4_K_M]}
+  #: PUNTO DULCE (bench 2026-10-08): CAPACITY@32768 -> 24.6 tok/s y 3861 MiB
+  #: (-28% vel y -180MiB vs 65536). Ventana 32K sobra para small/trivial.
+  - {id: phi-4-mini-reasoning-q4-k-m, file: "${SWARMIND_LLAMA_DIR}\\models\\microsoft_Phi-4-mini-reasoning-Q4_K_M.gguf", ctx: 32768, flags: CAPACITY, role: reasoning, ram_mb: 5300, aliases: [microsoft_Phi-4-mini-reasoning-Q4_K_M]}
   #: Razonamiento 4B (Alibaba, Thinking-2507): AIME2025 81.3 / GPQA 65.8.
   #: Familia distinta a phi -> diversidad para votacion/ensemble en analisis.
   - {id: qwen3-4b-thinking-2507-q4-k-m, file: "${SWARMIND_LLAMA_DIR}\\models\\Qwen3-4B-Thinking-2507-Q4_K_M.gguf", ctx: 65536, flags: CAPACITY, role: reasoning, ram_mb: 5300, aliases: [Qwen3-4B-Thinking-2507-Q4_K_M]}
   #: Embeddings para RAG (Memoria SSOT). Proposito distinto al razonamiento.
   - {id: qwen3-embedding-0-6b, file: "${SWARMIND_LLAMA_DIR}\\models\\Qwen3-Embedding-0.6B-Q8_0.gguf", ctx: 16384, flags: SAFE, role: embedding, ram_mb: 700, aliases: [Qwen3-Embedding-0.6B-Q8_0]}
+  #: TERNARIO 27B RETIRADO (EDV 2026-10-08): razona bien (4/4, 24 tok/s) pero
+  #: el pico de RAM deja ~0.8GB libres de 16GB (margen < 1.5GB del guard RAM);
+  #: no cabe en esta maquina con margen. Reactivar con mas RAM o ctx menor.
+  #: Requiere fork PrismML (`server_exe` propio), temperature 1.0 / top-p 0.95 /
+  #: top-k 20 (greedy colapsa a 1/4) y -nkvo (perfil CAPACITY).
+  #: - {id: ternary-bonsai-2-27b-ptq1-0, file: "${SWARMIND_LLAMA_DIR}\\models\\Ternary-Bonsai-2-27B-PTQ1_0.gguf", ctx: 16384, flags: CAPACITY, role: reasoning, ram_mb: 12500, aliases: [Ternary-Bonsai-2-27B-PTQ1_0], server_exe: "${SWARMIND_PRISM_DIR}\\bin\\llama-server.exe"}
 opencode:
   provider: llamacpp
   base_url: "http://127.0.0.1:11434/v1"
