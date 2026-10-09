@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import copy
 import json
+import os
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -267,6 +269,31 @@ def _err(what: str, why: str) -> ValueError:
     return ValueError(f"WHAT: {what}. WHY: {why}. WHERE: local_models.validate_config")
 
 
+#: Plantilla ``${VAR}`` aceptada en rutas de la SSOT (portable multi-SO).
+_ENV_TEMPLATE_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
+
+
+def _expand_path(value: str, context: str) -> str:
+    """Resuelve plantillas ``${VAR}`` de entorno en rutas de la SSOT.
+
+    Permite una SSOT portable (Windows/macOS/Linux): se declara
+    ``${SWARMIND_LLAMA_DIR}/bin/llama-server`` y cada maquina aporta su raiz
+    via variable de entorno. Si la variable no esta definida, se conserva la
+    plantilla literal (fail-soft: no rompe la carga sin env; el render queda
+    pendiente de resolver en la maquina destino).
+
+    Args:
+        value: Valor crudo de la SSOT (puede contener ``${VAR}``).
+        context: Contexto del campo (backend/model <id>) para errores.
+
+    Returns:
+        Ruta con las plantillas resueltas via ``os.environ``.
+    """
+    return _ENV_TEMPLATE_RE.sub(
+        lambda m: os.getenv(m.group(1), m.group(0)), value
+    )
+
+
 def _require_mapping(raw: Mapping[str, Any], key: str) -> Mapping[str, Any]:
     """Devuelve ``raw[key]`` como mapping o lanza (WHAT+WHY+WHERE)."""
     value = raw.get(key)
@@ -310,11 +337,11 @@ def _optional_int(raw: Mapping[str, Any], key: str, default: int) -> int:
 def _parse_backend(raw: Mapping[str, Any]) -> LocalBackend:
     """Parsea el bloque ``backend`` a ``LocalBackend``."""
     return LocalBackend(
-        server_exe=_require_str(raw, "server_exe", "backend"),
+        server_exe=_expand_path(_require_str(raw, "server_exe", "backend"), "backend"),
         host=_require_str(raw, "host", "backend"),
         port=_require_int(raw, "port"),
-        swap_exe=_require_str(raw, "swap_exe", "backend"),
-        swap_config=_require_str(raw, "swap_config", "backend"),
+        swap_exe=_expand_path(_require_str(raw, "swap_exe", "backend"), "backend"),
+        swap_config=_expand_path(_require_str(raw, "swap_config", "backend"), "backend"),
         start_port=_require_int(raw, "start_port"),
     )
 
@@ -344,7 +371,7 @@ def _parse_model(entry: Any, flags: Mapping[str, str], reserved: int = RESERVED_
     prompt_max = _optional_int(entry, "max_prompt_tokens", ctx_value - reserved)
     return LocalModel(
         id=model_id,
-        file=_require_str(entry, "file", f"model {model_id}"),
+        file=_expand_path(_require_str(entry, "file", f"model {model_id}"), f"model {model_id}"),
         ctx=ctx_value,
         flags=flags_ref,
         role=_require_str(entry, "role", f"model {model_id}"),
