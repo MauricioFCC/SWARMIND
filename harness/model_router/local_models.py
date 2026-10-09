@@ -54,6 +54,24 @@ ROLE_LABELS: Mapping[str, str] = {
 REASONING_ROLES = frozenset({"reasoning", "fast", "deep"})
 #: Roles que NO exponen tool-calling (embeddings).
 TOOLLESS_ROLES = frozenset({"embedding"})
+#: Techo VRAM total de la GPU (RTX 4060 8GB; anti-saturacion).
+VRAM_BUDGET_MB = 8000
+#: Techo seguro de contexto (40960 causo TDR VIDEO_TDR_FAILURE 0x116).
+SAFE_CTX_MAX = 32768
+#: Reserva fija para respuesta/sistema (ctx - reserved = max_prompt_tokens).
+RESERVED_TOKENS = 2048
+#: Concurrencia seriada (1 inferencia a la vez; 2 encolaba y saturaba).
+EXPECTED_CONCURRENCY = 1
+#: TTL maximo para liberar VRAM rapido (antes 300).
+MAX_TTL_S = 180
+#: Huella VRAM estimada por modelo (espejo de fleet_manifest/test_opencode).
+FALLBACK_VRAM_MB: Mapping[str, int] = {
+    "qwen2.5-coder-3b-iq4-xs": 3300,
+    "phi-4-mini-instruct-q4-k-m": 5700,
+    "qwen3-5-4b-gguf-ud-q4-k-xl": 4600,
+    "deepseek-r1-distill-qwen-7b-q2-k": 4400,
+    "qwen3-embedding-0-6b": 2100,
+}
 
 
 @dataclass(frozen=True)
@@ -85,6 +103,7 @@ class LocalModel:
         id: Nombre corto servido por llama-swap (canonico).
         file: Ruta absoluta al archivo ``.gguf``.
         ctx: Ventana de contexto real (``-c``).
+        max_prompt_tokens: Techo de prompt (= ctx - reserved).
         flags: Referencia a una clave de ``flags`` (SAFE|SMALL).
         role: Rol de capacidad (coding|reasoning|fast|deep|embedding).
         aliases: Nombres alternos que llama-swap expone.
@@ -96,6 +115,7 @@ class LocalModel:
     ctx: int
     flags: str
     role: str
+    max_prompt_tokens: int = 0
     aliases: tuple[str, ...] = ()
     opencode: bool = True
 
@@ -130,6 +150,11 @@ class LocalModelsConfig:
         flags: Mapa nombre -> cadena de flags de ``llama-server``.
         default_ctx: Contexto por defecto de la flota.
         default_ttl: TTL por defecto del proxy (segundos).
+        concurrency_limit: Inferencias simultaneas (1 = seriado).
+        safety_margin_mb: VRAM libre que debe quedar siempre.
+        reserved_tokens: Reserva para respuesta (ctx - reserved = prompt).
+        vram_budget_mb: Techo VRAM total de la GPU.
+        safe_ctx_max: Techo seguro de contexto (anti-TDR).
         models: Modelos de la flota.
         opencode: Cableado de opencode.
     """
@@ -140,6 +165,11 @@ class LocalModelsConfig:
     default_ttl: int
     models: tuple[LocalModel, ...]
     opencode: OpencodeSSOT
+    concurrency_limit: int = EXPECTED_CONCURRENCY
+    safety_margin_mb: int = 1500
+    reserved_tokens: int = RESERVED_TOKENS
+    vram_budget_mb: int = VRAM_BUDGET_MB
+    safe_ctx_max: int = SAFE_CTX_MAX
 
 
 # ---------------------------------------------------------------------------
@@ -195,20 +225,39 @@ def validate_config(raw: Mapping[str, Any]) -> LocalModelsConfig:
 
     Raises:
         ValueError: Si falta un campo, un ``flags`` referenciado no existe,
-            un ``file`` esta vacio o hay ids duplicados (WHAT+WHY+WHERE).
+            un ``file`` esta vacio, hay ids duplicados o se viola el margen
+            de seguridad VRAM/ctx (WHAT+WHY+WHERE).
     """
     backend = _parse_backend(_require_mapping(raw, "backend"))
     flags = _parse_flags(_require_mapping(raw, "flags"))
-    models = tuple(_parse_model(entry, flags) for entry in _require_sequence(raw, "models"))
+    reserved = _optional_int(raw, "reserved_tokens", RESERVED_TOKENS)
+    budget = _optional_int(raw, "vram_budget_mb", VRAM_BUDGET_MB)
+    safe_max = _optional_int(raw, "safe_ctx_max", SAFE_CTX_MAX)
+    margin = _optional_int(raw, "safety_margin_mb", 1500)
+    concurrency = _optional_int(raw, "concurrency_limit", EXPECTED_CONCURRENCY)
+    default_ttl = _require_int(raw, "default_ttl")
+    models = tuple(_parse_model(entry, flags, reserved) for entry in _require_sequence(raw, "models"))
     _check_unique_ids(models)
+    _check_concurrency(concurrency)
+    _check_ttl(default_ttl)
+    _check_ctx_ceiling(models, safe_max)
+    _check_prompt_window(models, reserved)
+    _check_vram_safety(models, margin, budget)
     opencode = _parse_opencode(_require_mapping(raw, "opencode"), models)
+    _check_agents_declared(opencode, models)
+    _check_smallest_model(opencode, models)
     return LocalModelsConfig(
         backend=backend,
         flags=flags,
         default_ctx=_require_int(raw, "default_ctx"),
-        default_ttl=_require_int(raw, "default_ttl"),
+        default_ttl=default_ttl,
         models=models,
         opencode=opencode,
+        concurrency_limit=concurrency,
+        safety_margin_mb=margin,
+        reserved_tokens=reserved,
+        vram_budget_mb=budget,
+        safe_ctx_max=safe_max,
     )
 
 
@@ -249,6 +298,14 @@ def _require_int(raw: Mapping[str, Any], key: str) -> int:
     return value
 
 
+def _optional_int(raw: Mapping[str, Any], key: str, default: int) -> int:
+    """Devuelve ``raw[key]`` o el defecto si ausente (valida si presente)."""
+    value = raw.get(key, default)
+    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+        raise _err(f"'{key}' invalido ({value!r})", "debe ser entero positivo")
+    return value
+
+
 def _parse_backend(raw: Mapping[str, Any]) -> LocalBackend:
     """Parsea el bloque ``backend`` a ``LocalBackend``."""
     return LocalBackend(
@@ -271,8 +328,8 @@ def _parse_flags(raw: Mapping[str, Any]) -> dict[str, str]:
     return flags
 
 
-def _parse_model(entry: Any, flags: Mapping[str, str]) -> LocalModel:
-    """Parsea una entrada de ``models`` y valida su referencia de flags."""
+def _parse_model(entry: Any, flags: Mapping[str, str], reserved: int = RESERVED_TOKENS) -> LocalModel:
+    """Parsea una entrada de ``models`` y valida flags y ventana de prompt."""
     if not isinstance(entry, Mapping):
         raise _err(f"entrada de modelo invalida ({entry!r})", "cada modelo debe ser mapping")
     model_id = _require_str(entry, "id", "model")
@@ -282,12 +339,15 @@ def _parse_model(entry: Any, flags: Mapping[str, str]) -> LocalModel:
             f"flags '{flags_ref}' no definido (modelo {model_id})",
             "la referencia debe existir en 'flags'",
         )
+    ctx_value = _require_int(entry, "ctx")
+    prompt_max = _optional_int(entry, "max_prompt_tokens", ctx_value - reserved)
     return LocalModel(
         id=model_id,
         file=_require_str(entry, "file", f"model {model_id}"),
-        ctx=_require_int(entry, "ctx"),
+        ctx=ctx_value,
         flags=flags_ref,
         role=_require_str(entry, "role", f"model {model_id}"),
+        max_prompt_tokens=prompt_max,
         aliases=_parse_aliases(entry),
         opencode=bool(entry.get("opencode", True)),
     )
@@ -340,6 +400,107 @@ def _check_flota_ref(field: str, model_id: str, ids: set[str]) -> None:
         )
 
 
+def footprint_mb(model_id: str) -> int | None:
+    """Huella VRAM estimada de un modelo (fleet_manifest o fallback)."""
+    try:
+        from harness.model_router import fleet_manifest as _fleet
+    except ImportError:
+        _fleet = None  # type: ignore[assignment]
+    if _fleet is not None:
+        entry = _fleet.model_entry(model_id)
+        if entry is not None:
+            return int(entry.vram_mb)
+    value = FALLBACK_VRAM_MB.get(model_id)
+    return int(value) if value is not None else None
+
+
+def _check_concurrency(concurrency: int) -> None:
+    """Exige seriado (1 inferencia a la vez; anti-encolado)."""
+    if concurrency != EXPECTED_CONCURRENCY:
+        raise _err(
+            f"concurrency_limit={concurrency} != {EXPECTED_CONCURRENCY}",
+            "la flota va seriada en 8GB (2 encolaba y saturaba VRAM)",
+        )
+
+
+def _check_ttl(default_ttl: int) -> None:
+    """Exige TTL corto para liberar VRAM rapido (<=180s)."""
+    if default_ttl > MAX_TTL_S:
+        raise _err(
+            f"default_ttl={default_ttl} > {MAX_TTL_S}",
+            "el TTL largo retiene VRAM y bloquea el swap",
+        )
+
+
+def _check_ctx_ceiling(models: tuple[LocalModel, ...], safe_max: int) -> None:
+    """Rechaza ctx sobre el techo seguro (40960 causo TDR)."""
+    for model in models:
+        if model.ctx > safe_max:
+            raise _err(
+                f"ctx={model.ctx} > safe_ctx_max={safe_max} (modelo {model.id})",
+                "subir el ctx dispara TDR en 8GB con WDDM",
+            )
+
+
+def _check_prompt_window(models: tuple[LocalModel, ...], reserved: int) -> None:
+    """Exige prompt que quepa (ctx - reserved >= 1 y coherente)."""
+    for model in models:
+        usable = model.ctx - reserved
+        if usable < 1:
+            raise _err(
+                f"ctx={model.ctx} - reserved={reserved} < 1 (modelo {model.id})",
+                "el prompt debe caber en la ventana util",
+            )
+        if model.max_prompt_tokens != usable:
+            raise _err(
+                f"max_prompt_tokens={model.max_prompt_tokens} != {usable} (modelo {model.id})",
+                "debe ser ctx - reserved_tokens para que el prompt quepa",
+            )
+
+
+def _check_vram_safety(models: tuple[LocalModel, ...], margin: int, budget: int) -> None:
+    """Rechaza config insegura (huella + margen > presupuesto)."""
+    for model in models:
+        footprint = footprint_mb(model.id)
+        if footprint is None:
+            raise _err(
+                f"modelo {model.id!r} sin huella VRAM conocida",
+                "sin huella no se puede verificar el margen de seguridad",
+            )
+        if footprint + margin > budget:
+            raise _err(
+                f"huella={footprint} + margen={margin} > {budget} (modelo {model.id})",
+                "la flota no puede saturar los 8GB ni con un modelo residente",
+            )
+
+
+def _check_agents_declared(oc: OpencodeSSOT, models: tuple[LocalModel, ...]) -> None:
+    """Exige agentes locales sobre modelos declarados (u oraculo cloud)."""
+    ids = {model.id for model in models}
+    for name, ref in oc.agents.items():
+        if ref in (CLOUD_ALIAS, oc.cloud_oracle):
+            continue
+        short = ref.split("/", 1)[-1] if "/" in ref else ref
+        if short not in ids:
+            raise _err(
+                f"agent {name}={ref!r} no declarado",
+                "los agentes locales deben apuntar a modelos de la flota",
+            )
+
+
+def _check_smallest_model(oc: OpencodeSSOT, models: tuple[LocalModel, ...]) -> None:
+    """Exige small_model = el modelo chat mas pequeno (por VRAM)."""
+    chats = [m for m in models if m.role not in TOOLLESS_ROLES and m.opencode]
+    if not chats:
+        return
+    smallest = min(chats, key=lambda m: footprint_mb(m.id) or 10**9)
+    if oc.small_model != smallest.id:
+        raise _err(
+            f"small_model={oc.small_model!r} != {smallest.id!r} (mas pequeno)",
+            "small_model debe ser el chat mas pequeno para tareas simples",
+        )
+
+
 # ---------------------------------------------------------------------------
 # Render
 # ---------------------------------------------------------------------------
@@ -368,12 +529,17 @@ def render_llama_swap(config: LocalModelsConfig) -> str:
 
 
 def _render_model_block(model: LocalModel, config: LocalModelsConfig) -> list[str]:
-    """Bloque YAML (``ttl``/``aliases``/``cmd``) de un modelo de llama-swap."""
+    """Bloque YAML (ttl/concurrencyLimit/aliases/cmd) de llama-swap."""
     cmd = (
         f'{config.backend.server_exe} -m "{model.file}" {config.flags[model.flags]} '
         f"-c {model.ctx} --host {config.backend.host} --port ${{PORT}}"
     )
-    block = [f"  {model.id}:", f"    ttl: {config.default_ttl}", "    aliases:"]
+    block = [
+        f"  {model.id}:",
+        f"    ttl: {config.default_ttl}",
+        f"    concurrencyLimit: {config.concurrency_limit}",
+        "    aliases:",
+    ]
     block.extend(f'      - "{alias}"' for alias in model.aliases)
     block.extend(["    cmd: >-", f"      {cmd}"])
     return block

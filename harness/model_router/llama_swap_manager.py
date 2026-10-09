@@ -47,6 +47,7 @@ from harness.model_router.backend_launcher import (
     build_launch_command,
     spawn_detached,
 )
+from harness.model_router.request_governor import RequestGovernor
 
 logger = logging.getLogger("harness.model_router.llama_swap_manager")
 
@@ -121,9 +122,18 @@ class LlamaSwapManager:
     #: Lock de clase: one backend -> un solo arranque concurrente (single-flight).
     _start_lock: threading.Lock = threading.Lock()
 
-    def __init__(self, config: LlamaSwapConfig | None = None) -> None:
-        """Guarda la config efectiva (sin I/O)."""
+    def __init__(
+        self, config: LlamaSwapConfig | None = None, governor: RequestGovernor | None = None
+    ) -> None:
+        """Guarda la config efectiva y el governor (sin I/O).
+
+        Args:
+            config: Configuracion del backend (None = resolver del entorno).
+            governor: Governor anti-tormenta (None = uno nuevo; su semaforo
+                sigue siendo el global del proceso: max-1 inferencia local).
+        """
         self._config = config if config is not None else resolve_config()
+        self._governor = governor if governor is not None else RequestGovernor()
 
     @property
     def base_url(self) -> str:
@@ -433,18 +443,37 @@ class LlamaSwapManager:
             )
             return False
 
-    def warm(self, model: str) -> bool:
+    def warm(
+        self,
+        model: str,
+        *,
+        prompt_tokens: int | None = None,
+        model_ctx: int | None = None,
+        free_vram_mb: int | None = None,
+        footprint_mb: int | None = None,
+        unloadable_mb: int = 0,
+    ) -> bool:
         """Precalienta un modelo forzando su carga (POST chat, 1 token).
 
         llama-swap carga el modelo al recibir una peticion proxied; el
         ``/v1/models`` no lo carga. Un chat minimo lo sube a VRAM y verifica
         que el swap (descarga del anterior) funciona. Reintenta con backoff.
 
+        Anti-tormenta: si el circuito del modelo esta abierto o el governor
+        rechaza el presupuesto (prompt > ventana o VRAM sin margen), retorna
+        False SIN tocar el backend (el llamador NO debe reintentar lo mismo).
+
         Args:
             model: Id del modelo (canonico o alias) a precargar.
+            prompt_tokens: Tokens estimados del prompt (None = sin gate ctx).
+            model_ctx: Ventana del modelo en tokens (None = sin gate ctx).
+            free_vram_mb: VRAM libre en MB (None = desconocida -> se permite).
+            footprint_mb: VRAM estimada del modelo en MB (None = sin gate).
+            unloadable_mb: VRAM liberable descargando residentes.
 
         Returns:
-            True si el backend acepto la peticion; False si fallo.
+            True si el backend acepto la peticion; False si fallo o el
+            governor la rechazo fail-fast.
 
         Raises:
             LlamaSwapError: Si ``model`` esta vacio.
@@ -455,6 +484,68 @@ class LlamaSwapManager:
                 "WHY: sin id no hay modelo que precargar. "
                 "WHERE: LlamaSwapManager.warm"
             )
+        if not self._governor.allow(model):
+            logger.warning(
+                "llama_swap_manager: warm %s omitido (circuito abierto, sin reintento)", model
+            )
+            return False
+        if not self._admit_or_reject(
+            model, prompt_tokens, model_ctx, free_vram_mb, footprint_mb, unloadable_mb
+        ):
+            return False
+        with self._governor.slot() as held:
+            if not held:
+                logger.warning("llama_swap_manager: warm %s sin slot (otra inferencia en curso)", model)
+                return False
+            return self._warm_request(model)
+
+    def _admit_or_reject(
+        self,
+        model: str,
+        prompt_tokens: int | None,
+        model_ctx: int | None,
+        free_vram_mb: int | None,
+        footprint_mb: int | None,
+        unloadable_mb: int,
+    ) -> bool:
+        """Gate fail-fast del governor: True = proceder al backend.
+
+        Solo se evalua si el llamador aporta el presupuesto completo
+        (prompt+ctx+footprint); si no, se permite (compat con el warm
+        historico). El rechazo NO cuenta como fallo del breaker (no hubo
+        intento real contra el backend).
+
+        Args:
+            model: Id del modelo (solo para el log accionable).
+            prompt_tokens: Tokens estimados (None = sin gate).
+            model_ctx: Ventana del modelo (None = sin gate).
+            free_vram_mb: VRAM libre (None = desconocida -> se permite).
+            footprint_mb: VRAM estimada del modelo (None = sin gate).
+            unloadable_mb: VRAM liberable descargando residentes.
+
+        Returns:
+            True si puede intentar; False si fue rechazado (ya logueado).
+        """
+        if prompt_tokens is None or model_ctx is None or footprint_mb is None:
+            return True
+        admitted, reason = self._governor.admit(
+            prompt_tokens, model_ctx, free_vram_mb, footprint_mb, unloadable_mb=unloadable_mb
+        )
+        if admitted:
+            return True
+        logger.warning("llama_swap_manager: warm %s rechazado por governor (%s)", model, reason)
+        return False
+
+    def _warm_request(self, model: str) -> bool:
+        """POST de warm contra el backend con registro en el breaker.
+
+        Args:
+            model: Id del modelo a precargar (slot del governor ya tomado).
+
+        Returns:
+            True si el backend acepto (registra exito); False si fallo
+            (registra fallo para el circuit breaker).
+        """
         body = {
             "model": model,
             "messages": [{"role": "user", "content": "."}],
@@ -469,8 +560,10 @@ class LlamaSwapManager:
                 timeout=self._config.start_timeout_s,
             )
         except LlamaSwapError as exc:
+            self._governor.record_failure(model)
             logger.warning("llama_swap_manager: warm %s fallo (%s)", model, exc)
             return False
+        self._governor.record_success(model)
         logger.info("llama_swap_manager: modelo %s precargado", model)
         return True
 

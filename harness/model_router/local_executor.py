@@ -27,6 +27,7 @@ from dataclasses import dataclass
 from harness.model_router.fleet_manifest import FLEET
 from harness.model_router.gpu_guard import pick_safe_model, safe_num_ctx, should_degrade
 from harness.model_router.model_windows import fits_in_window
+from harness.model_router.request_governor import RequestGovernor
 from harness.model_router.vram_guard import fits_in_vram, footprint_mb, free_vram_mb
 
 
@@ -224,6 +225,7 @@ class LocalExecutor:
         self, client, tiers, unsloth_client=None, unsloth_model=None,
         vram_check=None, free_vram=None, backend_manager=None,
         allow_open_tasks: bool = False, max_parallel: int = 2,
+        governor: RequestGovernor | None = None,
     ) -> None:
         """Inicializa el ejecutor con cliente, router y backend preferente.
 
@@ -240,6 +242,8 @@ class LocalExecutor:
             allow_open_tasks: Politica por defecto para tareas abiertas
                 (False = solo la allowlist cerrada).
             max_parallel: Workers del fan-out de ``execute_batch`` (>= 1).
+            governor: Governor anti-tormenta (None = uno nuevo; su semaforo
+                es el global del proceso: max-1 inferencia local a la vez).
         """
         self._client = client
         self._tiers = tiers
@@ -248,6 +252,7 @@ class LocalExecutor:
         self._vram_check = vram_check or _fits_vram_for
         self._free_vram = free_vram or free_vram_mb
         self._backend_manager = backend_manager
+        self._governor = governor if governor is not None else RequestGovernor()
         self._allow_open_tasks = allow_open_tasks
         # Acotar a >= 1: ThreadPoolExecutor exige max_workers >= 1.
         self._max_parallel = max(1, max_parallel)
@@ -378,6 +383,25 @@ class LocalExecutor:
         Returns:
             LocalExecutionResult (nunca lanza).
         """
+        with self._governor.slot() as held:
+            if not held:
+                return self._to_cloud(
+                    "WHAT: governor local ocupado por otra inferencia (timeout). "
+                    "WHY: max-1 inferencia local a la vez (anti-swap/TDR). "
+                    "WHERE: LocalExecutor.execute. NO reintentar en loop: ir a cloud."
+                )
+            return self._execute_guarded(task, allow_open)
+
+    def _execute_guarded(self, task: str, allow_open: bool | None) -> LocalExecutionResult:
+        """Cuerpo de ``execute`` con el slot del governor ya tomado.
+
+        Args:
+            task: Descripcion de la tarea.
+            allow_open: Override de tareas abiertas (None = default).
+
+        Returns:
+            LocalExecutionResult (nunca lanza).
+        """
         if allow_open is None:
             allow_open = self._allow_open_tasks
         if not allow_open and not is_closed_task(task):
@@ -392,26 +416,42 @@ class LocalExecutor:
     def execute_batch(self, tasks: list[str]) -> list[LocalExecutionResult]:
         """Ejecuta varias tareas locales en paralelo preservando el orden.
 
-        Fan-out concurrente con
+        Toma el slot del governor UNA vez para todo el batch (max-1
+        inferencia local a la vez frente a otros ejecutores/managers) y el
+        fan-out interno sigue concurrente con
         ``ThreadPoolExecutor(max_workers=self._max_parallel)``; ``pool.map``
-        conserva el orden de entrada. Los contadores de ahorro se actualizan
-        bajo lock (thread-safe). Contrato: NUNCA lanza (cada tarea ya cae a
-        cloud por si misma; se blinda ademas con ``_safe_execute``).
+        conserva el orden de entrada. Los puntos de inferencia NO re-adquieren
+        el slot (el semaforo no es reentrante). Los contadores de ahorro se
+        actualizan bajo lock (thread-safe). Contrato: NUNCA lanza.
 
         Args:
             tasks: Descripciones de tarea a ejecutar.
 
         Returns:
             Lista de resultados en el mismo orden que ``tasks`` (vacia si no
-            hay tareas).
+            hay tareas; toda a cloud si el slot no se obtuvo).
         """
         if not tasks:
             return []
-        with ThreadPoolExecutor(max_workers=self._max_parallel) as pool:
-            return list(pool.map(self._safe_execute, tasks))
+        with self._governor.slot() as held:
+            if not held:
+                return [self._batch_busy_result() for _ in tasks]
+            with ThreadPoolExecutor(max_workers=self._max_parallel) as pool:
+                return list(pool.map(self._safe_execute, tasks))
+
+    def _batch_busy_result(self) -> LocalExecutionResult:
+        """Resultado cloud cuando el batch no obtuvo el slot (ya logueado)."""
+        return self._to_cloud(
+            "WHAT: governor local ocupado por otra inferencia (timeout). "
+            "WHY: max-1 inferencia local a la vez (anti-swap/TDR). "
+            "WHERE: LocalExecutor.execute_batch. NO reintentar en loop: ir a cloud."
+        )
 
     def _safe_execute(self, task: str) -> LocalExecutionResult:
         """Ejecuta una tarea sin propagar excepciones (contrato del batch).
+
+        El slot ya lo tomo ``execute_batch`` para todo el batch (no se
+        re-adquiere aqui: el semaforo no es reentrante).
 
         Args:
             task: Descripcion de la tarea.
@@ -420,7 +460,7 @@ class LocalExecutor:
             Resultado local o cloud; nunca lanza.
         """
         try:
-            return self.execute(task)
+            return self._execute_guarded(task, None)
         except Exception as exc:  # noqa: BLE001 - contrato: nunca lanza
             return self._unexpected_failure(exc)
 
@@ -547,6 +587,10 @@ class LocalExecutor:
     ) -> LocalExecutionResult:
         """Genera en el modelo local y valida la salida (verificacion final).
 
+        El slot del governor lo toma el llamador (``execute``/``execute_batch``);
+        aqui solo se consulta el breaker: un modelo con 3 fallos consecutivos
+        deriva a cloud SIN tocar el backend (anti-tormenta de reintentos).
+
         Args:
             task: Tarea cerrada.
             model: Modelo local elegido.
@@ -556,6 +600,10 @@ class LocalExecutor:
         Returns:
             Resultado local si la salida es sana; cloud si falla o degenera.
         """
+        if not self._governor.allow(model):
+            return self._to_cloud(
+                f"circuito abierto para {model} (fallos consecutivos): fallback a cloud"
+            )
         keep_alive = _tier_keep_alive(self._tiers, tier)
         try:
             data = self._client.generate(
@@ -567,12 +615,26 @@ class LocalExecutor:
                 },
             )
         except Exception as exc:  # noqa: BLE001 - fallback a cloud, no crash
+            self._governor.record_failure(model)
             logger.warning("local_executor: fallo local (%s), fallback a cloud", exc)
             return self._to_cloud(
                 f"fallo del modelo local ({exc}): fallback a cloud"
             )
+        return self._validate_output(model, data)
+
+    def _validate_output(self, model: str, data: object) -> LocalExecutionResult:
+        """Valida la salida (verificacion final) y registra el breaker.
+
+        Args:
+            model: Modelo local que genero.
+            data: Respuesta cruda del cliente (dict con "response" o str).
+
+        Returns:
+            Resultado local si la salida es sana; cloud si degenera.
+        """
         output = str(data.get("response", "")) if isinstance(data, dict) else str(data)
         if _is_degenerate_output(output):
+            self._governor.record_failure(model)
             logger.warning(
                 "local_executor: %s devolvio salida degenerada "
                 "(verificacion final), fallback a cloud", model,
@@ -581,6 +643,7 @@ class LocalExecutor:
                 f"salida degenerada de {model} (verificacion final): "
                 "fallback a cloud"
             )
+        self._governor.record_success(model)
         self._count_local()
         logger.info("local_executor: tarea cerrada en %s (0 tokens cloud)", model)
         return LocalExecutionResult(
