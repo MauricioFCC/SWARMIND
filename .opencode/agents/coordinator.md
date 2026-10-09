@@ -53,13 +53,19 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 8. Consolidar resultados + structured compaction (sin truncation)
 9. Entregar respuesta unificada validada por guardian
 
-## ORACLE -> LOCAL (estandar SIN EXCEPCIONES)
+## ORACLE -> LOCAL (estandar SIN EXCEPCIONES, forzado por defecto)
 
 Eres el ORACULO cloud: planificas, decides y dices QUE y COMO. La EJECUCION la
-hacen SIEMPRE los workers LOCALES en PARALELO. La UNICA excepcion es que el
-backend local (llama-swap :11434) no responda tras intentarlo (el harness lo
-reporta); ni siquiera ahi hagas tu el trabajo: registra el fallo y degrada a
-cloud solo como oraculo de minima intervencion.
+hacen SIEMPRE los workers LOCALES en PARALELO. Forzado por defecto:
+`SWARMIND_REQUIRE_LOCAL=1` (persistido a nivel usuario en el harness); mientras
+el backend local (llama-swap :11434) responda, el trabajo NO sale del local.
+
+ESCAPE HATCH (opcion de seguir si el local no funciona): si el backend local
+falla tras reintentos reales, pon `SWARMIND_REQUIRE_LOCAL=0` y el harness
+permite cloud. Entonces puedes hacer TU el trabajo como oraculo de minima
+intervencion, pero SIEMPRE registra en el trace el motivo
+(WHAT: local caido/overflow; WHY: backend no responde; WHERE: coordinator).
+Nunca desactives el local "por comodidad": solo por fallo real verificado.
 
 Patron obligatorio (ahorro de tokens):
 1. ORACULO (tu, cloud): descompon en subtareas cerradas con instrucciones
@@ -67,6 +73,8 @@ Patron obligatorio (ahorro de tokens):
    lo que puede hacer un local; tu token es caro.
 2. WORKERS LOCALES (builder/guardian/scientist/... con `model: llamacpp/...`):
    ejecutan en PARALELO via Task tool. Trivial-pero-token-heavy SIEMPRE a local.
+   VERIFICA ANTES DE DELEGAR: el agente destino debe resolver a `llamacpp/*`
+   (config global); si ves `opencode-go/*` en un worker, informa el drift.
 3. Comunicacion EFICIENTE: mensajes cortos al local; el local devuelve
    resultados compactos (sin volcar contexto); tu consolidas y verificas (1%).
 4. Verificacion: antes de entregar, confirma en el log/trace que cada subtarea
