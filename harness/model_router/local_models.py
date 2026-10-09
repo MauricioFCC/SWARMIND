@@ -56,8 +56,9 @@ REASONING_ROLES = frozenset({"reasoning", "fast", "deep"})
 TOOLLESS_ROLES = frozenset({"embedding"})
 #: Techo VRAM total de la GPU (RTX 4060 8GB; anti-saturacion).
 VRAM_BUDGET_MB = 8000
-#: Techo seguro de contexto (40960 causo TDR VIDEO_TDR_FAILURE 0x116).
-SAFE_CTX_MAX = 32768
+#: Techo seguro de contexto (40960 causo TDR; 36864 medido seguro en 8GB:
+#: phi-4-mini 5948MiB, qwen3.5-4b 4925MiB, deepseek-7b 5223MiB, coder-3b 3707MiB).
+SAFE_CTX_MAX = 36864
 #: Reserva fija para respuesta/sistema (ctx - reserved = max_prompt_tokens).
 RESERVED_TOKENS = 2048
 #: Concurrencia seriada (1 inferencia a la vez; 2 encolaba y saturaba).
