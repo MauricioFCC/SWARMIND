@@ -19,6 +19,11 @@ from typing import Any
 
 import yaml
 
+from harness.orchestrator.hidden_body import (
+    _body_keyword_score,
+    read_skill_body,
+    tokenize,
+)
 from harness.orchestrator.keyword_match import match_keywords, normalize
 from harness.orchestrator.prompt_sanitizer import sanitize_task
 
@@ -31,6 +36,10 @@ _SKILL_REGISTRY_PATH = Path(__file__).resolve().parent.parent.parent / ".opencod
 #: Similitud Jaccard de tokens del NOMBRE a partir de la cual dos skills se
 #: consideran near-duplicates (misma habilidad con nombre variado).
 _NEAR_DUPLICATE_THRESHOLD = 0.9
+
+#: Margen relativo por debajo del cual dos dominios se consideran ambiguos
+#: (empate cercano) y se desempatan leyendo el cuerpo de los candidatos.
+_AMBIGUITY_MARGIN = 0.8
 
 
 def _name_tokens(name: str) -> frozenset[str]:
@@ -261,18 +270,98 @@ class SkillBundler:
             Dominio detectado (web, api, data, frontend, backend, etc.), o
             "general" si ninguna keyword matchea.
         """
+        scores = self._domain_keyword_scores(task)
+        if not scores:
+            return "general"
+
+        return max(scores, key=lambda name: scores[name])
+
+    def _domain_keyword_scores(self, task: str) -> dict[str, float]:
+        """Puntua cada dominio por keywords de la tarea (frontera de palabra).
+
+        WHAT: pondera por longitud de la keyword (mas especifica = mayor peso),
+        igual que ``detect_domain``. WHY: un unico calculo (DRY) reutilizado por
+        la deteccion y el desempate de dominios. WHERE: ``detect_domain`` y
+        ``_resolve_ambiguous_domain``.
+
+        Args:
+            task: Descripcion de la tarea.
+
+        Returns:
+            Dict ``dominio -> score`` para los dominios con al menos un match.
+        """
         safe_task = sanitize_task(task)
         scores: dict[str, float] = {}
         for domain, keywords in DOMAIN_KEYWORDS.items():
             matched = match_keywords(safe_task, keywords)
             if matched:
-                # Palabras mas largas = mas especificas = mayor peso
+                # Palabras mas largas = mas especificas = mayor peso.
                 scores[domain] = sum(len(kw) for kw in matched) / 10.0
+        return scores
 
-        if not scores:
-            return "general"
+    def _skill_paths(self) -> dict[str, str]:
+        """Mapea nombre de skill -> ruta resuelta del ``SKILL.md``.
 
-        return max(scores, key=lambda name: scores[name])
+        Returns:
+            Dict ``nombre -> path`` para las skills con ``path`` no vacio.
+        """
+        return {
+            str(skill.get("name", "")): str(skill.get("path", ""))
+            for skill in self._skills
+            if skill.get("path")
+        }
+
+    def _domain_body_score(self, domain: str, task: str) -> float:
+        """Puntua el cuerpo de las skills candidatas de un dominio.
+
+        Args:
+            domain: Dominio cuyos candidatos se evaluan.
+            task: Descripcion de la tarea.
+
+        Returns:
+            Promedio de ``matches/keywords`` sobre los cuerpos de las skills
+            del dominio (``0.0`` si no hay candidatas).
+        """
+        skills = DOMAIN_SKILLS.get(domain, ())
+        if not skills:
+            return 0.0
+        paths = self._skill_paths()
+        task_words = tokenize(task)
+        total = sum(
+            _body_keyword_score(read_skill_body(paths.get(name, "")), task_words)
+            for name in skills
+        )
+        return total / len(skills)
+
+    def _resolve_ambiguous_domain(self, domain: str, task: str) -> str:
+        """Desempata dominios cercanos leyendo el cuerpo de los candidatos.
+
+        WHAT: si los dos dominios con mayor score keyword estan a menos de
+        ``_AMBIGUITY_MARGIN`` (relativo) y ``domain`` es uno de ellos, elige el
+        de mayor puntaje de cuerpo (hidden-body). WHY: la metadata es
+        asimetrica; el cuerpo desambigua dominios que empatan por keywords.
+        WHERE: ``select_skills``.
+
+        Args:
+            domain: Dominio recibido (candidato al desempate).
+            task: Descripcion de la tarea.
+
+        Returns:
+            El dominio recibido, o el otro dominio del empate si su cuerpo
+            matchea mejor la tarea (empate de cuerpos conserva ``domain``).
+        """
+        scores = self._domain_keyword_scores(task)
+        if len(scores) < 2:
+            return domain
+        ranked = sorted(scores.items(), key=lambda kv: -kv[1])
+        (first, first_score), (second, second_score) = ranked[0], ranked[1]
+        if first_score <= 0 or second_score < first_score * _AMBIGUITY_MARGIN:
+            return domain
+        if domain not in (first, second):
+            return domain
+        if self._domain_body_score(second, task) > self._domain_body_score(first, task):
+            return second
+        return domain
 
     def select_skills(self, domain: str, task: str | None = None) -> list[str]:
         """
@@ -288,14 +377,23 @@ class SkillBundler:
         lista "general"; el dominio explicito "general" sigue siendo un mapeo
         curado valido.
 
+        HIDDEN-BODY (FR-C2): con ``task``, si el dominio es ambiguo (empate
+        cercano con otro) se desempata leyendo el cuerpo de los candidatos.
+
         Args:
             domain: Dominio detectado.
-            task: Tarea opcional para filtrado adicional.
+            task: Tarea opcional para filtrado adicional y desempate.
 
         Returns:
             Lista de skills ordenadas; ``[]`` si el dominio es desconocido
             (contrato de abstencion).
         """
+        if domain not in DOMAIN_SKILLS:
+            return []
+
+        if task:
+            domain = self._resolve_ambiguous_domain(domain, task)
+
         skills = list(DOMAIN_SKILLS.get(domain, ()))
         if not skills:
             return []

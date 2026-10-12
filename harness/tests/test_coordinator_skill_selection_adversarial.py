@@ -207,15 +207,22 @@ class TestThresholdYScore:
         assert dispatcher.find_skill_for_task("tarea") is None
 
     def test_score_yaml_fijo_080_y_contenido_resuelto(self) -> None:
-        """Corregido: el name-match reporta 0.80 y ahora resuelve el ``content``.
+        """FR-C2: el name-match combina metadata (0.80) con el CUERPO del skill.
 
-        El score del matcher YAML sigue normalizado a 0.80 (keyword match
-        fuerte); el ``path`` curado se resuelve por nombre y el contenido del
-        skill deja de quedar vacío -> 'guided_by_skill' con texto real.
+        El score base del matcher YAML sigue siendo 0.80; con el cuerpo real
+        del skill (hidden-body asymmetry, arXiv:2603.22455) la similitud
+        combinada sube por encima de 0.80. El ``path`` curado se resuelve por
+        nombre y el contenido del skill deja de quedar vacío ->
+        'guided_by_skill' con texto real. Discriminante: sin la lectura del
+        cuerpo ``body_score`` sería 0.0 (mutante rechazado).
         """
         result = AgentDispatcher().find_skill_for_task("rust")
         assert result is not None
-        assert result["similarity"] == 0.80
+        assert result["body_score"] > 0.0
+        assert result["similarity"] == pytest.approx(
+            0.5 * 0.80 + 0.5 * result["body_score"]
+        )
+        assert result["similarity"] > 0.80
         assert result["content"] != ""
 
     def test_skill_matcheada_deberia_traer_contenido(self) -> None:
