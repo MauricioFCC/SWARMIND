@@ -131,12 +131,13 @@ class TestFanoutGateWiring:
         assert outcome.winner is not None     # 1 pasada responde
         assert outcome.total_tokens < 500     # costo de UNA llamada, no N
 
-    def test_planner_boundary_exact_threshold(self, monkeypatch) -> None:
+    def test_planner_boundary_exact_threshold(self, monkeypatch, tmp_path) -> None:
         """_degrade_if_strong con rate == threshold EXACTO degrada (gate >=).
 
         Test unitario del metodo (sin depender del learned path): con >=
         degrada a SINGLE; con > (mutante) no degrada y retorna la multi.
         """
+        from harness.failure_registry import FailureRegistry
         from harness.orchestrator import adaptive_planner as ap_pkg
         from harness.orchestrator.adaptive_planner.core import (
             AdaptivePlanner,
@@ -144,7 +145,11 @@ class TestFanoutGateWiring:
         )
         from harness.orchestrator.adaptive_planner.models import PlanFeedback
 
-        planner = AdaptivePlanner()
+        # Registry aislado: el feedback con rate=0.0 dispara el drain de
+        # fallos; inyectarlo evita escribir en el db/failures.jsonl real.
+        planner = AdaptivePlanner(
+            failure_registry=FailureRegistry(path=tmp_path / "failures.jsonl"),
+        )
         for i in range(8):
             planner.record_feedback(PlanFeedback(
                 session_id="s", task_hash=f"b{i}", task_type="implement",

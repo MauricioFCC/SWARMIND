@@ -15,6 +15,12 @@ from __future__ import annotations
 import hashlib
 import logging
 
+from harness.failure_registry import (
+    FailureRegistry,
+    FailureType,
+    Severity,
+)
+from harness.failure_registry import registry as _default_failure_registry
 from harness.orchestrator.fanout_gate import SINGLE_AGENT_THRESHOLD
 
 from .constants import (
@@ -70,14 +76,26 @@ class AdaptivePlanner(_PSMASMixin, _PersistenceMixin):
         self,
         storage_path: str | None = None,
         min_samples: int = 3,
+        *,
+        failure_registry: FailureRegistry | None = None,
     ) -> None:
         """
         Args:
             storage_path: Ruta para persistir estadísticas.
             min_samples: Mínimo de muestras antes de usar ML.
+            failure_registry: Registry de fallos inyectable (DI). Default: el
+                singleton ``harness.failure_registry.registry``. Inyectar uno
+                aislado en tests evita escribir en ``db/failures.jsonl``.
         """
         self._storage_path = storage_path or ""
         self._min_samples = min_samples
+
+        # Registry de fallos para drenar feedback fallido (failure distillation)
+        self._failure_registry = (
+            failure_registry
+            if failure_registry is not None
+            else _default_failure_registry
+        )
 
         # Estadísticas por estrategia
         self._strategy_stats: dict[str, StrategyStats] = {
@@ -192,6 +210,59 @@ class AdaptivePlanner(_PSMASMixin, _PersistenceMixin):
             "strategy=%s success_rate=%.2f",
             feedback.session_id, feedback.strategy_used.value, feedback.success_rate,
         )
+
+        # Failure distillation: drenar el fallo al FailureRegistry central
+        if feedback.success_rate < REPLAN_FAILURE_RATE:
+            self._drain_failure_to_registry(feedback)
+
+    def _drain_failure_to_registry(self, feedback: PlanFeedback) -> None:
+        """
+        Drena un feedback fallido al FailureRegistry central.
+
+        Persiste un ``FailureRecord`` cuando el ``success_rate`` cae por
+        debajo de ``REPLAN_FAILURE_RATE``, de modo que el loop de
+        auto-mejora pueda destilar el fallo en skills (failure distillation,
+        arXiv 2607.29468 SESA).
+
+        Es tolerante a fallos de persistencia: si el registry lanza OSError
+        se loguea un warning y NO se propaga. WHY: el feedback del planner
+        no debe romper por la persistencia del fallo (el drain es best-effort).
+
+        Args:
+            feedback: Feedback de la ejecución con success_rate bajo.
+        """
+        try:
+            self._failure_registry.record(
+                task=(
+                    f"AdaptivePlanner: success_rate bajo en task_type="
+                    f"{feedback.task_type}"
+                ),
+                failure_type=FailureType.RUNTIME,
+                error_msg=(
+                    f"success_rate={feedback.success_rate:.2f} < "
+                    f"REPLAN_FAILURE_RATE={REPLAN_FAILURE_RATE} con estrategia "
+                    f"'{feedback.strategy_used.value}' | "
+                    f"session_id={feedback.session_id}"
+                ),
+                root_cause=(
+                    f"La estrategia '{feedback.strategy_used.value}' no alcanzo "
+                    f"la tasa de exito esperada para task_type "
+                    f"'{feedback.task_type}': success_rate="
+                    f"{feedback.success_rate:.2f}"
+                ),
+                resolution="pending",
+                severity=Severity.HIGH,
+                function_name="AdaptivePlanner.record_feedback",
+                tags=(feedback.task_type, feedback.strategy_used.value),
+            )
+        except OSError as exc:
+            logger.warning(
+                "WHAT=no se pudo persistir el fallo del planner en "
+                "FailureRegistry WHY=%s WHERE=AdaptivePlanner."
+                "_drain_failure_to_registry (el feedback del planner se "
+                "registro igual; el drain es best-effort)",
+                exc,
+            )
 
     def get_recommendation(self, task: str) -> dict:
         """
