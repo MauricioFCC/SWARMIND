@@ -1,13 +1,13 @@
----
+﻿---
 name: base-principles-min
 domain: core
-description: "N1 esencial para sesiones con modelos locales 9B (ctx 16K): principios sin N2/N3. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "N1 esencial para sesiones con modelos locales 9B (ctx 16K): principios sin N2/N3. | UPGÂ·NAMÂ·FRS (reglas en base_principles.md)"
 license: MIT
-version: 3.5.0
+version: 3.6.0
 project_agnostic: true
 ---
 
-# PRINCIPIOS UNIVERSALES (min) — solo N1
+# PRINCIPIOS UNIVERSALES (min) â€” solo N1
 
 Para sesiones locales con modelos 9B (ctx limitado): inyectar ESTE archivo
 en vez de `base_principles.md` completo (38KB). N2/N3 quedan bajo demanda
@@ -23,8 +23,8 @@ SEG: 0 secrets | mask logs | parametriza SQL | sys.path.insert(1)
 DOC: docstrings ES OBLIGATORIAS | 0 funciones sin docstring | template Args/Returns/Raises
 TST: core >=80% | TDD adversarial (test vs mutante) + mutantes + PBT + pairwise | coverage es piso no techo | pre-commit gates | 0 except silenciosos | logger.warning()
 CMT: conventional commit type(scope): descripcion
-FDE: bridge product↔reality | delta = gap to close | mission > persona
-EVO: learn→design→experiment→analyze | cognition persists | loop repeats
+FDE: bridge productâ†”reality | delta = gap to close | mission > persona
+EVO: learnâ†’designâ†’experimentâ†’analyze | cognition persists | loop repeats
 POC: Proceso > herramienta | sin harness = departamento aislado | 5 preguntas antes de adoptar
 TKN: Cache-Shape | Structured Compact | Failure-Spend | Observation Masking
 WFP: Workflow Patterns | Evaluator-Optimizer | Voting | Critique-Revise | Parallel-Transform
@@ -44,16 +44,17 @@ MAG: Magic Numbers | sin literales magicos | constantes con nombre semantico | t
 FSZ: Function Size | max 30 lineas | una responsabilidad | extraer helpers | guard clauses tempranas
 CMP: Composition over Inheritance | preferir composicion sobre herencia | estrategia + interfaces | evitar jerarquias profundas | HAS-A sobre IS-A
 DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un punto por linea | tell dont ask
-EDV: Evidence-Driven Development | investigar→hipotesis→probar→seleccionar→heredar→iterar | decisiones de modelo/arquitectura con evidencia medible (benchmark, ejecutar y validar), no preferencia | cada hallazgo se hereda en la SSOT/config y se itera
+EDV: Evidence-Driven Development | investigarâ†’hipotesisâ†’probarâ†’seleccionarâ†’heredarâ†’iterar | decisiones de modelo/arquitectura con evidencia medible (benchmark, ejecutar y validar), no preferencia | cada hallazgo se hereda en la SSOT/config y se itera
 FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | elegir la solucion mas avanzada/frontera/eficiente/confiable | al finalizar: actualizar docs + commit
+RSV: Roadmap Sync & Retrospectiva | cada N refactors (>=5) leer docs/src/es/roadmap/estado.md + analisis retrospectivo de calidad | features SIEMPRE de frontera (roadmap se actualiza con ultimas tecnicas)
 FND: Foundation-First | entorno antes que producto | walking skeleton + tracer bullet | spec + CI T1 (<90s) + gates + seguridad ANTES de features | identidad (org/dominio/registry) si publicas
 SPE: Spec-First (Proof-or-Stop) | spec ANTES de ejecutar | outcome medible | exit criteria definidos | sin spec = sin start
-GATE: Evidence-Gated Lifecycle | claim→evidence→gate | 0 false-DONE | T1 deterministic + T2 LLM-judge + T3 regression
-FAIL: Failure Registry | registrar fallos en JSONL | distillar en skills | Socratic-SWE traces→tasks | aprender de errores
+GATE: Evidence-Gated Lifecycle | claimâ†’evidenceâ†’gate | 0 false-DONE | T1 deterministic + T2 LLM-judge + T3 regression
+FAIL: Failure Registry | registrar fallos en JSONL | distillar en skills | Socratic-SWE tracesâ†’tasks | aprender de errores
 SBX: Sandboxing | aislamiento de fallos | per-task environment | rollback plan | contenedor o timeout como minimo
 RPA: Re-Pin After compaction | tras CADA compactacion recargar N1+rol+skills+agentes | 65% fallos = drift | bloque <<RE-ANCHOR>>
-CPD: Fundamentos Competicion | checklist edges+invariants+BigO ANTES de codear | diagnose→repair→regenerate | dual verification
-ADV: Verificacion adversarial SIEMPRE | atacante (halla gaps) → steelman (defiende+propone) → juez (veredicto+disenso) | T siempre ultimo movimiento | 1/5 "resuelto" es incorrecto: fortalecer antes de confiar
+CPD: Fundamentos Competicion | checklist edges+invariants+BigO ANTES de codear | diagnoseâ†’repairâ†’regenerate | dual verification
+ADV: Verificacion adversarial SIEMPRE | atacante (halla gaps) â†’ steelman (defiende+propone) â†’ juez (veredicto+disenso) | T siempre ultimo movimiento | 1/5 "resuelto" es incorrecto: fortalecer antes de confiar
 CLA: Clean Architecture | Presentation->Application->Domain<-Infrastructure | domain puro (0 frameworks/DB) | ports/adapters + DIP
 VAL: Input Validation | TODO input externo (HTTP/CLI) validado contra schema ANTES del dominio | Zod/Pydantic
 FST: Fail-Fast tipado | errores tipados con cause + contexto | nunca swallow ni mensaje generico
