@@ -22,10 +22,10 @@ skills:
 
   - name: hedgefund
     domain: financial
-    description: "Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, riesgo institucional. Alcance: doctrina y estrategia; para motores ver quant-trading, para ejecucion ver risk-execution. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, riesgo institucional. Alcance: doctrina y estrategia; para motores ver quant-trading, para ejecucion ver risk-execution. Cuando NO usar: ver Alcance. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 0eebd920b5ab20f4e0f7924cab284a4d5900e6450cdc4f47909a8ad8a313e91d
+    sha256: 1e91a0726be19e8269dc2324d9abe78b3d714741e70a12eba0c3aa571aa042dc
 
   - name: legal-doc
     domain: legal
@@ -50,10 +50,10 @@ skills:
 
   - name: quant-trading
     domain: quantitative
-    description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. Alcance: implementacion del motor sobre CQE; para validacion de factores ver alpha-research. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. Alcance: implementacion del motor sobre CQE; para validacion de factores ver alpha-research. Cuando NO usar: ver Alcance. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: c01a2bff623a5781766373540159aaae877520a8ed88c8b88550f2778e3aadd7
+    sha256: 0cfbff3592a87344268a9f53304e3b683192517c96881e714b466465f3dadb9b
 
   - name: risk-execution
     domain: quantitative
@@ -197,10 +197,10 @@ skills:
 
   - name: risk-intelligence
     domain: risk
-    description: "Usar cuando el usuario analiza riesgos emergentes. CRO Forum, riesgos tecnologicos, geopoliticos, climaticos, salud, financieros. Alcance: riesgos emergentes y escenarios; para riesgo de mercado ver risk-execution. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario analiza riesgos emergentes. CRO Forum, riesgos tecnologicos, geopoliticos, climaticos, salud, financieros. Alcance: riesgos emergentes y escenarios; para riesgo de mercado ver risk-execution. Cuando NO usar: ver Alcance. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: c32e46d6778eb5bd63bfc3021a25fa8c0eb9c0f77e4c2c22dc4de8981e59f6a0
+    sha256: 24f0bf3849644ba817ad51ba20accfc9f9342d772e88008834962eaf7ff3dd51
 
   - name: diagram-design
     domain: frontend

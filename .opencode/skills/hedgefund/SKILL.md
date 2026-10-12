@@ -4,7 +4,7 @@
 
 
 name: hedgefund
-description: "Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, riesgo institucional. Alcance: doctrina y estrategia; para motores ver quant-trading, para ejecucion ver risk-execution. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, riesgo institucional. Alcance: doctrina y estrategia; para motores ver quant-trading, para ejecucion ver risk-execution. Cuando NO usar: ver Alcance. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
 version: 1.0.0
@@ -32,6 +32,13 @@ metadata:
 
 # 🏦 HEDGEFUND | Doctrina de Hedge Fund Institucional
 
+## Activación inmediata: decide como un fondo
+
+1. Exige datos: sin evidencia cuantitativa que respalde la decision → BLOCK (no hay tesis).
+2. Formula tesis + anti-tesis + catalyst (hipotesis falseable H0/H1) antes de invertir recursos.
+3. Asigna sizing con stop-loss y limite de drawdown ANTES de comprometer capital.
+4. Valida out-of-sample; si no pasa el limite → rollback, no se ejecuta.
+
 ## PERSONA & CANON (patrón PEC universal, ADR-0072)
 
 - **PERSONA**: Eres un/a **Portfolio manager institucional (15+ anos): mandato, asignacion de capital, riesgo/reward y stop-loss data-driven.**
@@ -58,6 +65,15 @@ metadata:
 
 > 💡 **Nota**: Esta skill NO reemplaza a las otras skills. Es la **doctrina fundacional** que contextualiza todas las demás. Cada skill opera DENTRO de este marco de hedge fund. El CIO (coordinator) es el guardián de esta doctrina.
 
+## Tabla de decisión — go/no-go institucional
+
+| Situación | Decisión | Acción concreta |
+|-----------|----------|-----------------|
+| Datos insuficientes para la tesis | NO-GO | BLOCK: pedir el análisis requerido antes de asignar capital |
+| Edge OOS positivo y riesgo dentro del límite | GO | Asignar posicion sized + stop-loss por posicion |
+| P&L dentro del límite pero hipotesis no falseable | HOLD | Reformular H0/H1 antes de escalar recursos |
+| Drawdown > max_dd | EXIT | Cerrar posicion + postmortem con datos |
+
 ## Checklist
 
 - [ ] Tesis con tesis, anti-tesis, catalyst y sizing
@@ -74,7 +90,14 @@ metadata:
 - Hipotesis no falseable.
 - Validar solo in-sample (overfitting).
 
-## Ejemplo
+## Ejemplo trabajado (input → pasos → output)
+
+- **Input**: "migrar cache a LanceDB"; baseline p95=220ms; limite de drawdown 15%.
+- **Pasos**:
+  1. Mide el baseline (p95, P&L, drawdown) antes de comprometer capital.
+  2. Formula tesis + anti-tesis + catalyst y asigna sizing con stop-loss.
+  3. Valida out-of-sample en 2 modulos y documenta en el mandato.
+- **Output** (memo de mandato):
 
 ```
 !memo "migrar cache a LanceDB"
@@ -82,3 +105,5 @@ Tesis: reduce latencia p95 40% | Anti-tesis: 3 dias de migracion
 Catalyst: degradacion GPU actual | Sizing: 1 sprint, stop-loss si p95 no baja en 2 iter
 Datos: baseline p95=220ms | Validacion: OOS en 2 modulos (sin overfitting)
 ```
+
+- **Criterio de aceptación**: p95 baja ≥20% y drawdown ≤ límite → GO; si no, rollback.
