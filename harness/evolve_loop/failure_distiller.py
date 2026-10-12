@@ -164,10 +164,12 @@ class FailureDistiller:
         """
         base = record.tags[0] if record.tags else record.failure_type.value
         slug = re.sub(r"[^a-z0-9_-]", "", base.lower().replace(" ", "-"))
-        # B324: sha1 NO se usa para seguridad, solo para nombres deterministas
-        # (dedup idempotente: mismo fallo -> mismo skill). usedforsecurity=False
-        # es el contrato oficial de hashlib para este caso (PEP 552 + bandit B324).
-        digest = hashlib.sha1(record.id.encode("utf-8"), usedforsecurity=False).hexdigest()[:8]
+        # B324/nosemgrep: sha1 NO se usa para seguridad (dedup idempotente:
+        # mismo fallo -> mismo skill). usedforsecurity=False es el contrato
+        # oficial de hashlib para este caso (PEP 552 + bandit B324).
+        digest = hashlib.sha1(  # nosec B324 -- dedup no criptografico
+            record.id.encode("utf-8"), usedforsecurity=False
+        ).hexdigest()[:8]  # nosemgrep: python.lang.security.insecure-hash-algorithms.insecure-hash-algorithm-sha1
         return f"avoid-{slug}-{digest}"
 
     def _persist(self, record: FailureRecord, name: str) -> ProceduralSkill | None:
