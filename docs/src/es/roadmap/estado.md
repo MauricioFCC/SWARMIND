@@ -1,9 +1,25 @@
 # Roadmap y Estado del Proyecto
 
-> Estado actual del sistema Swarmind Harness a 2026-09-30.
+> Estado actual del sistema Swarmind Harness a 2026-10-12.
 > Documento vivo que refleja el progreso, hitos y proximos objetivos.
+> **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
+> y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
-## Estado Actual (2026-09-30)
+## Estado Actual (2026-10-12)
+
+### Estado 2026-10-12 (ADR-0103 Frontera Simple: enrutamiento aprendido + coordinador minimo + token economics medido)
+
+- **ADR-0103 + spec SDD** (`docs/adr/adr-0103-frontera-simple-2026.md`, `specs/adr0103-frontera-roadmap.md`) — investigacion frontera 4 frentes (harness engineering arXiv:2609.00006, skill routing arXiv:2603.22455, token economics arXiv:2508.21433/2607.15516, coordinador next-gen) + 8 acciones priorizadas por ROI.
+- **WS-A token economics** — `TokenTelemetry` (`harness/observability/token_telemetry.py`: record_usage por rol, hit_rate, gate_ok 0.80, report/to_json) + `build_cache_shaped_prompt` (orden canonico tools>system>static>dynamic con breakpoint de cache, `harness/orchestrator/prompt_cache_shape.py`) + **observation masking DEFAULT ON** (env `SWARMIND_OBS_MASKING_DISABLE`). 33 tests.
+- **WS-B coordinador minimo** — `coordinator.md` 273→**54 lineas** + `coordinator_policy.yaml` (SSOT: delegation/budget/verification/memory/output_contract/token_economics/antipatterns/tdd_authority + doctrina preservada). 8 tests.
+- **WS-C routing aprendido** — `TriageSLM` (small_model→JSON intent/complexity con cascada fallback al DifficultyRouter, `harness/orchestrator/triage_slm.py`) + **hidden-body router** (puntuar leyendo el cuerpo de skills/agent .md, `hidden_body.py` pesos 0.5/0.5) + **fan-out cap 5** (`SWARMIND_MAX_FANOUT`, XLarge 11 solo explicito). 72 tests.
+- **WS-D seguridad skills** — digests `sha256` en `skills_registry.yaml` (36/36) via `scripts/hash_skills_registry.py`; `validate_skills.py` verifica content drift (supply-chain hardening, SkillsMP/CVE-2025-59536). 11 tests.
+- **WS-E principios** — regla N1 **`RSV`** (Roadmap Sync & Retrospectiva: cada N refactors leer roadmap + retrospectiva de calidad + features de frontera; roadmap vivo) en base_principles v3.6.0 + min + full. 33 tests de integridad.
+- **Skills a progressive disclosure (SkillsBench arXiv:2602.12670 "focused beats comprehensive")** — risk-execution 236→71, alpha-research 218→48, con `references/` (6 modulos); doctrina 0 lineas perdidas.
+- **Agent-Native Documentation Engineering** — `INDEX.md` con frontmatter parseable en architecture/development/technical; README.md ES con indice por capas; "explicit beats implicit"; 61 links OK.
+- Suite completa: **6268 passed, 34 skipped, 13 xfailed** (3 fallos ambientales `test_fleet_config_drift` = local_only, skip en CI).
+
+## Estado 2026-09-30 (hito anterior)
 
 ### Estado 2026-09-30 (flota frontera 2026 + ctx 16K + escalado por verificación)
 
@@ -205,20 +221,24 @@ Objetivo: 80%    (proximo hito)
 
 | Prioridad | Tarea | Impacto | Detalle | Estado |
 |-----------|-------|---------|---------|--------|
-| **Alta** | Coverage 80% | Calidad | Atacar archivos con cobertura baja: mcp_executor.py, plugins, evolve_loop | 🔄 Pendiente |
-| **Alta** | Async pipeline integration | Rendimiento | TaskOrchestrator async completo, integracion con AsyncAgentBus | 🔄 Pendiente |
-| **Media** | MCP server per agent | Integracion | Cada agente con su propio servidor MCP para aislamiento | ⏳ Pendiente |
-| **Media** | GPU full pipeline | Rendimiento | Integrar GPU en mas puntos del pipeline (semantic cache, agent_bus) | 🔄 Pendiente |
+| **Alta** | Integrar TriageSLM en el pipeline | Routing | Conectar triage_slm al DifficultyRouter real (hoy es standalone con fallback) | 🔄 Pendiente |
+| **Alta** | Integrar TokenTelemetry en los call sites | Tokens | record_usage en provider executors para medir hit-rate real (R10 gate) | 🔄 Pendiente |
+| **Alta** | Progressive disclosure restantes | Skills | Migrar 9 skills comprehensive (legal-doc, rust-lang, sociology, linguistics, evolve, ethics, education, science-doc, behavioral-economics) a references/ (SkillsBench) | 🔄 Pendiente |
+| **Media** | Cleanup difficulty_router literales | MAG | `1000/500/200` en ComplexityFeatures → constantes con nombre | 🔄 Pendiente |
+| **Media** | Regenerar coordinator.agent.min.md | Coherencia | compile_agents.py debe consumir el YAML de politica (artefacto precompilado) | 🔄 Pendiente |
+| **Media** | Coverage 80% | Calidad | Atacar archivos con cobertura baja: mcp_executor.py, plugins, evolve_loop | 🔄 Pendiente |
+| **Media** | Async pipeline integration | Rendimiento | TaskOrchestrator async completo, integracion con AsyncAgentBus | 🔄 Pendiente |
 | **Media** | Fix debate tests | Estabilidad | ~20 tests de debate con ERROR por dependencias de orquestador | ⏳ Pendiente |
+| **Baja** | MCP server per agent | Integracion | Cada agente con su propio servidor MCP para aislamiento | ⏳ Pendiente |
+| **Baja** | GPU full pipeline | Rendimiento | Integrar GPU en mas puntos del pipeline (semantic cache, agent_bus) | 🔄 Pendiente |
 | **Baja** | Plugins architecture | Extensibilidad | Sistema de plugins para habilidades externas | ⏳ Pendiente |
 | **Baja** | Federated Learning | Innovacion | Aprendizaje federado opcional entre instancias | ⏳ Pendiente |
-| **Baja** | Benchmark suite | Rendimiento | Benchmarks automatizados de latencia y throughput | ⏳ Pendiente |
+| ✅ | ADR-0103 Frontera Simple | Estado del arte | WS-A/B/C/D/E implementados (telemetria, cache-shape, masking default, coordinador 54ln, triage SLM, hidden-body, fan-out cap, digests sha256, RSV) | **HECHO** |
+| ✅ | Skills finance a PD | Skills | risk-execution 236→71, alpha-research 218→48 + references/ | **HECHO** |
+| ✅ | Docs Agent-Native | Docs | INDEX.md frontmatter + indice por capas + 61 links OK | **HECHO** |
 | ✅ | Refactor archivos >500ln | Mantenibilidad | 32 módulos → paquetes con `__init__.py` re-export (deuda AGR 0) | **HECHO** |
 | ✅ | Session-scoped fixtures | Velocidad tests | MockVectorStore session-scoped creado | **HECHO** |
 | ✅ | GPU acceleration | Rendimiento | RTX 4060 + 6x search + embedding 3.2x | **HECHO** |
-| ✅ | Coverage MCP + Federated | Calidad | mcp_client 100%, mcp_manager 100%, federated 100% | **HECHO** |
-| ✅ | Coverage optimizer+plugins | Calidad | optimization_pipeline 62t, skill_loader 73t, plugins 46t, mcp_executor 68t | **HECHO** |
-| ✅ | ShapedCache + threshold | Token Economics | 0.95→0.88 cache semantico real | **HECHO** |
 
 ### Legado de Deuda Tecnica
 
