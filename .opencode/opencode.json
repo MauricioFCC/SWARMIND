@@ -4,7 +4,7 @@
     ".opencode/core/base_principles.min.md"
   ],
   "model": "opencode-go/deepseek-v4.1-flash",
-  "small_model": "llamacpp/phi-4-mini-reasoning-q4-k-m",
+  "small_model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs",
   "permission": {
     "bash": "allow",
     "edit": "allow",
@@ -18,81 +18,81 @@
     },
     "builder": {
       "mode": "subagent",
-      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "guardian": {
       "mode": "subagent",
-      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "scientist": {
       "mode": "subagent",
-      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "reviewer": {
-      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "architect": {
-      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "backend-engineer": {
-      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "data-engineer": {
-      "model": "llamacpp/qwen3-4b-thinking-2507-q4-k-m"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "database-administrator": {
-      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "devops": {
-      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "frontend-engineer": {
-      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "mobile-engineer": {
-      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "platform-engineer": {
-      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "product-manager": {
-      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "qa-engineer": {
-      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "release-ops": {
-      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "researcher": {
-      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "security-engineer": {
-      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "test-writer": {
-      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "explore": {
-      "model": "llamacpp/qwen3-4b-thinking-2507-q4-k-m"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "general": {
-      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "evolve": {
-      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "evolve-analyzer": {
-      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "evolve-engineer": {
-      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "evolve-researcher": {
-      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
+      "model": "opencode-go/deepseek-v4.1-flash"
     },
     "token-budget-auditor": {
-      "model": "llamacpp/phi-4-mini-reasoning-q4-k-m"
+      "model": "opencode-go/deepseek-v4.1-flash"
     }
   },
   "provider": {
@@ -131,6 +131,14 @@
           "name": "qwen3-embedding-0-6b (embeddings/RAG)",
           "reasoning": false,
           "tools": false,
+          "options": {
+            "num_ctx": 16384
+          }
+        },
+        "ternary-bonsai-2-27b-ptq1-0": {
+          "name": "ternary-bonsai-2-27b-ptq1-0 (reasoning/general)",
+          "reasoning": true,
+          "tools": true,
           "options": {
             "num_ctx": 16384
           }

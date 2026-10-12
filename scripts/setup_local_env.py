@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 """setup_local_env.py - persiste las env vars del harness local (multi-SO).
 
-WHAT: escribe las variables que fuerzan el worker local (``SWARMIND_REQUIRE_LOCAL=1``)
+WHAT: escribe las variables que regulan el worker local (``SWARMIND_REQUIRE_LOCAL``)
 y la raiz de modelos (``SWARMIND_LLAMA_DIR``) en el alcance persistente de cada SO,
 para que el sistema sea configurable en Windows, macOS y Linux sin tocar codigo.
 WHY: el harness lee ``os.environ`` (12-Factor); sin esto, cada maquina debia
-recordar setear las vars a mano o quedaba el default solo en codigo. Con este
-script el "local SIEMPRE" (con escape hatch ``=0``) queda persistido una vez.
+recordar setear las vars a mano o quedaba el default solo en codigo. Politica
+LOCAL SOLO TRIVIAL (default ``=0``): el local (mimo) atiende small_model
+(tareas triviales); el oraculo cloud resuelve el trabajo real porque los LLM
+locales carecen de calidad frontier. ``=1`` vuelve a exigir local SIEMPRE.
 WHERE: ``scripts/setup_local_env.py`` (CLI); documentacion en
 ``harness/model_router/local_models.yaml`` (cabecera multi-SO).
 
 Uso:
-    python scripts/setup_local_env.py                     # setea activo (idempotente)
+    python scripts/setup_local_env.py                     # setea default (idempotente)
     python scripts/setup_local_env.py --llama-dir /x/llama
     python scripts/setup_local_env.py --dry-run           # solo muestra acciones
     python scripts/setup_local_env.py --unset             # retira lo persistido
@@ -147,7 +149,7 @@ def main() -> int:
     parser.add_argument("--unset", action="store_true", help="Retirar lo persistido")
     args = parser.parse_args()
 
-    vars_dict = {REQUIRE_LOCAL: "1"}
+    vars_dict = {REQUIRE_LOCAL: "0"}
     if args.llama_dir and not args.unset:
         vars_dict[LLAMA_DIR] = args.llama_dir
 

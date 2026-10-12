@@ -44,9 +44,9 @@ EXPECTED_PATH = "/v1"
 #: Modelo por defecto = ORACULO cloud (politica LOCAL TRIVIAL: el oraculo
 #: resuelve el trabajo; el local solo small_model hasta mejor hardware).
 EXPECTED_DEFAULT_MODEL = "opencode-go/deepseek-v4.1-flash"
-#: Modelo pequeno local para tareas triviales (razonamiento 4B; benchmark
-#: data/signals: phi-4-mini gana al 3B).
-EXPECTED_SMALL_MODEL = "llamacpp/phi-4-mini-reasoning-q4-k-m"
+#: Modelo pequeno local para tareas triviales (unico local medianamente
+#: funcional: 9B distill; benchmark data/signals).
+EXPECTED_SMALL_MODEL = "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
 #: Provider cloud del coordinator (guia/oraculo; NO es un worker local).
 EXPECTED_CLOUD_PROVIDER = "opencode-go"
 #: Presupuesto GPU (anti-TDR): cada modelo debe caber en <7000MB y se cargan
@@ -58,14 +58,16 @@ MODEL_VRAM_MB = {
     "phi-4-mini-reasoning-q4-k-m": 2600,
     "qwen3-4b-thinking-2507-q4-k-m": 2600,
     "qwen3-embedding-0-6b": 3800,
+    "ternary-bonsai-2-27b-ptq1-0": 5700,
 }
-#: Espejo de `llama-swap.yaml`: flota final 4 modelos (razonamiento 9B/KV).
+#: Espejo de `llama-swap.yaml`: flota 5 modelos (9B/KV + ternary decision).
 EXPECTED_MODELS = frozenset(
     {
         "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs",
         "phi-4-mini-reasoning-q4-k-m",
         "qwen3-4b-thinking-2507-q4-k-m",
         "qwen3-embedding-0-6b",
+        "ternary-bonsai-2-27b-ptq1-0",
     }
 )
 #: Proveedores retirados que NO deben reaparecer en la config.
@@ -417,13 +419,13 @@ def test_declared_models_under_vram_cap() -> None:
 
 
 def test_agent_models_are_declared_local() -> None:
-    """Cada agente usa un modelo local DECLARADO o el provider cloud como oraculo.
+    """Cada agente usa el oraculo cloud O un modelo local DECLARADO.
 
-    El coordinator (agente primario) es la guia/oraculo cloud
-    (`opencode-go/deepseek-v4.1-flash`); politica LOCAL TRIVIAL: el runtime
-    por defecto es el oraculo y small_model el local. Si se declaran workers,
-    deben usar el provider local `llamacpp` con un modelo declarado.
-    El cloud solo se admite para el coordinator (oraculo), no como worker local.
+    Politica LOCAL SOLO TRIVIAL (2026-10-10): TODOS los agentes (workers) van
+    al oraculo cloud (`opencode-go/deepseek-v4.1-flash`) porque los LLM
+    locales carecen de calidad frontier; el local (mimo) se reserva para
+    small_model (tareas triviales). Si un agente apunta a `llamacpp`, su
+    modelo DEBE estar declarado en la flota.
     """
     config = _read_config()
     agents = config.get("agent", {})
@@ -431,14 +433,13 @@ def test_agent_models_are_declared_local() -> None:
     declared = _declared_models(config)
     for name, spec in agents.items():
         model = spec.get("model")
-        if _model_prefix(model) == EXPECTED_CLOUD_PROVIDER:
-            assert name == "coordinator", (
-                f"agente {name!r} no puede usar el provider cloud "
-                f"'{EXPECTED_CLOUD_PROVIDER}' (solo el coordinator/oraculo): {model!r}"
-            )
+        prefix = _model_prefix(model)
+        if prefix == EXPECTED_CLOUD_PROVIDER:
+            # Politica LOCAL SOLO TRIVIAL: todos los agentes pueden ir al oraculo.
             continue
-        assert _model_prefix(model) == EXPECTED_PROVIDER, (
-            f"agente {name!r} no usa el provider local '{EXPECTED_PROVIDER}': {model!r}"
+        assert prefix == EXPECTED_PROVIDER, (
+            f"agente {name!r} no usa el provider local '{EXPECTED_PROVIDER}' "
+            f"ni el cloud '{EXPECTED_CLOUD_PROVIDER}': {model!r}"
         )
         assert _model_name(model) in declared, (
             f"agente {name!r} apunta a un modelo no declarado: {model!r}"

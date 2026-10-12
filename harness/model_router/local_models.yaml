@@ -74,46 +74,53 @@ models:
   - {id: qwen3-4b-thinking-2507-q4-k-m, file: "${SWARMIND_LLAMA_DIR}\\models\\Qwen3-4B-Thinking-2507-Q4_K_M.gguf", ctx: 65536, flags: CAPACITY, role: reasoning, ram_mb: 5300, aliases: [Qwen3-4B-Thinking-2507-Q4_K_M]}
   #: Embeddings para RAG (Memoria SSOT). Proposito distinto al razonamiento.
   - {id: qwen3-embedding-0-6b, file: "${SWARMIND_LLAMA_DIR}\\models\\Qwen3-Embedding-0.6B-Q8_0.gguf", ctx: 16384, flags: SAFE, role: embedding, ram_mb: 700, aliases: [Qwen3-Embedding-0.6B-Q8_0]}
-  #: TERNARIO 27B RETIRADO (EDV 2026-10-08): razona bien (4/4, 24 tok/s) pero
-  #: el pico de RAM deja ~0.8GB libres de 16GB (margen < 1.5GB del guard RAM);
-  #: no cabe en esta maquina con margen. Reactivar con mas RAM o ctx menor.
-  #: Requiere fork PrismML (`server_exe` propio), temperature 1.0 / top-p 0.95 /
-  #: top-k 20 (greedy colapsa a 1/4) y -nkvo (perfil CAPACITY).
-  #: - {id: ternary-bonsai-2-27b-ptq1-0, file: "${SWARMIND_LLAMA_DIR}\\models\\Ternary-Bonsai-2-27B-PTQ1_0.gguf", ctx: 16384, flags: CAPACITY, role: reasoning, ram_mb: 12500, aliases: [Ternary-Bonsai-2-27B-PTQ1_0], server_exe: "${SWARMIND_PRISM_DIR}\\bin\\llama-server.exe"}
+  #: TERNARIO 27B (REACTIVADO por decision del operador 2026-10-09): modelo de
+  #: DECISION del fondo (Misellium DECISION_MODEL). Requiere fork PrismML
+  #: (`server_exe` propio, SWARMIND_PRISM_DIR), temperature 1.0 / top-p 0.95 /
+  #: top-k 20 (greedy colapsa a 1/4) y -nkvo (perfil CAPACITY). Riesgo EDV:
+  #: pico de RAM deja ~0.8GB libres de 16GB (margen < 1.5GB del guard); operar
+  #: solo en sesiones con el resto de modelos fríos (ttl) y ctx 16384 acotado.
+  - {id: ternary-bonsai-2-27b-ptq1-0, file: "${SWARMIND_LLAMA_DIR}\\models\\Ternary-Bonsai-2-27B-PTQ1_0.gguf", ctx: 16384, flags: CAPACITY, role: reasoning, ram_mb: 12500, aliases: [Ternary-Bonsai-2-27B-PTQ1_0], server_exe: "${SWARMIND_PRISM_DIR}\\bin\\llama-server.exe"}
 opencode:
   provider: llamacpp
   base_url: "http://127.0.0.1:11434/v1"
   model: opencode-go/deepseek-v4.1-flash
-  small_model: phi-4-mini-reasoning-q4-k-m
+  #: LOCAL SOLO TRIVIAL (politica 2026-10-10): el oraculo cloud resuelve el
+  #: trabajo real (calidad); el local (mimo) atiende SOLO tareas triviales via
+  #: small_model. Los LLM locales carecen de calidad para razonamiento/codigo
+  #: complejo (mimo es el unico medianamente funcional). Escape: enrutamiento
+  #: por agente explicito en local_models.yaml o SWARMIND_REQUIRE_LOCAL=1.
+  small_model: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
   cloud_oracle: opencode-go/deepseek-v4.1-flash
-  #: Politica EXIGENCIA LOCAL SIEMPRE (flota 9B con KV en RAM via CAPACITY
-  #: /-nkvo: confiable, sin TDR). El oraculo guia; TODOS los workers resuelven
-  #: en local. Escape hatch solo si el backend falla de verdad:
-  #: SWARMIND_REQUIRE_LOCAL=0 (ver coordinator.md y local_first.py).
+  #: Politica LOCAL SOLO TRIVIAL: TODOS los agentes (workers) van al oraculo
+  #: cloud; el local (mimo) se reserva para small_model (tareas triviales).
+  #: Los LLM locales no alcanzan calidad frontier; se usan solo lo trivial para
+  #: no pagar cloud en lo mecánico. Para forzar local en un agente concreto,
+  #: pon su id local en su entrada (la SSOT lo valida contra la flota).
   agents:
     coordinator: cloud_oracle
-    architect: phi-4-mini-reasoning-q4-k-m
-    builder: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
-    guardian: phi-4-mini-reasoning-q4-k-m
-    scientist: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
-    reviewer: phi-4-mini-reasoning-q4-k-m
-    backend-engineer: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
-    data-engineer: qwen3-4b-thinking-2507-q4-k-m
-    database-administrator: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
-    devops: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
-    frontend-engineer: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
-    mobile-engineer: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
-    platform-engineer: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
-    product-manager: phi-4-mini-reasoning-q4-k-m
-    qa-engineer: phi-4-mini-reasoning-q4-k-m
-    release-ops: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
-    researcher: phi-4-mini-reasoning-q4-k-m
-    security-engineer: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
-    test-writer: phi-4-mini-reasoning-q4-k-m
-    explore: qwen3-4b-thinking-2507-q4-k-m
-    general: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
-    evolve: phi-4-mini-reasoning-q4-k-m
-    evolve-analyzer: phi-4-mini-reasoning-q4-k-m
-    evolve-engineer: mimo-v2-6-distill-qwen-9b-gguf-iq4-xs
-    evolve-researcher: phi-4-mini-reasoning-q4-k-m
-    token-budget-auditor: phi-4-mini-reasoning-q4-k-m
+    architect: cloud_oracle
+    builder: cloud_oracle
+    guardian: cloud_oracle
+    scientist: cloud_oracle
+    reviewer: cloud_oracle
+    backend-engineer: cloud_oracle
+    data-engineer: cloud_oracle
+    database-administrator: cloud_oracle
+    devops: cloud_oracle
+    frontend-engineer: cloud_oracle
+    mobile-engineer: cloud_oracle
+    platform-engineer: cloud_oracle
+    product-manager: cloud_oracle
+    qa-engineer: cloud_oracle
+    release-ops: cloud_oracle
+    researcher: cloud_oracle
+    security-engineer: cloud_oracle
+    test-writer: cloud_oracle
+    explore: cloud_oracle
+    general: cloud_oracle
+    evolve: cloud_oracle
+    evolve-analyzer: cloud_oracle
+    evolve-engineer: cloud_oracle
+    evolve-researcher: cloud_oracle
+    token-budget-auditor: cloud_oracle

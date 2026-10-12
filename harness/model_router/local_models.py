@@ -88,8 +88,13 @@ FALLBACK_VRAM_MB: Mapping[str, int] = {
     "qwen3-5-4b-gguf-ud-q4-k-xl": 4600,
     "deepseek-r1-distill-qwen-7b-q2-k": 4400,
     "qwen3-embedding-0-6b": 3800,
-    #: Ternario 27B: solo pesos + buffers en VRAM (con CAPACITY la KV va a RAM).
-    "ternary-bonsai-2-27b-ptq1-0": 5900,
+    #: Ternario 27B: 5700 MB MEDIDO con las flags reales de CAPACITY (-nkvo
+    #: mueve la KV a RAM y baja la VRAM de 7789 a 5594 MB netos). 5700+1500 =
+    #: 7200 <= 8000 -> CABE con 800 MB de colchon. Reproducir con
+    #: CLI_TOOLS/verify_footprints.py (mide y compara declarado vs real).
+    #: OJO: sin -nkvo el mismo modelo pide 7789 MB y NO cabe -> el guard lo
+    #: rechaza, como debe.
+    "ternary-bonsai-2-27b-ptq1-0": 5700,
 }
 
 

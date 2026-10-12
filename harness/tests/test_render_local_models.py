@@ -220,9 +220,10 @@ def test_merge_preserves_foreign_keys() -> None:
 
     assert merged["$schema"] == "https://opencode.ai/config.json"
     assert merged["skills"] == {"paths": [".opencode/skills"]}
-    # Claves renderizadas: model actualizado al local de la flota.
+    # Claves renderizadas: builder ahora va al oraculo cloud (LOCAL SOLO
+    # TRIVIAL); coordinator explicito al cloud_oracle.
     assert merged["agent"]["builder"]["mode"] == "subagent"
-    assert merged["agent"]["builder"]["model"].startswith("llamacpp/")
+    assert merged["agent"]["builder"]["model"] == config.opencode.cloud_oracle
     assert merged["agent"]["coordinator"]["model"] == config.opencode.cloud_oracle
     # Clave ajena NO renderizada: se preserva intacta.
     assert merged["agent"]["ghost"] == {"mode": "subagent", "model": "fantasma/legacy"}
