@@ -81,11 +81,49 @@ class FailureDistiller:
         Returns:
             Lista de los ``ProceduralSkill`` NUEVOS creados (no los ya existentes).
         """
-        existing: set[str] = {s.name for s in self._memory.list_skills()}
         created: list[ProceduralSkill] = []
+        for record in self._select(max_skills=max_skills):
+            skill = self._persist(record, self._skill_name(record))
+            if skill is not None:
+                created.append(skill)
+        return created
+
+    def preview(self, *, max_skills: int = 10) -> list[FailureRecord]:
+        """Proyecta que fallos se destilarian SIN persistir nada en memoria.
+
+        WHAT: comparte la seleccion (filtro + dedup) con ``distill`` pero no
+        escribe; util para el modo ``--dry-run`` del CLI post-merge.
+        WHY: exponer un preview real evita tocar ``.opencode/skills/auto/`` al
+        simular, manteniendo la deduplicacion idempotente intacta.
+        WHERE: ``FailureDistiller.preview`` (invocado por
+        ``scripts/distill_failures.py``).
+
+        Args:
+            max_skills: Maximo de fallos destilables a proyectar.
+
+        Returns:
+            Lista de ``FailureRecord`` que originarian skills nuevos.
+        """
+        return self._select(max_skills=max_skills)
+
+    def _select(self, *, max_skills: int) -> list[FailureRecord]:
+        """Selecciona los fallos destilables (filtro + dedup) sin persistir.
+
+        Emula el estado de la memoria con un set local ``existing`` para
+        deduplicar tanto contra los skills previos como DENTRO de la corrida
+        (dos fallos que colisionan en nombre generan un solo skill).
+
+        Args:
+            max_skills: Maximo de fallos a seleccionar.
+
+        Returns:
+            Lista de ``FailureRecord`` destilables, en orden de insercion.
+        """
+        existing: set[str] = {s.name for s in self._memory.list_skills()}
+        selected: list[FailureRecord] = []
 
         for record in self._registry.get_all():
-            if len(created) >= max_skills:
+            if len(selected) >= max_skills:
                 break
             if not self._is_distillable(record):
                 continue
@@ -94,12 +132,10 @@ class FailureDistiller:
             if name in existing:
                 continue  # DEDUP idempotente: ya destilado.
 
-            skill = self._persist(record, name)
-            if skill is not None:
-                created.append(skill)
-                existing.add(skill.name)
+            existing.add(name)
+            selected.append(record)
 
-        return created
+        return selected
 
     def _is_distillable(self, record: FailureRecord) -> bool:
         """Determina si un fallo tiene una leccion cerrada y es destilable.

@@ -161,7 +161,7 @@ Todo skill es evaluado en estas dimensiones (project-agnostic):
 - `!evolve failures stats` — Métricas agregadas (by_type, by_severity)
 - `!evolve failures unresolved` — Fallos pendientes de resolver
 - `!evolve failures skills` — Skills derivados de fallos (deduplicados)
-- `!evolve failures distill` — Distilla skills desde failure traces (traces→skills→tasks)
+- `!evolve failures distill` — Distilla skills desde failure traces (CLI real: `uv run python scripts/distill_failures.py`; traces→skills→tasks)
 
 ---
 
