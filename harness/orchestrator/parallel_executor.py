@@ -106,6 +106,9 @@ class ParallelExecutor:
         router: ModelRouter inyectable (crea uno si es None).
         max_workers: Maximo de hilos concurrentes (default 3).
         budget_factor: Multiplicador de presupuesto para votacion.
+        guard: PipelineGuard inyectable (None = crea uno real). Screen-ea
+            cada output de agente contra code-injection/PII antes de
+            devolverlo (FR-0007 / guardrails de pipelines LLM).
     """
 
     def __init__(
@@ -114,6 +117,7 @@ class ParallelExecutor:
         router: Any | None = None,
         max_workers: int = DEFAULT_MAX_WORKERS,
         budget_factor: float = DEFAULT_BUDGET_FACTOR,
+        guard: Any | None = None,
     ) -> None:
         if provider is None:
             from harness.model_router.multi_provider import MultiAPIProvider
@@ -121,8 +125,12 @@ class ParallelExecutor:
         if router is None:
             from harness.model_router.router import ModelRouter
             router = ModelRouter()
+        if guard is None:
+            from harness.guardrails.pipeline_guard import PipelineGuard
+            guard = PipelineGuard()
         self._provider = provider
         self._router = router
+        self._guard = guard
         self.max_workers = max_workers
         self.budget_factor = budget_factor
 
@@ -169,7 +177,7 @@ class ParallelExecutor:
             for future in as_completed(futures):
                 task_id = futures[future]
                 try:
-                    completed[task_id] = future.result()
+                    completed[task_id] = self._apply_guard(future.result())
                 except Exception as exc:  # noqa: BLE001 - aislamiento de fallos
                     logger.error(
                         "Task %s lanzo excepcion: %s. "
@@ -188,6 +196,39 @@ class ParallelExecutor:
                         ),
                     )
         return [completed[t.id] for t in tasks]
+
+    def _apply_guard(self, result: ParallelResult) -> ParallelResult:
+        """Screen-ea el output de una tarea contra los guardrails (FR-0007).
+
+        Si el ``PipelineGuard`` BLOCKea el output (code-injection, etc.), la
+        tarea se marca ``success=False`` con un error WHAT+WHY+WHERE. Outputs
+        limpios o tareas ya fallidas pasan sin cambios.
+
+        Args:
+            result: Resultado crudo de la tarea.
+
+        Returns:
+            El mismo ``result`` si pasa; o uno ``success=False`` si BLOCKeado.
+        """
+        if not result.success or self._guard is None:
+            return result
+        screen = self._guard.screen(result.output, "output")
+        if screen.passed:
+            return result
+        return ParallelResult(
+            task_id=result.task_id,
+            success=False,
+            output=result.output,
+            model=result.model,
+            provider=result.provider,
+            tokens_used=result.tokens_used,
+            duration_ms=result.duration_ms,
+            error=(
+                f"WHAT: output bloqueado por guardrail ({screen.verdict.value}). "
+                f"WHY: {screen.blocked_reason()}. "
+                "WHERE: ParallelExecutor._apply_guard"
+            ),
+        )
 
     def vote_on_task(
         self,
