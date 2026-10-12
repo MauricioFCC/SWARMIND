@@ -7,6 +7,7 @@ orquesta truncado, summarization, observation masking y dropping.
 from __future__ import annotations
 
 import logging
+import os
 from collections.abc import Callable
 from typing import Any
 
@@ -25,6 +26,37 @@ from .sections import ContextSection
 from .window import ContextWindow
 
 logger = logging.getLogger("harness.memory_rag.context_window_manager")
+
+#: Variable de entorno que desactiva Observation Masking explicitamente.
+ENV_OBS_MASKING_DISABLE = "SWARMIND_OBS_MASKING_DISABLE"
+
+#: Variable de entorno del default de Observation Masking (spec ADR-0103 §2.4).
+ENV_OBS_MASKING_DEFAULT = "SWARMIND_OBS_MASKING_DEFAULT"
+
+_TRUTHY = frozenset({"1", "true", "yes", "on"})
+_FALSY = frozenset({"0", "false", "no", "off"})
+
+
+def observation_masking_default() -> bool:
+    """Resuelve si Observation Masking debe estar activo por defecto (FR-A3).
+
+    Lee el entorno una vez por instanciacion del manager (se invoca desde
+    ``ContextWindowManager.__init__``, no en cada compresion):
+
+      - ``SWARMIND_OBS_MASKING_DISABLE`` con valor truthy (1/true/yes/on)
+        desactiva incondicionalmente.
+      - ``SWARMIND_OBS_MASKING_DEFAULT`` con valor falsy (0/false/no/off)
+        desactiva; cualquier otro valor, o ausente, mantiene el default ON.
+
+    Returns:
+        True si el masking debe estar activo por defecto; False si un flag
+        explicito de entorno lo desactiva.
+    """
+    disabled = (
+        os.environ.get(ENV_OBS_MASKING_DISABLE, "").strip().lower() in _TRUTHY
+        or os.environ.get(ENV_OBS_MASKING_DEFAULT, "").strip().lower() in _FALSY
+    )
+    return not disabled
 
 
 # ---------------------------------------------------------------------------
@@ -58,7 +90,7 @@ class ContextWindowManager(StatsMixin):
         summary_fn: Callable[[str], str] | None = None,
         model_family: str = "claude",
         use_real_tokenizer: bool = True,
-        use_observation_masking: bool = True,
+        use_observation_masking: bool | None = None,
     ) -> None:
         """Inicializa el gestor de ventana de contexto.
 
@@ -69,12 +101,18 @@ class ContextWindowManager(StatsMixin):
             model_family: Familia de modelo para TokenEstimator.
             use_real_tokenizer: Usar tokenizador real (tiktoken) si esta disponible.
             use_observation_masking: Usar Observation Masking en tool outputs.
+                ``None`` (default) resuelve el valor desde el entorno via
+                ``observation_masking_default()`` (FR-A3: default ON, salvo
+                ``SWARMIND_OBS_MASKING_DISABLE=1``). Un booleano explicito
+                siempre gana al entorno.
         """
         super().__init__()
         self._total_budget = total_budget
         self._sliding_window_size = sliding_window_size
         self._summary_fn = summary_fn or summarize_messages
         self._use_real_tokenizer = use_real_tokenizer
+        if use_observation_masking is None:
+            use_observation_masking = observation_masking_default()
         self._use_observation_masking = use_observation_masking
 
         self._token_estimator = TokenEstimator(model_family=model_family)
