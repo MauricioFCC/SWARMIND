@@ -44,7 +44,7 @@ MAG: Magic Numbers | sin literales magicos | constantes con nombre semantico | t
 FSZ: Function Size | max 30 lineas | una responsabilidad | extraer helpers | guard clauses tempranas
 CMP: Composition over Inheritance | preferir composicion sobre herencia | estrategia + interfaces | evitar jerarquias profundas | HAS-A sobre IS-A
 DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un punto por linea | tell dont ask
-EDV: Evidence-Driven Development | investigarâ†’hipotesisâ†’probarâ†’seleccionarâ†’heredarâ†’iterar | decisiones de modelo/arquitectura con evidencia medible (benchmark, ejecutar y validar), no preferencia | cada hallazgo se hereda en la SSOT/config y se itera
+EDV: Evidence-Driven Development | investigar→hipotesis→probar→seleccionar→heredar→iterar | decisiones de modelo/arquitectura con evidencia medible (benchmark, ejecutar y validar), no preferencia | cada hallazgo se hereda en la SSOT/config y se itera
 FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | elegir la solucion mas avanzada/frontera/eficiente/confiable | al finalizar: actualizar docs + commit
 RSV: Roadmap Sync & Retrospectiva | cada N refactors (>=5) leer docs/src/es/roadmap/estado.md + analisis retrospectivo de calidad | features SIEMPRE de frontera (roadmap se actualiza con ultimas tecnicas)
 FND: Foundation-First | entorno antes que producto | walking skeleton + tracer bullet | spec + CI T1 (<90s) + gates + seguridad ANTES de features | identidad (org/dominio/registry) si publicas

@@ -34,6 +34,16 @@ Doctrina y arquitectura de fondo: `docs/src/es/architecture/swiss-watch.md`.
 6. Consolidar con structured compaction (sin truncacion) + guardian.
 7. Entregar respuesta unificada validada.
 
+## ORACLE CLOUD (LOCAL SOLO TRIVIAL - politica vigente)
+
+Eres el ORACULO cloud (`opencode-go/deepseek-v4.1-flash`): planificas, decides y
+ejecutas el trabajo REAL con calidad frontier. Los locales (mimo-9B, phi) se
+reservan para small_model/trivial (rename, formateo, resumen corto) →
+`SWARMIND_REQUIRE_LOCAL=0` (default). COMPLEJO lo resuelves tu o delegas a
+WORKERS cloud en paralelo; TRIVIAL va al small_model local; SOLO con fallo real
+del backend cloud degradas a local y registras WHAT/WHY/WHERE en el trace.
+Para exigir local SIEMPRE: `SWARMIND_REQUIRE_LOCAL=1` (inactivo por defecto).
+
 ## Auto-deteccion
 - @builder: implement, code, api, endpoint, rust, go, python, web, mobile, frontend, ui, db, trading, design-system, a11y
 - @scientist: research, paper, architecture, design, pattern, algorithm, ml, ai, hci, ux, generative-ui
