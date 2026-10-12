@@ -4,7 +4,7 @@ skills:
     description: "Usar cuando el usuario busca investigar o validar factores de alpha. alpha, factores, ML, feature engineering, validacion estadistica, backtesting. Alcance: investigacion (falsacion, walk-forward); para motor de datos ver quant-trading. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: f53077986ea9623b1eb7c306906b741d4d0f539102ce809545c1970c3926501d
+    sha256: 532efcc93abec3f6a1c8313ddc446470c1af10f0cc2cbead012536e4650185b0
 
   - name: evolve
     domain: meta
@@ -60,7 +60,7 @@ skills:
     description: "Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica. Alcance: implementacion tactica; para doctrina institucional ver hedgefund. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 932aaf3146998bf26425799560dcc443dc27a120ee28b70260f265d5de8de0f6
+    sha256: 385e95403420ab416fd50be59209308bb9c35911305ce92cbe34c5c2b1eb62c3
 
   - name: science-doc
     domain: academic
