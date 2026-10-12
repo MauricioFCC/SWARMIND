@@ -18,6 +18,8 @@ import re
 import sys
 from pathlib import Path
 
+from hash_skills_registry import compute_skill_digest
+
 from harness.common import estimate_tokens
 from harness.context.skill_contract import load_skill_contract, validate_contract
 
@@ -74,6 +76,29 @@ def _parse_frontmatter(text: str) -> tuple[dict[str, str], str | None]:
             key, _, val = line.partition(":")
             fm[key.strip()] = val.strip().strip('"').strip("'")
     return fm, None
+
+
+def _registry_digests() -> dict[str, str]:
+    """Lee el registry y devuelve {skill: sha256} de los que declaran digest.
+
+    Returns:
+        Mapa de nombre de skill a digest sha256 declarado (vacío si no hay
+        registry o ningún digest declarado).
+    """
+    if not _REGISTRY.exists():
+        return {}
+    text = _REGISTRY.read_text(encoding="utf-8", errors="replace")
+    digests: dict[str, str] = {}
+    current: str | None = None
+    for line in text.splitlines():
+        name_match = re.match(r"^  - name:\s*(\S+)", line)
+        if name_match:
+            current = name_match.group(1)
+            continue
+        sha_match = re.match(r"^\s+sha256:\s*(\S+)", line)
+        if sha_match and current:
+            digests[current] = sha_match.group(1)
+    return digests
 
 
 def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
@@ -163,6 +188,17 @@ def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
         )
     elif not quiet:
         print(f"  ℹ  {name}: ~{skill_tokens} tokens (cap {_MAX_SKILL_TOKENS})")
+
+    # 6d. Digest de integridad (FR-D1, ADR-0103): si el registry declara un
+    # sha256 para la skill, el estado actual en disco debe coincidir (anti
+    # supply-chain / content drift). Sin digest declarado -> warning informativo
+    # (migracion progresiva, no error).
+    expected_digest = _registry_digests().get(name)
+    if expected_digest is None:
+        if not quiet:
+            print(f"  ⚠  {name}: sin sha256 en registry (migracion progresiva)")
+    elif compute_skill_digest(skill_dir) != expected_digest:
+        errors.append(f"{name}: sha256 no coincide (content drift)")
 
     # 7. Tamano (warning spec)
     n_lines = len(text.splitlines())
