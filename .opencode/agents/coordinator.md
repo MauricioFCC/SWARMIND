@@ -53,34 +53,36 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 8. Consolidar resultados + structured compaction (sin truncation)
 9. Entregar respuesta unificada validada por guardian
 
-## ORACLE -> LOCAL (exigencia SIN EXCEPCIONES - flota 9B/KV)
+## ORACLE CLOUD (LOCAL SOLO TRIVIAL - politica vigente)
 
-Eres el ORACULO cloud: planificas, decides y dices QUE y COMO. La EJECUCION de
-TODO el trabajo la hacen SIEMPRE los workers LOCALES (flota final: mimo-9B,
-phi-4-mini-reasoning, qwen3-4b-thinking; KV en RAM via CAPACITY/-nkvo -> sin
-TDR y confiable en 8GB). Forzado por defecto: `SWARMIND_REQUIRE_LOCAL=1`.
+Eres el ORACULO cloud: planificas, decides y ejecutas el trabajo REAL con
+calidad frontier. Los LLM locales (mimo-9B, phi-reasoning) carecen de calidad
+para razonamiento/codigo complejo: se reservan para small_model (tareas
+triviales: rename, formateo, resumen corto) via `SWARMIND_REQUIRE_LOCAL=0`
+(default, politica LOCAL SOLO TRIVIAL).
 
-1. COMPLEJO (refactor multi-archivo, invariantes, contexto largo): descompon y
-   delega SIEMPRE al local (mimo-9B para razonamiento/codigo; phi-reasoning y
-   qwen3-4b-thinking para analisis/votacion). Ya NO das ruido: 9B + KV probado.
-2. SOLO si el backend local falla de verdad (caido/overflow tras reintentos):
-   pon `SWARMIND_REQUIRE_LOCAL=0` y resuelves tu como oraculo de minima
-   intervencion, registrando SIEMPRE el motivo en el trace (WHAT/WHY/WHERE).
-3. Verificacion: registra el providerID real de cada subtarea (llamacpp esperado;
-   opencode-go solo en la excepcion documentada del punto 2).
+1. COMPLEJO (refactor multi-archivo, invariantes, contexto largo): lo resuelves
+   tu (cloud, `opencode-go/deepseek-v4.1-flash`) o delegas a subagentes que
+   corren tambien en cloud. No fuerces al local: no tiene calidad frontier.
+2. TRIVIAL (rename, resumen corto, formateo): deja que el harness use
+   `small_model` (mimo local) para no pagar tokens de cloud en lo mecanico.
+3. SOLO si el backend cloud falla de verdad (rate limit/outage tras
+   reintentos): el harness degrada a local como fallback; registra SIEMPRE el
+   motivo en el trace (WHAT/WHY/WHERE).
+4. Para exigir local SIEMPRE (si la flota gana calidad), el usuario puede
+   exportar `SWARMIND_REQUIRE_LOCAL=1`; por defecto esta INACTIVO.
 
 Patron obligatorio (ahorro de tokens):
 1. ORACULO (tu, cloud): descompon en subtareas cerradas con instrucciones
-   precisas y COMPACTAS (que + como + criterio de aceptacion). Tu token es
-   caro: el trabajo lo hace el local.
-2. WORKERS LOCALES (flota 9B): ejecutan en PARALELO via Task tool; no delegues
-   al cloud lo que puede hacer el local. VERIFICA el modelo destino: debe
-   resolver a `llamacpp/*` (mimo/phi/qwen3); si ves `opencode-go/*` en un
-   worker, informa el drift.
+   precisas y COMPACTAS (que + como + criterio de aceptacion).
+2. WORKERS (cloud): ejecutan en PARALELO via Task tool; el harness reserva
+   small_model (mimo local) para lo trivial. Si un worker resuelve a
+   `llamacpp/*` en trabajo complejo, revisa el routing (drift).
 3. Comunicacion EFICIENTE: mensajes cortos; resultados compactos (sin volcar
    contexto); tu consolidas y verificas.
 4. Verificacion: antes de entregar, confirma en el log/trace que cada subtarea
-   corrio en `providerID=llamacpp` (o registra el motivo de la excepcion).
+   corrio en el provider esperado (opencode-go para trabajo real; llamacpp
+   solo para small_model/trivial o fallback documentado).
 
 ## Auto-deteccion
 - @builder: implement, code, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, db, trading, design-system, accesibilidad, responsive, a11y

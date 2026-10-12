@@ -5,28 +5,43 @@
   ],
   "model": "opencode-go/deepseek-v4.1-flash",
   "small_model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs",
-  "permission": {
-    "bash": "allow",
-    "edit": "allow",
-    "webfetch": "ask",
-    "task": "allow"
-  },
   "agent": {
     "coordinator": {
       "mode": "primary",
-      "model": "opencode-go/deepseek-v4.1-flash"
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "permission": {
+        "task": {
+          "*": "ask",
+          "builder-*": "allow",
+          "scientist-*": "allow",
+          "guardian-*": "allow"
+        }
+      }
     },
     "builder": {
       "mode": "subagent",
-      "model": "opencode-go/deepseek-v4.1-flash"
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "permission": {
+        "edit": "allow",
+        "bash": "ask"
+      }
     },
     "guardian": {
       "mode": "subagent",
-      "model": "opencode-go/deepseek-v4.1-flash"
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "permission": {
+        "edit": "deny",
+        "bash": "allow"
+      }
     },
     "scientist": {
       "mode": "subagent",
-      "model": "opencode-go/deepseek-v4.1-flash"
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "permission": {
+        "edit": "deny",
+        "bash": "ask",
+        "webfetch": "allow"
+      }
     },
     "reviewer": {
       "model": "opencode-go/deepseek-v4.1-flash"
