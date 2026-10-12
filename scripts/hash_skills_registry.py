@@ -71,9 +71,14 @@ def compute_skill_digest(skill_dir: Path) -> str:
     digest = hashlib.sha256(usedforsecurity=False)
     for file_path in files:
         rel = file_path.relative_to(skill_dir).as_posix()
+        # Normaliza newlines a LF (canonico git, .gitattributes "eol=lf"):
+        # el digest DEBE ser estable entre SOs (Windows CRLF vs CI/Linux LF),
+        # si no, el contenido identico produce digests distintos (content drift
+        # falso en CI). PEP 552; no criptografico (B324), solo integridad.
+        data = file_path.read_bytes().replace(b"\r\n", b"\n")
         digest.update(rel.encode("utf-8"))
         digest.update(b"\x00")
-        digest.update(file_path.read_bytes())
+        digest.update(data)
         digest.update(b"\x00")
     return digest.hexdigest()
 
