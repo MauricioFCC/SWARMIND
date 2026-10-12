@@ -17,6 +17,7 @@ Heurísticas de clasificación:
 from __future__ import annotations
 
 import logging
+import os
 import re
 from dataclasses import dataclass, field
 from enum import Enum
@@ -48,6 +49,113 @@ class PipelineType(str, Enum):
     SHALLOW = "shallow"     # Directo: detect agent → execute → return
     STANDARD = "standard"   # Plan → execute 1-2 levels → return
     DEEP = "deep"           # Plan → execute multi-level → iterate → consolidate
+
+
+# ---------------------------------------------------------------------------
+# Fan-out cap (FR-C3, ADR-0103/WS-C)
+# ---------------------------------------------------------------------------
+#
+# RSV/EDV — por que cap 5 (no 11):
+#   - Ringelmann (efecto social): el rendimiento cae al crecer el grupo; 2
+#     agentes DIVERSOS superan a 16 homogeneos (la diversidad, no el volumen,
+#     es lo que aporta).
+#   - "Capability ceiling": el fan-out rinde +45% sobre el baseline single-agent
+#     y luego satura; por encima de ~5 agentes el retorno marginal se anula y
+#     el ruido no estructurado amplifica errores.
+#   (arXiv:2512.08296 — scaling; arXiv:2602.07787 — amplificacion de ruido).
+# El escalado XLarge (11) queda disponible SOLO si el operador lo habilita via
+# ``SWARMIND_MAX_FANOUT``. Default: 5.
+
+#: Fan-out maximo por defecto (agentes concurrentes) — cap de seguridad.
+MAX_FANOUT_DEFAULT = 5
+#: Escalado XLarge historico (3-11), tras override explicito del operador.
+MAX_FANOUT_XLARGE = 11
+#: Env que sobreescribe el cap de fan-out (entero >= 1).
+ENV_MAX_FANOUT = "SWARMIND_MAX_FANOUT"
+
+#: Agentes deseados por nivel de complejidad (antes de aplicar el cap).
+_COMPLEXITY_TO_AGENTS: dict[ComplexityLevel, int] = {
+    ComplexityLevel.TRIVIAL: 1,
+    ComplexityLevel.SIMPLE: 2,
+    ComplexityLevel.MODERATE: 3,
+    ComplexityLevel.COMPLEX: 5,
+    ComplexityLevel.VERY_COMPLEX: MAX_FANOUT_XLARGE,
+}
+
+
+def resolve_max_fanout(default: int = MAX_FANOUT_DEFAULT) -> int:
+    """Resuelve el cap de fan-out desde ``SWARMIND_MAX_FANOUT`` o el default.
+
+    Args:
+        default: Valor a usar si la env no existe, no es entero o es ``< 1``.
+
+    Returns:
+        Entero ``>= 1``. Nunca lanza: ante env invalido retorna ``default``.
+    """
+    raw = os.getenv(ENV_MAX_FANOUT, "")
+    if not raw or not raw.strip():
+        return default
+    try:
+        value = int(raw.strip())
+    except (TypeError, ValueError) as exc:
+        logger.warning(
+            "difficulty_router: WHAT: %s='%s' invalido: %s. "
+            "WHY: debe ser un entero >= 1. WHERE: resolve_max_fanout",
+            ENV_MAX_FANOUT,
+            raw,
+            exc,
+        )
+        return default
+    if value < 1:
+        logger.warning(
+            "difficulty_router: WHAT: %s=%d < 1. "
+            "WHY: un fan-out no puede ser cero/negativo. WHERE: resolve_max_fanout",
+            ENV_MAX_FANOUT,
+            value,
+        )
+        return default
+    return value
+
+
+class ScaleDecider:
+    """Decide el tamano del swarm (fan-out) capado por ``MAX_FANOUT_DEFAULT``.
+
+    Traduce ``ComplexityLevel`` a un numero de agentes deseados (1..11) y lo
+    limita al cap efectivo (env ``SWARMIND_MAX_FANOUT`` o 5). Nunca devuelve
+    mas agentes que el cap.
+
+    Uso:
+        ScaleDecider().decide(ComplexityLevel.VERY_COMPLEX)  # -> 5 (cap default)
+    """
+
+    def __init__(self, max_fanout: int | None = None) -> None:
+        """Inicializa el decider.
+
+        Args:
+            max_fanout: Cap explicito; si es ``None`` usa
+                :func:`resolve_max_fanout` (env ``SWARMIND_MAX_FANOUT`` o
+                ``MAX_FANOUT_DEFAULT``).
+        """
+        self._max_fanout = (
+            max_fanout if max_fanout is not None else resolve_max_fanout()
+        )
+
+    @property
+    def max_fanout(self) -> int:
+        """Cap efectivo de agentes concurrentes."""
+        return self._max_fanout
+
+    def decide(self, complexity: ComplexityLevel) -> int:
+        """Numero de agentes para ``complexity``, nunca mayor que el cap.
+
+        Args:
+            complexity: Nivel de complejidad clasificado por ``DifficultyRouter``.
+
+        Returns:
+            Entero en ``[1, max_fanout]`` = ``min(agentes_deseados, cap)``.
+        """
+        desired = _COMPLEXITY_TO_AGENTS.get(complexity, MAX_FANOUT_XLARGE)
+        return min(desired, self._max_fanout)
 
 
 # ---------------------------------------------------------------------------
@@ -252,6 +360,25 @@ class DifficultyRouter:
         """Estima cuántas subtasks generará esta tarea."""
         features = self._extract_features(message)
         return self._estimate_subtasks(features)
+
+    def decide_scale(
+        self, message: str, decider: ScaleDecider | None = None
+    ) -> int:
+        """Numero de agentes (fan-out) para ``message``, respetando el cap.
+
+        WHAT: clasifica el mensaje y delega en ``ScaleDecider``. WHY: unifica
+        clasificacion + cap de escalado (FR-C3). WHERE: coordinator (escalado).
+
+        Args:
+            message: Tarea del usuario.
+            decider: Decisor inyectable; si es ``None`` usa ``ScaleDecider()``
+                (lee el cap del env o ``MAX_FANOUT_DEFAULT``).
+
+        Returns:
+            Entero ``>= 1`` y ``<= max_fanout`` (nunca mayor que el cap).
+        """
+        decision = self.route(message)
+        return (decider or ScaleDecider()).decide(decision.complexity)
 
     def route_slm(self, message: str, task_type: str = "classification") -> dict:
         """Recomienda la ruta de ejecución SLM-first (ADR-0034).

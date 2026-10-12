@@ -127,3 +127,13 @@ researcher): NO embebible (Electron/TS sin SDK Python), worktrees aislados
 
 - `builder`, `guardian`, `scientist`, `evolve`, `architect`, `researcher`,
   `token-budget-auditor` (`.opencode/agents/`).
+
+## Ejemplo
+
+```
+Adoptar "SuperIDE"? -> 5 preguntas:
+1. Problema: gap no cubierto? (planner ya lo hace -> IDP)
+2. Responsable: coordinator | 3. Datos: Memory_Proyects (sin DB nueva)
+4. Medicion: vote_on_task gate>=70 + PBT | 5. Escalar: evolve
+-> Veredicto: adoptar el PROCESO, no la herramienta (caso ORCA 2026)
+```

@@ -5,7 +5,7 @@
 
 name: quant-trading
 domain: trading
-description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. Alcance: implementacion del motor sobre CQE; para validacion de factores ver alpha-research. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. Alcance: implementacion del motor sobre CQE; para validacion de factores ver alpha-research. Cuando NO usar: ver Alcance. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+; motores cuantitativos de alto rendimiento'
 version: 1.0.0
@@ -13,6 +13,14 @@ project_agnostic: true
 ---
 
 # Quant Trading — Motor Cuantitativo de Alto Rendimiento
+
+## Activación inmediata (al cargar esta skill)
+
+1. Identifica el motor objetivo y usa sus tipos (`Trade`, `Quote`, `Order`, `Signal`), no genéricos.
+2. Fija el baseline ANTES de tocar el hot path: `cargo bench` + `cargo test --features=strict`.
+3. Declara costes antes de medir edge: `SlippageModel::estimate()` + fees en el backtest.
+4. Calcula sizing con Kelly (`BetSizing::kelly`) y el límite de drawdown (`portfolio_risk::measures::drawdown()`).
+5. Cierra con walk-forward (`WalkForwardOptimizer::min_ratio(0.8)`) y valida out-of-sample.
 
 ## PERSONA & CANON (patrón PEC universal, ADR-0072)
 
@@ -45,6 +53,16 @@ project_agnostic: true
 - Overfitting: `WalkForwardOptimizer::min_ratio(0.8)` mínimo
 - Drawdown: stop automático si `portfolio_risk::measures::drawdown() > max_dd`
 
+## Tabla de decisión — ¿qué componente del motor usar?
+
+| Necesito... | Componente | Guardrail obligatorio |
+|-------------|-----------|------------------------|
+| Construir barras/features | `domain::data_processing` | tipos del motor, no genéricos |
+| Señal o régimen de mercado | `domain::signal_processing` | normalizar antes de combinar |
+| Indicador (SMA/RSI/ATR/VPIN) | `domain::indicators` | sin `unwrap()` en hot path |
+| Backtest con edge real | `domain::backtesting` | slippage + fees + walk-forward ≥ 0.8 |
+| Feature store para ML | `domain::ml::FeatureStore` | sin look-ahead (point-in-time) |
+
 ## Anti-patrones (prohibidos)
 
 - `unwrap()` en el hot path de trading (usar `Result`/`expect`).
@@ -52,3 +70,20 @@ project_agnostic: true
 - Backtest sin costes, slippage ni fees.
 - Overfitting de la optimizacion (sin walk-forward).
 - Ignorar el limite de drawdown / Kelly.
+
+## Ejemplo trabajado (input → pasos → output)
+
+- **Input**: estrategia mean-reversion BTCUSDT 1m; fees 2 bps + slippage cableado.
+- **Pasos**: (1) cablear costes y sizing; (2) backtest out-of-sample; (3) walk-forward ratio ≥ 0.8.
+- **Output** (contrato ejecutable):
+
+```
+use quant_engine::domain::backtesting::BacktestEngine;
+let report = BacktestEngine::new()
+    .slippage(SlippageModel::estimate())      // costes incluidos
+    .kelly(BetSizing::kelly(0.25))            // position sizing
+    .run(strategy)?;
+assert!(report.sharpe > 1.0 && report.max_dd < 0.15);  // walk-forward ratio >= 0.8
+```
+
+- **Criterio de aceptación**: `sharpe > 1.0` y `max_dd < 0.15`; si no, la variante se rechaza (no se toca capital real).

@@ -4,213 +4,249 @@ skills:
     description: "Usar cuando el usuario busca investigar o validar factores de alpha. alpha, factores, ML, feature engineering, validacion estadistica, backtesting. Alcance: investigacion (falsacion, walk-forward); para motor de datos ver quant-trading. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 532efcc93abec3f6a1c8313ddc446470c1af10f0cc2cbead012536e4650185b0
 
   - name: evolve
     domain: meta
     description: "Usar cuando el usuario quiere mejorar el sistema o sus skills. auto-mejora, evolucion, ASI-Evolve, aprendizaje continuo, mejora de skills, FDE, meta-aprendizaje. Alcance: mejora del sistema y sus skills; para disciplina pre-merge ver agent-rigor. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 291fd91a1b76bbb61c7a38f03129f5c9fe60c4bff25b86c369862f57c15954b6
 
   - name: healthtech
     domain: healthtech
     description: "Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos. Alcance: salud digital y sistemas clinicos; para seguridad general ver security-audit. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 16d4c2b1bacabf9330cefed58c73523d7f97d386af7898a92cf8a823efdfe9aa
 
   - name: hedgefund
     domain: financial
-    description: "Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, riesgo institucional. Alcance: doctrina y estrategia; para motores ver quant-trading, para ejecucion ver risk-execution. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, riesgo institucional. Alcance: doctrina y estrategia; para motores ver quant-trading, para ejecucion ver risk-execution. Cuando NO usar: ver Alcance. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: bd10774e3afda07de698deb9d0f9b2808f62311eaac5fbbd7eb217057a8bd8a2
 
   - name: legal-doc
     domain: legal
     description: "Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia. Alcance: analisis juridico y normativo; para documentacion cientifica ver science-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 3c0bb6824da76d48ec60862da4a8f537c93d5ea2411c629f97c1f048802dc46a
 
   - name: math-doc
     domain: academic
     description: "Usar cuando el usuario necesita analisis matematico o formulas. papers matematicos, LaTeX, demostraciones, estadistica, algebra, calculo, modelado matematico. Alcance: analisis matematico y formulas; para papers cientificos ver science-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: f746f8d00838223c75e43e77ddfa41bb738dbbfdc310a7e1f1ebacae30fd3400
 
   - name: pos-retail
     domain: retail
     description: "Usar cuando el dominio es punto de venta o retail. POS, retail, e-commerce, inventario, facturacion, pagos, logistica. Alcance: POS y retail omnicanal; para estrategia de negocio ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 043ff761f7b0d8689c0612c6f2bb5c50f640398ea5c5643837199e3449ef3747
 
   - name: quant-trading
     domain: quantitative
-    description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. Alcance: implementacion del motor sobre CQE; para validacion de factores ver alpha-research. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. Alcance: implementacion del motor sobre CQE; para validacion de factores ver alpha-research. Cuando NO usar: ver Alcance. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 52e3e3c730dc18ff771855cf9ba60ad6d4882d30bd54cca2a5308d2f36953e2f
 
   - name: risk-execution
     domain: quantitative
     description: "Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica. Alcance: implementacion tactica; para doctrina institucional ver hedgefund. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 385e95403420ab416fd50be59209308bb9c35911305ce92cbe34c5c2b1eb62c3
 
   - name: science-doc
     domain: academic
     description: "Usar cuando el usuario analiza papers o documentacion cientifica. papers academicos, tesis, informes tecnicos, revisiones sistematicas, investigacion. Alcance: analisis de papers y revisiones; para matematicas ver math-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 512675b5d796f8ea64af4f42a16a7156b33a7501201c039960ccfa92aae66268
 
   - name: frontend-uiux
     domain: frontend
     description: "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. Alcance: UI/UX y design systems; para diagramas visuales ver diagram-design. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.2.0
     project_agnostic: true
+    sha256: ddddce8d4b3b6db3a06e1f8ff2dc9213b0dd64ec3a1634a80e80527d09daf199
 
   - name: rust-lang
     domain: systems
     description: "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes. Alcance: Rust y sistemas seguros; para arquitectura de sistemas ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 492da602602eb09c39ba2c97bb6bd2944417b775e7298ba0167955d22df0d0df
 
   - name: architecture
     domain: architecture
     description: "Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones. Alcance: diseno y decisiones de arquitectura; para infraestructura y despliegue ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: c9facbfce74cb52f10ce70169de10a2c7631efab4f0caa0d2fb5f75ad8da81b9
 
   - name: data-science
     domain: data
     description: "Usar cuando el usuario trabaja con datos, ML o pipelines. pandas, numpy, scikit-learn, pytorch, feature engineering, model evaluation, GPU, analisis de datos. Alcance: pipelines y modelos ML; para factores de alpha ver alpha-research. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: a08c6c9b5a7c632acc1dbc9e0042af68fb84ef34c088cb78568abb2891ef249c
 
   - name: security-audit
     domain: security
     description: "Usar cuando el usuario audita seguridad o cumple estandares. OWASP, STRIDE, SOC2, ISO27001, SAST, DAST, threat modeling, SBOM, pentesting. Alcance: auditoria AppSec/DevSecOps; para infraestructura ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 04aedf6cacee8fc50f928e12769e70825beef4e1d8d027de7be457b3bbd8b2dc
 
   - name: business-strategy
     domain: business
     description: "Usar cuando el usuario pide analisis estrategico o modelo de negocio. DOFA, SWOT, Porter, canvas, plan de negocio, ROI, KPIs, OKRs, posicionamiento. Alcance: estrategia y modelo de negocio; para gestion de proyectos ver project-management. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 471932f1cbd7557db122c9ba3f1631a8210a5049affa45a2841581ce421ec072
 
   - name: communication
     domain: communication
     description: "Usar cuando el usuario necesita comunicacion profesional o persuasiva. escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural, liderazgo. Alcance: comunicacion profesional y persuasiva; para material educativo ver education. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 4c5ae307158e4eb38d6292f8b4fe77e2caa6be406b84a54d29abd3207daafd44
 
   - name: project-management
     domain: management
     description: "Usar cuando el usuario gestiona proyectos o metodologias. Scrum, Kanban, planificacion, seguimiento, riesgos, estimaciones, stakeholders. Alcance: gestion y metodologias de proyecto; para estrategia ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: b0eadce339bfd56a41ccd23b5b3652ef27362eaedb44b1e1229851fc5cdd6641
 
   - name: creative-design
     domain: design
     description: "Usar cuando el usuario busca ideacion o diseno creativo. design thinking, ideacion, prototipado, branding, identidad visual, UX, brainstorming. Alcance: ideacion y diseno creativo; para UI/design systems ver frontend-uiux. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 6267ace920735c14d26227b5affc3c053cd07c64cf623eea1ba842ede223bcac
 
   - name: psychology
     domain: psychology
     description: "Usar cuando el problema involucra comportamiento o psicologia. psicologia cognitiva, organizacional, del aprendizaje, positiva, sistemas multi-agente. Alcance: individuo, equipo y aprendizaje; para decisiones economicas e incentivos ver behavioral-economics. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 6a970fbbd48d05fc091636f3c647940039da2bb5d11527444e0ca0563dab61e6
 
   - name: education
     domain: education
     description: "Usar cuando el usuario diseña material educativo o formacion. diseno instruccional, pedagogia, andragogia, Bloom, microlearning, evaluacion educativa. Alcance: diseno instruccional y evaluacion; para comunicacion ver communication. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: bc9b6d2e5f8e34c598c17e87f8457345ac1862b3962bde40dcef33f938f98602
 
   - name: ethics
     domain: philosophy
     description: "Usar cuando la decision involucra etica de IA o valores. alineamiento, marcos eticos, agentes autonomos, decisiones automaticas, filosofia de la mente, sesgo etico. Alcance: etica de IA y alineamiento; para riesgos emergentes ver risk-intelligence. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: f6ee973f19c684dff76b3d1d9f8b9e33684e20335e9dc10eff44474ee341b2fa
 
   - name: behavioral-economics
     domain: economics
     description: "Usar cuando el problema involucra decisiones humanas bajo incertidumbre. teoria de juegos, sesgos cognitivos, heuristicas, incentivos, nudges. Alcance: decisiones economicas; para aprendizaje y equipo ver psychology. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 879752f4d729aea966fd877f5d816a22580672658aaf3cc4b210062a9ecc911d
 
   - name: linguistics
     domain: linguistics
     description: "Usar cuando el problema involucra lenguaje, semiotica o NLP. linguistica cognitiva, semiotica, pragmatica, analisis del discurso, procesamiento de lenguaje natural. Alcance: lenguaje, semantica y NLP; para documentacion cientifica ver science-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 3ebec79041f7e8c59f0f293bcc112b82add3b83f04fee8ee5c59d287b1bdbbcc
 
   - name: sociology
     domain: sociology
     description: "Usar cuando el problema involucra dinamicas sociales o de grupos. sociologia, antropologia, redes, cultura digital, grupos, sistemas multi-agente. Alcance: dinamicas sociales y redes; para psicologia individual ver psychology. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 26bb12e1f7450e6cf26653de7a896c3655b9ca65cef0f4f11f9fecf599ef6797
 
   - name: devops-infra
     domain: devops
     description: "Usar cuando el usuario opera infraestructura o CI/CD. Docker, Kubernetes, Terraform, CI/CD, monitoreo, observabilidad, plataforma, despliegue. Alcance: infraestructura y CI/CD generico; para releases del repo SWARMIND ver swarm-release-ops. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: d70ad94734106a70fb5eef6ca6c67661627f4f6222d22f873dbd2d95c7f4ecc8
 
   - name: sustainability
     domain: environment
     description: "Usar cuando el usuario trabaja sostenibilidad o ESG. ESG, impacto ambiental, economia circular, cambio climatico, reportes sostenibilidad. Alcance: ESG e impacto ambiental; para estrategia de negocio ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: edb80a546db9469e0ddc9101e016fbf2c8c742ff445039a417a9abbed125f47a
 
   - name: physical-sciences
     domain: science
     description: "Usar cuando el dominio son ciencias naturales experimentales. fisica, quimica, biologia, metodos cientificos, diseno experimental, analisis de datos cientificos. Alcance: ciencias naturales experimentales; para analisis de datos ver data-science. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 790cdf067078007b07e66a9f68beda13b8d4b67b0a9b654c2da2842996a04907
 
   - name: risk-intelligence
     domain: risk
-    description: "Usar cuando el usuario analiza riesgos emergentes. CRO Forum, riesgos tecnologicos, geopoliticos, climaticos, salud, financieros. Alcance: riesgos emergentes y escenarios; para riesgo de mercado ver risk-execution. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el usuario analiza riesgos emergentes. CRO Forum, riesgos tecnologicos, geopoliticos, climaticos, salud, financieros. Alcance: riesgos emergentes y escenarios; para riesgo de mercado ver risk-execution. Cuando NO usar: ver Alcance. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: d01b4bfd0ad628b3cb0430ef1b8047e84957e16008caddc505db61eea21c8185
 
   - name: diagram-design
     domain: frontend
     description: "Usar cuando el usuario pide un diagrama visual editorial. arquitectura, flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar, org chart, mermaid, drawio, SVG, diagrama. Alcance: diagramas visuales editoriales; para arquitectura ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: ea892d2157373594108c89d27f21f971678fd6282e0fa6165c8135b25d73e6f8
 
   - name: ads-optimizer
     domain: advertising
     description: "Usar cuando el usuario quiere optimizar campanas publicas digitales. Meta Ads, Google Ads, BOAD, ShapleyFlow, MetaClaw, RL bidding, ROI publicitario, conversion, targeting. Alcance: optimizacion de campanas digitales; para estrategia de negocio ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 9c8194ad3ff4159f1eb31f8ec8c7595757acaf510a5e3621ec4ccf8ba52709d2
 
   - name: swarm-release-ops
     domain: swarm-release-ops
     description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. Alcance: releases y CI/CD del repo SWARMIND; para infra generica ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 5450ff115925bafec6ebf0d64b9fc6a7a6c86b9ec9046e086b03affa2d6a2fd7
 
   - name: atdd-spec
     domain: testing
     description: "Usar cuando se desarrolla una feature con ciclo Spec→Test→Code: especificación de comportamiento primero, tests como prompt+verificación, implementación mínima, refactor. Alcance: ciclo Spec->Test->Code; para disciplina pre-merge ver agent-rigor. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: b1973572e2921798ef54120efd814920bebdf4c3554b2c516e62a7904190dfae
 
   - name: process-over-tools
     domain: orchestration
     description: "Usar cuando se evalúa adoptar herramienta, modelo o agente en el proyecto: define objetivo, responsable, datos, medición y escalado, y enrútalo al harness. Alcance: adopcion de tools en el harness; para mejora del sistema ver evolve. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 9275ccb27de7244395a433ceb5e5d0c2f3e89d0c1be82deb6572258270c75331
 
   - name: agent-rigor
     domain: quality
     description: "Usar cuando el usuario exige disciplina de ingeniería pre-merge. gates deterministas, anti-atajos, tests decorativos, verificación con evidencia, mutation score. Alcance: proceso de verificación; para mejora continua ver evolve. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: 95facce37d9a49c8d64eef351b96eb0cf7a738e5f31482c3c8f8f96f33bdb80d
 
   - name: skill-engineering
     domain: meta
     description: "Usar cuando el usuario quiere crear, revisar, mejorar o auditar skills o agentes del harness. skill engineering, frontmatter, description pushy, progressive disclosure, routing, evaluacion, lifecycle, drift. Alcance: mejora de skills; para mejora del sistema ver evolve. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
+    sha256: a21fd2610038e865157f6e62ca69d9af89d84efde5af27b810b13515b5b8c6b4

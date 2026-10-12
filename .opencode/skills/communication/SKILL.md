@@ -53,3 +53,12 @@ Skill de comunicacion profesional para redaccion ejecutiva, presentaciones efect
 - Jargon innecesario para la audiencia.
 - Presentacion sin un mensaje unico.
 - Negociacion sin BATNA.
+
+## Ejemplo
+
+```
+!comm email "retraso del release a stakeholders"
+Asunto: Release v2 pasa al 20-oct (riesgo de deuda tecnica)
+BLUF: Necesito tu OK para moverlo 1 semana y cerrar 3 bugs P1.
+Impacto: sin cambio de alcance; +16h QA. Decision antes del viernes.
+```

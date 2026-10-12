@@ -270,9 +270,13 @@ def _sync_harness_to_global(dry_run: bool = False) -> int:
             continue
         target = dst / subdir
         if not dry_run:
+            # Excluye datos runtime gigantes (LanceDB ~6GB, iteration_reports):
+            # el global solo necesita db/schema, no los datos (ADR-0038).
             shutil.copytree(src, target, dirs_exist_ok=True,
-                            ignore=shutil.ignore_patterns("__pycache__", "*.pyc",
-                                                           "*.so", "*.pyd", ".DS_Store"))
+                            ignore=shutil.ignore_patterns(
+                                "__pycache__", "*.pyc", "*.so", "*.pyd",
+                                ".DS_Store", "lancedb", "_archived",
+                                "iteration_reports", "import", "*.lance"))
         count += sum(1 for _ in src.rglob("*.py") if _.is_file())
 
     # Copiar archivos raÃ­z de harness

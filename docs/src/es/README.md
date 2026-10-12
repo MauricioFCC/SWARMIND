@@ -1,3 +1,11 @@
+---
+title: Swarmind — Sistema Multi-Agente Evolutivo
+description: Mapa raiz de la documentacion ES de Swarmind (que es, estado actual, quick start) con indice por capas hacia guia, arquitectura, tecnico, agentes, skills, referencia y roadmap.
+domain: "overview"
+updated: 2026-10-12
+toc: true
+---
+
 # Swarmind — Sistema Multi-Agente Evolutivo
 
 ![Swarmind](/assets/logo.svg)
@@ -81,6 +89,25 @@ Los modulos nuevos (Multi-Harness Adapter Layer, Hook System, Zero Trust, Federa
 - [Roadmap](roadmap/estado.md) — Estado del proyecto y proximos pasos
 - [Desarrollo](development/modificar.md) — Como modificar y contribuir
 - [Comparativa Harness 2026](reference/comparativa-harness-2026.md) — vs ECC, DeerFlow, CowAgent, CodeWhale
+
+## Indice por Capas
+
+Navegacion jerarquica: este README es el mapa (capa 0); cada capa desciende a su
+propio indice con descripcion de una linea por documento. El agente selecciona el
+nivel que necesita (progressive disclosure).
+
+| Capa | Directorio | Que responde | Entrada |
+|------|-----------|--------------|---------|
+| Guia de uso | `guide/` | Filosofia, tutorial de uso, agentes/skills, estandares, velocidad y analisis de arquitectura. | [Como Usar Swarmind](guide/como-usar.md) |
+| Arquitectura | `architecture/` | Coordinacion Swiss Watch, estrategias de planificacion y tecnicas frontier por agente/skill. | [Indice de arquitectura](architecture/INDEX.md) |
+| Manual tecnico | `technical/` | Modulos core del harness: orquestacion, memoria/RAG, QA, guardrails y modelo. | [Indice tecnico](technical/INDEX.md) |
+| Agentes | `agents/` | Perfil y capacidades de cada agente especializado. | [Architect](agents/architect.md) |
+| Skills | `skills/` | Registry, tiers de residencia y fichas de cada skill contextual. | [Skills Registry](skills/registry.md) |
+| Desarrollo | `development/` | Testing, modificacion, commits convencionales y exportacion/backup. | [Indice de desarrollo](development/INDEX.md) |
+| Referencia | `reference/` | Glosario, investigacion aplicada, comparativa de harness y referencias academicas. | [Glosario](reference/glosario.md) |
+| API | `api/` | API autogenerada del paquete `harness` (no editar a mano). | [Indice API](api/README.md) |
+| Roadmap | `roadmap/` | Estado del proyecto y proximos pasos. SSOT de estado. | [Estado del Proyecto](roadmap/estado.md) |
+| Legal | `legal/` | Reservado, sin documentos actualmente. | — (vacio) |
 
 ## Arquitectura
 

@@ -1,14 +1,14 @@
----
+﻿---
 name: base-principles-full
 description: Principios universales - SOLO N3 (detalle bajo demanda) con checklists extendidos, mapa de roles y abreviaciones. N1/N2 viven UNA vez en core/base_principles.md (SSOT).
-version: 3.5.0
+version: 3.6.0
 project_agnostic: true
 inherit:
   - core/base_principles.md
   - core/fde_principles.md
 ---
 
-# PRINCIPIOS UNIVERSALES | Nivel 3 (FULL — detalle bajo demanda)
+# PRINCIPIOS UNIVERSALES | Nivel 3 (FULL â€” detalle bajo demanda)
 
 > Este archivo contiene SOLO N3 (detalle completo: checklists, ejemplos,
 > mapa de roles y abreviaciones). Consultar SOLO cuando se necesiten
@@ -84,7 +84,7 @@ Cita: `FND` o `ADR-XXXX:FND`.
 - [ ] No `eval()/exec()` en produccion
 - `X f"SELECT * FROM t WHERE id={uid}"` -> `OK session.execute(text("..."), {"id": uid})`
 
-### DOC - Documentacion (OBLIGATORIO — sin docstring = FAIL)
+### DOC - Documentacion (OBLIGATORIO â€” sin docstring = FAIL)
 - [ ] **TODA funcion/clase/metodo publico DEBE tener docstring en ESPANOL UTF-8**
 - [ ] Formato: Args/Returns/Raises (NumPy style o Google style)
 - [ ] Codigo EN: variables, funciones, clases, types, archivos
@@ -109,7 +109,7 @@ Cita: `FND` o `ADR-XXXX:FND`.
           ValueError: Si param2 es negativo.
       """
   ```
-- ⚠️ CERO funciones sin docstring. Si el agente genera codigo sin docstring, se rechaza en revision.
+- âš ï¸ CERO funciones sin docstring. Si el agente genera codigo sin docstring, se rechaza en revision.
 
 ### TST - Testing
 - [ ] pytest framework. New feature -> test unitario + integracion
@@ -127,18 +127,18 @@ Cita: `FND` o `ADR-XXXX:FND`.
 - `X response = requests.get(url)` -> `OK response = requests.get(url, timeout=30)`
 
 ### ERR - Error Handling & Readability (OBLIGATORIO)
-- [ ] **TODO `except` debe registrar causa**: `logger.warning("Fallo X: %s", e)` — jamas `except: pass`
+- [ ] **TODO `except` debe registrar causa**: `logger.warning("Fallo X: %s", e)` â€” jamas `except: pass`
 - [ ] **Formato de error accionable**: Mensaje que incluya:
   - `WHAT` = Que operacion fallo (ej: "Fallo al conectar a BD")
   - `WHY` = Causa raiz (ej: "Timeout de conexion: 30s")
   - `WHERE` = Archivo:linea:funcion (incluir en log)
   - `HOW` = Como resolver (ej: "Verificar que el servicio BD este corriendo")
-- [ ] **Stack trace estructurado**: Usar `logging.exception()` o formatear con `traceback.format_exc()` — nunca `print(e)`
+- [ ] **Stack trace estructurado**: Usar `logging.exception()` o formatear con `traceback.format_exc()` â€” nunca `print(e)`
 - [ ] **Errores en ES** para usuarios finales, **tecnicos en EN** con contexto completo
 - [ ] **Error classification**: Distinguir entre:
-  - `VALIDATION`: input invalido → mensaje claro al usuario
-  - `OPERATIONAL`: red/DB/timeout → retry + alert
-  - `BUG`: assertion/codigo → stack trace completo
+  - `VALIDATION`: input invalido â†’ mensaje claro al usuario
+  - `OPERATIONAL`: red/DB/timeout â†’ retry + alert
+  - `BUG`: assertion/codigo â†’ stack trace completo
 - [ ] **Nunca exponer internals** en errores al usuario (sanitizar antes de mostrar)
 - `X except: pass` -> `OK except TimeoutError as e: logger.warning("Timeout en %s: %s", op, e); raise`
 - `X print(e)` -> `OK logger.exception("Fallo al procesar %s", request_id)`
@@ -174,11 +174,11 @@ Cita: `FND` o `ADR-XXXX:FND`.
 
 ### UPG - Upgrade Continuo (regla universal para TODO stack)
 - [ ] **Aplicar a TODO cambio de stack** (no solo upgrades completos):
-  - [ ] Lenguajes: Python, Rust, TypeScript, Go, etc. — ultima estable
-  - [ ] Librerias/frameworks: Django, FastAPI, React, numpy, torch — ultima estable
-  - [ ] Runtimes: uv, npm, cargo, pip — ultima estable
-  - [ ] Build deps: setuptools, hatchling, maturin — ultima estable
-  - [ ] Deps transitivas (incluidas via lockfile) — todas en latest
+  - [ ] Lenguajes: Python, Rust, TypeScript, Go, etc. â€” ultima estable
+  - [ ] Librerias/frameworks: Django, FastAPI, React, numpy, torch â€” ultima estable
+  - [ ] Runtimes: uv, npm, cargo, pip â€” ultima estable
+  - [ ] Build deps: setuptools, hatchling, maturin â€” ultima estable
+  - [ ] Deps transitivas (incluidas via lockfile) â€” todas en latest
 - [ ] **Protocolo obligatorio antes de cambiar versiones**:
   1. **Investigacion web exhaustiva** (PyPI, GitHub releases, endoflife.date, blogs oficiales)
   2. **Mesa de trabajo** con la siguiente estructura minima:
@@ -188,7 +188,7 @@ Cita: `FND` o `ADR-XXXX:FND`.
      - **Consenso**: voto unanime, mayoria cualificada, o decision justificada del coordinator
   3. **Implementacion incremental**: lockfile regenerado, tests, lint, scanner
   4. **Validacion**: suite de tests + bandit + scanner + cross-platform (Win/Linux)
-  5. **Propagacion local** (sync opencode + deploy_all) — NUNCA push automatico
+  5. **Propagacion local** (sync opencode + deploy_all) â€” NUNCA push automatico
   6. **PR al usuario** con mesa de trabajo adjunta para revision y aprobacion
 - [ ] **Criterios de exclusion** (no upgrade automatico):
   - Paquete en EOL con deprecation > 6 meses y sin LTS
@@ -210,7 +210,7 @@ Cita: `FND` o `ADR-XXXX:FND`.
 - [ ] **TypeVar** para generics: `T = TypeVar("T")`
 - [ ] **Type aliases** con `type X = ...` o `TypeAlias`
 - [ ] **NewType** para tipos distinctos: `UserId = NewType("UserId", int)`
-- [ ] **Evitar `Any`** — preferir `object`, generics, o `Unknown`
+- [ ] **Evitar `Any`** â€” preferir `object`, generics, o `Unknown`
 - [ ] **mypy --strict** en CI (zero errors policy)
 - [ ] **Return type** explicito:
   - `-> None` si no retorna
@@ -470,6 +470,7 @@ Cita: `FND` o `ADR-XXXX:FND`.
 | Composition over Inheritance | CMP |
 | Law of Demeter (Tell, Don't Ask) | DEM |
 | Frontier Research & Solution (regla universal) | FRS |
+| Roadmap Sync & Retrospectiva | RSV |
 
 ---
 
@@ -496,16 +497,45 @@ Cita: `FND` o `ADR-XXXX:FND`.
         comportamiento, API, dependencias o arquitectura.
   - [ ] **Crear commit**: conventional commit `type(scope): descripcion #ISSUE`.
 - [ ] **Ejemplos de busquedas obligatorias**:
-  - `X "implementa un cache"` → `OK buscar "cache python 2026 best practice" → elegir
-    ShapedCache/LRU+TTL frontier → implementar → docs + commit`
-  - `X "arregla este error"` → `OK buscar el error exacto + "2026 fix" → entender
-    causa raiz → aplicar fix frontier → docs + commit`
-  - `X "agrega una API"` → `OK buscar "fastapi vs litestar 2026" → elegir el mas
-    eficiente/confiable → implementar → docs + commit`
+  - `X "implementa un cache"` â†’ `OK buscar "cache python 2026 best practice" â†’ elegir
+    ShapedCache/LRU+TTL frontier â†’ implementar â†’ docs + commit`
+  - `X "arregla este error"` â†’ `OK buscar el error exacto + "2026 fix" â†’ entender
+    causa raiz â†’ aplicar fix frontier â†’ docs + commit`
+  - `X "agrega una API"` â†’ `OK buscar "fastapi vs litestar 2026" â†’ elegir el mas
+    eficiente/confiable â†’ implementar â†’ docs + commit`
 - [ ] **Excepciones validas** (NO requieren web research):
   - Cambios triviales de formato/typo sin impacto (aun asi, commit).
   - Operaciones urgentes de rollback/revert (despues se investiga).
   - La tarea es SOLO actualizar documentacion (la investigacion ya se hizo).
+
+---
+
+### RSV - Roadmap Sync & Retrospectiva (regla universal obligatoria)
+
+> **SE CUMPLE SIEMPRE**: el roadmap es un documento VIVO alineado a la frontera;
+> cada N refactors se hace pausa de retrospectiva y re-validacion de estado del arte.
+
+- [ ] **1. Retrospectiva periodica**: cada N refactors (N >= 5) o antes de cada
+      hito grande:
+  - [ ] **Leer** `docs/src/es/roadmap/estado.md` completo.
+  - [ ] **Analisis retrospectivo de calidad**: que features envejecieron,
+        que deuda crecio, que supuestos ya no se cumplen (context rot).
+  - [ ] **Re-validar frontera**: verificar con web research que las tecnicas
+        del roadmap y de las features vigentes siguen siendo estado del arte
+        (UPG + FRS aplicados; la vanguardia se renueva sola).
+- [ ] **2. Features SIEMPRE de frontera**: ninguna feature nueva entra al
+      roadmap si no es la solucion mas avanzada/elegante 2026 (rechazar
+      soluciones legacy y patrones superados por evidencia).
+- [ ] **3. Actualizar el roadmap al hito**: cada feature implementada se
+      registra en el roadmap con su tecnica, evidencia y fecha; el roadmap
+      NUNCA queda desactualizado (ritmo tipo ARR/alignment: sincronizar antes
+      de escalar).
+- [ ] **4. Al finalizar**:
+  - [ ] Registrar el analisis en `docs/.MEJORAS_SWARMIND.md` si aplica.
+  - [ ] Commit conventional `docs(roadmap): ...` o `feat(...): ...`.
+- [ ] **Ejemplo**: tras 5 refactors â†’ `RSV`: leer roadmap, detectar que una
+      tecnica (ej. debate vanilla) quedo superada por majority-vote (ACL 2026),
+      actualizar roadmap + ADR, elegir la frontera en la siguiente feature.
 
 ### ADR-0098 - Convenciones de codigo
 

@@ -99,3 +99,14 @@ no un reescrito a ciegas.
 
 - `evolve`, `evolve-engineer`, `evolve-analyzer`, `evolve-researcher`,
   `architect`, `guardian` (`.opencode/agents/`).
+
+## Ejemplo
+
+```
+# Antes (description que resume el workflow)
+description: "Analiza, disena y despliega X paso a paso"
+$ python scripts/validate_skills.py --strict  -> FAIL no abre con "Usar cuando"
+# Despues (router + anti-trigger)
+description: "Usar cuando el usuario necesite X (no para Y, ver z-skill)"
+$ python scripts/validate_skills.py --strict  -> OK
+```

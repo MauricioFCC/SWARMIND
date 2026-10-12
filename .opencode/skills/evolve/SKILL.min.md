@@ -4,63 +4,28 @@ description: "Usar cuando el usuario quiere mejorar el sistema o sus skills. aut
 license: MIT
 ---
 
-## 📋 PROPÓSITO
+# Evolve (min)
 
-## 🔄 EVOLVE LOOP COMPLETO
+Meta-skill del loop **ASI-Evolve** (Learn → Design → Experiment → Analyze): mejora skills, agentes y configs con FDE, Cognition Store (lecciones) y Experiment DB (scores).
 
-## 🚀 FDE INTEGRATION
+## Aterrizaje (motor real)
+Los comandos `!evolve ...` corren sobre `harness.evolve_loop` (API pública `CASEEvaluator, SelfImprover, ProceduralMemory, CognitionSync, SkillGenerator`).
 
-| FDE Pilar | Cómo se aplica en Evolve |
-|-----------|--------------------------|
-| **DELTA** | Identificar el gap entre el skill actual y el ideal universal |
-| **MISSION** | Cada ronda tiene un objetivo medible (score objetivo) |
-| **GLUE** | Las mejoras deben ser integrables en cualquier proyecto |
-| **VALUE** | Priorizar cambios 80/20 que den más valor por round |
-| **DIPLOMACY** | Las mejoras deben mantener compatibilidad hacia atrás |
-| **RESILIENCE** | Los skills mejorados deben mantener guardrails activos |
-| **EVOLVE** | El meta-loop se retroalimenta de sus propias métricas |
+## Comandos esenciales
+- `!evolve run <skill-path> [rounds=10] [sample_n=3]` / `!evolve run all`
+- `!evolve cognition add|search|list|seed`
+- `!evolve best|history|compare`
+- `!evolve fde audit <skill-path>` · `!evolve failures distill`
 
-## 📊 MÉTRICAS DE EVALUACIÓN UNIVERSALES
+## FDE por ronda
+DELTA (gap) · MISSION (score medible) · GLUE (portable) · VALUE (80/20) · DIPLOMACY (compatibilidad) · RESILIENCE (guardrails) · EVOLVE (meta-loop).
 
-| Métrica | Peso | Descripción |
-|---------|------|-------------|
-| exists | 0.05 | El archivo existe |
-| has_frontmatter | 0.05 | Tiene frontmatter YAML válido |
-| has_version | 0.05 | Tiene versionado semántico |
-| has_project_agnostic | 0.10 | Es reutilizable en cualquier proyecto |
-| has_principles_ref | 0.10 | Referencia principios universales |
-| has_evolve_hooks | 0.10 | Tiene hooks de auto-mejora |
-| has_fde_flow | 0.10 | Incorpora FDE principles |
-| has_guardrails | 0.05 | Tiene validaciones de guardrails |
-| has_variables | 0.05 | Usa variables {{}} para parametrización |
-| has_mermaid | 0.05 | Incluye diagramas de flujo |
-| has_checklist | 0.05 | Tiene checklist de verificación |
-| has_domain_sections | 0.05 | Estructura clara con secciones |
-| length_adequate | 0.05 | Tamaño adecuado (200-5000 chars) |
-| fde_coverage | 0.10 | Cobertura de patrones FDE |
-| evolve_coverage | 0.05 | Cobertura de patrones EVO |
+## Guardrails
+Sin registro no hay mutación · `max_rounds` con reporte intermedio · preservar `project_agnostic: true` · compatibilidad hacia atrás · siempre registrar lección.
 
-## 🧠 COMANDOS
+## Checklist
+- [ ] Delta real (FDE) · Hipótesis con métrica · Registro en Experiment DB
+- [ ] Lección en Cognition Store · Rollback si lift <= 0 · `validate_skills --strict`
 
-### Gestión del Loop
-
-### Cognition Store
-
-### Experiment DB
-
-### FDE
-
-## 🔐 GUARDRAILS DEL META-SKILL
-
-## 🧬 FRONTIER RESEARCH INTEGRATION (2026)
-
-| Framework | Uso en Evolve |
-|-----------|---------------|
-| **MetaClaw** | Skill-driven fast adaptation: cada skill es una behavioral instruction optimizable via RL. Opportunistic policy optimization en ventanas de inactividad del sistema. Skill library + base policy evolucionan juntos sin GPU local |
-| **MARS** | Metacognitive reflection: cada ciclo Learn→Design→Experiment→Analyze usa single-cycle recurrence. Principio-based reflection (que evitar) + procedural reflection (como tener exito). Reemplaza multi-turn recursive loops costosos |
-| **Hyperagents (DGM-H)** | Meta-agent auto-referencial: el sistema Evolve se modifica a si mismo. Mejora el mecanismo de mejora (self-accelerating). Meta-level improvements transfieren entre skills y dominios |
-| **Memento-Skills** | Skill-as-memory: cognition store como skill library persistente. Cada leccion es un skill reusable en markdown. Router entrenado con RL recupera el skill mas relevante. Contraste entre lecciones similares |
-| **Native Self-Evolution** | Exploration agent que genera World Knowledge antes de task execution. Outcome-based reward solo en training. Reward-free inference en produccion. Destilacion de conocimiento ambiental sin rewards externos |
-| **ERL** | Experiential Reflective Learning: reflexiona sobre trayectorias de mejora → extrae heuristics → retrieve en nuevo ciclo. Heuristics > raw trajectories para transferencia entre skills |
-
-## 🔗 ENLACES
+## Referencias (bajo demanda)
+- [Comandos](references/comandos.md) · [Frameworks 2026](references/frameworks-2026.md) · [Métricas y FDE](references/metricas-y-fde.md)

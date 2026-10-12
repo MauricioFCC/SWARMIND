@@ -14,6 +14,32 @@ project_agnostic: true
 - Diseno de incentivos y mecanismos
 - Toma de decisiones bajo incertidumbre
 
+## Selector de juego
+- Acuerdos vinculantes → cooperativo (Shapley). No vinculantes → Nash.
+- Simultaneo → matriz de pagos. Secuencial → induccion hacia atras.
+- Suma cero → conflicto puro. Suma no cero → win-win.
+
+## Protocolo de sesgos
+`DETECTAR → CUANTIFICAR → CORREGIR → VERIFICAR → REGISTRAR`. Alto impacto: anclaje, confirmacion, exceso de confianza, supervivencia, bandwagon.
+
+## Mecanismos (Hurwicz-Myerson)
+Compatibilidad de incentivos · racionalidad individual · eficiencia asignativa · presupuesto balanceado · veracidad.
+
+## Decision bajo incertidumbre
+Certeza → determinista. Riesgo → utilidad esperada. Ambigua → Maximin. Ignorancia → heuristicas + exploracion.
+
 ## Comandos
 - `!behav game <situacion>` — Analisis de teoria de juegos
-- `!behav biases <decision>` — Identificar sesgos cognitivos
+- `!behav biases <decision>` — Identificar y mitigar sesgos
+- `!behav incentive <objetivo>` — Diseno de mecanismos
+- `!behav decision <problema>` — Decision bajo incertidumbre
+- `!behav nudge <comportamiento>` — Diseno de nudge transparente
+- `!behav market <recurso>` — Diseno de mercado entre agentes
+
+## Anti-patrones
+- Asumir racionalidad perfecta. Premiar metrica proxy (Goodhart).
+- Generalizar sin evidencia. Ignorar aversion al riesgo. Nudge manipulador.
+
+## Referencias (bajo demanda)
+- [Teoria: juegos, sesgos, incentivos, decision](references/teoria.md)
+- [Aplicaciones en Swarmind](references/aplicaciones.md)

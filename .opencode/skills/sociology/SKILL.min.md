@@ -9,11 +9,34 @@ project_agnostic: true
 # Sociology (min)
 
 ## Responsabilidades
-- Dinamicas de grupos en equipos multi-agente
-- Teoria de redes aplicada a topologias de comunicacion
-- Sociologia del conocimiento y aprendizaje organizacional
-- Antropologia de la tecnologia y cultura digital
+- Dinamicas de grupos en equipos multi-agente (etapas Tuckman, roles Belbin, fenomenos grupales)
+- Teoria de redes aplicada a topologias de comunicacion (metricas SNA)
+- Sociologia del conocimiento y aprendizaje organizacional (SECI)
+- Antropologia de la tecnologia y cultura digital (etnografia)
+
+## Diagnostico de grupo (Tuckman)
+- Forming → facilitar presentacion, definir reglas base.
+- Storming → mediacion, clarificar objetivos y criterios.
+- Norming → formalizar normas, celebrar acuerdos.
+- Performing → monitorear, prevenir regresion a storming.
+- Adjourning → documentar lecciones, cerrar ciclos.
+
+## Protocolo SNA
+1. MAPEAR nodos/edges → 2. MEDIR centralidad/densidad/clustering → 3. DIAGNOSTICAR cuellos de botella/aislamiento → 4. INTERVENIR puentes/roles → 5. MONITOREAR.
 
 ## Comandos
-- `!socio group <dinamica>` — Analisis de dinamicas de grupo
-- `!socio network <topologia>` — Analisis de red de agentes
+- `!socio group <dinamica>` — Analisis de dinamicas de grupo (Tuckman, Belbin, fenomenos)
+- `!socio network <topologia>` — Analisis de red de agentes con metricas SNA
+- `!socio culture <contexto>` — Analisis antropologico de cultura de agentes
+- `!socio knowledge <problema>` — Transferencia de conocimiento (SECI)
+- `!socio diversity <equipo>` — Diversidad cultural entre agentes
+- `!socio ethnography <sistema>` — Diseno de estudio etnografico
+
+## Anti-patrones
+- Generalizar de una anecdota. Diagnostico sin datos ni marco teorico.
+- Ignorar cultura y contexto de la red. Asumir homogeneidad del grupo.
+
+## Referencias (bajo demanda)
+- [Teoria social](references/teoria-social.md)
+- [Redes y SNA](references/redes-sna.md)
+- [Antropologia de la tecnologia](references/antropologia.md)

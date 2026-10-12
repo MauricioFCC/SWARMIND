@@ -25,6 +25,12 @@ from harness.memory_rag.lance_vector_store import (
     COLLECTION_PROCEDURAL_SKILLS,
     LanceVectorStore,
 )
+from harness.orchestrator.hidden_body import (
+    _body_keyword_score,
+    combine_hidden_body_score,
+    read_skill_body,
+    tokenize,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +39,9 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 SIMILARITY_THRESHOLD = 0.70  # 70% match to load skill
+
+#: Similitud de un match del registry YAML curado (keyword = senal fuerte).
+_YAML_MATCH_SIMILARITY = 0.80
 
 #: Env que habilita la inyeccion de la herencia (`inherit:`) en el runtime.
 #: Default OFF para no inflar el contexto (TKN-safe).
@@ -233,15 +242,26 @@ class AgentDispatcher:
             )
             content = self._read_skill_md(skill_path) if skill_path else ""
             inherited, inherited_ok = _resolve_inherit_meta(skill_path)
+            # Hidden-body (FR-C2): la metadata es asimetrica; se puntua el
+            # CUERPO real y se combina 0.5/0.5 con la similitud del match YAML.
+            body = read_skill_body(skill_path)
+            body_score = _body_keyword_score(body, tokenize(task_description))
+            similarity = (
+                combine_hidden_body_score(_YAML_MATCH_SIMILARITY, body_score)
+                if body
+                else _YAML_MATCH_SIMILARITY
+            )
             logger.info(
-                "Skill found in YAML registry: %s (path=%s)",
+                "Skill found in YAML registry: %s (path=%s, body_score=%.2f)",
                 registry_match.get("name"),
                 skill_path,
+                body_score,
             )
             return {
                 **registry_match,
                 "content": content,
-                "similarity": 0.80,  # YAML keyword match = strong
+                "similarity": similarity,  # YAML keyword + hidden-body
+                "body_score": body_score,
                 "inherited": inherited,
                 "inherited_ok": inherited_ok,
             }
@@ -350,6 +370,10 @@ class AgentDispatcher:
         )
         content = self._read_skill_md(skill_path)
         inherited, inherited_ok = _resolve_inherit_meta(skill_path)
+        # Hidden-body (FR-C2): combina el score vectorial con el del cuerpo.
+        body = read_skill_body(skill_path)
+        body_score = _body_keyword_score(body, tokenize(query))
+        similarity = combine_hidden_body_score(score, body_score) if body else score
 
         return {
             "name": skill_name,
@@ -358,7 +382,8 @@ class AgentDispatcher:
             "agent": meta.get("agent", ""),
             "trigger": meta.get("trigger", ""),
             "content": content,
-            "similarity": score,
+            "similarity": similarity,
+            "body_score": body_score,
             "inherited": inherited,
             "inherited_ok": inherited_ok,
         }

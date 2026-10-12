@@ -21,18 +21,10 @@ project_agnostic: true
   - Corte Suprema de Justicia (Colombia) — https://www.cortesuprema.gov.co
   - Consejo de Estado — https://www.consejodeestado.gov.co
 - **ANTI-HEDGING**: Cita norma + sentencia con radicado; nunca doctrina sin fuente oficial.
-## Activación
-Se activa automáticamente cuando el `router` detecta keywords del dominio legal.
 
-## Keywords de dominio
-- `derecho`, `jurídico`, `legal`, `abogado`, `tribunal`, `juez`, `court`
-- `jurisprudencia`, `precedente`, `ratio decidendi`, `sentencia`, `auto`, `providencia`
-- `demanda`, `recurso`, `tutela`, `acción`, `nulidad`, `amparo`
-- `Código Civil`, `Código Penal`, `Constitución`, `bloque de constitucionalidad`
-- `ley`, `norma`, `reglamento`, `decreto`, `código`, `estatuto`
-- `litigio`, `arbitraje`, `mediación`, `contrato`, `obligaciones`
-- Ejemplos por jurisdicción: `Colombia`, `Corte Constitucional`, `Consejo de Estado`, `Corte Suprema`
-- Ejemplos por norma: `CGP`, `CPACA`, `Constitución Política`, `Código de Comercio`
+## Activación y Keywords de dominio
+
+Se activa automáticamente cuando el `router` detecta keywords del dominio legal (`derecho`, `jurisprudencia`, `precedente`, `demanda`, `tutela`, `norma`, `contrato`, `litigio`...). Lista completa por jurisdicción y norma en `references/fuentes-y-especialidades.md`.
 
 ## Metodología: RTF+C + Role Stacking (8 roles integrados)
 
@@ -48,39 +40,6 @@ Cada análisis debe estructurarse aplicando simultáneamente estos 8 roles:
 | **6. Especialista Procesal** | Principios: debido proceso, carga de la prueba, cosa juzgada, competencia, términos |
 | **7. Gestor de Riesgo** | Evaluación de viabilidad, costos, tiempos, probabilidades de éxito por ruta procesal |
 | **8. Comunicador Pedagógico** | Traducción de tecnicismos a lenguaje accesible sin perder precisión |
-
-## Arquitectura de Análisis (6 Capas)
-
-| Capa | Restricción |
-|------|-------------|
-| **1. Explícita** | Fidelidad al texto. No inventar hechos, citas o argumentos no presentes |
-| **2. Técnica** | Formato Markdown estructurado + citas estandarizadas jurisdiccionales |
-| **3. Normativa-Jerárquica** | Pirámide normativa jurisdiccional (ej. Colombia): Constitución > Tratados DDHH > Leyes Estatutarias > Leyes Ordinarias > Decretos > Reglamentos |
-| **4. Procesal-Raíz** | Todo análisis sustantivo anclado en principios procesales (debido proceso, carga probatoria, competencia, términos) |
-| **5. Cognitiva-Pedagógica** | Claridad sin simplismo; explicar tecnicismos la primera vez |
-| **6. Ética-Crítica-Comparada** | Neutralidad analítica + conciencia crítica + derecho comparado contextualizado |
-
-## Fuentes Jurisdiccionales (Ejemplo: Colombia)
-
-### N1: Fuentes Primarias (Ejemplo Colombia)
-| Fuente | URL | Uso |
-|--------|-----|-----|
-| SUIN-JURISCOL | https://www.suin-juriscol.gov.co/ | Vigencia de leyes, decretos |
-| Relatoría Corte Constitucional | https://www.corteconstitucional.gov.co/relatoria/ | Sentencias C-, T-, SU-, Auto |
-| Consejo de Estado | https://www.consejodeestado.gov.co/ | Nulidad, reparación directa |
-| Corte Suprema de Justicia | https://www.cortesuprema.gov.co/ | Casación civil, laboral, penal |
-| Rama Judicial | https://www.ramajudicial.gov.co/ | Consulta de procesos |
-| Secretaría del Senado | https://www.senado.gov.co/ | Trámite legislativo |
-
-### N2: Fuentes Internacionales y Comparadas
-| Fuente | Jurisdicción | URL |
-|--------|-------------|-----|
-| Corte IDH | Sistema Interamericano | https://www.corteidh.or.cr/ |
-| Tribunal Constitucional | España | https://www.tribunalconstitucional.es/ |
-| Suprema Corte | México | https://www.scjn.gob.mx/ |
-| Corte Suprema | Argentina | https://www.csjn.gov.ar/ |
-| Tribunal Constitucional Federal | Alemania | https://www.bundesverfassungsgericht.de/ |
-| Supreme Court | EE.UU. | https://www.supremecourt.gov/ |
 
 ## Workflow de Ejecución (7 Fases)
 
@@ -108,18 +67,37 @@ Identificar: activismo judicial vs autocontención, supuestos axiológicos, opor
 ### FASE 6: Síntesis y Recomendaciones
 Generar: conclusiones técnicas, hoja de ruta procesal, matriz de riesgos, recomendaciones accionables, fuentes verificables.
 
-## Especialidades Jurídicas Soportadas (Ejemplo: Colombia)
+## ⚠️ Verificación de Vigencia y Citas (DEBER sancionable, 2026)
 
-| Especialidad | Normas Clave (Ej. Colombia) | Jurisdicción |
-|-------------|--------------|--------------|
-| **Constitucional** | CP Arts. 1-220, Bloque de Constitucionalidad | Corte Constitucional |
-| **Administrativo** | CPACA, Ley 1437/2011, Código Contratación | Consejo de Estado |
-| **Laboral** | CST, CPL, Ley 100/1993 | Corte Suprema SL |
-| **Penal** | Ley 906/2004, Ley 599/2000 | Corte Suprema SP |
-| **Familia** | Código Infancia, Ley 1098/2006 | Juzgados Familia |
-| **Tributario** | ET, Ley 1607/2012, Statute Tributario | Consejo de Estado |
-| **Civil** | Código Civil, CGP | Corte Suprema SC |
-| **Comercial** | Código de Comercio | Corte Suprema SC |
+La verificación de citas es un **DEBER sancionable, no una buena práctica opcional** (detalle en `references/verificacion-citas.md`):
+
+- **LegalGraphRAG** (Researcher → Auditor → Adjudicator): solo evidencia VERIFICADA llega a la síntesis.
+- **Vigencia**: cada norma con estado `VIGENTE`/`MODIFICADO`/`DEROGADO`/`INEXEQUIBLE` + fecha de consulta, anclado a fuente primaria (SUIN, relatorías, Kelsen MCP).
+- **Cita no verificada** → marcar **`APÓCRIFA-REVISAR`**; nunca presentarla como válida.
+- **Cierre obligatorio**: contador de citas verificadas vs no verificadas.
+- **Multi-jurisdicción**: declarar la jurisdicción en cada cita (`[Colombia]`, `[España]`, `[México]`).
+
+### Diagnostic checklist por norma
+- [ ] **Ámbito de aplicación**: a quién/situaciones aplica la norma.
+- [ ] **Excepciones**: qué excluye expresamente la norma.
+- [ ] **Jurisprudencia que la interpreta**: sentencias que la aplican o la desarrollan.
+- [ ] **Vigencia**: estado actual anclado a fuente primaria + fecha de consulta.
+
+## ✅ EJEMPLO TRABAJADO — verificar una cita antes de usarla
+
+1. **RESEARCHER** — Recuperar la candidata: "Corte Constitucional, Sentencia T-323 de 2024".
+2. **AUDITOR** — Contrastar contra la fuente primaria (relatoría): ¿existe? ¿radicado y fecha coinciden? ¿vigencia?
+3. **ADJUDICATOR** — Solo si VERIFICADA entra a la síntesis; si no, `APÓCRIFA-REVISAR`:
+
+```yaml
+cita: "Corte Constitucional, Sentencia T-323 de 2024"
+norma: "Constitución Política de Colombia, Art. 86"
+jurisdiccion: "[Colombia]"
+vigencia: VIGENTE
+fuente: "https://www.corteconstitucional.gov.co/relatoria/"
+fecha_consulta: "2026-02-01"
+estado_verificacion: VERIFICADA   # si falla el cotejo -> APÓCRIFA-REVISAR
+```
 
 ## Output esperado
 - Análisis jurisprudencial completo con metodología explícita (7 fases)
@@ -129,158 +107,8 @@ Generar: conclusiones técnicas, hoja de ruta procesal, matriz de riesgos, recom
 - Documentación en lenguaje jurídico preciso (adaptado a la jurisdicción)
 - Glosario integrado de términos técnicos
 
-### NLP Juridico 2026
+## Referencias (bajo demanda)
 
-**SaulLM-7B** (2025): LLM juridico entrenado con 570B tokens legales EN/FR/DE/ES.
-- LexGLUE y CaseHOLD: supera GPT-4 en tareas juridicas
-- NER juridico con taxonomia de 100+ entidades (normas, cortes, cargos)
-- Integrable via HuggingFace para clasificacion de documentos
-
-**LexBERT + Legal-RE**: Extraccion de relaciones juridicas
-- Deteccion de entidades nombradas (normas, jurisprudencia, sujetos procesales)
-- Relaciones entre entidades (deroga, modifica, interpreta, desarrolla)
-
-**MiningLegalBench** (2026): Benchmark mineria de contratos
-- Clausulas abusivas, compliance, obligaciones
-- Deteccion de riesgos contractuales
-
-### Argument Mining (Extraccion de Argumentos)
-
-**Arg-LLaDA** (2025): Summarization sufficiency-aware para argumentos legales.
-- Extrae premisa -> claim -> evidence en 3 niveles jerarquicos
-- Identifica ratio decidendi y obiter dicta en sentencias
-- Mapea estructura argumentativa con RST trees
-
-**Hierarchical Argument Mining**:
-- Nivel 1: Premisas mayores (normas aplicables)
-- Nivel 2: Premisas menores (hechos del caso)
-- Nivel 3: Conclusion (decision)
-
-**Deteccion de falacias**:
-- 12 tipos de falacias juridicas (ad hominem, ad populum, falsa causalidad)
-- Fine-tuning sobre LogicalFallacyBench (2025)
-
-### Discourse Analysis (Analisis del Discurso)
-
-**Multi-Granularity Discourse Parsing**:
-- Segmentacion tematica de documentos extensos (>100k tokens)
-- Sliding window + overlapping + contexto preservado
-- Arboles RST (Rhetorical Structure Theory) para mapear relaciones
-
-**SegBot** (2025): Segmentacion automatica
-- Chunking jerarquico con deteccion de topic boundaries
-- Preservacion de contexto entre segmentos
-
-### Generacion de Documentos Legales
-
-**Outlines + Guidance**: Generacion estructurada con gramaticas CFG
-- Formatos vinculados a metodologia RTF+C
-- Constraints de formato juridico segun jurisdiccion
-- Drafting de demandas, recursos, conceptos
-
-**Constitutional AI**:
-- Redaccion asistida con principios constitucionales
-- Verificacion de consistencia normativa
-- Deteccion de contradicciones con el ordenamiento
-
-### Framework Legal AI Enterprise (LuMay AI)
-
-**Principio:** El mejor AI legal no es el que responde mas rapido, es aquel cuya respuesta
-puede sostenerse ante un General Counsel, Board, Auditor o Regulador.
-
-#### 1. SLM para Ejecucion
-SLMs (Small Language Models) destacan en trabajo legal estructurado y repetitivo:
-- Revision de NDAs
-- Clasificacion de clausulas
-- Extraccion de metadatos de contratos
-- Enrutamiento de solicitudes legales
-- Analisis basado en playbooks
-
-#### 2. RAG para Evidencia
-Cada respuesta debe estar fundamentada en:
-- Contratos aprobados
-- Politicas de la empresa
-- Playbooks legales
-- Guias regulatorias
-- Plantillas
-- Casos legales previos
-
-#### 3. Verificacion Antes de Generar
-Antes de responder, el sistema debe verificar:
-- Es esta la version mas reciente?
-- Es la jurisdiccion correcta?
-- La fuente citada realmente soporta la conclusion?
-- Hay politicas en conflicto?
-- Cual es el nivel de confianza?
-
-#### 4. Juicio Humano
-La decision final siempre debe recaer en profesionales legales.
-El AI debe reducir trabajo repetitivo, no reemplazar la responsabilidad legal.
-
-#### Criterios de Calidad Enterprise
-- Explainable: La respuesta debe poder explicarse
-- Governed: Debe haber gobierno sobre el proceso
-- Auditable: Cada decision debe ser trazable
-- Defensible: Debe poder defenderse ante un regulador
-- Enterprise-ready: Listo para entorno corporativo
-
-## Verificación de Vigencia y Citas Legales (2026)
-
-La verificación de citas en el dominio legal es un **DEBER sancionable, no una buena práctica
-opcional**. Cualquier conclusión debe anclarse a fuentes verificadas y con estado de vigencia
-conocido. Sin esto, el output no es legalmente defendible.
-
-### Contexto regulatorio crítico (Colombia, feb 2026)
-- La **Sala Civil de la Corte Suprema de Justicia de Colombia sancionó a un abogado por
-  temeridad procesal** al citar textos legales y jurisprudencia apócrifos generados por IA.
-  El incumplimiento de la verificación tiene consecuencias disciplinarias reales.
-- La **Corte Constitucional (T-323 de 2024)** exhortó a funcionarios y empleados de la Rama
-  Judicial sobre el uso de herramientas de IA generativa, y fija criterios exigibles:
-  - **Transparencia**: declarar el uso de IA en la elaboración del documento.
-  - **Responsabilidad**: el profesional responde por el contenido, no la herramienta.
-  - **Verificación seria de fuentes**: toda cita debe cotejarse contra la fuente primaria.
-  - **Control humano**: revisión final por profesional habilitado antes de presentar.
-- Aplicar estos criterios también como estándar interno para cualquier análisis jurídico generado.
-
-### Patrón LegalGraphRAG: Researcher → Auditor → Adjudicator
-Pipeline de tres roles para garantizar que solo la evidencia verificada llegue al output:
-```
-1. RESEARCHER: recupera evidencia candidata (normas, sentencias, doctrina) desde el corpus
-2. AUDITOR: VERIFICA la validez de cada candidata contra las fuentes primarias
-   (existe la norma? la sentencia cita eso? la numeración es correcta? vigencia?)
-3. ADJUDICATOR: sintetiza SOLO evidencia verificada, con citas trazables a la fuente
-```
-- Cada conclusión debe llevar citas **trazables**: norma/sentencia, órgano emisor, fecha y URL.
-- Si el AUDITOR no puede verificar una fuente, esa evidencia NO entra a la síntesis
-  (o entra marcada como no verificada, nunca como válida).
-
-### Verificación de vigencia
-- Para cada norma citada, reportar su **estado**: `VIGENTE` / `MODIFICADO` / `DEROGADO` /
-  `INEXEQUIBLE`, **anclado a la fuente primaria** (con URL/fecha de consulta).
-- Fuentes oficiales sugeridas (Colombia):
-  - Relatoría de la Corte Constitucional (sentencias C-, T-, SU-, Autos).
-  - **SUIN** (Sistema Único de Información Normativa) para vigencia de leyes y decretos.
-  - Secretarías/relatorías de la Corte Suprema y Consejo de Estado, Rama Judicial.
-  - **Kelsen MCP** (si está disponible): herramientas `buscar_normas`, `consultar_articulo`,
-    `buscar_jurisprudencia`, `vigencia` para consulta estructurada de fuentes oficiales.
-- La vigencia debe incluir fecha de la consulta: el estado puede cambiar entre consultas.
-
-### Diagnostic Checklists por norma
-Para cada norma analizada, aplicar un checklist diagnóstico:
-- [ ] **Ámbito de aplicación**: a quién/situaciones aplica la norma.
-- [ ] **Excepciones**: qué excluye expresamente la norma.
-- [ ] **Jurisprudencia que la interpreta**: sentencias que la aplican o la desarrollan.
-- [ ] **Vigencia**: estado actual anclado a fuente primaria + fecha de consulta.
-
-### Marca explícita de citas no verificadas
-- Cualquier cita NO verificada debe marcarse **`APÓCRIFA-REVISAR`** en la salida.
-- **Nunca presentar como válida una cita no verificada**: es el anti-patrón que generó
-  sanciones disciplinarias en Colombia.
-- Al final del output, incluir un **contador de citas verificadas vs no verificadas**.
-
-### Multi-jurisdicción
-- Si el análisis cruza jurisdicciones, **verificar en la jurisdicción correcta** y
-  **declararla explícitamente** en cada cita (ej. `[Colombia]`, `[España]`, `[México]`).
-- No extrapolar vigencia o interpretación de una jurisdicción a otra sin señalarlo.
-- Cuando aplique control de convencionalidad, anclar la verificación a la fuente de la
-  jurisdicción pertinente (Corte IDH para el Sistema Interamericano).
+- [Fuentes, especialidades y arquitectura](references/fuentes-y-especialidades.md) — fuentes N1/N2, especialidades por jurisdicción, keywords y las 6 capas de análisis.
+- [NLP jurídico, argument mining y enterprise](references/nlp-juridico-2026.md) — SaulLM/LexBERT, extracción de argumentos, discurso y framework enterprise (LuMay AI).
+- [Verificación de citas](references/verificacion-citas.md) — contexto regulatorio, LegalGraphRAG, vigencia, diagnostic checklists y multi-jurisdicción.

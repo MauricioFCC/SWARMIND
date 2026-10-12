@@ -1,89 +1,31 @@
 ---
 name: quant-trading
-description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. Alcance: implementacion del motor sobre CQE; para validacion de factores ver alpha-research. | UPG·NAM·FRS (reglas en base_principles.md)"
+domain: trading
+description: "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. Alcance: implementacion del motor sobre CQE; para validacion de factores ver alpha-research. Cuando NO usar: ver Alcance. | UPG-NAM-FRS (reglas en base_principles.md)"
 license: MIT
+version: 1.0.0
+project_agnostic: true
 ---
 
-## 📡 Data Processing (`domain::data_processing`)
+# Quant-Trading (min)
 
-use quant-engine::domain::data_processing::{
-    bars::{BarBuilder, BarType, TimeBar, VolumeBar, TickBar, DollarBar},
-    features::FeatureExtractor,
+Motor cuantitativo de alto rendimiento (Rust + bindings Python): barras,
+features, senales, indicadores, ML y backtesting. Estrategia con edge
+cuantificado, costes (fees/slippage) y test out-of-sample.
 
-### Flujo de datos para alpha
+## Modulos del motor
+- `domain::data_processing` (BarBuilder, FeatureExtractor) | `domain::signal_processing` (normalize, combine_signals, RegimeDetector)
+- `domain::indicators` (SMA/EMA/HMA, RSI, ATR, VPIN) | `domain::ml` (FeatureStore) | `domain::backtesting` (BacktestEngine, PerformanceMetrics)
 
-### Performance
+## Reglas
+- Tipos del motor (`Trade`, `Quote`, `Order`, `Signal`), no genericos.
+- NUNCA `unwrap()` en hot path -> `Result`/`expect`.
+- Backtest con slippage/fees; walk-forward (min ratio 0.8) contra overfitting.
+- Kelly para sizing; stop automatico si drawdown > max_dd.
+- NUNCA loguear API keys/tokens.
 
-## 📈 Señales (`domain::signal_processing`)
-
-use quant-engine::domain::signal_processing::{
-    signal::{Signal, SignalType, normalize, combine_signals, alpha_decay},
-    regime::RegimeDetector,
-
-### Pipeline de señales para alpha
-
-### Alpha boosters 🚀
-
-## 📊 Indicadores (`domain::indicators`)
-
-use quant-engine::domain::indicators::{
-    moving_averages::{SMA, EMA, WMA, HMA, ZLEMA, ALMA, KAMA, FRAMA, VIDYA},
-    momentum::{RSI, MFI, Stochastic, WilliamsR, TSIFloor, ROC, TRIX, CCIMomentum},
-
-### Selección de indicadores por régimen
-| Régimen | Indicadores primarios | Parámetros |
-|---------|----------------------|-------------|
-| Trending | HMA, KAMA, FRAMA, MACD | Fast: 12/26, Slow: 50/200 |
-| Mean-reverting | Bollinger, RSI, Stochastic | BB: 2.0σ, RSI: 14 periods |
-| High volatility | ATR, VPIN, VolTarget | VPIN: 50 buckets |
-| Low volatility | ZLEMA, Fisher, Coppock | Fisher: 9 periods, smooth: 3 |
-
-### Implementación en Rust (SIMD)
-// Ejemplo: EMA vectorizada con SIMD
-fn ema_simd(data: &[f64], period: usize) -> Vec<f64> {
-    let alpha = 2.0 / (period as f64 + 1.0);
-
-## 🧠 Machine Learning (`domain::ml`)
-
-use quant-engine::domain::ml::{
-    features::FeatureStore,
-    causal::CausalInference,
-
-### Feature Store para alpha
-
-## 📐 Backtesting (`domain::backtesting`)
-
-use quant-engine::domain::backtesting::{
-    engine::BacktestEngine,
-    metrics::PerformanceMetrics,
-
-### Workflow de backtesting
-
-## 🆕 Frontier 2026 — Nuevas Tecnicas Incorporadas
-
-### AlphaCFG — Grammar-Guided Alpha Discovery
-// Descubrimiento automatico de factores alfa via gramatica formal
-use alpha_discovery::AlphaCFG;
-
-### PIKAN — Physics-Informed KAN para Portfolio
-// Reemplaza MLPs con KANs + fisica financiera
-use pikan::PIKANPortfolio;
-
-### RL-Enhanced Static Analysis
-// RL agent aprende a suprimir falsos positivos en analisis estatico Rust
-// Combinado con cargo-fuzz para validacion dinamica
-// Reference: arXiv:2605.04000 — RL for False Positive Mitigation (May 2026)
-
-### Frontier — Vanguardia Implementada
-
-## ✅ CHECKLIST PRE-COMMIT (MOTOR CUANTITATIVO)
-- [ ] Usar tipos del motor cuantitativo (`Trade`, `Quote`, `Order`, `Signal`) no tipos genéricos
-- [ ] Benchmarks: `cargo bench` en módulo relevante antes de merge
-- [ ] Memory: `cargo miri` para UB, `valgrind` para leaks en hot path
-- [ ] Fuzz: `cargo fuzz` en parsing de market data
-- [ ] Tests: `cargo test --features=strict` antes de commit
-- [ ] SIMD: verificar autovectorización con `cargo asm`
-- [ ] Python bindings: `maturin build --release` si hay cambios en API
-- [ ] **NUEVO**: RL-based false positive suppression para Rust static analysis (arXiv:2605.04000)
-
-## ⚠️ GUARDRAILS
+## Checklist
+- [ ] `cargo bench` + `cargo test --features=strict` antes de merge
+- [ ] Memory: `cargo miri`; Fuzz: `cargo fuzz` en parsing de market data
+- [ ] SIMD verificado con `cargo asm`; bindings `maturin build --release`
+- [ ] Backtest con costes + out-of-sample; sizing Kelly; limite de drawdown

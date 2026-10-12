@@ -75,12 +75,12 @@ Nivel 2: account-safety
 Nivel 3: dashboard consolidado
 
 ## Comandos
-- !meta campaign <objetivo> � Disenar campana
-- !meta analyze <creativo> � Analizar creativo
-- !meta budget <total> � Optimizar budget
-- !meta bid <cpa_target> � Optimizar bids
-- !meta spy <competitor> � Analisis competitivo
-- !meta safety � Verificar estado de cuenta
+- !meta campaign <objetivo> → Disenar campana
+- !meta analyze <creativo> → Analizar creativo
+- !meta budget <total> → Optimizar budget
+- !meta bid <cpa_target> → Optimizar bids
+- !meta spy <competitor> → Analisis competitivo
+- !meta safety → Verificar estado de cuenta
 
 ## Checklist
 
@@ -106,3 +106,12 @@ Nivel 3: dashboard consolidado
 - Advantage+ AI: Meta 2026
 - CLIP/ViT: Computer Vision 2026
 
+
+## Ejemplo
+
+```
+!meta campaign objetivo="compras web" presupuesto=5000
+-> campaign CBO_Prospecting / adset lookalike 1% / 3 ads (CLIP: 0.82, 0.79, 0.71)
+-> budget-allocator (ShapleyFlow): 60% prospecting | 40% remarketing
+-> limite: CPA_max=25 USD, ROAS_min=2.0 (pausa auto si 3 dias por debajo)
+```

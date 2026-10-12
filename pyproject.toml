@@ -134,6 +134,7 @@ ignore = ["EXE001"]
 "harness/tests/test_setup_verification.py" = ["E402"]
 "harness/tests/test_tdad_select.py" = ["E402"]
 "harness/tests/test_validate_skills.py" = ["E402"]
+"harness/tests/test_evolve_skills_gepa.py" = ["E402"]
 "harness/**/__init__.py" = ["E402"]
 "harness/run_commands/__init__.py" = ["F403"]
 # .opencode/core/router_v2.py es un hub de re-export backward-compat documentado

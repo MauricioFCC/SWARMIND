@@ -64,3 +64,12 @@ Skill para analisis estrategico, modelos de negocio y toma de decisiones empresa
 - Business Model Generation (Osterwalder)
 - OKR (Doerr)
 - Lean Startup (Ries)
+
+## Ejemplo
+
+```
+!biz dofa "SaaS B2B salud, LATAM"
+F: vertical clinico | D: CAC alto | O: FHIR obligatorio | A: competidor global
+!biz okr "crecer ARR"
+O1 ARR +40% | KR1 churn <3%/mes | KR2 NRR >=110% (baseline 98%)
+```

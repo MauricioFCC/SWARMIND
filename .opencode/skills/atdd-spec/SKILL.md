@@ -120,3 +120,14 @@ Cui 2025 (arXiv:2505.09027, WebApp1K: 1000 challenges, 20 dominios,
   LLM Code Generation" — arXiv:2505.09027.
 - Beck, K. (2022). "Test-Driven Development: By Example" — origen del ciclo
   red-green-refactor.
+
+## Ejemplo
+
+```
+# 1) Spec: "POST /users rechaza email invalido con 422"
+# 2) Test ANTES del codigo -> RED
+def test_create_user_with_invalid_email_returns_422(client):
+    assert client.post("/users", json={"email": "sin-arroba"}).status_code == 422
+$ pytest -q   # FAILED (404) -> RED con motivo correcto
+# 3) implementacion minima -> GREEN - 4) refactor con tests verdes
+```

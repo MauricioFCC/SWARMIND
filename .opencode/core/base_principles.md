@@ -1,11 +1,11 @@
----
+﻿---
 description: Principios universales v3.5.0 - N1+N2 siempre, N3 bajo demanda + FND Foundation-First (entorno antes que producto) + taxonomia de adherencia (IFEval/DRFR) + RPA re-anclaje post-compaction + CPD fundamentos de competicion (ADR-0070) + TDD adversarial/mutante/PBT/pairwise/BVA/metamorphic/fuzz (ADR-0077) + DORA/ShapeUp/trunk/RFC/postmortem (ADR-0083) + ADV verificacion adversarial atacante/steelman/juez + SWE-ABS/RvB + convenciones de codigo Clean Architecture/validacion de input/fail-fast tipado/AAA/atomicos (ADR-0098)
 inherit:
   - core/base_principles.md
   - core/fde_principles.md
 name: base-principles
 project_agnostic: true
-version: 3.5.0
+version: 3.6.0
 ---
 
 # PRINCIPIOS UNIVERSALES | Multi-nivel
@@ -26,8 +26,8 @@ SEG: 0 secrets | mask logs | parametriza SQL | sys.path.insert(1)
 DOC: docstrings ES OBLIGATORIAS | 0 funciones sin docstring | template Args/Returns/Raises
 TST: core >=80% | TDD adversarial (test vs mutante) + mutantes + PBT + pairwise | coverage es piso no techo | pre-commit gates | 0 except silenciosos | logger.warning()
 CMT: conventional commit type(scope): descripcion
-FDE: bridge product↔reality | delta = gap to close | mission > persona
-EVO: learn→design→experiment→analyze | cognition persists | loop repeats
+FDE: bridge productâ†”reality | delta = gap to close | mission > persona
+EVO: learnâ†’designâ†’experimentâ†’analyze | cognition persists | loop repeats
 POC: Proceso > herramienta | sin harness = departamento aislado | 5 preguntas antes de adoptar
 TKN: Cache-Shape | Structured Compact | Failure-Spend | Observation Masking
 WFP: Workflow Patterns | Evaluator-Optimizer | Voting | Critique-Revise | Parallel-Transform
@@ -49,14 +49,15 @@ CMP: Composition over Inheritance | preferir composicion sobre herencia | estrat
 DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un punto por linea | tell dont ask
 EDV: Evidence-Driven Development | investigar→hipotesis→probar→seleccionar→heredar→iterar | decisiones de modelo/arquitectura con evidencia medible (benchmark, ejecutar y validar), no preferencia | cada hallazgo se hereda en la SSOT/config y se itera
 FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | elegir la solucion mas avanzada/frontera/eficiente/confiable | al finalizar: actualizar docs + commit
+RSV: Roadmap Sync & Retrospectiva | cada N refactors (>=5) leer docs/src/es/roadmap/estado.md y hacer analisis retrospectivo de calidad | features SIEMPRE de frontera y estado del arte, no legacy | el roadmap se actualiza con las ultimas tecnicas frontera (ritmo tipo ARR: alinearse al hito antes de escalar)
 FND: Foundation-First | entorno antes que producto | walking skeleton + tracer bullet | spec + CI T1 (<90s) + gates + seguridad ANTES de features | identidad (org/dominio/registry) si publicas
 SPE: Spec-First (Proof-or-Stop) | spec ANTES de ejecutar | outcome medible | exit criteria definidos | sin spec = sin start
-GATE: Evidence-Gated Lifecycle | claim→evidence→gate | 0 false-DONE | T1 deterministic + T2 LLM-judge + T3 regression
-FAIL: Failure Registry | registrar fallos en JSONL | distillar en skills | Socratic-SWE traces→tasks | aprender de errores
+GATE: Evidence-Gated Lifecycle | claimâ†’evidenceâ†’gate | 0 false-DONE | T1 deterministic + T2 LLM-judge + T3 regression
+FAIL: Failure Registry | registrar fallos en JSONL | distillar en skills | Socratic-SWE tracesâ†’tasks | aprender de errores
 SBX: Sandboxing | aislamiento de fallos | per-task environment | rollback plan | contenedor o timeout como minimo
 RPA: Re-Pin After compaction | tras CADA compactacion recargar N1+rol+skills+agentes | 65% fallos = drift | bloque <<RE-ANCHOR>>
-CPD: Fundamentos Competicion | checklist edges+invariants+BigO ANTES de codear | diagnose→repair→regenerate | dual verification
-ADV: Verificacion adversarial SIEMPRE | atacante (halla gaps) → steelman (defiende+propone) → juez (veredicto+disenso) | T siempre ultimo movimiento | 1/5 "resuelto" es incorrecto: fortalecer antes de confiar
+CPD: Fundamentos Competicion | checklist edges+invariants+BigO ANTES de codear | diagnoseâ†’repairâ†’regenerate | dual verification
+ADV: Verificacion adversarial SIEMPRE | atacante (halla gaps) â†’ steelman (defiende+propone) â†’ juez (veredicto+disenso) | T siempre ultimo movimiento | 1/5 "resuelto" es incorrecto: fortalecer antes de confiar
 CLA: Clean Architecture | Presentation->Application->Domain<-Infrastructure | domain puro (0 frameworks/DB) | ports/adapters + DIP
 VAL: Input Validation | TODO input externo (HTTP/CLI) validado contra schema ANTES del dominio | Zod/Pydantic
 FST: Fail-Fast tipado | errores tipados con cause + contexto | nunca swallow ni mensaje generico
@@ -71,7 +72,7 @@ ATM: Atomic Changes | 1 commit/PR = 1 preocupacion logica
 Cada codigo N1 pertenece a UNA categoria y un modo de cumplimiento. Los
 CHECK son instrucciones verificables binarias (IFEval/DRFR: 1 regla = 1
 criterio atomico); los GUIDE son orientativos (se citan por ID, nunca se
-parafrasean — Ribeiro: el compliance es pattern matching fragil).
+parafrasean â€” Ribeiro: el compliance es pattern matching fragil).
 
 | Cat | Nombre | Codigos | Modo |
 |-----|--------|---------|------|
@@ -97,16 +98,16 @@ Reglas de uso (DRFR + SID + FollowBench):
    `harness/memory_rag/reanchor.py`). El summary retiene ~17% de las
    restricciones; el bloque las restaura (>90%).
 6. **Jerarquia de conflicto**: formato > proceso > estilo (Wei: CoT verboso
-   vs output conciso — resolver con orden explicito).
+   vs output conciso â€” resolver con orden explicito).
 
 Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 
 - **Checklist ANTES de codear**: edges + invariants + BigO + constraints I/O.
    El 44% de los fallos de LLMs en competicion es design (28.6%) + boundary
-   (15.5%) — prevenibles con checklist.
+   (15.5%) â€” prevenibles con checklist.
 - **Repair en 3 fases**: P1 diagnosticar contra taxonomia (design/boundary/
-   condition/type/IO) → P2 reparar anclado a la categoria → P3 regenerar con
-   info aumentada (5/80 → 46/80 AC con este framework).
+   condition/type/IO) â†’ P2 reparar anclado a la categoria â†’ P3 regenerar con
+   info aumentada (5/80 â†’ 46/80 AC con este framework).
 - **Invariants con verificacion real**: citar invariante + comprobarla
    (Best-of-N filtering); invariante invalida se descarta, no se repara.
 - **Dual verification**: solucion vs brute-force de referencia para
@@ -123,22 +124,22 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 | __ARQ__ | Hexagonal ports/adapters + DI. __KISS__ (Keep It Simple): preferir la solucion obvia. __DRY__ (Don't Repeat Yourself): extraer logica repetida a utils. __YAGNI__ (You Aren't Gonna Need It): no anadir configuracion para futuros casos hipoteticos. Type hints publicas. Pathlib siempre. |
 | __SEG__ | Secrets 0 hardcode: `os.getenv()`. Logs mask PII/data. Input sanitize. SQL parametrizada. No `eval()/exec()`. `sys.path.insert(1,)` nunca `insert(0,)`. Bandit + pip-audit en CI. |
 | __DOC__ | Docstrings ES: Args/Returns/Raises (NumPy style). README/CHANGELOG ES. Codigo EN. Docs 1:1 en API/interfaz changes. `Griffe` para autodoc moderno (reemplaza legacy sphinx.ext.autodoc). Validar docs AI-generated con `pytest-examples` o doctest. |
-| __TST__ | pytest framework. Core coverage >=80% (line+branch `--cov-branch`; 100% line con 60% branch = tests decorativos). New feature = new test + integration. Pre-commit gates. 0 `except Exception: pass` sin logger. __Adversarial TDD__ (AdverTest arXiv:2602.08146): loop test-vs-mutante co-evolutivo (M genera mutantes context-aware que hackean blind-spots de T; T los mata; +8.56% fault-detection, +63% vs EvoSuite); supervivientes = senal (no repetir mutantes en zonas ya cubiertas). __SWE-ABS__ (arXiv:2603.00520): asumir inflacion (1/5 "resuelto" es incorrecto); two-stage: slicing a regiones no testeadas + patches plausibles-pero-incorrectos como adversarios (rechaza 19.71%; top 78.80%→62.20%). __RvB loop__ (red→reporte→patch→verificacion): iterar hasta que el exploit no reproduce (`verified_fixed`). __Mutation testing__ con `mutmut`/`cosmic-ray`: MS>=70% merge, objetivo >=85% nightly; suite manual dirigida donde mutmut da falsos negativos (imports de paquete). __Pairwise t=2__ (70-98% fallos son 1-2-way, NIST): covering array sobre variables discretizadas; subir a t=4-6 si hay supervivientes (fallos son <=6-way; 36626->1818, -95%). __BVA por variable__: min-1/min/min+1/max-1/max/max+1/0/""/None/NaN/overflow (~15% fallos boundary, 7x densidad). __Snapshot__ con `syrupy` para outputs grandes. |
+| __TST__ | pytest framework. Core coverage >=80% (line+branch `--cov-branch`; 100% line con 60% branch = tests decorativos). New feature = new test + integration. Pre-commit gates. 0 `except Exception: pass` sin logger. __Adversarial TDD__ (AdverTest arXiv:2602.08146): loop test-vs-mutante co-evolutivo (M genera mutantes context-aware que hackean blind-spots de T; T los mata; +8.56% fault-detection, +63% vs EvoSuite); supervivientes = senal (no repetir mutantes en zonas ya cubiertas). __SWE-ABS__ (arXiv:2603.00520): asumir inflacion (1/5 "resuelto" es incorrecto); two-stage: slicing a regiones no testeadas + patches plausibles-pero-incorrectos como adversarios (rechaza 19.71%; top 78.80%â†’62.20%). __RvB loop__ (redâ†’reporteâ†’patchâ†’verificacion): iterar hasta que el exploit no reproduce (`verified_fixed`). __Mutation testing__ con `mutmut`/`cosmic-ray`: MS>=70% merge, objetivo >=85% nightly; suite manual dirigida donde mutmut da falsos negativos (imports de paquete). __Pairwise t=2__ (70-98% fallos son 1-2-way, NIST): covering array sobre variables discretizadas; subir a t=4-6 si hay supervivientes (fallos son <=6-way; 36626->1818, -95%). __BVA por variable__: min-1/min/min+1/max-1/max/max+1/0/""/None/NaN/overflow (~15% fallos boundary, 7x densidad). __Snapshot__ con `syrupy` para outputs grandes. |
 | __OPS__ | Timeout >=30s I/O. Retry 3x exponential backoff + jitter. Circuit breaker. __OpenTelemetry__ para tracing distribuido (OTLP exporter). Log JSON estructurado con `trace_id`, `span_id`, `request_id` (structlog). Fallback plan. Health checks: liveness vs readiness. __Prometheus metrics__ para SLO. WAL obligatorio antes de tool-calls costosos. __Trunk-based__ (DORA elite): integrate-daily (ninguna rama vive >1 dia), squash merge, merge != release (dark ship con `FeatureFlags`, `SWARMIND_FF_*=1`); CI T1 (<90s) como green-trunk gate. |
-| __DOR__ | __DORA como SLO (elite: deploy on-demand, lead <1h, CFR <5%, MTTR <1h)__: medir deploy frequency, lead time commit→verde, change failure rate (TST + mutation MS≥70%, no solo coverage) y time-to-restore (rollback plan SBX por fan-out). Solo 19% de equipos son elite (DORA 2024); el tier low crece 17%→25%: sin platform team se cae al low. |
+| __DOR__ | __DORA como SLO (elite: deploy on-demand, lead <1h, CFR <5%, MTTR <1h)__: medir deploy frequency, lead time commitâ†’verde, change failure rate (TST + mutation MSâ‰¥70%, no solo coverage) y time-to-restore (rollback plan SBX por fan-out). Solo 19% de equipos son elite (DORA 2024); el tier low crece 17%â†’25%: sin platform team se cae al low. |
 | __CMT__ | Conventional commit `type(scope): msg #ISSUE`. <=72 chars. Pre-commit hook: secrets+size+lint+test. __Conventional Comments__ para comentarios de PR. __Signed commits__ (GPG/SSH) en ramas main. |
 | __QLT__ | __DEPRECATED v2.4.0__: cubierto por NAM, TYP, IMM, SOL, MAG, FSZ. Mantener solo como referencia historica. Codigo listo/sin hardcode. Conciso: 1 responsabilidad por funcion. Sin constantes magicas (siempre con nombre). |
 | __ERR__ | Errores accionables: WHAT (que fallo) + WHY (causa) + WHERE (linea/archivo/funcion). Sin except silencioso. Logger siempre con contexto. Stack trace estructurado. __Sentry__ o similar para captura centralizada. __Error budgets__ (SRE). |
 | __TKN__ | Cache-Shape Discipline (-38% tokens), Structured Compaction (-41% costo), Scoped Context (-44% tiempo), Failure-Spend Governance, Observation Masking, Phase-Scheduled MAS (-27.3% tokens). Effective-Input-Price = inp * miss_ratio * price + out * price. __2026__: usar modelos small para tareas simples (router por complejidad), cache de tool results, batching de invocaciones, prompt caching (Anthropic/OpenAI), speculative decoding para inferencia. |
-| __WFP__ | 4 patrones de flujo reutilizables: Evaluator-Optimizer (genera→evalua→loop), Voting (N variantes→ranking→mejor), Critique-Revise (genera→critica→revisa), Parallel-Transform (fan-out→transforma→fan-in merge). Retry cost -51%. __2026__: añadir MapReduce para tareas grandes (dividir → paralelo → reducir). __R1 reasoning__ (DeepSeek destilado): reason→verify→reflect→final con `verdict` explícito y longitud controlada (early-stop al verificar; anti-hedging). |
+| __WFP__ | 4 patrones de flujo reutilizables: Evaluator-Optimizer (generaâ†’evaluaâ†’loop), Voting (N variantesâ†’rankingâ†’mejor), Critique-Revise (generaâ†’criticaâ†’revisa), Parallel-Transform (fan-outâ†’transformaâ†’fan-in merge). Retry cost -51%. __2026__: aÃ±adir MapReduce para tareas grandes (dividir â†’ paralelo â†’ reducir). __R1 reasoning__ (DeepSeek destilado): reasonâ†’verifyâ†’reflectâ†’final con `verdict` explÃ­cito y longitud controlada (early-stop al verificar; anti-hedging). |
 | __PBT__ | Property-Based Testing con templates de holes rellenables. 7 templates predefinidos (sorting, idempotent, pure, boundary, roundtrip, commutative, associative). Reduce alucinaciones -59%, costo -3.8x. __2026__: `hypothesis` 6.x con `@given` + `assume()`, profiles, health checks, deadlines. __Adversarial refinement__ (PROBE ACL'26): Validator genera contra-implementaciones que pasan la propiedad debil -> Generator la endurece (+9.79pp MS, 95% vs 65% correctness). __Metamorphic__ como PBT sin oraculo: MR reversibles (`reverse(reverse(x))==x`, `encode(decode(x))==x`, `f(x+k)==f(x)+k`). __Fuzzing dirigido__: parsers/fronteras (JSON/URLs/regex) con oraculo no-crash+roundtrip+timeout. |
-| __CEN__ | Context Engineering: Least-Recent Context First (relevancia al inicio), Structured Chunking (metadatos por bloque), Progressive Disclosure (instruccion→ejemplos→datos). __2026__: usar `cache_control` breakpoints en prompts LLM, incluir timestamps en facts, versioning de system prompts. |
+| __CEN__ | Context Engineering: Least-Recent Context First (relevancia al inicio), Structured Chunking (metadatos por bloque), Progressive Disclosure (instruccionâ†’ejemplosâ†’datos). __2026__: usar `cache_control` breakpoints en prompts LLM, incluir timestamps en facts, versioning de system prompts. |
 | __BTR__ | Behavioral Tracing: cada decision registra action+chosen+rationale+confidence. Fingerprint de comportamiento por agente. Reportes de consistencia y auditoria. __2026__: OpenTelemetry spans + GenAI semantic conventions (`gen_ai.*` attrs). Langfuse/LangSmith para observability de agentes. |
 | __AGR__ | Architectural Guardrails: type hints obligatorios, max 60 lineas/funcion, prohibido except:pass, imports prohibidos (eval, exec, pickle). Validacion automatica post-generacion. __2026__: ruff reglas `A` (builtins shadowing), `C4` (comprehensions), `PIE` (misc), `RET` (returns), `SIM` (simplify), `TID` (tidy imports), `ARG` (unused args), `ERA` (commented-out code). Pre-commit enforcement. |
 | __SVE__ | Semantic Versioning MAJOR.MINOR.PATCH para skills y agent prompts. CHANGELOG automatico. Trazabilidad de regresiones por scaffolding. __2026__: usar `release-please` o `commitizen` para automatizar versionado. Conventional commits + automerge en CI. |
-| __FDE__ | Bridge product↔reality. Delta = gap a cerrar. Mission > persona. Glue 50% integracion. Speed-to-value primero. Diplomacia tecnica. Zero-trust. |
-| __EVO__ | Loop learn→design→experiment→analyze. Cognition store persiste lecciones. Experiment DB registra todo. Best snapshot automatico. SURS >= 90% en cada deploy. |
-| __POC__ | Proceso sobre herramienta: toda tool/modelo/agente nuevo se adopta como proceso orquestado (fan-out + votación gate≥70, memoria SSOT, oráculos PBT/mutation, KPIs) o se descarta. 5 preguntas: problema, responsable, datos, medición, escalado. Caso ORCA 2026. |
+| __FDE__ | Bridge productâ†”reality. Delta = gap a cerrar. Mission > persona. Glue 50% integracion. Speed-to-value primero. Diplomacia tecnica. Zero-trust. |
+| __EVO__ | Loop learnâ†’designâ†’experimentâ†’analyze. Cognition store persiste lecciones. Experiment DB registra todo. Best snapshot automatico. SURS >= 90% en cada deploy. |
+| __POC__ | Proceso sobre herramienta: toda tool/modelo/agente nuevo se adopta como proceso orquestado (fan-out + votaciÃ³n gateâ‰¥70, memoria SSOT, orÃ¡culos PBT/mutation, KPIs) o se descarta. 5 preguntas: problema, responsable, datos, mediciÃ³n, escalado. Caso ORCA 2026. |
 | __MCL__ | MetaClaw continual meta-learning: skill-driven fast adaptation + RL process reward optimization. Skills como behavioral instructions que evolucionan. MARS reflection single-cycle. |
 | __MKS__ | Memento-Skills: skill-as-memory en cognition store. Router contrastivo recupera lecciones relevantes. ERL heuristics > raw trajectories para transferencia entre skills. |
 | __UPG__ | __Upgrade Continuo (regla universal)__: TODO stack tecnologico debe estar en la ultima version estable viable. Investigar ANTES de actuar (web research exhaustiva + mesa de trabajo). Lenguajes, librerias, frameworks, runtimes, dependencias build, deps transitivas: TODAS. Si una version mas reciente es incompatible con el codigo actual, se documenta el delta y se migra. Si existe alternativa mas eficiente (mismo problema, menor costo/memoria/latencia), se evalua via mesa de trabajo y se migra. Excluye: paquetes en EOL (deprecation > 6 meses) sin LTS, alphas/betas/RCs inestable, versiones que rompen contratos publicos sin migracion posible. |
@@ -150,12 +151,12 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 | __FSZ__ | __Function Size__: funciones MAX 30 lineas (excluyendo docstring; Google style guide sugiere 40 como limite laxo, preferimos 30). Si excede: extraer helpers, aplicar guard clauses tempranas, dividir por responsabilidad. Una funcion = una tarea. Si el nombre necesita "and" o "or", dividir. Parametros: max 4-5 (si mas, usar un dataclass de input). Cyclomatic complexity < 10. Return temprano sobre if-else anidados. |
 | __CMP__ | __Composition over Inheritance__ (GoF 1994): preferir COMPOSICION (HAS-A: "tiene un") sobre HERENCIA (IS-A: "es un"). Usar protocolos/ABC pequenos inyectados como componentes. Evitar jerarquias de herencia >2 niveles. Strategy pattern, State pattern, Decorator pattern son composicion. Herencia solo para tipos claramente relacionados (ej. Exception -> ValueError). Mixing composicion+herencia: subclase para especializar, composicion para variar comportamiento. |
 | __DEM__ | __Law of Demeter__ (Principle of Least Knowledge, 1987): un objeto solo habla con sus "amigos directos" (sus propios metodos, sus atributos, los metodos de los objetos que recibe como parametro, los objetos que crea). NO chains: `customer.wallet.money.total()` (3 puntos = 2 violaciones). Max 1 punto por linea: `total = customer.total_money()` (delegar). Favorece Tell-Dont-Ask: en vez de pedirle datos a un objeto y decidir por el, pedirle que el mismo decida (command/query separation). Reduce acoplamiento y facilita testing. |
-| __FRS__ | __Frontier Research & Solution (regla universal obligatoria)__: TODO requerimiento del usuario — sea cual sea — debe iniciar con __busqueda web exhaustiva__ para identificar la solucion MAS avanzada (frontera), de mejor calidad, mas eficiente y mas confiable disponible en el momento. NO resolver desde memoria o habitos: investigar primero. Criterios de eleccion: (1) frontier 2026 (papers, frameworks, tools), (2) calidad (adoptada, mantenida, documentada), (3) eficiencia (menor costo/memoria/latencia), (4) confiabilidad (estable, testada, comunidad). AL FINALIZAR toda tarea: __actualizar documentacion__ (README/CHANGELOG/ADRs si aplica) y __crear commit__ (conventional commit). |
-| __FND__ | __Foundation-First (entorno antes que producto)__: en un proyecto nuevo el PRIMER artefacto NO es una feature. Orden F0: (1) scaffolding reproducible (repo desde template, `.editorconfig`/`.gitignore`/`LICENSE`/`SECURITY.md`, lockfile, devcontainer); (2) `AGENTS.md` CORTO (~100 lineas = mapa, no manual) + constitution/principios machine-readable; (3) gates locales T1 (formatter+linter+type-checker+pre-commit) con **CI <90s** (Google: feedback casi instantaneo por check-in; DORA: CI+trunk son elite); (4) seguridad EN el scaffold (secret scanning+push protection, SAST, SBOM, branch protection, `#![forbid(unsafe_code)]`/`deny.toml`/`cargo-geiger` en Rust, `bandit`/`pip-audit` en Python); (5) ADR-0001 + ADRs de las <=3 decisiones irreversibles (Nygard) + fitness functions (Ford/Parsons/Kua); (6) **Walking Skeleton** (Cockburn) / **Tracer Bullet** (Pragmatic): slice vertical end-to-end con tests que SE CONSERVA, no prototipo; (7) **Thinnest Viable Platform**/golden path (Team Topologies; en 2026 el consumidor tambien es un agente); (8) identidad el dia 1 SOLO si publicas (org/dominio/registry; PEP 752 prefix). Fuentes: NIST SSDF SP 800-218/218A, SLSA, DORA 2025 (la IA AMPLIFICA el entorno — uno malo tambien), GitHub Spec Kit/Amazon Kiro (constitution→specify→plan→tasks), AGENTS.md (>60k repos), OpenAI harness engineering. |
-| __SPE__ | __Spec-First (Proof-or-Stop, Huang 2026) + SDD (Spec-Driven Development)__: TODO output de agente es un CLAIM, no estado. Lifecycle transitions solo avanzan cuando evidencia fresca satisface un gate predicate. Plantilla `specs/<task>.md` obligatoria ANTES de ejecutar: outcome medible, FR/NF, exit criteria, sandbox scope, rollback plan. Sin spec = sin start. Reduced false-DONE de 31/1800 a 2/1800 en ablation. __SDD__: ciclo Spec→Test→Code del skill atdd-spec (contratos SDD con pre/postcondiciones + failing_test en `harness/context/skill_contract.py`, ADR-0048); el spec define el contrato, el test failing lo fija, el codigo lo satisface — nunca codigo sin contrato. __Shape Up__: el spec es un pitch con `appetite` (tiempo fijo, scope variable) + `boundaries`; fan-out vota en betting table (gate ≥70%), lo que pierde va a cooldown (cognition + deuda AGR), no a backlog. __RFC vs ADR__: RFC si >1 dependencia/riesgo o cambia contrato publico (propuesta debatible pre-trabajo); ADR solo post-decision; cambio pequeno → PR directo con spec minima. |
+| __FRS__ | __Frontier Research & Solution (regla universal obligatoria)__: TODO requerimiento del usuario â€” sea cual sea â€” debe iniciar con __busqueda web exhaustiva__ para identificar la solucion MAS avanzada (frontera), de mejor calidad, mas eficiente y mas confiable disponible en el momento. NO resolver desde memoria o habitos: investigar primero. Criterios de eleccion: (1) frontier 2026 (papers, frameworks, tools), (2) calidad (adoptada, mantenida, documentada), (3) eficiencia (menor costo/memoria/latencia), (4) confiabilidad (estable, testada, comunidad). AL FINALIZAR toda tarea: __actualizar documentacion__ (README/CHANGELOG/ADRs si aplica) y __crear commit__ (conventional commit). |
+| __FND__ | __Foundation-First (entorno antes que producto)__: en un proyecto nuevo el PRIMER artefacto NO es una feature. Orden F0: (1) scaffolding reproducible (repo desde template, `.editorconfig`/`.gitignore`/`LICENSE`/`SECURITY.md`, lockfile, devcontainer); (2) `AGENTS.md` CORTO (~100 lineas = mapa, no manual) + constitution/principios machine-readable; (3) gates locales T1 (formatter+linter+type-checker+pre-commit) con **CI <90s** (Google: feedback casi instantaneo por check-in; DORA: CI+trunk son elite); (4) seguridad EN el scaffold (secret scanning+push protection, SAST, SBOM, branch protection, `#![forbid(unsafe_code)]`/`deny.toml`/`cargo-geiger` en Rust, `bandit`/`pip-audit` en Python); (5) ADR-0001 + ADRs de las <=3 decisiones irreversibles (Nygard) + fitness functions (Ford/Parsons/Kua); (6) **Walking Skeleton** (Cockburn) / **Tracer Bullet** (Pragmatic): slice vertical end-to-end con tests que SE CONSERVA, no prototipo; (7) **Thinnest Viable Platform**/golden path (Team Topologies; en 2026 el consumidor tambien es un agente); (8) identidad el dia 1 SOLO si publicas (org/dominio/registry; PEP 752 prefix). Fuentes: NIST SSDF SP 800-218/218A, SLSA, DORA 2025 (la IA AMPLIFICA el entorno â€” uno malo tambien), GitHub Spec Kit/Amazon Kiro (constitutionâ†’specifyâ†’planâ†’tasks), AGENTS.md (>60k repos), OpenAI harness engineering. |
+| __SPE__ | __Spec-First (Proof-or-Stop, Huang 2026) + SDD (Spec-Driven Development)__: TODO output de agente es un CLAIM, no estado. Lifecycle transitions solo avanzan cuando evidencia fresca satisface un gate predicate. Plantilla `specs/<task>.md` obligatoria ANTES de ejecutar: outcome medible, FR/NF, exit criteria, sandbox scope, rollback plan. Sin spec = sin start. Reduced false-DONE de 31/1800 a 2/1800 en ablation. __SDD__: ciclo Specâ†’Testâ†’Code del skill atdd-spec (contratos SDD con pre/postcondiciones + failing_test en `harness/context/skill_contract.py`, ADR-0048); el spec define el contrato, el test failing lo fija, el codigo lo satisface â€” nunca codigo sin contrato. __Shape Up__: el spec es un pitch con `appetite` (tiempo fijo, scope variable) + `boundaries`; fan-out vota en betting table (gate â‰¥70%), lo que pierde va a cooldown (cognition + deuda AGR), no a backlog. __RFC vs ADR__: RFC si >1 dependencia/riesgo o cambia contrato publico (propuesta debatible pre-trabajo); ADR solo post-decision; cambio pequeno â†’ PR directo con spec minima. |
 | __GATE__ | __Evidence-Gated Lifecycle (Pondero CI-for-Agents 2026)__: 3-tier gates: __T1__ deterministic (<90s, blocks merge): schema validation, lint, test, security scan. __T2__ LLM-judge (<10min, blocks merge): behavioral spec, rubric scoring, majority voting repeat:3, judge temp=0. __T3__ regression (<60min, alert-only): nightly full suite, cross-model comparison. Spec y evals cambian juntos (SVE). Cost-arithmetic para judge models. |
-| __FAIL__ | __Failure Registry (Socratic-SWE, Qu 2026)__: Cada fallo se registra en `harness/db/failures.jsonl` con: failure_type, error_msg, root_cause, resolution, skill_derived, severity. Evolve loop lee el registry → distilla en skills → genera tareas dirigidas que address capability gaps. Skills deduplicated por similaridad semántica. Solver-gradient alignment reward para task quality. +7.80 SWE-bench después de 3 iteraciones. __Postmortem blameless__ (SEV≥2, plantilla `specs/postmortem_template.md`): timeline + 5 whys (si culpa a persona, seguir preguntando) + action items con dueño+fecha; sin culpa, el sistema fallo. |
-| __SBX__ | __Sandboxing (Docker Sandboxes + Cloudflare Dynamic Workers 2026)__: Aislamiento de fallos: cada fan-out task puede correr en entorno aislado. Docker microVM para coding agents (Claude Code, Codex, OpenCode) con `--dangerously-skip-permissions`. Cloudflare V8 isolates: 100x más rápido que containers (ms startup, MB memory). Python-native: Pyodide/WASM para tool execution. Governance layer: network policies, filesystem controls. Rollback plan obligatorio antes de ejecutar. |
+| __FAIL__ | __Failure Registry (Socratic-SWE, Qu 2026)__: Cada fallo se registra en `harness/db/failures.jsonl` con: failure_type, error_msg, root_cause, resolution, skill_derived, severity. Evolve loop lee el registry â†’ distilla en skills â†’ genera tareas dirigidas que address capability gaps. Skills deduplicated por similaridad semÃ¡ntica. Solver-gradient alignment reward para task quality. +7.80 SWE-bench despuÃ©s de 3 iteraciones. __Postmortem blameless__ (SEVâ‰¥2, plantilla `specs/postmortem_template.md`): timeline + 5 whys (si culpa a persona, seguir preguntando) + action items con dueÃ±o+fecha; sin culpa, el sistema fallo. |
+| __SBX__ | __Sandboxing (Docker Sandboxes + Cloudflare Dynamic Workers 2026)__: Aislamiento de fallos: cada fan-out task puede correr en entorno aislado. Docker microVM para coding agents (Claude Code, Codex, OpenCode) con `--dangerously-skip-permissions`. Cloudflare V8 isolates: 100x mÃ¡s rÃ¡pido que containers (ms startup, MB memory). Python-native: Pyodide/WASM para tool execution. Governance layer: network policies, filesystem controls. Rollback plan obligatorio antes de ejecutar. |
 | __CLA__ | Clean Architecture (ADR-0098): direccion de dependencias `Presentation->Application->Domain<-Infrastructure`. El dominio es puro (0 imports de frameworks/DB); la infraestructura implementa los ports del dominio via DIP. Complementa ARQ (hexagonal). |
 | __VAL__ | Input Validation (ADR-0098): TODO input externo (HTTP/CLI) se valida contra un schema ANTES de tocar el dominio (Zod/Pydantic). Complementa SEG (validate input). |
 | __FST__ | Fail-Fast tipado (ADR-0098): errores tipados con `cause` + contexto; nunca swallow ni mensaje generico (`raise ... from error` en Python). Complementa ERR (WHAT+WHY+WHERE). |
@@ -216,11 +217,11 @@ Cita: `FND` o `ADR-XXXX:FND`. Fuente de la doctrina: `specs/foundation-first.md`
 ### UPG - Upgrade Continuo (regla universal para TODO stack)
 
 - [ ] **Aplicar a TODO cambio de stack** (no solo upgrades completos):
-   - [ ] Lenguajes: Python, Rust, TypeScript, Go, etc. — ultima estable
-   - [ ] Librerias/frameworks: Django, FastAPI, React, numpy, torch — ultima estable
-   - [ ] Runtimes: uv, npm, cargo, pip — ultima estable
-   - [ ] Build deps: setuptools, hatchling, maturin — ultima estable
-   - [ ] Deps transitivas (incluidas via lockfile) — todas en latest
+   - [ ] Lenguajes: Python, Rust, TypeScript, Go, etc. â€” ultima estable
+   - [ ] Librerias/frameworks: Django, FastAPI, React, numpy, torch â€” ultima estable
+   - [ ] Runtimes: uv, npm, cargo, pip â€” ultima estable
+   - [ ] Build deps: setuptools, hatchling, maturin â€” ultima estable
+   - [ ] Deps transitivas (incluidas via lockfile) â€” todas en latest
 
 - [ ] **Protocolo obligatorio antes de cambiar versiones**:
    1. **Investigacion web exhaustiva** (PyPI, GitHub releases, endoflife.date, blogs oficiales)
@@ -232,7 +233,7 @@ Cita: `FND` o `ADR-XXXX:FND`. Fuente de la doctrina: `specs/foundation-first.md`
 
    3. **Implementacion incremental**: lockfile regenerado, tests, lint, scanner
    4. **Validacion**: suite de tests + bandit + scanner + cross-platform (Win/Linux)
-   5. __Propagacion local__ (sync opencode + deploy_all) — NUNCA push automatico
+   5. __Propagacion local__ (sync opencode + deploy_all) â€” NUNCA push automatico
    6. **PR al usuario** con mesa de trabajo adjunta para revision y aprobacion
 
 - [ ] **Criterios de exclusion** (no upgrade automatico):
@@ -258,7 +259,7 @@ Cita: `FND` o `ADR-XXXX:FND`. Fuente de la doctrina: `specs/foundation-first.md`
 - [ ] **TypeVar** para generics: `T = TypeVar("T")`
 - [ ] **Type aliases** con `type X = ...` o `TypeAlias`
 - [ ] **NewType** para tipos distinctos: `UserId = NewType("UserId", int)`
-- [ ] **Evitar `Any`** — preferir `object`, generics, o `Unknown`
+- [ ] **Evitar `Any`** â€” preferir `object`, generics, o `Unknown`
 - [ ] **mypy --strict** en CI (zero errors policy)
 - [ ] **Return type** explicito:
    - `-> None` si no retorna
@@ -407,8 +408,8 @@ Cita: `FND` o `ADR-XXXX:FND`. Fuente de la doctrina: `specs/foundation-first.md`
    - Config/data: `kebab-case.yaml` o `snake_case.json`
 
 - [ ] **TOOLING - Scripts temporales y herramientas (ADR-0076)**:
-   - Scripts temporales/one-off: **Python** (`uv run -- python -c "..."`) o **bash** (`.sh`) — NUNCA PowerShell: corrompe UTF-8 (mojibake en acentos ES `á→Ã¡`, emojis `🚀→?-*`), y su sintaxis de pipelines es no-portable.
-   - Herramientas Linux-first: `rg` (ripgrep), `bash`, `awk`, `jq` — portables y deterministas; el texto ES/UTF-8 viaja intacto.
+   - Scripts temporales/one-off: **Python** (`uv run -- python -c "..."`) o **bash** (`.sh`) â€” NUNCA PowerShell: corrompe UTF-8 (mojibake en acentos ES `Ã¡â†’ÃƒÂ¡`, emojis `ðŸš€â†’?-*`), y su sintaxis de pipelines es no-portable.
+   - Herramientas Linux-first: `rg` (ripgrep), `bash`, `awk`, `jq` â€” portables y deterministas; el texto ES/UTF-8 viaja intacto.
    - Si es inevitable leer/escribir texto con PowerShell: forzar `$OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8` y verificar el resultado (VER).
    - Wrappers de reduccion de output: `rtk` (Rust Token Killer, -60-90% output bash) y `tgrep` (Microsoft, trigram-indexed) cuando el binario este disponible (opt-in, passthrough si falta).
 
