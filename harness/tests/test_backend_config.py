@@ -19,10 +19,14 @@ from harness.model_router.backend_config import (
     DEFAULT_GPU_BUDGET_MB,
     DEFAULT_MIN_FREE_VRAM_MB,
     DEFAULT_MIN_SAFE_CTX,
+    DEFAULT_RAM_BUDGET_MB,
+    DEFAULT_RAM_MARGIN_MB,
     DEFAULT_SAFE_CTX_MAX,
+    DEFAULT_SAFE_CTX_MAX_RAM_KV,
     DEFAULT_VRAM_SAFETY,
     BackendConfig,
     GpuBudget,
+    RamBudget,
     discover_config_file,
     discover_executable,
 )
@@ -35,6 +39,9 @@ _ENV_KEYS = (
     "SWARMIND_MIN_SAFE_CTX",
     "SWARMIND_CTX_STEP",
     "SWARMIND_VRAM_SAFETY",
+    "SWARMIND_RAM_BUDGET_MB",
+    "SWARMIND_SAFETY_MARGIN_MB",
+    "SWARMIND_SAFE_CTX_MAX_RAM_KV",
     "SWARMIND_LOCAL_BASE_URL",
     "SWARMIND_LLAMA_BASE_URL",
     "SWARMIND_LLAMA_EXECUTABLE",
@@ -104,6 +111,41 @@ def test_gpu_budget_invalid_env_raises(clean_env, env) -> None:
         clean_env.setenv(key, value)
     with pytest.raises(ValueError, match="WHAT"):
         GpuBudget.from_env()
+
+
+def test_ram_budget_defaults(clean_env) -> None:
+    """Sin entorno, RamBudget reproduce el contrato anti-volcado (16GB)."""
+    budget = RamBudget.from_env()
+    assert budget.budget_mb == DEFAULT_RAM_BUDGET_MB == 14000
+    assert budget.margin_mb == DEFAULT_RAM_MARGIN_MB == 1500
+    assert budget.safe_ctx_max_ram_kv == DEFAULT_SAFE_CTX_MAX_RAM_KV == 131072
+
+
+def test_ram_budget_env_overrides(clean_env) -> None:
+    """Los overrides por entorno endurecen el guard anti-volcado (migrar RAM)."""
+    clean_env.setenv("SWARMIND_RAM_BUDGET_MB", "28000")
+    clean_env.setenv("SWARMIND_SAFETY_MARGIN_MB", "3000")
+    clean_env.setenv("SWARMIND_SAFE_CTX_MAX_RAM_KV", "262144")
+    budget = RamBudget.from_env()
+    assert budget.budget_mb == 28000
+    assert budget.margin_mb == 3000
+    assert budget.safe_ctx_max_ram_kv == 262144
+
+
+@pytest.mark.parametrize(
+    "env",
+    [
+        {"SWARMIND_RAM_BUDGET_MB": "0"},
+        {"SWARMIND_SAFETY_MARGIN_MB": "-1"},
+        {"SWARMIND_SAFE_CTX_MAX_RAM_KV": "0"},
+    ],
+)
+def test_ram_budget_invalid_env_raises(clean_env, env) -> None:
+    """Combinaciones de entorno que violan invariantes RAM lanzan ValueError."""
+    for key, value in env.items():
+        clean_env.setenv(key, value)
+    with pytest.raises(ValueError, match="WHAT"):
+        RamBudget.from_env()
 
 
 def test_backend_config_defaults(clean_env) -> None:

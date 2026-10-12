@@ -129,6 +129,47 @@ def test_permite_ram_con_margen() -> None:
     validate_config(raw)  # no debe lanzar
 
 
+def test_env_baja_presupuesto_ram_rechaza(monkeypatch) -> None:
+    """``SWARMIND_RAM_BUDGET_MB`` bajo rechaza un ``ram_mb`` que antes cabia."""
+    raw = _raw_ssot()
+    budget = int(raw.get("ram_budget_mb", 14000))
+    raw["models"][0]["ram_mb"] = budget - 1500 - 1  # valido por defecto
+    validate_config(raw)  # baseline ok
+    monkeypatch.setenv("SWARMIND_RAM_BUDGET_MB", str(budget - 5000))
+    with pytest.raises(ValueError, match="WHAT.*WHY.*WHERE"):
+        validate_config(raw)
+
+
+def test_env_margin_alto_endurece(monkeypatch) -> None:
+    """``SWARMIND_SAFETY_MARGIN_MB`` alto rechaza ``ram_mb`` que antes cabia."""
+    raw = _raw_ssot()
+    model = _capacity_model(raw)
+    assert model["ram_mb"] + 1500 <= int(raw.get("ram_budget_mb", 14000))
+    monkeypatch.setenv("SWARMIND_SAFETY_MARGIN_MB", "9000")
+    with pytest.raises(ValueError, match="WHAT.*WHY.*WHERE"):
+        validate_config(raw)
+
+
+def test_env_baja_techo_ram_kv_rechaza(monkeypatch) -> None:
+    """``SWARMIND_SAFE_CTX_MAX_RAM_KV`` bajo rechaza ctx que antes cabia."""
+    raw = _raw_ssot()
+    model = _capacity_model(raw)
+    model["ctx"] = 131072
+    model["max_prompt_tokens"] = 131072 - int(raw.get("reserved_tokens", 2048))
+    validate_config(raw)  # baseline ok (techo default 131072)
+    monkeypatch.setenv("SWARMIND_SAFE_CTX_MAX_RAM_KV", "65536")
+    with pytest.raises(ValueError, match="WHAT.*WHY.*WHERE"):
+        validate_config(raw)
+
+
+def test_yaml_gana_sobre_env_ram(monkeypatch) -> None:
+    """Un ``ram_budget_mb`` declarado en YAML prevalece sobre el env."""
+    raw = _raw_ssot()
+    raw["ram_budget_mb"] = 16000
+    monkeypatch.setenv("SWARMIND_RAM_BUDGET_MB", "100")  # env restrictivo
+    validate_config(raw)  # no debe lanzar: el YAML (16000) gana
+
+
 def test_check_idempotente_tras_write(tmp_path: Path) -> None:
     """Tras escribir, ``check_targets`` reporta cero deriva (idempotente)."""
     config = load_config()

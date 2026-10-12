@@ -27,6 +27,8 @@ from typing import Any
 
 import yaml
 
+from harness.model_router.backend_config import RamBudget
+
 #: Ruta por defecto de la SSOT (junto a este modulo).
 SSOT_PATH = Path(__file__).resolve().parent / "local_models.yaml"
 
@@ -260,18 +262,19 @@ def validate_config(raw: Mapping[str, Any]) -> LocalModelsConfig:
     """
     backend = _parse_backend(_require_mapping(raw, "backend"))
     flags = _parse_flags(_require_mapping(raw, "flags"))
+    ram = RamBudget.from_env()
     reserved = _optional_int(raw, "reserved_tokens", RESERVED_TOKENS)
     budget = _optional_int(raw, "vram_budget_mb", VRAM_BUDGET_MB)
-    ram_budget = _optional_int(raw, "ram_budget_mb", RAM_BUDGET_MB)
+    ram_budget = _optional_int(raw, "ram_budget_mb", ram.budget_mb)
     safe_max = _optional_int(raw, "safe_ctx_max", SAFE_CTX_MAX)
-    margin = _optional_int(raw, "safety_margin_mb", 1500)
+    margin = _optional_int(raw, "safety_margin_mb", ram.margin_mb)
     concurrency = _optional_int(raw, "concurrency_limit", EXPECTED_CONCURRENCY)
     default_ttl = _require_int(raw, "default_ttl")
     models = tuple(_parse_model(entry, flags, reserved) for entry in _require_sequence(raw, "models"))
     _check_unique_ids(models)
     _check_concurrency(concurrency)
     _check_ttl(default_ttl)
-    _check_ctx_ceiling(models, safe_max)
+    _check_ctx_ceiling(models, safe_max, ram.safe_ctx_max_ram_kv)
     _check_prompt_window(models, reserved)
     _check_vram_safety(models, margin, budget)
     _check_ram_safety(models, margin, ram_budget)
@@ -501,15 +504,16 @@ def _check_ttl(default_ttl: int) -> None:
         )
 
 
-def _check_ctx_ceiling(models: tuple[LocalModel, ...], safe_max: int) -> None:
+def _check_ctx_ceiling(models: tuple[LocalModel, ...], safe_max: int, safe_max_ram_kv: int) -> None:
     """Rechaza ctx sobre el techo seguro, segun DONDE vive la KV cache.
 
     WHY: el techo de 36864 existe porque la KV cache en VRAM dispara TDR en
     8 GB con WDDM (40960 lo causo). Los perfiles de `RAM_KV_FLAGS` mueven la
-    KV a RAM con `-nkvo`: ahi ese limite no aplica, lo pone la RAM del equipo.
+    KV a RAM con `-nkvo`: ahi ese limite no aplica, lo pone la RAM del equipo
+    (`safe_max_ram_kv`, seteable por ``SWARMIND_SAFE_CTX_MAX_RAM_KV``).
     """
     for model in models:
-        tope = SAFE_CTX_MAX_RAM_KV if model.flags in RAM_KV_FLAGS else safe_max
+        tope = safe_max_ram_kv if model.flags in RAM_KV_FLAGS else safe_max
         if model.ctx > tope:
             raise _err(
                 f"ctx={model.ctx} > techo={tope} (modelo {model.id}, perfil {model.flags})",

@@ -45,7 +45,9 @@ flags:
 default_ctx: 36864
 default_ttl: 180
 concurrency_limit: 1
-safety_margin_mb: 1500
+#: Margen anti-volcado/saturacion: ahora vive en RamBudget (env
+#: SWARMIND_SAFETY_MARGIN_MB, default 1500); declarar `safety_margin_mb` aqui
+#: lo fijaria y anularia el override por entorno.
 #: Presupuesto de SALIDA (max_tokens disponibles = ctx - reserved_tokens).
 #: Subido 2048 -> 4096 -> 6144: los modelos de razonamiento generan trazas
 #: largas antes de responder y con menos se agotaba dejando `content` vacio.
@@ -54,10 +56,10 @@ safety_margin_mb: 1500
 reserved_tokens: 6144
 vram_budget_mb: 8000
 safe_ctx_max: 36864
-#: Presupuesto de RAM del sistema (anti-volcado/OOM): con CAPACITY (-nkvo) el
-#: KV cache vive en RAM; 14000MB deja margen sobre los 16GB fisicos. Cada
-#: modelo declara `ram_mb` (pesos en RAM + KV si CAPACITY); medir con bench.
-ram_budget_mb: 14000
+#: Presupuesto de RAM (anti-volcado/OOM) y techo de ctx con KV en RAM: viven
+#: en RamBudget (env SWARMIND_RAM_BUDGET_MB / SWARMIND_SAFE_CTX_MAX_RAM_KV,
+#: defaults 14000 / 131072). Cada modelo declara `ram_mb` (pesos + KV si
+#: CAPACITY); medir con bench. Declararlo aqui anularia el override por env.
 models:
   #: FLOTA FINAL (2026-10-08): 3 modelos de razonamiento + embeddings.
   #: Se retiraron qwen2.5-coder-3b y phi-4-mini-instruct: daban ruido en tareas
