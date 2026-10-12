@@ -29,7 +29,7 @@ metadata:
     required: [result, metrics, cognition_added]
 ---
 
-# EVOLVE | Meta-Skill de Auto-Me jora Continua
+# EVOLVE | Meta-Skill de Auto-Mejora Continua
 
 ## PERSONA & CANON (patrón PEC universal, ADR-0072)
 
@@ -38,132 +38,45 @@ metadata:
   - Anthropic — Building Effective Agents — https://www.anthropic.com/research/building-effective-agents
   - Agent Lightning — https://arxiv.org/abs/2608.17528
 - **ANTI-HEDGING**: Propone el experimento con metrica y criterio de exito antes de escalarlo.
----
 
 ## 📋 PROPÓSITO
 
-Evolve es un meta-skill que implementa el loop ASI-Evolve completo dentro del ecosistema .opencode. Su misión es mejorar constantemente todos los skills, agentes y configuraciones del sistema usando:
-
-1. **ASI-Evolve Loop**: Learn → Design → Experiment → Analyze
-2. **FDE Principles**: Cada mejora resuelve un delta real con stakeholder definido
-3. **Cognition Store**: Memoria persistente de lecciones y conocimiento
-4. **Experiment DB**: Base de datos de todos los intentos con scores y análisis
-
----
+Meta-skill que implementa el loop **ASI-Evolve** (Learn → Design → Experiment → Analyze) dentro del ecosistema `.opencode`: mejora skills, agentes y configs con FDE (delta real con stakeholder), Cognition Store (lecciones persistentes) y Experiment DB (intentos con score y análisis).
 
 ## 🔄 EVOLVE LOOP COMPLETO
 
 ```mermaid
-graph TD
-    A[Inicio] --> B{Comando Evolve}
-    B -->|run| C[Sample Experiment DB]
-    B -->|cognition| D[Manage Cognition Store]
-    B -->|status| E[Report Loop Status]
-    B -->|best| F[Show Best Snapshots]
-    
-    C --> G[LEARN: Consult Cognition]
-    G --> H[DESIGN: Formulate Hypothesis]
-    H --> I[EXPERIMENT: Evaluate Candidate]
-    I --> J[ANALYZE: Distill Lesson]
-    J --> K[REGISTER: Save to DB + Cognition]
-    K --> L{Patience Exhausted?}
-    L -->|No| C
-    L -->|Yes| M[Promote Best Snapshot]
-    M --> N[Report Results]
-    
-    D --> O[Add / Search / List]
-    O --> N
-    
-    E --> P[Show Stats]
-    P --> N
-    
-    F --> Q[Show Best per Skill]
-    Q --> N
-    
-    style G fill:#e3f2fd
-    style H fill:#fff3e0
-    style I fill:#fce4ec
-    style J fill:#e8f5e9
-    style K fill:#f3e5f5
+graph LR
+    L[LEARN: Cognition] --> D[DESIGN: Hypothesis] --> E[EXPERIMENT: Evaluate] --> A[ANALYZE: Distill]
+    A --> R[REGISTER: DB + Cognition]
+    R -->|patience OK| L
+    R -->|patience agotada| P[Promote Best Snapshot] --> N[Report Results]
 ```
-
----
 
 ## 🚀 FDE INTEGRATION
 
-Cada ronda de evolución aplica FDE:
+**FDE por ronda**: DELTA (gap skill→ideal universal) · MISSION (objetivo/score medible) · GLUE (integrable en cualquier proyecto) · VALUE (cambios 80/20) · DIPLOMACY (compatibilidad hacia atrás) · RESILIENCE (guardrails activos) · EVOLVE (el meta-loop se retroalimenta de sus métricas).
 
-| FDE Pilar | Cómo se aplica en Evolve |
-|-----------|--------------------------|
-| **DELTA** | Identificar el gap entre el skill actual y el ideal universal |
-| **MISSION** | Cada ronda tiene un objetivo medible (score objetivo) |
-| **GLUE** | Las mejoras deben ser integrables en cualquier proyecto |
-| **VALUE** | Priorizar cambios 80/20 que den más valor por round |
-| **DIPLOMACY** | Las mejoras deben mantener compatibilidad hacia atrás |
-| **RESILIENCE** | Los skills mejorados deben mantener guardrails activos |
-| **EVOLVE** | El meta-loop se retroalimenta de sus propias métricas |
+## 🧠 ATERRIZAJE (motor real)
 
----
+Los comandos `!evolve ...` se ejecutan sobre `harness.evolve_loop` (API pública `CASEEvaluator, SelfImprover, ProceduralMemory, CognitionSync, SkillGenerator`). Esenciales (detalle completo en `references/comandos.md`):
+- `!evolve run <skill-path> [rounds=10] [sample_n=3]` — N rondas de mejora sobre un skill
+- `!evolve cognition add <title> | <content>` — añade conocimiento persistente
+- `!evolve best [skill-name]` / `!evolve history [skill-name]` — snapshots e historial
+- `!evolve fde audit <skill-path>` — audita un skill contra principios FDE
+- `!evolve failures distill` — distilla skills desde failure traces
 
-## 📊 MÉTRICAS DE EVALUACIÓN UNIVERSALES
+### Ejemplo trabajado — una ronda de mejora
 
-Todo skill es evaluado en estas dimensiones (project-agnostic):
-
-| Métrica | Peso | Descripción |
-|---------|------|-------------|
-| exists | 0.05 | El archivo existe |
-| has_frontmatter | 0.05 | Tiene frontmatter YAML válido |
-| has_version | 0.05 | Tiene versionado semántico |
-| has_project_agnostic | 0.10 | Es reutilizable en cualquier proyecto |
-| has_principles_ref | 0.10 | Referencia principios universales |
-| has_evolve_hooks | 0.10 | Tiene hooks de auto-mejora |
-| has_fde_flow | 0.10 | Incorpora FDE principles |
-| has_guardrails | 0.05 | Tiene validaciones de guardrails |
-| has_variables | 0.05 | Usa variables {{}} para parametrización |
-| has_mermaid | 0.05 | Incluye diagramas de flujo |
-| has_checklist | 0.05 | Tiene checklist de verificación |
-| has_domain_sections | 0.05 | Estructura clara con secciones |
-| length_adequate | 0.05 | Tamaño adecuado (200-5000 chars) |
-| fde_coverage | 0.10 | Cobertura de patrones FDE |
-| evolve_coverage | 0.05 | Cobertura de patrones EVO |
-
----
-
-## 🧠 COMANDOS
-
-> **Aterrizaje (motor real)**: los comandos `!evolve ...` se ejecutan sobre el módulo
-> `harness.evolve_loop` (importar la API pública: `from harness.evolve_loop import CASEEvaluator, SelfImprover, ProceduralMemory, CognitionSync, SkillGenerator`).
-
-### Gestión del Loop
-- `!evolve run <skill-path> [rounds=10] [sample_n=3]` — Ejecuta N rondas de mejora sobre un skill
-- `!evolve run all [rounds=5]` — Mejora todos los skills secuencialmente
-- `!evolve status` — Muestra estado actual del loop
-- `!evolve stats` — Estadísticas detalladas
-- `!evolve stop` — Detiene el loop actual
-
-### Cognition Store
-- `!evolve cognition add <title> | <content>` — Añade conocimiento
-- `!evolve cognition search <query>` — Busca en cognition
-- `!evolve cognition list [tag]` — Lista items de cognition
-- `!evolve cognition seed <skill-path>` — Siembra cognition desde un skill
-
-### Experiment DB
-- `!evolve best [skill-name]` — Mejor snapshot
-- `!evolve history [skill-name]` — Historial de experimentos
-- `!evolve compare <id1> <id2>` — Compara dos experimentos
-
-### FDE
-- `!evolve fde audit <skill-path>` — Audita un skill contra principios FDE
-- `!evolve fde report` — Reporte FDE de todo el sistema
-
-### Failure Registry (Socratic-SWE)
-- `!evolve failures recent [n=10]` — Fallos más recientes
-- `!evolve failures stats` — Métricas agregadas (by_type, by_severity)
-- `!evolve failures unresolved` — Fallos pendientes de resolver
-- `!evolve failures skills` — Skills derivados de fallos (deduplicados)
-- `!evolve failures distill` — Distilla skills desde failure traces (CLI real: `uv run python scripts/distill_failures.py`; traces→skills→tasks)
-
----
+```bash
+# 1) Diagnóstico FDE (identifica el delta/gap del skill)
+!evolve fde audit .opencode/skills/education/SKILL.md
+# 2) Ejecuta 10 rondas, 3 candidatos/ronda, sobre el motor real
+!evolve run .opencode/skills/education/SKILL.md 10 3
+# 3) Snapshot ganador + historial con scores; promueve solo con evidencia
+!evolve best education
+uv run python scripts/validate_skills.py --strict   # rollback si lift <= 0
+```
 
 ## 🔐 GUARDRAILS DEL META-SKILL
 
@@ -173,24 +86,6 @@ Todo skill es evaluado en estas dimensiones (project-agnostic):
 - No degradar score de guardrails existentes
 - Las mejoras deben mantener compatibilidad hacia atrás
 - Siempre registrar lección (incluso en fallos)
-
----
-
-## 🧬 FRONTIER RESEARCH INTEGRATION (2026)
-
-El loop Evolve incorpora los siguientes frameworks de frontera para auto-mejora:
-
-| Framework | Uso en Evolve |
-|-----------|---------------|
-| **MetaClaw** | Skill-driven fast adaptation: cada skill es una behavioral instruction optimizable via RL. Opportunistic policy optimization en ventanas de inactividad del sistema. Skill library + base policy evolucionan juntos sin GPU local |
-| **MARS** | Metacognitive reflection: cada ciclo Learn→Design→Experiment→Analyze usa single-cycle recurrence. Principio-based reflection (que evitar) + procedural reflection (como tener exito). Reemplaza multi-turn recursive loops costosos |
-| **Hyperagents (DGM-H)** | Meta-agent auto-referencial: el sistema Evolve se modifica a si mismo. Mejora el mecanismo de mejora (self-accelerating). Meta-level improvements transfieren entre skills y dominios |
-| **Memento-Skills** | Skill-as-memory: cognition store como skill library persistente. Cada leccion es un skill reusable en markdown. Router entrenado con RL recupera el skill mas relevante. Contraste entre lecciones similares |
-| **Native Self-Evolution** | Exploration agent que genera World Knowledge antes de task execution. Outcome-based reward solo en training. Reward-free inference en produccion. Destilacion de conocimiento ambiental sin rewards externos |
-| **ERL** | Experiential Reflective Learning: reflexiona sobre trayectorias de mejora → extrae heuristics → retrieve en nuevo ciclo. Heuristics > raw trajectories para transferencia entre skills |
-| **Socratic-SWE** | Failure Registry: registrar cada fallo en `harness/db/failures.jsonl` (failure_type, error_msg, root_cause, resolution, skill_derived). El loop lee el registry → distilla en skills → genera tareas dirigidas que address capability gaps. +7.80 SWE-bench tras 3 iteraciones. Skills deduplicados por similaridad semántica |
-| **Proof-or-Stop** | Evidence-Gated: cada output del loop es un CLAIM; solo avanza a DONE cuando evidencia fresca satisface el gate (T1 deterministic + T2 LLM-judge). 0 false-DONE. Payment de spec-first: `specs/<task>.md` con exit criteria ANTES de ejecutar |
-| **Pondero CI-gates** | 3-tier gates: T1 (<90s, blocks merge: lint+test+security), T2 (<10min, LLM-judge/mutation), T3 (<60min, regression notify). Spec y evals cambian juntos (SVE) |
 
 ## Checklist
 
@@ -209,13 +104,10 @@ El loop Evolve incorpora los siguientes frameworks de frontera para auto-mejora:
 - Optimizar una metrica local con regresion global.
 - Perder el best snapshot sin plan de rollback.
 
-## 🔗 ENLACES
+## Referencias (bajo demanda)
 
-- 🔄 Loop Engine: `harness/evolve_loop/` — API pública `harness.evolve_loop` (CASEEvaluator, FullEvaluation, SelfImprover, ProceduralMemory, CognitionSync, SkillGenerator, GEPAMutator, PromptEvolver, AgentBuilder, AgentPruner, run_agent_evolution)
-- 🧠 Cognition Store: `harness/db/lancedb/asi_cognition_store.lance` (vía `CognitionSync` / `CognitionLesson`)
-- 📊 Experiment DB / Failure Registry: `harness/failure_registry/registry.py` (`FailureRegistry` -> `harness/db/failures.jsonl`)
-- 🚀 FDE Principles: `.opencode/core/fde_principles.md`
-- 📋 Base Principles: `.opencode/core/base_principles.md`
-- ⚙️ Loop Config: variables del frontmatter (`EVOLVE_LOOP_DIR`, `EVOLVE_MAX_ROUNDS`, `EVOLVE_SAMPLE_N`, `EVOLVE_PATIENCE`)
-- 🧪 Tests del motor: `harness/tests/test_evolve_skills.py`
+> Migrado a `references/` por política "focused beats comprehensive" (SkillsBench 2026, arXiv:2602.12670).
 
+- [Comandos completos del loop](references/comandos.md) — Loop, Cognition, Experiment DB, FDE, Failure Registry, diagrama extendido y enlaces al motor.
+- [Frameworks de frontera 2026](references/frameworks-2026.md) — MetaClaw, MARS, Hyperagents, Memento-Skills, Socratic-SWE, Proof-or-Stop, Pondero.
+- [Métricas de evaluación y FDE](references/metricas-y-fde.md) — tabla de pesos por dimensión y mapeo FDE completo.

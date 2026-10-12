@@ -51,3 +51,12 @@ Skill de pensamiento creativo, design thinking, branding y diseno visual.
 - Branding sin sistema reusable.
 - Prototipo sin usuario ni criterio de exito.
 - Presentar 10 opciones sin recomendacion.
+
+## Ejemplo
+
+```
+!design brand valores="confiable, cercano, clinico"
+Concepto (1): "Pulso" - linea vital continua como marca
+Tokens: primary #0B7285 - accent #FF922B - Inter - grid 4px
+Variantes: logo horizontal + icono | rationale: cercania (curva) + rigor (grid)
+```

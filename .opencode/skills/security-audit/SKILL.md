@@ -96,3 +96,13 @@ y compliance.
 - CWE (Common Weakness Enumeration)
 - NIST SP 800-53
 - CIS Benchmarks
+
+## Ejemplo
+
+```
+!security audit app/db.py
+HIGH (CWE-89, CVSS 9.8): f"SELECT * FROM users WHERE id={uid}" -> SQLi
+Fix: cursor.execute("SELECT * FROM users WHERE id=%s", (uid,))
+PoC: uid="1 OR 1=1" -> 200 con todos los registros
+Regresion: test_sqli parametrizado (prueba de no-regresion)
+```

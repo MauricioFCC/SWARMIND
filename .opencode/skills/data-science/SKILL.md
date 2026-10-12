@@ -104,3 +104,13 @@ metadata:
 - Test set usado en entrenamiento o tuning.
 - Overfitting (train >> test) sin regularizar.
 - Resultados sin seed ni version de datos.
+
+## Ejemplo
+
+```
+from sklearn.model_selection import train_test_split
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
+# split ANTES de imputar/escalar (evita leakage)
+pipe = Pipeline([("scaler", StandardScaler()), ("clf", LogisticRegression())])
+print(cross_val_score(pipe, X_tr, y_tr, cv=5).mean())   # baseline reportado
+```

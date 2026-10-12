@@ -52,3 +52,14 @@ project_agnostic: true
 - Backtest sin costes, slippage ni fees.
 - Overfitting de la optimizacion (sin walk-forward).
 - Ignorar el limite de drawdown / Kelly.
+
+## Ejemplo
+
+```
+use quant_engine::domain::backtesting::BacktestEngine;
+let report = BacktestEngine::new()
+    .slippage(SlippageModel::estimate())      // costes incluidos
+    .kelly(BetSizing::kelly(0.25))            // position sizing
+    .run(strategy)?;
+assert!(report.sharpe > 1.0 && report.max_dd < 0.15);  // walk-forward ratio >= 0.8
+```

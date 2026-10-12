@@ -42,3 +42,13 @@ Skill de disciplina de ingeniería: commit/test/lint como gate pre-merge, anti-a
 - [ ] 0 `except` silenciosos; errores con WHAT+WHY+WHERE
 - [ ] Cada fix trae su test de regresion (el mutante que lo hubiera matado)
 - [ ] Evidencia cruda citada en la respuesta (VER)
+
+## Ejemplo
+
+```
+$ uv run python -m pytest harness/tests/test_risk.py -q --cov-branch
+12 passed - branch coverage 84%
+$ uv run ruff check harness/risk.py
+All checks passed
+-> Gate T1 VERDE (evidencia arriba); mutation score 78% >= 70% -> merge permitido
+```

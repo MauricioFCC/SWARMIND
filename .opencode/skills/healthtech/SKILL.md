@@ -83,3 +83,12 @@ Se activa automáticamente cuando el `router` detecta keywords del dominio healt
 - Acceso a datos clinicos sin rol autorizado.
 - Formatos propietarios en vez de FHIR.
 - Ignorar la jurisdiccion (HIPAA/GDPR-Salud).
+
+## Ejemplo
+
+```
+GET /fhir/Patient/123                 # HL7 FHIR R4
+Authorization: Bearer <SMART on FHIR> # rol: physician
+-> audit_log(user_id, "read", "Patient", 123, ts, ip, ua, reason="treatment")
+# PHI cifrado AES-256 en reposo - TLS 1.3 en transito; retencion >=5 anos
+```

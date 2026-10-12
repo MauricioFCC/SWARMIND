@@ -51,3 +51,12 @@ Skill de ciencias naturales para investigacion y analisis cientifico profundo.
 - p-hacking o seleccion de resultados.
 - Sin grupo de control ni replicas.
 - Conclusiones mas alla del alcance de los datos.
+
+## Ejemplo
+
+```
+!sci experiment "efecto de la temperatura en la tasa de reaccion"
+H0: T no afecta la tasa | H1: T la aumenta (Arrhenius)
+Diseno: 4 temperaturas x 5 replicas, control a 25 C
+Reportar: tasa +/- IC95% (incertidumbre propagada); correlacion != causa
+```

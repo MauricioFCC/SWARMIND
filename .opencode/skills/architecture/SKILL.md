@@ -105,3 +105,14 @@ metadata:
 - Arquitectura por moda sin restricciones de dominio.
 - Cambio arquitectonico mayor sin ADR.
 - Menu de opciones sin veredicto ni tradeoffs.
+
+## Ejemplo
+
+```
+!arch analyze src/
+-> hexagonal detectado; dominio puro OK
+!arch violations
+-> BLOCK payments -> imports -> infrastructure (invertir con puerto PaymentGateway)
+!arch adr new "Separar dominio de pagos"
+-> ADR-0018 creado (status: proposed)
+```

@@ -73,3 +73,12 @@ metadata:
 - Codigo nuevo sin test (posicion sin stop-loss).
 - Hipotesis no falseable.
 - Validar solo in-sample (overfitting).
+
+## Ejemplo
+
+```
+!memo "migrar cache a LanceDB"
+Tesis: reduce latencia p95 40% | Anti-tesis: 3 dias de migracion
+Catalyst: degradacion GPU actual | Sizing: 1 sprint, stop-loss si p95 no baja en 2 iter
+Datos: baseline p95=220ms | Validacion: OOS en 2 modulos (sin overfitting)
+```

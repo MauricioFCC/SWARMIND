@@ -57,3 +57,12 @@ Skill de gestion de proyectos con metodologias agiles y tradicionales.
 - 'Todo va bien' sin evidencia de avance.
 - Alcance creciente sin control de cambios.
 - Stakeholders informados tarde.
+
+## Ejemplo
+
+```
+!pm plan "lanzar modulo de facturacion"
+Hitos: M1 modelo datos (w1) - M2 API (w2) - M3 UI+QA (w3-4)
+Riesgos top-3: cambio IVA (prob 0.3 / impacto alto -> Strategy aislada)
+Estimacion: 12 SP +/-3 (historico de 3 sprints) | Cadencia: standup + demo w4
+```

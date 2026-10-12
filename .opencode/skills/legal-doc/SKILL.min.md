@@ -7,24 +7,43 @@ version: 1.0.0
 project_agnostic: true
 ---
 
-# Legal-Doc Colombia: Analisis juridico colombiano multi-especialidad
+# Legal-Doc Colombia (min)
 
-Metodologia RTF+C + Role Stacking (8 roles): Analista Senior, Teorico Interpretacion, Litigante Estrategico, Academico Constitucional, Comparatista, Procesalista, Gestor Riesgo, Comunicador.
-
-## Fuentes primarias
-SUIN-JURISCOL, Relatoria Corte Constitucional (C-/T-/SU-), Consejo de Estado, Corte Suprema, Rama Judicial
+## Metodología RTF+C + Role Stacking (8 roles)
+Analista Jurídico Senior, Teórico de la Interpretación, Litigante Estratégico, Académico Constitucional, Comparatista, Especialista Procesal, Gestor de Riesgo, Comunicador Pedagógico.
 
 ## Workflow 7 fases
-F0: Clasificar documento y especialidad
-F1: Descomponer: partes, hechos, problema juridico, ratio
-F2: Analisis jerarquico: CP > Tratados > Leyes > Decretos
-F3: Analisis procesal: competencia, terminos, carga prueba, debido proceso
-F4: Comparado: Corte IDH, Espana, Mexico, Argentina, Alemania, EE.UU.
-F5: Critico: activismo judicial, riesgos, oportunidades impugnacion
-F6: Sintesis: hoja de ruta, matriz riesgos, recomendaciones
+- **F0**: Clasificar documento, emisor y especialidad.
+- **F1**: Descomponer: partes, hechos, problema jurídico, ratio decidendi.
+- **F2**: Análisis jerárquico: CP > Tratados > Leyes > Decretos (marcar [⚠️ JERARQUÍA], vigencia en SUIN).
+- **F3**: Procesal: competencia, términos, carga prueba, debido proceso, cosa juzgada.
+- **F4**: Comparado: Corte IDH, España, México, Argentina, Chile, Alemania, EE.UU.
+- **F5**: Crítico: activismo judicial, riesgos de caducidad/prescripción, rutas de impugnación.
+- **F6**: Síntesis: hoja de ruta, matriz de riesgos, recomendaciones con fuentes verificables.
+
+## ⚠️ Verificación de citas (DEBER sancionable, 2026)
+- **LegalGraphRAG** Researcher → Auditor → Adjudicator: solo evidencia VERIFICADA entra a la síntesis.
+- Estado de cada norma: `VIGENTE`/`MODIFICADO`/`DEROGADO`/`INEXEQUIBLE` + fecha de consulta (fuente primaria).
+- Cita no verificada → marcar **`APÓCRIFA-REVISAR`**; nunca presentarla como válida.
+- Cierre obligatorio: contador de citas verificadas vs no verificadas.
+- Multi-jurisdicción: declarar la jurisdicción en cada cita (`[Colombia]`, `[España]`, `[México]`).
+
+## Ejemplo (verificar cita antes de usarla)
+```yaml
+cita: "Corte Constitucional, Sentencia T-323 de 2024"
+jurisdiccion: "[Colombia]"
+vigencia: VIGENTE
+fuente: "https://www.corteconstitucional.gov.co/relatoria/"
+estado_verificacion: VERIFICADA   # si falla el cotejo -> APÓCRIFA-REVISAR
+```
 
 ## Especialidades
 Constitucional (CP, Bloque), Administrativo (CPACA), Laboral (CST), Penal (Ley 906), Familia (Infancia), Tributario (ET), Civil (CC), Comercial (CCom)
 
 ## Output
-Analisis con citas colombianas estandarizadas, hoja de ruta procesal, matriz comparativa internacional, glosario tecnico
+Análisis con citas colombianas estandarizadas, hoja de ruta procesal, matriz comparativa internacional, glosario técnico.
+
+## Referencias (bajo demanda)
+- [Fuentes, especialidades y arquitectura](references/fuentes-y-especialidades.md)
+- [NLP jurídico, argument mining y enterprise](references/nlp-juridico-2026.md)
+- [Verificación de citas](references/verificacion-citas.md)

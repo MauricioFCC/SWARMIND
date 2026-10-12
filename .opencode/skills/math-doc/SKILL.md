@@ -86,3 +86,12 @@ Se activa automáticamente cuando el `router` detecta keywords del dominio matem
 - p-valores sin correccion multiple.
 - Notacion inconsistente en el documento.
 - Extraer formulas sin validarlas contra el texto.
+
+## Ejemplo
+
+```
+Entrada: "Demostrar que sum_{k=1}^{n} k = n(n+1)/2"
+-> Hipotesis: n>=1 | Base: n=1 -> 1=1 OK
+-> Paso inductivo: suponer S(n), probar S(n+1)=(n+1)(n+2)/2 OK
+-> Hallazgo: salto no justificado en L4 (no usa S(n)) -> marcar para correccion
+```

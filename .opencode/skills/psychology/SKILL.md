@@ -114,3 +114,12 @@ Skill de psicologia aplicada para mejorar la interaccion, motivacion y efectivid
 - Csikszentmihalyi, M. (1990). *Flow: The Psychology of Optimal Experience*
 - Belbin, R. M. (2010). *Team Roles at Work*
 - Seligman, M. E. P. (2011). *Flourish*
+
+## Ejemplo
+
+```
+!psyc biases "comite que aprueba releases"
+-> Sesgo de confirmacion (alto): solo se citan tests verdes
+-> Exceso de confianza (medio): sin test negativo
+Mitigacion: checklist adversarial pre-merge + muestra de fallos; evaluar pre/post
+```

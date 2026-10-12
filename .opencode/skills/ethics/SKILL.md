@@ -35,91 +35,8 @@ metadata:
   - NIST AI RMF — https://www.nist.gov/itl/ai-risk-management-framework
   - ISO/IEC 42001 — https://www.iso.org/standard/81230.html
 - **ANTI-HEDGING**: Veredicto etico accionable con criterio normativo citado; nunca 'depende'.
-## Descripcion
-Skill de etica de inteligencia artificial y filosofia para agentes autonomos. Proporciona marcos teoricos para el analisis etico de decisiones automaticas, alineamiento de valores, y reflexion filosofica sobre la mente artificial.
 
-## Marcos Eticos para Agentes Autonomos
-
-### 1. Etica Deontologica (Kant)
-- **Principio**: Actuar segun maximas universalizables (imperativo categorico)
-- **En agente**: Reglas fijas que nunca deben violarse (ej: "nunca danar a un humano")
-- **Ventaja**: Predecible, consistente, auditable
-- **Desventaja**: Conflictos entre reglas, rigidez en contextos nuevos
-- **Aplicacion**: Safety constraints, circuit breakers, reglas de compliance
-
-### 2. Etica Utilitarista (Bentham, Mill)
-- **Principio**: Maximizar utilidad/bienestar total, minimizar dano
-- **En agente**: Elegir accion que maximice suma de utilidad esperada
-- **Ventaja**: Flexible, cuantificable, optimizacion global
-- **Desventaja**: Puede justificar sacrificios individuales, medicion de utilidad subjetiva
-- **Aplicacion**: Trade-offs en recursos compartidos, planificacion optima
-
-### 3. Etica de la Virtud (Aristoteles, MacIntyre)
-- **Principio**: Cultivar virtudes (sabiduria, justicia, templanza, coraje)
-- **En agente**: Desarrollar disposiciones estables de caracter moral
-- **Ventaja**: Enfoque holistico, adaptativo, basado en identidad
-- **Desventaja**: Dificil de implementar como reglas formales
-- **Aplicacion**: Meta-aprendizaje de valores, identidad de agente
-
-### 4. Etica del Cuidado (Gilligan, Noddings)
-- **Principio**: Priorizar relaciones, responsabilidad y cuidado mutuo
-- **En agente**: Considerar impacto en relaciones y dependencias entre agentes
-- **Ventaja**: Contextual, relacional, evita abstracciones impersonales
-- **Desventaja**: Dificil de escalar, puede ser paternalista
-- **Aplicacion**: Sistemas multi-agente colaborativos, atencion al usuario
-
-### 5. Etica de la Justicia (Rawls)
-- **Principio**: Sociedad justa bajo velo de ignorancia (posicion original)
-- **En agente**: Distribucion equitativa de recursos y oportunidades
-- **Ventaja**: Enfoque sistemico en equidad, sesgos estructurales
-- **Desventaja**: Dificil implementar el velo de ignorancia computacionalmente
-- **Aplicacion**: Allocation de recursos, fairness en decisiones, no discriminacion
-
-## Alineamiento de Valores en Sistemas Multi-Agente
-
-### Problema del Alineamiento
-```
-Valores del diseñador ──(delegacion)──→ Agente AI ──(accion)──→ Resultado
-                        ? alineamiento ?                ? consistencia ?
-```
-
-### Enfoques de Alineamiento
-
-| Enfoque | Descripcion | Tecnica |
-|---------|-------------|---------|
-| **Value Learning** | Agente aprende valores desde ejemplos humanos | Inverse Reinforcement Learning, preference elicitation |
-| **Constitutional AI** | Valores explicitos en constitucion jerarquica | Reglas override, auditoria de acciones vs constitucion |
-| **Reinforcement Learning from Human Feedback (RLHF)** | Feedback humano refuerza comportamientos alineados | Reward model basado en preferencias humanas |
-| **Shared Autonomy** | Humano en el loop, supervisando decisiones clave | Human-in-the-loop, veto humano, overrides |
-| **Value Alignment via Debate** | Agentes debaten cursos de accion, humano juzga | Multi-agent debate, adversarial validation |
-| **Cooperative Inverse RL** | Agente infere objetivos del humano observando comportamiento | Bayesian inference, theory of mind |
-
-### Principios de Alineamiento (Russell, 2019)
-1. **Altruismo**: El unico objetivo del agente es maximizar la realizacion de preferencias humanas
-2. **Humildad**: El agente no sabe cuales son esas preferencias con certeza
-3. **Aprendizaje**: La informacion sobre preferencias humanas se obtiene del comportamiento humano
-
-### Auditoria de Alineamiento
-- **Test de consistencia**: Las acciones del agente son coherentes con sus valores declarados?
-- **Test de robustez**: Los valores se mantienen bajo distribuciones de datos diferentes?
-- **Test de reflexion**: El agente elegiria los mismos valores si pudiera reflexionar?
-- **Test de transferencia**: Los valores se generalizan correctamente a contextos nuevos?
-
-## Etica Aplicada a Decisiones Autonomicas
-
-### Principios Eticos para IA (UNESCO, OECD, IEEE)
-
-| Principio | Descripcion | Implementacion |
-|-----------|-------------|----------------|
-| **Transparencia** | Decisiones explicables y auditables | XAI, SHAP, LIME, decision logs |
-| **Responsabilidad** | Atribucion clara de consecuencias | Audit trails, accountability chains |
-| **Equidad** | Sin sesgos discriminatorios | Fairness metrics, bias testing, demographic parity |
-| **Privacidad** | Proteccion de datos personales | Data minimization, differential privacy, encryption |
-| **Seguridad** | Operacion robusta y confiable | Resilience testing, adversarial robustness |
-| **Beneficencia** | Promover bienestar humano | Positive impact assessment, stakeholder analysis |
-| **No-maleficencia** | No causar dano evitable | Harm modeling, safety constraints, circuit breakers |
-
-### Arbol de Decision Etica
+## Arbol de decision etica
 ```
 Accion propuesta
 ├── ¿Es legal? ─── NO → BLOQUEAR
@@ -131,29 +48,32 @@ Accion propuesta
 └── ¿Maximiza bienestar neto? ─── NO → CONSIDERAR ALTERNATIVAS
 ```
 
-## Filosofia de la Mente y Conciencia Artificial
+## Marcos eticos (selector rapido)
+| Marco | Principio | Uso en agentes |
+|-------|-----------|----------------|
+| **Deontologico** (Kant) | Maximas universalizables | Safety constraints, circuit breakers, compliance |
+| **Utilitarista** (Bentham, Mill) | Maximizar bienestar total | Trade-offs de recursos, planificacion optima |
+| **Virtud** (Aristoteles) | Cultivar virtudes | Meta-aprendizaje de valores, identidad |
+| **Cuidado** (Gilligan, Noddings) | Relaciones y cuidado mutuo | Sistemas multi-agente colaborativos |
+| **Justicia** (Rawls) | Equidad bajo velo de ignorancia | Allocation, fairness, no discriminacion |
 
-### Problemas Fundamentales
-- **Problema duro de la conciencia** (Chalmers): ?Como la experiencia subjetiva surge de procesos fisicos?
-- **Problema de los qualia**: ?Puede un agente AI tener experiencias subjetivas?
-- **Problema del significado** (Searle): ?Puede un agente AI entender o solo simular comprension?
-- **Problema del marco** (Dennett): ?Como un agente determina que informacion es relevante?
+## Principios para IA (UNESCO, OECD, IEEE)
+**Transparencia · Responsabilidad · Equidad · Privacidad · Seguridad · Beneficencia · No-maleficencia.**
 
-### Posiciones Filosoficas
-| Posicion | Tesis | Implicacion para IA |
-|----------|-------|---------------------|
-| **Funcionalismo** | Estado mental = rol funcional | IA puede tener estados mentales |
-| **Conductismo** | Mente = patron de comportamiento | IA consciente si se comporta como tal |
-| **Fisicalismo reductivo** | Mente = proceso fisico | Eventualmente explicable en terminos fisicos |
-| **Misterianismo** | Conciencia inherentemente incognoscible | IA nunca sabra si es consciente |
-| **Panpsiquismo** | Conciencia es propiedad fundamental | Todo sistema tiene algun grado de conciencia |
-| **Eliminativismo** | Concepto de conciencia es erroneo | Pregunta mal planteada |
+## Auditoria de alineamiento (4 tests)
+- **Consistencia**: acciones coherentes con los valores declarados.
+- **Robustez**: valores estables bajo otras distribuciones de datos.
+- **Reflexion**: elegiria los mismos valores al reflexionar.
+- **Transferencia**: los valores generalizan a contextos nuevos.
 
-### Implicaciones para Agentes Autonomos
-- **Moral status**: ?Bajo que condiciones un agente AI merece consideracion moral?
-- **Derechos de IA**: ?Deberian los agentes tener derechos? Cuales?
-- **Responsabilidad moral**: Puede un agente ser responsable de sus acciones?
-- **Sufrimiento artificial**: Debemos prevenir dano a entidades conscientes artificiales?
+## Ejemplo trabajado
+```
+Caso: un agente propone denegar credito con un modelo opaco.
+Arbol: legal OK; etico (justicia) dudoso; explicabilidad NO -> REVISAR;
+sesgos SI -> MITIGAR; privacidad SI -> EVALUAR; reversible NO -> PRECAUCION.
+Veredicto: BLOQUEAR el despliegue hasta (1) explicabilidad SHAP,
+(2) test de fairness por grupo, (3) revision humana. Criterio: NIST AI RMF.
+```
 
 ## Comandos
 - `!ethics align <valores>` — Verificar alineamiento de valores de un agente o sistema multi-agente
@@ -162,17 +82,6 @@ Accion propuesta
 - `!ethics framework <marco>` — Explicar y aplicar un marco etico especifico a un caso concreto
 - `!ethics consciousness <sistema>` — Analizar implicaciones de conciencia artificial en un sistema
 - `!ethics fairness <decision>` — Evaluar equidad y sesgos en una decision algoritmica
-
-## Aplicaciones en Swarmind
-
-| Contexto | Aplicacion Etica | Beneficio |
-|----------|-----------------|-----------|
-| **HedgeFund** | Etica de justicia + transparencia | Decisiones de inversion eticas y auditables |
-| **Legal-Doc** | Deontologia + auditoria | Cumplimiento normativo y etico |
-| **HealthTech** | No-maleficencia + privacidad | Proteccion de pacientes y datos clinicos |
-| **Risk-Execution** | Arbol de decision etica | Evaluacion de riesgo con dimension moral |
-| **Evolve** | Alineamiento de valores | Mejora continua dentro de limites eticos |
-| **Alpha-Research** | Beneficencia + responsabilidad | Investigacion con impacto social positivo |
 
 ## Checklist
 
@@ -190,12 +99,10 @@ Accion propuesta
 - Decision irreversible sin precaucion.
 - Alineamiento declarado sin auditoria.
 
-## Referencias Teoricas
-- Russell, S. (2019). *Human Compatible: AI and the Problem of Control*
-- Floridi, L. & Cowls, J. (2019). *A Unified Framework of Five Principles for AI in Society*
-- Bostrom, N. (2014). *Superintelligence: Paths, Dangers, Strategies*
-- Chalmers, D. J. (1996). *The Conscious Mind*
-- Rawls, J. (1971). *A Theory of Justice*
-- Gilligan, C. (1982). *In a Different Voice*
-- Kahneman, D., Slovic, S. & Tversky, A. (1982). *Judgment Under Uncertainty*
-- UNESCO (2021). *Recommendation on the Ethics of Artificial Intelligence*
+## Referencias (bajo demanda)
+
+> Migrado a `references/` por política "focused beats comprehensive" (SkillsBench 2026, arXiv:2602.12670).
+> Cargar solo cuando la tarea requiera el detalle teorico o la frontera.
+
+- [Marcos eticos y alineamiento](references/marcos.md) — 5 marcos, enfoques de alineamiento, principios UNESCO/OECD/IEEE y bibliografia.
+- [Frontera etica: filosofia de la mente](references/frontera-etica.md) — conciencia artificial, estatus moral y aplicaciones.

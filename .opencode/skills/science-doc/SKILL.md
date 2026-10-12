@@ -21,20 +21,7 @@ project_agnostic: true
   - Nature — https://www.nature.com
   - Semantic Scholar — https://www.semanticscholar.org
 - **ANTI-HEDGING**: Claim con DOI; separa hallazgo de interpretacion; nunca parafraseo sin cita.
-## Activación
-Se activa automáticamente cuando el `router` detecta keywords del dominio científico/investigación.
-
-## Keywords de dominio
-- `science`, `scientific`, `research`, `investigación`, `ciencia`, `científico`
-- `paper`, `article`, `publication`, `publicación`, `journal`, `revista`
-- `thesis`, `tesis`, `dissertation`, `disertación`, `academic`, `académico`
-- `experiment`, `experimento`, `hypothesis`, `hipótesis`, `methodology`, `metodología`
-- `peer review`, `revisión por pares`, `systematic review`, `revisión sistemática`
-- `meta-analysis`, `metaanálisis`, `reproducibility`, `reproducibilidad`
-- `citation`, `cita`, `bibliography`, `bibliografía`, `references`, `referencias`
-- `impact factor`, `factor de impacto`, `indexing`, `indeación`, `scopus`, `wos`
-- `physics`, `física`, `chemistry`, `química`, `biology`, `biología`, `medicine`
-- `engineering`, `ingeniería`, `computer science`, `computación`, `social sciences`
+> Activación y keywords de dominio (disparadores del `router`): `references/keywords-dominio.md`.
 
 ## Reglas contextuales
 
@@ -88,65 +75,25 @@ Se activa automáticamente cuando el `router` detecta keywords del dominio cient
 - **Colaboración**: Evaluar colaboración internacional vs nacional vs institucional
 
 ## Output esperado
-- Análisis estructural de papers con extracción precisa de secciones IMRaD
-- Evaluación metodológica con identificación de diseño, sesgos y limitaciones
+
+- Análisis estructural IMRaD + evaluación metodológica (diseño, sesgos, limitaciones)
 - Interpretación estadística de resultados (tamaño del efecto, significancia)
 - Revisión bibliográfica sintetizada con mapa de citas y gaps
 - Revisión sistemática conforme a PRISMA con metaanálisis
-- Evaluación ética y de integridad científica
-- Métricas bibliométricas con análisis de impacto y colaboración
+- Evaluación ética/integridad científica + métricas bibliométricas (impacto, colaboración)
 
-## Verificación de Citas y Reproducibilidad (2026)
+### Ejemplo trabajado — verificar una cita
 
-Las alucinaciones de citas son un problema medido y crítico en la literatura científica
-asistida por IA: más de 50 citas falsas fueron detectadas en 300 submissions de ICLR 2026.
-Toda síntesis debe implementar verificación de citas y reproducibilidad como parte del
-pipeline, no como paso opcional.
-
-### CiteGuard-style: Validación de cada cita contra la fuente
-- Cada cita del paper/resumen debe validarse contra la fuente original mediante
-  **retrieval-augmented validation** (búsqueda en la base + adjudicación con el texto recuperado).
-- Mantener un **contador de citas no verificables**: cada cita que no pueda confirmarse
-  contra una fuente real se contabiliza y se marca explícitamente como **`CITA-NO-VERIFICADA`**
-  en el output. Nunca presentarla como válida.
-- El retrieval debe incluir la acción de buscar el snippet textual (no solo el título),
-  porque la evidencia textual recuperada es el mayor predictor de citas fieles
-  (hallazgo central de CiteGuard, ACL 2026 — accuracy 68.1% en benchmark CiteME vs 69.2% humano).
-
-### OpenScholar-style self-feedback
-Pipeline de refinamiento iterativo para síntesis con citas trazables:
+```text
+Entrada: "El metodo X mejora la precision un 12% [Lee 2025]."
+1. Recuperar evidencia: buscar Lee 2025 (Semantic Scholar/arXiv) + snippet textual.
+2. Adjudicar: ¿el snippet soporta el claim?
+   - Si -> cita verificada (DOI valido).
+   - No -> marcar "CITA-NO-VERIFICADA" y NO presentarla como valida.
+3. Extraer reproducibilidad: dataset, seeds, hiperparametros, metricas.
+4. Veredicto: REPRODUCIBLE / PARCIAL / NO-REPRODUCIBLE + que falta.
+5. Contradicciones: "Afirmacion A [paper X, sec] <-> Afirmacion B [paper Z, sec]".
 ```
-1. RECUPERAR evidencia: retrieval de papers relevantes desde la base (ID de paper + sección)
-2. REDACTAR síntesis con citas in-text, cada afirmación anclada a una fuente
-3. AUTO-REVISAR: verificar que cada claim tiene cita, que la cita soporta el claim, y que no hay claims sin soporte
-4. REFINAR: reescribir las partes con citas débiles o faltantes
-```
-- El output debe permitir **trazar cada afirmación a la fuente**: ID del paper, sección,
-  y fragmento textual recuperado (estilo Self-RAG / OpenScholar).
-- Usar **LLM-as-a-Judge** para filtrar síntesis con citas débiles antes de emitirlas.
-
-### Reproducibilidad (ARA-style)
-Al analizar un paper, extraer explícitamente el paquete de reproducibilidad:
-- **Datos de entrenamiento/experimentos**: datasets usados, splits, versiones, accesibilidad.
-- **Hiperparámetros**: learning rate, batch size, épocas, seeds, config de modelos.
-- **Métricas reportadas**: precisión/recall/F1, p-valores, IC, tamaño del efecto.
-- Señalar si el paper permite **reproducibilidad document-level** (workflow graph: pasos,
-  dependencias de datos, versiones) o si **faltan detalles** que impiden reproducir.
-- Reportar un veredicto de reproducibilidad: `REPRODUCIBLE` / `PARCIAL` / `NO-REPRODUCIBLE`
-  con la evidencia de qué falta.
-
-### Detección de contradicciones
-- Si el análisis encuentra **contradicciones entre papers o entre afirmaciones del mismo
-  paper**, listarlas explícitamente con referencias (estilo PaperQA2), en formato:
-  `Afirmación A [paper X, sección Y] ↔ Afirmación B [paper Z, sección W]`.
-- No resolver la contradicción silenciosamente: marcarla como hallazgo y señalar el conflicto.
-
-### Herramientas sugeridas
-- **Semantic Scholar API**: retrieval por título/abstract/topics, embeddings científicos.
-- **arXiv API**: acceso a preprints y versiones con DOI.
-- **scholar-search-mcp** (si está disponible): búsqueda académica vía MCP.
-- **DOI validation**: verificar que el DOI resuelve y apunta al documento correcto.
-- **ai2 paper finder / retrieval pipelines**: alternativas de alta cobertura para el retrieval.
 
 ## Checklist
 
@@ -164,3 +111,10 @@ Al analizar un paper, extraer explícitamente el paquete de reproducibilidad:
 - Confundir hallazgo con interpretacion.
 - Omitir tamanos de efecto e incertidumbre.
 - Resolver contradicciones en silencio.
+
+## Referencias (bajo demanda)
+
+> Migrado a `references/` por política "focused beats comprehensive" (SkillsBench 2026, arXiv:2602.12670).
+
+- [Verificación de citas y reproducibilidad 2026](references/verificacion-2026.md) — CiteGuard, OpenScholar, ARA, detección de contradicciones y herramientas.
+- [Activación y keywords de dominio](references/keywords-dominio.md) — disparadores del router para activar el skill.

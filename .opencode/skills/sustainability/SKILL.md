@@ -50,3 +50,12 @@ Skill de sostenibilidad, criterios ESG y reportes de impacto ambiental.
 - Metrica sin baseline ni fuente.
 - Reportar sin verificacion externa.
 - Compensar sin reducir.
+
+## Ejemplo
+
+```
+!esg carbon "planta Bogota 2026"
+Alcance 1: 1.200 tCO2e | Alcance 2: 800 tCO2e (factor de red X)
+Alcance 3: 5.400 tCO2e | Baseline 2025: 8.100 -> meta 2027: -30%
+Fuente: medidor + factor GHG Protocol
+```

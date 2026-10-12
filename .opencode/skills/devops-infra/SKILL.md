@@ -59,3 +59,15 @@ Skill especializado en DevOps, infraestructura como codigo, CI/CD, contenedores,
 - Desplegar sin rollback ni health checks.
 - Recursos sin limites (requests/limits).
 - Ignorar costes y capacidad.
+
+## Ejemplo
+
+```
+!infra dockerize api
+FROM python:3.12-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+RUN uv sync --frozen
+CMD ["uv","run","uvicorn","app:app","--host","0.0.0.0"]
+# deploy: manifiesto con resources.limits + livenessProbe
+# rollback: kubectl rollout undo deploy/api
+```

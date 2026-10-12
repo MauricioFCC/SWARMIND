@@ -64,3 +64,12 @@ utilizando el framework CRO Forum 2026: Major Trends and Emerging Risk Radar.
 ## Referencias
 - CRO Forum 2026: Emerging Risks Initiative
 - Major Trends and Emerging Risk Radar 2026
+
+## Ejemplo
+
+```
+!risk tech
+[A1] AI concentration - prob 0.7 - impacto alto - horizonte 0-2 anos
+Leading: no de proveedores LLM por funcion | Early warning: caida SLA >5%
+Escenario estres: vendor lock 2 semanas -> plan: 2do proveedor homologado (owner: CTO)
+```
