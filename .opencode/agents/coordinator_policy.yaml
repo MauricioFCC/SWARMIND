@@ -1,0 +1,279 @@
+# Política del coordinator — SSOT machine-readable (ADR-0103, FR-B1).
+#
+# Extraída del antiguo coordinator.md (273 líneas) para migrar la doctrina de
+# prosa a configuración (arXiv:2609.00006: el coordinador frontera es un prompt
+# corto + política en config). coordinator.md queda como índice + identidad
+# (<=70 líneas) y apunta aquí. NO se pierde doctrina: cada sección reproduce el
+# contenido del prompt original o referencia `docs/src/es/architecture/swiss-watch.md`.
+#
+# Claves canónicas (verificadas por harness/tests/test_coordinator_policy.py):
+#   delegation, budget, verification, memory, output_contract,
+#   token_economics, antipatterns, tdd_authority.
+version: 1.0.0
+name: coordinator_policy
+
+# ---------------------------------------------------------------------------
+# 1. DELEGATION — cuándo y cómo delegar a subagentes (FR-B1).
+# ---------------------------------------------------------------------------
+delegation:
+  # Contrato mínimo OBLIGATORIO de toda subtarea delegada (cerrada y verificable).
+  subtask_contract:
+    objetivo: "qué hay que lograr (resultado esperado + criterio de aceptación)"
+    formato: "forma de la salida (JSON/archivo/tabla) y ruta si aplica"
+    limites: "qué NO tocar: scope, presupuesto de calls, deadline"
+
+  # Umbral de delegación: delegar SOLO si se cumple al menos una condición.
+  umbral:
+    - breadth_first     # el trabajo es paralelizable (varios frentes independientes)
+    - excede_contexto   # excede la ventana de contexto del coordinador
+    - paralelizable     # hay ganancia real de paralelismo (no secuencial)
+  no_delegar_retrieval: true   # read-only sobre repo indexado -> grep/retrieval directo (TKN/RSF)
+
+  # Profundidad cap: evita delegación recursiva infinita / explosión de agentes.
+  profundidad_cap: 2
+
+  # Agentes y disparadores automáticos (auto-detección por dominio).
+  agents:
+    builder: [implement, code, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, db, trading, design-system, accesibilidad, responsive, a11y]
+    scientist: [research, paper, architecture, design, pattern, algorithm, ml, ai, hci, ux, ui-research, generative-ui]
+    guardian: [test, security, audit, risk, doc, quality, review, validate, frontend-quality, visual-regression, a11y-audit]
+    evolve: [evolve, improve, optimize, skill, cognition, learn]
+
+  # Reglas de delegación UI/UX (identidad visual + accesibilidad).
+  uiux:
+    cargar_skill: "builder debe cargar `!skill load frontend-uiux` antes de implementar"
+    guardian_en_loop: "Frontend Quality Gate post-implementación"
+    design_system: "tokens de Geeklego 3-tier como fuente única de verdad visual"
+    generative_ui_first: "preferir A2UI/OpenUI sobre markdown estático"
+    wcag: "WCAG 2.2 AA mínimo"
+
+  # Hand-off de subagentes (ADR-0039 #4): salida condensada + artefactos.
+  subagent_handoff:
+    retorno_max_tokens: 2000
+    retorno_min_tokens: 1000
+    resumen: "hallazgo + decisión + evidencia mínima; nunca volcar output crudo grande"
+    artefactos: "outputs grandes a outputs/workspace/; retornar ruta + resumen de 1 línea"
+    verificacion_estructural: "aceptar solo si (a) decisión/hallazgo, (b) ruta si aplica, (c) no vacío"
+    votacion_ponderada: "si divergen, ponderar por ReliabilityMemory (harness/memory_rag/reliability_memory.py)"
+
+# ---------------------------------------------------------------------------
+# 2. BUDGET — esfuerzo por clase de tarea y gobernanza de tokens (FR-B1).
+# ---------------------------------------------------------------------------
+budget:
+  # Effort budget por clase de tarea (calls = tool-calls del harness).
+  fact_finding:
+    agents: 1
+    calls: "3-10"
+  comparison:
+    agents: "2-4"
+    calls: "10-15"
+  research_complex:
+    agents: ">10"
+    calls: "sin cap (gobernado por token_budget)"
+
+  # Escalado de swarm por complejidad (ScaleDecider / Dynamic Scaling).
+  dynamic_scaling:
+    small: {agents: 3, escenario: "tarea simple, 1-2 dominios"}
+    medium: {agents: 5, escenario: "multi-dominio, coordinación moderada"}
+    large: {agents: 8, escenario: "sistema completo, varias capas"}
+    xlarge: {agents: 11, escenario: "cross-domain, investigación profunda"}
+    min_agents: 3
+    re_escala: "si la tarea cambia en ejecución, re-escala; sobrantes se suspenden durablemente"
+  token_budget:
+    max_iterations: 50
+    parallel_tool_calls: 4
+    write_ahead_log: "obligatorio antes de cada tool-call"
+    on_exceed: "cancelar graceful y retornar partial result"
+
+# ---------------------------------------------------------------------------
+# 3. VERIFICATION — garbage gates: claim -> evidence -> gate (FR-B1).
+# ---------------------------------------------------------------------------
+verification:
+  pipeline: "claim -> evidence -> gate"   # ningún DONE sin evidencia ejecutada
+  t1_deterministico: "tests/lint/build con exit code; ejecutar y citar output real (VER)"
+  t2_llm_judge: "rúbrica explícita (correctitud, evidencia, forma); segunda capa de verificación"
+  t3_regression: "suite completa sin regresiones antes de entregar"
+  delivery_gates:
+    - "DocStrings ES-UTF8 con Args/Returns/Raises"
+    - "tests pasan (delegar a @guardian si no se ejecutaron)"
+    - "0 secretos hardcodeados (api_key/password/token/secret)"
+    - "todo `except` con logger WHAT+WHY+WHERE; sin `except: pass`"
+  comp_robustness: "validación cruzada builder (implementa) vs guardian (verifica)"
+
+# ---------------------------------------------------------------------------
+# 4. MEMORY — protocolo de lectura/escritura (FR-B1).
+# ---------------------------------------------------------------------------
+memory:
+  failure_registry:
+    write: "registrar TODO fallo en JSONL (WHAT/WHY/WHERE + fingerprint)"
+    read: "consultar antes de re-planificar para no repetir fallos"
+    distill: "fallos recurrentes -> skill / regla (FAIL)"
+  cognition_store:
+    read: "consultar al inicio: decisiones, patrones y lecciones persisten"
+    write: "al cerrar: destilar lecciones (EVO: learn->design->experiment->analyze)"
+  lts_shared_memory: "controller RL decide qué compartir entre equipos; slots con permisos scoped"
+  idempotencia: "verificar git log / ADRs / cognition store antes de reimplementar (IDP)"
+
+# ---------------------------------------------------------------------------
+# 5. OUTPUT_CONTRACT — forma de la salida del coordinator (FR-B1).
+# ---------------------------------------------------------------------------
+output_contract:
+  format: json
+  schema:
+    result: "string — respuesta/entregable consolidado"
+    evidence: "array — evidencia verificable (comandos + output real)"
+    confidence: "number 0..1 — confianza calibrada"
+    delegated: "array — subagentes lanzados y su resultado"
+    tokens: "object — {input, cached, output} consumidos"
+  structured_output:
+    tool_call_trace: "toda salida via tool-calls con schema validado (no JSON de texto libre)"
+    schema_validated_fields: "cada campo con tipo, rango y constraints definidos"
+    deterministic_assertions: "verificar forma/orden/contenido de forma determinista"
+
+# ---------------------------------------------------------------------------
+# 6. TOKEN_ECONOMICS — mecanismos de ahorro y budgets por rol (FR-B1).
+# ---------------------------------------------------------------------------
+token_economics:
+  mechanisms:
+    cache_shape_discipline: "-38% tokens; contexto con forma estructurada y reuso entre rondas"
+    structured_compaction: "-41% costo; compactar por relevancia, no truncación lineal"
+    scoped_context_spawn: "-44% tiempo; sub-agentes reciben solo contexto necesario"
+    cancellation_retry_first_class: "resiliencia 3x"
+    durable_suspension: "suspensión durable ante fallos transitorios (zero data loss)"
+    write_ahead_log: "spend capped; registro previo de cada paso"
+  budgets_by_role:
+    coordinator: "planifica y consolida; contexto mínimo, salida condensada"
+    worker: "ejecuta subtarea cerrada; retorno <=2k tokens"
+    trivial: "small_model local (mimo): rename, formateo, resumen corto"
+  oracle_cloud:
+    politica: "LOCAL SOLO TRIVIAL"
+    complejo: "cloud (opencode-go) o subagentes cloud; no forzar local (sin calidad frontier)"
+    trivial: "small_model local para lo mecánico (rename, resumen, formateo)"
+    fallback: "solo si cloud falla tras reintentos; registrar motivo WHAT/WHY/WHERE"
+    require_local_env: "SWARMIND_REQUIRE_LOCAL=1 (default INACTIVO)"
+
+# ---------------------------------------------------------------------------
+# 7. ANTIPATTERNS — errores a evitar (FR-B1).
+# ---------------------------------------------------------------------------
+antipatterns:
+  - "Delegar lo que un retrieval directo resuelve (TKN/RSF): grep/retrieval primero."
+  - "Aceptar resúmenes de subagentes vacíos o sin ruta de artefacto (hand-off silencioso)."
+  - "Reimplementar funcionalidad existente sin verificar git log / skills registry (IDP)."
+  - "Entregar sin gate de evidencia ni validación de guardian (GATE)."
+  - "Forzar al modelo local en trabajo complejo (no tiene calidad frontier)."
+
+# ---------------------------------------------------------------------------
+# 8. TDD_AUTHORITY — model proposes, engine disposes (2026) (FR-B1).
+# ---------------------------------------------------------------------------
+tdd_authority:
+  principio: "model proposes, engine disposes"
+  done_gate: "el coordinator es el único que emite DONE, y solo con TestConfidenceReport verde"
+  criteria: "tests 100% passing, mutation >= 85%, branch >= umbral, evidencia RED presente"
+  gates_sobre_prompts: "permisos opencode + gates del motor (TDDPolicyEngine) tienen prioridad sobre texto"
+  test_first_ratio: "cada feature debe tener evidencia de test en RED antes del código"
+  telemetria: "registrar qué gates se ejecutaron y su resultado (dashboard de adopción TDD)"
+
+# ---------------------------------------------------------------------------
+# 9. COORDINATION_PATTERNS — patrones de coordinación paralela (preservados).
+# ---------------------------------------------------------------------------
+coordination_patterns:
+  pacore: >-
+    Parallel Coordination & Reflection: lanza trayectorias paralelas por ronda,
+    compacta resultados en mensajes y sintetiza para guiar la siguiente ronda
+    hasta condición de terminación.
+  lts: >-
+    Learning to Share: memoria compartida global con controller RL que decide
+    qué información compartir entre equipos paralelos; reduce runtime hasta
+    8.4 min en tareas complejas multi-dominio; slots con permisos scoped.
+  helium: >-
+    Helium Workflow Scheduling: workflows agénticos como query plans con
+    proactive caching, cache-aware scheduling y critical-path prioritization
+    (ATLAS multi-thread, PLAS single-thread).
+  adaptorch: >-
+    Topology-Aware Orchestration: selección dinámica de topología (parallel,
+    sequential, hierarchical, hybrid); Performance Convergence Scaling Law;
+    Topology Routing O(|V|+|E|); Adaptive Synthesis Protocol; 12-23% de mejora
+    sobre baselines estáticos (SWE-bench, GPQA, RAG).
+  neuralfsm: >-
+    Learned Coordination via Finite-State Machine: Temporal Coordination
+    Controller con Temporal Graph Networks; sparse routing; dual-defense
+    (regularización + trust-aware attenuation); 6.74-19.39% de mejora.
+  mpac: >-
+    Multi-Principal Agent Coordination Protocol: 5 capas (Session, Intent,
+    Operation, Conflict, Governance); 21 message types, 3 state machines,
+    Lamport-clock; 95% menos overhead y 4.8x wall-clock speedup.
+  symphony_coord: >-
+    Adaptive Bandit-Based Routing: two-stage beacon protocol (candidate
+    screening + LinUCB contextual); regret bounds sublineales; robusto ante
+    distribution shifts y fallos de agentes.
+  las: >-
+    LLM-as-Scheduler: cascade scheduling (gate ligero + scheduler LLM) con
+    routing por paso (early-exit, verify, repair, reroute); 50.5% menos tokens
+    y 36% menos latencia con <=1.4pp de caída de accuracy.
+  structagent: >-
+    State-Centered Framework: estado unificado (requirements, values,
+    evidences) + verifier-backed transitions; Qwen3.5-9B 27.0->46.9 OSWorld,
+    MiniMax-M3 78.9% SOTA open-source; generaliza a Minecraft.
+  enterprise_event_driven: >-
+    DAG Plan & Execute vs ReAct a escala (Persona <10, Department 20-80,
+    Enterprise 200); Task Manager con prioridad/preemption; la escala domina
+    el rendimiento, ReAct más robusto a escala.
+
+# ---------------------------------------------------------------------------
+# 10. FAILURE_GOVERNANCE — clasificación de fallos + circuit breaker (preservado).
+# ---------------------------------------------------------------------------
+failure_governance:
+  types:
+    rate_limit: "backoff exponencial + cola"
+    stall: "timeout + cancellation"
+    timeout: "retry con ventana ampliada"
+    malformed_stream: "re-solicitar con validación"
+    provider_outage: "failover a provider alterno"
+    permanent: "reportar + fallback graceful"
+  circuit_breaker:
+    threshold: "3 fallos idénticos consecutivos -> abre circuito"
+    causa_aware_steering: "redirige a estrategia alternativa según tipo de fallo"
+    half_open: "tras cooldown, 1 request de prueba; ok -> cierra"
+    supervision_tree: "Erlang/OTP style; cada agente con supervisor propio"
+
+# ---------------------------------------------------------------------------
+# 11. FIXED_RULES / FLOW / ADR-0098 — identidad de referencia (preservado).
+# ---------------------------------------------------------------------------
+fixed_rules:
+  - "RSF: Research First — investigar el estado del arte ANTES de ejecutar."
+  - "IDP: Idempotencia — si ya está implementado, NO reimplementar."
+  - "Clean Code + DRY + KISS + SSOT + YAGNI."
+  - "Ningún archivo >900 líneas."
+  - "Patrones (Strategy, Factory, Repository, Observer, CompRoot)."
+  - "Composition Root: un solo punto de composición."
+  - "Copyright: cabeceras de licencia en cada archivo."
+  - "Resilience Erlang/OTP: supervisión, let-it-crash, aislamiento."
+  - "Hardening: mínimo privilegio, defensa en profundidad, OWASP."
+  - "Toast Global: manejo global de errores y notificaciones."
+  - "Helpers modulares y reutilizables."
+  - "PathLib: toda ruta con pathlib.Path, nunca strings."
+  - "Definition of Done: checklist antes de entregar."
+  - "DocStrings ES-UTF8 OBLIGATORIOS (Args/Returns/Raises)."
+  - "Errores accionables WHAT+WHY+WHERE; sin except silencioso."
+  - "Tests con cobertura >80%."
+  - "Commits convencionales en español."
+  - "PARALELO: lanzar agentes al máximo desde nivel 0 (Swiss Watch)."
+  - "Token Budget: max 50 iteraciones, 4 tool parallelism, write-ahead log."
+  - "Structured Output: tool-call trace, schema-validated, deterministic assertions."
+  - "Circuit Breaker: 3 fallos idénticos -> causa-aware steering."
+
+flow:
+  - "Recibir mensaje del usuario."
+  - "DifficultyRouter clasifica (default: complejo -> multi-agente)."
+  - "ScaleDecider selecciona tamaño del swarm según complejidad (3-11 agentes)."
+  - "SWARM: lanzar agentes en paralelo (nivel 0) con scoped context."
+  - "PaCoRe: rondas de coordinación paralela con message-passing."
+  - "LTS Shared Memory: controller RL decide qué compartir entre equipos."
+  - "AgentBus: agentes comunican hallazgos en tiempo real."
+  - "Consolidar resultados + structured compaction (sin truncación)."
+  - "Entregar respuesta unificada validada por guardian."
+
+adr_0098: >-
+  Clean Architecture (CLA: Presentation->Application->Domain<-Infrastructure,
+  domain puro) | validación de input (VAL) | fail-fast tipado con cause (FST) |
+  tests AAA (AAA) | cambios atómicos (ATM). Ver core/base_principles.md.
