@@ -5,6 +5,9 @@ WHAT: decide cuando una tarea debe ejecutarse en el backend local
 intervencion. La fuente es el entorno (12-Factor), con defaults seguros.
 WHY: frontier 2026 — local-first reduce tokens cloud; el cloud se reserva
 como oraculo (solo si local no basta) o como fallback cuando no hay GPU.
+Politica LOCAL SOLO TRIVIAL: los LLM locales carecen de calidad frontier para
+razonamiento/codigo complejo; se usan SOLO en tareas triviales (small_model);
+el oraculo cloud resuelve el trabajo real.
 WHERE: ``run_commands._apply_model_routing`` (decision local/cloud) y
 ``run._try_local_execution`` (ejecucion + oraculo).
 
@@ -32,13 +35,17 @@ ENV_REQUIRE_LOCAL = "SWARMIND_REQUIRE_LOCAL"
 #: Defaults seguros: local-first activo, 2 en paralelo (alineado con
 #: `--parallel 2` de llama-server; mas workers solo encolan en el server),
 #: tareas abiertas permitidas (el executor gatea por tier), cloud oraculo, y
-#: REQUIRE_LOCAL (el oracle cloud pone a trabajar al local SIEMPRE en paralelo;
-#: la UNICA excepcion es que no haya backend local disponible).
+#: REQUIRE_LOCAL INACTIVO por defecto (politica LOCAL SOLO TRIVIAL): el local
+#: (mimo) atiende SOLO tareas triviales via small_model; el oraculo cloud
+#: resuelve el trabajo real porque los LLM locales carecen de calidad frontier.
+#: SWARMIND_REQUIRE_LOCAL=1 vuelve a exigir local SIEMPRE (si la flota gana
+#: calidad); el backend local sigue siendo el fallback preferente si el cloud
+#: no esta disponible.
 DEFAULT_ENABLED = True
 DEFAULT_MAX_PARALLEL = 2
 DEFAULT_ALLOW_OPEN_TASKS = True
 DEFAULT_CLOUD_ORACLE = True
-DEFAULT_REQUIRE_LOCAL = True
+DEFAULT_REQUIRE_LOCAL = False
 
 #: Literales aceptados para booleanos de entorno.
 _TRUE_LITERALS = frozenset({"1", "true", "yes", "on", "si"})
@@ -97,7 +104,9 @@ class LocalFirstPolicy:
         allow_open_tasks: True = intentar local tambien en tareas abiertas.
         cloud_oracle: True = cloud solo si local no basta (oraculo).
         require_local: True = el oracle cloud pone a trabajar al local SIEMPRE
-            en paralelo; la UNICA excepcion es que no haya backend local.
+            en paralelo (exigencia total); False (default) = LOCAL SOLO
+            TRIVIAL: el local atiende small_model, el oraculo resuelve el
+            trabajo real (calidad).
 
     Raises:
         ValueError: Si ``max_parallel`` es menor que 1.

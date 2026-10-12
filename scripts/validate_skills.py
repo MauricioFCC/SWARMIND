@@ -28,6 +28,12 @@ _ROOT = Path(__file__).resolve().parent.parent
 _SKILLS_DIR = _ROOT / ".opencode" / "skills"
 _REGISTRY = _SKILLS_DIR / "skills_registry.yaml"
 
+# Directorios dentro de .opencode/skills que NO son skills del spec Agent Skills:
+# - __pycache__: artefactos de Python
+# - auto: ProceduralSkills generados por el FailureDistiller (formato propio,
+#   consumidos via ProceduralMemory; NO versionados y NO declarables en el registry).
+_SKIPPED_DIRS = {"__pycache__", "auto"}
+
 # Hard cap ADR-0048: tokens maximos por skill individual
 _MAX_SKILL_TOKENS = 5000
 
@@ -231,7 +237,7 @@ def main() -> None:
 
     errors: list[str] = []
     for skill_dir in sorted(_SKILLS_DIR.iterdir()):
-        if not skill_dir.is_dir() or skill_dir.name == "__pycache__":
+        if not skill_dir.is_dir() or skill_dir.name in _SKIPPED_DIRS:
             continue
         if not args.quiet:
             print(f"• {skill_dir.name}")

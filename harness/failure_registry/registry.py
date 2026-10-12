@@ -211,6 +211,14 @@ class FailureRegistry:
         """
         return sorted(self._records, key=lambda r: r.timestamp, reverse=True)[:n]
 
+    def get_all(self) -> list[FailureRecord]:
+        """Retorna todos los fallos registrados (copia defensiva).
+
+        Returns:
+            Lista de FailureRecord en orden de inserción (append-only).
+        """
+        return list(self._records)
+
     def get_by_type(self, failure_type: FailureType | str) -> list[FailureRecord]:
         """Retorna fallos de un tipo específico.
 

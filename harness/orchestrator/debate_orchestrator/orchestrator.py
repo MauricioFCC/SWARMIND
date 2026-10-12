@@ -10,8 +10,20 @@ import logging
 import uuid
 from typing import Any
 
+from harness.failure_registry import (
+    FailureRegistry,
+    FailureType,
+    Severity,
+)
+from harness.failure_registry import registry as _default_failure_registry
+
 from .aggregation import _AggregationMixin
-from .models import DebateResult, DebateStrategy, DispatchFn
+from .models import (
+    NO_CONSENSUS_AGREEMENT_THRESHOLD,
+    DebateResult,
+    DebateStrategy,
+    DispatchFn,
+)
 from .strategies import _StrategiesMixin
 
 logger = logging.getLogger(__name__)
@@ -32,15 +44,31 @@ class DebateOrchestrator(_StrategiesMixin, _AggregationMixin):
     """
 
 
-    def __init__(self, vector_store: Any | None = None) -> None:
+    def __init__(
+        self,
+        vector_store: Any | None = None,
+        *,
+        failure_registry: FailureRegistry | None = None,
+    ) -> None:
         """
         Args:
             vector_store: Optional LanceVectorStore for persistence.
+            failure_registry: Registry de fallos inyectable (DI). Default: el
+                singleton ``harness.failure_registry.registry``. Inyectar uno
+                aislado en tests evita escribir en ``db/failures.jsonl``.
         """
         from harness.orchestrator.agent_bus import AgentBus
 
         self._store = vector_store
         self._bus = AgentBus(vector_store=vector_store)
+
+        # Registry de fallos para drenar debates sin consenso
+        # (failure distillation)
+        self._failure_registry = (
+            failure_registry
+            if failure_registry is not None
+            else _default_failure_registry
+        )
 
     def debate(
         self,
@@ -100,7 +128,59 @@ class DebateOrchestrator(_StrategiesMixin, _AggregationMixin):
         # Log debate result
         self._log_debate_result(result)
 
+        # Failure distillation: drenar debates sin consenso
+        if result.agent_agreement < NO_CONSENSUS_AGREEMENT_THRESHOLD:
+            self._drain_debate_failure_to_registry(result)
+
         return result
+
+    def _drain_debate_failure_to_registry(self, result: DebateResult) -> None:
+        """Drena un debate sin consenso al FailureRegistry central.
+
+        Persiste un ``FailureRecord`` cuando el ``agent_agreement`` del
+        resultado cae por debajo de ``NO_CONSENSUS_AGREEMENT_THRESHOLD``: los
+        agentes no convergieron en una respuesta comun. WHY: alimenta el loop
+        de auto-mejora para destilar el patron de desacuerdo en skills
+        (failure distillation, arXiv 2607.29468 SESA).
+
+        Es tolerante a fallos de persistencia: si el registry lanza OSError
+        se loguea un warning y NO se propaga. WHY: el resultado del debate no
+        debe romper por la persistencia del fallo (el drain es best-effort).
+
+        Args:
+            result: Resultado del debate con ``agent_agreement`` bajo.
+        """
+        agents = result.metadata.get("agents", [])
+        agents_text = ", ".join(str(a) for a in agents) or "(desconocidos)"
+        try:
+            self._failure_registry.record(
+                task=result.task,
+                failure_type=FailureType.RUNTIME,
+                error_msg=(
+                    f"Debate sin consenso: strategy="
+                    f"'{result.strategy.value}' agents=[{agents_text}] "
+                    f"agent_agreement={result.agent_agreement:.2f}"
+                ),
+                root_cause=(
+                    f"Los agentes [{agents_text}] no alcanzaron consenso en la "
+                    f"tarea '{result.task[:80]}' con estrategia "
+                    f"'{result.strategy.value}': agent_agreement="
+                    f"{result.agent_agreement:.2f} < "
+                    f"{NO_CONSENSUS_AGREEMENT_THRESHOLD}"
+                ),
+                resolution="pending",
+                severity=Severity.MEDIUM,
+                function_name="DebateOrchestrator.debate",
+                tags=("debate", result.strategy.value),
+            )
+        except OSError as exc:
+            logger.warning(
+                "WHAT=no se pudo persistir el fallo de debate en "
+                "FailureRegistry WHY=%s WHERE=DebateOrchestrator."
+                "_drain_debate_failure_to_registry (el resultado del debate "
+                "se devolvio igual; el drain es best-effort)",
+                exc,
+            )
 
     @staticmethod
     def consolidate(result: DebateResult) -> str:

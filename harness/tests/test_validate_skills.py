@@ -349,7 +349,7 @@ def test_registry_falta_skill_en_disco(tmp_path: Path, monkeypatch: pytest.Monke
 
     all_errors: list[str] = []
     for skill_dir in sorted(skills_dir.iterdir()):
-        if not skill_dir.is_dir() or skill_dir.name == "__pycache__":
+        if not skill_dir.is_dir() or skill_dir.name in vs._SKIPPED_DIRS:
             continue
         errors = vs._validate_skill(skill_dir, quiet=True)
         all_errors.extend(errors)

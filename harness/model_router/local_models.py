@@ -18,12 +18,16 @@ from __future__ import annotations
 
 import copy
 import json
+import os
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+from harness.model_router.backend_config import RamBudget
 
 #: Ruta por defecto de la SSOT (junto a este modulo).
 SSOT_PATH = Path(__file__).resolve().parent / "local_models.yaml"
@@ -48,17 +52,26 @@ ROLE_LABELS: Mapping[str, str] = {
     "reasoning": "reasoning/general",
     "fast": "fast",
     "deep": "deep",
+    "data": "data/signals",
     "embedding": "embeddings/RAG",
 }
 #: Roles que opencode marca como reasoning.
-REASONING_ROLES = frozenset({"reasoning", "fast", "deep"})
+REASONING_ROLES = frozenset({"reasoning", "fast", "deep", "data"})
 #: Roles que NO exponen tool-calling (embeddings).
 TOOLLESS_ROLES = frozenset({"embedding"})
 #: Techo VRAM total de la GPU (RTX 4060 8GB; anti-saturacion).
 VRAM_BUDGET_MB = 8000
+#: Techo de RAM del sistema (16GB fisicos - SO; anti-volcado/OOM).
+RAM_BUDGET_MB = 14000
 #: Techo seguro de contexto (40960 causo TDR; 36864 medido seguro en 8GB:
 #: phi-4-mini 5948MiB, qwen3.5-4b 4925MiB, deepseek-7b 5223MiB, coder-3b 3707MiB).
 SAFE_CTX_MAX = 36864
+#: Techo de contexto con la KV cache en RAM (perfil CAPACITY, flag `-nkvo`).
+#: Sin KV en VRAM el TDR por VRAM no aplica: el limite pasa a ser la RAM
+#: (16 GB en esta maquina), no los 8 GB de la GPU.
+SAFE_CTX_MAX_RAM_KV = 131072
+#: Perfiles de flags que mueven la KV cache a RAM -> habilitan ctx mayor.
+RAM_KV_FLAGS = frozenset({"CAPACITY"})
 #: Reserva fija para respuesta/sistema (ctx - reserved = max_prompt_tokens).
 RESERVED_TOKENS = 2048
 #: Concurrencia seriada (1 inferencia a la vez; 2 encolaba y saturaba).
@@ -69,9 +82,21 @@ MAX_TTL_S = 180
 FALLBACK_VRAM_MB: Mapping[str, int] = {
     "qwen2.5-coder-3b-iq4-xs": 3300,
     "phi-4-mini-instruct-q4-k-m": 5700,
+    #: Con CAPACITY (-nkvo) la KV cache vive en RAM, no en VRAM: la huella de
+    #: GPU es solo pesos + buffers de computo.
+    "phi-4-mini-reasoning-q4-k-m": 2600,
+    "qwen3-4b-thinking-2507-q4-k-m": 2600,
+    "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs": 6400,
     "qwen3-5-4b-gguf-ud-q4-k-xl": 4600,
     "deepseek-r1-distill-qwen-7b-q2-k": 4400,
-    "qwen3-embedding-0-6b": 2100,
+    "qwen3-embedding-0-6b": 3800,
+    #: Ternario 27B: 5700 MB MEDIDO con las flags reales de CAPACITY (-nkvo
+    #: mueve la KV a RAM y baja la VRAM de 7789 a 5594 MB netos). 5700+1500 =
+    #: 7200 <= 8000 -> CABE con 800 MB de colchon. Reproducir con
+    #: CLI_TOOLS/verify_footprints.py (mide y compara declarado vs real).
+    #: OJO: sin -nkvo el mismo modelo pide 7789 MB y NO cabe -> el guard lo
+    #: rechaza, como debe.
+    "ternary-bonsai-2-27b-ptq1-0": 5700,
 }
 
 
@@ -105,7 +130,8 @@ class LocalModel:
         file: Ruta absoluta al archivo ``.gguf``.
         ctx: Ventana de contexto real (``-c``).
         max_prompt_tokens: Techo de prompt (= ctx - reserved).
-        flags: Referencia a una clave de ``flags`` (SAFE|SMALL).
+        ram_mb: Huella de RAM del sistema (pesos + KV si CAPACITY) anti-OOM.
+        flags: Referencia a una clave de ``flags`` (SAFE|SMALL|CAPACITY).
         role: Rol de capacidad (coding|reasoning|fast|deep|embedding).
         aliases: Nombres alternos que llama-swap expone.
         opencode: True (default) para publicar en opencode; False = solo swap.
@@ -117,7 +143,11 @@ class LocalModel:
     flags: str
     role: str
     max_prompt_tokens: int = 0
+    ram_mb: int = 0
     aliases: tuple[str, ...] = ()
+    #: Binario propio del modelo (opcional). Los pesos ternarios requieren el
+    #: fork de PrismML; el resto usa el `backend.server_exe` por defecto.
+    server_exe: str | None = None
     opencode: bool = True
 
 
@@ -171,6 +201,7 @@ class LocalModelsConfig:
     reserved_tokens: int = RESERVED_TOKENS
     vram_budget_mb: int = VRAM_BUDGET_MB
     safe_ctx_max: int = SAFE_CTX_MAX
+    ram_budget_mb: int = RAM_BUDGET_MB
 
 
 # ---------------------------------------------------------------------------
@@ -231,19 +262,22 @@ def validate_config(raw: Mapping[str, Any]) -> LocalModelsConfig:
     """
     backend = _parse_backend(_require_mapping(raw, "backend"))
     flags = _parse_flags(_require_mapping(raw, "flags"))
+    ram = RamBudget.from_env()
     reserved = _optional_int(raw, "reserved_tokens", RESERVED_TOKENS)
     budget = _optional_int(raw, "vram_budget_mb", VRAM_BUDGET_MB)
+    ram_budget = _optional_int(raw, "ram_budget_mb", ram.budget_mb)
     safe_max = _optional_int(raw, "safe_ctx_max", SAFE_CTX_MAX)
-    margin = _optional_int(raw, "safety_margin_mb", 1500)
+    margin = _optional_int(raw, "safety_margin_mb", ram.margin_mb)
     concurrency = _optional_int(raw, "concurrency_limit", EXPECTED_CONCURRENCY)
     default_ttl = _require_int(raw, "default_ttl")
     models = tuple(_parse_model(entry, flags, reserved) for entry in _require_sequence(raw, "models"))
     _check_unique_ids(models)
     _check_concurrency(concurrency)
     _check_ttl(default_ttl)
-    _check_ctx_ceiling(models, safe_max)
+    _check_ctx_ceiling(models, safe_max, ram.safe_ctx_max_ram_kv)
     _check_prompt_window(models, reserved)
     _check_vram_safety(models, margin, budget)
+    _check_ram_safety(models, margin, ram_budget)
     opencode = _parse_opencode(_require_mapping(raw, "opencode"), models)
     _check_agents_declared(opencode, models)
     _check_smallest_model(opencode, models)
@@ -259,12 +293,38 @@ def validate_config(raw: Mapping[str, Any]) -> LocalModelsConfig:
         reserved_tokens=reserved,
         vram_budget_mb=budget,
         safe_ctx_max=safe_max,
+        ram_budget_mb=ram_budget,
     )
 
 
 def _err(what: str, why: str) -> ValueError:
     """Construye un ValueError accionable (WHAT+WHY+WHERE)."""
     return ValueError(f"WHAT: {what}. WHY: {why}. WHERE: local_models.validate_config")
+
+
+#: Plantilla ``${VAR}`` aceptada en rutas de la SSOT (portable multi-SO).
+_ENV_TEMPLATE_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
+
+
+def _expand_path(value: str, context: str) -> str:
+    """Resuelve plantillas ``${VAR}`` de entorno en rutas de la SSOT.
+
+    Permite una SSOT portable (Windows/macOS/Linux): se declara
+    ``${SWARMIND_LLAMA_DIR}/bin/llama-server`` y cada maquina aporta su raiz
+    via variable de entorno. Si la variable no esta definida, se conserva la
+    plantilla literal (fail-soft: no rompe la carga sin env; el render queda
+    pendiente de resolver en la maquina destino).
+
+    Args:
+        value: Valor crudo de la SSOT (puede contener ``${VAR}``).
+        context: Contexto del campo (backend/model <id>) para errores.
+
+    Returns:
+        Ruta con las plantillas resueltas via ``os.environ``.
+    """
+    return _ENV_TEMPLATE_RE.sub(
+        lambda m: os.getenv(m.group(1), m.group(0)), value
+    )
 
 
 def _require_mapping(raw: Mapping[str, Any], key: str) -> Mapping[str, Any]:
@@ -310,11 +370,11 @@ def _optional_int(raw: Mapping[str, Any], key: str, default: int) -> int:
 def _parse_backend(raw: Mapping[str, Any]) -> LocalBackend:
     """Parsea el bloque ``backend`` a ``LocalBackend``."""
     return LocalBackend(
-        server_exe=_require_str(raw, "server_exe", "backend"),
+        server_exe=_expand_path(_require_str(raw, "server_exe", "backend"), "backend"),
         host=_require_str(raw, "host", "backend"),
         port=_require_int(raw, "port"),
-        swap_exe=_require_str(raw, "swap_exe", "backend"),
-        swap_config=_require_str(raw, "swap_config", "backend"),
+        swap_exe=_expand_path(_require_str(raw, "swap_exe", "backend"), "backend"),
+        swap_config=_expand_path(_require_str(raw, "swap_config", "backend"), "backend"),
         start_port=_require_int(raw, "start_port"),
     )
 
@@ -344,12 +404,16 @@ def _parse_model(entry: Any, flags: Mapping[str, str], reserved: int = RESERVED_
     prompt_max = _optional_int(entry, "max_prompt_tokens", ctx_value - reserved)
     return LocalModel(
         id=model_id,
-        file=_require_str(entry, "file", f"model {model_id}"),
+        file=_expand_path(_require_str(entry, "file", f"model {model_id}"), f"model {model_id}"),
         ctx=ctx_value,
         flags=flags_ref,
         role=_require_str(entry, "role", f"model {model_id}"),
         max_prompt_tokens=prompt_max,
+        ram_mb=_optional_int(entry, "ram_mb", 0),
         aliases=_parse_aliases(entry),
+        server_exe=_expand_path(str(entry["server_exe"]), f"model {model_id}")
+        if entry.get("server_exe")
+        else None,
         opencode=bool(entry.get("opencode", True)),
     )
 
@@ -374,11 +438,18 @@ def _check_unique_ids(models: tuple[LocalModel, ...]) -> None:
 
 
 def _parse_opencode(raw: Mapping[str, Any], models: tuple[LocalModel, ...]) -> OpencodeSSOT:
-    """Parsea el bloque ``opencode`` y valida sus referencias a la flota."""
+    """Parsea el bloque ``opencode`` y valida sus referencias a la flota.
+
+    ``model`` (default del runtime) puede ser el cloud_oracle (politica LOCAL
+    TRIVIAL: el oraculo resuelve, el local atiende small_model); ``small_model``
+    SIEMPRE debe ser un modelo local declarado.
+    """
     ids = {model.id for model in models}
+    cloud_oracle = _require_str(raw, "cloud_oracle", "opencode")
     model_id = _require_str(raw, "model", "opencode")
     small_id = _require_str(raw, "small_model", "opencode")
-    _check_flota_ref("model", model_id, ids)
+    if model_id != cloud_oracle:
+        _check_flota_ref("model", model_id, ids)
     _check_flota_ref("small_model", small_id, ids)
     agents_raw = _require_mapping(raw, "agents")
     agents = {str(key): str(value) for key, value in agents_raw.items()}
@@ -387,7 +458,7 @@ def _parse_opencode(raw: Mapping[str, Any], models: tuple[LocalModel, ...]) -> O
         base_url=_require_str(raw, "base_url", "opencode"),
         model=model_id,
         small_model=small_id,
-        cloud_oracle=_require_str(raw, "cloud_oracle", "opencode"),
+        cloud_oracle=cloud_oracle,
         agents=agents,
     )
 
@@ -433,13 +504,21 @@ def _check_ttl(default_ttl: int) -> None:
         )
 
 
-def _check_ctx_ceiling(models: tuple[LocalModel, ...], safe_max: int) -> None:
-    """Rechaza ctx sobre el techo seguro (40960 causo TDR)."""
+def _check_ctx_ceiling(models: tuple[LocalModel, ...], safe_max: int, safe_max_ram_kv: int) -> None:
+    """Rechaza ctx sobre el techo seguro, segun DONDE vive la KV cache.
+
+    WHY: el techo de 36864 existe porque la KV cache en VRAM dispara TDR en
+    8 GB con WDDM (40960 lo causo). Los perfiles de `RAM_KV_FLAGS` mueven la
+    KV a RAM con `-nkvo`: ahi ese limite no aplica, lo pone la RAM del equipo
+    (`safe_max_ram_kv`, seteable por ``SWARMIND_SAFE_CTX_MAX_RAM_KV``).
+    """
     for model in models:
-        if model.ctx > safe_max:
+        tope = safe_max_ram_kv if model.flags in RAM_KV_FLAGS else safe_max
+        if model.ctx > tope:
             raise _err(
-                f"ctx={model.ctx} > safe_ctx_max={safe_max} (modelo {model.id})",
-                "subir el ctx dispara TDR en 8GB con WDDM",
+                f"ctx={model.ctx} > techo={tope} (modelo {model.id}, perfil {model.flags})",
+                "el KV en VRAM dispara TDR en 8GB con WDDM; para contextos mayores "
+                "usa el perfil CAPACITY (mueve el KV a RAM con -nkvo)",
             )
 
 
@@ -475,6 +554,28 @@ def _check_vram_safety(models: tuple[LocalModel, ...], margin: int, budget: int)
             )
 
 
+def _check_ram_safety(models: tuple[LocalModel, ...], margin: int, budget: int) -> None:
+    """Rechaza config que pueda volcar RAM (anti-OOM/cuelgue del sistema).
+
+    Con CAPACITY (-nkvo) el KV cache vive en RAM del sistema: cada modelo debe
+    declarar ``ram_mb`` (pesos + KV) y ``ram_mb + margen <= budget`` (16GB con
+    margen). Un modelo sin ``ram_mb`` es rechazado (fail-fast: medir y declarar).
+    """
+    for model in models:
+        if model.ram_mb <= 0:
+            raise _err(
+                f"modelo {model.id!r} sin huella RAM (ram_mb)",
+                "con CAPACITY/-nkvo el KV vive en RAM; medir con bench_profiles "
+                "y declarar ram_mb para verificar el margen anti-volcado",
+            )
+        if model.ram_mb + margin > budget:
+            raise _err(
+                f"ram_mb={model.ram_mb} + margen={margin} > {budget} "
+                f"(modelo {model.id}, perfil {model.flags})",
+                "el KV en RAM + pesos no debe arriesgar un volcado/OOM del sistema",
+            )
+
+
 def _check_agents_declared(oc: OpencodeSSOT, models: tuple[LocalModel, ...]) -> None:
     """Exige agentes locales sobre modelos declarados (u oraculo cloud)."""
     ids = {model.id for model in models}
@@ -490,15 +591,19 @@ def _check_agents_declared(oc: OpencodeSSOT, models: tuple[LocalModel, ...]) -> 
 
 
 def _check_smallest_model(oc: OpencodeSSOT, models: tuple[LocalModel, ...]) -> None:
-    """Exige small_model = el modelo chat mas pequeno (por VRAM)."""
+    """Exige small_model entre los chats locales (politica LOCAL TRIVIAL).
+
+    Antes "el mas pequeno por VRAM"; ahora el adecuado para tareas triviales
+    con calidad (benchmark data/signals: phi-4-mini gana al 3B). Cualquier
+    chat local expuesto es valido; el oraculo cloud nunca es small_model.
+    """
     chats = [m for m in models if m.role not in TOOLLESS_ROLES and m.opencode]
     if not chats:
         return
-    smallest = min(chats, key=lambda m: footprint_mb(m.id) or 10**9)
-    if oc.small_model != smallest.id:
+    if oc.small_model not in {m.id for m in chats}:
         raise _err(
-            f"small_model={oc.small_model!r} != {smallest.id!r} (mas pequeno)",
-            "small_model debe ser el chat mas pequeno para tareas simples",
+            f"small_model={oc.small_model!r} no es un chat local {sorted(m.id for m in chats)}",
+            "small_model debe ser un modelo local de chat (trivial); el oraculo no cuenta",
         )
 
 
@@ -532,7 +637,7 @@ def render_llama_swap(config: LocalModelsConfig) -> str:
 def _render_model_block(model: LocalModel, config: LocalModelsConfig) -> list[str]:
     """Bloque YAML (ttl/concurrencyLimit/aliases/cmd) de llama-swap."""
     cmd = (
-        f'{config.backend.server_exe} -m "{model.file}" {config.flags[model.flags]} '
+        f'{model.server_exe or config.backend.server_exe} -m "{model.file}" {config.flags[model.flags]} '
         f"-c {model.ctx} --host {config.backend.host} --port ${{PORT}}"
     )
     block = [

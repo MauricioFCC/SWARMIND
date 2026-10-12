@@ -17,6 +17,10 @@ import logging
 import random
 import time
 
+from harness.failure_registry import (
+    FailureType,
+    Severity,
+)
 from harness.orchestrator.mars_scheduler_types import (
     CONGESTION_THRESHOLD,
     Assignment,
@@ -140,6 +144,7 @@ class _MARSSchedulingMixin(_MARSStateMixin):
                     best_assignment.agent_id,
                     time.time(),
                 )
+                self._running_specs[task.task_id] = task
                 self._total_scheduled += 1
 
                 logger.info(
@@ -272,8 +277,9 @@ class _MARSSchedulingMixin(_MARSStateMixin):
             )
             self._q_table[(agent_id, task_id)] = updated_q
 
-            # Limpiar tarea de ejecucion
+            # Limpiar tarea de ejecucion (conservando la spec para el drain)
             del self._running_tasks[task_id]
+            spec = self._running_specs.pop(task_id, None)
 
             # Registrar en historial
             self._completed_tasks.append({
@@ -302,8 +308,73 @@ class _MARSSchedulingMixin(_MARSStateMixin):
             task_id, agent_id, success, latency, cost, reward, updated_q,
         )
 
+        # Failure distillation: drenar el fallo al FailureRegistry central
+        if not success:
+            self._drain_task_failure_to_registry(
+                task_id, agent_id, latency, cost, spec,
+            )
+
         # Intentar despachar tareas encoladas
         self._dispatch_queued()
+
+    def _drain_task_failure_to_registry(
+        self,
+        task_id: str,
+        agent_id: str,
+        latency: float,
+        cost: float,
+        spec: TaskSpec | None,
+    ) -> None:
+        """Drena una tarea fallida al FailureRegistry central.
+
+        Persiste un ``FailureRecord`` cuando una tarea termina con
+        ``success=False``, de modo que el loop de auto-mejora pueda destilar
+        el fallo en skills (failure distillation, arXiv 2607.29468 SESA).
+
+        Es tolerante a fallos de persistencia: si el registry lanza OSError
+        se loguea un warning y NO se propaga. WHY: el outcome del scheduler
+        no debe romper por la persistencia del fallo (el drain es best-effort).
+
+        Args:
+            task_id: ID de la tarea fallida.
+            agent_id: ID del agente que la ejecuto.
+            latency: Latencia real en segundos.
+            cost: Costo real en tokens.
+            spec: TaskSpec original (o None si no se conservo), usado para
+                tomar la descripcion y el task_type reales.
+        """
+        task_type = spec.task_type if spec is not None else "unknown"
+        description = (
+            spec.description
+            if spec is not None and spec.description
+            else f"MARS task '{task_id}' (type={task_type})"
+        )
+        try:
+            self._failure_registry.record(
+                task=description,
+                failure_type=FailureType.RUNTIME,
+                error_msg=(
+                    f"Tarea '{task_id}' fallo con agent_id='{agent_id}': "
+                    f"latency={latency:.2f}s, cost={cost:.0f} tokens"
+                ),
+                root_cause=(
+                    f"El agente '{agent_id}' no completo la tarea '{task_id}' "
+                    f"(task_type='{task_type}'); latency={latency:.2f}s, "
+                    f"cost={cost:.0f}"
+                ),
+                resolution="pending",
+                severity=Severity.MEDIUM,
+                function_name="MARSScheduler.record_outcome",
+                tags=("mars", agent_id, task_type),
+            )
+        except OSError as exc:
+            logger.warning(
+                "WHAT=no se pudo persistir el fallo de MARS en "
+                "FailureRegistry WHY=%s WHERE=MARSScheduler."
+                "_drain_task_failure_to_registry (el outcome se registro "
+                "igual; el drain es best-effort)",
+                exc,
+            )
 
     def dispatch_queued(self) -> int:
         """Intenta despachar tareas de la cola a agentes disponibles.
@@ -355,6 +426,7 @@ class _MARSSchedulingMixin(_MARSStateMixin):
                     profile.total_tasks += 1
                     profile.last_assigned = time.time()
                     self._running_tasks[task.task_id] = (agent_id, time.time())
+                    self._running_specs[task.task_id] = task
                     self._total_scheduled += 1
                     assigned = True
                     dispatched += 1

@@ -53,24 +53,36 @@ quality: {clean_code:true, dry:true, kiss:true, ssot:true, docstrings_es:true, m
 8. Consolidar resultados + structured compaction (sin truncation)
 9. Entregar respuesta unificada validada por guardian
 
-## ORACLE -> LOCAL (estandar SIN EXCEPCIONES)
+## ORACLE CLOUD (LOCAL SOLO TRIVIAL - politica vigente)
 
-Eres el ORACULO cloud: planificas, decides y dices QUE y COMO. La EJECUCION la
-hacen SIEMPRE los workers LOCALES en PARALELO. La UNICA excepcion es que el
-backend local (llama-swap :11434) no responda tras intentarlo (el harness lo
-reporta); ni siquiera ahi hagas tu el trabajo: registra el fallo y degrada a
-cloud solo como oraculo de minima intervencion.
+Eres el ORACULO cloud: planificas, decides y ejecutas el trabajo REAL con
+calidad frontier. Los LLM locales (mimo-9B, phi-reasoning) carecen de calidad
+para razonamiento/codigo complejo: se reservan para small_model (tareas
+triviales: rename, formateo, resumen corto) via `SWARMIND_REQUIRE_LOCAL=0`
+(default, politica LOCAL SOLO TRIVIAL).
+
+1. COMPLEJO (refactor multi-archivo, invariantes, contexto largo): lo resuelves
+   tu (cloud, `opencode-go/deepseek-v4.1-flash`) o delegas a subagentes que
+   corren tambien en cloud. No fuerces al local: no tiene calidad frontier.
+2. TRIVIAL (rename, resumen corto, formateo): deja que el harness use
+   `small_model` (mimo local) para no pagar tokens de cloud en lo mecanico.
+3. SOLO si el backend cloud falla de verdad (rate limit/outage tras
+   reintentos): el harness degrada a local como fallback; registra SIEMPRE el
+   motivo en el trace (WHAT/WHY/WHERE).
+4. Para exigir local SIEMPRE (si la flota gana calidad), el usuario puede
+   exportar `SWARMIND_REQUIRE_LOCAL=1`; por defecto esta INACTIVO.
 
 Patron obligatorio (ahorro de tokens):
 1. ORACULO (tu, cloud): descompon en subtareas cerradas con instrucciones
-   precisas y COMPACTAS (que + como + criterio de aceptacion). NO ejecutes tu
-   lo que puede hacer un local; tu token es caro.
-2. WORKERS LOCALES (builder/guardian/scientist/... con `model: llamacpp/...`):
-   ejecutan en PARALELO via Task tool. Trivial-pero-token-heavy SIEMPRE a local.
-3. Comunicacion EFICIENTE: mensajes cortos al local; el local devuelve
-   resultados compactos (sin volcar contexto); tu consolidas y verificas (1%).
+   precisas y COMPACTAS (que + como + criterio de aceptacion).
+2. WORKERS (cloud): ejecutan en PARALELO via Task tool; el harness reserva
+   small_model (mimo local) para lo trivial. Si un worker resuelve a
+   `llamacpp/*` en trabajo complejo, revisa el routing (drift).
+3. Comunicacion EFICIENTE: mensajes cortos; resultados compactos (sin volcar
+   contexto); tu consolidas y verificas.
 4. Verificacion: antes de entregar, confirma en el log/trace que cada subtarea
-   corrio en `providerID=llamacpp` (o registra por que no habia backend local).
+   corrio en el provider esperado (opencode-go para trabajo real; llamacpp
+   solo para small_model/trivial o fallback documentado).
 
 ## Auto-deteccion
 - @builder: implement, code, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, db, trading, design-system, accesibilidad, responsive, a11y

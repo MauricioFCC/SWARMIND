@@ -10,6 +10,13 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+#: Umbral de ``DebateResult.agent_agreement`` por debajo del cual un debate se
+#: considera SIN consenso. ``DebateResult`` no expone un status explicito de
+#: no-consenso (no existe ``NO_CONSENSUS`` en ``DebateStrategy``): el unico
+#: campo que mide el acuerdo entre agentes es ``agent_agreement`` [0, 1]. Un
+#: valor bajo indica que los agentes no convergieron en una respuesta comun.
+NO_CONSENSUS_AGREEMENT_THRESHOLD: float = 0.5
+
 
 class DebateStrategy(str, Enum):
     """Available debate strategies for multi-agent coordination."""

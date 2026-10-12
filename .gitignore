@@ -52,6 +52,8 @@ harness/db/_archived/
 harness/db/import/
 harness/db/iteration_reports/
 harness/db/failures.jsonl
+# ProceduralSkills generados por FailureDistiller (formato propio, runtime, regenerables)
+.opencode/skills/auto/
 memory_rag/*.db
 
 # Environment

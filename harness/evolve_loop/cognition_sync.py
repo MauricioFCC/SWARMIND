@@ -25,6 +25,11 @@ logger = logging.getLogger(__name__)
 
 _COGNITION_COLLECTION = "asi_cognition_store"
 _EMBEDDING_DIM = 384
+# Limite de escaneo para verificaciones de existencia por id (``has_lesson``).
+# WHY: ``get_lesson_by_id`` limita a ``top_k=1`` ANTES de filtrar, por lo que en
+# colecciones densas puede no encontrar el id; escanear amplio antes de filtrar
+# hace fiable la comprobacion de existencia (LanceDB y store en memoria).
+_HAS_LESSON_SCAN_LIMIT = 10_000
 
 
 # ---------------------------------------------------------------------------
@@ -113,6 +118,8 @@ class CognitionSync:
         domain: str,
         tags: list[str] | None = None,
         metrics: dict[str, Any] | None = None,
+        *,
+        lesson_id: str | None = None,
     ) -> CognitionLesson:
         """
         Create a new cognition lesson and persist it to the store.
@@ -123,12 +130,16 @@ class CognitionSync:
             domain: Knowledge domain (e.g. ``"trading"``, ``"ml"``, ``"infra"``).
             tags: Optional list of tags for filtering.
             metrics: Optional dict of numeric or categorical metrics.
+            lesson_id: Id deterministico opcional (KW-only). Si es ``None`` se
+                genera un UUID. Se usa para siembras idempotentes (p. ej.
+                ``CognitionSeeder``), donde el mismo origen debe producir el
+                mismo id para deduplicar.
 
         Returns:
             The newly created ``CognitionLesson``.
         """
         lesson = CognitionLesson(
-            id=str(uuid.uuid4()),
+            id=lesson_id or str(uuid.uuid4()),
             title=title,
             content=content,
             domain=domain,
@@ -236,6 +247,44 @@ class CognitionSync:
         lesson = CognitionLesson.from_dict(meta)
         self._bump_access(lesson.id)
         return lesson
+
+    def has_lesson(self, lesson_id: str) -> bool:
+        """
+        Indica si existe una leccion con ``lesson_id`` (metodo aditivo).
+
+        WHAT: comprobacion booleana de existencia por id. WHY: ``get_lesson_by_id``
+        limita a ``top_k=1`` antes de filtrar, lo que puede dar falsos negativos
+        en colecciones densas; aqui se escanea con ``_HAS_LESSON_SCAN_LIMIT``
+        antes de filtrar. WHERE: dedup idempotente del ``CognitionSeeder``.
+
+        Args:
+            lesson_id: Identificador de la leccion (p. ej. ``"adr-0092"``).
+
+        Returns:
+            ``True`` si existe; ``False`` si no existe, si el id es vacio, o si
+            el store falla (best-effort, logueado).
+        """
+        if not lesson_id:
+            return False
+
+        try:
+            dummy = np.zeros(_EMBEDDING_DIM, dtype=np.float32)
+            results = self.store.search(
+                _COGNITION_COLLECTION,
+                dummy,
+                top_k=_HAS_LESSON_SCAN_LIMIT,
+                filters={"id": lesson_id},
+            )
+        except Exception:
+            logger.exception(
+                "has_lesson: fallo al consultar la leccion '%s' "
+                "(WHAT=store.search lanzo; WHY=store no disponible/corrupto; "
+                "WHERE=CognitionSync.has_lesson)",
+                lesson_id,
+            )
+            return False
+
+        return bool(results)
 
     def get_lessons_by_domain(
         self, domain: str, top_k: int = 20

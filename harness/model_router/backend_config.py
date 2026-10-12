@@ -31,6 +31,10 @@ DEFAULT_MIN_SAFE_CTX = 2048
 DEFAULT_CTX_STEP = 1024
 DEFAULT_VRAM_SAFETY = 0.85
 DEFAULT_GPU_BUDGET_MB = 7000
+#: Defaults anti-volcado RAM (16GB fisicos - SO; espejo de local_models).
+DEFAULT_RAM_BUDGET_MB = 14000
+DEFAULT_RAM_MARGIN_MB = 1500
+DEFAULT_SAFE_CTX_MAX_RAM_KV = 131072
 DEFAULT_BASE_URL = "http://127.0.0.1:11434"
 #: Binario de llama-swap. Default None: se DESCUBRE en runtime por entorno,
 #: ``shutil.which`` o candidatos por plataforma (NUNCA rutas de usuario fijas).
@@ -51,6 +55,9 @@ ENV_MIN_FREE_VRAM_MB = "SWARMIND_MIN_FREE_VRAM_MB"
 ENV_MIN_SAFE_CTX = "SWARMIND_MIN_SAFE_CTX"
 ENV_CTX_STEP = "SWARMIND_CTX_STEP"
 ENV_VRAM_SAFETY = "SWARMIND_VRAM_SAFETY"
+ENV_RAM_BUDGET_MB = "SWARMIND_RAM_BUDGET_MB"
+ENV_SAFETY_MARGIN_MB = "SWARMIND_SAFETY_MARGIN_MB"
+ENV_SAFE_CTX_MAX_RAM_KV = "SWARMIND_SAFE_CTX_MAX_RAM_KV"
 ENV_BASE_URL = "SWARMIND_LOCAL_BASE_URL"
 ENV_BASE_URL_LEGACY = "SWARMIND_LLAMA_BASE_URL"
 ENV_EXECUTABLE = "SWARMIND_LLAMA_EXECUTABLE"
@@ -288,6 +295,68 @@ class GpuBudget:
             min_safe_ctx=_env_int(ENV_MIN_SAFE_CTX, DEFAULT_MIN_SAFE_CTX),
             ctx_step=_env_int(ENV_CTX_STEP, DEFAULT_CTX_STEP),
             vram_safety=_env_float(ENV_VRAM_SAFETY, DEFAULT_VRAM_SAFETY),
+        )
+
+
+@dataclass(frozen=True)
+class RamBudget:
+    """Presupuesto RAM anti-volcado/OOM (configurable por entorno).
+
+    Espejo de ``GpuBudget`` pero para la RAM del sistema: con el perfil
+    CAPACITY (``-nkvo``) la KV cache vive en RAM, asi que el limite real de
+    la flota son los 16GB fisicos (no los 8GB de VRAM). Los tres knobs se
+    pueden endurecer por entorno al migrar de maquina (ej. 32GB) sin tocar
+    la SSOT; un YAML que declare el campo sigue teniendo prioridad.
+
+    Attributes:
+        budget_mb: RAM total utilizable por un modelo (pesos + KV en CAPACITY).
+        margin_mb: Margen estatico que debe quedar libre (default del
+            ``safety_margin_mb`` compartido VRAM+RAM de la SSOT).
+        safe_ctx_max_ram_kv: Techo de contexto con la KV en RAM (perfil
+            CAPACITY; el limite lo pone la RAM, no la VRAM).
+    """
+
+    budget_mb: int = DEFAULT_RAM_BUDGET_MB
+    margin_mb: int = DEFAULT_RAM_MARGIN_MB
+    safe_ctx_max_ram_kv: int = DEFAULT_SAFE_CTX_MAX_RAM_KV
+
+    def __post_init__(self) -> None:
+        """Valida invariantes del presupuesto RAM (WHAT+WHY+WHERE si viola)."""
+        if self.budget_mb <= 0:
+            raise ValueError(
+                f"WHAT: budget_mb invalido ({self.budget_mb}). "
+                "WHY: el presupuesto RAM debe ser positivo. "
+                "WHERE: RamBudget.__post_init__"
+            )
+        if self.margin_mb < 0:
+            raise ValueError(
+                f"WHAT: margin_mb negativo ({self.margin_mb}). "
+                "WHY: el margen anti-volcado no puede ser negativo. "
+                "WHERE: RamBudget.__post_init__"
+            )
+        if self.safe_ctx_max_ram_kv <= 0:
+            raise ValueError(
+                f"WHAT: safe_ctx_max_ram_kv invalido ({self.safe_ctx_max_ram_kv}). "
+                "WHY: el techo de contexto con KV en RAM debe ser positivo. "
+                "WHERE: RamBudget.__post_init__"
+            )
+
+    @classmethod
+    def from_env(cls) -> RamBudget:
+        """Construye el presupuesto RAM desde el entorno (defaults 16GB).
+
+        Returns:
+            RamBudget con los overrides presentes.
+
+        Raises:
+            ValueError: Si una combinacion de env viola las invariantes.
+        """
+        return cls(
+            budget_mb=_env_int(ENV_RAM_BUDGET_MB, DEFAULT_RAM_BUDGET_MB),
+            margin_mb=_env_int(ENV_SAFETY_MARGIN_MB, DEFAULT_RAM_MARGIN_MB),
+            safe_ctx_max_ram_kv=_env_int(
+                ENV_SAFE_CTX_MAX_RAM_KV, DEFAULT_SAFE_CTX_MAX_RAM_KV
+            ),
         )
 
 

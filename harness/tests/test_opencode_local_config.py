@@ -41,31 +41,33 @@ EXPECTED_HOSTS = frozenset({"127.0.0.1", "localhost"})
 EXPECTED_PORT = 11434
 #: Path del endpoint OpenAI-compatible.
 EXPECTED_PATH = "/v1"
-#: Modelo por defecto = coding local (tier CODING, worker agentico multi-turn).
-EXPECTED_DEFAULT_MODEL = "llamacpp/qwen2.5-coder-3b-iq4-xs"
-#: Modelo pequeno para tareas simples (tier FAST, 4B).
-EXPECTED_SMALL_MODEL = "llamacpp/qwen3-5-4b-gguf-ud-q4-k-xl"
+#: Modelo por defecto = ORACULO cloud (politica LOCAL TRIVIAL: el oraculo
+#: resuelve el trabajo; el local solo small_model hasta mejor hardware).
+EXPECTED_DEFAULT_MODEL = "opencode-go/deepseek-v4.1-flash"
+#: Modelo pequeno local para tareas triviales (unico local medianamente
+#: funcional: 9B distill; benchmark data/signals).
+EXPECTED_SMALL_MODEL = "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
 #: Provider cloud del coordinator (guia/oraculo; NO es un worker local).
 EXPECTED_CLOUD_PROVIDER = "opencode-go"
 #: Presupuesto GPU (anti-TDR): cada modelo debe caber en <7000MB y se cargan
 #: de a UNO por vez (llama-swap swap + purga al cambiar de modelo).
 MAX_MODEL_VRAM_MB = 7000
-#: Huella de VRAM por modelo (espejo de `fleet_manifest.py` / `llama-swap.yaml`).
+#: Huella de VRAM por modelo (espejo `FALLBACK_VRAM_MB`; CAPACITY=KV en RAM).
 MODEL_VRAM_MB = {
-    "qwen2.5-coder-3b-iq4-xs": 3300,
-    "phi-4-mini-instruct-q4-k-m": 5700,
-    "qwen3-5-4b-gguf-ud-q4-k-xl": 4600,
-    "deepseek-r1-distill-qwen-7b-q2-k": 4400,
-    "qwen3-embedding-0-6b": 2100,
+    "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs": 6400,
+    "phi-4-mini-reasoning-q4-k-m": 2600,
+    "qwen3-4b-thinking-2507-q4-k-m": 2600,
+    "qwen3-embedding-0-6b": 3800,
+    "ternary-bonsai-2-27b-ptq1-0": 5700,
 }
-#: Espejo de `llama-swap.yaml`: 5 modelos por nombre corto (SVE).
+#: Espejo de `llama-swap.yaml`: flota 5 modelos (9B/KV + ternary decision).
 EXPECTED_MODELS = frozenset(
     {
-        "qwen2.5-coder-3b-iq4-xs",
-        "phi-4-mini-instruct-q4-k-m",
-        "qwen3-5-4b-gguf-ud-q4-k-xl",
-        "deepseek-r1-distill-qwen-7b-q2-k",
+        "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs",
+        "phi-4-mini-reasoning-q4-k-m",
+        "qwen3-4b-thinking-2507-q4-k-m",
         "qwen3-embedding-0-6b",
+        "ternary-bonsai-2-27b-ptq1-0",
     }
 )
 #: Proveedores retirados que NO deben reaparecer en la config.
@@ -166,7 +168,12 @@ def check_json_schema(config: Mapping[str, Any]) -> list[str]:
 
 
 def check_model_prefix(config: Mapping[str, Any]) -> list[str]:
-    """Verifica que el prefijo de `model`/`small_model` exista en `provider`."""
+    """Verifica que el prefijo de `model`/`small_model` exista en `provider`.
+
+    Politica LOCAL TRIVIAL: `model` (default del runtime) puede ser el oraculo
+    cloud (provider externo de opencode, no de la SSOT) -> se permite para la
+    clave `model`; `small_model` SIEMPRE debe ser local (`llamacpp`).
+    """
     violations: list[str] = []
     for key in ("model", "small_model"):
         prefix = _model_prefix(config.get(key))
@@ -176,6 +183,8 @@ def check_model_prefix(config: Mapping[str, Any]) -> list[str]:
                 f"WHY: opencode resuelve el provider por el prefijo. "
                 f"WHERE: {CONFIG_PATH.name}:{key}."
             )
+        elif prefix == EXPECTED_CLOUD_PROVIDER and key == "model":
+            continue
         elif prefix not in _provider_ids(config):
             violations.append(
                 f"WHAT: {key} usa provider '{prefix}' inexistente. "
@@ -290,11 +299,19 @@ def check_no_stale_base_url(raw_text: str) -> list[str]:
 
 
 def check_default_model_is_declared(config: Mapping[str, Any]) -> list[str]:
-    """Verifica que `model`/`small_model` apunten a modelos declarados."""
+    """Verifica `model`/`small_model` con la politica LOCAL TRIVIAL.
+
+    ``model`` (default del runtime) puede ser el oraculo cloud (provider
+    externo de opencode, no registrado en la SSOT); ``small_model`` SIEMPRE
+    debe ser un modelo local declarado.
+    """
     declared = _declared_models(config)
     violations: list[str] = []
     for key in ("model", "small_model"):
-        if _model_prefix(config.get(key)) != EXPECTED_PROVIDER:
+        prefix = _model_prefix(config.get(key))
+        if prefix == EXPECTED_CLOUD_PROVIDER and key == "model":
+            continue
+        if prefix != EXPECTED_PROVIDER:
             violations.append(
                 f"WHAT: {key}={config.get(key)!r} no usa provider '{EXPECTED_PROVIDER}'. "
                 f"WHY: el default debe ser local. WHERE: {CONFIG_PATH.name}:{key}."
@@ -362,13 +379,13 @@ def test_config_is_valid_json() -> None:
 
 
 def test_model_prefix_matches_provider() -> None:
-    """El prefijo de `model`/`small_model` existe como provider declarado."""
+    """El prefijo de `model`/`small_model` existe como provider (o oraculo)."""
     config = _read_config()
 
     prefixes = {_model_prefix(config.get("model")), _model_prefix(config.get("small_model"))}
 
     assert check_model_prefix(config) == []
-    assert prefixes <= _provider_ids(config)
+    assert prefixes <= (_provider_ids(config) | {EXPECTED_CLOUD_PROVIDER})
 
 
 def test_base_url_points_to_llama_swap() -> None:
@@ -402,12 +419,13 @@ def test_declared_models_under_vram_cap() -> None:
 
 
 def test_agent_models_are_declared_local() -> None:
-    """Cada agente usa un modelo local DECLARADO o el provider cloud como oraculo.
+    """Cada agente usa el oraculo cloud O un modelo local DECLARADO.
 
-    El coordinator (agente primario) es la guia/oraculo cloud
-    (`opencode-go/deepseek-v4.1-flash`); los subagentes (builder/guardian/
-    scientist) deben usar el provider local `llamacpp` con un modelo declarado.
-    El cloud solo se admite para el coordinator (oraculo), no como worker local.
+    Politica LOCAL SOLO TRIVIAL (2026-10-10): TODOS los agentes (workers) van
+    al oraculo cloud (`opencode-go/deepseek-v4.1-flash`) porque los LLM
+    locales carecen de calidad frontier; el local (mimo) se reserva para
+    small_model (tareas triviales). Si un agente apunta a `llamacpp`, su
+    modelo DEBE estar declarado en la flota.
     """
     config = _read_config()
     agents = config.get("agent", {})
@@ -415,14 +433,13 @@ def test_agent_models_are_declared_local() -> None:
     declared = _declared_models(config)
     for name, spec in agents.items():
         model = spec.get("model")
-        if _model_prefix(model) == EXPECTED_CLOUD_PROVIDER:
-            assert name == "coordinator", (
-                f"agente {name!r} no puede usar el provider cloud "
-                f"'{EXPECTED_CLOUD_PROVIDER}' (solo el coordinator/oraculo): {model!r}"
-            )
+        prefix = _model_prefix(model)
+        if prefix == EXPECTED_CLOUD_PROVIDER:
+            # Politica LOCAL SOLO TRIVIAL: todos los agentes pueden ir al oraculo.
             continue
-        assert _model_prefix(model) == EXPECTED_PROVIDER, (
-            f"agente {name!r} no usa el provider local '{EXPECTED_PROVIDER}': {model!r}"
+        assert prefix == EXPECTED_PROVIDER, (
+            f"agente {name!r} no usa el provider local '{EXPECTED_PROVIDER}' "
+            f"ni el cloud '{EXPECTED_CLOUD_PROVIDER}': {model!r}"
         )
         assert _model_name(model) in declared, (
             f"agente {name!r} apunta a un modelo no declarado: {model!r}"
@@ -441,13 +458,14 @@ def test_no_stale_ollama_provider() -> None:
 
 
 def test_default_model_is_declared() -> None:
-    """`model`/`small_model` son provider `llamacpp` + modelos declarados."""
+    """`model` es el oraculo cloud; `small_model` es provider `llamacpp` declarado."""
     config = _read_config()
 
     assert check_default_model_is_declared(config) == []
     declared = _declared_models(config)
-    assert _model_name(config.get("model")) in declared
+    assert _model_prefix(config.get("model")) == EXPECTED_CLOUD_PROVIDER
     assert _model_name(config.get("small_model")) in declared
+    assert _model_prefix(config.get("small_model")) == EXPECTED_PROVIDER
 
 
 def test_read_config_missing_file_raises(tmp_path: Path) -> None:

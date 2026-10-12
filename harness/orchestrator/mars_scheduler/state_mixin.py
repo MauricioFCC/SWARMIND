@@ -15,6 +15,10 @@ import threading
 import time
 from typing import Any
 
+from harness.failure_registry import (
+    FailureRegistry,
+)
+from harness.failure_registry import registry as _default_failure_registry
 from harness.orchestrator.mars_scheduler_types import (
     AGING_FACTOR,
     MAX_QUEUE_SIZE,
@@ -46,6 +50,8 @@ class _MARSStateMixin:
         max_queue: int = MAX_QUEUE_SIZE,
         min_match_threshold: float = MIN_MATCH_THRESHOLD,
         aging_factor: float = AGING_FACTOR,
+        *,
+        failure_registry: FailureRegistry | None = None,
     ) -> None:
         """Inicializa el planificador MARS.
 
@@ -64,6 +70,9 @@ class _MARSStateMixin:
                 asignar directamente. Default: 0.15.
             aging_factor: Factor de incremento de prioridad por
                 envejecimiento >= 1.0. Default: 1.05.
+            failure_registry: Registry de fallos inyectable (DI). Default: el
+                singleton ``harness.failure_registry.registry``. Inyectar uno
+                aislado en tests evita escribir en ``db/failures.jsonl``.
 
         Raises:
             ValueError: Si learning_rate, discount_factor,
@@ -122,6 +131,13 @@ class _MARSStateMixin:
         self._min_match_threshold = min_match_threshold
         self._aging_factor = aging_factor
 
+        # Registry de fallos para drenar feedback fallido (failure distillation)
+        self._failure_registry = (
+            failure_registry
+            if failure_registry is not None
+            else _default_failure_registry
+        )
+
         self._lock = threading.Lock()
 
         # Agentes registrados
@@ -132,6 +148,10 @@ class _MARSStateMixin:
 
         # Tareas en ejecucion: {task_id: (agent_id, timestamp)}
         self._running_tasks: dict[str, tuple[str, float]] = {}
+
+        # TaskSpec de las tareas en ejecucion: {task_id: TaskSpec}. Permite
+        # drenar al FailureRegistry con la descripcion/tipo reales al fallar.
+        self._running_specs: dict[str, TaskSpec] = {}
 
         # Tareas completadas (historial)
         self._completed_tasks: list[dict[str, Any]] = []

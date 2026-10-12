@@ -20,7 +20,7 @@ variables:
 metadata:
   author: evolve-system
   tags: [meta, evolve, self-improvement, asi-evolve, fde, continuous-improvement]
-  dependencies: [core/evolve_loop.py, core/cognition_store.py, core/experiment_db.py, core/fde_principles.md]
+  dependencies: [harness/evolve_loop, harness/failure_registry/registry.py, core/fde_principles.md]
   input_schema:
     type: object
     required: [command, target]
@@ -131,6 +131,9 @@ Todo skill es evaluado en estas dimensiones (project-agnostic):
 
 ## 🧠 COMANDOS
 
+> **Aterrizaje (motor real)**: los comandos `!evolve ...` se ejecutan sobre el módulo
+> `harness.evolve_loop` (importar la API pública: `from harness.evolve_loop import CASEEvaluator, SelfImprover, ProceduralMemory, CognitionSync, SkillGenerator`).
+
 ### Gestión del Loop
 - `!evolve run <skill-path> [rounds=10] [sample_n=3]` — Ejecuta N rondas de mejora sobre un skill
 - `!evolve run all [rounds=5]` — Mejora todos los skills secuencialmente
@@ -158,7 +161,7 @@ Todo skill es evaluado en estas dimensiones (project-agnostic):
 - `!evolve failures stats` — Métricas agregadas (by_type, by_severity)
 - `!evolve failures unresolved` — Fallos pendientes de resolver
 - `!evolve failures skills` — Skills derivados de fallos (deduplicados)
-- `!evolve failures distill` — Distilla skills desde failure traces (traces→skills→tasks)
+- `!evolve failures distill` — Distilla skills desde failure traces (CLI real: `uv run python scripts/distill_failures.py`; traces→skills→tasks)
 
 ---
 
@@ -208,10 +211,11 @@ El loop Evolve incorpora los siguientes frameworks de frontera para auto-mejora:
 
 ## 🔗 ENLACES
 
-- 🔄 Loop Engine: `.opencode/core/evolve_loop.py`
-- 🧠 Cognition Store: `.opencode/loop/cognition_data/`
-- 📊 Experiment DB: `.opencode/loop/experiment_data/`
+- 🔄 Loop Engine: `harness/evolve_loop/` — API pública `harness.evolve_loop` (CASEEvaluator, FullEvaluation, SelfImprover, ProceduralMemory, CognitionSync, SkillGenerator, GEPAMutator, PromptEvolver, AgentBuilder, AgentPruner, run_agent_evolution)
+- 🧠 Cognition Store: `harness/db/lancedb/asi_cognition_store.lance` (vía `CognitionSync` / `CognitionLesson`)
+- 📊 Experiment DB / Failure Registry: `harness/failure_registry/registry.py` (`FailureRegistry` -> `harness/db/failures.jsonl`)
 - 🚀 FDE Principles: `.opencode/core/fde_principles.md`
 - 📋 Base Principles: `.opencode/core/base_principles.md`
-- ⚙️ Loop Config: `.opencode/loop/config.yaml`
+- ⚙️ Loop Config: variables del frontmatter (`EVOLVE_LOOP_DIR`, `EVOLVE_MAX_ROUNDS`, `EVOLVE_SAMPLE_N`, `EVOLVE_PATIENCE`)
+- 🧪 Tests del motor: `harness/tests/test_evolve_skills.py`
 
