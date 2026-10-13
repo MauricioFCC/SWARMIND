@@ -6,6 +6,7 @@ helpers de agregacion se heredan de mixins en submódulos contiguos.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from typing import Any
@@ -16,9 +17,11 @@ from harness.failure_registry import (
     Severity,
 )
 from harness.failure_registry import registry as _default_failure_registry
+from harness.orchestrator.minority_sentinel import MinoritySentinel
 
 from .aggregation import _AggregationMixin
 from .models import (
+    CONVERGENCE_THRESHOLD,
     NO_CONSENSUS_AGREEMENT_THRESHOLD,
     DebateResult,
     DebateStrategy,
@@ -49,6 +52,7 @@ class DebateOrchestrator(_StrategiesMixin, _AggregationMixin):
         vector_store: Any | None = None,
         *,
         failure_registry: FailureRegistry | None = None,
+        sentinel: MinoritySentinel | None = None,
     ) -> None:
         """
         Args:
@@ -56,11 +60,16 @@ class DebateOrchestrator(_StrategiesMixin, _AggregationMixin):
             failure_registry: Registry de fallos inyectable (DI). Default: el
                 singleton ``harness.failure_registry.registry``. Inyectar uno
                 aislado en tests evita escribir en ``db/failures.jsonl``.
+            sentinel: MinoritySentinel opcional (DI) para mayoria revertible.
+                Si se inyecta, tras agregar la mayoria en ``_majority_winner``
+                se pasa por ``sentinel.review`` (ACL 2026). Default None =>
+                comportamiento actual (backward-compat).
         """
         from harness.orchestrator.agent_bus import AgentBus
 
         self._store = vector_store
         self._bus = AgentBus(vector_store=vector_store)
+        self._sentinel = sentinel
 
         # Registry de fallos para drenar debates sin consenso
         # (failure distillation)
@@ -110,20 +119,9 @@ class DebateOrchestrator(_StrategiesMixin, _AggregationMixin):
         self._log_debate_start(session_id, task, strategy, effective_agents)
 
         # --- Strategy dispatch ---
-        if strategy == DebateStrategy.CONSENSUS:
-            result = self._execute_consensus(
-                task, effective_agents, max_rounds, effective_fn, session_id,
-            )
-        elif strategy == DebateStrategy.CRITIQUE:
-            result = self._execute_critique(
-                task, effective_agents, max_rounds, effective_fn, session_id,
-            )
-        elif strategy == DebateStrategy.DELIBERATION:
-            result = self._execute_deliberation(
-                task, effective_agents, max_rounds, effective_fn, session_id,
-            )
-        else:
-            raise ValueError(f"Unknown debate strategy: {strategy}")
+        result = self._dispatch_strategy(
+            task, effective_agents, strategy, max_rounds, effective_fn, session_id,
+        )
 
         # Log debate result
         self._log_debate_result(result)
@@ -133,6 +131,113 @@ class DebateOrchestrator(_StrategiesMixin, _AggregationMixin):
             self._drain_debate_failure_to_registry(result)
 
         return result
+
+    async def debate_async(
+        self,
+        task: str,
+        agents: list[str],
+        strategy: DebateStrategy = DebateStrategy.CONSENSUS,
+        max_rounds: int = 2,
+        dispatch_fn: DispatchFn | None = None,
+        convergence_threshold: float = CONVERGENCE_THRESHOLD,
+    ) -> DebateResult:
+        """
+        Ejecuta un debate multi-agente por la ruta asincrona.
+
+        Para ``CONSENSUS`` usa la estrategia paralela
+        (``_execute_consensus_async``, PaCoRe: latencia O(n) -> O(1)). Para
+        ``CRITIQUE``/``DELIBERATION`` delega en la ruta sincrona via
+        ``asyncio.to_thread`` (su logica es inherentemente secuencial).
+        Comparte validacion, logging y failure distillation con ``debate``
+        (ruta sync, que permanece sin cambios).
+
+        Args:
+            task: Tarea o pregunta a debatir.
+            agents: Nombres de agentes (minimo 2).
+            strategy: Estrategia de debate a usar.
+            max_rounds: Maximo de rondas de debate.
+            dispatch_fn: Callable ``(agent, task, context) -> str``. Si se
+                omite, se usa ``_default_dispatch``.
+            convergence_threshold: Umbral de convergencia para el consenso
+                async (solo aplica a ``CONSENSUS``).
+
+        Returns:
+            DebateResult con la respuesta final y el historial del debate.
+
+        Raises:
+            ValueError: Si la tarea esta vacia o hay menos de 2 agentes.
+        """
+        # --- Validation ---
+        if not task or not task.strip():
+            raise ValueError("Debate task cannot be empty.")
+        if not agents or len(agents) < 2:
+            raise ValueError("Debate requires at least 2 agents.")
+
+        effective_agents = list(agents)
+        effective_fn = dispatch_fn or self._default_dispatch
+        session_id = str(uuid.uuid4())[:8]
+
+        self._log_debate_start(session_id, task, strategy, effective_agents)
+
+        # --- Strategy dispatch (async) ---
+        if strategy == DebateStrategy.CONSENSUS:
+            result = await self._execute_consensus_async(
+                task, effective_agents, max_rounds, effective_fn, session_id,
+                convergence_threshold=convergence_threshold,
+            )
+        else:
+            result = await asyncio.to_thread(
+                self._dispatch_strategy,
+                task, effective_agents, strategy, max_rounds, effective_fn, session_id,
+            )
+
+        self._log_debate_result(result)
+
+        # Failure distillation: drenar debates sin consenso
+        if result.agent_agreement < NO_CONSENSUS_AGREEMENT_THRESHOLD:
+            self._drain_debate_failure_to_registry(result)
+
+        return result
+
+    def _dispatch_strategy(
+        self,
+        task: str,
+        agents: list[str],
+        strategy: DebateStrategy,
+        max_rounds: int,
+        dispatch_fn: DispatchFn,
+        session_id: str,
+    ) -> DebateResult:
+        """
+        Selecciona y ejecuta la estrategia de debate (ruta sincrona).
+
+        Args:
+            task: Tarea a debatir.
+            agents: Agentes participantes.
+            strategy: Estrategia a ejecutar.
+            max_rounds: Maximo de rondas.
+            dispatch_fn: Callable de dispatch.
+            session_id: ID de sesion.
+
+        Returns:
+            DebateResult de la estrategia seleccionada.
+
+        Raises:
+            ValueError: Si la estrategia no es conocida.
+        """
+        if strategy == DebateStrategy.CONSENSUS:
+            return self._execute_consensus(
+                task, agents, max_rounds, dispatch_fn, session_id,
+            )
+        if strategy == DebateStrategy.CRITIQUE:
+            return self._execute_critique(
+                task, agents, max_rounds, dispatch_fn, session_id,
+            )
+        if strategy == DebateStrategy.DELIBERATION:
+            return self._execute_deliberation(
+                task, agents, max_rounds, dispatch_fn, session_id,
+            )
+        raise ValueError(f"Unknown debate strategy: {strategy}")
 
     def _drain_debate_failure_to_registry(self, result: DebateResult) -> None:
         """Drena un debate sin consenso al FailureRegistry central.

@@ -73,7 +73,18 @@ class _AggregationMixin:
                 best_idx = i
 
         agreement = best_count / len(texts)
-        return (texts[best_idx], agreement)
+        winner = texts[best_idx]
+
+        # Integracion opcional (DI): MinoritySentinel puede revertir la
+        # mayoria hacia la minoria mas fuerte (mayoria revertible, ACL 2026).
+        # Backward-compat: sin sentinel inyectado (getattr None) el resultado
+        # no cambia. WHY: getattr desacopla la agregacion del sentinel.
+        sentinel = getattr(self, "_sentinel", None)
+        if sentinel is not None:
+            verdict = sentinel.review(winner, texts)
+            if verdict.reverted:
+                return (verdict.final_answer, agreement)
+        return (winner, agreement)
 
     @staticmethod
     def _synthesize_answers(outputs: dict[str, str]) -> str:
