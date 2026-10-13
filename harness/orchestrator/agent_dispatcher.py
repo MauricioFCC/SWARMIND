@@ -10,11 +10,13 @@ from __future__ import annotations
 import functools
 import logging
 import os
+import re
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
+from harness.common import estimate_tokens
 from harness.context.skill_inherit import (
     CompositionError,
     parse_inherit,
@@ -25,6 +27,7 @@ from harness.memory_rag.lance_vector_store import (
     COLLECTION_PROCEDURAL_SKILLS,
     LanceVectorStore,
 )
+from harness.observability.token_telemetry import TokenTelemetry
 from harness.orchestrator.hidden_body import (
     _body_keyword_score,
     combine_hidden_body_score,
@@ -39,6 +42,12 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 SIMILARITY_THRESHOLD = 0.70  # 70% match to load skill
+
+#: Rol con el que el dispatcher registra el uso de tokens (FR-2, ADR-0103).
+DISPATCH_TELEMETRY_ROLE = "agent_dispatch"
+
+#: Tokens de salida fijos por dispatch (una decision de despacho).
+DISPATCH_OUTPUT_TOKENS = 1
 
 #: Similitud de un match del registry YAML curado (keyword = senal fuerte).
 _YAML_MATCH_SIMILARITY = 0.80
@@ -55,6 +64,116 @@ _OPENCODE_BASE_DIR = Path(".opencode")
 
 #: Marcador que separa el contenido del skill de su herencia anexada.
 _INHERIT_SEPARATOR = "\n\n<!-- SWARMIND:SKILL-INHERIT-BEGIN -->\n"
+
+
+# ---------------------------------------------------------------------------
+# Hard veto (anti-triggers) — Codex #34712 + ThakiCloud Description Budget
+# ---------------------------------------------------------------------------
+#
+# WHAT: los anti-triggers en prosa de la ``description`` ("No usar para X",
+# "Evitar Y", "Cuando NO usar", "anti-trigger") los IGNORA el routing implicito;
+# el veto NEGATIVO debe vivir en el ROUTER (veto duro). WHY: el matching por
+# tokens puede cargar una skill que explicitamente NO aplica a la tarea. WHERE:
+# ``AgentDispatcher.find_skill_for_task`` (filtra el candidato ANTES del rank).
+
+#: Anti-triggers en prosa cuyo contexto se inspecciona para vetar un candidato.
+NEGATIVE_TRIGGER_RE = re.compile(
+    r"(?:Cuando NO usar|No usar|Evitar|NO aplica|anti-trigger|sin )",
+    re.IGNORECASE,
+)
+
+#: Caracteres de contexto tras el trigger anti-patron que se inspeccionan.
+VETO_CONTEXT_CHARS = 60
+
+#: Tokens minimos de interseccion clausula<->tarea para confirmar el veto.
+VETO_TOKEN_MATCH = 1
+
+
+def _skill_description(skill: Any) -> str:
+    """Extrae el texto de ``description`` de un candidato de skill.
+
+    WHAT: acepta dicts (``description``/``trigger``/``name``) o strings. WHY: el
+    candidato del registry YAML trae ``description`` y el de LanceDB ``trigger``.
+
+    Args:
+        skill: Dict de skill o string con la descripcion.
+
+    Returns:
+        Texto de la description; ``""`` si no hay campo reconocible.
+    """
+    if isinstance(skill, str):
+        return skill
+    if isinstance(skill, dict):
+        for key in ("description", "trigger", "name"):
+            value = skill.get(key)
+            if value:
+                return str(value)
+    return ""
+
+
+def hard_veto_score(
+    description: str,
+    task_text: str,
+    *,
+    veto_context_chars: int = VETO_CONTEXT_CHARS,
+    veto_token_match: int = VETO_TOKEN_MATCH,
+) -> float:
+    """Puntua si una description veta la tarea por anti-trigger (0.0 = veta).
+
+    WHAT: detecta un anti-trigger (``No usar``, ``Evitar``, ``Cuando NO usar``,
+    ``anti-trigger``, ``sin ``) en la ``description``; extrae la clausula
+    siguiente (``veto_context_chars``) y, si sus tokens intersectan los de la
+    tarea (``>= veto_token_match``), devuelve ``0.0`` (veta). WHY: un
+    anti-trigger en prosa que menciona la tarea debe excluir al candidato ANTES
+    del rank, no depender del veto implicito del LLM (Codex #34712). WHERE:
+    ``AgentDispatcher.find_skill_for_task``.
+
+    Args:
+        description: Description del candidato (puede ser vacia).
+        task_text: Texto de la tarea a rutear.
+        veto_context_chars: Caracteres de contexto tras el trigger a inspeccionar.
+        veto_token_match: Tokens minimos de interseccion para confirmar el veto.
+
+    Returns:
+        ``0.0`` si la description veta la tarea; ``1.0`` en caso contrario.
+        Nunca lanza: sin clausula (contexto vacio) no hay veto.
+    """
+    if not description or not task_text:
+        return 1.0
+    match = NEGATIVE_TRIGGER_RE.search(description)
+    if match is None:
+        return 1.0
+    context = max(veto_context_chars, 0)
+    clause = description[match.end() : match.end() + context]
+    clause_tokens = tokenize(clause)
+    task_tokens = tokenize(task_text)
+    if not clause_tokens or not task_tokens:
+        return 1.0
+    if len(clause_tokens & task_tokens) >= max(veto_token_match, 1):
+        return 0.0
+    return 1.0
+
+
+def apply_hard_veto(skills_list: list[Any], task_text: str) -> list[Any]:
+    """Filtra los candidatos que la tarea activa via anti-trigger.
+
+    WHAT: aplica :func:`hard_veto_score` a cada candidato y conserva solo los que
+    NO son vetados (score ``1.0``). WHY: excluir al candidato ANTES del rank
+    evita que un anti-trigger en prosa pase desapercibido. WHERE:
+    ``AgentDispatcher.find_skill_for_task``.
+
+    Args:
+        skills_list: Candidatos (dicts con description/trigger/name, o strings).
+        task_text: Texto de la tarea a rutear.
+
+    Returns:
+        Lista filtrada en el orden original; vacia si todos fueron vetados.
+    """
+    return [
+        skill
+        for skill in skills_list
+        if hard_veto_score(_skill_description(skill), task_text) > 0.0
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -204,9 +323,21 @@ class AgentDispatcher:
     context so the agent can reuse known patterns.
     """
 
-    def __init__(self, vector_store: LanceVectorStore | None = None) -> None:
-        """Inicializa la instancia de la clase."""
+    def __init__(
+        self,
+        vector_store: LanceVectorStore | None = None,
+        *,
+        telemetry: TokenTelemetry | None = None,
+    ) -> None:
+        """Inicializa la instancia de la clase.
+
+        Args:
+            vector_store: Store vectorial opcional para busqueda de skills.
+            telemetry: Acumulador de telemetria de tokens (FR-2). Si es ``None``
+                (default) no se registra nada: backward-compatible.
+        """
         self._vector_store = vector_store
+        self._telemetry = telemetry
         self._stats: dict[str, Any] = {
             "total_dispatches": 0,
             "skill_matches": 0,
@@ -236,6 +367,15 @@ class AgentDispatcher:
 
         # --- 1. Check YAML registry ---
         registry_match = SkillGenerator.find_in_registry(query_lower)
+        if registry_match and not apply_hard_veto([registry_match], task_description):
+            # Veto duro (Codex #34712): la description del candidato contiene un
+            # anti-trigger cuya clausula menciona la tarea -> se excluye antes
+            # del rank (no se inyecta una skill que explicita "No usar para X").
+            logger.info(
+                "hard-veto: skill '%s' vetada para la tarea (anti-trigger)",
+                registry_match.get("name"),
+            )
+            registry_match = None
         if registry_match:
             skill_path = registry_match.get("path", "") or _resolve_skill_path_by_name(
                 str(registry_match.get("name", ""))
@@ -270,6 +410,12 @@ class AgentDispatcher:
         if self._vector_store is not None:
             lancedb_match = self._search_lancedb_skills(query_lower)
             if lancedb_match and lancedb_match.get("similarity", 0) >= SIMILARITY_THRESHOLD:
+                if not apply_hard_veto([lancedb_match], task_description):
+                    logger.info(
+                        "hard-veto: skill '%s' vetada para la tarea (anti-trigger)",
+                        lancedb_match.get("name"),
+                    )
+                    return None
                 return lancedb_match
 
         logger.debug("No skill found for: %s", task_description[:80])
@@ -324,11 +470,47 @@ class AgentDispatcher:
                 SIMILARITY_THRESHOLD * 100,
             )
 
+        self._record_dispatch_telemetry(task_description, result["skill_context"])
         return result
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _record_dispatch_telemetry(self, task_description: str, skill_context: str) -> None:
+        """Registra el uso de tokens del dispatch (FR-2, best-effort).
+
+        WHAT: atribuye tokens al rol ``agent_dispatch``: ``cached`` = tokens del
+        contexto de skill (prefijo reutilizable/cacheable) e ``input`` = tokens
+        de la tarea del turno. WHY: sin un call site real la telemetria de
+        cache-hit no es medible. WHERE: ``dispatch`` y ``dispatch_async``.
+
+        No hace nada si no se inyecto ``telemetry`` (backward-compatible) y
+        nunca lanza: un fallo de telemetria no debe romper el despacho.
+
+        Args:
+            task_description: Tarea del turno (entrada dinamica).
+            skill_context: Contenido del skill inyectado (prefijo cacheable);
+                cadena vacia si no hubo match.
+        """
+        if self._telemetry is None:
+            return
+        cached = estimate_tokens(skill_context, minimum=0)
+        dynamic = estimate_tokens(task_description, minimum=0)
+        try:
+            self._telemetry.record_usage(
+                DISPATCH_TELEMETRY_ROLE,
+                cached=cached,
+                input=dynamic,
+                output=DISPATCH_OUTPUT_TOKENS,
+            )
+        except (ValueError, TypeError) as exc:
+            logger.warning(
+                "agent_dispatcher: WHAT: no se pudo registrar telemetria: %s. "
+                "WHY: conteo invalido o rol vacio. "
+                "WHERE: AgentDispatcher._record_dispatch_telemetry",
+                exc,
+            )
 
     def _search_lancedb_skills(self, query: str) -> dict[str, Any] | None:
         """Search for skills in LanceDB procedural_skills collection."""
@@ -515,6 +697,10 @@ class AgentDispatcher:
             "recent_messages": messages,
             "reasoning_mode": "guided_by_skill" if skill_result else "from_scratch",
         }
+
+        self._record_dispatch_telemetry(
+            task_description, result["skill_context"]
+        )
 
         # Incluir plan context si existe (Plan-and-Execute)
         if plan_context:
