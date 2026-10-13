@@ -17,7 +17,10 @@ from typing import Any
 
 from harness.orchestrator.agent_bus import AgentBus
 from harness.orchestrator.confidence_scorer import ConfidenceScore, ConfidenceScorer
-from harness.orchestrator.debate_orchestrator import DebateResult
+from harness.orchestrator.debate_orchestrator import (
+    CONVERGENCE_THRESHOLD,
+    DebateResult,
+)
 from harness.orchestrator.orchestration_result import OrchestratorResult
 from harness.orchestrator.self_healing import CircuitBreaker, SelfHealingContext
 from harness.orchestrator.session_context import SessionContext, SessionState
@@ -254,11 +257,48 @@ class TaskOrchestrator(_BroadcastingMixin):
         agents: list[str] | None = None, strategy: str = "consensus",
         dispatch_fn: Callable[..., Any] | None = None,
     ) -> DebateResult:
-        """Ejecuta debate multi-agente delegando en DebateRunner (async)."""
+        """Ejecuta debate multi-agente delegando en DebateRunner (async).
+
+        Corre la ruta sincrona del debate en un thread via
+        ``asyncio.to_thread`` (comportamiento historico, backward-compat).
+        Para el dispatch paralelo nativo del consenso (PaCoRe) usar
+        ``run_debate_async``.
+        """
         from harness.orchestrator.debate_runner import DebateRunner
         runner = DebateRunner(self._store, self._session_ctx, self._bus)
         return await asyncio.to_thread(
             runner.run_debate, session_id, task, agents, strategy, dispatch_fn,
+        )
+
+    async def run_debate_async(
+        self, session_id: str, task: str,
+        agents: list[str] | None = None, strategy: str = "consensus",
+        dispatch_fn: Callable[..., Any] | None = None,
+        convergence_threshold: float = CONVERGENCE_THRESHOLD,
+    ) -> DebateResult:
+        """Ejecuta debate multi-agente por la ruta async nativa (async).
+
+        A diferencia de ``run_debate`` (que corre la ruta sync dentro de un
+        thread), esta version usa el dispatch paralelo nativo del consenso
+        (PaCoRe: latencia O(n) -> O(1)) a traves de
+        ``DebateRunner.run_debate_async``. ``run_debate`` permanece intacto
+        (backward-compat).
+
+        Args:
+            session_id: ID de la sesion activa.
+            task: Tarea original a debatir.
+            agents: Agentes participantes. Si es None se extraen del plan.
+            strategy: Estrategia de debate (``consensus`` por defecto).
+            dispatch_fn: Callable opcional ``(agent, task, context) -> str``.
+            convergence_threshold: Umbral de convergencia del consenso async.
+
+        Returns:
+            DebateResult con el resultado completo del debate.
+        """
+        from harness.orchestrator.debate_runner import DebateRunner
+        runner = DebateRunner(self._store, self._session_ctx, self._bus)
+        return await runner.run_debate_async(
+            session_id, task, agents, strategy, dispatch_fn, convergence_threshold,
         )
 
     # ------------------------------------------------------------------

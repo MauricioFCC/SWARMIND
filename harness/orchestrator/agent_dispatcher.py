@@ -22,6 +22,7 @@ from harness.context.skill_inherit import (
     parse_inherit,
     resolve_inherit,
 )
+from harness.evolve_loop.library_drift import LibraryDriftManager
 from harness.evolve_loop.skill_generator import REGISTRY_PATH, SkillGenerator
 from harness.memory_rag.lance_vector_store import (
     COLLECTION_PROCEDURAL_SKILLS,
@@ -328,6 +329,7 @@ class AgentDispatcher:
         vector_store: LanceVectorStore | None = None,
         *,
         telemetry: TokenTelemetry | None = None,
+        drift_manager: LibraryDriftManager | None = None,
     ) -> None:
         """Inicializa la instancia de la clase.
 
@@ -335,9 +337,13 @@ class AgentDispatcher:
             vector_store: Store vectorial opcional para busqueda de skills.
             telemetry: Acumulador de telemetria de tokens (FR-2). Si es ``None``
                 (default) no se registra nada: backward-compatible.
+            drift_manager: Gestor de retiro por outcome (Library Drift). Si es
+                ``None`` (default) el dispatcher no acumula utilidad de skills:
+                backward-compatible.
         """
         self._vector_store = vector_store
         self._telemetry = telemetry
+        self._drift_manager = drift_manager
         self._stats: dict[str, Any] = {
             "total_dispatches": 0,
             "skill_matches": 0,
@@ -476,6 +482,25 @@ class AgentDispatcher:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def record_skill_outcome(self, skill_name: str, *, success: bool) -> None:
+        """Registra el outcome real de una skill usada en un dispatch.
+
+        WHAT: delega en ``LibraryDriftManager.record_outcome`` para acumular
+        evidencia de utilidad (recuperacion + helpful/hurt). WHY: el outcome de
+        una skill se conoce DESPUES de que el agente termina (no en
+        ``dispatch``), asi que el caller que ejecuta la tarea y conoce el
+        resultado invoca este metodo para cerrar el ciclo (Library Drift).
+        WHERE: caller de ``AgentDispatcher`` tras evaluar el resultado; no-op si
+        no se inyecto ``drift_manager`` (backward-compatible).
+
+        Args:
+            skill_name: Nombre del skill inyectado en el dispatch.
+            success: ``True`` si la trayectoria guiada por el skill fue correcta.
+        """
+        if self._drift_manager is None:
+            return
+        self._drift_manager.record_outcome(skill_name, success=success, used=True)
 
     def _record_dispatch_telemetry(self, task_description: str, skill_context: str) -> None:
         """Registra el uso de tokens del dispatch (FR-2, best-effort).

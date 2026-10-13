@@ -17,6 +17,19 @@ from typing import Any
 #: valor bajo indica que los agentes no convergieron en una respuesta comun.
 NO_CONSENSUS_AGREEMENT_THRESHOLD: float = 0.5
 
+#: Confianza de respaldo del consenso asincrono (``_execute_consensus_async``)
+#: cuando no se produjo ninguna ronda valida (p. ej. todos los dispatch
+#: fallaron). WHY: la confianza se deriva del acuerdo real entre agentes
+#: (promedio de la confianza de cada ronda); este valor solo aplica como
+#: fallback cuando no hay rondas que promediar. Preserva el valor historico.
+DEFAULT_CONSENSUS_CONFIDENCE: float = 0.85
+
+#: Umbral de acuerdo por ronda a partir del cual el consenso asincrono converge
+#: y detiene rondas adicionales (early stopping). WHY: parametriza el umbral
+#: fijo historico (0.9) para que sea configurable sin cambiar el default.
+#: La convergencia se evalua con ``agreement > CONVERGENCE_THRESHOLD``.
+CONVERGENCE_THRESHOLD: float = 0.9
+
 
 class DebateStrategy(str, Enum):
     """Available debate strategies for multi-agent coordination."""

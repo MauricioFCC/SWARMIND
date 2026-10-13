@@ -10,6 +10,11 @@ from harness.evolve_loop.cognition_sync import CognitionLesson, CognitionSync
 from harness.evolve_loop.evaluator import CASEEvaluator, FullEvaluation
 from harness.evolve_loop.failure_distiller import FailureDistiller
 from harness.evolve_loop.gepa_mutator import GEPAMutator, MutantPrompt
+from harness.evolve_loop.library_drift import (
+    DriftPolicy,
+    DriftVerdict,
+    LibraryDriftManager,
+)
 from harness.evolve_loop.procedural_memory import ProceduralMemory, ProceduralSkill
 from harness.evolve_loop.prompt_evolver import PromptEvolver
 from harness.evolve_loop.self_improver import ImprovementRound, SelfImprover
@@ -23,10 +28,13 @@ __all__ = [
     "CognitionLesson",
     "CognitionSeeder",
     "CognitionSync",
+    "DriftPolicy",
+    "DriftVerdict",
     "FailureDistiller",
     "FullEvaluation",
     "GEPAMutator",
     "ImprovementRound",
+    "LibraryDriftManager",
     "MutantPrompt",
     "ProceduralMemory",
     "ProceduralSkill",

@@ -5,7 +5,16 @@ CRITIQUE y DELIBERATION, incluyendo la variante asincrona (PaCoRe).
 """
 from __future__ import annotations
 
-from .models import DebateResult, DebateRound, DebateStrategy, DispatchFn
+from typing import Any
+
+from .models import (
+    CONVERGENCE_THRESHOLD,
+    DEFAULT_CONSENSUS_CONFIDENCE,
+    DebateResult,
+    DebateRound,
+    DebateStrategy,
+    DispatchFn,
+)
 
 
 class _StrategiesMixin:
@@ -112,59 +121,98 @@ class _StrategiesMixin:
         task: str,
         agents: list[str],
         max_rounds: int,
-        dispatch_fn: callable,
+        dispatch_fn: DispatchFn,
         session_id: str,
+        convergence_threshold: float = CONVERGENCE_THRESHOLD,
+        fallback_confidence: float = DEFAULT_CONSENSUS_CONFIDENCE,
     ) -> DebateResult:
         """
-        Version asincrona de consenso: agentes responden en paralelo.
+        Version asincrona de consenso: agentes responden en paralelo (PaCoRe).
 
-        Usa asyncio.gather para ejecutar dispatch de todos los agentes
-        simultaneamente, reduciendo latencia de O(n) a O(1).
+        Usa ``asyncio.gather`` para ejecutar el dispatch de todos los agentes
+        de una ronda simultaneamente, reduciendo la latencia de O(n) a O(1).
+        La confianza final se deriva del acuerdo real entre agentes (promedio
+        de la confianza de cada ronda); solo si no hubo rondas validas se usa
+        ``fallback_confidence``. La convergencia temprana usa
+        ``convergence_threshold`` (parametrizable, default historico 0.9).
 
         Args:
             task: Tarea a debatir.
-            agents: Lista de agentes.
-            max_rounds: Maximo de rondas.
-            dispatch_fn: Funcion de dispatch.
+            agents: Lista de agentes participantes.
+            max_rounds: Maximo de rondas de consenso.
+            dispatch_fn: Callable ``(agent, task, context) -> str``.
             session_id: ID de sesion.
+            convergence_threshold: Acuerdo minimo por ronda (estricto ``>``)
+                para converger y detener rondas adicionales.
+            fallback_confidence: Confianza de respaldo cuando no hay rondas
+                validas que promediar.
 
         Returns:
-            DebateResult con respuestas de todos los agentes.
+            DebateResult con las respuestas y la confianza derivada del acuerdo.
         """
         import asyncio
 
-        responses: list[str] = []
         rounds: list[DebateRound] = []
+        all_outputs: dict[str, str] = {}
+
         for rnd in range(max_rounds):
+            round_num = rnd + 1
+            phase = "independent_answer" if round_num == 1 else "conference_vote"
+            contexts = [
+                {
+                    "strategy": DebateStrategy.CONSENSUS.value,
+                    "round": round_num,
+                    "previous_outputs": dict(all_outputs),
+                    "feedback": {},
+                    "phase": phase,
+                }
+                for _ in agents
+            ]
             round_responses = await asyncio.gather(
-                *[self._run_async_dispatch(agent, task, dispatch_fn)
-                  for agent in agents],
+                *[
+                    self._run_async_dispatch(agent, task, dispatch_fn, context)
+                    for agent, context in zip(agents, contexts)
+                ],
                 return_exceptions=True,
             )
-            valid = [r for r in round_responses if isinstance(r, str)]
-            if not valid:
-                break
-            responses.extend(valid)
 
-            dr = DebateRound(round_num=rnd + 1)
-            for i, agent in enumerate(agents):
-                if i < len(valid):
-                    dr.agent_outputs[agent] = valid[i]
+            dr = DebateRound(round_num=round_num)
+            for agent, response in zip(agents, round_responses):
+                if not isinstance(response, str):
+                    continue
+                dr.agent_outputs[agent] = response
+                all_outputs[agent] = response
+                self._log_agent_message(
+                    session_id, agent, task, response, round_num=round_num,
+                )
+
+            if not dr.agent_outputs:
+                break
+
             dr.confidence = self._compute_agreement(dict(dr.agent_outputs))
             dr.synthesis = self._synthesize_answers(dict(dr.agent_outputs))
             rounds.append(dr)
 
             # Verificar convergencia temprana
-            if len(valid) == len(agents) and dr.confidence > 0.9:
+            if (
+                len(dr.agent_outputs) == len(agents)
+                and dr.confidence > convergence_threshold
+            ):
                 break
+
+        overall_confidence = (
+            sum(r.confidence for r in rounds) / len(rounds)
+            if rounds
+            else fallback_confidence
+        )
 
         return DebateResult(
             session_id=session_id,
             task=task,
             strategy=DebateStrategy.CONSENSUS,
             rounds=rounds,
-            final_answer=responses[-1] if responses else "",
-            confidence=0.85,
+            final_answer=rounds[-1].synthesis if rounds else "",
+            confidence=overall_confidence,
             agent_agreement=rounds[-1].confidence if rounds else 0.0,
             metadata={
                 "num_agents": len(agents),
@@ -172,6 +220,7 @@ class _StrategiesMixin:
                 "agents": list(agents),
                 "strategy": DebateStrategy.CONSENSUS.value,
                 "async": True,
+                "convergence_threshold": convergence_threshold,
             },
         )
 
@@ -179,22 +228,30 @@ class _StrategiesMixin:
         self,
         agent: str,
         task: str,
-        dispatch_fn: callable,
+        dispatch_fn: DispatchFn,
+        context: dict[str, Any],
     ) -> str:
         """
-        Ejecutar dispatch de un agente de forma asincrona.
+        Ejecutar dispatch de un agente de forma asincrona (en un thread).
+
+        WHY: ``dispatch_fn`` suele ser I/O-bound (invocacion LLM) y de firma
+        sincrona ``(agent, task, context)``; se ejecuta en el executor por
+        defecto para no bloquear el event loop. El ``context`` es obligatorio
+        por contrato de ``DispatchFn``.
 
         Args:
             agent: Nombre del agente.
             task: Tarea a ejecutar.
-            dispatch_fn: Funcion de dispatch.
+            dispatch_fn: Funcion de dispatch ``(agent, task, context) -> str``.
+            context: Contexto de la ronda (strategy/round/phase/...).
 
         Returns:
             Respuesta del agente.
         """
         import asyncio
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, dispatch_fn, agent, task)
+
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, dispatch_fn, agent, task, context)
 
     def _execute_critique(
         self,
