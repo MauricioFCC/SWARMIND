@@ -504,13 +504,16 @@ python harness/scripts/check_ollama.py
 
 **Servidores preconfigurados:**
 
-| Servidor | URL | Tools | Instalacion |
-|----------|-----|-------|-------------|
-| filesystem | localhost:3100 | read_file, write_file, list_directory | `npx @modelcontextprotocol/server-filesystem` |
-| github | localhost:3101 | get_repo, list_issues, create_pr, search_code | `npx @modelcontextprotocol/server-github` |
-| postgres | localhost:3102 | query, list_tables, describe_table | `npx @modelcontextprotocol/server-postgres` |
-| memory | localhost:3104 | store_memory, recall_memory, list_memories | `npx @modelcontextprotocol/server-memory` |
-| brave_search | localhost:3105 | web_search, web_fetch | `npx @modelcontextprotocol/server-brave-search` |
+Todos los servers oficiales usan transporte **stdio** (subproceso), no HTTP: el
+`MCPManager` los lanza con `command` + `args` + `env`.
+
+| Servidor | Transporte | Tools reales | Instalacion |
+|----------|------------|--------------|-------------|
+| filesystem | stdio (npx) | read_text_file, write_file, list_directory, search_files, ... | `npx -y @modelcontextprotocol/server-filesystem <dir>` |
+| github | stdio (docker) | get_file_contents, create_pull_request, search_repositories, ... | `docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server` |
+| postgres | stdio (npx) | query | `npx -y @modelcontextprotocol/server-postgres postgresql://host/db` |
+| memory | stdio (npx) | create_entities, create_relations, search_nodes, read_graph, ... | `npx -y @modelcontextprotocol/server-memory` |
+| brave_search | stdio (npx) | brave_web_search, brave_news_search, brave_image_search, ... | `BRAVE_API_KEY=xxx npx -y @brave/brave-search-mcp-server` |
 
 **Uso:**
 ```bash

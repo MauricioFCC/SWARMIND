@@ -1,72 +1,186 @@
 # MCP Servers Configuration
 # =========================
-# Define MCP servers that this harness can connect to.
-# All servers are DISABLED by default. Enable the ones you need.
+# Define MCP servers que el harness puede conectar via MCPManager.
 #
-# To install community MCP servers:
-#   See: https://github.com/modelcontextprotocol/servers
+# PATRON DE TRANSPORTE
+# --------------------
+# Los servers oficiales de modelcontextprotocol se publican como subprocesos
+# (transport == "stdio"): el manager los lanza con `command` + `args` y les
+# inyecta `env`. NO exponen un endpoint HTTP propio en localhost.
+#
+#   stdio:  command: npx|docker|uvx   + args [...]   + env {...}
+#   http:   url: http://host:port     (solo servers que sirven HTTP real)
+#
+# El registro previo inventaba `url: http://localhost:31XX` y nombres de tools
+# que no existen en los paquetes reales. Eso queda corregido aqui usando los
+# nombres y comandos VERIFICADOS contra los repos oficiales (ver fuentes por
+# server). Ver tambien: https://github.com/modelcontextprotocol/servers
+#
+# COMO HABILITAR
+# --------------
+#   1. Instala el runtime: Node (npx) para los npx; Docker para github.
+#   2. Exporta las env requeridas (gitbash/PowerShell):
+#        GITHUB_PERSONAL_ACCESS_TOKEN, BRAVE_API_KEY
+#   3. En el server deseado cambia `enabled: false` -> `enabled: true`.
+#   4. MCPManager.load_servers() lo conecta automaticamente al iniciar.
+#
+# Nota: los placeholders `${VAR}` / rutas de ejemplo son referencias
+# documentales; el manager NO expande variables dentro de `args` ni `env`
+# (env se pasa tal cual al subproceso).
 
 servers:
+  # ---------------------------------------------------------------------------
+  # 1. filesystem — operaciones de archivo seguras con directorios permitidos.
+  #    Fuente: https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem
+  #    Runtime: Node (npx).  Env: ninguna.
+  #    Args: <dir permitido> [<dir permitido>...]  (al menos uno, o usar Roots).
+  #    TODO usuario: reemplazar /path/to/allowed/dir por la ruta real.
+  # ---------------------------------------------------------------------------
   - name: filesystem
-    url: http://localhost:3100
-    description: "Read/write files and list directories (filesystem MCP server)"
+    transport: stdio
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/dir"]
+    description: "Read/write files and list/search directories (reference filesystem server)"
     tools:
-      - read_file
+      - read_text_file
+      - read_media_file
+      - read_multiple_files
       - write_file
+      - edit_file
+      - create_directory
       - list_directory
+      - list_directory_with_sizes
+      - move_file
+      - search_files
+      - directory_tree
+      - get_file_info
+      - list_allowed_directories
     enabled: false
-    install_hint: "npx @modelcontextprotocol/server-filesystem"
+    install_hint: "Node.js y: npx -y @modelcontextprotocol/server-filesystem /path/to/allowed/dir"
 
+  # ---------------------------------------------------------------------------
+  # 2. github — GitHub oficial (github/github-mcp-server), escrito en Go.
+  #    Fuente: https://github.com/github/github-mcp-server
+  #    OJO: el paquete npm @modelcontextprotocol/server-github esta DEPRECADO
+  #    (abril 2025) y el server real NO expone get_repo/list_issues (nombres
+  #    inventados). Distribucion oficial: imagen Docker
+  #    `ghcr.io/github/github-mcp-server` o binario Go `github-mcp-server stdio`.
+  #    Runtime: Docker (o Go desde fuente).  Env: GITHUB_PERSONAL_ACCESS_TOKEN.
+  #    Filtra tools con --toolsets / GITHUB_TOOLSETS (ej. repos,issues,pull_requests).
+  #    Alternativa sin Docker (binario): command: github-mcp-server, args: ["stdio"].
+  # ---------------------------------------------------------------------------
   - name: github
-    url: http://localhost:3101
-    description: "GitHub API integration: repos, issues, PRs (GitHub MCP server)"
+    transport: stdio
+    command: docker
+    args:
+      - run
+      - -i
+      - --rm
+      - -e
+      - GITHUB_PERSONAL_ACCESS_TOKEN
+      - ghcr.io/github/github-mcp-server
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+    description: "GitHub oficial: repos, issues, PRs, code search, Actions (github/github-mcp-server)"
     tools:
-      - get_repo
-      - list_issues
-      - create_pr
+      - get_me
+      - get_file_contents
+      - search_repositories
       - search_code
+      - create_repository
+      - list_branches
+      - list_commits
+      - get_commit
+      - create_branch
+      - get_latest_release
+      - list_releases
+      - list_issues
+      - issue_read
+      - issue_write
+      - add_issue_comment
+      - search_issues
+      - create_pull_request
+      - pull_request_read
+      - list_pull_requests
+      - merge_pull_request
+      - update_pull_request
+      - get_repository_tree
     enabled: false
-    install_hint: "npx @modelcontextprotocol/server-github"
+    install_hint: "Docker y: docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server"
 
+  # ---------------------------------------------------------------------------
+  # 3. postgres — acceso de SOLO LECTURA a PostgreSQL.
+  #    Fuente: https://github.com/modelcontextprotocol/servers-archived/tree/main/src/postgres
+  #    ARCHIVADO (mayo 2025): sigue instalable via npm pero sin soporte.
+  #    Runtime: Node (npx).  Env: ninguna.
+  #    Args: <connection string postgresql://...>  (unico arg obligatorio).
+  #    Tool real: SOLO `query` (no existen list_tables/describe_table). El
+  #    esquema de cada tabla se expone como MCP Resource, no como tool.
+  #    Alternativa mantenida: postgres-mcp (crystaldba/postgres-mcp).
+  # ---------------------------------------------------------------------------
   - name: postgres
-    url: http://localhost:3102
-    description: "PostgreSQL database queries and schema inspection"
+    transport: stdio
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-postgres", "postgresql://user:password@localhost:5432/mydb"]
+    description: "PostgreSQL read-only (archived reference server): schema inspection + single query tool"
     tools:
       - query
-      - list_tables
-      - describe_table
     enabled: false
-    install_hint: "npx @modelcontextprotocol/server-postgres"
+    install_hint: "Node.js y: npx -y @modelcontextprotocol/server-postgres postgresql://user:password@host:5432/db"
 
-  - name: filesystem_local
-    url: http://localhost:3103
-    description: "Alternative filesystem server with expanded path access"
-    tools:
-      - read_file
-      - write_file
-      - list_directory
-      - search_files
-    enabled: false
-    install_hint: "npx @modelcontextprotocol/server-filesystem --allowed-paths=/tmp"
-
+  # ---------------------------------------------------------------------------
+  # 4. memory — grafo de conocimiento persistente.
+  #    Fuente: https://github.com/modelcontextprotocol/servers/tree/main/src/memory
+  #    Runtime: Node (npx).  Env opcional: MEMORY_FILE_PATH (ruta del JSON).
+  #    Tools reales del grafo (no existen store_memory/recall_memory).
+  # ---------------------------------------------------------------------------
   - name: memory
-    url: http://localhost:3104
-    description: "Persistent memory/knowledge graph server (MemMCP)"
+    transport: stdio
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-memory"]
+    env: {}
+    description: "Persistent knowledge-graph memory (entities, relations, observations)"
     tools:
-      - store_memory
-      - recall_memory
-      - list_memories
+      - create_entities
+      - create_relations
+      - add_observations
+      - delete_entities
+      - delete_observations
+      - delete_relations
+      - read_graph
+      - search_nodes
+      - open_nodes
     enabled: false
-    install_hint: "npx @modelcontextprotocol/server-memory"
+    install_hint: "Node.js y: npx -y @modelcontextprotocol/server-memory"
 
+  # ---------------------------------------------------------------------------
+  # 5. brave_search — busqueda web/noticias/imagenes via Brave Search API.
+  #    Fuente: https://github.com/brave/brave-search-mcp-server
+  #    OJO: el server de modelcontextprotocol esta ARCHIVADO; el oficial actual
+  #    es `@brave/brave-search-mcp-server` (default transport: stdio).
+  #    Runtime: Node (npx).  Env: BRAVE_API_KEY (obligatoria).
+  #    Tools reales: brave_web_search, brave_local_search, brave_news_search,
+  #    brave_image_search, brave_video_search, brave_place_search,
+  #    brave_summarizer, brave_llm_context (no existe web_fetch).
+  # ---------------------------------------------------------------------------
   - name: brave_search
-    url: http://localhost:3105
-    description: "Web search via Brave Search API"
+    transport: stdio
+    command: npx
+    args: ["-y", "@brave/brave-search-mcp-server", "--transport", "stdio"]
+    env:
+      BRAVE_API_KEY: "${BRAVE_API_KEY}"
+    description: "Web/news/image/video/place search + AI summarization via Brave Search API"
     tools:
-      - web_search
-      - web_fetch
+      - brave_web_search
+      - brave_local_search
+      - brave_news_search
+      - brave_image_search
+      - brave_video_search
+      - brave_place_search
+      - brave_summarizer
+      - brave_llm_context
     enabled: false
-    install_hint: "npx @modelcontextprotocol/server-brave-search"
+    install_hint: "Node.js y: BRAVE_API_KEY=xxx npx -y @brave/brave-search-mcp-server --transport stdio"
 
   # ---------------------------------------------------------------------------
   # REA - reverse engineering MCP server (morluto/rea, licencia MIT).

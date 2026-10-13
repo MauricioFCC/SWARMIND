@@ -196,12 +196,13 @@ class TestLoadServersRealYaml:
         """REA llega deshabilitado (el usuario lo habilita explícitamente)."""
         assert manager._servers["rea"].enabled is False
 
-    def test_existing_http_servers_still_load(self, manager: MCPManager) -> None:
-        """Los servers http existentes siguen cargando con su url."""
+    def test_official_http_servers_migrated_to_stdio(self, manager: MCPManager) -> None:
+        """Los servers oficiales migraron a stdio (command), sin url inventada."""
         assert "filesystem" in manager._servers
         fs = manager._servers["filesystem"]
-        assert fs.is_stdio() is False
-        assert fs.url == "http://localhost:3100"
+        assert fs.is_stdio() is True
+        assert fs.command == "npx"
+        assert fs.url == ""
 
     def test_all_registered_servers_have_valid_endpoint(
         self, manager: MCPManager
