@@ -178,6 +178,20 @@ class SkillUtilityTracker:
         """
         return self._state.get(name, SkillUtility(name=name))
 
+    def names(self) -> list[str]:
+        """Lista los nombres de las skills rastreadas actualmente.
+
+        WHAT: expone (solo lectura) las claves del estado en memoria para que
+        un consumidor —p. ej. ``LibraryDriftManager``— pueda recorrer TODAS las
+        skills registradas sin tocar el atributo privado ``_state``. WHY: el
+        ``sweep`` de la politica de retiro necesita el universo completo, no
+        solo los evictables. WHERE: ``SkillUtilityTracker.names``.
+
+        Returns:
+            Lista con los nombres rastreados (en orden de insercion).
+        """
+        return list(self._state)
+
     # -- Eviction ----------------------------------------------------------
 
     def evictable(self, *, min_retrievals: int = MIN_RETRIEVALS) -> list[SkillUtility]:
