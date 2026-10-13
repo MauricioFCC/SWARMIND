@@ -10,6 +10,7 @@
 ### Estado 2026-10-12 (ADR-0103 Frontera Simple: enrutamiento aprendido + coordinador minimo + token economics medido)
 
 - **ADR-0103 + spec SDD** (`docs/adr/adr-0103-frontera-simple-2026.md`, `specs/adr0103-frontera-roadmap.md`) — investigacion frontera 4 frentes (harness engineering arXiv:2609.00006, skill routing arXiv:2603.22455, token economics arXiv:2508.21433/2607.15516, coordinador next-gen) + 8 acciones priorizadas por ROI.
+- **Cierre del refactor (tecnicas frontera)** — `PipelineRouter` (`harness/orchestrator/pipeline_router.py`): cascada SLM→fallback en complejidad timida→frontier (RouteLLM/cascade), integra TriageSLM + cache-shape + `TelemetryGate` (hit-rate 0.80); telemetria cableada en `agent_dispatcher` (R10 medido); **veto duro de anti-triggers** en el router (`hard_veto_score`/`apply_hard_veto`, Codex #34712: el routing ignora prosa negativa); MAG cleanup (`SHORT/MEDIUM/LONG_TEXT_THRESHOLD_CHARS`); `coordinator.agent.min.md` regenerado consumiendo `coordinator_policy.yaml`; 4 skills restantes a PD (atdd-spec 133→85, process-over-tools 139→88, frontend-uiux 174→113, diagram-design 198→120). 98 tests nuevos/regresion green.
 - **WS-A token economics** — `TokenTelemetry` (`harness/observability/token_telemetry.py`: record_usage por rol, hit_rate, gate_ok 0.80, report/to_json) + `build_cache_shaped_prompt` (orden canonico tools>system>static>dynamic con breakpoint de cache, `harness/orchestrator/prompt_cache_shape.py`) + **observation masking DEFAULT ON** (env `SWARMIND_OBS_MASKING_DISABLE`). 33 tests.
 - **WS-B coordinador minimo** — `coordinator.md` 273→**54 lineas** + `coordinator_policy.yaml` (SSOT: delegation/budget/verification/memory/output_contract/token_economics/antipatterns/tdd_authority + doctrina preservada). 8 tests.
 - **WS-C routing aprendido** — `TriageSLM` (small_model→JSON intent/complexity con cascada fallback al DifficultyRouter, `harness/orchestrator/triage_slm.py`) + **hidden-body router** (puntuar leyendo el cuerpo de skills/agent .md, `hidden_body.py` pesos 0.5/0.5) + **fan-out cap 5** (`SWARMIND_MAX_FANOUT`, XLarge 11 solo explicito). 72 tests.
@@ -221,14 +222,20 @@ Objetivo: 80%    (proximo hito)
 
 | Prioridad | Tarea | Impacto | Detalle | Estado |
 |-----------|-------|---------|---------|--------|
-| **Alta** | Integrar TriageSLM en el pipeline | Routing | Conectar triage_slm al DifficultyRouter real (hoy es standalone con fallback) | 🔄 Pendiente |
-| **Alta** | Integrar TokenTelemetry en los call sites | Tokens | record_usage en provider executors para medir hit-rate real (R10 gate) | 🔄 Pendiente |
-| **Alta** | Progressive disclosure restantes | Skills | Migrar 9 skills comprehensive (legal-doc, rust-lang, sociology, linguistics, evolve, ethics, education, science-doc, behavioral-economics) a references/ (SkillsBench) | 🔄 Pendiente |
-| **Media** | Cleanup difficulty_router literales | MAG | `1000/500/200` en ComplexityFeatures → constantes con nombre | 🔄 Pendiente |
-| **Media** | Regenerar coordinator.agent.min.md | Coherencia | compile_agents.py debe consumir el YAML de politica (artefacto precompilado) | 🔄 Pendiente |
 | **Media** | Coverage 80% | Calidad | Atacar archivos con cobertura baja: mcp_executor.py, plugins, evolve_loop | 🔄 Pendiente |
 | **Media** | Async pipeline integration | Rendimiento | TaskOrchestrator async completo, integracion con AsyncAgentBus | 🔄 Pendiente |
 | **Media** | Fix debate tests | Estabilidad | ~20 tests de debate con ERROR por dependencias de orquestador | ⏳ Pendiente |
+| **Media** | Paired eval de skills (Skill Lift) | Skills | Medir Δpp con/sin skill (SkillsBench: 16/84 negativos; self-generated -1.3pp); retiro por outcome N>=100 | 🔄 Pendiente |
+| **Baja** | Mutation gate de skills en pre-commit | Skills | SkillCI-style (typo, negacion, context-prefix) + self-growing -> test permanente | 🔄 Pendiente |
+| **Baja** | Surrogate Verifier aislado por sesion | Gobernanza | Framework distinto emite diagnostico por-assertion (CoEvoSkills 2604.01687) | 🔄 Pendiente |
+| ✅ | Integrar TriageSLM+Telemetry al pipeline | Routing/Tokens | `PipelineRouter` (cascada: SLM -> fallback en complejidad timida -> frontier), TelemetryGate hit-rate 0.80, telemetria en agent_dispatcher (R10) | **HECHO** |
+| ✅ | Progressive disclosure restantes | Skills | atdd-spec 133→85, process-over-tools 139→88, frontend-uiux 174→113, diagram-design 198→120 (+references/) | **HECHO** |
+| ✅ | Cleanup difficulty_router literales (MAG) | MAG | SHORT/MEDIUM/LONG_TEXT_THRESHOLD_CHARS (200/500/1000) | **HECHO** |
+| ✅ | Regenerar coordinator.agent.min.md | Coherencia | compile_agents.py consume coordinator_policy.yaml (3 refs) | **HECHO** |
+| ✅ | Veto duro de anti-triggers en router | Routing | hard_veto_score/apply_hard_veto en agent_dispatcher (Codex #34712: el routing ignora prosa negativa) | **HECHO** |
+| ✅ | Refactor archivos >500ln | Mantenibilidad | 32 módulos → paquetes con `__init__.py` re-export (deuda AGR 0) | **HECHO** |
+| ✅ | Session-scoped fixtures | Velocidad tests | MockVectorStore session-scoped creado | **HECHO** |
+| ✅ | GPU acceleration | Rendimiento | RTX 4060 + 6x search + embedding 3.2x | **HECHO** |
 | **Baja** | MCP server per agent | Integracion | Cada agente con su propio servidor MCP para aislamiento | ⏳ Pendiente |
 | **Baja** | GPU full pipeline | Rendimiento | Integrar GPU en mas puntos del pipeline (semantic cache, agent_bus) | 🔄 Pendiente |
 | **Baja** | Plugins architecture | Extensibilidad | Sistema de plugins para habilidades externas | ⏳ Pendiente |

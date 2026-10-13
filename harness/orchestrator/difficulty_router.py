@@ -30,6 +30,12 @@ SIMPLE_SCORE_MAX = 0.25
 MODERATE_SCORE_MAX = 0.45
 COMPLEX_SCORE_MAX = 0.7
 
+# Umbrales de longitud del mensaje (chars, exclusivos) que graduan la
+# contribucion de tamano al score (MAG: sin literales en las comparaciones).
+SHORT_TEXT_THRESHOLD_CHARS = 200
+MEDIUM_TEXT_THRESHOLD_CHARS = 500
+LONG_TEXT_THRESHOLD_CHARS = 1000
+
 
 # ---------------------------------------------------------------------------
 # Enums
@@ -237,7 +243,9 @@ class ComplexityFeatures:
         Puntaje de complejidad (0.0 = trivial, 1.0 = muy complejo).
         
         Contribuciones:
-          - Longitud (>500 chars → +0.2)
+          - Longitud (>SHORT_TEXT_THRESHOLD_CHARS → +0.1;
+            >MEDIUM_TEXT_THRESHOLD_CHARS → +0.2;
+            >LONG_TEXT_THRESHOLD_CHARS → +0.3)
           - High complexity keywords: +0.15 c/u (max 0.4)
           - Tech verbs: +0.1 c/u (max 0.3)
           - Ambiguity: +0.1 c/u
@@ -249,11 +257,11 @@ class ComplexityFeatures:
         s = 0.0
 
         # Length
-        if self.length_chars > 1000:
+        if self.length_chars > LONG_TEXT_THRESHOLD_CHARS:
             s += 0.3
-        elif self.length_chars > 500:
+        elif self.length_chars > MEDIUM_TEXT_THRESHOLD_CHARS:
             s += 0.2
-        elif self.length_chars > 200:
+        elif self.length_chars > SHORT_TEXT_THRESHOLD_CHARS:
             s += 0.1
 
         # High complexity keywords
@@ -486,7 +494,7 @@ class DifficultyRouter:
         base += max(0, features.domain_count - 1)
         if features.has_code_blocks:
             base += 1
-        if features.length_chars > 500:
+        if features.length_chars > MEDIUM_TEXT_THRESHOLD_CHARS:
             base += 1
         # Cap at 16 subtasks (Swiss Watch: maximo paralelismo)
         return min(base, 16)

@@ -3,18 +3,18 @@
 compile_agents.py — Pre-compila agent prompts .md a version minimal (.agent.min.md).
 
 Lee agent profiles de `.opencode/agents/{role}.md` y genera
-`.opencode/agents/{role}.agent.min.md` con solo:
-  - Frontmatter reducido (name, domain, triggers, capabilities)
-  - ## Secciones principales
-  - Capabilities list, output format
-  - Guardrails (✅, ⚠️, ❌)
-  - Checklists (- [ ] ...)
+`.opencode/agents/{role}.agent.min.md` con:
+  - Frontmatter COMPLETO (el discovery en agent_discovery/parsing.py depende
+    de triggers/capabilities/aliases/description; no se puede reducir).
+  - Headings (#, ##, ###, ####), checklists, tablas y guardrails (✅, ⚠️, ❌).
+  - Listas, reglas numeradas y bloques de config (variable = valor).
+  - Referencias a archivos de config/politica (`*.yaml|yml|json|toml`), p. ej.
+    `coordinator_policy.yaml` (SSOT de politica del coordinator, ADR-0103).
 
 Omite:
   - Mermaid diagrams (```mermaid ... ```)
   - Ejemplos largos (>3 lineas de codigo)
-  - Descripciones verbosas (>80 chars por linea en parrafos continuos)
-  - Frontmatter verboso (tags, version, etc.)
+  - Parrafos de prosa sin estructura
 
 Modo de uso:
     python harness/scripts/compile_agents.py
@@ -38,10 +38,12 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # Swarmind/
 AGENTS_DIR = PROJECT_ROOT / ".opencode" / "agents"
 
-# Keys del frontmatter a preservar en version minificada
-KEEP_FRONTMATTER_KEYS: set[str] = {
-    "name", "domain", "role", "description", "mode",
-}
+#: Referencias a archivos de config/politica que SIEMPRE se preservan. El
+#: coordinator apunta a `coordinator_policy.yaml` (SSOT de politica, ADR-0103);
+#: sin esta regla la prosa que lo referencia se descartaria al minificar.
+CONFIG_REF_PATTERN = re.compile(
+    r"[\w./\\-]+\.(?:ya?ml|json|toml|ini|cfg)", re.IGNORECASE
+)
 
 # Secciones que siempre preservar
 KEEP_SECTIONS: set[str] = {
@@ -71,19 +73,20 @@ def minify_agent(md_content: str) -> str:
     """Compilar agent prompt a version minima para contexto.
 
     Preserva:
-    - Frontmatter reducido (solo keys en KEEP_FRONTMATTER_KEYS)
-    - ## Secciones principales (Mision, Flujo, Reglas, Formato, Capacidades)
+    - Frontmatter completo (identidad + triggers/capabilities para el discovery)
+    - Headings (#, ##, ###, ####) de las secciones principales
     - Checklists (- [ ] ...)
     - Tablas (| ... |)
     - Guardrails (✅ ⚠️ ❌)
     - Output format blocks (``` ... ``` cortos)
     - Lineas con @menciones o #hashtags
+    - Referencias a config/politica (``*.yaml``/``*.json``; ver
+      :data:`CONFIG_REF_PATTERN`)
 
     Omite:
     - Diagramas mermaid (```mermaid ... ```)
     - Parrafos largos (>80 chars sin estructura)
     - Ejemplos extensos
-    - Frontmatter keys no esenciales
     """
     lines = md_content.split("\n")
     minified: list[str] = []
@@ -141,11 +144,9 @@ def minify_agent(md_content: str) -> str:
                 continue
 
         if in_frontmatter:
-            # Preservar solo keys importantes
-            for key in KEEP_FRONTMATTER_KEYS:
-                if stripped.startswith((key + ":", key + ":")):
-                    minified.append(line)
-                    break
+            # Preservar el frontmatter completo: agent_discovery/parsing.py lee
+            # triggers/capabilities/aliases/description desde aqui.
+            minified.append(line)
             continue
 
         # Resetear deteccion de parrafos verbosos
@@ -162,17 +163,17 @@ def minify_agent(md_content: str) -> str:
         # - @menciones
         # - Comandos (!comando)
         # - Items de lista (- o *)
-        is_heading = stripped.startswith("##")
+        is_heading = stripped.startswith("#")
         is_checklist = stripped.startswith(("- [", "* ["))
         is_table = stripped.startswith("|")
         is_guardrail = any(stripped.startswith(g) for g in ("✅", "⚠️", "❌", "🔴", "🟢", "📌"))
         is_mention = "@" in stripped and not stripped.startswith("```")
         is_command = stripped.startswith("!")
         is_list_item = stripped.startswith(("- ", "* "))
-        is_section_ref = stripped.startswith(("####", "###"))
+        is_config_ref = bool(CONFIG_REF_PATTERN.search(stripped))
 
         if any([is_heading, is_checklist, is_table, is_guardrail,
-                is_mention, is_command, is_list_item, is_section_ref]):
+                is_mention, is_command, is_list_item, is_config_ref]):
             minified.append(line)
             verbose_line_count = 0
             skip_verbose_paragraph = False
