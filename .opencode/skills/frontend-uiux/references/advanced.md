@@ -1,3 +1,5 @@
+> Migrado a references/ por politica focused beats comprehensive - SkillsBench 2026.
+
 # Frontend UI/UX — advanced.md (bajo demanda)
 
 Carga este archivo **solo bajo demanda**: accesibilidad detallada, rendimiento,

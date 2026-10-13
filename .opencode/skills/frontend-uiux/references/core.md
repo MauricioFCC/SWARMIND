@@ -1,3 +1,5 @@
+> Migrado a references/ por politica focused beats comprehensive - SkillsBench 2026.
+
 # Frontend UI/UX — core.md (esencial)
 
 Carga este archivo **bajo demanda** al construir interfaces: principios de

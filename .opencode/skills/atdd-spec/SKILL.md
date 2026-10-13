@@ -17,62 +17,23 @@ compatibility: 'Python 3.12+; pytest; aplicable a cualquier lenguaje con test ru
   - Growing Object-Oriented Software (GOOS) — https://www.gocd.org
   - Test-Driven Development — https://martinfowler.com/bliki/TestDrivenDevelopment.html
 - **ANTI-HEDGING**: Especifica el comportamiento observable ANTES del test; un criterio por spec.
-## Doctrina
 
-En un flujo guiado por LLM, el requisito vive en el chat y se pierde. La spec
-añade una capa ligera y acordada: **acuerda ANTES de construir** (patron
-OpenSpec: proposal → specs → design → tasks). El test es el contrato de la
-feature: define el alcance sin ambiguedad y da al modelo una senal de exito
-medible, no una opinion.
+## Doctrina (esencial)
+
+El requisito vive en el chat y se pierde; la spec es una capa ligera acordada
+(**acuerda ANTES de construir**: proposal → specs → design → tasks). El test es
+el contrato de la feature: alcance sin ambiguedad + senal de exito medible
+(tests como prompt Y como verificacion). Detalle en
+[`references/ciclo-spec-test-code.md`](references/ciclo-spec-test-code.md).
 
 ## El ciclo Spec→Test→Code→Refactor
 
-### 1. Spec (requerimiento → acceptance criteria)
-- Traduce el requerimiento a **acceptance criteria en lenguaje natural** +
-  **ejemplos concretos** (entrada → salida esperada).
-- Formato OpenSpec: `proposal.md` (por que/cambio), `specs/` (requirements y
-  scenarios), `design.md` (enfoque tecnico), `tasks.md` (checklist).
-- Sin ambiguedad: cada criterio debe ser comprobable por un test.
-
-### 2. Tests (especificacion ejecutable ANTES del codigo)
-- Escribe los tests **antes del codigo**: son la spec en forma ejecutable.
-- Un test = un criterio de aceptacion. Nombres descriptivos
-  (`test_validate_email_with_invalid_format_returns_false`).
-- En Python: pytest; para invariantes usar PBT con `hypothesis` (`@given`).
-- Los tests son **tanto prompt como verificacion** para el LLM.
-
-### 3. Code (implementacion minima)
-- Implementa **solo lo necesario** para pasar los tests (KISS, YAGNI).
-- Docstrings ES obligatorias en toda funcion publica (DOC).
-- Sin sobre-ingenieria: si el test no lo exige, no existe.
-
-### 4. Refactor
-- Con los tests verdes como red de seguridad, limpia: extrae helpers,
-  aplica NAM/TYP/IMM/SOL, elimina duplicacion (DRY).
-- Vuelve a ejecutar los tests: el verde debe mantenerse.
-
-## Frontier 2026: tests como prompt+verificacion
-
-Cui 2025 (arXiv:2505.09027, WebApp1K: 1000 challenges, 20 dominios,
-19 frontier models) demuestra en TDD tasks que:
-
-- **Los tests funcionan como prompt Y como verificacion**: el LLM recibe los
-  tests y debe implementar la funcionalidad directamente a partir de ellos,
-  sin descripcion en lenguaje natural.
-- **Instruction following > habilidad general**: la capacidad de seguir
-  instrucciones y el in-context learning diferencian el exito en TDD mas que
-  la pericia general de programacion o el conocimiento de pretraining
-  (modelos con bajo exito TDD tienen alto exito en tareas TLD hermanas).
-- **Bottleneck: instruction loss en prompts largos** — mas test cases y
-  prompts mas extensos **degradan** la performance (TDD prompting paradox).
-
-### Consecuencia operativa (progressive disclosure)
-
-- **Prompts CORTOS y progresivos**: no vuelques la spec completa de golpe.
-  Primero contexto limpio (spec resumida + tests), despues implementa.
-- Instrucciones largas = ruido: degradan el instruction following.
-- Un test a la vez en loops complejos (patron Evaluator-Optimizer): fallo →
-  ajuste → repite.
+1. **Spec**: requerimiento → acceptance criteria en lenguaje natural + ejemplos
+   concretos (entrada → salida esperada); cada criterio comprobable por un test.
+2. **Tests** (ANTES del codigo): 1 test = 1 criterio; nombres descriptivos;
+   pytest; PBT con `hypothesis` para invariantes. Los tests son prompt + verificacion.
+3. **Code**: implementacion minima para pasar (KISS/YAGNI); docstrings ES.
+4. **Refactor**: con tests verdes, limpiar (NAM/TYP/IMM/SOL, DRY) sin romper verde.
 
 ## Red-Green-Refactor disciplinado
 
@@ -80,15 +41,7 @@ Cui 2025 (arXiv:2505.09027, WebApp1K: 1000 challenges, 20 dominios,
    (assertion, no error de import). Si no falla, el test no prueba nada.
 2. **GREEN**: implementacion minima que lo pasa.
 3. **REFACTOR**: limpiar sin romper verde.
-- Prohibido: parches cosmeticos a tests para "pintar verde" (el test debe
-  poder fallar — doctrina VER/guardian).
-
-## Model routing (TKN)
-
-- **Spec**: modelos de alto razonamiento (frontier) — la traduccion
-  requerimiento→criterios es donde se juega la calidad.
-- **Implementacion repetitiva**: modelos small — tareas mecánicas de bajo
-  costo (Token Economics: small para simple, frontier para complejo).
+- Prohibido: parches cosmeticos a tests para "pintar verde" (doctrina VER/guardian).
 
 ## Checklist ATDD
 
@@ -112,16 +65,7 @@ Cui 2025 (arXiv:2505.09027, WebApp1K: 1000 challenges, 20 dominios,
 - Over-engineering en Code (implementar mas de lo que el test exige).
 - Refactor sin tests verdes previos.
 
-## Referencias
-
-- OpenSpec-ATDD — spec-driven development con TDD/BDD workflows guiados por
-  IA (github.com/zarzouram/OpenSpec-ATDD).
-- Cui, Y. (2025). "Tests as Prompt: A Test-Driven-Development Benchmark for
-  LLM Code Generation" — arXiv:2505.09027.
-- Beck, K. (2022). "Test-Driven Development: By Example" — origen del ciclo
-  red-green-refactor.
-
-## Ejemplo
+## Ejemplo trabajado
 
 ```
 # 1) Spec: "POST /users rechaza email invalido con 422"
@@ -131,3 +75,11 @@ def test_create_user_with_invalid_email_returns_422(client):
 $ pytest -q   # FAILED (404) -> RED con motivo correcto
 # 3) implementacion minima -> GREEN - 4) refactor con tests verdes
 ```
+
+## Referencias (bajo demanda)
+
+> Migrado a `references/` por política "focused beats comprehensive" (SkillsBench 2026).
+> Cargar solo cuando la tarea requiera el detalle del ciclo o la frontera.
+
+- [Ciclo Spec→Test→Code completo](references/ciclo-spec-test-code.md) — doctrina OpenSpec, los 4 pasos en detalle.
+- [Frontier 2026 — tests como prompt+verificación](references/frontier-2026.md) — Cui 2025 (arXiv:2505.09027), instruction loss, model routing.

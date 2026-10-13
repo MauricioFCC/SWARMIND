@@ -3,7 +3,7 @@ name: diagram-design
 domain: frontend
 description: "Usar cuando el usuario pide un diagrama visual editorial. arquitectura, flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar, org chart, mermaid, drawio, SVG, diagrama. Alcance: diagramas visuales editoriales; para arquitectura ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 1.0.0
+version: 1.1.0
 project_agnostic: true
 ---
 
@@ -25,6 +25,7 @@ project_agnostic: true
 - `!diagram check` — Self-check de calidad (self_check.py)
 
 ## Referencias
+- `references/selection-guide.md` — trigger→pattern y guia de los 27 tipos visuales
 - `references/style-guide.md` — Design tokens (customizar antes del primer uso)
 - `references/type-*.md` — 27 especificaciones de tipos visuales
 - `references/semantic-patterns.md` — Patrones de comportamiento

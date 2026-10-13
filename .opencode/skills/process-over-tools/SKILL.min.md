@@ -34,3 +34,7 @@ PBT/mutacion, KPIs; adoptar procesos, no herramientas (caso ORCA).
 - [ ] Oraculos PBT/mutation + KPIs + budget
 - [ ] ADR + docs actualizados
 - [ ] Evidencia: tests + lint verdes (VER)
+
+## Referencias (bajo demanda)
+- `references/marco-5-preguntas.md` — tesis, mapa pregunta→componente, detalle
+- `references/caso-orca-2026.md` — caso ORCA 2026, comandos `!rag`/`!iteration`
