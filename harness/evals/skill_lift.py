@@ -191,6 +191,13 @@ class SkillLiftEvaluator:
         counts = {"useful": 0, "neutral": 0, "harmful": 0}
         for result in materialized:
             counts[result.verdict] += 1
+        if counts["harmful"]:
+            logger.warning(
+                "Skill Lift: %d skill(s) con lift negativo (harmful); candidatas a "
+                "retiro via Library Drift. WHAT: delta_pp<0; WHY: danan la tarea; "
+                "WHERE: SkillLiftEvaluator.report",
+                counts["harmful"],
+            )
         mean_delta = mean(r.delta_pp for r in materialized) if materialized else 0.0
         return {
             "useful": counts["useful"],
