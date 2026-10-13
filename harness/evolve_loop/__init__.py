@@ -10,6 +10,11 @@ from harness.evolve_loop.cognition_sync import CognitionLesson, CognitionSync
 from harness.evolve_loop.evaluator import CASEEvaluator, FullEvaluation
 from harness.evolve_loop.failure_distiller import FailureDistiller
 from harness.evolve_loop.gepa_mutator import GEPAMutator, MutantPrompt
+from harness.evolve_loop.harness_critic import (
+    HarnessCause,
+    HarnessCritic,
+    HarnessDiff,
+)
 from harness.evolve_loop.library_drift import (
     DriftPolicy,
     DriftVerdict,
@@ -33,6 +38,9 @@ __all__ = [
     "FailureDistiller",
     "FullEvaluation",
     "GEPAMutator",
+    "HarnessCause",
+    "HarnessCritic",
+    "HarnessDiff",
     "ImprovementRound",
     "LibraryDriftManager",
     "MutantPrompt",
