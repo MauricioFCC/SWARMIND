@@ -47,8 +47,6 @@ _TASK_OK = "quiero analizar finanzas del trimestre"
 #: Description limpia (sin ningun anti-trigger).
 _CLEAN_DESC = "Usar cuando el usuario analiza series de datos y metricas."
 
-_VETO_TOKEN = "kubernetes"
-
 
 def _vetoed_skill() -> dict[str, str]:
     """Candidato de skill con anti-trigger sobre kubernetes."""
