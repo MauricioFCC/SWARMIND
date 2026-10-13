@@ -31,3 +31,7 @@ Adaptacion de OpenSpec-ATDD (spec-driven + TDD/BDD guiado por IA) al stack SWARM
 - [ ] Implementacion minima → GREEN
 - [ ] Refactor sin romper verde
 - [ ] pytest + ruff pasando (VER, evidencia mostrada)
+
+## Referencias (bajo demanda)
+- `references/ciclo-spec-test-code.md` — ciclo Spec→Test→Code completo (OpenSpec)
+- `references/frontier-2026.md` — tests como prompt (Cui 2025), model routing

@@ -34,6 +34,9 @@ logger = logging.getLogger("harness.observability.token_telemetry")
 #: Version del esquema de persistencia JSON.
 SCHEMA_VERSION = 1
 
+#: Umbral minimo de acierto de cache exigido por la compuerta TKN (FR-3).
+MIN_HIT_RATE = 0.80
+
 
 @dataclass(frozen=True)
 class UsageRecord:
@@ -272,6 +275,57 @@ class TokenTelemetry:
         return total_cached / denominator if denominator > 0 else 0.0
 
 
+class TelemetryGate:
+    """Compuerta de cache-hit sobre una ``TokenTelemetry`` (FR-3, TKN).
+
+    WHAT: verifica que el ``hit_rate`` global alcance ``MIN_HIT_RATE`` y, si no,
+    entrega un diagnostico accionable (cache-buster flaggeado) que sugiere
+    re-shapear el prompt. WHY: un hit-rate bajo suele indicar que el prefijo
+    estable del prompt se invalida entre llamadas; medirlo con evidencia evita
+    optimizar a ciegas. WHERE: lo consume ``PipelineRouter.route`` para loggear
+    (nunca bloquea el pipeline).
+
+    Uso:
+        gate = TelemetryGate()
+        ok, message = gate.check(telemetry)
+    """
+
+    def __init__(self, threshold: float = MIN_HIT_RATE) -> None:
+        """Inicializa la compuerta con el umbral minimo de acierto.
+
+        Args:
+            threshold: Umbral minimo de ``hit_rate`` exigido (default
+                ``MIN_HIT_RATE`` = 0.80).
+        """
+        self._threshold = threshold
+
+    @property
+    def threshold(self) -> float:
+        """Umbral minimo de acierto de cache exigido por la compuerta."""
+        return self._threshold
+
+    def check(self, telemetry: TokenTelemetry) -> tuple[bool, str]:
+        """Evalua el ``hit_rate`` de ``telemetry`` contra el umbral.
+
+        Args:
+            telemetry: Acumulador de telemetria a inspeccionar.
+
+        Returns:
+            Tupla ``(ok, message)``. ``ok`` es ``True`` si
+            ``hit_rate >= threshold``; en caso contrario ``ok`` es ``False`` y
+            ``message`` describe el "cache-buster" con la sugerencia de
+            re-shapear el prompt (estables primero).
+        """
+        rate = telemetry.hit_rate()
+        if rate < self._threshold:
+            message = (
+                f"cache-buster flaggeado: hit_rate {rate:.2f} < {self._threshold:.2f}; "
+                "re-shapea el prompt (tools+system+static antes que dynamic)"
+            )
+            return False, message
+        return True, f"cache-hit OK: hit_rate {rate:.2f} >= {self._threshold:.2f}"
+
+
 def _empty_bucket() -> dict[str, int]:
     """Crea un bucket de agregacion en cero.
 
@@ -286,4 +340,4 @@ def _empty_bucket() -> dict[str, int]:
     }
 
 
-__all__ = ["SCHEMA_VERSION", "TokenTelemetry", "UsageRecord"]
+__all__ = ["MIN_HIT_RATE", "SCHEMA_VERSION", "TelemetryGate", "TokenTelemetry", "UsageRecord"]

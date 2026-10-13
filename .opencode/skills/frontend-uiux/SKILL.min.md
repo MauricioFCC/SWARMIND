@@ -3,7 +3,7 @@ name: frontend-uiux
 domain: frontend
 description: "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. Alcance: UI/UX y design systems; para diagramas visuales ver diagram-design. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 1.0.0
+version: 1.2.0
 project_agnostic: true
 ---
 
@@ -22,3 +22,8 @@ project_agnostic: true
 - `!ds token add/export` — Gestion de design tokens
 - `!perf analyze <url>` — Analisis de Core Web Vitals
 - `!ux validate` — Validacion WiserUI-Bench + ReFinE loop
+
+## Referencias (bajo demanda)
+- `references/core.md` — principios, Generative UI pipeline, arquitectura, design system 3-tier
+- `references/advanced.md` — accesibilidad, rendimiento, personalizacion Bayesian, testing visual + PBT
+

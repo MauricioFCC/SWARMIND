@@ -74,7 +74,7 @@ skills:
     description: "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. Alcance: UI/UX y design systems; para diagramas visuales ver diagram-design. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.2.0
     project_agnostic: true
-    sha256: ddddce8d4b3b6db3a06e1f8ff2dc9213b0dd64ec3a1634a80e80527d09daf199
+    sha256: ad20709513b6369280578bc3704385d779ee16d130afef6659d70e9c09030bf6
 
   - name: rust-lang
     domain: systems
@@ -207,7 +207,7 @@ skills:
     description: "Usar cuando el usuario pide un diagrama visual editorial. arquitectura, flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar, org chart, mermaid, drawio, SVG, diagrama. Alcance: diagramas visuales editoriales; para arquitectura ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: ea892d2157373594108c89d27f21f971678fd6282e0fa6165c8135b25d73e6f8
+    sha256: f31a05142b12084752f7c43c45928612716e9aa1d720a66da7f32a92b601b3dd
 
   - name: ads-optimizer
     domain: advertising
@@ -228,14 +228,14 @@ skills:
     description: "Usar cuando se desarrolla una feature con ciclo Spec→Test→Code: especificación de comportamiento primero, tests como prompt+verificación, implementación mínima, refactor. Alcance: ciclo Spec->Test->Code; para disciplina pre-merge ver agent-rigor. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: b1973572e2921798ef54120efd814920bebdf4c3554b2c516e62a7904190dfae
+    sha256: 96526c87474c03b51a2d76528544bed75feaead1328dcb139c63873d61e87b35
 
   - name: process-over-tools
     domain: orchestration
     description: "Usar cuando se evalúa adoptar herramienta, modelo o agente en el proyecto: define objetivo, responsable, datos, medición y escalado, y enrútalo al harness. Alcance: adopcion de tools en el harness; para mejora del sistema ver evolve. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 9275ccb27de7244395a433ceb5e5d0c2f3e89d0c1be82deb6572258270c75331
+    sha256: 28b4daf11a5f5507078aa7e5b4d6ecccd21a0ac2f3dd193f35923664f5687313
 
   - name: agent-rigor
     domain: quality

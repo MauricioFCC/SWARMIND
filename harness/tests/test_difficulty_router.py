@@ -8,8 +8,12 @@ classify_batch(), y RoutingDecision.
 
 from __future__ import annotations
 
+import ast
+from pathlib import Path
+
 import pytest
 
+from harness.orchestrator import difficulty_router as difficulty_router_module
 from harness.orchestrator.difficulty_router import (
     AMBIGUITY_PATTERNS,
     HIGH_COMPLEXITY_KEYWORDS,
@@ -455,3 +459,115 @@ class TestKeywordsDefinitions:
 
     def test_ambiguity_patterns_non_empty(self):
         assert len(AMBIGUITY_PATTERNS) > 0
+
+
+# ---------------------------------------------------------------------------
+# MAG: umbrales de longitud como constantes con nombre
+# ---------------------------------------------------------------------------
+
+
+#: Nombres y valores esperados de los umbrales de longitud (SSOT, MAG).
+_NAMED_LENGTH_THRESHOLDS: dict[str, int] = {
+    "LONG_TEXT_THRESHOLD_CHARS": 1000,
+    "MEDIUM_TEXT_THRESHOLD_CHARS": 500,
+    "SHORT_TEXT_THRESHOLD_CHARS": 200,
+}
+
+#: Valores que NO deben aparecer como literales en las comparaciones de score.
+_MAGIC_LENGTH_LITERALS = frozenset({1000, 500, 200})
+
+
+def _exposes_named_length_thresholds(namespace: dict) -> bool:
+    """Indica si ``namespace`` expone las constantes con nombre y valor exactos.
+
+    Args:
+        namespace: Mapping tipo ``vars(module)`` o un dict mutado.
+
+    Returns:
+        ``True`` si las tres constantes existen con su valor esperado.
+    """
+    return all(
+        namespace.get(name) == value
+        for name, value in _NAMED_LENGTH_THRESHOLDS.items()
+    )
+
+
+def _find_class_method(
+    tree: ast.AST, class_name: str, method_name: str
+) -> ast.AST | None:
+    """Ubica el nodo AST de un metodo dentro de una clase.
+
+    Args:
+        tree: Arbol AST del modulo (``ast.parse``).
+        class_name: Nombre de la clase contenedora.
+        method_name: Nombre del metodo a localizar.
+
+    Returns:
+        El ``ast.FunctionDef`` del metodo, o ``None`` si no existe.
+    """
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef) and node.name == class_name:
+            for item in node.body:
+                if (
+                    isinstance(item, ast.FunctionDef)
+                    and item.name == method_name
+                ):
+                    return item
+    return None
+
+
+def _literal_length_comparisons(func: ast.AST) -> list[int]:
+    """Devuelve los literales int (1000/500/200) usados en comparaciones.
+
+    Args:
+        func: Nodo AST de la funcion a inspeccionar.
+
+    Returns:
+        Lista de valores magicos hallados en ``ast.Compare`` (vacia si limpio).
+    """
+    found: list[int] = []
+    for node in ast.walk(func):
+        if not isinstance(node, ast.Compare):
+            continue
+        operands = [node.left, *node.comparators]
+        for operand in operands:
+            if (
+                isinstance(operand, ast.Constant)
+                and isinstance(operand.value, int)
+                and operand.value in _MAGIC_LENGTH_LITERALS
+            ):
+                found.append(operand.value)
+    return found
+
+
+def test_complexity_thresholds_are_named_constants() -> None:
+    """MAG: umbrales de longitud como constantes con nombre (sin literales).
+
+    (a) el modulo expone las tres constantes con su valor exacto (renombrarlas
+        rompe el assert: oraculo de mutacion);
+    (b) ``ComplexityFeatures.score`` no compara contra los literales 1000/500/200
+        (inspeccion AST del source real);
+    (c) mutation-style: un namespace al que se le quita una constante falla la
+        verificacion de nombres.
+    """
+    # (a) constantes expuestas con valor exacto
+    assert _exposes_named_length_thresholds(vars(difficulty_router_module))
+
+    # (b) AST: score() sin literales magicos en comparaciones
+    source = Path(difficulty_router_module.__file__).read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    score_node = _find_class_method(tree, "ComplexityFeatures", "score")
+    assert score_node is not None, (
+        "no se encontro ComplexityFeatures.score en el AST"
+    )
+    assert _literal_length_comparisons(score_node) == [], (
+        "score() aun compara contra literales 1000/500/200 (MAG pendiente)"
+    )
+
+    # (c) mutation: quitar una constante rompe la verificacion de nombres
+    mutated_namespace = {
+        name: value
+        for name, value in vars(difficulty_router_module).items()
+        if name != "LONG_TEXT_THRESHOLD_CHARS"
+    }
+    assert not _exposes_named_length_thresholds(mutated_namespace)
