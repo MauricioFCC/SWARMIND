@@ -379,21 +379,189 @@ def _handle_watch_mode(harness_root: Path) -> None:
         _rc._safe_print(f"\n  {_rc._cyan('[WATCH]')} Watch mode detenido.")
 
 
-# ── Guardrails helper ──────────────────────────────────────────────
+# ── Guardrails helper (fail-closed + engine local) ─────────────────
+#
+# Diseno (EDV, Forge 2026): los guardrails cierran el gap de reliability;
+# fallar ABIERTO (continuar sin proteccion) es un riesgo inaceptable.
+# Cadena de resolucion:
+#   1. Engine EXTERNO ``opencode.core.guardrails`` (si ``run_full_pipeline``).
+#   2. Engine LOCAL ``harness.guardrails`` (fallback cableado, no mas bypass).
+#   3. Ninguno -> FAIL-CLOSED: se bloquea la ejecucion (constante
+#      ``FAIL_CLOSED_ON_NO_ENGINE``). El unico camino de degradacion es
+#      explicito y consciente (bandera a False).
+
+#: Si es True (default), bloquear cuando NINGUN engine de guardrails carga.
+FAIL_CLOSED_ON_NO_ENGINE: bool = True
+
+#: Marca de registro unico de los hooks builtin (idempotencia runtime).
+_BUILTIN_HOOKS_REGISTERED: bool = False
+
+
+def _ensure_builtin_hooks_registered() -> int:
+    """Registra los hooks builtin (audit_logger, etc.) una sola vez.
+
+    Idempotente: la primera invocacion instala los hooks; las siguientes
+    retornan 0 sin re-registrar. Activa ``audit_logger`` en runtime.
+
+    Returns:
+        Numero de hooks nuevos registrados (0 si ya estaban registrados).
+    """
+    global _BUILTIN_HOOKS_REGISTERED
+    if _BUILTIN_HOOKS_REGISTERED:
+        return 0
+    from harness.hooks.builtin_hooks import register_builtin_hooks
+    try:
+        count = register_builtin_hooks()
+    except Exception as exc:  # noqa: BLE001 - no rompe el runtime por hooks
+        _rc.logger.warning(
+            "[HOOKS] WHAT=no se pudieron registrar los hooks builtin; "
+            "WHY=%s; WHERE=_ensure_builtin_hooks_registered", exc,
+        )
+        return 0
+    _BUILTIN_HOOKS_REGISTERED = True
+    return count
+
+def _get_local_guardrail_engine() -> Any:
+    """Construye el engine LOCAL de guardrails (``harness.guardrails``).
+
+    Returns:
+        Instancia de ``GuardrailEngine``.
+
+    Raises:
+        Exception: Si el engine local no puede importarse/construirse.
+    """
+    from harness.guardrails import GuardrailEngine
+    return GuardrailEngine()
+
+
+def _run_local_guardrail_pipeline(
+    user_message: str,
+    generated_code: str,
+    context: dict,
+    engine: Any = None,
+) -> dict:
+    """Adapta el engine LOCAL al contrato de ``run_full_pipeline``.
+
+    Ejecuta las capas INPUT (y CONTENT si hay codigo) del ``GuardrailEngine``
+    local y normaliza el veredicto al dict ``{allowed, blocked_at, summary}``
+    que consume ``_run_guardrails``.
+
+    Args:
+        user_message: Prompt/tarea del usuario.
+        generated_code: Codigo generado (puede ser "").
+        context: Contexto de ejecucion (agent_role, etc.).
+        engine: Engine inyectable (None = construye el local).
+
+    Returns:
+        Dict compatible con ``opencode.core.guardrails.run_full_pipeline``.
+    """
+    if engine is None:
+        engine = _get_local_guardrail_engine()
+
+    layers: list[tuple[str, Any]] = [("input", engine.check_input(user_message))]
+    if generated_code:
+        layers.append(("content", engine.check_content(generated_code)))
+
+    blocked_at: str | None = None
+    failed_rules: list[str] = []
+    passed: int = 0
+    for layer_name, result in layers:
+        violations = tuple(getattr(result, "violations", ()) or ())
+        verdict = getattr(result, "verdict", None)
+        if verdict is not None and getattr(verdict, "value", None) == "block":
+            if blocked_at is None:
+                blocked_at = layer_name
+        else:
+            passed += 1
+        failed_rules.extend(violations)
+
+    return {
+        "allowed": blocked_at is None,
+        "blocked_at": blocked_at,
+        "summary": {
+            "passed": passed,
+            "total_checks": len(layers),
+            "failed_rules": failed_rules,
+        },
+    }
+
+
+def _build_local_guardrail_pipeline() -> Any:
+    """Construye el pipeline de guardrails LOCAL (o None si no esta disponible).
+
+    Returns:
+        Callable ``(user_message, generated_code, context) -> dict`` que usa
+        el engine local, o None si ``harness.guardrails`` no carga.
+    """
+    try:
+        engine = _get_local_guardrail_engine()
+    except Exception as exc:  # noqa: BLE001 - fallback a fail-closed
+        _rc.logger.warning(
+            "[GUARDRAILS] WHAT=engine local harness.guardrails no disponible; "
+            "WHY=%s; WHERE=_build_local_guardrail_pipeline", exc,
+        )
+        return None
+
+    def _pipeline(user_message: str, generated_code: str, context: dict) -> dict:
+        return _run_local_guardrail_pipeline(
+            user_message, generated_code, context, engine=engine,
+        )
+
+    return _pipeline
+
+
+def _fail_closed_no_engine(task: str, target_agent: str) -> None:
+    """Aplica fail-closed cuando NINGUN engine de guardrails esta disponible.
+
+    Args:
+        task: Tarea solicitada (referencia para el log).
+        target_agent: Agente destino (referencia para el log).
+    """
+    if FAIL_CLOSED_ON_NO_ENGINE:
+        _rc.logger.error(
+            "[GUARDRAILS] FAIL-CLOSED: WHAT=ni opencode.core.guardrails ni "
+            "harness.guardrails disponibles; WHY=no se puede validar seguridad "
+            "y fallar abierto es inaceptable; WHERE=_run_guardrails. "
+            "BLOQUEANDO tarea de @%s.", target_agent,
+        )
+        _rc.sys.exit(1)
+    _rc.logger.warning(
+        "[GUARDRAILS] WHAT=sin engine de guardrails; "
+        "WHY=FAIL_CLOSED_ON_NO_ENGINE=False (degradacion consciente); "
+        "WHERE=_run_guardrails. Resultado marcado como INSEGURO."
+    )
 
 
 def _run_guardrails(task: str, target_agent: str, ctx: Any,
                      routing_source: str,
                      run_full_pipeline: Any = None) -> None:
+    """Ejecuta guardrails de seguridad (fail-closed).
+
+    Resuelve el pipeline en cascada: engine externo (``opencode.core.guardrails``)
+    -> engine LOCAL (``harness.guardrails``) -> fail-closed si AMBOS faltan.
+
+    Args:
+        task: Descripcion de la tarea.
+        target_agent: Agente destino.
+        ctx: Contexto RAG de la tarea.
+        routing_source: Fuente de routing ("local"/"cloud").
+        run_full_pipeline: Pipeline externo inyectable (None = ausente).
+
+    Raises:
+        SystemExit: Si los guardrails bloquean o si no hay engine (fail-closed).
     """
-    Ejecuta guardrails de seguridad.
-    
-    Si run_full_pipeline no está disponible, emite WARNING pero continúa
-    (comportamiento degradado pero no bloqueante para desarrollo local).
-    """
-    if run_full_pipeline is None:
-        _rc.logger.info("[Harness] Guardrails no disponible (opencode.core.guardrails no importado)")
-        _rc.logger.info("[Harness] El sistema opera SIN proteccion de guardrails.")
+    _ensure_builtin_hooks_registered()
+
+    pipeline = run_full_pipeline
+    if pipeline is None:
+        pipeline = _build_local_guardrail_pipeline()
+        if pipeline is not None:
+            _rc.logger.info(
+                "[Harness] Guardrails: opencode.core.guardrails ausente; "
+                "usando engine LOCAL harness.guardrails (fail-closed)."
+            )
+    if pipeline is None:
+        _fail_closed_no_engine(task, target_agent)
         return
 
     pre_context = {
@@ -403,7 +571,7 @@ def _run_guardrails(task: str, target_agent: str, ctx: Any,
         "token_budget": ctx.metadata.get("total_tokens_used", 0) if hasattr(ctx, 'metadata') else 0,
         "routing_source": routing_source,
     }
-    result = run_full_pipeline(task, "", pre_context)
+    result = pipeline(task, "", pre_context)
     if not result.get("allowed", True):
         blocked_at = result.get("blocked_at", "unknown")
         summary = result.get("summary", {})
@@ -417,25 +585,19 @@ def _run_guardrails(task: str, target_agent: str, ctx: Any,
 # ── ANSI helpers ────────────────────────────────────────────────────
 
 __all__ = [
+    "FAIL_CLOSED_ON_NO_ENGINE",
     "_apply_model_routing",
+    "_build_local_guardrail_pipeline",
     "_check_hitl",
+    "_ensure_builtin_hooks_registered",
+    "_fail_closed_no_engine",
     "_get_files_to_watch",
+    "_get_local_guardrail_engine",
     "_handle_evolve_mutate",
     "_handle_hooks_status",
     "_handle_schedule_add",
     "_handle_schedule_list",
     "_handle_watch_mode",
     "_run_guardrails",
-]
-
-__all__ = [
-    "_apply_model_routing",
-    "_check_hitl",
-    "_get_files_to_watch",
-    "_handle_evolve_mutate",
-    "_handle_hooks_status",
-    "_handle_schedule_add",
-    "_handle_schedule_list",
-    "_handle_watch_mode",
-    "_run_guardrails",
+    "_run_local_guardrail_pipeline",
 ]

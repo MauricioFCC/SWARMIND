@@ -43,6 +43,7 @@ from .colors import (
 from .handlers_extra import (
     _apply_model_routing,
     _check_hitl,
+    _ensure_builtin_hooks_registered,
     _get_files_to_watch,
     _handle_evolve_mutate,
     _handle_hooks_status,
@@ -198,6 +199,7 @@ __all__ = [
     "_check_hitl",
     "_create_store",
     "_cyan",
+    "_ensure_builtin_hooks_registered",
     "_err",
     "_get_files_to_watch",
     "_get_pkg_attr",

@@ -92,6 +92,7 @@ except ImportError:
 from harness.run_commands import (
     _apply_model_routing,
     _check_hitl,
+    _ensure_builtin_hooks_registered,
     _handle_db_list_imports,
     _handle_db_migrate,
     _handle_db_rollback,
@@ -468,6 +469,9 @@ def _check_lancedb_or_exit() -> None:
 def main() -> None:
     """Main entry point for the Harness."""
     _check_lancedb_or_exit()
+
+    # Activa los hooks builtin (audit_logger + validadores) una sola vez.
+    _ensure_builtin_hooks_registered()
 
     parsed = _parse_args()
 
