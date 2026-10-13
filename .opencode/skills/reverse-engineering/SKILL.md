@@ -1,7 +1,7 @@
 ---
 name: reverse-engineering
 domain: reverse-engineering
-description: "Usar cuando el usuario analiza binarios o software sin codigo fuente (ingenieria inversa, reverse engineering). decompile, binary, ghidra, hopper, ida, .asar, electron, xrefs, trace, .NET, Go/Rust, SQLite, REA. Alcance: artefactos que el usuario posee o esta autorizado a analizar; para auditoria de seguridad defensiva ver security-audit. | UPG·NAM·FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario analiza binarios o software sin codigo fuente. reverse engineering, decompile, binary, ghidra, hopper, ida, .asar, electron, xrefs, .NET, Go/Rust, SQLite, REA. Alcance: solo targets propios/autorizados; para auditoria de seguridad ver security-audit. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Node.js 22+ ; npx rea-agents@latest o npm install -g rea-agents'
 version: 1.0.0

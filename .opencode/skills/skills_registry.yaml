@@ -256,4 +256,4 @@ skills:
     description: "Usar cuando el usuario analiza binarios o software sin codigo fuente (ingenieria inversa, reverse engineering). decompile, binary, ghidra, hopper, ida, .asar, electron, xrefs, trace, .NET, Go/Rust, SQLite, REA. Alcance: artefactos que el usuario posee o esta autorizado a analizar; para auditoria de seguridad defensiva ver security-audit. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: false
-    sha256: 4908f5e4d7cf2e1ba978864af07acd727aa8b875157bfd8dee3d745f638960f4
+    sha256: 348eefa6c966b546ffa9783285befdfc597c8fe183e84454b0589533cc9780f2
