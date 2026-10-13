@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal
 
 from .mcp_client import MCPClient, MCPResult, MCPTool
 
@@ -23,6 +23,25 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_CACHE_TTL = 60  # seconds
 
+#: Transportes soportados por un servidor MCP.
+_VALID_TRANSPORTS: tuple[str, ...] = ("http", "stdio")
+#: Ubicación de la validación de transporte (para mensajes WHAT/WHY/WHERE).
+_CONFIG_WHERE = "harness/tools_sandbox/mcp_manager.py::MCPServerConfig.__post_init__"
+
+
+# ---------------------------------------------------------------------------
+# Errors
+# ---------------------------------------------------------------------------
+
+
+class MCPConfigError(ValueError):
+    """Error de configuración de un servidor MCP (transporte/endpoint inválido).
+
+    Subclase de ``ValueError`` para que el llamador pueda capturar el tipo
+    específico o un ``ValueError`` genérico. El mensaje siempre incluye
+    WHAT (qué falta), WHY (por qué es obligatorio) y WHERE (dónde se valida).
+    """
+
 
 # ---------------------------------------------------------------------------
 # Data types
@@ -31,14 +50,76 @@ _DEFAULT_CACHE_TTL = 60  # seconds
 
 @dataclass
 class MCPServerConfig:
-    """Configuration for an MCP server."""
+    """Configuración de un servidor MCP con transporte dual (http/stdio).
+
+    - Transporte ``http``: el servidor se alcanza por red en ``url``.
+    - Transporte ``stdio``: el servidor se lanza como subproceso
+      ``command`` + ``args`` con ``env`` extra (ej. REA:
+      ``npx -y rea-agents@latest mcp``).
+
+    Attributes:
+        name: Nombre único del servidor.
+        url: URL del servidor (obligatoria si ``transport == "http"``).
+        description: Descripción legible.
+        tools: Nombres de herramientas que expone el servidor.
+        enabled: Si se auto-conecta al cargar.
+        install_hint: Cómo instalar/registrar el servidor.
+        transport: ``"http"`` (red) o ``"stdio"`` (subproceso).
+        command: Ejecutable a lanzar (obligatorio si ``transport == "stdio"``).
+        args: Argumentos del ejecutable ``command``.
+        env: Variables de entorno extra para el subproceso stdio.
+
+    Raises:
+        MCPConfigError: si ``transport`` es desconocido, si ``stdio`` no
+            define ``command`` o si ``http`` no define ``url``.
+    """
 
     name: str
-    url: str
+    url: str = ""
     description: str = ""
     tools: list[str] = field(default_factory=list)
     enabled: bool = False
     install_hint: str = ""
+    transport: Literal["http", "stdio"] = "http"
+    command: str = ""
+    args: list[str] = field(default_factory=list)
+    env: dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        """Valida la coherencia transporte ↔ endpoint con WHAT/WHY/WHERE.
+
+        Raises:
+            MCPConfigError: si falta el endpoint exigido por el transporte.
+        """
+        if self.transport not in _VALID_TRANSPORTS:
+            raise MCPConfigError(
+                f"WHAT: transport '{self.transport}' desconocido "
+                f"(esperado uno de {list(_VALID_TRANSPORTS)}) para el servidor "
+                f"'{self.name}'; WHY: el manager solo sabe conectar http o stdio; "
+                f"WHERE: {_CONFIG_WHERE}."
+            )
+        if self.transport == "stdio":
+            if not self.command or not self.command.strip():
+                raise MCPConfigError(
+                    f"WHAT: 'command' es obligatorio para transport='stdio' "
+                    f"(servidor '{self.name}'); WHY: un servidor stdio corre como "
+                    f"subproceso y necesita un ejecutable que lanzar; "
+                    f"WHERE: {_CONFIG_WHERE}."
+                )
+        elif not self.url or not self.url.strip():
+            raise MCPConfigError(
+                f"WHAT: 'url' es obligatorio para transport='http' "
+                f"(servidor '{self.name}'); WHY: un servidor http se alcanza por "
+                f"red en una URL; WHERE: {_CONFIG_WHERE}."
+            )
+
+    def is_stdio(self) -> bool:
+        """Indica si el servidor usa transporte stdio (subproceso).
+
+        Returns:
+            True si ``transport == "stdio"``; False si es http.
+        """
+        return self.transport == "stdio"
 
 
 # ---------------------------------------------------------------------------
@@ -82,22 +163,34 @@ class MCPManager:
     def register_server(
         self,
         name: str,
-        url: str,
+        url: str = "",
         tools: list[str] | None = None,
         enabled: bool = False,
         description: str = "",
         install_hint: str = "",
+        transport: Literal["http", "stdio"] = "http",
+        command: str = "",
+        args: list[str] | None = None,
+        env: dict[str, str] | None = None,
     ) -> None:
         """
-        Register a new MCP server.
+        Register a new MCP server (transporte http o stdio).
 
         Args:
             name: Unique server name.
-            url: Server URL (e.g. http://localhost:3100).
+            url: Server URL (e.g. http://localhost:3100). Obligatoria para http.
             tools: List of tool names this server provides.
             enabled: Whether to auto-connect on startup.
             description: Human-readable description.
             install_hint: How to install this server.
+            transport: ``"http"`` (red) o ``"stdio"`` (subproceso).
+            command: Ejecutable a lanzar. Obligatorio para stdio.
+            args: Argumentos del ejecutable ``command`` (stdio).
+            env: Variables de entorno extra para el subproceso (stdio).
+
+        Raises:
+            MCPConfigError: si la configuración no es coherente (ver
+                :class:`MCPServerConfig`).
         """
         self._servers[name] = MCPServerConfig(
             name=name,
@@ -106,8 +199,19 @@ class MCPManager:
             enabled=enabled,
             description=description,
             install_hint=install_hint,
+            transport=transport,
+            command=command,
+            args=args or [],
+            env=env or {},
         )
-        logger.info("Registered MCP server '%s' at %s (enabled=%s)", name, url, enabled)
+        target = f"command={command!r}" if transport == "stdio" else f"url={url}"
+        logger.info(
+            "Registered MCP server '%s' (%s: %s, enabled=%s)",
+            name,
+            transport,
+            target,
+            enabled,
+        )
 
     def remove_server(self, name: str) -> None:
         """Remove a server and disconnect its client."""
@@ -158,6 +262,10 @@ class MCPManager:
                     enabled=s.get("enabled", False),
                     description=s.get("description", ""),
                     install_hint=s.get("install_hint", ""),
+                    transport=s.get("transport", "http"),
+                    command=s.get("command", ""),
+                    args=s.get("args", []),
+                    env=s.get("env", {}),
                 )
                 count += 1
 
@@ -190,10 +298,19 @@ class MCPManager:
                 continue
 
             client = MCPClient()
-            if client.connect(config.url):
+            if config.is_stdio():
+                connected_ok = client.connect_stdio(
+                    config.command, config.args, config.env
+                )
+                where = f"stdio:{config.command}"
+            else:
+                connected_ok = client.connect(config.url)
+                where = config.url
+
+            if connected_ok:
                 self._clients[name] = client
                 connected += 1
-                logger.info("Connected to MCP server '%s' at %s", name, config.url)
+                logger.info("Connected to MCP server '%s' at %s", name, where)
             else:
                 logger.warning("Failed to connect to MCP server '%s'", name)
 

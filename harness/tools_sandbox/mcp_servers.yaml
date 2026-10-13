@@ -67,3 +67,31 @@ servers:
       - web_fetch
     enabled: false
     install_hint: "npx @modelcontextprotocol/server-brave-search"
+
+  # ---------------------------------------------------------------------------
+  # REA - reverse engineering MCP server (morluto/rea, licencia MIT).
+  # Transporte stdio: se lanza como subproceso (NO usa 'url').
+  #   Requisito: Node 22+/24+/26+ (el entorno actual tiene Node v24).
+  #   Instalacion: npx -y rea-agents@latest mcp
+  #                (o 'npx rea-agents setup' para registrar con agentes)
+  #   Env opcionales (anadir bajo la clave 'env' si se necesitan):
+  #     REA_ANALYSIS_PROVIDER: hopper | ghidra | ida  (proveedor de analisis)
+  #     REA_MCP_INPUT_SCHEMA_PROFILE: perfil del schema de entrada
+  #     REA_MCP_MAX_RESPONSE_BYTES: limite de bytes por respuesta
+  # ---------------------------------------------------------------------------
+  - name: rea
+    transport: stdio
+    command: npx
+    args: ["-y", "rea-agents@latest", "mcp"]
+    description: "REA - reverse engineering MCP (binaries, JS/Electron, .NET, websites)"
+    tools:
+      - analyze_function
+      - analyze_javascript_application
+      - decompile
+      - get_call_graph
+      - trace_call_path
+      - inspect_artifact
+      - extract_artifact
+      - open_binary
+    enabled: false
+    install_hint: "Node 22+/24+ y: npx -y rea-agents@latest mcp (o 'npx rea-agents setup' para registrar con agentes)"
