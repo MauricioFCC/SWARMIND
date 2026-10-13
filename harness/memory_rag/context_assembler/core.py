@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import Any
 
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 
@@ -17,6 +18,23 @@ from .models import ContextAssembly
 from .retrieval import _RetrievalMixin
 
 logger = logging.getLogger("harness.memory_rag.context_assembler")
+
+# ---------------------------------------------------------------------------
+# Marcadores canonicos de seccion del prompt (cache-shape friendly)
+# ---------------------------------------------------------------------------
+# WHY marcadores: separan el contenido estable (rol/instrucciones) del
+# dinamico (RAG + task context) y de la solicitud final; el bloque estable
+# va primero para maximizar el prefijo cacheable del prompt.
+
+#: Encabezado del bloque estable (rol/instrucciones).
+_PROMPT_SECTION_STATIC = "### CONTEXTO ESTATICO (rol)"
+#: Encabezado del bloque dinamico (chunks RAG + task context).
+_PROMPT_SECTION_DYNAMIC = "### CONTEXTO DINAMICO (recuperado)"
+#: Encabezado de la solicitud del usuario (ultimo bloque, mas variable).
+_PROMPT_SECTION_REQUEST = "### SOLICITUD"
+
+#: Campos donde puede vivir el texto de un chunk/item (orden de prioridad).
+_TEXT_FIELDS = ("content", "text", "chunk", "description")
 
 
 # ---------------------------------------------------------------------------
@@ -44,6 +62,8 @@ class ContextAssembler(_RetrievalMixin, _TokenBudgetMixin):
         self,
         vector_store: LanceVectorStore | None = None,
         embedding_fn: callable | None = None,
+        hybrid_retriever: Any | None = None,
+        corrective_retriever: Any | None = None,
     ) -> None:
         """
         Args:
@@ -52,9 +72,17 @@ class ContextAssembler(_RetrievalMixin, _TokenBudgetMixin):
             embedding_fn: Optional callable that maps ``str -> np.ndarray``.
                 If omitted, a simple TF-IDF-like bag-of-characters fallback
                 is used so that the assembler works without an external model.
+            hybrid_retriever: ``HybridRetriever`` opcional (DI) que fusiona
+                denso+BM25 con RRF. Si se inyecta mejora el recall; si es
+                ``None`` rige la busqueda legacy (backward-compat).
+            corrective_retriever: ``CorrectiveRetriever`` opcional (DI, CRAG)
+                que valida y corrige la recuperacion. Tiene prioridad sobre
+                ``hybrid_retriever``. ``None`` lo desactiva.
         """
         self.store = vector_store or LanceVectorStore()
         self._embedding_fn = embedding_fn or self._default_embedding
+        self._hybrid_retriever = hybrid_retriever
+        self._corrective_retriever = corrective_retriever
 
     # ------------------------------------------------------------------
     # Public API
@@ -129,8 +157,10 @@ class ContextAssembler(_RetrievalMixin, _TokenBudgetMixin):
             filters["tipo_doc"] = tipo_doc_filter
 
         # 3. Ejecutar busquedas en PARALELO via asyncio.gather
+        # El recall avanzado (CRAG/hybrid) se resuelve por DI dentro de
+        # ``_retrieve_chunks``; sin retrievers inyectados rige la ruta legacy.
         chunks_task = asyncio.to_thread(
-            self._search_rag_chunks, query_vec, keywords, 20, filters
+            self._retrieve_chunks, message, query_vec, keywords, 20, filters
         )
         tasks_task = asyncio.to_thread(
             self._fetch_task_context, agent_role, 10
@@ -165,3 +195,115 @@ class ContextAssembler(_RetrievalMixin, _TokenBudgetMixin):
         assembly = self._apply_token_budget(assembly, safe_budget)
 
         return assembly
+
+    # ------------------------------------------------------------------
+    # Prompt injection (cache-shape friendly)
+    # ------------------------------------------------------------------
+
+    def inject_into_prompt(
+        self,
+        base_prompt: str,
+        assembled: ContextAssembly,
+    ) -> str:
+        """Inyecta el contexto ensamblado en un prompt canonico por secciones.
+
+        WHAT: compone un prompt con tres bloques marcados y estables:
+        ``ESTATICO`` (instrucciones de rol), ``DINAMICO`` (chunks RAG + task
+        context) y ``SOLICITUD`` (``base_prompt``). WHY: el assembler producia
+        contexto pero nadie lo insertaba en un prompt en una forma canonica;
+        ademas, poner primero el contenido estable maximiza el prefijo
+        cacheable (Cache-Shape Discipline). WHERE: call sites que construyen el
+        prompt del agente a partir del ``ContextAssembly``.
+
+        Orden garantizado (estatico -> dinamico -> solicitud): el contenido mas
+        estable va delante para que el cache de prefijo sea efectivo; el bloque
+        mas variable (la solicitud del usuario) queda al final.
+
+        Args:
+            base_prompt: Prompt/solicitud base del usuario.
+            assembled: Contexto ya ensamblado (``ContextAssembly``).
+
+        Returns:
+            Prompt con el contexto inyectado en secciones marcadas. Las
+            secciones sin contenido se omiten (sin bloques vacios).
+        """
+        static_block = self._render_section(
+            _PROMPT_SECTION_STATIC,
+            [assembled.instructions] if assembled.instructions else [],
+        )
+        dynamic_parts = [self._format_doc(doc) for doc in assembled.relevant_docs]
+        dynamic_parts += [self._format_task(item) for item in assembled.task_context]
+        dynamic_block = self._render_section(_PROMPT_SECTION_DYNAMIC, dynamic_parts)
+        request_block = self._render_section(_PROMPT_SECTION_REQUEST, [base_prompt])
+
+        return "\n\n".join(
+            block for block in (static_block, dynamic_block, request_block) if block
+        )
+
+    @staticmethod
+    def _render_section(marker: str, parts: list[str]) -> str:
+        """Renderiza una seccion marcada; vacia si no hay contenido.
+
+        Args:
+            marker: Encabezado de la seccion (constante ``_PROMPT_SECTION_*``).
+            parts: Lineas de contenido de la seccion.
+
+        Returns:
+            La seccion con encabezado, o cadena vacia si todas las partes son
+            vacias.
+        """
+        rendered = [part for part in parts if part]
+        if not rendered:
+            return ""
+        return marker + "\n" + "\n".join(rendered)
+
+    @staticmethod
+    def _format_doc(doc: dict[str, Any]) -> str:
+        """Formatea un chunk recuperado como linea estable del prompt.
+
+        Args:
+            doc: Chunk con ``id`` y texto (directo o en ``metadata``).
+
+        Returns:
+            Linea ``[id] texto`` (o la parte disponible).
+        """
+        doc_id = str(doc.get("id", "") or "")
+        snippet = ContextAssembler._text_of(doc)
+        prefix = f"[{doc_id}] " if doc_id else ""
+        return f"{prefix}{snippet}" if snippet else prefix.strip()
+
+    @staticmethod
+    def _format_task(item: dict[str, Any]) -> str:
+        """Formatea una entrada de task context como linea del prompt.
+
+        Args:
+            item: Entrada de task context (``agent`` + texto).
+
+        Returns:
+            Linea ``- [agent] texto`` (o la parte disponible).
+        """
+        agent = str(item.get("agent", "") or "")
+        text = ContextAssembler._text_of(item)
+        prefix = f"- [{agent}] " if agent else "- "
+        return f"{prefix}{text}" if text else ""
+
+    @staticmethod
+    def _text_of(item: dict[str, Any]) -> str:
+        """Extrae el texto de un item (campo directo o dentro de metadata).
+
+        Args:
+            item: Chunk o entrada de task context.
+
+        Returns:
+            El primer texto no vacio encontrado en ``_TEXT_FIELDS`` (o "").
+        """
+        for field in _TEXT_FIELDS:
+            value = item.get(field)
+            if value:
+                return str(value)
+        meta = item.get("metadata", {}) or {}
+        for field in _TEXT_FIELDS:
+            value = meta.get(field)
+            if value:
+                return str(value)
+        return ""

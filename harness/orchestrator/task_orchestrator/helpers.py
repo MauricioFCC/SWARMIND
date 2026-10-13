@@ -35,15 +35,16 @@ def enable_golden_signals(orchestrator: TaskOrchestrator, **kwargs) -> None:
         **kwargs: parametros de costo para GoldenSignals
             (cost_input_per_1k, cost_output_per_1k, cache_read_discount).
     """
-    if orchestrator._telemetry is None:
+    telemetry = orchestrator._telemetry
+    if telemetry is None or not callable(getattr(telemetry, "enable_golden_signals", None)):
         StructuredLogRecord.warning(
             "golden_signals_skipped",
-            message="TaskOrchestrator no tiene telemetria habilitada; "
-                    "Golden Signals no activado",
+            message="TaskOrchestrator no tiene un TelemetryTracker con Golden "
+                    "Signals habilitables; Golden Signals no activado",
             session_id="",
         )
         return
-    orchestrator._telemetry.enable_golden_signals(**kwargs)
+    telemetry.enable_golden_signals(**kwargs)
     StructuredLogRecord.info(
         "golden_signals_enabled",
         message="Golden Signals LLM activados en telemetria",

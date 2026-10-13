@@ -163,7 +163,21 @@ def _handle_gateway_mode(parsed: dict[str, Any]) -> None:
 
 
 def _dispatch_task(store: Any, orch_result: Any, task: str) -> str:
-    """Dispatch task via AgentDispatcher and return routing_source."""
+    """Dispatch task via AgentDispatcher and return routing_source.
+
+    Cablea los componentes de frontera que antes quedaban standalone: inyecta
+    un ``TokenTelemetry`` (FR-2) y un ``LibraryDriftManager`` (retiro por
+    outcome) en el ``AgentDispatcher``, y cierra el outcome del skill tras el
+    dispatch (best-effort).
+
+    Args:
+        store: Vector store compartido por el dispatcher.
+        orch_result: Resultado del ``TaskOrchestrator`` (target_agent + plan).
+        task: Tarea original del usuario.
+
+    Returns:
+        El agente destino (``routing_source``) elegido por el orquestador.
+    """
     target_agent = orch_result.target_agent
     plan_context = {
         "session_id": orch_result.session_id,
@@ -176,8 +190,15 @@ def _dispatch_task(store: Any, orch_result: Any, task: str) -> str:
 
     import asyncio
 
+    from harness.evolve_loop.library_drift import LibraryDriftManager
+    from harness.observability.token_telemetry import TokenTelemetry
     from harness.orchestrator.agent_dispatcher import AgentDispatcher
-    dispatcher = AgentDispatcher(vector_store=store)
+
+    dispatcher = AgentDispatcher(
+        vector_store=store,
+        telemetry=TokenTelemetry(),
+        drift_manager=LibraryDriftManager(),
+    )
 
     async def _run():
         result = await dispatcher.dispatch_async(target_agent, task, plan_context=plan_context)
@@ -185,9 +206,49 @@ def _dispatch_task(store: Any, orch_result: Any, task: str) -> str:
                      result["used_skill"],
                      len(result.get("rag_context", {}).get("relevant_docs", [])),
                      bool(result.get("execution_plan")))
+        _record_skill_outcome(dispatcher, result)
 
     asyncio.run(_run())
     return target_agent
+
+
+def _record_skill_outcome(dispatcher: Any, dispatch_result: dict[str, Any]) -> None:
+    """Cierra el outcome de la skill usada en un dispatch (best-effort).
+
+    WHAT: si el dispatch inyecto un skill (``skill_name`` no vacio), delega en
+    ``AgentDispatcher.record_skill_outcome`` para acumular evidencia de utilidad
+    (retrieval + helpful/hurt) en el ``LibraryDriftManager``. WHY: el outcome se
+    conoce DESPUES del dispatch; sin este hook el tracker nunca acumula trials y
+    el retiro por outcome no puede decidirse (Library Drift). WHERE: caller de
+    ``AgentDispatcher.dispatch_async`` en ``_dispatch_task``.
+
+    Nota de integracion: ``dispatch_async`` devuelve el contexto de despacho, no
+    la correccion final de la subtarea; por eso se marca la **aplicacion** del
+    skill como senal de exito provisional. El caller que conozca el veredicto
+    real puede reutilizar este mismo hook sin cambiar el contrato.
+
+    Nunca lanza: un fallo del tracker (IO/atributos) se registra y no rompe el
+    flujo (ERR: sin except silencioso).
+
+    Args:
+        dispatcher: ``AgentDispatcher`` que ejecuto el dispatch.
+        dispatch_result: Resultado de ``dispatch_async`` (dict).
+    """
+    skill_name = str(dispatch_result.get("skill_name", "") or "")
+    if not skill_name:
+        return
+    try:
+        dispatcher.record_skill_outcome(
+            skill_name, success=bool(dispatch_result.get("used_skill", False)),
+        )
+    except (AttributeError, TypeError, ValueError, OSError) as exc:
+        logger.warning(
+            "[Harness] WHAT: no se pudo registrar el outcome del skill '%s': %s. "
+            "WHY: dispatcher sin drift_manager o fallo de IO al persistir. "
+            "WHERE: _record_skill_outcome",
+            skill_name,
+            exc,
+        )
 
 
 def _resolve_hitl_mode(parsed: dict[str, Any]) -> str:

@@ -173,6 +173,109 @@ class _RetrievalMixin:
             logger.exception("RAG chunk search failed; returning empty.")
             return []
 
+    def _retrieve_chunks(
+        self,
+        message: str,
+        query_vec: np.ndarray,
+        keywords: list[str],
+        top_k: int = 20,
+        filters: dict[str, str] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Recupera chunks con la estrategia inyectada (CRAG > hybrid > legacy).
+
+        WHAT: si se inyecto ``corrective_retriever`` (CRAG) lo usa; si no,
+        ``hybrid_retriever`` (RRF); si ninguno esta inyectado, cae a la busqueda
+        legacy (``_search_rag_chunks``). WHY: ``HybridRetriever`` y
+        ``CorrectiveRetriever`` mejoran el recall pero estaban sin callers; este
+        es el cableado DI opcional y backward-compatible. WHERE:
+        ``ContextAssembler.assemble_async`` via ``asyncio.to_thread``.
+
+        Args:
+            message: Mensaje original (query textual para los retrievers).
+            query_vec: Embedding de la query (usado por la ruta legacy).
+            keywords: Keywords extraidos (usados por la ruta legacy).
+            top_k: Maximo de chunks a recuperar.
+            filters: Filtros de metadata (usados por la ruta legacy).
+
+        Returns:
+            Lista de chunks normalizados (``id``/``score``/``metadata``).
+        """
+        corrective = getattr(self, "_corrective_retriever", None)
+        if corrective is not None:
+            chunks = self._call_retriever(corrective, message, top_k, corrective=True)
+            if chunks is not None:
+                return chunks
+
+        hybrid = getattr(self, "_hybrid_retriever", None)
+        if hybrid is not None:
+            chunks = self._call_retriever(hybrid, message, top_k, corrective=False)
+            if chunks is not None:
+                return chunks
+
+        return self._search_rag_chunks(query_vec, keywords, top_k, filters)
+
+    def _call_retriever(
+        self,
+        retriever: Any,
+        message: str,
+        top_k: int,
+        *,
+        corrective: bool,
+    ) -> list[dict[str, Any]] | None:
+        """Invoca un retriever inyectado y normaliza su salida.
+
+        Args:
+            retriever: Objeto con ``retrieve(query, top_k)``.
+            message: Query textual.
+            top_k: Maximo de resultados.
+            corrective: ``True`` si el contrato es CRAG
+                (``CorrectiveResult.items``); ``False`` si devuelve items.
+
+        Returns:
+            Chunks normalizados (posiblemente vacio), o ``None`` si el retriever
+            fallo (para degradar a la ruta legacy).
+        """
+        try:
+            output = retriever.retrieve(message, top_k=top_k)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "WHAT=recall avanzado fallo: %s. WHY=el retriever inyectado "
+                "lanzo; se degrada a la busqueda legacy. "
+                "WHERE=_RetrievalMixin._call_retriever",
+                exc,
+            )
+            return None
+        items = getattr(output, "items", output) if corrective else output
+        chunks = self._normalise_chunks(items)
+        return self._adaptive_k_rerank(chunks) if chunks else chunks
+
+    @staticmethod
+    def _normalise_chunks(items: Any) -> list[dict[str, Any]]:
+        """Normaliza salidas heterogeneas a chunks ``{id, score, metadata}``.
+
+        Acepta dicts (contrato legacy/CRAG) y objetos con ``doc_id``/``score``/
+        ``metadata`` (``HybridResult``).
+
+        Args:
+            items: Iterable de dicts o dataclasses de resultado.
+
+        Returns:
+            Lista de chunks en el formato interno del assembler.
+        """
+        chunks: list[dict[str, Any]] = []
+        for item in items or []:
+            if isinstance(item, dict):
+                chunks.append(item)
+                continue
+            raw_meta = getattr(item, "metadata", {}) or {}
+            metadata = raw_meta if isinstance(raw_meta, dict) else {"value": raw_meta}
+            chunks.append({
+                "id": str(getattr(item, "doc_id", "") or getattr(item, "id", "") or ""),
+                "score": float(getattr(item, "score", 0.0) or 0.0),
+                "metadata": metadata,
+            })
+        return chunks
+
     def _adaptive_k_rerank(
         self, results: list[dict[str, Any]]
     ) -> list[dict[str, Any]]:

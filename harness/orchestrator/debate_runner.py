@@ -12,6 +12,7 @@ Uso:
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 
 from harness.orchestrator.debate_orchestrator import (
@@ -20,9 +21,56 @@ from harness.orchestrator.debate_orchestrator import (
     DebateResult,
     DebateStrategy,
 )
+from harness.orchestrator.minority_sentinel import MinoritySentinel
 from harness.orchestrator.structured_log import StructuredLogRecord
 
 logger = logging.getLogger(__name__)
+
+#: Variable de entorno (opt-out) que DESACTIVA el ``MinoritySentinel``.
+#: Default ON: la mayoria revertible (ACL 2026) es una mejora de frontera que
+#: no cambia la interfaz publica del debate.
+ENV_MINORITY_SENTINEL = "SWARMIND_MINORITY_SENTINEL"
+
+#: Valores (case-insensitive) que desactivan el sentinel.
+_ENV_FALSY = frozenset({"0", "false", "no", "off"})
+
+#: Marca para distinguir "no inyectado por DI" de "inyectado explicitamente
+#: None" (que desactiva el sentinel). WHY: el default del constructor debe
+#: resolver por entorno, pero DI explicita siempre gana.
+_UNSET: Any = object()
+
+
+def _sentinel_enabled() -> bool:
+    """Indica si el ``MinoritySentinel`` debe activarse por defecto.
+
+    Politica opt-out (12-Factor): env ausente o vacia -> activo; cualquier
+    valor en ``_ENV_FALSY`` (``0``/``false``/``no``/``off``) -> desactivado.
+
+    Returns:
+        ``True`` si el sentinel debe inyectarse por defecto; ``False`` si
+        ``SWARMIND_MINORITY_SENTINEL`` lo desactiva.
+    """
+    raw = os.getenv(ENV_MINORITY_SENTINEL)
+    if raw is None or not raw.strip():
+        return True
+    return raw.strip().lower() not in _ENV_FALSY
+
+
+def _resolve_sentinel(sentinel: Any = _UNSET) -> MinoritySentinel | None:
+    """Resuelve el sentinel del debate (DI > env default ON > None).
+
+    Args:
+        sentinel: Instancia inyectada por DI; ``None`` lo desactiva
+            explicitamente; ``_UNSET`` (default) delega en la politica por
+            entorno.
+
+    Returns:
+        La instancia inyectada, o un ``MinoritySentinel`` nuevo si el default
+        por entorno esta activo, o ``None`` si esta desactivado.
+    """
+    if sentinel is not _UNSET:
+        return sentinel
+    return MinoritySentinel() if _sentinel_enabled() else None
 
 
 class DebateRunner:
@@ -38,16 +86,43 @@ class DebateRunner:
         _bus: AgentBus o AsyncAgentBus para comunicacion entre agentes.
     """
 
-    def __init__(self, store: Any, session_ctx: Any, bus: Any) -> None:
+    def __init__(
+        self,
+        store: Any,
+        session_ctx: Any,
+        bus: Any,
+        sentinel: Any = _UNSET,
+    ) -> None:
         """
         Args:
             store: LanceVectorStore o None. Se pasa a DebateOrchestrator.
             session_ctx: SessionContext para resolver sesiones.
             bus: AgentBus para logging de comunicacion entre agentes.
+            sentinel: ``MinoritySentinel`` inyectado por DI. Por defecto se
+                crea uno nuevo salvo que ``SWARMIND_MINORITY_SENTINEL`` lo
+                desactive; pasar ``None`` lo desactiva explicitamente
+                (backward-compat con el comportamiento previo).
         """
         self._store = store
         self._session_ctx = session_ctx
         self._bus = bus
+        self._sentinel = _resolve_sentinel(sentinel)
+
+    def _build_orchestrator(self) -> DebateOrchestrator:
+        """Construye el ``DebateOrchestrator`` con el sentinel resuelto.
+
+        WHAT: inyecta el ``MinoritySentinel`` (DI/env) al construir el
+        orquestador de debate. WHY: sin este cableado la revision de minoria
+        quedaba inactiva (``sentinel=None``). WHERE: ``run_debate`` y
+        ``run_debate_async``.
+
+        Returns:
+            ``DebateOrchestrator`` con ``vector_store`` y ``sentinel``
+            (``None`` => comportamiento legacy sin reversion).
+        """
+        return DebateOrchestrator(
+            vector_store=self._store, sentinel=self._sentinel,
+        )
 
     def run_debate(
         self,
@@ -83,8 +158,8 @@ class DebateRunner:
         """
         agents, debate_strategy = self._prepare(session_id, agents, strategy)
 
-        # Ejecutar debate (ruta sync)
-        orch = DebateOrchestrator(vector_store=self._store)
+        # Ejecutar debate (ruta sync) con el sentinel resuelto (DI/env).
+        orch = self._build_orchestrator()
         result = orch.debate(
             task=task,
             agents=agents,
@@ -129,7 +204,7 @@ class DebateRunner:
         """
         agents, debate_strategy = self._prepare(session_id, agents, strategy)
 
-        orch = DebateOrchestrator(vector_store=self._store)
+        orch = self._build_orchestrator()
         result = await orch.debate_async(
             task=task,
             agents=agents,

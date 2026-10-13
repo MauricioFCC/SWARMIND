@@ -28,11 +28,13 @@ from harness.orchestrator.structured_log import StructuredLogRecord
 from harness.orchestrator.task_planner import TaskPlanner
 
 from .broadcasting import _BroadcastingMixin
+from .debate_entry import _DebateEntryMixin
+from .wiring import WorkflowWiring
 
 logger = logging.getLogger(__name__)
 
 
-class TaskOrchestrator(_BroadcastingMixin):
+class TaskOrchestrator(_BroadcastingMixin, _DebateEntryMixin):
     """
     Orchestrates multi-agent task execution with Plan-and-Execute (async).
 
@@ -53,7 +55,25 @@ class TaskOrchestrator(_BroadcastingMixin):
         level_timeout_sec: float = 300.0,
         stall_timeout_sec: float = 120.0,
         verbose: bool = False,
+        *,
+        telemetry: Any | None = None,
+        pipeline_router: Any | None = None,
     ) -> None:
+        """Inicializa el orquestador y su cableado de frontera.
+
+        Args:
+            vector_store: Store vectorial opcional compartido por los componentes.
+            max_retries: Reintentos maximos por operacion de dispatch.
+            level_timeout_sec: Timeout por nivel del plan (self-healing).
+            stall_timeout_sec: Timeout de estancamiento sin progreso.
+            verbose: Habilita logging detallado.
+            telemetry: Telemetria inyectada (DI). Si es ``None`` se activa una
+                ``TokenTelemetry`` por defecto salvo que la env
+                ``SWARMIND_TELEMETRY_DISABLE`` la desactive (opt-out).
+            pipeline_router: Router inyectado (DI) para la cascada de triage. La
+                cascada solo se usa si ``SWARMIND_PIPELINE_ROUTER`` esta activa
+                (opt-in); por defecto manda el ``TaskPlanner`` legacy.
+        """
         self._store = vector_store
         self._planner = TaskPlanner()
         self._session_ctx = SessionContext(vector_store)
@@ -66,7 +86,12 @@ class TaskOrchestrator(_BroadcastingMixin):
         self._healing_contexts: dict[str, SelfHealingContext] = {}
         self._global_cb = CircuitBreaker(failure_threshold=5, recovery_timeout=60.0)
         self._shaped_cache = None
-        self._telemetry = None  # TelemetryTracker (ADR-0034 Golden Signals)
+        self._wiring = WorkflowWiring(
+            telemetry=telemetry, pipeline_router=pipeline_router,
+        )
+        # Telemetria de tokens activa por defecto (opt-out via env); el atributo
+        # se conserva para backward-compat con enable_golden_signals (helpers).
+        self._telemetry = self._wiring.telemetry
         self._speculative_executor = None  # SpeculativeToolExecutor (ADR-0034)
         self._recent_messages: dict[str, float] = {}
         self._dedup_window: float = 30.0
@@ -152,6 +177,11 @@ class TaskOrchestrator(_BroadcastingMixin):
                 self._get_healing(active_session.session_id).record_progress()
             return result
 
+        # Clasificacion opt-in (SWARMIND_PIPELINE_ROUTER=1): la cascada de
+        # triage solo se consulta con evidencia; por defecto manda el planner
+        # legacy, sin cambiar el flujo probado (EDV).
+        self._wiring.classify(message)
+
         plan = self._planner.decompose(message)
         session = self._session_ctx.get_or_create(message, plan)
         healing = self._get_healing(session.session_id)
@@ -164,6 +194,7 @@ class TaskOrchestrator(_BroadcastingMixin):
         )
 
         await self._broadcast_plan_async(session)
+        self._wiring.record_usage(message, len(plan.subtasks))
         return self._build_result(session, message, force_agent, is_new_plan=True)
 
     async def process_completion(

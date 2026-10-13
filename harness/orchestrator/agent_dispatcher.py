@@ -717,6 +717,7 @@ class AgentDispatcher:
             "agent": agent_role,
             "task": task_description,
             "used_skill": skill_result is not None,
+            "skill_name": skill_result.get("name", "") if skill_result else "",
             "skill_context": skill_result.get("content", "") if skill_result else "",
             "rag_context": context_result,
             "recent_messages": messages,
