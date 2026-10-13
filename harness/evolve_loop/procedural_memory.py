@@ -91,11 +91,13 @@ class ProceduralMemory:
                 in_steps = False
                 for line in lines:
                     if line.startswith("**Agent:** @"):
-                        agent = line.split("@")[1].strip()
+                        agent = line.split("@", 1)[1].strip()
                     elif line.startswith("**Descripcion:**"):
-                        description = line.split("**:", 1)[1].strip() if ":" in line else ""
+                        # El marcador real es "**Descripcion:**"; split("**:", 1)
+                        # nunca lo separa (no existe "**:" en la linea) -> IndexError.
+                        description = line[len("**Descripcion:**"):].strip()
                     elif line.startswith("**Tags:**"):
-                        tags_str = line.split("**:", 1)[1].strip() if ":" in line else ""
+                        tags_str = line[len("**Tags:**"):].strip()
                         tags = [t.strip() for t in tags_str.split(",") if t.strip()]
                     elif line.strip().startswith("## Pasos"):
                         in_steps = True

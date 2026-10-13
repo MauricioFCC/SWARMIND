@@ -1,0 +1,94 @@
+# =============================================================================
+# Skills Quality — gate de calidad de skills/agentes en PR (Agent Skills 2026)
+# =============================================================================
+#
+# Corre en pull_request cuando cambian las skills (.opencode/skills/**) o los
+# scripts de skills (scripts/*skills*). NO se registra en branch protection (eso
+# es decision del usuario): solo expone el workflow y reporta en el PR.
+#
+# Gates:
+#   1. scripts/validate_skills.py --strict
+#      (frontmatter, SKILL.min.md, registry sincronizado, digests sha256).
+#   2. scripts/audit_skills_agents.py --strict
+#      (checklist skill-engineering; se ejecuta solo si el script existe).
+#
+# Estilo: mismo patron que .github/workflows/ci.yml (actions/checkout,
+# astral-sh/setup-uv, cache de uv, `uv run ...`, `uv sync` NUNCA pip,
+# permisos minimos, ubuntu-latest).
+# =============================================================================
+
+name: Skills Quality
+
+on:
+  pull_request:
+    paths:
+      - ".opencode/skills/**"
+      - "scripts/*skills*"
+      - ".github/workflows/skills-quality.yml"
+  workflow_dispatch:
+
+# Agrupacion por branch/PR: cancelar runs antiguos del mismo contexto.
+concurrency:
+  group: skills-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+# Permisos minimos (SEG: least privilege). pull-requests:write solo para
+# publicar el reporte como comentario en el PR.
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  skills-quality:
+    name: skills-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Cache uv
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Instalar dependencias
+        run: uv sync --extra dev
+
+      - name: Validar skills (gate)
+        run: uv run python scripts/validate_skills.py --strict
+
+      - name: Auditar skills y agentes (gate)
+        run: |
+          if [ -f scripts/audit_skills_agents.py ]; then
+            uv run python scripts/audit_skills_agents.py --strict
+          else
+            echo "scripts/audit_skills_agents.py no existe: se omite el gate de auditoria"
+          fi
+
+      - name: Reporte en el PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          uv run python scripts/validate_skills.py > skills-quality.txt 2>&1 || true
+          {
+            echo "## Skills Quality"
+            echo ""
+            echo '```'
+            cat skills-quality.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            gh pr comment "${{ github.event.pull_request.number }}" \
+              --body-file skills-quality.txt || true
+          fi

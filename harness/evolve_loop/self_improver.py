@@ -182,18 +182,29 @@ class SelfImprover:
         return completed
 
     def promote_best_snapshot(self, skill_name: str) -> str | None:
-        """
-        Promote the best-performing snapshot for a skill.
+        """Promueve el mejor snapshot de una skill (persistencia idempotente).
 
-        In a full implementation this would replace the live skill definition
-        with the snapshot.  Currently it logs the promotion and returns the
-        snapshot ID.
+        Contrato deterministico (EDV, sin LLM):
+
+            1. Toma el mejor snapshot en memoria del skill
+               (``_current_snapshots``).
+            2. Persiste un registro de promocion IDEMPOTENTE en el cognition
+               store con id determinista ``promote_<skill>_<snapshot>``: si ya
+               existe no lo duplica (``CognitionSync.has_lesson``).
+            3. Marca el skill como promovido (``_promoted``).
+
+        LIMITE honesto (EDV): SIN un LLM o un flujo de git no es posible
+        "aplicar" el snapshot sobre el ``SKILL.md`` vivo (eso requiere generar y
+        validar texto). Por eso el contrato deterministico es PERSISTIR +
+        REGISTRAR; el reemplazo textual de la skill queda explicitamente fuera de
+        alcance y NO se simula. El unico almacen usado es el cognition store ya
+        existente (no se inventa infraestructura).
 
         Args:
-            skill_name: The skill whose best snapshot should be promoted.
+            skill_name: Skill cuyo mejor snapshot se promueve.
 
         Returns:
-            The snapshot ID, or ``None`` if no snapshot exists.
+            El ``snapshot_id`` promovido, o ``None`` si no hay snapshot.
         """
         snapshot_id = self._current_snapshots.get(skill_name)
         if not snapshot_id:
@@ -203,31 +214,47 @@ class SelfImprover:
             return None
 
         best = self._best_scores.get(skill_name, 0.0)
+        # Id determinista -> dedup idempotente en el cognition store.
+        promotion_id = f"promote_{skill_name}_{snapshot_id}"
 
-        # In production this would:
-        #   1. Load the snapshot from the store
-        #   2. Replace the live skill definition
-        #   3. Run validation tests
-        #   4. Deploy the updated skill
-
+        # La decision de promocion se registra en memoria independientemente de
+        # si el store persiste (best-effort): la persistencia es el side-effect.
         self._promoted[skill_name] = True
-        logger.info(
-            "Promoted snapshot '%s' for skill '%s' (score=%.2f).",
-            snapshot_id,
-            skill_name,
-            best,
-        )
 
-        self.cognition.add_lesson(
-            title=f"Snapshot promoted: {skill_name}",
-            content=(
-                f"Promoted snapshot {snapshot_id} for skill '{skill_name}' "
-                f"with best C.A.S.E. score {best:.2f}."
-            ),
-            domain="self_improvement",
-            tags=["promotion", skill_name, "snapshot"],
-            metrics={"best_score": best, "snapshot_id": snapshot_id},
-        )
+        try:
+            if not self.cognition.has_lesson(promotion_id):
+                self.cognition.add_lesson(
+                    title=f"Snapshot promoted: {skill_name}",
+                    content=(
+                        f"Promoted snapshot {snapshot_id} for skill "
+                        f"'{skill_name}' with best C.A.S.E. score {best:.2f}."
+                    ),
+                    domain="self_improvement.promotions",
+                    tags=["promotion", skill_name, "snapshot"],
+                    metrics={"best_score": best, "snapshot_id": snapshot_id},
+                    lesson_id=promotion_id,
+                )
+                logger.info(
+                    "Promoted snapshot '%s' for skill '%s' (score=%.2f, id=%s).",
+                    snapshot_id,
+                    skill_name,
+                    best,
+                    promotion_id,
+                )
+            else:
+                logger.info(
+                    "Snapshot '%s' for skill '%s' already promoted (idempotente).",
+                    snapshot_id,
+                    skill_name,
+                )
+        except Exception:
+            logger.exception(
+                "No se pudo persistir la promocion de '%s' (snapshot=%s) | "
+                "WHY: cognition store no disponible | "
+                "WHERE: SelfImprover.promote_best_snapshot",
+                skill_name,
+                snapshot_id,
+            )
 
         return snapshot_id
 
