@@ -48,6 +48,7 @@ import argparse
 import logging
 import os
 import shutil
+import sys
 from pathlib import Path
 
 from setup_memory_central import ensure_memory_structure
@@ -63,6 +64,13 @@ _HERE = Path(__file__).resolve().parent            # Swarmind/scripts/
 _ROOT = _HERE.parent                               # Swarmind/
 _SRC_OPENCODE = _ROOT / ".opencode"
 _SRC_HARNESS = _ROOT / "harness"
+
+#: SSOT de los servers MCP (el harness los usa via MCPManager; opencode via `mcp`).
+_SRC_MCP_YAML = _SRC_HARNESS / "tools_sandbox" / "mcp_servers.yaml"
+
+#: `_ROOT` en sys.path para importar el harness (mcp_opencode).
+if str(_ROOT) not in sys.path:
+    sys.path.insert(1, str(_ROOT))
 
 # Config global de opencode: ~/.config/opencode (NO ~/.opencode)
 _GLOBAL = Path(os.environ.get(
@@ -312,6 +320,33 @@ def _ensure_memory_central(dry_run: bool = False) -> dict:
     return result
 
 
+def _sync_mcp_config(dry_run: bool = False) -> int:
+    """Registra los servers MCP de la SSOT en la config GLOBAL de opencode.
+
+    Traduce `harness/tools_sandbox/mcp_servers.yaml` a `mcp.servers` de OpenCode
+    (local/remote) para que opencode pueda USAR las herramientas del harness.
+    Este es el acople oficial: `scripts/deploy_all.py --sync-global` -> aqui.
+
+    Args:
+        dry_run: Si True, solo simula.
+
+    Returns:
+        Numero de servers MCP registrados (0 si no hay SSOT).
+    """
+    from harness.tools_sandbox.mcp_opencode import load_servers, sync_config_file
+
+    servers = load_servers(_SRC_MCP_YAML)
+    if not servers:
+        logger.warning("  \u26a0\ufe0f  SSOT MCP sin servers: %s", _SRC_MCP_YAML)
+        return 0
+    # El render de modelos escribe opencode.jsonc; respetar ese si existe.
+    target = _GLOBAL / "opencode.jsonc"
+    if not target.exists() and (_GLOBAL / "opencode.json").exists():
+        target = _GLOBAL / "opencode.json"
+    sync_config_file(target, servers, dry_run=dry_run)
+    return len(servers)
+
+
 def sync_global(dry_run: bool = False, quiet: bool = False,
                 cerebro: bool = False, motor: bool = False,
                 mode: str = "copy", force: bool = False) -> dict:
@@ -366,6 +401,12 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
             stats["skills_registry"] = 1
             if not quiet:
                 logger.info("  âœ… skills_registry.yaml %s", "(simulado)" if dry_run else "actualizado")
+
+    if do_cerebro:
+        mcp_count = _sync_mcp_config(dry_run=dry_run)
+        stats["mcp_servers"] = mcp_count
+        if not quiet:
+            logger.info("  \u2705 %-10s %d servers -> opencode", "mcp", mcp_count)
 
     if do_motor:
         count = _sync_harness_to_global(dry_run=dry_run)

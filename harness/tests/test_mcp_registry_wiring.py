@@ -1,8 +1,8 @@
 """
 Smoke test del cableado del registry MCP con packages/tools REALES.
 
-Valida que ``harness/tools_sandbox/mcp_servers.yaml`` declara los 8 servers
-(5 oficiales + rea + los 2 de comprensión de código: serena y context7) con
+Valida que ``harness/tools_sandbox/mcp_servers.yaml`` declara los 11 servers
+(5 oficiales + 4 de RE: rea/rc_devtools/ghidra_mcp/radare2 + serena y context7) con
 transporte ``stdio`` coherente, comando/args no vacíos, env requeridas
 documentadas y los nombres de tools REALES de cada paquete (NO los inventados
 del cableado previo tipo ``get_repo``/``store_memory``).
@@ -35,6 +35,18 @@ _OFFICIAL_SERVERS = ("filesystem", "github", "postgres", "memory", "brave_search
 
 # Los 2 servers de comprensión de código añadidos en esta iteración.
 _COMPREHENSION_SERVERS = ("serena", "context7")
+
+# Los servers de reverse engineering (filosofia REA: la herramienta correcta).
+_RE_SERVERS = ("rea", "rc_devtools", "ghidra_mcp", "radare2")
+
+# Servers de proposito general anexados (variados: web, browser, datos, git, docs).
+_TOOLING_SERVERS = (
+    "fetch", "time", "git", "sequentialthinking",
+    "playwright", "firecrawl", "notion", "kubernetes",
+)
+
+# Servers frontera anexados (2026-10-14): browser/debug, observabilidad, DB/BaaS, cloud browser.
+_FRONTIER_SERVERS = ("chrome_devtools", "sentry", "supabase", "browserbase")
 
 # Packages reales (substring presente en args) por server.
 _EXPECTED_PACKAGE = {
@@ -86,14 +98,17 @@ class TestRegistryLoads:
     """El YAML real carga con MCPManager sin romperse."""
 
     def test_load_returns_servers(self, manager: MCPManager) -> None:
-        """load_servers registra los 8 servers (5 oficiales + rea + serena + context7)."""
-        for name in (*_OFFICIAL_SERVERS, "rea", *_COMPREHENSION_SERVERS):
+        """load_servers registra todos los servers del registry."""
+        for name in (
+            *_OFFICIAL_SERVERS, *_RE_SERVERS, *_TOOLING_SERVERS,
+            *_FRONTIER_SERVERS, *_COMPREHENSION_SERVERS,
+        ):
             assert name in manager._servers, f"falta server '{name}'"
 
-    def test_load_returns_eight_servers(self, manager: MCPManager) -> None:
-        """El registry cableado completo declara exactamente 8 servers."""
-        assert len(manager._servers) == 8, (
-            f"esperados 8 servers, hay {len(manager._servers)}: "
+    def test_load_returns_all_servers(self, manager: MCPManager) -> None:
+        """El registry cableado completo declara exactamente 23 servers."""
+        assert len(manager._servers) == 23, (
+            f"esperados 23 servers, hay {len(manager._servers)}: "
             f"{sorted(manager._servers)}"
         )
 

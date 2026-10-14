@@ -187,10 +187,10 @@ class TestLoadServersRealYaml:
         assert rea.url == ""
 
     def test_rea_tools_present(self, manager: MCPManager) -> None:
-        """REA expone las tools clave de ingeniería inversa."""
+        """REA expone las tools clave (nombres de la SSOT del skill)."""
         rea = manager._servers["rea"]
-        assert "analyze_function" in rea.tools
-        assert "decompile" in rea.tools
+        assert "rea.decompile" in rea.tools
+        assert "rea.analyze" in rea.tools
 
     def test_rea_disabled_by_default(self, manager: MCPManager) -> None:
         """REA llega deshabilitado (el usuario lo habilita explícitamente)."""
