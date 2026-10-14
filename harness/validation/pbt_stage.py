@@ -296,7 +296,9 @@ def _run_hypothesis_in_subprocess(
         script_path = Path(tmp_dir) / "pbt_check.py"
         script_path.write_text(script, encoding="utf-8")
         try:
-            result = SandboxExecutor().run_script(script_path, timeout_s=timeout)
+            result = SandboxExecutor().run_script(
+                script_path, timeout_s=timeout, require_project_deps=True
+            )
         except Exception as e:  # noqa: BLE001
             return False, f"{type(e).__name__}: {e}"
 
