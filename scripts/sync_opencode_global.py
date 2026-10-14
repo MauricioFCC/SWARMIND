@@ -92,7 +92,7 @@ _HARNESS_INCLUDE = ["orchestrator", "memory_rag", "tools_sandbox", "model_router
                     "evolve_loop", "qa", "security", "guardrails", "hooks",
                     "context", "evals", "aifactory", "observability", "parallel",
                     "plugins", "gateway", "db", "benchmarks", "scheduler",
-                    "validation"]
+                    "validation", "reverse_engineering"]
 # Archivos raiz del paquete harness (fix ADR-0042: incluye __init__.py y
 # __main__.py para que el global sea un paquete importable; security_policy.py
 # vive en harness/qa/ y se copia via el directorio qa; scheduler.py paso a ser
