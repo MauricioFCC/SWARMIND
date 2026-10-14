@@ -257,3 +257,17 @@ skills:
     version: 1.0.0
     project_agnostic: false
     sha256: ff18bb11c59d950f2f632906d21fe6858a0d52218dbc70a0bfdbb18b03abbdf9
+
+  - name: codebase-comprehension
+    domain: codebase-comprehension
+    description: "Usar cuando el usuario quiere entender un codebase ajeno o mapear su arquitectura. onboarding, repo map, donde esta X, blast radius, call-graph, ctags, Serena, hotspots. Alcance: comprension y navegacion de codigo; para conformidad arquitectonica ver architecture-review. | UPG·NAM·FRS (reglas en base_principles.md)"
+    version: 1.0.0
+    project_agnostic: true
+    sha256: 464e0b7b670632c39014ed90c250af82e469b542dff302514401c5bc37b71e1c
+
+  - name: architecture-review
+    domain: architecture
+    description: "Usar cuando el usuario revisa conformidad de arquitectura o deuda arquitectonica. conformance, violaciones de capas, ciclos de imports, drift, fitness functions, tach, ArchGuard, hotspots. Alcance: revision de arquitectura; para DISENAR arquitectura nueva ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
+    version: 1.0.0
+    project_agnostic: true
+    sha256: 8eb4b9e9356fa5722a595e199ce0cd1abffde15830a1c1421fb5a9ba329bfb4b
