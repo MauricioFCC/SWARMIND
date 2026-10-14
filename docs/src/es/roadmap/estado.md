@@ -14,7 +14,7 @@
 - **Agentes `.agent.min` ocultos (OpenCode V2)** — 24 artefactos minificados aparecian como agentes duplicados en V2 (`<rol>.agent.min`); `hidden: true` en el frontmatter + inyeccion en `compile_agents.minify_agent` (el harness los sigue leyendo como prompt pre-compilado).
 - **Pre-commit re-activado** — `install_hooks.py` ahora resuelve `core.hooksPath` (`.githooks`); el pre-commit (QA + sync del opencode global) vuelve a ejecutarse de verdad en cada commit.
 - **Entorno restaurado (reinstalacion de SO)** — `uv` 0.13.1 + `uv sync --extra dev`; GPU CUDA (torch 2.13.0+cu126, RTX 4060 via `enable_gpu.py`); Docker daemon; cerebro+motor sincronizados al opencode global.
-- **Gaps abiertos (detectados, no auto-arreglados)** — (1) **deriva de flota de modelos**: `fleet_manifest`/`ollama_models.yaml` declaran la flota nueva (qwen3.5-4b, phi-4-mini-instruct, qwen2.5-coder-3b, qwen3-embedding) pero el server `:11434` sirve la antigua (mimo/ternary-bonsai/qwen3-4b-thinking) → `test_fleet_config_drift` (x3, local-only) rojo. Requiere curar la flota + alinear `.opencode/opencode.json`.
+- **Flota local alineada a lo INSTALADO (2026-10-14)** — regenerado desde la SSOT `local_models.yaml` (`render_local_models.py`): `llama-swap.yaml`, `.opencode/opencode.json` y `~/.config/opencode/opencode.jsonc` en sync (gate `--check` verde). `fleet_manifest.FLEET` + `.opencode/config/ollama_models.yaml` alineados a los 5 modelos instalados: fast `phi-4-mini-reasoning-q4-k-m`, coding `qwen3-4b-thinking-2507-q4-k-m`, quality `mimo-v2-6-distill-qwen-9b-gguf-iq4-xs`, embedding `qwen3-embedding-0-6b`, deep `ternary-bonsai-2-27b-ptq1-0`. RETIRADOS qwen3.5-4b / phi-4-mini-instruct / qwen2.5-coder-3b / deepseek-r1-distill (no instalados). `test_fleet_config_drift` **5 passed** contra el server real (antes rojo).
 
 ## Estado Actual (2026-10-12)
 
@@ -233,7 +233,7 @@ Objetivo: 80%    (proximo hito)
 
 | Prioridad | Tarea | Impacto | Detalle | Estado |
 |-----------|-------|---------|---------|--------|
-| **Alta** | Alinear flota de modelos local | Entorno | `fleet_manifest`/`ollama_models.yaml` vs server `:11434` (`test_fleet_config_drift` x3 rojo) + `.opencode/opencode.json` | 🔄 Pendiente |
+| ✅ | Alinear flota de modelos a lo instalado | Entorno | SSOT `local_models.yaml` regenerada + `fleet_manifest`/`ollama_models.yaml` alineados; `test_fleet_config_drift` 5 passed | **HECHO** |
 | ✅ | Oraculo PBT funcional en Windows | TDD | `SandboxExecutor.run_script(require_project_deps=True)` → Job Object host; `pbt_stage` activado | **HECHO** |
 | ✅ | Python 3.14 acoplado | Entorno | `.python-version` + PATH de usuario + CI alineado | **HECHO** |
 | ✅ | Pre-commit efectivo | Rigor | `install_hooks.py` resuelve `core.hooksPath` (`.githooks`) | **HECHO** |
