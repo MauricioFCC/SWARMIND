@@ -209,3 +209,69 @@ servers:
       - open_binary
     enabled: false
     install_hint: "Node 22+/24+ y: npx -y rea-agents@latest mcp (o 'npx rea-agents setup' para registrar con agentes)"
+
+  # ---------------------------------------------------------------------------
+  # 6. serena — comprension simbolica de codigo via LSP (40+ lenguajes).
+  #    Fuente: https://github.com/oraios/serena
+  #    Docs (running/stdio): https://oraios.github.io/serena/02-usage/020_running.html
+  #    Docs (tools):         https://oraios.github.io/serena/01-about/035_tools.html
+  #    OJO licencia: NO es MIT en v2. El paquete `serena-agent` es
+  #    GPL-3.0-or-later como distribucion combinada (SolidLSP interno si es
+  #    MIT). Ver https://github.com/oraios/serena/blob/main/LICENSE.
+  #    Runtime: uv (Python 3.13+).  Sin API key.
+  #    Transporte stdio es el default de `serena start-mcp-server` (no lleva
+  #    flag de transporte). El server es STATEFUL y necesita un proyecto:
+  #    se selecciona con `--project <path|name>` (o `--project-from-cwd`).
+  #    TODO usuario: reemplazar /path/to/project por la ruta real.
+  #    Nota: no se usa env SERENA_PROJECT_PATH (no documentado por el repo);
+  #    el proyecto se pasa por argumento.
+  # ---------------------------------------------------------------------------
+  - name: serena
+    transport: stdio
+    command: uvx
+    args:
+      - "-p"
+      - "3.13"
+      - "--from"
+      - "git+https://github.com/oraios/serena"
+      - "serena"
+      - "start-mcp-server"
+      - "--project"
+      - "/path/to/project"
+    env: {}
+    description: "Serena: semantic/symbolic code understanding & editing via LSP (40+ languages, no API key)"
+    tools:
+      - find_symbol
+      - get_symbols_overview
+      - find_referencing_symbols
+      - find_declaration
+      - find_implementations
+      - get_diagnostics_for_file
+      - search_for_pattern
+      - replace_content
+      - activate_project
+      - get_current_config
+    enabled: false
+    install_hint: "uv + Python 3.13+ y: uv tool install -p 3.13 serena-agent ; luego 'serena start-mcp-server' (o via uvx: uvx -p 3.13 --from git+https://github.com/oraios/serena serena start-mcp-server --project /path/to/project)"
+
+  # ---------------------------------------------------------------------------
+  # 7. context7 — documentacion de librerias versionada para LLMs.
+  #    Fuente: https://github.com/upstash/context7  (licencia MIT)
+  #    Paquete: npm @upstash/context7-mcp (https://www.npmjs.com/package/@upstash/context7-mcp)
+  #    Runtime: Node >= 20.18.1 (npx).  Transporte stdio es el default.
+  #    Tools REALES: resolve-library-id y query-docs (OJO: `get-library-docs`
+  #    fue RENOMBRADO a `query-docs`; el nombre viejo ya no aplica).
+  #    Env OPCIONAL: CONTEXT7_API_KEY (o flag --api-key) para mayor rate limit
+  #    y repos privados. Sin key el server funciona con limites menores.
+  # ---------------------------------------------------------------------------
+  - name: context7
+    transport: stdio
+    command: npx
+    args: ["-y", "@upstash/context7-mcp"]
+    env: {}
+    description: "Context7: up-to-date, version-specific library documentation & code examples for LLMs"
+    tools:
+      - resolve-library-id
+      - query-docs
+    enabled: false
+    install_hint: "Node 20+ y: npx -y @upstash/context7-mcp (opcional: --api-key <key> o env CONTEXT7_API_KEY)"

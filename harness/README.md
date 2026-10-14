@@ -514,6 +514,9 @@ Todos los servers oficiales usan transporte **stdio** (subproceso), no HTTP: el
 | postgres | stdio (npx) | query | `npx -y @modelcontextprotocol/server-postgres postgresql://host/db` |
 | memory | stdio (npx) | create_entities, create_relations, search_nodes, read_graph, ... | `npx -y @modelcontextprotocol/server-memory` |
 | brave_search | stdio (npx) | brave_web_search, brave_news_search, brave_image_search, ... | `BRAVE_API_KEY=xxx npx -y @brave/brave-search-mcp-server` |
+| rea | stdio (npx) | analyze_function, decompile, get_call_graph, trace_call_path, ... | `npx -y rea-agents@latest mcp` |
+| serena | stdio (uvx) | find_symbol, get_symbols_overview, find_referencing_symbols, replace_content, ... | `uvx -p 3.13 --from git+https://github.com/oraios/serena serena start-mcp-server --project <dir>` |
+| context7 | stdio (npx) | resolve-library-id, query-docs | `npx -y @upstash/context7-mcp` |
 
 **Uso:**
 ```bash
