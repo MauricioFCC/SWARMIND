@@ -46,7 +46,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 REGISTRY_PATH = _PROJECT_ROOT / ".opencode" / "skills" / "skills_registry.yaml"
 
 #: N de skills esperado en el registry (ronda 2; +2 comprension/arquitectura).
-EXPECTED_SKILLS = 39
+EXPECTED_SKILLS = 40
 
 #: Score de solape >= a este valor = "pico" que DEBE ser accionable.
 PEAK_THRESHOLD = 0.8

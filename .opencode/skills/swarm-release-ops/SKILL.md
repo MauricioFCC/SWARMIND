@@ -39,7 +39,7 @@ evidencia y sin parches cosmeticos (mandato: fix real + test que lo cubra).
 
 | Job | Comando esencial | Nota |
 |-----|-----------------|------|
-| Lint | `uv run ruff check .` + `uv run ruff format --check .` | EXE001 ignorado |
+| Lint | `uv run ruff check harness/ scripts/` + `uv run vulture ...` | EXE001 ignorado; `ruff format` NO es gate de CI |
 | Compile | `uv run python -m compileall` | — |
 | Test | `uv run pytest harness/tests` | coverage real ~80.8% |
 | Agents | `uv run pytest harness/tests/test_agents.py` (u orquestador) | — |
@@ -64,7 +64,7 @@ uv run safety check -r /tmp/requirements.txt --output text
 ## Branch protection y auto-merge (bloqueos historicos)
 
 - Branch protection de `main` exige checks **exactos y case-sensitive**:
-  `Lint`, `Test`, `Security` (display names de los jobs con `name:`).
+  `lint`, `test`, `security` (minuscula: son los `name:`/job id de `.github/workflows/ci.yml`).
   Si los names no coinciden, el PR queda `BLOCKED` ("Expected — Waiting").
 - `required_conversation_resolution: true` — los review threads sin resolver
   bloquean el merge.

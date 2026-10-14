@@ -652,3 +652,20 @@ servers:
 #   Mobile / RE:
 #     - ver la seccion RE arriba (jadx, apktool, frida, ghidra, ida, radare2)
 
+# ---------------------------------------------------------------------------
+# Organizacion: cada herramienta en su categoria (espejo de mcp_catalog.CATEGORIES).
+# ---------------------------------------------------------------------------
+categories:
+  reverse-engineering: [rea, rc_devtools, ghidra_mcp, radare2]
+  browser: [playwright, chrome_devtools]
+  web: [fetch, firecrawl]
+  data: [postgres, supabase]
+  vcs: [github, git]
+  devops: [kubernetes]
+  observability: [sentry]
+  productivity: [notion, context7]
+  reasoning: [sequentialthinking]
+  utility: [time, memory]
+  code: [serena]
+
+

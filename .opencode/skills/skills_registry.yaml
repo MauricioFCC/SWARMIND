@@ -221,7 +221,7 @@ skills:
     description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. Alcance: releases y CI/CD del repo SWARMIND; para infra generica ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 5450ff115925bafec6ebf0d64b9fc6a7a6c86b9ec9046e086b03affa2d6a2fd7
+    sha256: 140b4c6e22024e71a0f4083032e4acb9f558598531016b528573539d19c15597
 
   - name: atdd-spec
     domain: testing
@@ -271,3 +271,10 @@ skills:
     version: 1.0.0
     project_agnostic: true
     sha256: 8eb4b9e9356fa5722a595e199ce0cd1abffde15830a1c1421fb5a9ba329bfb4b
+
+  - name: mcp-toolkit
+    domain: tooling
+    description: "Usar cuando hay que elegir o cablear herramientas MCP para una tarea (browser, scraping, db, kubernetes, reverse engineering, observabilidad, data, devops). Alcance: seleccion de herramientas MCP del harness; para comprension de codigo ver codebase-comprehension; para RE ver reverse-engineering. | UPG·NAM·FRS"
+    version: 1.0.0
+    project_agnostic: true
+    sha256: 9c41e4493f1bd8505db124140eb699206c4f188d6b5b39f7c9a17b7b6354a5ba

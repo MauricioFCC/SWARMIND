@@ -7,8 +7,11 @@ devuelto existe en la SSOT) y que el mapeo por keyword cubre los casos clave.
 from __future__ import annotations
 
 from harness.tools_sandbox.mcp_catalog import (
+    CATEGORIES,
+    SKILL_TO_TOOLS,
     TASK_SERVER_KEYWORDS,
     catalog_servers,
+    servers_for_skill,
     servers_for_task,
 )
 
@@ -62,3 +65,26 @@ class TestServersForTask:
     def test_selection_is_deduped_and_ordered(self) -> None:
         tools = servers_for_task("decompila el binario y hazle reverse a la url")
         assert len(tools) == len(set(tools))
+
+
+class TestSkillToTools:
+    """Cableado skill <-> herramientas."""
+
+    def test_reverse_engineering_skill_has_tools(self) -> None:
+        tools = servers_for_skill("reverse-engineering")
+        assert "rea" in tools and "radare2" in tools
+
+    def test_unknown_skill_returns_nothing(self) -> None:
+        assert servers_for_skill("skill-inexistente") == ()
+
+    def test_all_mapped_servers_exist_in_catalog(self) -> None:
+        known = set(catalog_servers())
+        for servers in SKILL_TO_TOOLS.values():
+            for name in servers:
+                assert name in known, f"server inexistente: {name}"
+
+    def test_categories_reference_real_servers(self) -> None:
+        known = set(catalog_servers())
+        for servers in CATEGORIES.values():
+            for name in servers:
+                assert name in known, f"categoria con server inexistente: {name}"

@@ -192,8 +192,9 @@ AGENTS:
     - token-budget-auditor
 
 SKILLS:
-  total: 39
+  total: 40
   skill_list:
+    - mcp-toolkit
     - ads-optimizer
     - agent-rigor
     - alpha-research

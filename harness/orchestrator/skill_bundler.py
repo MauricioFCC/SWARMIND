@@ -149,6 +149,7 @@ SKILL_TO_AGENT: dict[str, str] = {
     "codebase-comprehension": "architect",
     "architecture-review": "architect",
     "ads-optimizer": "product-manager",
+    "mcp-toolkit": "platform-engineer",
 }
 
 # Mapa de dominios → skills relevantes. Cubre TODO el registry (SSOT) para que
@@ -193,6 +194,7 @@ DOMAIN_SKILLS: dict[str, list[str]] = {
     "reverse-engineering": ["reverse-engineering"],
     "codebase-comprehension": ["codebase-comprehension"],
     "architecture-review": ["architecture-review"],
+    "tooling": ["mcp-toolkit"],
 }
 
 # Palabras clave para deteccion de dominio (por dominio de DOMAIN_SKILLS salvo
@@ -235,6 +237,7 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
     "reverse-engineering": ["ingenieria inversa", "reverse engineering", "decompile", "ghidra", "hopper", "asar", "xrefs"],
     "codebase-comprehension": ["codebase", "onboarding", "repo map", "call graph", "ctags", "hotspots", "blast radius"],
     "architecture-review": ["conformance", "conformance check", "violaciones de capas", "ciclos de imports", "fitness functions", "archguard", "deuda arquitectonica"],
+    "tooling": ["mcp", "herramienta", "herramientas", "browser", "scrape", "scraping", "catalogo", "tool selection", "integracion de api"],
 }
 
 #: Keywords de testing que agregan seguridad a cualquier dominio.

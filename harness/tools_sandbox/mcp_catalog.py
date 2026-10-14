@@ -144,3 +144,51 @@ def servers_for_task(task: str) -> tuple[str, ...]:
                 if name in known and name not in selected:
                     selected.append(name)
     return tuple(selected)
+
+
+#: Categoria -> servers MCP (las herramientas en su respectivo lugar).
+CATEGORIES: dict[str, tuple[str, ...]] = {
+    "reverse-engineering": ("rea", "rc_devtools", "ghidra_mcp", "radare2"),
+    "browser": ("playwright", "chrome_devtools"),
+    "web": ("fetch", "firecrawl"),
+    "data": ("postgres", "supabase"),
+    "vcs": ("github", "git"),
+    "devops": ("kubernetes",),
+    "observability": ("sentry",),
+    "productivity": ("notion", "context7"),
+    "reasoning": ("sequentialthinking",),
+    "utility": ("time", "memory"),
+    "code": ("serena",),
+}
+
+#: Skill -> servers MCP que esa skill aprovecha (cableado skill <-> herramienta).
+SKILL_TO_TOOLS: dict[str, tuple[str, ...]] = {
+    "reverse-engineering": ("rea", "rc_devtools", "ghidra_mcp", "radare2"),
+    "security-audit": ("rea", "radare2", "sentry"),
+    "codebase-comprehension": ("serena", "github", "git"),
+    "devops-infra": ("kubernetes", "sentry"),
+    "frontend-uiux": ("playwright", "chrome_devtools"),
+    "data-science": ("postgres", "supabase"),
+    "quant-trading": ("postgres", "supabase"),
+    "alpha-research": ("postgres", "supabase"),
+    "science-doc": ("context7", "fetch", "firecrawl"),
+    "legal-doc": ("context7", "fetch"),
+    "ads-optimizer": ("firecrawl", "playwright"),
+    "mcp-toolkit": ("fetch", "time", "sequentialthinking", "context7"),
+}
+
+
+def servers_for_skill(skill: str) -> tuple[str, ...]:
+    """Servers MCP que aprovecha una skill (cableado skill <-> herramienta).
+
+    Solo devuelve nombres presentes en la SSOT (0 herramientas inventadas).
+
+    Args:
+        skill: Nombre del skill (p. ej. ``"reverse-engineering"``).
+
+    Returns:
+        Tupla de servers aplicables (vacia si la skill no declara herramientas).
+    """
+    known = set(catalog_servers())
+    return tuple(n for n in SKILL_TO_TOOLS.get(skill, ()) if n in known)
+
