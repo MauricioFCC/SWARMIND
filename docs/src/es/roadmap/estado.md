@@ -1,9 +1,20 @@
 # Roadmap y Estado del Proyecto
 
-> Estado actual del sistema Swarmind Harness a 2026-10-12.
+> Estado actual del sistema Swarmind Harness a 2026-10-14.
 > Documento vivo que refleja el progreso, hitos y proximos objetivos.
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
+
+## Estado Actual (2026-10-14)
+
+### Estado 2026-10-14 (Restauracion post-reinstalacion de SO + Python 3.14 + oraculo PBT cross-platform)
+
+- **Python 3.14 acoplado** — `.python-version` = 3.14; `.venv` a 3.14.7 (uv); PATH de usuario apunta a `Python314` + `Scripts` (eliminado el `Python312` stale que caia al stub de Microsoft Store); classifier 3.14 en `pyproject.toml`; CI (`ci`/`mutation`/`security-scan`/`skills-quality`/`release`) alineado a 3.14 sin drift con el pin; `requires-python >=3.12` se mantiene como piso.
+- **Oraculo PBT funcional en Windows** — `SandboxExecutor.run_script(require_project_deps=True)`: cuando el backend docker no puede aportar las deps del proyecto (no-POSIX: el site-packages trae extensiones nativas `.pyd`, p. ej. `hypothesis._native`), el script corre en el interprete host con sandbox nativo (Job Object / subprocess). `pbt_stage` lo activa; +5 tests. Evidencia: `run_pbt_stage(good).passed=True`, `(buggy).passed=False`. Mutation sigue en docker (no requiere deps).
+- **Agentes `.agent.min` ocultos (OpenCode V2)** — 24 artefactos minificados aparecian como agentes duplicados en V2 (`<rol>.agent.min`); `hidden: true` en el frontmatter + inyeccion en `compile_agents.minify_agent` (el harness los sigue leyendo como prompt pre-compilado).
+- **Pre-commit re-activado** — `install_hooks.py` ahora resuelve `core.hooksPath` (`.githooks`); el pre-commit (QA + sync del opencode global) vuelve a ejecutarse de verdad en cada commit.
+- **Entorno restaurado (reinstalacion de SO)** — `uv` 0.13.1 + `uv sync --extra dev`; GPU CUDA (torch 2.13.0+cu126, RTX 4060 via `enable_gpu.py`); Docker daemon; cerebro+motor sincronizados al opencode global.
+- **Gaps abiertos (detectados, no auto-arreglados)** — (1) **deriva de flota de modelos**: `fleet_manifest`/`ollama_models.yaml` declaran la flota nueva (qwen3.5-4b, phi-4-mini-instruct, qwen2.5-coder-3b, qwen3-embedding) pero el server `:11434` sirve la antigua (mimo/ternary-bonsai/qwen3-4b-thinking) → `test_fleet_config_drift` (x3, local-only) rojo. Requiere curar la flota + alinear `.opencode/opencode.json`.
 
 ## Estado Actual (2026-10-12)
 
@@ -222,6 +233,11 @@ Objetivo: 80%    (proximo hito)
 
 | Prioridad | Tarea | Impacto | Detalle | Estado |
 |-----------|-------|---------|---------|--------|
+| **Alta** | Alinear flota de modelos local | Entorno | `fleet_manifest`/`ollama_models.yaml` vs server `:11434` (`test_fleet_config_drift` x3 rojo) + `.opencode/opencode.json` | 🔄 Pendiente |
+| ✅ | Oraculo PBT funcional en Windows | TDD | `SandboxExecutor.run_script(require_project_deps=True)` → Job Object host; `pbt_stage` activado | **HECHO** |
+| ✅ | Python 3.14 acoplado | Entorno | `.python-version` + PATH de usuario + CI alineado | **HECHO** |
+| ✅ | Pre-commit efectivo | Rigor | `install_hooks.py` resuelve `core.hooksPath` (`.githooks`) | **HECHO** |
+| ✅ | Agentes `.agent.min` ocultos (V2) | Skills/Agentes | `hidden: true` + `compile_agents.minify_agent` | **HECHO** |
 | **Media** | Coverage 80% | Calidad | Atacar archivos con cobertura baja: mcp_executor.py, plugins, evolve_loop | 🔄 Pendiente |
 | **Media** | Async pipeline integration | Rendimiento | TaskOrchestrator async completo, integracion con AsyncAgentBus | 🔄 Pendiente |
 | **Media** | Fix debate tests | Estabilidad | ~20 tests de debate con ERROR por dependencias de orquestador | ⏳ Pendiente |
