@@ -1,4 +1,5 @@
 ---
+hidden: true
 
 name: coordinator
 version: 1.0.0

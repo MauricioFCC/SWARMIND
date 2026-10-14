@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: backend-engineer
 domain: backend
 description: "Backend engineer especializado en APIs, servidores, bases de datos y microservicios con calidad institucional."

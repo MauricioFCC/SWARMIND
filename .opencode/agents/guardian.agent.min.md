@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: guardian
 domain: quality
 priority: 9

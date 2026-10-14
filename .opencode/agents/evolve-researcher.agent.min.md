@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: evolve-researcher
 role: "Evolve Researcher — ASI-Evolve Agent"
 description: >

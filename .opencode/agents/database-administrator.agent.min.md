@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: database-administrator
 domain: data
 description: "DBA especializado en modelado, optimizacion y administracion de bases de datos relacionales y NoSQL."

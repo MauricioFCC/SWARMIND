@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: devops
 domain: devops
 description: "Ingeniero DevOps especializado en CI/CD, infraestructura, despliegue y monitoreo con estandares SRE."

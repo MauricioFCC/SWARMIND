@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: release-ops
 domain: devops
 description: "Ingeniero de releases y CI/CD de SWARMIND: GitHub Actions, uv, safety, bandit, auto-merge y branch protection | UPG·NAM·FRS (reglas en base_principles.md)"

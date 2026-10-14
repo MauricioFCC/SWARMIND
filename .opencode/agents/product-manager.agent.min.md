@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: product-manager
 domain: management
 description: "Product manager especializado en requerimientos, roadmaps, stakeholders y estrategia de producto con OKRs."

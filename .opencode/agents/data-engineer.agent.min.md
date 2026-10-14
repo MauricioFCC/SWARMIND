@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: data-engineer
 domain: data
 description: "Ingeniero de datos especializado en pipelines ETL, data warehouses y procesamiento de datos con calidad."

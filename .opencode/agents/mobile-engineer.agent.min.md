@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: mobile-engineer
 domain: mobile
 description: "Mobile engineer especializado en apps iOS/Android nativas y cross-platform con React Native y Flutter."

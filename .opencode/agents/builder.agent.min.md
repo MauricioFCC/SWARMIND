@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: builder
 domain: universal
 priority: 10

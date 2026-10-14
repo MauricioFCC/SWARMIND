@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: frontend-engineer
 domain: frontend
 description: "Frontend engineer especializado en UI/UX, React, componentes responsive y accesibilidad con Generative UI 2026."

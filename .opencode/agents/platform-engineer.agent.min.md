@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: platform-engineer
 domain: platform
 description: "Platform engineer: thinnest viable platform, self-service y golden paths con DORA como SLO."

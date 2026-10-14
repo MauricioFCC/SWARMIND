@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: architect
 domain: architecture
 description: "Arquitecto de software especializado en diseno de sistemas, C4 modeling y decisiones arquitectonicas."

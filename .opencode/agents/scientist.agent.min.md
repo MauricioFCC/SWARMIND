@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: scientist
 domain: research
 priority: 8

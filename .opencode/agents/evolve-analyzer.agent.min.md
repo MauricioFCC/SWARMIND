@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: evolve-analyzer
 domain: evolve
 description: "Analiza resultados vs baseline y destila lecciones a cognition store (fase ANALYZE)."

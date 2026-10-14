@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: researcher
 domain: research
 description: "Investigador academico especializado en revision de literatura, analisis de papers y escritura academica."

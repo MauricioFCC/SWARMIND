@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: evolve-engineer
 role: "Evolve Engineer — ASI-Evolve Agent"
 description: >

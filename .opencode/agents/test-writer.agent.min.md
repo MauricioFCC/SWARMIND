@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: test-writer
 domain: quality
 description: "Test Writer aislado: tests ANTES de ver la implementacion (firma + docstring + contrato)."

@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: security-engineer
 domain: security
 description: "Ingeniero de seguridad especializado en auditorias, pentesting y hardening con estandares OWASP."

@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: qa-engineer
 domain: quality
 description: "QA engineer especializado en testing automatizado, calidad de software y pipelines de integracion continua."

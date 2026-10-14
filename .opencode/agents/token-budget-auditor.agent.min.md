@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: token-budget-auditor
 domain: quality
 description: "Auditor de Token Economics del harness SWARMIND: cache-shape, structured compaction, failure-spend y budgets por rol | UPG·NAM·FRS (reglas en base_principles.md)"

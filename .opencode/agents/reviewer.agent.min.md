@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: reviewer
 domain: quality
 description: "Revisor de codigo especializado en pull requests, code review y auditoria de calidad."

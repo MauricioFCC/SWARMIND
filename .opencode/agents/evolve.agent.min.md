@@ -1,4 +1,5 @@
 ---
+hidden: true
 name: evolve
 domain: self-improvement
 priority: 10
