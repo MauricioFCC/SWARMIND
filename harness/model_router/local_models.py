@@ -80,15 +80,11 @@ EXPECTED_CONCURRENCY = 1
 MAX_TTL_S = 180
 #: Huella VRAM estimada por modelo (espejo de fleet_manifest/test_opencode).
 FALLBACK_VRAM_MB: Mapping[str, int] = {
-    "qwen2.5-coder-3b-iq4-xs": 3300,
-    "phi-4-mini-instruct-q4-k-m": 5700,
     #: Con CAPACITY (-nkvo) la KV cache vive en RAM, no en VRAM: la huella de
     #: GPU es solo pesos + buffers de computo.
     "phi-4-mini-reasoning-q4-k-m": 2600,
     "qwen3-4b-thinking-2507-q4-k-m": 2600,
     "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs": 6400,
-    "qwen3-5-4b-gguf-ud-q4-k-xl": 4600,
-    "deepseek-r1-distill-qwen-7b-q2-k": 4400,
     "qwen3-embedding-0-6b": 3800,
     #: Ternario 27B: 5700 MB MEDIDO con las flags reales de CAPACITY (-nkvo
     #: mueve la KV a RAM y baja la VRAM de 7789 a 5594 MB netos). 5700+1500 =
