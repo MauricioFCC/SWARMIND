@@ -7,14 +7,34 @@
   "small_model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs",
   "agent": {
     "coordinator": {
-      "mode": "primary",
+      "mode": "all",
       "model": "opencode-go/deepseek-v4.1-flash",
       "permission": {
         "task": {
           "*": "ask",
-          "builder-*": "allow",
-          "scientist-*": "allow",
-          "guardian-*": "allow"
+          "builder": "allow",
+          "guardian": "allow",
+          "scientist": "allow",
+          "reviewer": "allow",
+          "architect": "allow",
+          "test-writer": "allow",
+          "security-engineer": "allow",
+          "researcher": "allow",
+          "release-ops": "allow",
+          "token-budget-auditor": "allow",
+          "platform-engineer": "allow",
+          "product-manager": "allow",
+          "qa-engineer": "allow",
+          "backend-engineer": "allow",
+          "frontend-engineer": "allow",
+          "data-engineer": "allow",
+          "database-administrator": "allow",
+          "mobile-engineer": "allow",
+          "devops": "allow",
+          "evolve": "allow",
+          "evolve-engineer": "allow",
+          "evolve-analyzer": "allow",
+          "evolve-researcher": "allow"
         }
       }
     },
@@ -123,7 +143,7 @@
           "reasoning": true,
           "tools": true,
           "options": {
-            "num_ctx": 12288
+            "num_ctx": 8192
           }
         },
         "phi-4-mini-reasoning-q4-k-m": {
@@ -131,7 +151,7 @@
           "reasoning": true,
           "tools": true,
           "options": {
-            "num_ctx": 32768
+            "num_ctx": 8192
           }
         },
         "qwen3-4b-thinking-2507-q4-k-m": {
@@ -139,7 +159,7 @@
           "reasoning": true,
           "tools": true,
           "options": {
-            "num_ctx": 65536
+            "num_ctx": 8192
           }
         },
         "qwen3-embedding-0-6b": {
@@ -147,7 +167,7 @@
           "reasoning": false,
           "tools": false,
           "options": {
-            "num_ctx": 16384
+            "num_ctx": 8192
           }
         },
         "ternary-bonsai-2-27b-ptq1-0": {
@@ -155,7 +175,7 @@
           "reasoning": true,
           "tools": true,
           "options": {
-            "num_ctx": 16384
+            "num_ctx": 8192
           }
         }
       }

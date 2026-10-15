@@ -20,6 +20,7 @@ import pytest
 import yaml
 
 from harness.model_router.local_models import (
+    _SAFE_CTX_MAX,
     SSOT_PATH,
     _local_ref,
     build_targets,
@@ -139,7 +140,11 @@ def test_render_opencode_provider_is_coherent() -> None:
     assert rendered["agents"]["coordinator"] == config.opencode.cloud_oracle
     for model in config.models:
         if model.opencode:
-            assert rendered["models"][model.id]["options"]["num_ctx"] == model.ctx
+            # El num_ctx publicado a opencode se capa a la ventana anti-TDR.
+            assert (
+                rendered["models"][model.id]["options"]["num_ctx"]
+                == min(model.ctx, _SAFE_CTX_MAX)
+            )
 
 
 def test_render_opencode_provider_excludes_non_exposed() -> None:

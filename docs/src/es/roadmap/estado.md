@@ -1,9 +1,46 @@
 # Roadmap y Estado del Proyecto
 
-> Estado actual del sistema Swarmind Harness a 2026-10-14.
+> Estado actual del sistema Swarmind Harness a 2026-10-15.
 > Documento vivo que refleja el progreso, hitos y proximos objetivos.
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
+
+## Estado Actual (2026-10-15)
+
+### Estado 2026-10-15 (Auditoria del acople OpenCode: agentes lanzables, plugin V2, MCP y doctrina global)
+
+- **Acople 1:1 con OpenCode verificado con evidencia runtime** (`opencode debug agents`,
+  `opencode mcp list`, `opencode plugin list`, `opencode.log`) y reparado en 4 puntos:
+  1. **Agentes lanzables** — 22 de 24 agentes no declaraban `mode` y caian al default V2
+     `primary` (fuera del catalogo de subagentes): solo 7 de 24 eran lanzables y
+     **8 skills de 40** enrutaban a agentes inalcanzables (`architect` x2,
+     `product-manager`, `platform-engineer`, `security-engineer`, `evolve-engineer`,
+     `evolve`, `coordinator`). Hoy: 24 agentes en `mode: subagent`, `coordinator` en
+     `all` (primario + lanzable) y `permission.task` del coordinator por ID exacto
+     (antes `builder-*` no matcheaba ningun ID). Runtime: **25 `subagent` + 1 `all`**.
+  2. **Plugin V2** — `compaction-context.js` seguia en la API de plugins V1 y OpenCode lo
+     rechazaba (`PluginModule.LoadError`) en TODOS los proyectos: el hook de compactacion
+     estaba muerto. Portado a `export default { id, setup }` + `ctx.session.hook("compaction")`
+     (sin dependencias npm). Runtime: `swarmind.compaction-context` cargado con su ID.
+  3. **MCP `DEFAULT_ACTIVE` 3/3** — `sequentialthinking` moria con
+     `failed: Request timed out` (npx en frio vs 30 s). SSOT fija
+     `@modelcontextprotocol/server-sequential-thinking@1.0.0` y
+     `mcp_opencode.merge_into_config` garantiza `experimental.mcp_timeout >= 90000`.
+     Runtime: `fetch`/`time`/`sequentialthinking` **connected**.
+  4. **Doctrina AGENTS.md universal** — antes solo existia dentro de SWARMIND.
+     `sync_opencode_global` la copia al global (`~/.config/opencode/AGENTS.md`, inyectada
+     en cada sesion) y `deploy_all.deploy_agents_md` genera un AGENTS.md delgado en la raiz
+     de cada proyecto (marca `SWARMIND:generated`, NUNCA pisa un AGENTS.md ajeno).
+     Como `AGENTS.md` es el estandar compartido por OpenCode, Claude Code y Codex, la
+     doctrina viaja a cualquier harness sin duplicar SSOT.
+  5. **Comandos de OpenCode** — `.opencode/commands/` (`/mcp`, `/dispatch`, `/ver`)
+     sincronizados al global.
+- **Capa modular**: lo especifico de OpenCode (`mode`, plugin API, `opencode.json`) vive
+  cableado a su runtime; lo portable (AGENTS.md, agentes con frontmatter estandar) se
+  exporta por los mismos caminos que ya usan `claude_adapter`/`codex_adapter`.
+- **Contratos TDD**: `test_opencode_runtime_contract.py` (13: agentes lanzables,
+  `SKILL_TO_AGENT` alcanzable, forma V2 del plugin, comandos) + 4 de `mcp_timeout` +
+  6 de `deploy_agents_md`; ruff 0. Detalle completo: `docs/.MEJORAS_SWARMIND.md` 11.12.
 
 ## Estado Actual (2026-10-14)
 

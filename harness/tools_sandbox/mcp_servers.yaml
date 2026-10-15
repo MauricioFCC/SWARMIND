@@ -407,7 +407,7 @@ servers:
   - name: sequentialthinking
     transport: stdio
     command: npx
-    args: ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    args: ["-y", "@modelcontextprotocol/server-sequential-thinking@1.0.0"]
     description: "Sequential Thinking (referencia oficial): descomposicion reflexiva por pasos de pensamiento"
     tools:
       - sequentialthinking

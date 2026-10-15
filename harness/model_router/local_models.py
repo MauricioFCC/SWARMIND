@@ -27,7 +27,14 @@ from typing import Any
 
 import yaml
 
-from harness.model_router.backend_config import RamBudget
+from harness.model_router.backend_config import GpuBudget, RamBudget
+
+#: Ventana anti-TDR (SSOT `GpuBudget`). El `num_ctx` que se publica a opencode se
+#: capa a este techo (lo que opencode SOLICITA); llama-swap conserva el ctx de la
+#: SSOT (capacidad del server). WHY: el answer guard anti-TDR de deploy_all
+#: bloquea re-propagar `num_ctx=16384` (BSOD 0x116); opencode nunca debe pedir
+#: mas que la ventana segura. WHERE: local_models._opencode_model_entry.
+_SAFE_CTX_MAX = GpuBudget().safe_ctx_max
 
 #: Ruta por defecto de la SSOT (junto a este modulo).
 SSOT_PATH = Path(__file__).resolve().parent / "local_models.yaml"
@@ -677,7 +684,7 @@ def _opencode_model_entry(model: LocalModel) -> dict[str, Any]:
         "name": f"{model.id} ({label})",
         "reasoning": model.role in REASONING_ROLES,
         "tools": model.role not in TOOLLESS_ROLES,
-        "options": {"num_ctx": model.ctx},
+        "options": {"num_ctx": min(model.ctx, _SAFE_CTX_MAX)},
     }
 
 

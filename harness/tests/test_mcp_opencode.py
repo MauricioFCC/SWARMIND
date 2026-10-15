@@ -11,6 +11,7 @@ from pathlib import Path
 
 from harness.tools_sandbox.mcp_opencode import (
     DEFAULT_ACTIVE,
+    MCP_TIMEOUT_MS,
     build_mcp_servers,
     build_server_entry,
     env_references,
@@ -84,6 +85,30 @@ class TestMerge:
     def test_merge_preserves_unrelated_keys(self) -> None:
         merged = merge_into_config({"model": "x/y"}, [])
         assert merged["model"] == "x/y"
+
+
+class TestMcpTimeout:
+    """``experimental.mcp_timeout`` minimo para servers stdio servidos por npx.
+
+    Caso real: ``sequentialthinking`` (npx en frio) moria con
+    ``failed: Request timed out`` al timeout por defecto de OpenCode (30s).
+    """
+
+    def test_merge_fija_el_timeout_minimo(self) -> None:
+        merged = merge_into_config({}, [])
+        assert merged["experimental"]["mcp_timeout"] == MCP_TIMEOUT_MS
+
+    def test_merge_no_baja_un_timeout_mayor(self) -> None:
+        merged = merge_into_config({"experimental": {"mcp_timeout": 120_000}}, [])
+        assert merged["experimental"]["mcp_timeout"] == 120_000
+
+    def test_merge_preserva_otras_claves_experimental(self) -> None:
+        merged = merge_into_config({"experimental": {"otra": True}}, [])
+        assert merged["experimental"]["otra"] is True
+
+    def test_timeout_invalido_no_explota(self) -> None:
+        merged = merge_into_config({"experimental": {"mcp_timeout": "no-numero"}}, [])
+        assert merged["experimental"]["mcp_timeout"] == MCP_TIMEOUT_MS
 
 
 class TestRealSsot:

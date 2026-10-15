@@ -4,6 +4,7 @@
 
 
 name: data-engineer
+mode: subagent
 version: 1.0.0
 license: MIT
 compatibility: 'Python 3.12+; SWARMIND harness'

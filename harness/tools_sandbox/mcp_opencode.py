@@ -45,6 +45,14 @@ DEFAULT_ACTIVE: frozenset[str] = frozenset(
     }
 )
 
+#: Timeout minimo de arranque MCP (ms) que se garantiza en
+#: ``experimental.mcp_timeout``. El default de OpenCode (30s) no alcanza para un
+#: server stdio servido por ``npx`` en frio (descarga del paquete): OpenCode lo
+#: reporta ``failed: Request timed out`` (caso verificado de
+#: ``sequentialthinking``). 90s cubre la instalacion en frio sin degradar el
+#: arranque de los servers ya cacheados.
+MCP_TIMEOUT_MS: int = 90_000
+
 
 def env_references(env: Mapping[str, Any] | None) -> dict[str, str]:
     """Convierte ``env`` del YAML a referencias de entorno de opencode.
@@ -115,7 +123,13 @@ def merge_into_config(
     """Inyecta ``mcp.servers`` en una config de OpenCode preservando el resto.
 
     Preserva servers ya presentes que NO esten en la SSOT (no destructivo: el
-    operador puede tener servers propios).
+    operador puede tener servers propios). Ademas garantiza
+    ``experimental.mcp_timeout >=`` :data:`MCP_TIMEOUT_MS`.
+
+    WHY: OpenCode arranca los servers stdio con un timeout propio (30s por
+    defecto). Un server servido por ``npx`` en frio tarda mas (descarga del
+    paquete) y OpenCode lo reporta ``failed: Request timed out`` — caso real de
+    ``sequentialthinking``. Subir el timeout es portable y no toca la SSOT.
 
     Args:
         config: Config actual (dict) de ``opencode.json``/``.jsonc``.
@@ -131,6 +145,15 @@ def merge_into_config(
     )
     existing_servers.update(build_mcp_servers(servers))
     merged["mcp"] = {"servers": existing_servers}
+
+    experimental = dict(merged.get("experimental") or {})
+    try:
+        current_timeout = int(experimental.get("mcp_timeout", 0) or 0)
+    except (TypeError, ValueError):
+        current_timeout = 0
+    if current_timeout < MCP_TIMEOUT_MS:
+        experimental["mcp_timeout"] = MCP_TIMEOUT_MS
+    merged["experimental"] = experimental
     return merged
 
 

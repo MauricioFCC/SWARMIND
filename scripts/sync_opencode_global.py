@@ -68,6 +68,11 @@ _SRC_HARNESS = _ROOT / "harness"
 #: SSOT de los servers MCP (el harness los usa via MCPManager; opencode via `mcp`).
 _SRC_MCP_YAML = _SRC_HARNESS / "tools_sandbox" / "mcp_servers.yaml"
 
+#: Doctrina SWARMIND. OpenCode la carga desde ~/.config/opencode/AGENTS.md y la
+#: combina con la de cada proyecto (estandar AGENTS.md: el mismo archivo sirve a
+#: Claude Code y Codex, asi el cerebro viaja a cualquier harness).
+_SRC_AGENTS_MD = _ROOT / "AGENTS.md"
+
 #: `_ROOT` en sys.path para importar el harness (mcp_opencode).
 if str(_ROOT) not in sys.path:
     sys.path.insert(1, str(_ROOT))
@@ -78,8 +83,10 @@ _GLOBAL = Path(os.environ.get(
     str(Path.home() / ".config" / "opencode"),
 ))
 
-# Partes del cerebro que se sincronizan al global
-_BRAIN_DIRS = ["agents", "skills", "core"]
+# Partes del cerebro que se sincronizan al global.
+# "commands" = comandos de opencode (.opencode/commands/*.md -> /mcp, /dispatch,
+# /ver): el acople 1:1 con OpenCode, tambien viaja al global.
+_BRAIN_DIRS = ["agents", "skills", "core", "commands"]
 _REGISTRY_FILE = "skills/skills_registry.yaml"
 
 # Partes del cerebro que el usuario puede curar: sin --force NO se borran
@@ -347,6 +354,29 @@ def _sync_mcp_config(dry_run: bool = False) -> int:
     return len(servers)
 
 
+def _sync_agents_md(dry_run: bool = False) -> int:
+    """Copia la doctrina SWARMIND (``AGENTS.md``) al config global de opencode.
+
+    OpenCode carga ``~/.config/opencode/AGENTS.md`` en TODAS las sesiones (doc
+    oficial de Instructions) y la combina con el AGENTS.md de cada proyecto.
+    Sin este paso la doctrina (reglas RSF/ERR/CMT/VER, workflow VER) solo
+    existia dentro del repo SWARMIND; los demas proyectos quedaban sin ella.
+
+    Args:
+        dry_run: Si True, solo simula.
+
+    Returns:
+        1 si copio (o copiaria), 0 si la fuente no existe.
+    """
+    if not _SRC_AGENTS_MD.is_file():
+        logger.warning("  ⚠️  AGENTS.md fuente no existe: %s", _SRC_AGENTS_MD)
+        return 0
+    dst = _GLOBAL / "AGENTS.md"
+    if not dry_run:
+        shutil.copy2(_SRC_AGENTS_MD, dst)
+    return 1
+
+
 def sync_global(dry_run: bool = False, quiet: bool = False,
                 cerebro: bool = False, motor: bool = False,
                 mode: str = "copy", force: bool = False) -> dict:
@@ -401,6 +431,14 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
             stats["skills_registry"] = 1
             if not quiet:
                 logger.info("  âœ… skills_registry.yaml %s", "(simulado)" if dry_run else "actualizado")
+
+        # Doctrina: AGENTS.md global (OpenCode Instructions + estandar universal
+        # que tambien leen Claude Code y Codex).
+        agents_md = _sync_agents_md(dry_run=dry_run)
+        stats["agents_md"] = agents_md
+        if not quiet:
+            logger.info("  \u2705 %-10s %s", "AGENTS.md",
+                        "(simulado)" if dry_run else f"-> {_GLOBAL / 'AGENTS.md'}")
 
     if do_cerebro:
         mcp_count = _sync_mcp_config(dry_run=dry_run)
