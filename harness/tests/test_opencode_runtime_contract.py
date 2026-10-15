@@ -108,6 +108,51 @@ class TestAgentesLanzables:
         )
 
 
+class TestCoordinatorFleet:
+    """El allow-list ``permission.task`` del coordinator cubre toda la flota.
+
+    La flota se escribio a mano (un ID por agente): sin este contrato, anadir
+    un agente sin actualizar ``opencode.json`` lo deja fuera del fan-out y el
+    coordinator tendria que pedir confirmacion para lanzarlo. SSOT = los
+    archivos ``.opencode/agents/*.md``; la config los refleja. El coordinator
+    no se incluye a si mismo (auto-lanzarse es recursion).
+    """
+
+    def test_fleet_cubre_toda_la_flota_base(self) -> None:
+        task = ((_config_agents().get("coordinator") or {}).get("permission") or {}).get("task") or {}
+        fleet = {k for k, v in task.items() if v == "allow" and k != "*"}
+        base = {p.stem for p in _base_agents()} - {"coordinator"}
+
+        assert fleet == base, (
+            "flota desincronizada con los agentes base. "
+            f"Faltan en config: {sorted(base - fleet)}. "
+            f"Sobran en config: {sorted(fleet - base)}."
+        )
+
+    def test_desconocidos_siguen_pidiendo_confirmacion(self) -> None:
+        task = ((_config_agents().get("coordinator") or {}).get("permission") or {}).get("task") or {}
+        assert task.get("*") == "ask", "el comodin debe seguir siendo `ask`"
+
+
+class TestMcpTimeoutEnDisco:
+    """El template y su merge garantizan ``experimental.mcp_timeout >= 90000``.
+
+    El global ya lo tiene (via ``sync_config_file``), pero las sesiones de
+    proyecto leen el template espejado (``deploy_all``): con 30000 en disco, la
+    clave del proyecto pisa a la global en el merge de OpenCode y
+    ``sequentialthinking`` (npx en frio) cae en ``Request timed out``.
+    """
+
+    def test_template_con_timeout_suficiente(self) -> None:
+        raw = _CONFIG.read_text(encoding="utf-8")
+        doc = json.loads("\n".join(ln for ln in raw.splitlines() if not ln.strip().startswith("//")))
+        timeout = (doc.get("experimental") or {}).get("mcp_timeout", 0)
+        assert int(timeout) >= 90_000, (
+            f"mcp_timeout en disco = {timeout}: insuficiente para npx en frio "
+            "(sequentialthinking). Debe ser >= 90000 (ver MCP_TIMEOUT_MS)."
+        )
+
+
 class TestPluginV2:
     """``compaction-context.js`` debe usar la API de plugins de OpenCode V2."""
 

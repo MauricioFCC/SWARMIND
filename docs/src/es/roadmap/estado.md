@@ -41,6 +41,13 @@
 - **Contratos TDD**: `test_opencode_runtime_contract.py` (13: agentes lanzables,
   `SKILL_TO_AGENT` alcanzable, forma V2 del plugin, comandos) + 4 de `mcp_timeout` +
   6 de `deploy_agents_md`; ruff 0. Detalle completo: `docs/.MEJORAS_SWARMIND.md` 11.12.
+- **Refactor 11.13 (este ciclo)**: capa universal multi-harness reparada
+  (`converter_base` filtra `*.agent.min.md` y descubre `SKILL.md` reales;
+  `_copy_agents`/`_copy_skills` eliminan 4 loops duplicados; índice Claude
+  idempotente), flota del coordinator como contrato SSOT, pins
+  `mcp-server-fetch/time@2026.10.10`, `mcp_timeout: 90000` en template + 11
+  configs, AGENTS.md con números reales. Suite **6745 passed** + gates en verde.
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.13.
 
 ## Estado Actual (2026-10-14)
 

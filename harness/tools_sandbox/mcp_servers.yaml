@@ -354,7 +354,9 @@ servers:
   - name: fetch
     transport: stdio
     command: uvx
-    args: ["mcp-server-fetch"]
+    # Pin de version (SSOT como sequentialthinking@npx): uvx sin pin re-resuelve
+    # en cada maquina fria. Verificado en PyPI 2026-10-15 (requires-python >=3.10).
+    args: ["mcp-server-fetch@2026.10.10"]
     description: "Fetch (referencia oficial): descarga URLs y las convierte a markdown para el LLM"
     tools:
       - fetch
@@ -369,7 +371,8 @@ servers:
   - name: time
     transport: stdio
     command: uvx
-    args: ["mcp-server-time"]
+    # Pin de version (idem fetch). Verificado en PyPI 2026-10-15.
+    args: ["mcp-server-time@2026.10.10"]
     description: "Time (referencia oficial): hora actual y conversion entre zonas horarias"
     tools:
       - get_current_time

@@ -196,6 +196,6 @@
     "max_bytes": 8192
   },
   "experimental": {
-    "mcp_timeout": 30000
+    "mcp_timeout": 90000
   }
 }
