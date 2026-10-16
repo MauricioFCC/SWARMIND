@@ -88,19 +88,31 @@ class TestMerge:
 
 
 class TestMcpTimeout:
-    """``experimental.mcp_timeout`` minimo para servers stdio servidos por npx.
+    """``mcp.timeout`` (nativo V2) minimo para servers stdio servidos por npx.
 
     Caso real: ``sequentialthinking`` (npx en frio) moria con
     ``failed: Request timed out`` al timeout por defecto de OpenCode (30s).
+    ``experimental.mcp_timeout`` es V1: se normaliza pero el canonical es
+    ``mcp.timeout.{catalog,execution}``.
     """
 
     def test_merge_fija_el_timeout_minimo(self) -> None:
         merged = merge_into_config({}, [])
-        assert merged["experimental"]["mcp_timeout"] == MCP_TIMEOUT_MS
+        timeout = merged["mcp"]["timeout"]
+        assert timeout["catalog"] == MCP_TIMEOUT_MS
+        assert timeout["execution"] == MCP_TIMEOUT_MS
 
     def test_merge_no_baja_un_timeout_mayor(self) -> None:
+        merged = merge_into_config(
+            {"mcp": {"timeout": {"catalog": 120_000, "execution": 120_000}}}, []
+        )
+        assert merged["mcp"]["timeout"] == {"catalog": 120_000, "execution": 120_000}
+
+    def test_merge_migra_el_timeout_v1_de_experimental(self) -> None:
+        """Un config legado con ``experimental.mcp_timeout`` migra y lo limpia."""
         merged = merge_into_config({"experimental": {"mcp_timeout": 120_000}}, [])
-        assert merged["experimental"]["mcp_timeout"] == 120_000
+        assert merged["mcp"]["timeout"]["catalog"] == 120_000
+        assert "mcp_timeout" not in (merged.get("experimental") or {})
 
     def test_merge_preserva_otras_claves_experimental(self) -> None:
         merged = merge_into_config({"experimental": {"otra": True}}, [])
@@ -108,7 +120,7 @@ class TestMcpTimeout:
 
     def test_timeout_invalido_no_explota(self) -> None:
         merged = merge_into_config({"experimental": {"mcp_timeout": "no-numero"}}, [])
-        assert merged["experimental"]["mcp_timeout"] == MCP_TIMEOUT_MS
+        assert merged["mcp"]["timeout"]["catalog"] == MCP_TIMEOUT_MS
 
 
 class TestRealSsot:

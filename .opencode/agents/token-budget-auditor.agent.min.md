@@ -11,9 +11,9 @@ aliases: [token-auditor, token-budget-auditor, budget-auditor, token-economist]
 description: "Usar cuando se auditan tokens, contexto o costos del harness (token, budget, context, compact, compaction, cache-shape, costos). Alcance: Token Economics del harness; para auto-mejora ver evolve; para plataforma ver platform-engineer. | UPG·NAM·FRS (reglas en base_principles.md)"
 steps: 8
 mode: subagent
-permission:
-  edit: deny
-  bash: allow
+permissions:
+  - { action: edit, resource: "*", effect: deny }
+  - { action: shell, resource: "*", effect: allow }
 ---
 
 # Token Budget Auditor | Token Economics v2026

@@ -48,6 +48,19 @@
   `mcp-server-fetch/time@2026.10.10`, `mcp_timeout: 90000` en template + 11
   configs, AGENTS.md con números reales. Suite **6745 passed** + gates en verde.
   Detalle: `docs/.MEJORAS_SWARMIND.md` 11.13.
+- **Refactor 11.14 (este ciclo)**: acople migrado a **config NATIVA OpenCode V2**
+  (guía oficial `migrate-v1/`): `providers`+`package aisdk`+`settings`,
+  `agents`+`permissions` lista (acciones `shell`/`subagent`), `agents.title.model`
+  (reemplazo de `small_model`), `mcp.timeout.{catalog,execution}`, modelos con
+  `capabilities`/`limit.context`, plugin en `.opencode/plugins/` + limpieza del
+  legado en los 10 espejos. **Fix del error de compactación en 200K**: el
+  `buffer: 2000` absoluto (1% de holgura) se retiró para heredar el default
+  proporcional 10% del límite (2K locales / 20K cloud) — `compaction.model` NO
+  existe en V2 (la sesión compacta con su propio modelo). Features de frontera
+  nuevas: `permissions` globales (push→ask, sudo→deny), `policies` sudo
+  hard-deny, `watcher.ignore` anti-ruido. Checkers duales V2+V1; `formatter`
+  evaluado y rechazado con evidencia (277/325 tests se reescribirían).
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.14.
 
 ## Estado Actual (2026-10-14)
 
@@ -295,6 +308,7 @@ Objetivo: 80%    (proximo hito)
 | **Media** | Async pipeline integration | Rendimiento | TaskOrchestrator async completo, integracion con AsyncAgentBus | 🔄 Pendiente |
 | **Media** | Fix debate tests | Estabilidad | ~20 tests de debate con ERROR por dependencias de orquestador | ⏳ Pendiente |
 | **Media** | Paired eval de skills (Skill Lift) | Skills | Medir Δpp con/sin skill (SkillsBench: 16/84 negativos; self-generated -1.3pp); retiro por outcome N>=100 | 🔄 Pendiente |
+| **Media** | Habilitar `formatter: true` (OpenCode V2) | DX/Rigor | Evaluado 2026-10-15 y RECHAZADO con evidencia: `ruff format --check` reescribiría 277/325 tests + 32 scripts y crashea en algunos dirs (bug de ruff). Habilitar tras establish `ruff format` baseline + fix upstream | ⏳ Pendiente |
 | **Baja** | Mutation gate de skills en pre-commit | Skills | SkillCI-style (typo, negacion, context-prefix) + self-growing -> test permanente | 🔄 Pendiente |
 | **Baja** | Surrogate Verifier aislado por sesion | Gobernanza | Framework distinto emite diagnostico por-assertion (CoEvoSkills 2604.01687) | 🔄 Pendiente |
 | ✅ | Integrar TriageSLM+Telemetry al pipeline | Routing/Tokens | `PipelineRouter` (cascada: SLM -> fallback en complejidad timida -> frontier), TelemetryGate hit-rate 0.80, telemetria en agent_dispatcher (R10) | **HECHO** |

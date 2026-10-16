@@ -18,7 +18,7 @@ WHY: sin estos tests el acople se rompe en silencio: los skills enrutan a
 agentes que el modelo no puede lanzar y el plugin de compactacion no carga.
 
 WHERE: ``.opencode/agents/*.md`` + ``.opencode/opencode.json`` +
-``.opencode/plugin/compaction-context.js`` + ``.opencode/commands/``.
+``.opencode/plugins/compaction-context.js`` + ``.opencode/commands/``.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ from harness.orchestrator.skill_bundler import SKILL_TO_AGENT
 _ROOT = Path(__file__).resolve().parents[2]
 _AGENTS_DIR = _ROOT / ".opencode" / "agents"
 _CONFIG = _ROOT / ".opencode" / "opencode.json"
-_PLUGIN = _ROOT / ".opencode" / "plugin" / "compaction-context.js"
+_PLUGIN = _ROOT / ".opencode" / "plugins" / "compaction-context.js"
 _COMMANDS = _ROOT / ".opencode" / "commands"
 
 #: Modos que OpenCode V2 pone en el catalogo de subagentes.
@@ -56,10 +56,10 @@ def _frontmatter(path: Path) -> dict:
 
 
 def _config_agents() -> dict:
-    """Seccion ``agent`` de ``.opencode/opencode.json`` (JSON con comentarios)."""
+    """Seccion ``agents`` de ``.opencode/opencode.json`` (JSON con comentarios)."""
     raw = _CONFIG.read_text(encoding="utf-8")
     stripped = "\n".join(ln for ln in raw.splitlines() if not ln.strip().startswith("//"))
-    return json.loads(stripped).get("agent") or {}
+    return json.loads(stripped).get("agents") or {}
 
 
 def _effective_mode(agent: str) -> str:
@@ -109,7 +109,7 @@ class TestAgentesLanzables:
 
 
 class TestCoordinatorFleet:
-    """El allow-list ``permission.task`` del coordinator cubre toda la flota.
+    """El allow-list ``permissions`` (``action: subagent``) cubre toda la flota.
 
     La flota se escribio a mano (un ID por agente): sin este contrato, anadir
     un agente sin actualizar ``opencode.json`` lo deja fuera del fan-out y el
@@ -118,9 +118,18 @@ class TestCoordinatorFleet:
     no se incluye a si mismo (auto-lanzarse es recursion).
     """
 
+    @staticmethod
+    def _subagent_rules() -> list[dict]:
+        """Reglas ``action: subagent`` del coordinator (forma nativa V2)."""
+        perms = ((_config_agents().get("coordinator") or {}).get("permissions")) or []
+        return [r for r in perms if r.get("action") == "subagent"]
+
     def test_fleet_cubre_toda_la_flota_base(self) -> None:
-        task = ((_config_agents().get("coordinator") or {}).get("permission") or {}).get("task") or {}
-        fleet = {k for k, v in task.items() if v == "allow" and k != "*"}
+        rules = self._subagent_rules()
+        fleet = {
+            r["resource"] for r in rules
+            if r.get("effect") == "allow" and r.get("resource") != "*"
+        }
         base = {p.stem for p in _base_agents()} - {"coordinator"}
 
         assert fleet == base, (
@@ -130,26 +139,38 @@ class TestCoordinatorFleet:
         )
 
     def test_desconocidos_siguen_pidiendo_confirmacion(self) -> None:
-        task = ((_config_agents().get("coordinator") or {}).get("permission") or {}).get("task") or {}
-        assert task.get("*") == "ask", "el comodin debe seguir siendo `ask`"
+        wildcard = [
+            r for r in self._subagent_rules() if r.get("resource") == "*"
+        ]
+        assert wildcard and wildcard[-1].get("effect") == "ask", (
+            "el comodin `subagent: *` debe seguir siendo `ask` (ultima regla "
+            "matching = la que manda en V2)"
+        )
 
 
 class TestMcpTimeoutEnDisco:
-    """El template y su merge garantizan ``experimental.mcp_timeout >= 90000``.
+    """El template y su merge garantizan ``mcp.timeout >= 90000`` (nativo V2).
 
     El global ya lo tiene (via ``sync_config_file``), pero las sesiones de
     proyecto leen el template espejado (``deploy_all``): con 30000 en disco, la
     clave del proyecto pisa a la global en el merge de OpenCode y
     ``sequentialthinking`` (npx en frio) cae en ``Request timed out``.
+    ``experimental.mcp_timeout`` es V1 (se normaliza); el canonical V2 es
+    ``mcp.timeout.{catalog,execution}``.
     """
 
     def test_template_con_timeout_suficiente(self) -> None:
         raw = _CONFIG.read_text(encoding="utf-8")
         doc = json.loads("\n".join(ln for ln in raw.splitlines() if not ln.strip().startswith("//")))
-        timeout = (doc.get("experimental") or {}).get("mcp_timeout", 0)
-        assert int(timeout) >= 90_000, (
-            f"mcp_timeout en disco = {timeout}: insuficiente para npx en frio "
+        timeout = ((doc.get("mcp") or {}).get("timeout")) or {}
+        catalog = int(timeout.get("catalog") or 0)
+        execution = int(timeout.get("execution") or 0)
+        assert catalog >= 90_000 and execution >= 90_000, (
+            f"mcp.timeout en disco = {timeout}: insuficiente para npx en frio "
             "(sequentialthinking). Debe ser >= 90000 (ver MCP_TIMEOUT_MS)."
+        )
+        assert "mcp_timeout" not in (doc.get("experimental") or {}), (
+            "experimental.mcp_timeout V1 sigue en disco: usar mcp.timeout nativo"
         )
 
 

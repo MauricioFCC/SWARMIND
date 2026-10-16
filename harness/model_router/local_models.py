@@ -16,7 +16,6 @@ WHERE: ``scripts/render_local_models.py`` (CLI) y su test
 
 from __future__ import annotations
 
-import copy
 import json
 import os
 import re
@@ -50,6 +49,9 @@ LOG_LEVEL = "info"
 INCLUDE_ALIASES_IN_LIST = True
 #: Metadatos npm/servidor del provider local en la config de opencode.
 OPENCODE_NPM = "@ai-sdk/openai-compatible"
+#: Paquete del provider en forma NATIVA V2: V1 usaba ``npm`` sin prefijo; V2
+#: exige ``package`` y las librerias AI SDK llevan el prefijo ``aisdk:``.
+OPENCODE_PACKAGE = f"aisdk:{OPENCODE_NPM}"
 OPENCODE_PROVIDER_NAME = "llama.cpp (llama-swap local :11434)"
 #: Referencia simbolica al oraculo cloud en la SSOT de agentes.
 CLOUD_ALIAS = "cloud_oracle"
@@ -62,8 +64,6 @@ ROLE_LABELS: Mapping[str, str] = {
     "data": "data/signals",
     "embedding": "embeddings/RAG",
 }
-#: Roles que opencode marca como reasoning.
-REASONING_ROLES = frozenset({"reasoning", "fast", "deep", "data"})
 #: Roles que NO exponen tool-calling (embeddings).
 TOOLLESS_ROLES = frozenset({"embedding"})
 #: Techo VRAM total de la GPU (RTX 4060 8GB; anti-saturacion).
@@ -655,36 +655,57 @@ def _render_model_block(model: LocalModel, config: LocalModelsConfig) -> list[st
 
 
 def render_opencode_provider(config: LocalModelsConfig) -> dict[str, Any]:
-    """Renderiza el cableado de provider/modelos de opencode.
+    """Renderiza el cableado de provider/modelos de opencode (forma V2).
 
     Args:
         config: SSOT validada.
 
     Returns:
-        Dict con ``provider``, ``base_url``, ``models`` (solo los expuestos),
-        ``model``, ``small_model`` y ``agents`` (referencias resueltas).
+        Dict con ``provider_id``, ``base_url``, ``models`` (solo los expuestos,
+        forma nativa V2), ``model`` y ``agents`` (referencias resueltas; el
+        modelo pequeno entra como ``title`` = ``agents.title.model`` V2, el
+        reemplazo nativo del top-level ``small_model``).
     """
     oc = config.opencode
     models = {model.id: _opencode_model_entry(model) for model in config.models if model.opencode}
     agents = {name: _resolve_agent_ref(ref, oc) for name, ref in oc.agents.items()}
+    agents["title"] = _local_ref(oc.small_model, oc.provider)
     return {
-        "provider": oc.provider,
+        "provider_id": oc.provider,
         "base_url": oc.base_url,
         "models": models,
         "model": _local_ref(oc.model, oc.provider),
-        "small_model": _local_ref(oc.small_model, oc.provider),
         "agents": agents,
     }
 
 
 def _opencode_model_entry(model: LocalModel) -> dict[str, Any]:
-    """Entrada ``provider.<p>.models.<id>`` de opencode para un modelo local."""
+    """Entrada ``providers.<p>.models.<id>`` NATIVA V2 de un modelo local.
+
+    V2 no acepta los campos V1 ``reasoning``/``tools``/``options`` (los ignora
+    con warning). En su lugar: ``capabilities`` (tools/input/output),
+    ``limit.context`` (sin el, OpenCode asume 200k y la compactacion automatica
+    no dispara en modelos de 8k) y ``settings.num_ctx`` (mapping oficial
+    ``options`` -> ``settings``; el ctx efectivo lo fija ademas llama-swap con
+    ``-c`` en el server).
+
+    Args:
+        model: Modelo local de la SSOT.
+
+    Returns:
+        Entrada de modelo en forma V2.
+    """
     label = ROLE_LABELS.get(model.role, model.role)
+    ctx = min(model.ctx, _SAFE_CTX_MAX)
     return {
         "name": f"{model.id} ({label})",
-        "reasoning": model.role in REASONING_ROLES,
-        "tools": model.role not in TOOLLESS_ROLES,
-        "options": {"num_ctx": min(model.ctx, _SAFE_CTX_MAX)},
+        "capabilities": {
+            "tools": model.role not in TOOLLESS_ROLES,
+            "input": ["text"],
+            "output": ["text"],
+        },
+        "limit": {"context": ctx},
+        "settings": {"num_ctx": ctx},
     }
 
 
@@ -700,32 +721,231 @@ def _resolve_agent_ref(ref: str, oc: OpencodeSSOT) -> str:
     return _local_ref(ref, oc.provider)
 
 
+#: Acciones V1 de agentes -> acciones V2 (`bash`->`shell`, `task`->`subagent`).
+_V1_ACTION_ALIASES: Mapping[str, str] = {
+    "bash": "shell",
+    "task": "subagent",
+    "write": "edit",
+    "patch": "edit",
+}
+
+
+def _permissions_from_v1(permission: Mapping[str, Any]) -> list[dict[str, str]]:
+    """Convierte un mapa V1 ``permission`` a la lista ordenada V2.
+
+    V1: ``{"bash": "ask", "task": {"*": "ask", "builder": "allow"}}``.
+    V2: ``[{"action": "shell", "resource": "*", "effect": "ask"}, ...]``.
+
+    El orden importa en V2 (ultima regla que matchea gana): el comodin ``*``
+    se emite PRIMERO dentro de cada accion y las reglas especificas despues,
+    replicando la prioridad del lookup exacto de V1.
+
+    Args:
+        permission: Mapa V1 de permisos de un agente.
+
+    Returns:
+        Lista de reglas V2 ``{action, resource, effect}``.
+    """
+    rules: list[dict[str, str]] = []
+    for key, value in permission.items():
+        action = _V1_ACTION_ALIASES.get(str(key), str(key))
+        if isinstance(value, Mapping):
+            ordered = sorted(
+                ((str(res), str(eff)) for res, eff in value.items()),
+                key=lambda kv: kv[0] != "*",
+            )
+            rules.extend(
+                {"action": action, "resource": res, "effect": eff}
+                for res, eff in ordered
+            )
+        else:
+            rules.append({"action": action, "resource": "*", "effect": str(value)})
+    return rules
+
+
+def _model_entry_v1_to_v2(entry: Mapping[str, Any]) -> dict[str, Any]:
+    """Convierte una entrada de modelo V1 (``reasoning``/``tools``/``options``)
+    a la forma nativa V2 (``capabilities``/``limit``/``settings``).
+
+    Args:
+        entry: Entrada de modelo en forma V1.
+
+    Returns:
+        Entrada en forma V2 (campos desconocidos se conservan).
+    """
+    converted: dict[str, Any] = {
+        k: v for k, v in entry.items() if k not in {"reasoning", "tools", "options"}
+    }
+    options = entry.get("options")
+    num_ctx = options.get("num_ctx") if isinstance(options, Mapping) else None
+    capabilities = dict(entry.get("capabilities") or {})
+    capabilities.setdefault("tools", bool(entry.get("tools", True)))
+    capabilities.setdefault("input", ["text"])
+    capabilities.setdefault("output", ["text"])
+    converted["capabilities"] = capabilities
+    if isinstance(num_ctx, int):
+        limit = dict(entry.get("limit") or {})
+        limit.setdefault("context", num_ctx)
+        converted["limit"] = limit
+        settings = dict(entry.get("settings") or {})
+        settings.setdefault("num_ctx", num_ctx)
+        converted["settings"] = settings
+    return converted
+
+
+def _provider_entry_v1_to_v2(entry: Mapping[str, Any]) -> dict[str, Any]:
+    """Convierte un provider V1 (``npm``/``options``/``models``) a forma V2.
+
+    Args:
+        entry: Entrada de provider en forma V1.
+
+    Returns:
+        Entrada V2 con ``package``/``settings``/``models`` convertidos.
+    """
+    converted: dict[str, Any] = {
+        k: v for k, v in entry.items() if k not in {"npm", "options", "models"}
+    }
+    converted["package"] = str(entry.get("npm") or OPENCODE_PACKAGE)
+    options = entry.get("options")
+    if isinstance(options, Mapping):
+        settings = dict(entry.get("settings") or {})
+        settings.update({str(k): v for k, v in options.items()})
+        converted["settings"] = settings
+    models = entry.get("models")
+    if isinstance(models, Mapping):
+        converted["models"] = {
+            str(name): _model_entry_v1_to_v2(model) if isinstance(model, Mapping) else model
+            for name, model in models.items()
+        }
+    return converted
+
+
+def migrate_opencode_v1_to_v2(document: Mapping[str, Any]) -> dict[str, Any]:
+    """Normaliza un documento de config de opencode de V1 a la forma nativa V2.
+
+    Mapea las claves V1 deprecadas segun la guia oficial de migracion:
+    ``provider`` -> ``providers`` (``npm``->``package``, ``options``->
+    ``settings``), ``agent`` -> ``agents``,
+    ``permission`` (mapa) -> ``permissions`` (lista con acciones
+    ``bash``->``shell``/``task``->``subagent``) y ``small_model`` top-level ->
+    ``agents.title.model``. Si una clave V2 ya existe, PREVALECE sobre la V1
+    (regla de precedencia del propio runtime) y las claves ajenas se
+    preservan intactas. Idempotente: migrar dos veces no cambia el resultado.
+
+    WHY: V2 acepta las claves V1 normalizandolas en memoria, pero varios
+    campos se ignoran con warning y el operador cree que siguen activos;
+    ademas ``nested mixing`` no se infiere dentro de entradas individuales.
+
+    Args:
+        document: Documento de config (V1, V2 o mixto).
+
+    Returns:
+        Documento en forma V2 (copia nueva; no muta ``document``).
+
+    Raises:
+        TypeError: Si ``document`` no es un mapping.
+    """
+    if not isinstance(document, Mapping):
+        raise TypeError(
+            f"WHAT: document tipo {type(document).__name__} no es mapping. "
+            "WHY: migrate_opencode_v1_to_v2 espera un documento de config. "
+            "WHERE: local_models.migrate_opencode_v1_to_v2."
+        )
+    doc: dict[str, Any] = dict(document)
+
+    # 1) provider (V1) -> providers (V2); el bloque V2 ya existente gana.
+    v1_provider = doc.pop("provider", None)
+    if isinstance(v1_provider, Mapping):
+        providers = {
+            str(pid): _provider_entry_v1_to_v2(entry) if isinstance(entry, Mapping) else entry
+            for pid, entry in v1_provider.items()
+        }
+        providers.update(doc.get("providers") or {})
+        doc["providers"] = providers
+
+    # 2) agent (V1) -> agents (V2) + permission (mapa) -> permissions (lista).
+    v1_agents = doc.pop("agent", None)
+    if isinstance(v1_agents, Mapping):
+        agents: dict[str, Any] = {}
+        for name, entry in v1_agents.items():
+            converted: dict[str, Any] = dict(entry or {})
+            permission = converted.pop("permission", None)
+            if isinstance(permission, Mapping):
+                converted["permissions"] = _permissions_from_v1(permission)
+            agents[str(name)] = converted
+        agents.update(doc.get("agents") or {})
+        doc["agents"] = agents
+
+    # 3) small_model (V1) -> agents.title.model (V2); el title V2 gana.
+    small_model = doc.pop("small_model", None)
+    if small_model and not (((doc.get("agents") or {}).get("title")) or {}).get("model"):
+        agents_block = dict(doc.get("agents") or {})
+        title = dict(agents_block.get("title") or {})
+        title["model"] = small_model
+        agents_block["title"] = title
+        doc["agents"] = agents_block
+
+    # 4) compaction V1 -> V2 (prune/tail_turns no tienen equivalente: se
+    #    eliminan; reserved/preserve_recent_tokens -> buffer/keep.tokens).
+    compaction = doc.get("compaction")
+    if isinstance(compaction, Mapping):
+        converted_compaction: dict[str, Any] = {
+            k: v for k, v in compaction.items() if k not in {"prune", "tail_turns"}
+        }
+        keep = dict(converted_compaction.get("keep") or {})
+        if "reserved" in compaction:
+            converted_compaction["buffer"] = compaction["reserved"]
+        if "preserve_recent_tokens" in compaction:
+            keep.setdefault("tokens", compaction["preserve_recent_tokens"])
+        if keep:
+            converted_compaction["keep"] = keep
+        doc["compaction"] = converted_compaction
+
+    # 5) skills V1 {paths, urls} -> array V2 (solo si existe la forma V1).
+    skills = doc.get("skills")
+    if isinstance(skills, Mapping):
+        combined = [str(p) for p in (skills.get("paths") or [])]
+        combined += [str(u) for u in (skills.get("urls") or [])]
+        doc["skills"] = combined
+
+    return doc
+
+
 def merge_opencode_document(
     existing: Mapping[str, Any], rendered: Mapping[str, Any]
 ) -> dict[str, Any]:
-    """Fusiona el render de opencode en un documento existente.
+    """Fusiona el render de opencode en un documento existente (forma V2).
 
-    Preserva todas las claves ajenas (skills, compaction, permisos de agentes).
+    Migra de paso cualquier clave V1 del documento existente a la forma nativa
+    V2 (ver :func:`migrate_opencode_v1_to_v2`) y preserva todas las claves
+    ajenas (skills, compaction, permisos de agentes).
 
     Args:
         existing: Documento de config actual (vacio si no existe).
         rendered: Resultado de ``render_opencode_provider``.
 
     Returns:
-        Documento fusionado (copia nueva; no muta ``existing``).
+        Documento fusionado en forma V2 (copia nueva; no muta ``existing``).
     """
-    document: dict[str, Any] = copy.deepcopy(existing) if existing else {}
-    provider_id = str(rendered["provider"])
-    entry = document.setdefault("provider", {}).setdefault(provider_id, {})
-    entry["npm"] = OPENCODE_NPM
+    document = migrate_opencode_v1_to_v2(existing)
+    provider_id = str(rendered["provider_id"])
+    providers = dict(document.get("providers") or {})
+    entry = dict(providers.get(provider_id) or {})
+    entry["package"] = OPENCODE_PACKAGE
     entry["name"] = OPENCODE_PROVIDER_NAME
-    entry.setdefault("options", {})["baseURL"] = rendered["base_url"]
+    settings = dict(entry.get("settings") or {})
+    settings["baseURL"] = rendered["base_url"]
+    entry["settings"] = settings
     entry["models"] = rendered["models"]
+    providers[provider_id] = entry
+    document["providers"] = providers
     document["model"] = rendered["model"]
-    document["small_model"] = rendered["small_model"]
-    agents = document.setdefault("agent", {})
+    agents = dict(document.get("agents") or {})
     for name, model_ref in rendered["agents"].items():
-        agents.setdefault(name, {})["model"] = model_ref
+        agent_entry = dict(agents.get(name) or {})
+        agent_entry["model"] = model_ref
+        agents[name] = agent_entry
+    document["agents"] = agents
     return document
 
 

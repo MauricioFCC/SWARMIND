@@ -237,6 +237,36 @@ def _violates_context_guard(path: Path) -> bool:
         return False
     return any(pattern.search(text) for pattern in _FORBIDDEN_CONTEXT_PATTERNS)
 
+
+#: Dir de plugin en el layout V1 (singular). V2 descubre ``plugins/``.
+_LEGACY_PLUGIN_DIR = "plugin"
+
+
+def _remove_legacy_opencode_paths(dst_opencode: Path, dry_run: bool) -> int:
+    """Elimina rutas legadas V1 del destino que la fuente ya no trae.
+
+    ``_sync_tree`` es no destructivo (no borra entradas ausentes en origen), asi
+    que tras migrar de layout (``plugin/`` -> ``plugins/``) los espejos
+    conservarian el dir singular y OpenCode cargaria el plugin DOS veces
+    (hook de compactacion duplicado).
+
+    Args:
+        dst_opencode: ``.opencode/`` del proyecto destino.
+        dry_run: Si True, solo reporta sin eliminar.
+
+    Returns:
+        Numero de entradas legadas eliminadas (o que se eliminarian).
+    """
+    legacy = dst_opencode / _LEGACY_PLUGIN_DIR
+    if not legacy.exists():
+        return 0
+    if dry_run:
+        logger.info("  🧹 (simulado) eliminaria dir legado: %s", legacy)
+        return 1
+    shutil.rmtree(legacy)
+    logger.info("  🧹 eliminado dir legado V1: %s (layout nativo: plugins/)", legacy)
+    return 1
+
 # ---------------------------------------------------------------------------
 # Config (rutas portables, ADR-0035)
 # ---------------------------------------------------------------------------
@@ -1021,6 +1051,7 @@ def deploy_project(
         exclude=hidden, blocked=blocked,
     )
     opencode_count += _seed_node_modules(project.path / ".opencode", dry_run)
+    opencode_count += _remove_legacy_opencode_paths(project.path / ".opencode", dry_run)
     logger.info("  ✅ .opencode/: %d archivos %s", opencode_count, "(simulado)" if dry_run else "")
 
     # 3. Motor (harness/): NO se copia a proyectos (estándar v2.5).

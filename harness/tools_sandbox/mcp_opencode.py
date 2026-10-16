@@ -46,11 +46,13 @@ DEFAULT_ACTIVE: frozenset[str] = frozenset(
 )
 
 #: Timeout minimo de arranque MCP (ms) que se garantiza en
-#: ``experimental.mcp_timeout``. El default de OpenCode (30s) no alcanza para un
-#: server stdio servido por ``npx`` en frio (descarga del paquete): OpenCode lo
-#: reporta ``failed: Request timed out`` (caso verificado de
-#: ``sequentialthinking``). 90s cubre la instalacion en frio sin degradar el
-#: arranque de los servers ya cacheados.
+#: ``mcp.timeout.{catalog,execution}`` (canonical V2; V1 usaba
+#: ``experimental.mcp_timeout`` y se migra en :func:`merge_into_config`).
+#: El default de OpenCode (30s) no alcanza para un server stdio servido por
+#: ``npx`` en frio (descarga del paquete): OpenCode lo reporta
+#: ``failed: Request timed out`` (caso verificado de ``sequentialthinking``).
+#: 90s cubre la instalacion en frio sin degradar el arranque de los servers
+#: ya cacheados.
 MCP_TIMEOUT_MS: int = 90_000
 
 
@@ -124,7 +126,8 @@ def merge_into_config(
 
     Preserva servers ya presentes que NO esten en la SSOT (no destructivo: el
     operador puede tener servers propios). Ademas garantiza
-    ``experimental.mcp_timeout >=`` :data:`MCP_TIMEOUT_MS`.
+    ``mcp.timeout.{catalog,execution} >=`` :data:`MCP_TIMEOUT_MS` (forma
+    nativa V2) y migra/limpia el campo V1 ``experimental.mcp_timeout``.
 
     WHY: OpenCode arranca los servers stdio con un timeout propio (30s por
     defecto). Un server servido por ``npx`` en frio tarda mas (descarga del
@@ -144,16 +147,30 @@ def merge_into_config(
         dict(existing.get("servers", {})) if isinstance(existing, dict) else {}
     )
     existing_servers.update(build_mcp_servers(servers))
-    merged["mcp"] = {"servers": existing_servers}
+    existing_timeout = (
+        dict(existing.get("timeout", {})) if isinstance(existing, dict) else {}
+    )
 
+    # Timeout V1 legado (experimental.mcp_timeout) -> canonical V2 mcp.timeout.
     experimental = dict(merged.get("experimental") or {})
+    legacy_raw = experimental.pop("mcp_timeout", 0)
     try:
-        current_timeout = int(experimental.get("mcp_timeout", 0) or 0)
+        legacy_timeout = int(legacy_raw or 0)
     except (TypeError, ValueError):
-        current_timeout = 0
-    if current_timeout < MCP_TIMEOUT_MS:
-        experimental["mcp_timeout"] = MCP_TIMEOUT_MS
-    merged["experimental"] = experimental
+        legacy_timeout = 0
+    if experimental:
+        merged["experimental"] = experimental
+    else:
+        merged.pop("experimental", None)
+
+    timeout: dict[str, int] = {}
+    for key in ("catalog", "execution"):
+        try:
+            current = int(existing_timeout.get(key, 0) or 0)
+        except (TypeError, ValueError):
+            current = 0
+        timeout[key] = max(current, legacy_timeout, MCP_TIMEOUT_MS)
+    merged["mcp"] = {"servers": existing_servers, "timeout": timeout}
     return merged
 
 
@@ -205,7 +222,7 @@ def sync_config_file(
     else:
         current = {}
     desired = merge_into_config(current, servers)
-    if current.get("mcp") == desired.get("mcp"):
+    if current == desired:
         return True
     if not dry_run:
         path.parent.mkdir(parents=True, exist_ok=True)

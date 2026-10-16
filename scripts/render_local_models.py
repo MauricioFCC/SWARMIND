@@ -2,9 +2,11 @@
 
 WHAT: CLI idempotente que lee ``harness/model_router/local_models.yaml`` (SSOT)
 y (1) escribe el YAML de config de llama-swap y (2) parchea los
-``opencode.json``/``opencode.jsonc`` (provider ``llamacpp``, ``model``/
-``small_model`` y ``agent.*.model``), preservando el resto de claves de esos
-archivos. Las funciones de render viven en ``harness.model_router.local_models``
+``opencode.json``/``opencode.jsonc`` en forma NATIVA V2 (``providers.llamacpp``
+con ``package``/``settings``/``capabilities``/``limit``, ``model`` y
+``agents.<id>.model`` incluido ``agents.title.model`` el modelo pequeno),
+migrando de paso cualquier clave V1 legada y preservando el resto de claves.
+Las funciones de render viven en ``harness.model_router.local_models``
 (fuente unica).
 WHY: la config de modelos estaba duplicada en cinco archivos; actualizar un
 modelo era un dolor y la deriva era silenciosa. Editar la SSOT + regenerar

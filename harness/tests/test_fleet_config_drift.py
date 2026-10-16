@@ -90,12 +90,24 @@ def _yaml_tiers() -> dict[str, dict[str, Any]]:
 def _declared_aliases() -> frozenset[str]:
     """Ids declarados en el `opencode.json` del repo (aliases de flota).
 
+    Tolerante a la forma nativa V2 (``providers``) y a la V1 legada
+    (``provider``): el guard anti-retirados debe cubrir ambos shape.
+
     Returns:
-        Conjunto de ids de `provider.ollama.models`.
+        Conjunto de ids de ``providers.*.models`` (V2) o
+        ``provider.*.models`` (V1).
     """
     data: dict[str, Any] = json.loads(_OPENCODE_JSON.read_text(encoding="utf-8"))
-    models = data.get("provider", {}).get("ollama", {}).get("models", {})
-    return frozenset(models) if isinstance(models, dict) else frozenset()
+    declared: set[str] = set()
+    for section in ("providers", "provider"):
+        block = data.get(section)
+        if not isinstance(block, dict):
+            continue
+        for provider in block.values():
+            models = (provider or {}).get("models")
+            if isinstance(models, dict):
+                declared.update(str(name) for name in models)
+    return frozenset(declared)
 
 
 @pytest.fixture(scope="module")
