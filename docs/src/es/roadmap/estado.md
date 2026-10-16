@@ -61,6 +61,24 @@
   hard-deny, `watcher.ignore` anti-ruido. Checkers duales V2+V1; `formatter`
   evaluado y rechazado con evidencia (277/325 tests se reescribirían).
   Detalle: `docs/.MEJORAS_SWARMIND.md` 11.14.
+- **Frontera 11.15 (este ciclo)**: 2 capacidades del estado del arte 2026
+  ausentes en el harness, verificadas con TDD adversarial mutante.
+  (1) **Ejecución durable con Resume Contract** (`harness/orchestrator/
+  durable_run.py`, arXiv 2608.03836 — LangGraph/CrewAI medidos INCUMPLENDOLO):
+  `DurableRunStore` con transiciones atómicas, claim consume-once
+  **cross-process** (un solo racer gana el efecto), `resume_plan` determinista
+  (PENDING→re-ejecuta, RUNNING→`indeterminate` nunca re-ejecución ciega,
+  COMPLETED→prefix jamás repetido) y respuestas HITL consume-once.
+  (2) **Graduación de evals a regresión** (`harness/evals/regression_tracker.py`,
+  Anthropic "Demystifying evals" 2026): baseline histórica por tarea, alerta
+  nombrando la tarea que cayó >1.0pp, saturación al 100%, historial JSONL
+  append-only. Kill-check con el mutador AST propio: **6/6 mutantes
+  semánticos muertos** (el superviviente inicial expuso `mkdir(parents=False)`
+  → test nuevo). Detalle: `docs/.MEJORAS_SWARMIND.md` 11.15.
+- **Pendiente (evals de frontera)**: LLM-as-judge con escape "Unknown" +
+  scorecards por corrida (Anthropic 2026); ACP lo cubre `packages/acp` de
+  OpenCode (el harness Python no necesita implementarlo — validar `opencode
+  acp` cuando el binario esté en PATH).
 
 ## Estado Actual (2026-10-14)
 
