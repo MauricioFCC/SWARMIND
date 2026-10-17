@@ -113,6 +113,35 @@
   `spent` del re-ataque) → ronda 2 **17/17 + 2/2 = 19/19 (100%)**; 75
   contratos nuevos (RED: 6 ModuleNotFoundError).
   Detalle: `docs/.MEJORAS_SWARMIND.md` 11.17.
+- **Frontera 11.18 (este ciclo)**: **round skills/agentes/MCP** —
+  auditoría determinista de la capa MCP y defensa anti inyección en
+  prosa de skills (OWASP MCP Top-10 2025 + arXiv 2608.29596).
+  (1) `harness/security/mcp_security_scan.py`: parser JSONC real +
+  5 categorías OWASP (shell crudo, pin ausente = rug-pull, secretos en
+  env con masking, http sin TLS, endpoints internos = superficie SSRF);
+  spec corregida contra la config real (argv-list, `environment`,
+  `mcp.servers`). (2) `harness/security/skill_guard.py`: frontmatter
+  obligatorio + 7 patrones de prosa hostil; **dogfood en las 42 skills:
+  0 hostiles + 5 `domain` faltantes de skills preexistentes corregidos**.
+  (3) Skills `mcp-security` + `alpha-mining` (SKILL.min + registry sha256
+  + routing a agentes). (4) Agente **`alpha-miner`** con contrato de
+  flota completo (mode, min variante, permisos del coordinator,
+  delegation policy). Kill-check 5/5 (100%); 34 contratos nuevos
+  (RED: 2 ModuleNotFoundError). Detalle:
+  `docs/.MEJORAS_SWARMIND.md` 11.18.
+- **Frontera 11.19**: **ADR fr-0001 — politica de costos de routeo**
+  (STEER-lite cost-aware, mandato del usuario). `cost_policy.py`:
+  escalera free→small→standard→frontier; escalación por costo
+  INCREMENTAL (umbral $0.05) con escalón intermedio `standard`; tier
+  `free` para complejidad <= 2 + output <= 2000; veto de presupuesto de
+  salida (> 4000 tokens => vetar modelos ultra-caros salvo `force_tier`);
+  voting k-in-1 con el tier de menor input cuando gate >= 70 y
+  confidence < 0.7. **Acoplamiento aditivo 0-regresión**:
+  `CascadeRouter.plan_cost_aware_escalation` +
+  `session_affinity.should_switch_on_cache_health` (umbral 0.60
+  alineado con `TokenUsageTracker.cache_health`). 28 contratos (RED);
+  kill-check 11/11 muertos + 5 equivalentes = 100% efectivo. Detalle:
+  `docs/.MEJORAS_SWARMIND.md` 11.19.
 - **Pendiente (evals de frontera)**: LLM-as-judge con escape "Unknown" +
   scorecards por corrida (Anthropic 2026); ACP lo cubre `packages/acp` de
   OpenCode (el harness Python no necesita implementarlo — validar `opencode

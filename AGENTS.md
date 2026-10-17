@@ -57,7 +57,7 @@ nunca afirma, verifica**. Al completar cualquier cambio:
 4. **Docs oficiales**: README.md (inglés, público), docs/src/es/ (español,
    primario), CHANGELOG.md, docs/.MEJORAS_SWARMIND.md. Los ADR NO se mencionan
    en la documentación pública.
-5. **Tests**: pytest en `harness/tests/` (6947 passing, 0 failed). TDD siempre-on.
+5. **Tests**: pytest en `harness/tests/` (7019 passing, 0 failed). TDD siempre-on.
    Ruff 0 errores, vulture 0 dead code, deuda AGR 0.
 6. **Commits**: conventional commit en español (`feat(scope): mensaje`).
 7. **Push**: los ADR (docs/src/es/adr/) se versionan localmente pero NO se
@@ -67,7 +67,7 @@ nunca afirma, verifica**. Al completar cualquier cambio:
 
 - Roadmap: `docs/src/es/roadmap/estado.md`
 - Mejoras log: `docs/.MEJORAS_SWARMIND.md`
-- Agentes: `.opencode/agents/` (24 agentes, `mode` declarado; flota del
+- Agentes: `.opencode/agents/` (25 agentes, `mode` declarado; flota del
   coordinator sincronizada por contrato en `test_opencode_runtime_contract.py`)
 - Registry de skills: `.opencode/skills/skills_registry.yaml`
 - Principios completos: `.opencode/core/base_principles.md`

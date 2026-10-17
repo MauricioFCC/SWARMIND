@@ -2,6 +2,26 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-10-16] Round skills/agentes/MCP + ADR fr-0001 cost-aware routing
+
+### Nuevos módulos
+- **`harness/security/mcp_security_scan.py`** — parser JSONC real (comentarios blanked preservando numeración, trailing commas, `://` intacto) + `scan_mcp_config` determinista con 5 categorías OWASP MCP Top-10: shell crudo, pin ausente (rug-pull), secretos en env (masking SEG), http sin TLS, endpoints internos (superficie SSRF). Spec corregida contra la config real (`command` argv-list, `environment`, `mcp.servers` anidado).
+- **`harness/security/skill_guard.py`** — frontmatter obligatorio (name/domain/description/version/project_agnostic) + 7 patrones de prosa hostil case-insensitive (arXiv 2608.29596). Dogfood en las 42 skills: 0 hostiles, 5 `domain` faltantes corregidos.
+- **`harness/model_router/cost_policy.py`** (ADR fr-0001) — escalera free→small→standard→frontier; `estimated_cost_usd`; escalación por costo incremental (umbral $0.05 ⇒ escalón `standard`); tier `free` para complejidad ≤ 2 + output ≤ 2000; veto de presupuesto de salida (> 4000 tokens ⇒ vetar `OUTPUT_BUDGET_VETO_MODELS` salvo `force_tier`); `pick_voting_tier` k-in-1 con el tier de menor input (gate ≥ 70, confidence < 0.7).
+
+### Acoplamiento aditivo (0 regresión)
+- `CascadeRouter.plan_cost_aware_escalation` — planifica la escalera por costo sin tocar `run()`.
+- `session_affinity.should_switch_on_cache_health` + `CACHE_HEALTH_MIN_HIT_RATE = 0.60` — rompe la afinidad cuando el cache de prompt está roto (alineado con `TokenUsageTracker.cache_health`).
+
+### Skills y agentes
+- **Skills nuevos** `mcp-security` + `alpha-mining` (SKILL.md + SKILL.min.md + registry sha256); `SKILL_TO_AGENT` y `DOMAIN_SKILLS` cableados.
+- **Agente `alpha-miner`** (mode: subagent, variante `.agent.min.md`, permisos del coordinator, delegation policy keywords).
+- 5 skills preexistentes (architecture, data-science, evolve, hedgefund, rust-lang) corregidas con `domain:` faltante.
+
+### Tests
+- `test_security_mcp_scan.py` (18) + `test_security_skill_guard.py` (16) + `test_cost_policy.py` (28) = **62 contratos nuevos** (RED evidenciado).
+- Kill-check mutante: skill_guard+mcp 5/5 (100%); cost_policy 11/11 muertos + 5 equivalentes = 100% efectivo.
+
 ## [2026-10-07] Calibración probabilística + fingerprint de opciones (Misellium→Swarmind)
 
 ### Nuevos módulos
