@@ -11,7 +11,7 @@ skills:
     description: "Usar cuando el usuario quiere mejorar el sistema o sus skills. auto-mejora, evolucion, ASI-Evolve, aprendizaje continuo, mejora de skills, FDE, meta-aprendizaje. Alcance: mejora del sistema y sus skills; para disciplina pre-merge ver agent-rigor. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 291fd91a1b76bbb61c7a38f03129f5c9fe60c4bff25b86c369862f57c15954b6
+    sha256: a1c97d9ac51e02b60e966de38bcc1b8e96579d1563bf0e5c9652e1e6bb4d6e0d
 
   - name: healthtech
     domain: healthtech
@@ -25,7 +25,7 @@ skills:
     description: "Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, riesgo institucional. Alcance: doctrina y estrategia; para motores ver quant-trading, para ejecucion ver risk-execution. Cuando NO usar: ver Alcance. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: bd10774e3afda07de698deb9d0f9b2808f62311eaac5fbbd7eb217057a8bd8a2
+    sha256: f9fb21c18d53c0fabba860ec966f2c73dd921e998d9cdc3dc687adbd7ddc3365
 
   - name: legal-doc
     domain: legal
@@ -81,21 +81,21 @@ skills:
     description: "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes. Alcance: Rust y sistemas seguros; para arquitectura de sistemas ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 492da602602eb09c39ba2c97bb6bd2944417b775e7298ba0167955d22df0d0df
+    sha256: 96e0185d2cfa86f6d19232706b127a3372cc6ea4eedd7c7c8d08d7877402d27a
 
   - name: architecture
     domain: architecture
     description: "Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones. Alcance: diseno y decisiones de arquitectura; para infraestructura y despliegue ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: c9facbfce74cb52f10ce70169de10a2c7631efab4f0caa0d2fb5f75ad8da81b9
+    sha256: a8fa16fda666e935e44cac73f875d5667cbb3c9679182578e9aeb4b8b0aabc21
 
   - name: data-science
     domain: data
     description: "Usar cuando el usuario trabaja con datos, ML o pipelines. pandas, numpy, scikit-learn, pytorch, feature engineering, model evaluation, GPU, analisis de datos. Alcance: pipelines y modelos ML; para factores de alpha ver alpha-research. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: a08c6c9b5a7c632acc1dbc9e0042af68fb84ef34c088cb78568abb2891ef249c
+    sha256: 532c229930be4e852964c0762c5ea9c44099097ba3ec36ce6a71a5965fab7b65
 
   - name: security-audit
     domain: security
@@ -278,3 +278,17 @@ skills:
     version: 1.0.0
     project_agnostic: true
     sha256: 9c41e4493f1bd8505db124140eb699206c4f188d6b5b39f7c9a17b7b6354a5ba
+
+  - name: mcp-security
+    domain: security
+    description: "Usar cuando se auditan, endurecen o instalan servidores MCP (mcp, owasp, supply-chain, rug-pull, ssrf, least-privilege, secrets). Alcance: seguridad de la capa MCP; para auditoria general ver security-audit; para elegir herramientas ver mcp-toolkit. | UPG*NAM*FRS (reglas en base_principles.md)"
+    version: 1.0.0
+    project_agnostic: true
+    sha256: 9fabee94c95fa2fbf4e8586a64fb4778246ceb661d6af22cbacd4d9a6cecb7f7
+
+  - name: alpha-mining
+    domain: quantitative
+    description: "Usar cuando se minan, generan o evaluan factores alpha con el harness (factor, dsl, rankic, ast, mcts, factor zoo, mining loop). Alcance: mineria operativa con harness/alpha_mining; para investigacion de factores ver alpha-research; para el motor de trading ver quant-trading. | UPG*NAM*FRS (reglas en base_principles.md)"
+    version: 1.0.0
+    project_agnostic: true
+    sha256: 6a952ad03d481fb66ef4ca1b33ff0703c92fa0c821a9de0e66e310ef7882837d

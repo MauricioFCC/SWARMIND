@@ -61,6 +61,7 @@ delegation:
     evolve-analyzer: [analizar resultados, baseline, destilar lecciones, retrospectiva, metricas de mejora]
     evolve-researcher: [investigar tecnicas, frontera, paper de agentes, propuesta de mejora, rl scaling]
     token-budget-auditor: [token budget, cache-shape, compaction, token economics, ahorro de tokens, failure-spend]
+    alpha-miner: [alpha, factor, mineria alpha, senales, rankic, factor zoo, mining loop, dsl de factores, umbrales nvidia]
 
   # Reglas de delegación UI/UX (identidad visual + accesibilidad).
   uiux:

@@ -108,7 +108,9 @@ def _deduplicate_near_duplicates(names: list[str]) -> list[str]:
 # sistema de skills); reverse-engineering→security-engineer (analisis de
 # artefactos con foco defensivo); codebase-comprehension→architect y
 # architecture-review→architect (comprension y conformance arquitectonica);
-# ads-optimizer→product-manager (optimizacion de campanas/business).
+# ads-optimizer→product-manager (optimizacion de campanas/business);
+# mcp-security→security-engineer (auditoria OWASP de la capa MCP);
+# alpha-mining→alpha-miner (agente dedicado de mineria alpha, ciclo 11.18).
 SKILL_TO_AGENT: dict[str, str] = {
     "alpha-research": "scientist",
     "evolve": "evolve",
@@ -150,6 +152,8 @@ SKILL_TO_AGENT: dict[str, str] = {
     "architecture-review": "architect",
     "ads-optimizer": "product-manager",
     "mcp-toolkit": "platform-engineer",
+    "mcp-security": "security-engineer",
+    "alpha-mining": "alpha-miner",
 }
 
 # Mapa de dominios → skills relevantes. Cubre TODO el registry (SSOT) para que
@@ -162,9 +166,9 @@ DOMAIN_SKILLS: dict[str, list[str]] = {
     "frontend": ["frontend-uiux", "security-audit"],
     "backend": ["rust-lang", "architecture", "data-science", "security-audit"],
     "mobile": ["frontend-uiux", "security-audit"],
-    "security": ["security-audit", "architecture"],
+    "security": ["security-audit", "architecture", "mcp-security"],
     "architecture": ["architecture", "rust-lang"],
-    "trading": ["quant-trading", "alpha-research", "risk-execution"],
+    "trading": ["quant-trading", "alpha-research", "risk-execution", "alpha-mining"],
     "research": ["alpha-research", "science-doc", "data-science"],
     "legal": ["legal-doc", "science-doc"],
     "health": ["healthtech", "data-science", "security-audit"],
