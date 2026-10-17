@@ -9,7 +9,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](pyproject.toml)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
-[![Tests](https://img.shields.io/badge/tests-5383_passing-brightgreen.svg)](harness/tests/)
+[![Tests](https://img.shields.io/badge/tests-7000%2B%20passing-brightgreen.svg)](harness/tests/)
 [![CI](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml/badge.svg)](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -99,8 +99,11 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 - **Distributed-systems tooling (ADR-0076)**: `tool_output_filter.py` (rtk wrapper: up to 90% less bash output, opt-in passthrough), `idempotency_guard.py` (effect dedup by key+payload hash, replay cache), `structured_enforcer` strict keys (rejects trojan keys), `llm_grep.TgrepBackend` (Microsoft tgrep, opt-in); principles mandate Python/bash scripts (PowerShell corrupts UTF-8) + Linux-first tools.
 - **Verify-replan + trace replay (ADR-0079)**: `verify_replan_gate.py` (VMAO stop thresholds), `trace_viewer.py` (export trace.jsonl + deterministic replay without LLM), per-agent permissions in `opencode.json`, `agent-rigor` skill (PEC-35: pre-merge gates, anti-greenwashing).
 - **Competition harness (ADR-0080)**: `cp_spec_gate.py` (4-pillar pre-code gate: edges/invariants/complexity/io_constraints; attacks the 44% design+boundary at the gate) + `dual_verify.py` (fast vs brute-force with indexed mismatches).
+- **MCP security scanner (11.18, OWASP MCP Top-10)**: `harness/security/mcp_security_scan.py` — a real JSONC parser (comment blanking with line preservation, trailing commas, `://` intact) plus a deterministic `scan_mcp_config` with 5 categories: raw shell payloads, unpinned package managers (rug-pull/supply-chain), secrets in env (masked: key + length only), plaintext HTTP, and internal endpoints (LLM-SSRF surface) — spec hardened against the real `opencode.json` config (argv-list `command`, `environment`, nested `mcp.servers`).
+- **Skill-prose injection guard (11.18, arXiv 2608.29596)**: `harness/security/skill_guard.py` — strict frontmatter (name/domain/description/version/project_agnostic) + 7 case-insensitive hostile-prose patterns (ignore/disregard prior, role override, system-prompt takeover, hidden directives, exfiltration, remote download-and-exec); dogfooded over all 42 skills: 0 hostile, 5 missing `domain` fixed.
+- **Cost-aware routing policy (11.19, ADR fr-0001)**: `harness/model_router/cost_policy.py` — free→small→standard→frontier ladder, incremental-cost escalation ($0.05 threshold inserts a `standard` hop before a `frontier` jump), `free` tier for complexity ≤ 2 + output ≤ 2000, output-budget veto (> 4000 tokens vetoes ultra-expensive output models unless `force_tier`), and k-in-1 voting gated to the cheapest-input tier. Additive wiring: `CascadeRouter.plan_cost_aware_escalation` + `session_affinity.should_switch_on_cache_health` (0.60 aligned with `TokenUsageTracker.cache_health`).
 - **Local execution real (ADR-0078)**: `LocalExecutor` closes the loop (closed-task allowlist + cloud fallback; trivial = 0 cloud tokens), `pressure()` meter, `prune_then_summarize` pipeline, R1 reasoning discipline in principles.
-- **PEC universal in skills**: all 35 skills carry an expert persona + canonical frontier references per specialty (OWASP for security, HL7 FHIR for healthtech, Rust API Guidelines, RICOUI Brands for UI...) + anti-hedging rule (`scripts/apply_pec.py`, 176 tests) — ADR-0072.
+- **PEC universal in skills**: all 42 skills carry an expert persona + canonical frontier references per specialty (OWASP for security, HL7 FHIR for healthtech, Rust API Guidelines, RICOUI Brands for UI...) + anti-hedging rule (`scripts/apply_pec.py`, 176 tests) — ADR-0072.
 - **Universal principles v3.1.0**: 36 numbered principles with an adherence taxonomy (CHECK vs GUIDE, IFEval/DRFR), post-compaction re-pin rule (RPA), competition-programming fundamentals (CPD) and adversarial TDD/mutants/PBT/pairwise/BVA (TST/PBT) — ADR-0070/0077.
 - **Ollama CODING tier**: local `JackOD-9B-Coder` tier with precedence over QUALITY for code tasks + frontier-only keyword filter (`is_frontier_only`) — ADR-0069.
 - **opencode runs local by default**: `"model": "llamacpp/jackod-9b-coder-iq4-xs"` + `"small_model": "llamacpp/qwen3-5-4b-gguf-ud-q4-k-xl"` in `.opencode/opencode.json`, provider `llamacpp` (llama.cpp / llama-swap on `http://127.0.0.1:11434/v1`, OpenAI-compatible) with 6 registered local models by short name (fast `qwen3-5-4b-gguf-ud-q4-k-xl`, quality `mimo-v2-6-distill-qwen-9b-gguf-iq4-xs`, coding `jackod-9b-coder-iq4-xs`, reasoning `ornith-1-5-9b-gguf-q4-k-m`, embedding `qwen3-embedding-0-6b`, vision `qwen3-vl-4b`).
@@ -275,6 +278,7 @@ Duplicated databases were eliminated (7.5 GB reclaimed). The memory layout is po
 
 - **Model routing**: `harness/model_router/complexity_router/` emits small/frontier signals; `route_with_fallback` sends low-confidence requests (confidence < 0.7) to the frontier model.
 - **Cascade routing**: `cascade_router` tries small first and escalates on low confidence (STEER-lite), with per-attempt cost accounting; `session_affinity` keeps the tier sticky per session to avoid prefill re-payments.
+- **Cost-aware policy (ADR fr-0001)**: `cost_policy` plans escalation by incremental cost (a $0.05 threshold inserts a `standard` hop before a `frontier` jump), routes trivial tasks (complexity ≤ 2, output ≤ 2000) to a `free` tier, vetoes ultra-expensive output models when output > 4000 tokens (unless `force_tier`), and gates k-in-1 voting to the cheapest-input tier.
 - **Governed voting**: `ParallelExecutor` fans out to N=3 agents when the gate score is ≥ 70 and confidence < 0.7, with a budget of `MAX_TOKENS_BY_AGENT × 3`; `batch_vote` charges input once for k votes (the `n` parameter) with fallback.
 - **Structured outputs**: `structured_enforcer` validates every machine-readable verdict against a JSON schema with error-feedback retries (30× fewer parse failures).
 - **Token budgets**: budgets are the single source of truth (`token_budgets.yaml`), enforced by `TokenBudgetManager`; `cache_health` flags structural cache-busters (hit < 60% with volume).
@@ -301,7 +305,7 @@ python scripts/enable_gpu.py
 
 Quality is enforced continuously, not at the end:
 
-- **Test suite**: 5383 tests collected (TDD suite), mutation testing mutmut gate ≥70%.
+- **Test suite**: ~7000 tests collected (TDD suite), mutation testing mutmut gate ≥70%.
 - **Lint**: ruff — all checks passed.
 - **Dead code**: vulture — 0 dead code.
 - **Architecture debt (AGR)**: 0 files over 500 lines in non-test code; 32 flat modules refactored into packages with re-exporting `__init__.py`; mixins limited to ≤ 2 bases; SOLID corrected in 9 classes.
@@ -321,7 +325,8 @@ SWARMIND/
 │   │                              # debate_orchestrator, worktable, workflows,
 │   │                              # multi_harness (adapters+cli), parallel_executor.py
 │   ├── model_router/              # complexity_router, multi_provider,
-│   │                              # provider_health, ollama_client, ollama_tiers
+│   │                              # provider_health, ollama_client, ollama_tiers,
+│   │                              # cascade_router, session_affinity, cost_policy
 │   ├── memory_rag/                # lance_vector_store, semantic_cache,
 │   │                              # sqlite_vec_adapter, federated_search,
 │   │                              # agent_kpi_tracker, vector_store_adapter,
@@ -335,7 +340,8 @@ SWARMIND/
 │   │                              # gepa_mutator, nudge_system, evaluator,
 │   │                              # self_improver, procedural_memory, cognition_sync
 │   ├── validation/                # pbt_stage.py, mutation_stage.py (oracles reales)
-│   ├── security/                  # zero_trust.py
+│   ├── security/                  # zero_trust.py, mcp_security_scan.py,
+│   │                              # skill_guard.py (anti-injection)
 │   ├── hooks/                     # hook_manager, hook_registry, builtin_hooks
 │   ├── observability/             # OpenTelemetry, logging, session_replay
 │   ├── qa/                        # detector, generator, orchestrator, predictor
@@ -352,7 +358,7 @@ SWARMIND/
 │   ├── evals/                     # eval_factory
 │   ├── context/                   # token_budget_router, skill_contract
 │   ├── scripts/                   # init, rag_ingest, end_of_iteration, ...
-│   └── tests/                     # 224 test files (5383 tests)
+│   └── tests/                     # ~240 test files (~7000 tests)
 ├── scripts/                       # Repo-level tooling
 │   ├── setup_swarmind.py          # one-command setup (Python 3.12+, uv, uv sync, sync global, central memory)
 │   ├── enable_gpu.py              # reinstall torch CUDA wheel after uv sync
@@ -372,7 +378,7 @@ SWARMIND/
 │   │   └── guide/, technical/, reference/, skills/
 │   ├── src/en/SUMMARY.md
 │   └── .MEJORAS_SWARMIND.md
-├── .opencode/                     # agents (22), skills (35, PEC universal), config — SSOT
+├── .opencode/                     # agents (25), skills (42, PEC universal), config — SSOT
 ├── CHANGELOG.md
 ├── pyproject.toml
 └── README.md
@@ -383,7 +389,7 @@ SWARMIND/
 - [Documentation (ES) — primary language](docs/src/es/) — full docs in Spanish, the main documentation language.
 - [English summary](docs/src/en/SUMMARY.md)
 - [Roadmap](docs/src/es/roadmap/estado.md)
-- [Skills registry + residency tiers](docs/src/es/skills/registry.md) — 35 skills, PEC universal, REFERENCE/SAVED/INSTALLED
+- [Skills registry + residency tiers](docs/src/es/skills/registry.md) — 42 skills, PEC universal, REFERENCE/SAVED/INSTALLED
 - [CHANGELOG](CHANGELOG.md)
 - [Improvements log](docs/.MEJORAS_SWARMIND.md)
 

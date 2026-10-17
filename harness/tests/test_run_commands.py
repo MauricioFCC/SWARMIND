@@ -425,6 +425,38 @@ class TestHooksCommands:
         mock_fn.assert_called_once()
 
 
+class TestMcpCommands:
+    """Tests para comandos !mcp: list, for, skill (catalogo de herramientas)."""
+
+    def test_mcp_list_dispatches(self):
+        """!mcp list despacha al handler _handle_mcp_list."""
+        with patch("harness.run_commands._handle_mcp_list") as mock_fn:
+            from harness.run_commands import run_command
+            run_command("!mcp list")
+        mock_fn.assert_called_once()
+
+    def test_mcp_for_passes_task(self):
+        """!mcp for <tarea> despacha el handler con la tarea."""
+        with patch("harness.run_commands._handle_mcp_for") as mock_fn:
+            from harness.run_commands import run_command
+            run_command("!mcp for haz scraping de la web")
+        mock_fn.assert_called_once()
+        assert "scraping" in mock_fn.call_args[0][0]
+
+    def test_mcp_skill_passes_skill(self):
+        """!mcp skill <nombre> despacha el handler con la skill."""
+        with patch("harness.run_commands._handle_mcp_skill") as mock_fn:
+            from harness.run_commands import run_command
+            run_command("!mcp skill reverse-engineering")
+        mock_fn.assert_called_once()
+        assert "reverse-engineering" in mock_fn.call_args[0][0]
+
+    def test_mcp_for_real_handler_resolves_tools(self):
+        """El handler real resuelve herramientas del catalogo (sin lanzar)."""
+        from harness.run_commands import _handle_mcp_for
+        _handle_mcp_for("!mcp for haz ingenieria inversa del binario")
+
+
 # ===================================================================
 # Evolve Commands
 # ===================================================================

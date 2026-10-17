@@ -399,6 +399,21 @@ def _host_site_packages() -> Path | None:
     return path if path.is_dir() else None
 
 
+def _docker_supplies_project_deps() -> bool:
+    """Indica si el backend docker puede aportar las dependencias del proyecto.
+
+    El site-packages del host se monta en el contenedor, pero SOLO es valido en
+    POSIX: en Windows el site-packages trae extensiones nativas (``.pyd``)
+    incompatibles con el contenedor Linux (p. ej. ``hypothesis._native``), asi
+    que montarlo romperia los oraculos reales (PBT con hypothesis).
+
+    Returns:
+        True si el backend docker hereda las deps del proyecto (POSIX con
+        site-packages presente); False si no puede (p. ej. Windows).
+    """
+    return os.name == "posix" and _host_site_packages() is not None
+
+
 def _ensure_docker_readable(workdir: Path, script: Path) -> None:
     """Relaja permisos del mount docker para el usuario sin privilegios.
 
@@ -488,6 +503,7 @@ class SandboxExecutor:
         timeout_s: float = DEFAULT_TIMEOUT_S,
         env: dict[str, str] | None = None,
         image: str | None = None,
+        require_project_deps: bool = False,
     ) -> SandboxResult:
         """Ejecuta un script Python (codigo no confiable) de forma aislada.
 
@@ -500,6 +516,12 @@ class SandboxExecutor:
             timeout_s: Timeout en segundos (> 0).
             env: Variables inyectadas en runtime (nunca al contexto).
             image: Imagen docker a usar (default: la del constructor).
+            require_project_deps: Si True, el script necesita las dependencias
+                del proyecto (p. ej. `hypothesis`). Si el backend docker no
+                puede aportarlas (no-POSIX: el site-packages trae extensiones
+                nativas incompatibles con Linux), el script corre en el
+                interprete host bajo el sandbox nativo (Job Object/subprocess)
+                para no romper los oraculos reales.
 
         Returns:
             SandboxResult (timeout -> returncode 124; nunca lanza excepcion
@@ -511,12 +533,26 @@ class SandboxExecutor:
         script = Path(script_path)
         self._validate_request([str(script)], timeout_s)
         parent = script.parent
-        if self._backend == BACKEND_DOCKER:
+        docker_viable = self._backend == BACKEND_DOCKER and not (
+            require_project_deps and not _docker_supplies_project_deps()
+        )
+        if docker_viable:
             _ensure_docker_readable(parent, script)
             cmd = [PYTHON_IN_CONTAINER, f"{SANDBOX_WORKDIR}/{script.name}"]
             return self._execute(
                 cmd, timeout_s, env or {}, parent, image or self._image
             )
+        if require_project_deps and self._backend == BACKEND_DOCKER:
+            logger.warning(
+                "sandbox_executor: docker no puede aportar deps del proyecto "
+                "en %s (site-packages con extensiones nativas); ejecuto en el "
+                "interprete host con sandbox nativo. WHY: los oraculos reales "
+                "(hypothesis) necesitan las deps del proyecto. "
+                "WHERE: SandboxExecutor.run_script",
+                os.name,
+            )
+            cmd = [sys.executable, str(script)]
+            return self._run_host(cmd, timeout_s, env or {}, parent)
         cmd = [sys.executable, str(script)]
         return self._execute(cmd, timeout_s, env or {}, parent)
 
@@ -570,6 +606,33 @@ class SandboxExecutor:
             return self._run_windows_jobobject(cmd, timeout_s, env, workdir)
         if self._backend == BACKEND_BWRAP:
             return self._run_bwrap(cmd, timeout_s, env, workdir)
+        return self._run_subprocess(cmd, timeout_s, env, workdir)
+
+    def _run_host(
+        self,
+        cmd: list[str],
+        timeout_s: float,
+        env: dict[str, str],
+        workdir: Path | None,
+    ) -> SandboxResult:
+        """Ejecuta en el interprete host con el sandbox nativo del SO.
+
+        Se usa cuando el backend activo es docker pero NO puede aportar las
+        dependencias del proyecto (no-POSIX): el codigo corre con el python del
+        venv (que SI tiene las deps) bajo el aislamiento nativo del sistema
+        (Job Object en Windows, subprocess con allowlist en el resto).
+
+        Args:
+            cmd: Comando con el interprete host (``sys.executable``).
+            timeout_s: Timeout en segundos.
+            env: Variables inyectadas en runtime.
+            workdir: Directorio de trabajo del hijo (opcional).
+
+        Returns:
+            SandboxResult del sandbox nativo.
+        """
+        if os.name == "nt" and _load_kernel32() is not None:
+            return self._run_windows_jobobject(cmd, timeout_s, env, workdir)
         return self._run_subprocess(cmd, timeout_s, env, workdir)
 
     def _run_windows_jobobject(

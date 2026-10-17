@@ -1,9 +1,167 @@
 # Roadmap y Estado del Proyecto
 
-> Estado actual del sistema Swarmind Harness a 2026-10-12.
+> Estado actual del sistema Swarmind Harness a 2026-10-15.
 > Documento vivo que refleja el progreso, hitos y proximos objetivos.
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
+
+## Estado Actual (2026-10-15)
+
+### Estado 2026-10-15 (Auditoria del acople OpenCode: agentes lanzables, plugin V2, MCP y doctrina global)
+
+- **Acople 1:1 con OpenCode verificado con evidencia runtime** (`opencode debug agents`,
+  `opencode mcp list`, `opencode plugin list`, `opencode.log`) y reparado en 4 puntos:
+  1. **Agentes lanzables** — 22 de 24 agentes no declaraban `mode` y caian al default V2
+     `primary` (fuera del catalogo de subagentes): solo 7 de 24 eran lanzables y
+     **8 skills de 40** enrutaban a agentes inalcanzables (`architect` x2,
+     `product-manager`, `platform-engineer`, `security-engineer`, `evolve-engineer`,
+     `evolve`, `coordinator`). Hoy: 24 agentes en `mode: subagent`, `coordinator` en
+     `all` (primario + lanzable) y `permission.task` del coordinator por ID exacto
+     (antes `builder-*` no matcheaba ningun ID). Runtime: **25 `subagent` + 1 `all`**.
+  2. **Plugin V2** — `compaction-context.js` seguia en la API de plugins V1 y OpenCode lo
+     rechazaba (`PluginModule.LoadError`) en TODOS los proyectos: el hook de compactacion
+     estaba muerto. Portado a `export default { id, setup }` + `ctx.session.hook("compaction")`
+     (sin dependencias npm). Runtime: `swarmind.compaction-context` cargado con su ID.
+  3. **MCP `DEFAULT_ACTIVE` 3/3** — `sequentialthinking` moria con
+     `failed: Request timed out` (npx en frio vs 30 s). SSOT fija
+     `@modelcontextprotocol/server-sequential-thinking@1.0.0` y
+     `mcp_opencode.merge_into_config` garantiza `experimental.mcp_timeout >= 90000`.
+     Runtime: `fetch`/`time`/`sequentialthinking` **connected**.
+  4. **Doctrina AGENTS.md universal** — antes solo existia dentro de SWARMIND.
+     `sync_opencode_global` la copia al global (`~/.config/opencode/AGENTS.md`, inyectada
+     en cada sesion) y `deploy_all.deploy_agents_md` genera un AGENTS.md delgado en la raiz
+     de cada proyecto (marca `SWARMIND:generated`, NUNCA pisa un AGENTS.md ajeno).
+     Como `AGENTS.md` es el estandar compartido por OpenCode, Claude Code y Codex, la
+     doctrina viaja a cualquier harness sin duplicar SSOT.
+  5. **Comandos de OpenCode** — `.opencode/commands/` (`/mcp`, `/dispatch`, `/ver`)
+     sincronizados al global.
+- **Capa modular**: lo especifico de OpenCode (`mode`, plugin API, `opencode.json`) vive
+  cableado a su runtime; lo portable (AGENTS.md, agentes con frontmatter estandar) se
+  exporta por los mismos caminos que ya usan `claude_adapter`/`codex_adapter`.
+- **Contratos TDD**: `test_opencode_runtime_contract.py` (13: agentes lanzables,
+  `SKILL_TO_AGENT` alcanzable, forma V2 del plugin, comandos) + 4 de `mcp_timeout` +
+  6 de `deploy_agents_md`; ruff 0. Detalle completo: `docs/.MEJORAS_SWARMIND.md` 11.12.
+- **Refactor 11.13 (este ciclo)**: capa universal multi-harness reparada
+  (`converter_base` filtra `*.agent.min.md` y descubre `SKILL.md` reales;
+  `_copy_agents`/`_copy_skills` eliminan 4 loops duplicados; índice Claude
+  idempotente), flota del coordinator como contrato SSOT, pins
+  `mcp-server-fetch/time@2026.10.10`, `mcp_timeout: 90000` en template + 11
+  configs, AGENTS.md con números reales. Suite **6745 passed** + gates en verde.
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.13.
+- **Refactor 11.14 (este ciclo)**: acople migrado a **config NATIVA OpenCode V2**
+  (guía oficial `migrate-v1/`): `providers`+`package aisdk`+`settings`,
+  `agents`+`permissions` lista (acciones `shell`/`subagent`), `agents.title.model`
+  (reemplazo de `small_model`), `mcp.timeout.{catalog,execution}`, modelos con
+  `capabilities`/`limit.context`, plugin en `.opencode/plugins/` + limpieza del
+  legado en los 10 espejos. **Fix del error de compactación en 200K**: el
+  `buffer: 2000` absoluto (1% de holgura) se retiró para heredar el default
+  proporcional 10% del límite (2K locales / 20K cloud) — `compaction.model` NO
+  existe en V2 (la sesión compacta con su propio modelo). Features de frontera
+  nuevas: `permissions` globales (push→ask, sudo→deny), `policies` sudo
+  hard-deny, `watcher.ignore` anti-ruido. Checkers duales V2+V1; `formatter`
+  evaluado y rechazado con evidencia (277/325 tests se reescribirían).
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.14.
+- **Frontera 11.15 (este ciclo)**: 2 capacidades del estado del arte 2026
+  ausentes en el harness, verificadas con TDD adversarial mutante.
+  (1) **Ejecución durable con Resume Contract** (`harness/orchestrator/
+  durable_run.py`, arXiv 2608.03836 — LangGraph/CrewAI medidos INCUMPLENDOLO):
+  `DurableRunStore` con transiciones atómicas, claim consume-once
+  **cross-process** (un solo racer gana el efecto), `resume_plan` determinista
+  (PENDING→re-ejecuta, RUNNING→`indeterminate` nunca re-ejecución ciega,
+  COMPLETED→prefix jamás repetido) y respuestas HITL consume-once.
+  (2) **Graduación de evals a regresión** (`harness/evals/regression_tracker.py`,
+  Anthropic "Demystifying evals" 2026): baseline histórica por tarea, alerta
+  nombrando la tarea que cayó >1.0pp, saturación al 100%, historial JSONL
+  append-only. Kill-check con el mutador AST propio: **6/6 mutantes
+  semánticos muertos** (el superviviente inicial expuso `mkdir(parents=False)`
+  → test nuevo). Detalle: `docs/.MEJORAS_SWARMIND.md` 11.15.
+- **Frontera 11.16 (este ciclo)**: **minería alpha de frontera (0 capacidad →
+  paquete `harness/alpha_mining/`)** con los 5 sistemas alpha del estado del
+  arte, verificada con TDD adversarial mutante. (1) **DSL total** (`factor_dsl`:
+  Hubble — el LLM solo emite JSON reconstruido a AST validado, evaluador sin
+  crashes con ceros/NaN/división; AlphaAgent — complejidad `MAX_NODES=32` +
+  Jaccard de genes abstractos; AlphaMCTS — FSA con `abstract_gene` y forbidden
+  top-k). (2) **Evaluador con umbrales NVIDIA** (`factor_eval`: IC dual
+  Pearson+RankIC, `p < 0.05` estricto, score acotado [0,1] con input hostil).
+  (3) **Zoo family-aware** (`alpha_zoo`: JSONL estricto, KB de fallos por modo,
+  `is_similar` pre-eval, top-k con `per_family_cap`). (4) **Loop
+  signal→code→eval + MCTS-UCT con branching real** (`mining_loop`: hermanos
+  compitientes y exploración observable — la cadena lineal era código muerto —,
+  `crossover`/`mutate`/`evolve_pool` por recompensa, determinista sin rng).
+  **Kill-check 2 rondas**: ronda 1 6/14 → 6 fugas reales de spec + 1 corrección
+  de source donde el mutador tenía razón (p-value al canon) → ronda 2
+  **13/16 + 3 equivalentes = 100% mutantes semánticos**; 81 contratos nuevos.
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.16.
+- **Frontera 11.17 (este ciclo)**: **sistemas del milenio →
+  `harness/complex_problems/`** (AlphaProof Nature 2025-11, AlphaEvolve
+  PNAS 2026-09, AlphaProof Nexus arXiv 2605.22763 9/353 Erdős): los 5
+  mecanismos "rompe-límites" de su configuración, con DI completa y sin
+  rng. (1) **Escalera de presupuesto** (`budget`: rungs monotonamente
+  crecientes + cap global 3000 episodios — más compute cuando la dirección
+  ya se afinó, failure-spend acotado). (2) **Verificador formal inyectado
+  + anti-malformalización** (`verifier`: Protocol duck-typed; el statement
+  real debe conservar sus marcadores o verificar NO cuenta). (3) **Elo
+  suma-cero** (`sketch_store`: población compartida de sketches, `top(k)`
+  con empate determinista). (4) **P-UCB** (`p_ucb`: cobertura garantizada
+  antes de explotar, `MappingProxyType` externo). (5) **Ledger monotono**
+  (`progress`: idempotente, rollback siempre error, JSONL append-only con
+  `linea N` en corrupción). (6) **AttackLoop integrador** (`attack`:
+  grant → hook → integridad → verificación → gasto; re-ataque = 0
+  episodios; cap corta antes de `max_attempts`). **Kill-check 2 rondas**:
+  ronda 1 13/17 → 4 fugas de spec en los CONTRATOS (top por rating,
+  exploración fraccional, default `cost_per_attempt` nunca ejercitado,
+  `spent` del re-ataque) → ronda 2 **17/17 + 2/2 = 19/19 (100%)**; 75
+  contratos nuevos (RED: 6 ModuleNotFoundError).
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.17.
+- **Frontera 11.18 (este ciclo)**: **round skills/agentes/MCP** —
+  auditoría determinista de la capa MCP y defensa anti inyección en
+  prosa de skills (OWASP MCP Top-10 2025 + arXiv 2608.29596).
+  (1) `harness/security/mcp_security_scan.py`: parser JSONC real +
+  5 categorías OWASP (shell crudo, pin ausente = rug-pull, secretos en
+  env con masking, http sin TLS, endpoints internos = superficie SSRF);
+  spec corregida contra la config real (argv-list, `environment`,
+  `mcp.servers`). (2) `harness/security/skill_guard.py`: frontmatter
+  obligatorio + 7 patrones de prosa hostil; **dogfood en las 42 skills:
+  0 hostiles + 5 `domain` faltantes de skills preexistentes corregidos**.
+  (3) Skills `mcp-security` + `alpha-mining` (SKILL.min + registry sha256
+  + routing a agentes). (4) Agente **`alpha-miner`** con contrato de
+  flota completo (mode, min variante, permisos del coordinator,
+  delegation policy). Kill-check 5/5 (100%); 34 contratos nuevos
+  (RED: 2 ModuleNotFoundError). Detalle:
+  `docs/.MEJORAS_SWARMIND.md` 11.18.
+- **Frontera 11.19**: **ADR fr-0001 — politica de costos de routeo**
+  (STEER-lite cost-aware, mandato del usuario). `cost_policy.py`:
+  escalera free→small→standard→frontier; escalación por costo
+  INCREMENTAL (umbral $0.05) con escalón intermedio `standard`; tier
+  `free` para complejidad <= 2 + output <= 2000; veto de presupuesto de
+  salida (> 4000 tokens => vetar modelos ultra-caros salvo `force_tier`);
+  voting k-in-1 con el tier de menor input cuando gate >= 70 y
+  confidence < 0.7. **Acoplamiento aditivo 0-regresión**:
+  `CascadeRouter.plan_cost_aware_escalation` +
+  `session_affinity.should_switch_on_cache_health` (umbral 0.60
+  alineado con `TokenUsageTracker.cache_health`). 28 contratos (RED);
+  kill-check 11/11 muertos + 5 equivalentes = 100% efectivo. Detalle:
+  `docs/.MEJORAS_SWARMIND.md` 11.19.
+- **Pendiente (evals de frontera)**: LLM-as-judge con escape "Unknown" +
+  scorecards por corrida (Anthropic 2026); ACP lo cubre `packages/acp` de
+  OpenCode (el harness Python no necesita implementarlo — validar `opencode
+  acp` cuando el binario esté en PATH).
+
+## Estado Actual (2026-10-14)
+
+### Estado 2026-10-14 (Restauracion post-reinstalacion de SO + Python 3.14 + oraculo PBT cross-platform)
+
+- **Python 3.14 acoplado** — `.python-version` = 3.14; `.venv` a 3.14.7 (uv); PATH de usuario apunta a `Python314` + `Scripts` (eliminado el `Python312` stale que caia al stub de Microsoft Store); classifier 3.14 en `pyproject.toml`; CI (`ci`/`mutation`/`security-scan`/`skills-quality`/`release`) alineado a 3.14 sin drift con el pin; `requires-python >=3.12` se mantiene como piso.
+- **Oraculo PBT funcional en Windows** — `SandboxExecutor.run_script(require_project_deps=True)`: cuando el backend docker no puede aportar las deps del proyecto (no-POSIX: el site-packages trae extensiones nativas `.pyd`, p. ej. `hypothesis._native`), el script corre en el interprete host con sandbox nativo (Job Object / subprocess). `pbt_stage` lo activa; +5 tests. Evidencia: `run_pbt_stage(good).passed=True`, `(buggy).passed=False`. Mutation sigue en docker (no requiere deps).
+- **Agentes `.agent.min` ocultos (OpenCode V2)** — 24 artefactos minificados aparecian como agentes duplicados en V2 (`<rol>.agent.min`); `hidden: true` en el frontmatter + inyeccion en `compile_agents.minify_agent` (el harness los sigue leyendo como prompt pre-compilado).
+- **Pre-commit re-activado** — `install_hooks.py` ahora resuelve `core.hooksPath` (`.githooks`); el pre-commit (QA + sync del opencode global) vuelve a ejecutarse de verdad en cada commit.
+- **Entorno restaurado (reinstalacion de SO)** — `uv` 0.13.1 + `uv sync --extra dev`; GPU CUDA (torch 2.13.0+cu126, RTX 4060 via `enable_gpu.py`); Docker daemon; cerebro+motor sincronizados al opencode global.
+- **Flota local alineada a lo INSTALADO (2026-10-14)** — regenerado desde la SSOT `local_models.yaml` (`render_local_models.py`): `llama-swap.yaml`, `.opencode/opencode.json` y `~/.config/opencode/opencode.jsonc` en sync (gate `--check` verde). `fleet_manifest.FLEET` + `.opencode/config/ollama_models.yaml` alineados a los 5 modelos instalados: fast `phi-4-mini-reasoning-q4-k-m`, coding `qwen3-4b-thinking-2507-q4-k-m`, quality `mimo-v2-6-distill-qwen-9b-gguf-iq4-xs`, embedding `qwen3-embedding-0-6b`, deep `ternary-bonsai-2-27b-ptq1-0`. RETIRADOS qwen3.5-4b / phi-4-mini-instruct / qwen2.5-coder-3b / deepseek-r1-distill (no instalados). `test_fleet_config_drift` **5 passed** contra el server real (antes rojo).
+- **Router de targets RE — filosofia REA ("la herramienta correcta")** — `harness/reverse_engineering/target_router.py`: dado un target (ruta/URL) elige el METODO REA + el PROVIDER (hopper|ghidra|ida, override `REA_ANALYSIS_PROVIDER`) + la EVIDENCIA esperada, por tipo detectado con magic bytes/ext/URL (nativa PE/ELF/Mach-O, Go, .NET/CLR, JS/Electron `.asar`, website, captura HAR, SQLite). Guardrail etico HARD (solo targets propios/autorizados) y `unknown` -> rechazo (0 claims sin artefacto; no adivina). 25 tests (deteccion, provider env, adversarial guardrail). Wire con el skill `reverse-engineering` + server MCP `rea`.
+- **Catalogo MCP ampliado (la herramienta correcta por dominio)** — `harness/tools_sandbox/mcp_servers.yaml` **8 → 23 servers** con comandos/tools VERIFICADOS contra cada repo oficial (regla del propio archivo): RE (`rea` con tools afinadas segun la SSOT del skill; `rc_devtools`, `ghidra_mcp`, `radare2`), proposito general (`fetch`, `time`, `git`, `sequentialthinking`, `playwright`, `firecrawl`, `notion`, `kubernetes`) y FRONTERA (`chrome_devtools`, `sentry`, `supabase`, `browserbase`). Catalogo de candidatos por dominio documentado (cloudflare, huggingface, figma, stripe, exa, tavily, aws, datadog, qdrant, dbt...). `target_router` mapea `target -> mcp_servers`.
+- **Cableado skills + agentes + HERRAMIENTAS (siguiente nivel)** — `harness/tools_sandbox/mcp_catalog.py` (tarea -> servers MCP por keyword, sin inventar) + `DispatchPlan.tools` (el dispatch aplica agente + skills + **herramientas**); `harness/tools_sandbox/mcp_opencode.py` traduce la SSOT MCP a `mcp.servers` de OpenCode y el **acople oficial `deploy_all.py --sync-global`** lo registra en el global (23 servers; 3 activos). Wiring e2e probado (`test_harness_wiring_e2e`: skills dual, agentes, SSOT->opencode, router->servers, dispatch con tools). opencode ya expone `fetch`/`time`/`sequentialthinking`.
+- **Organizacion de herramientas + skill `mcp-toolkit`** — cada server en su categoria (`mcp_servers.yaml: categories` + `mcp_catalog.CATEGORIES`, espejo) y cableado skill<->herramienta (`SKILL_TO_TOOLS`/`servers_for_skill`); nueva skill **`mcp-toolkit`** (PEC) que documenta el catalogo por categoria y la regla de seleccion ("la herramienta correcta"). Registro + routing actualizados (`skills_registry.yaml` + `SKILL_TO_AGENT`/`DOMAIN_SKILLS`/`DOMAIN_KEYWORDS`), digests regenerados. Propagado con `deploy_all --sync-global`.
+- **`!mcp` — catalogo de herramientas en el CLI** — `!mcp list` (catalogo por categoria), `!mcp for <tarea>` (herramientas aplicables via `servers_for_task`), `!mcp skill <nombre>` (`servers_for_skill`); +4 tests. Ademas, validacion E2E de imports de los 22 subpaquetes del harness (todos OK) + gates de CI corridas en local (ruff/bandit/safety/compile).
 
 ## Estado Actual (2026-10-12)
 
@@ -222,10 +380,20 @@ Objetivo: 80%    (proximo hito)
 
 | Prioridad | Tarea | Impacto | Detalle | Estado |
 |-----------|-------|---------|---------|--------|
+| ✅ | Router de targets RE (filosofia REA) | RE/Agentes | `harness/reverse_engineering/target_router.py`: metodo+engine+evidencia+guardrail; 25 tests | **HECHO** |
+| ✅ | Catalogo MCP variado + frontera | Tooling | `mcp_servers.yaml` 8→23 servers verificados + candidatos por dominio; suite MCP/RE verde | **HECHO** |
+| ✅ | Cableado skills+agentes+herramientas | Harness | `mcp_catalog` + `DispatchPlan.tools` + `deploy_all --sync-global`→opencode; wiring e2e probado | **HECHO** |
+| ✅ | Skill `mcp-toolkit` + organizacion de tools | Harness/Skills | categorias en la SSOT + `SKILL_TO_TOOLS`; registro+routing+digests; propagado | **HECHO** |
+| ✅ | Alinear flota de modelos a lo instalado | Entorno | SSOT `local_models.yaml` regenerada + `fleet_manifest`/`ollama_models.yaml` alineados; `test_fleet_config_drift` 5 passed | **HECHO** |
+| ✅ | Oraculo PBT funcional en Windows | TDD | `SandboxExecutor.run_script(require_project_deps=True)` → Job Object host; `pbt_stage` activado | **HECHO** |
+| ✅ | Python 3.14 acoplado | Entorno | `.python-version` + PATH de usuario + CI alineado | **HECHO** |
+| ✅ | Pre-commit efectivo | Rigor | `install_hooks.py` resuelve `core.hooksPath` (`.githooks`) | **HECHO** |
+| ✅ | Agentes `.agent.min` ocultos (V2) | Skills/Agentes | `hidden: true` + `compile_agents.minify_agent` | **HECHO** |
 | **Media** | Coverage 80% | Calidad | Atacar archivos con cobertura baja: mcp_executor.py, plugins, evolve_loop | 🔄 Pendiente |
 | **Media** | Async pipeline integration | Rendimiento | TaskOrchestrator async completo, integracion con AsyncAgentBus | 🔄 Pendiente |
 | **Media** | Fix debate tests | Estabilidad | ~20 tests de debate con ERROR por dependencias de orquestador | ⏳ Pendiente |
 | **Media** | Paired eval de skills (Skill Lift) | Skills | Medir Δpp con/sin skill (SkillsBench: 16/84 negativos; self-generated -1.3pp); retiro por outcome N>=100 | 🔄 Pendiente |
+| **Media** | Habilitar `formatter: true` (OpenCode V2) | DX/Rigor | Evaluado 2026-10-15 y RECHAZADO con evidencia: `ruff format --check` reescribiría 277/325 tests + 32 scripts y crashea en algunos dirs (bug de ruff). Habilitar tras establish `ruff format` baseline + fix upstream | ⏳ Pendiente |
 | **Baja** | Mutation gate de skills en pre-commit | Skills | SkillCI-style (typo, negacion, context-prefix) + self-growing -> test permanente | 🔄 Pendiente |
 | **Baja** | Surrogate Verifier aislado por sesion | Gobernanza | Framework distinto emite diagnostico por-assertion (CoEvoSkills 2604.01687) | 🔄 Pendiente |
 | ✅ | Integrar TriageSLM+Telemetry al pipeline | Routing/Tokens | `PipelineRouter` (cascada: SLM -> fallback en complejidad timida -> frontier), TelemetryGate hit-rate 0.80, telemetria en agent_dispatcher (R10) | **HECHO** |

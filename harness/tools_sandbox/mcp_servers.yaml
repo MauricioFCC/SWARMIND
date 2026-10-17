@@ -1,69 +1,674 @@
 # MCP Servers Configuration
 # =========================
-# Define MCP servers that this harness can connect to.
-# All servers are DISABLED by default. Enable the ones you need.
+# Define MCP servers que el harness puede conectar via MCPManager.
 #
-# To install community MCP servers:
-#   See: https://github.com/modelcontextprotocol/servers
+# PATRON DE TRANSPORTE
+# --------------------
+# Los servers oficiales de modelcontextprotocol se publican como subprocesos
+# (transport == "stdio"): el manager los lanza con `command` + `args` y les
+# inyecta `env`. NO exponen un endpoint HTTP propio en localhost.
+#
+#   stdio:  command: npx|docker|uvx   + args [...]   + env {...}
+#   http:   url: http://host:port     (solo servers que sirven HTTP real)
+#
+# El registro previo inventaba `url: http://localhost:31XX` y nombres de tools
+# que no existen en los paquetes reales. Eso queda corregido aqui usando los
+# nombres y comandos VERIFICADOS contra los repos oficiales (ver fuentes por
+# server). Ver tambien: https://github.com/modelcontextprotocol/servers
+#
+# COMO HABILITAR
+# --------------
+#   1. Instala el runtime: Node (npx) para los npx; Docker para github.
+#   2. Exporta las env requeridas (gitbash/PowerShell):
+#        GITHUB_PERSONAL_ACCESS_TOKEN, BRAVE_API_KEY
+#   3. En el server deseado cambia `enabled: false` -> `enabled: true`.
+#   4. MCPManager.load_servers() lo conecta automaticamente al iniciar.
+#
+# Nota: los placeholders `${VAR}` / rutas de ejemplo son referencias
+# documentales; el manager NO expande variables dentro de `args` ni `env`
+# (env se pasa tal cual al subproceso).
 
 servers:
+  # ---------------------------------------------------------------------------
+  # 1. filesystem — operaciones de archivo seguras con directorios permitidos.
+  #    Fuente: https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem
+  #    Runtime: Node (npx).  Env: ninguna.
+  #    Args: <dir permitido> [<dir permitido>...]  (al menos uno, o usar Roots).
+  #    TODO usuario: reemplazar /path/to/allowed/dir por la ruta real.
+  # ---------------------------------------------------------------------------
   - name: filesystem
-    url: http://localhost:3100
-    description: "Read/write files and list directories (filesystem MCP server)"
+    transport: stdio
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/dir"]
+    description: "Read/write files and list/search directories (reference filesystem server)"
     tools:
-      - read_file
+      - read_text_file
+      - read_media_file
+      - read_multiple_files
       - write_file
+      - edit_file
+      - create_directory
       - list_directory
+      - list_directory_with_sizes
+      - move_file
+      - search_files
+      - directory_tree
+      - get_file_info
+      - list_allowed_directories
     enabled: false
-    install_hint: "npx @modelcontextprotocol/server-filesystem"
+    install_hint: "Node.js y: npx -y @modelcontextprotocol/server-filesystem /path/to/allowed/dir"
 
+  # ---------------------------------------------------------------------------
+  # 2. github — GitHub oficial (github/github-mcp-server), escrito en Go.
+  #    Fuente: https://github.com/github/github-mcp-server
+  #    OJO: el paquete npm @modelcontextprotocol/server-github esta DEPRECADO
+  #    (abril 2025) y el server real NO expone get_repo/list_issues (nombres
+  #    inventados). Distribucion oficial: imagen Docker
+  #    `ghcr.io/github/github-mcp-server` o binario Go `github-mcp-server stdio`.
+  #    Runtime: Docker (o Go desde fuente).  Env: GITHUB_PERSONAL_ACCESS_TOKEN.
+  #    Filtra tools con --toolsets / GITHUB_TOOLSETS (ej. repos,issues,pull_requests).
+  #    Alternativa sin Docker (binario): command: github-mcp-server, args: ["stdio"].
+  # ---------------------------------------------------------------------------
   - name: github
-    url: http://localhost:3101
-    description: "GitHub API integration: repos, issues, PRs (GitHub MCP server)"
+    transport: stdio
+    command: docker
+    args:
+      - run
+      - -i
+      - --rm
+      - -e
+      - GITHUB_PERSONAL_ACCESS_TOKEN
+      - ghcr.io/github/github-mcp-server
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+    description: "GitHub oficial: repos, issues, PRs, code search, Actions (github/github-mcp-server)"
     tools:
-      - get_repo
-      - list_issues
-      - create_pr
+      - get_me
+      - get_file_contents
+      - search_repositories
       - search_code
+      - create_repository
+      - list_branches
+      - list_commits
+      - get_commit
+      - create_branch
+      - get_latest_release
+      - list_releases
+      - list_issues
+      - issue_read
+      - issue_write
+      - add_issue_comment
+      - search_issues
+      - create_pull_request
+      - pull_request_read
+      - list_pull_requests
+      - merge_pull_request
+      - update_pull_request
+      - get_repository_tree
     enabled: false
-    install_hint: "npx @modelcontextprotocol/server-github"
+    install_hint: "Docker y: docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server"
 
+  # ---------------------------------------------------------------------------
+  # 3. postgres — acceso de SOLO LECTURA a PostgreSQL.
+  #    Fuente: https://github.com/modelcontextprotocol/servers-archived/tree/main/src/postgres
+  #    ARCHIVADO (mayo 2025): sigue instalable via npm pero sin soporte.
+  #    Runtime: Node (npx).  Env: ninguna.
+  #    Args: <connection string postgresql://...>  (unico arg obligatorio).
+  #    Tool real: SOLO `query` (no existen list_tables/describe_table). El
+  #    esquema de cada tabla se expone como MCP Resource, no como tool.
+  #    Alternativa mantenida: postgres-mcp (crystaldba/postgres-mcp).
+  # ---------------------------------------------------------------------------
   - name: postgres
-    url: http://localhost:3102
-    description: "PostgreSQL database queries and schema inspection"
+    transport: stdio
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-postgres", "postgresql://user:password@localhost:5432/mydb"]
+    description: "PostgreSQL read-only (archived reference server): schema inspection + single query tool"
     tools:
       - query
-      - list_tables
-      - describe_table
     enabled: false
-    install_hint: "npx @modelcontextprotocol/server-postgres"
+    install_hint: "Node.js y: npx -y @modelcontextprotocol/server-postgres postgresql://user:password@host:5432/db"
 
-  - name: filesystem_local
-    url: http://localhost:3103
-    description: "Alternative filesystem server with expanded path access"
-    tools:
-      - read_file
-      - write_file
-      - list_directory
-      - search_files
-    enabled: false
-    install_hint: "npx @modelcontextprotocol/server-filesystem --allowed-paths=/tmp"
-
+  # ---------------------------------------------------------------------------
+  # 4. memory — grafo de conocimiento persistente.
+  #    Fuente: https://github.com/modelcontextprotocol/servers/tree/main/src/memory
+  #    Runtime: Node (npx).  Env opcional: MEMORY_FILE_PATH (ruta del JSON).
+  #    Tools reales del grafo (no existen store_memory/recall_memory).
+  # ---------------------------------------------------------------------------
   - name: memory
-    url: http://localhost:3104
-    description: "Persistent memory/knowledge graph server (MemMCP)"
+    transport: stdio
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-memory"]
+    env: {}
+    description: "Persistent knowledge-graph memory (entities, relations, observations)"
     tools:
-      - store_memory
-      - recall_memory
-      - list_memories
+      - create_entities
+      - create_relations
+      - add_observations
+      - delete_entities
+      - delete_observations
+      - delete_relations
+      - read_graph
+      - search_nodes
+      - open_nodes
     enabled: false
-    install_hint: "npx @modelcontextprotocol/server-memory"
+    install_hint: "Node.js y: npx -y @modelcontextprotocol/server-memory"
 
+  # ---------------------------------------------------------------------------
+  # 5. brave_search — busqueda web/noticias/imagenes via Brave Search API.
+  #    Fuente: https://github.com/brave/brave-search-mcp-server
+  #    OJO: el server de modelcontextprotocol esta ARCHIVADO; el oficial actual
+  #    es `@brave/brave-search-mcp-server` (default transport: stdio).
+  #    Runtime: Node (npx).  Env: BRAVE_API_KEY (obligatoria).
+  #    Tools reales: brave_web_search, brave_local_search, brave_news_search,
+  #    brave_image_search, brave_video_search, brave_place_search,
+  #    brave_summarizer, brave_llm_context (no existe web_fetch).
+  # ---------------------------------------------------------------------------
   - name: brave_search
-    url: http://localhost:3105
-    description: "Web search via Brave Search API"
+    transport: stdio
+    command: npx
+    args: ["-y", "@brave/brave-search-mcp-server", "--transport", "stdio"]
+    env:
+      BRAVE_API_KEY: "${BRAVE_API_KEY}"
+    description: "Web/news/image/video/place search + AI summarization via Brave Search API"
     tools:
-      - web_search
-      - web_fetch
+      - brave_web_search
+      - brave_local_search
+      - brave_news_search
+      - brave_image_search
+      - brave_video_search
+      - brave_place_search
+      - brave_summarizer
+      - brave_llm_context
     enabled: false
-    install_hint: "npx @modelcontextprotocol/server-brave-search"
+    install_hint: "Node.js y: BRAVE_API_KEY=xxx npx -y @brave/brave-search-mcp-server --transport stdio"
+
+  # ---------------------------------------------------------------------------
+  # REA - reverse engineering MCP server (morluto/rea, licencia MIT).
+  # Transporte stdio: se lanza como subproceso (NO usa 'url').
+  #   Requisito: Node 22+/24+/26+ (el entorno actual tiene Node v24).
+  #   Instalacion: npx -y rea-agents@latest mcp
+  #                (o 'npx rea-agents setup' para registrar con agentes)
+  #   Env opcionales (anadir bajo la clave 'env' si se necesitan):
+  #     REA_ANALYSIS_PROVIDER: hopper | ghidra | ida  (proveedor de analisis)
+  #     REA_MCP_INPUT_SCHEMA_PROFILE: perfil del schema de entrada
+  #     REA_MCP_MAX_RESPONSE_BYTES: limite de bytes por respuesta
+  # ---------------------------------------------------------------------------
+  - name: rea
+    transport: stdio
+    command: npx
+    args: ["-y", "rea-agents@latest", "mcp"]
+    description: "REA - reverse engineering MCP (binaries, JS/Electron, .NET, websites)"
+    # Nombres segun la SSOT del skill reverse-engineering (references/mcp-tools.md).
+    tools:
+      - rea.doctor
+      - rea.providers
+      - rea.capabilities
+      - rea.analyze
+      - rea.analyze_javascript_application
+      - rea.inspect_binary
+      - rea.inspect_metadata
+      - rea.inspect_website
+      - rea.inspect_sqlite
+      - rea.search
+      - rea.function
+      - rea.decompile
+      - rea.xrefs
+      - rea.trace
+      - rea.compare
+      - rea.evidence_export
+    enabled: false
+    install_hint: "Node 22+/24+ y: npx -y rea-agents@latest mcp (o 'npx rea-agents setup' para registrar con agentes)"
+
+  # ---------------------------------------------------------------------------
+  # rc_devtools — browser/JS RE + analisis de red (reverse-craft).
+  #    Fuente: https://github.com/reverse-craft/rc-devtools-mcp
+  #    Runtime: Node (npx). Transporte stdio. Env: ninguna.
+  #    Comando VERIFICADO contra el README oficial. Tools (subset verificado;
+  #    el resto se descubre en runtime): debugging JS (breakpoints), captura de
+  #    red, automatizacion de pagina. Complementa a REA para targets website/JS.
+  # ---------------------------------------------------------------------------
+  - name: rc_devtools
+    transport: stdio
+    command: npx
+    args: ["@reverse-craft/rc-devtools-mcp@latest"]
+    description: "ReverseCraft DevTools: browser automation, JavaScript debugging & network analysis"
+    tools:
+      - navigate_page
+      - list_network_requests
+      - get_network_request
+      - search_network_requests
+      - save_network_request
+      - set_breakpoint
+      - remove_breakpoint
+    enabled: false
+    install_hint: "Node.js y: npx @reverse-craft/rc-devtools-mcp@latest"
+
+  # ---------------------------------------------------------------------------
+  # ghidra_mcp — Ghidra (extension Java) + bridge Python (209 tools).
+  #    Fuente: https://github.com/bethington/ghidra-mcp
+  #    Runtime: uv (bridge Python) + Ghidra 12.1.4 + JDK 21 + extension GhidraMCP.
+  #    Transporte stdio. Requiere instalar la extension ANTES (Ghidra+JDK):
+  #      git clone https://github.com/bethington/ghidra-mcp && python -m tools.setup deploy --ghidra-path <Ghidra>
+  #    Comando del bridge VERIFICADO contra el README oficial.
+  # ---------------------------------------------------------------------------
+  - name: ghidra_mcp
+    transport: stdio
+    command: uv
+    args: ["run", "--directory", "/path/to/ghidra-mcp", "bridge-mcp-ghidra", "--transport", "stdio"]
+    description: "Ghidra MCP (bethington): decompile, xrefs, P-code/dataflow, debugger (209 tools)"
+    tools:
+      - analyze_function_completeness
+    enabled: false
+    install_hint: "Ghidra 12.1.4 + JDK21 + extension GhidraMCP (git clone bethington/ghidra-mcp && python -m tools.setup deploy --ghidra-path <Ghidra>); bridge: uv run --directory <repo> bridge-mcp-ghidra"
+
+  # ---------------------------------------------------------------------------
+  # radare2 — server OFICIAL de radareorg (C, APIs nativas de r2). 26+ tools.
+  #    Fuente: https://github.com/radareorg/radare2-mcp
+  #    Runtime: radare2 + r2pm. Instalacion: r2pm -Uci r2mcp. Transporte stdio.
+  #    Comando VERIFICADO contra el README oficial. Soporta modo readonly,
+  #    sandbox lock y restriccion de tools (util para el harness).
+  # ---------------------------------------------------------------------------
+  - name: radare2
+    transport: stdio
+    command: r2pm
+    args: ["-r", "r2mcp"]
+    description: "radare2 MCP oficial: analisis binario, xrefs, decompile y SQL (r2xsql)"
+    tools:
+      - open_file
+      - analyze
+      - sql
+    enabled: false
+    install_hint: "radare2 y: r2pm -Uci r2mcp"
+
+  # ---------------------------------------------------------------------------
+  # 6. serena — comprension simbolica de codigo via LSP (40+ lenguajes).
+  #    Fuente: https://github.com/oraios/serena
+  #    Docs (running/stdio): https://oraios.github.io/serena/02-usage/020_running.html
+  #    Docs (tools):         https://oraios.github.io/serena/01-about/035_tools.html
+  #    OJO licencia: NO es MIT en v2. El paquete `serena-agent` es
+  #    GPL-3.0-or-later como distribucion combinada (SolidLSP interno si es
+  #    MIT). Ver https://github.com/oraios/serena/blob/main/LICENSE.
+  #    Runtime: uv (Python 3.13+).  Sin API key.
+  #    Transporte stdio es el default de `serena start-mcp-server` (no lleva
+  #    flag de transporte). El server es STATEFUL y necesita un proyecto:
+  #    se selecciona con `--project <path|name>` (o `--project-from-cwd`).
+  #    TODO usuario: reemplazar /path/to/project por la ruta real.
+  #    Nota: no se usa env SERENA_PROJECT_PATH (no documentado por el repo);
+  #    el proyecto se pasa por argumento.
+  # ---------------------------------------------------------------------------
+  - name: serena
+    transport: stdio
+    command: uvx
+    args:
+      - "-p"
+      - "3.13"
+      - "--from"
+      - "git+https://github.com/oraios/serena"
+      - "serena"
+      - "start-mcp-server"
+      - "--project"
+      - "/path/to/project"
+    env: {}
+    description: "Serena: semantic/symbolic code understanding & editing via LSP (40+ languages, no API key)"
+    tools:
+      - find_symbol
+      - get_symbols_overview
+      - find_referencing_symbols
+      - find_declaration
+      - find_implementations
+      - get_diagnostics_for_file
+      - search_for_pattern
+      - replace_content
+      - activate_project
+      - get_current_config
+    enabled: false
+    install_hint: "uv + Python 3.13+ y: uv tool install -p 3.13 serena-agent ; luego 'serena start-mcp-server' (o via uvx: uvx -p 3.13 --from git+https://github.com/oraios/serena serena start-mcp-server --project /path/to/project)"
+
+  # ---------------------------------------------------------------------------
+  # 7. context7 — documentacion de librerias versionada para LLMs.
+  #    Fuente: https://github.com/upstash/context7  (licencia MIT)
+  #    Paquete: npm @upstash/context7-mcp (https://www.npmjs.com/package/@upstash/context7-mcp)
+  #    Runtime: Node >= 20.18.1 (npx).  Transporte stdio es el default.
+  #    Tools REALES: resolve-library-id y query-docs (OJO: `get-library-docs`
+  #    fue RENOMBRADO a `query-docs`; el nombre viejo ya no aplica).
+  #    Env OPCIONAL: CONTEXT7_API_KEY (o flag --api-key) para mayor rate limit
+  #    y repos privados. Sin key el server funciona con limites menores.
+  # ---------------------------------------------------------------------------
+  - name: context7
+    transport: stdio
+    command: npx
+    args: ["-y", "@upstash/context7-mcp"]
+    env: {}
+    description: "Context7: up-to-date, version-specific library documentation & code examples for LLMs"
+    tools:
+      - resolve-library-id
+      - query-docs
+    enabled: false
+    install_hint: "Node 20+ y: npx -y @upstash/context7-mcp (opcional: --api-key <key> o env CONTEXT7_API_KEY)"
+
+  # ---------------------------------------------------------------------------
+  # 8. fetch — descarga de URLs y conversion a markdown (referencia oficial).
+  #    Fuente: https://github.com/modelcontextprotocol/servers/tree/main/src/fetch
+  #    Runtime: uv (Python). Transporte stdio. Sin credenciales.
+  # ---------------------------------------------------------------------------
+  - name: fetch
+    transport: stdio
+    command: uvx
+    # Pin de version (SSOT como sequentialthinking@npx): uvx sin pin re-resuelve
+    # en cada maquina fria. Verificado en PyPI 2026-10-15 (requires-python >=3.10).
+    args: ["mcp-server-fetch@2026.10.10"]
+    description: "Fetch (referencia oficial): descarga URLs y las convierte a markdown para el LLM"
+    tools:
+      - fetch
+    enabled: false
+    install_hint: "uv y: uvx mcp-server-fetch (server de referencia oficial, Python)"
+
+  # ---------------------------------------------------------------------------
+  # 9. time — hora actual y conversion de zonas horarias (referencia oficial).
+  #    Fuente: https://github.com/modelcontextprotocol/servers/tree/main/src/time
+  #    Runtime: uv (Python). Transporte stdio. Sin credenciales.
+  # ---------------------------------------------------------------------------
+  - name: time
+    transport: stdio
+    command: uvx
+    # Pin de version (idem fetch). Verificado en PyPI 2026-10-15.
+    args: ["mcp-server-time@2026.10.10"]
+    description: "Time (referencia oficial): hora actual y conversion entre zonas horarias"
+    tools:
+      - get_current_time
+      - convert_time
+    enabled: false
+    install_hint: "uv y: uvx mcp-server-time (server de referencia oficial, Python)"
+
+  # ---------------------------------------------------------------------------
+  # 10. git — operaciones sobre un repositorio Git local (referencia oficial).
+  #    Fuente: https://github.com/modelcontextprotocol/servers/tree/main/src/git
+  #    Runtime: uv (Python). Transporte stdio. Args: --repository <path>.
+  #    TODO usuario: reemplazar /path/to/repo por la ruta real.
+  # ---------------------------------------------------------------------------
+  - name: git
+    transport: stdio
+    command: uvx
+    args: ["mcp-server-git", "--repository", "/path/to/repo"]
+    description: "Git (referencia oficial): status, diff, log, commit, ramas sobre un repo local"
+    tools:
+      - git_status
+      - git_diff
+      - git_log
+      - git_commit
+      - git_add
+      - git_create_branch
+      - git_checkout
+    enabled: false
+    install_hint: "uv y: uvx mcp-server-git --repository /path/to/repo (referencia oficial, Python)"
+
+  # ---------------------------------------------------------------------------
+  # 11. sequentialthinking — razonamiento por secuencias de pensamiento.
+  #    Fuente: https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking
+  #    Runtime: Node (npx). Transporte stdio. Sin credenciales.
+  # ---------------------------------------------------------------------------
+  - name: sequentialthinking
+    transport: stdio
+    command: npx
+    args: ["-y", "@modelcontextprotocol/server-sequential-thinking@1.0.0"]
+    description: "Sequential Thinking (referencia oficial): descomposicion reflexiva por pasos de pensamiento"
+    tools:
+      - sequentialthinking
+    enabled: false
+    install_hint: "Node.js y: npx -y @modelcontextprotocol/server-sequential-thinking"
+
+  # ---------------------------------------------------------------------------
+  # 12. playwright — automatizacion de navegador (Microsoft).
+  #    Fuente: https://github.com/microsoft/playwright-mcp  (MIT)
+  #    Runtime: Node 18+ (npx). Transporte stdio. Usa el arbol de accesibilidad
+  #    (no vision). Complementa testing E2E y RE de websites.
+  # ---------------------------------------------------------------------------
+  - name: playwright
+    transport: stdio
+    command: npx
+    args: ["@playwright/mcp@latest"]
+    description: "Playwright MCP (Microsoft): automatizacion de navegador via arbol de accesibilidad"
+    tools:
+      - browser_navigate
+      - browser_click
+      - browser_type
+      - browser_snapshot
+      - browser_take_screenshot
+      - browser_evaluate
+      - browser_close
+    enabled: false
+    install_hint: "Node.js 18+ y: npx @playwright/mcp@latest"
+
+  # ---------------------------------------------------------------------------
+  # 13. firecrawl — scrape/crawl/search web a markdown/JSON (Firecrawl).
+  #    Fuente: https://github.com/firecrawl/firecrawl-mcp-server
+  #    Runtime: Node (npx). Env: FIRECRAWL_API_KEY (hay free tier keyless).
+  #    Sinergia: el repo ya usa firecrawl-anydoc para ingesta de documentos.
+  # ---------------------------------------------------------------------------
+  - name: firecrawl
+    transport: stdio
+    command: npx
+    args: ["-y", "firecrawl-mcp"]
+    env:
+      FIRECRAWL_API_KEY: "${FIRECRAWL_API_KEY}"
+    description: "Firecrawl: scrape/crawl/map/search de la web a markdown/JSON limpio"
+    tools:
+      - firecrawl_scrape
+      - firecrawl_search
+      - firecrawl_map
+      - firecrawl_crawl
+      - firecrawl_parse
+    enabled: false
+    install_hint: "Node.js y: FIRECRAWL_API_KEY=... npx -y firecrawl-mcp (o endpoint hosted keyless)"
+
+  # ---------------------------------------------------------------------------
+  # 14. notion — paginas y data sources de Notion (self-hosted; el oficial
+  #     remoto https://developers.notion.com/docs/mcp es el recomendado).
+  #    Fuente: https://github.com/makenotion/notion-mcp-server
+  #    Runtime: Node (npx). Env: NOTION_TOKEN.
+  # ---------------------------------------------------------------------------
+  - name: notion
+    transport: stdio
+    command: npx
+    args: ["-y", "@notionhq/notion-mcp-server"]
+    env:
+      NOTION_TOKEN: "${NOTION_TOKEN}"
+    description: "Notion: leer/editar paginas (markdown) y data sources; sinergia con la memoria/documentacion"
+    tools:
+      - retrieve-page-markdown
+      - update-page-markdown
+      - query-data-source
+      - API-post-search
+    enabled: false
+    install_hint: "Node.js y: NOTION_TOKEN=ntn_... npx -y @notionhq/notion-mcp-server (o Remote Notion MCP oficial)"
+
+  # ---------------------------------------------------------------------------
+  # 15. kubernetes — gestion de un cluster K8s (Flux159/mcp-server-kubernetes).
+  #    Fuente: https://github.com/Flux159/mcp-server-kubernetes
+  #    Runtime: Node (npx) + kubectl + kubeconfig. Modo no destructivo y
+  #    enmascarado de secrets disponibles. Transporte stdio.
+  # ---------------------------------------------------------------------------
+  - name: kubernetes
+    transport: stdio
+    command: npx
+    args: ["mcp-server-kubernetes"]
+    description: "Kubernetes: gestion de cluster (get/apply/scale/rollout/logs) + Helm + diagnostico"
+    tools:
+      - kubectl_get
+      - kubectl_describe
+      - kubectl_create
+      - kubectl_apply
+      - kubectl_delete
+      - kubectl_logs
+      - kubectl_scale
+      - kubectl_rollout
+      - ping
+    enabled: false
+    install_hint: "Node.js + kubectl + kubeconfig y: npx mcp-server-kubernetes"
+
+  # ---------------------------------------------------------------------------
+  # 16. chrome-devtools — Chrome DevTools para agentes (Google). FRONTERA:
+  #     performance traces, red, consola con stack maps, automatizacion.
+  #     Fuente: https://github.com/ChromeDevTools/chrome-devtools-mcp
+  #     Runtime: Node LTS + Chrome estable (npx). Transporte stdio.
+  #     Opt-out de telemetria: flag --no-usage-statistics.
+  # ---------------------------------------------------------------------------
+  - name: chrome_devtools
+    transport: stdio
+    command: npx
+    args: ["-y", "chrome-devtools-mcp@latest"]
+    description: "Chrome DevTools (Google): performance traces, red, consola y automatizacion de Chrome"
+    tools:
+      - navigate_page
+      - click
+      - take_snapshot
+      - take_screenshot
+      - evaluate_script
+      - list_network_requests
+      - performance_start_trace
+    enabled: false
+    install_hint: "Node LTS + Chrome estable y: npx -y chrome-devtools-mcp@latest (--no-usage-statistics para opt-out)"
+
+  # ---------------------------------------------------------------------------
+  # 17. sentry — errores/traces/logs para debugging (getsentry, oficial).
+  #     Fuente: https://github.com/getsentry/sentry-mcp
+  #     Runtime: Node (npx) con token; o remoto https://mcp.sentry.dev/mcp.
+  #     Algunas tools de busqueda IA requieren un LLM provider.
+  # ---------------------------------------------------------------------------
+  - name: sentry
+    transport: stdio
+    command: npx
+    args: ["@sentry/mcp-server@latest"]
+    env:
+      SENTRY_ACCESS_TOKEN: "${SENTRY_ACCESS_TOKEN}"
+    description: "Sentry: issues/errores, traces y logs para debugging (tools de busqueda IA opt-in)"
+    tools:
+      - search_errors
+      - search_traces
+      - search_logs
+      - search_issues
+    enabled: false
+    install_hint: "Node.js y: npx @sentry/mcp-server@latest --access-token=<token> (o remoto https://mcp.sentry.dev/mcp)"
+
+  # ---------------------------------------------------------------------------
+  # 18. supabase — proyecto Supabase (tablas, config, queries) via HTTP.
+  #     Fuente: https://github.com/supabase-community/supabase-mcp
+  #     Transporte http (OAuth en el cliente). Tools se filtran por features.
+  # ---------------------------------------------------------------------------
+  - name: supabase
+    transport: http
+    url: "https://mcp.supabase.com/mcp"
+    description: "Supabase: gestion de tablas, config y queries del proyecto (HTTP + OAuth)"
+    tools:
+      - get_project_url
+    enabled: false
+    install_hint: "Cliente MCP con HTTP y OAuth: url https://mcp.supabase.com/mcp (o local http://localhost:54321/mcp)"
+
+  # ---------------------------------------------------------------------------
+  # 19. browserbase — navegador cloud (Stagehand) via HTTP (hosted, recomendado).
+  #     Fuente: https://github.com/browserbase/mcp-server-browserbase (repo archivado;
+  #     usar el hosted). Transporte http. 6 tools verificadas.
+  # ---------------------------------------------------------------------------
+  - name: browserbase
+    transport: http
+    url: "https://mcp.browserbase.com/mcp"
+    description: "Browserbase (Stagehand): navegador cloud para agentes (start/act/observe/extract)"
+    tools:
+      - start
+      - end
+      - navigate
+      - act
+      - observe
+      - extract
+    enabled: false
+    install_hint: "Hosted: url https://mcp.browserbase.com/mcp (o stdio: npx @browserbasehq/mcp con BROWSERBASE_API_KEY)"
+
+# ===========================================================================
+# RE/MCP — CANDIDATOS (fuente: Awesome-RE-MCP, https://github.com/crowdere/Awesome-RE-MCP)
+# ===========================================================================
+# No se anexan como entradas activas hasta VERIFICAR el comando y el engine
+# (regla de este archivo: nombres/comandos confirmados contra el repo oficial).
+# Catalogados para adopcion futura (target -> server), por categoria:
+#   Disassemblers/decompilers:
+#     - ida-pro-mcp (mrexodia) / OFICIAL HexRaysSA/ida-mcp — IDA Pro (licencia)
+#     - GhidraMCP (LaurieWired) · reverse-engineering-assistant (cyberkaida/ReVa) — Ghidra
+#     - binary_ninja_mcp (fosdickio) — Binary Ninja (licencia)
+#     - CutterMCP (ap425q) — Rizin/Cutter · x64dbgMCP (Wasdubya) — x64dbg (Windows)
+#   Debuggers:
+#     - LLDB (MCP nativo oficial 2025) · GDB MCP (pansila)
+#     - gaps conocidos: WinDbg, OllyDbg, rr
+#   Estatico/dinamico:
+#     - YaraFlux (ThreatFlux) — firmas YARA
+#     - frida-mcp (dnakov, MIT) — comando verificado: `pip install frida-mcp` -> `frida-mcp`
+#       (stdio; tool-names se descubren en runtime, por eso no se anexa como entry).
+#   Disassemblers con licencia (comando verificado, engine externo requerido):
+#     - ida-pro-mcp (mrexodia) / OFICIAL HexRaysSA/ida-mcp — `uvx ida-pro-mcp` (IDA Pro)
+#     - GhidraMCP (LaurieWired) · Binary Ninja (fosdickio) · CutterMCP (ap425q)
+#   Red:
+#     - WireMCP (0xKoda) — Wireshark · Burp Suite MCP (PortSwigger oficial) · ZAP-MCP
+#   Mobile:
+#     - Jadx-MCP-Plugin (mobilehackinglab) · jadx-mcp-server / apktool-mcp-server (zinja-coder)
+#   Sin MCP (oportunidad): UPX/PEiD/DetectItEasy, binwalk, AFL++, angr, Triton.
+#
+# ===========================================================================
+# MCP — CATALOGO DE CANDIDATOS POR DOMINIO (investigacion web 2026-10-14)
+# ===========================================================================
+# Regla: NO anexar como entry hasta VERIFICAR comando + al menos una tool
+# contra el repo oficial. Fuentes: registry.modelcontextprotocol.io,
+# github.com/modelcontextprotocol/servers, github.com/punkpeye/awesome-mcp-servers
+# y los repos de cada vendor. Comandos VERIFICADOS se anotan entre <>:
+#   Bases de datos:
+#     - mongodb:  npx -y mongodb-mcp-server@latest --readOnly (env MDB_MCP_CONNECTION_STRING) [verificado]
+#     - grafana (obs/SQL): uvx mcp-grafana (env GRAFANA_URL, GRAFANA_SERVICE_ACCOUNT_TOKEN) [verificado]
+#     - redis / sqlite (archived ref) / clickhouse / duckdb / qdrant / chroma
+#   Cloud / infraestructura:
+#     - cloudflare (HTTP): https://mcp.cloudflare.com/mcp (API) · docs/browser/containers.mcp.cloudflare.com
+#     - aws (awslabs.core-mcp-server) · azure (azure-mcp) · gcp · terraform · docker · pulumi
+#   Observabilidad:
+#     - sentry (ya anexado) · datadog · prometheus · opensearch
+#   BaaS / DB gestionada:
+#     - supabase (ya anexado) · neon · firebase
+#   Navegador cloud:
+#     - browserbase (ya anexado) · steel · hyperbrowser
+#   Busqueda web / research:
+#     - exa (npx -y exa-mcp-server, EXA_API_KEY) · tavily (npx -y tavily-mcp, TAVILY_API_KEY) · perplexity
+#   IA / ML / Hub:
+#     - huggingface (HTTP): https://huggingface.co/mcp (Bearer HF token) · mlflow · jupyter · pandas-mcp
+#   Design / productividad:
+#     - figma (HTTP): https://mcp.figma.com/mcp (Dev Mode) · linear · jira/atlassian · slack (zencoderai) · google-workspace
+#   Pagos / SaaS:
+#     - stripe (npx -y @stripe/mcp) · zapier (HTTP)
+#   Seguridad / pentest:
+#     - mcp-for-security (SQLMap/FFUF/NMAP/Masscan) · OWASP ZAP-MCP · Burp Suite (oficial) · Semgrep · Trivy
+#   Busqueda web / research:
+#     - exa (npx -y exa-mcp-server, EXA_API_KEY) · tavily (npx -y tavily-mcp, TAVILY_API_KEY) · perplexity
+#   Coding / code intelligence:
+#     - serena (ya anexado) · ast-grep · tree-sitter · deepwiki
+#   Productividad / colaboracion:
+#     - linear · jira/atlassian · slack (zencoderai/slack-mcp-server) · gmail/outlook · google-calendar
+#   Datos / ML:
+#     - huggingface · mlflow · jupyter · pandas-mcp
+#   Media / geo:
+#     - ffmpeg · google-maps (archived) · gdrive (archived)
+#   Matematicas / razonamiento:
+#     - math-mcp · wolfram · sequentialthinking (ya anexado)
+#   Mobile / RE:
+#     - ver la seccion RE arriba (jadx, apktool, frida, ghidra, ida, radare2)
+
+# ---------------------------------------------------------------------------
+# Organizacion: cada herramienta en su categoria (espejo de mcp_catalog.CATEGORIES).
+# ---------------------------------------------------------------------------
+categories:
+  reverse-engineering: [rea, rc_devtools, ghidra_mcp, radare2]
+  browser: [playwright, chrome_devtools]
+  web: [fetch, firecrawl]
+  data: [postgres, supabase]
+  vcs: [github, git]
+  devops: [kubernetes]
+  observability: [sentry]
+  productivity: [notion, context7]
+  reasoning: [sequentialthinking]
+  utility: [time, memory]
+  code: [serena]
+
+

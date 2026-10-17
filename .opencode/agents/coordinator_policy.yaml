@@ -33,11 +33,35 @@ delegation:
   profundidad_cap: 2
 
   # Agentes y disparadores automáticos (auto-detección por dominio).
+  # SSOT de los 24 agentes reales de `.opencode/agents/*.md` (los 4 núcleo
+  # —builder/scientist/guardian/evolve— más los 20 especializados). Un agente
+  # sin entrada aquí queda fuera de la auto-detección del coordinador.
   agents:
-    builder: [implement, code, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, db, trading, design-system, accesibilidad, responsive, a11y]
+    builder: [implement, implementa, code, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, db, trading, design-system, accesibilidad, responsive, a11y]
     scientist: [research, paper, architecture, design, pattern, algorithm, ml, ai, hci, ux, ui-research, generative-ui]
     guardian: [test, security, audit, risk, doc, quality, review, validate, frontend-quality, visual-regression, a11y-audit]
     evolve: [evolve, improve, optimize, skill, cognition, learn]
+    coordinator: [delegate, plan, coordinate, triage, orchestrate, descomponer, priorizar, despachar]
+    architect: [arquitectura, architecture, c4, adr, trade-off, decision arquitectonica, diagrama de sistema, conformance]
+    backend-engineer: [backend, api rest, grpc, microservicio, servicio, endpoint backend, java, node]
+    frontend-engineer: [frontend, react, vue, svelte, angular, nextjs, tailwind, componente ui, accesibilidad]
+    mobile-engineer: [mobile, ios, android, react native, flutter, app movil, kotlin, swift]
+    data-engineer: [etl, pipeline de datos, data warehouse, airflow, spark, ingest, dbt, orquestacion de datos]
+    database-administrator: [database, base de datos, sql, postgres, mysql, indices, query tuning, migracion de datos, backup]
+    devops: [devops, ci/cd, deploy, kubernetes, docker, terraform, sre, pipeline, observabilidad]
+    platform-engineer: [plataforma, self-service, golden path, developer experience, idp, internal developer platform]
+    security-engineer: [security, seguridad, pentest, owasp, threat modeling, hardening, sast, sbom, vulnerabilidad]
+    qa-engineer: [qa, testing, pruebas, regresion, e2e, integration test, cobertura, test plan]
+    test-writer: [test, tests, tdd, red, unit test, fixture, caso de prueba, arrange act assert]
+    reviewer: [code review, pull request, pr, revision de codigo, diff, retroalimentacion]
+    researcher: [research, investigacion, literatura, paper, estado del arte, benchmark, evidencia]
+    product-manager: [producto, roadmap, okr, requisitos, user story, stakeholder, priorizacion, backlog, campana]
+    release-ops: [release, github actions, ci, cd, auto-merge, branch protection, changelog, versionado, deploy]
+    evolve-engineer: [evolve, skill engineering, mejora de skills, frontmatter, cognition, auto-mejora]
+    evolve-analyzer: [analizar resultados, baseline, destilar lecciones, retrospectiva, metricas de mejora]
+    evolve-researcher: [investigar tecnicas, frontera, paper de agentes, propuesta de mejora, rl scaling]
+    token-budget-auditor: [token budget, cache-shape, compaction, token economics, ahorro de tokens, failure-spend]
+    alpha-miner: [alpha, factor, mineria alpha, senales, rankic, factor zoo, mining loop, dsl de factores, umbrales nvidia]
 
   # Reglas de delegación UI/UX (identidad visual + accesibilidad).
   uiux:

@@ -8,6 +8,9 @@ publica y privada sin cambios de logica ni de firmas.
 from __future__ import annotations
 
 import logging
+import os
+import subprocess
+from collections.abc import Callable
 from typing import Any
 
 from .mcp_types import (
@@ -17,6 +20,9 @@ from .mcp_types import (
 )
 
 logger = logging.getLogger("harness.tools_sandbox.mcp_client")
+
+#: Ubicación lógica de las validaciones de conexión (mensajes WHAT/WHY/WHERE).
+_CONNECTION_WHERE = "harness/tools_sandbox/mcp_client/connection.py"
 
 
 class _ConnectionMixin:
@@ -181,6 +187,102 @@ class _ConnectionMixin:
             logger.error("MCP stateless connect failed to %s: %s", server_url, exc)
             return None
 
+    def connect_stdio(
+        self,
+        command: str,
+        args: list[str] | None = None,
+        env: dict[str, str] | None = None,
+        *,
+        runner: Callable[..., Any] | None = None,
+    ) -> bool:
+        """
+        Lanza un servidor MCP con transporte stdio (subproceso).
+
+        Ejemplo REA: ``connect_stdio("npx", ["-y", "rea-agents@latest", "mcp"])``.
+        El ``runner`` es una dependencia inyectable (por defecto
+        ``subprocess.Popen``) para testear sin lanzar procesos reales ni tocar
+        la red.
+
+        Alcance actual: deja el subproceso vivo y marca el transporte como
+        ``stdio``; el framing JSON-RPC delimitado por saltos de línea sobre los
+        pipes es un follow-up (``execute_tool`` sigue hablando HTTP). Se expone
+        aquí para que la configuración dual sea operable de extremo a extremo.
+
+        Args:
+            command: Ejecutable a lanzar (ej. ``npx``).
+            args: Argumentos del ejecutable (ej. ``["-y", "rea-agents@latest", "mcp"]``).
+            env: Variables de entorno extra para el subproceso.
+            runner: Callable compatible con ``subprocess.Popen``; por defecto
+                ``subprocess.Popen`` (DI para tests sin red/procesos).
+
+        Returns:
+            True si el subproceso se lanzó; False si ``command`` está vacío o
+            el lanzamiento falló (se registra con logger, sin excepción).
+        """
+        if not command or not command.strip():
+            logger.error(
+                "connect_stdio: WHAT='command' vacío; WHY=no hay ejecutable que "
+                "lanzar; WHERE=%s::MCPClient.connect_stdio",
+                _CONNECTION_WHERE,
+            )
+            return False
+
+        proc = self._spawn_stdio(command, args, env, runner)
+        if proc is None:
+            return False
+
+        self._stdio_proc = proc
+        self._server_url = None
+        self._stateless = False
+        self._connected = True
+        self._transport = "stdio"
+        logger.info("MCP stdio server launched: %s", " ".join([command, *(args or [])]))
+        return True
+
+    def _spawn_stdio(
+        self,
+        command: str,
+        args: list[str] | None,
+        env: dict[str, str] | None,
+        runner: Callable[..., Any] | None,
+    ) -> Any | None:
+        """
+        Lanza el subproceso stdio (adapter con DI del runner).
+
+        Args:
+            command: Ejecutable a lanzar.
+            args: Argumentos del ejecutable.
+            env: Variables de entorno extra (se fusionan sobre ``os.environ``).
+            runner: Callable compatible con ``subprocess.Popen``; ``None`` usa
+                ``subprocess.Popen``. Es el punto de inyección para tests.
+
+        Returns:
+            El objeto proceso si se lanzó, ``None`` si falló (con log WHAT/WHY/WHERE).
+        """
+        spawn = runner if runner is not None else subprocess.Popen
+        proc_env = {**os.environ, **env} if env else None
+        argv = [command, *(args or [])]
+        try:
+            return spawn(
+                argv,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=proc_env,
+            )
+        except (OSError, ValueError) as exc:
+            logger.error(
+                "connect_stdio: WHAT=falló el lanzamiento de '%s'; WHY=%s; "
+                "WHERE=%s::MCPClient._spawn_stdio",
+                command,
+                exc,
+                _CONNECTION_WHERE,
+            )
+            self._connected = False
+            self._transport = "http"
+            return None
+
     def disconnect(self) -> None:
         """Disconnect from the MCP server."""
         if self._connected and self._server_url:
@@ -197,8 +299,16 @@ class _ConnectionMixin:
             except Exception as exc:  # noqa: BLE001
                 logger.debug("MCP best-effort operation failed: %s", exc)
 
+        if self._stdio_proc is not None:
+            try:
+                self._stdio_proc.terminate()
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("MCP stdio terminate failed: %s", exc)
+            self._stdio_proc = None
+
         self._connected = False
         self._stateless = False
+        self._transport = "http"
         self._server_url = None
         self._tools_cache = []
         logger.info("MCP disconnected.")

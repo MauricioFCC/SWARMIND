@@ -86,9 +86,10 @@ class TestProceduralMemoryInit:
     def test_init_loads_existing_skills(self):
         """Test init carga skills existentes del directorio.
         
-        Nota: El parser _load_skills tiene un bug con line.split(\"**:\", 1)
-        en lineas como \"**Descripcion:** valor\", por lo que saltamos
-        esa validacion hasta que se corrija el parseo.
+        Nota: este fixture deja fuera el campo ``**Descripcion:**`` para cubrir
+        el caso sin descripcion; el parseo de descripcion/tags se cubre en
+        ``test_init_loads_skill_with_description_and_tags`` (regresion del bug
+        ``line.split("**:", 1)`` que lanzaba IndexError).
         """
         with tempfile.TemporaryDirectory() as tmp:
             skill_path = Path(tmp) / "existing_skill.md"
@@ -112,6 +113,33 @@ class TestProceduralMemoryInit:
             assert skill.name == "existing_skill"
             assert skill.agent == "builder"
             assert skill.steps == ["Primer paso", "Segundo paso"]
+
+    def test_init_loads_skill_with_description_and_tags(self):
+        """Regresion: carga ``**Descripcion:**`` y ``**Tags:**`` sin IndexError.
+
+        Bug previo: ``line.split("**:", 1)`` nunca separa el marcador real
+        ``**Descripcion:**`` (no contiene ``**:"``), lo que lanzaba IndexError y
+        rompia ``FailureDistiller`` al leer ``.opencode/skills/auto/``.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            skill = ProceduralSkill(
+                name="avoid-demo",
+                description="Avoidance: demo",
+                steps=["NO hacer: x", "Causa: y", "Resolucion: z"],
+                agent="evolve",
+                tags=["tag-a", "tag-b"],
+            )
+            (Path(tmp) / "avoid-demo.md").write_text(
+                skill.to_markdown(), encoding="utf-8"
+            )
+
+            pm = ProceduralMemory(skills_dir=str(tmp))
+
+            loaded = pm._skills["avoid-demo"]
+            assert loaded.description == "Avoidance: demo"
+            assert loaded.agent == "evolve"
+            assert loaded.tags == ["tag-a", "tag-b"]
+            assert loaded.steps == ["NO hacer: x", "Causa: y", "Resolucion: z"]
 
 
 class TestProceduralMemoryRegister:

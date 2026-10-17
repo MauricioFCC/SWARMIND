@@ -79,18 +79,24 @@ def test_retired_aliases_no_longer_resolve() -> None:
 
 
 def test_retired_fleet_models_no_longer_resolve() -> None:
-    """Los modelos retirados 2026-10-08 ya no matchean (flota reducida a 4).
+    """Los modelos retirados 2026-10-14 ya no matchean.
 
-    jackod-9b, mimo-9b, ornith-9b y qwen3-vl-4b salieron de la flota; ningun
-    nombre (canonico ni corto) debe resolver a una entrada.
+    qwen3.5-4b, phi-4-mini-instruct, qwen2.5-coder-3b y deepseek-r1-distill
+    (flota declarada previa) mas jackod-9b/ornith-9b/qwen3-vl-4b salieron de
+    la flota; ningun nombre (canonico ni corto) debe resolver a una entrada.
     """
     for retired in (
+        "qwen3-5-4b-gguf-ud-q4-k-xl",
+        "hf.co/unsloth/qwen3.5-4b-gguf:ud-q4_k_xl",
+        "qwen3.5-4b",
+        "phi-4-mini-instruct-q4-k-m",
+        "microsoft_phi-4-mini-instruct-q4_k_m",
+        "qwen2.5-coder-3b-iq4-xs",
+        "qwen2.5-coder-3b",
+        "deepseek-r1-distill-qwen-7b-q2-k",
         "mannix/JackOD-9B-Coder:IQ4_XS",
         "jackod-9b-coder-iq4-xs",
-        "hf.co/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF:IQ4_XS",
-        "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs",
         "hf.co/ornith-ai/Ornith-1.5-9B-GGUF:Q4_K_M",
-        "ornith-1-5-9b-gguf-q4-k-m",
         "qwen3-vl:4b",
         "qwen3-vl-4b",
     ):
