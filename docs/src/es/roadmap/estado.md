@@ -75,6 +75,44 @@
   append-only. Kill-check con el mutador AST propio: **6/6 mutantes
   semánticos muertos** (el superviviente inicial expuso `mkdir(parents=False)`
   → test nuevo). Detalle: `docs/.MEJORAS_SWARMIND.md` 11.15.
+- **Frontera 11.16 (este ciclo)**: **minería alpha de frontera (0 capacidad →
+  paquete `harness/alpha_mining/`)** con los 5 sistemas alpha del estado del
+  arte, verificada con TDD adversarial mutante. (1) **DSL total** (`factor_dsl`:
+  Hubble — el LLM solo emite JSON reconstruido a AST validado, evaluador sin
+  crashes con ceros/NaN/división; AlphaAgent — complejidad `MAX_NODES=32` +
+  Jaccard de genes abstractos; AlphaMCTS — FSA con `abstract_gene` y forbidden
+  top-k). (2) **Evaluador con umbrales NVIDIA** (`factor_eval`: IC dual
+  Pearson+RankIC, `p < 0.05` estricto, score acotado [0,1] con input hostil).
+  (3) **Zoo family-aware** (`alpha_zoo`: JSONL estricto, KB de fallos por modo,
+  `is_similar` pre-eval, top-k con `per_family_cap`). (4) **Loop
+  signal→code→eval + MCTS-UCT con branching real** (`mining_loop`: hermanos
+  compitientes y exploración observable — la cadena lineal era código muerto —,
+  `crossover`/`mutate`/`evolve_pool` por recompensa, determinista sin rng).
+  **Kill-check 2 rondas**: ronda 1 6/14 → 6 fugas reales de spec + 1 corrección
+  de source donde el mutador tenía razón (p-value al canon) → ronda 2
+  **13/16 + 3 equivalentes = 100% mutantes semánticos**; 81 contratos nuevos.
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.16.
+- **Frontera 11.17 (este ciclo)**: **sistemas del milenio →
+  `harness/complex_problems/`** (AlphaProof Nature 2025-11, AlphaEvolve
+  PNAS 2026-09, AlphaProof Nexus arXiv 2605.22763 9/353 Erdős): los 5
+  mecanismos "rompe-límites" de su configuración, con DI completa y sin
+  rng. (1) **Escalera de presupuesto** (`budget`: rungs monotonamente
+  crecientes + cap global 3000 episodios — más compute cuando la dirección
+  ya se afinó, failure-spend acotado). (2) **Verificador formal inyectado
+  + anti-malformalización** (`verifier`: Protocol duck-typed; el statement
+  real debe conservar sus marcadores o verificar NO cuenta). (3) **Elo
+  suma-cero** (`sketch_store`: población compartida de sketches, `top(k)`
+  con empate determinista). (4) **P-UCB** (`p_ucb`: cobertura garantizada
+  antes de explotar, `MappingProxyType` externo). (5) **Ledger monotono**
+  (`progress`: idempotente, rollback siempre error, JSONL append-only con
+  `linea N` en corrupción). (6) **AttackLoop integrador** (`attack`:
+  grant → hook → integridad → verificación → gasto; re-ataque = 0
+  episodios; cap corta antes de `max_attempts`). **Kill-check 2 rondas**:
+  ronda 1 13/17 → 4 fugas de spec en los CONTRATOS (top por rating,
+  exploración fraccional, default `cost_per_attempt` nunca ejercitado,
+  `spent` del re-ataque) → ronda 2 **17/17 + 2/2 = 19/19 (100%)**; 75
+  contratos nuevos (RED: 6 ModuleNotFoundError).
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.17.
 - **Pendiente (evals de frontera)**: LLM-as-judge con escape "Unknown" +
   scorecards por corrida (Anthropic 2026); ACP lo cubre `packages/acp` de
   OpenCode (el harness Python no necesita implementarlo — validar `opencode
