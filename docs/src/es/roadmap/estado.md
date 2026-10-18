@@ -142,6 +142,31 @@
   alineado con `TokenUsageTracker.cache_health`). 28 contratos (RED);
   kill-check 11/11 muertos + 5 equivalentes = 100% efectivo. Detalle:
   `docs/.MEJORAS_SWARMIND.md` 11.19.
+- **Frontera 11.20**: **memoria colectiva en 1ª instalación** (spec
+  `specs/memory-lifecycle.md`, research anexada: arXiv:2607.21503
+  memoria-ciclo-de-vida + políticas de caches 2026 — qué NO guardar).
+  `memory_bootstrap.py`: `bootstrap_memory` (SSOT
+  `~/Documents/Memory_Proyects` + `.swarmind_config.json` idempotente,
+  override `MEMORY_ROOT`, cross-platform), detección y migración de forks
+  locales (append por mtime, volátiles jamás), `prune_volatile_collections`
+  (cap 1 GB/caché regenerable). Cableado en `setup_swarmind.py` paso 4 +
+  warning de fallback en `memory_config` (bug raíz: config SSOT ausente ⇒
+  fork de 4.7 GB). **Ejecución real: -14.29 GB** (prune 9.59 GB +
+  fork 4.70 GB); INCIDENTE: 13 tablas locales sin `_versions/*.manifest`
+  (pérdida externa) ⇒ recuperación con pylance leyendo fragments ⇒
+  parquet ⇒ fusión al central 13/13 (65 filas de valor, 41 de cognición
+  que se habrían perdido) + archivo de seguridad en `backups/`. 17
+  contratos (RED: ModuleNotFoundError), cobertura 100% del módulo;
+  kill-check 2/2 reales (100%) con no-ops excluidos honestamente.
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.20.
+- **Frontera 11.21 (propuesto — spec)**: **auto-actualización
+  anti-reversión** (`specs/self-update.md`): el harness lee el repo
+  remoto y se actualiza solo en las 3 plataformas con `merge --ff-only`
+  + gate de monotonicidad (`blocked_downgrade` nunca degrada) + log
+  JSONL append-only con `audit_log` que detecta reversiones
+  (`to >= from >= max(previas)`); degradación suave offline/sucio/
+  divergido = 0 cambios, jamás `reset --hard`. Implementación TDD = ciclo
+  11.21 (10 contratos con remoto `file://` sin red).
 - **Pendiente (evals de frontera)**: LLM-as-judge con escape "Unknown" +
   scorecards por corrida (Anthropic 2026); ACP lo cubre `packages/acp` de
   OpenCode (el harness Python no necesita implementarlo — validar `opencode

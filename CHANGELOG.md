@@ -2,6 +2,25 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-10-17] Memoria colectiva en 1ª instalación + recuperación de fragments
+
+### Spec
+- **`specs/memory-lifecycle.md`** — ciclo de vida de la memoria con research frontera anexada (arXiv:2607.21503 memoria-como-ciclo-de-vida + políticas de caches 2026): 13 colecciones de **valor** vs `semantic_cache`/`agent_workspace_logs` **regenerables** (cap 1 GB por colección, jamás respaldar ni migrar); qué NO guardar: secretos, PII en logs, tool-outputs > 4K (ya en `artifact_store`), chunks duplicados.
+
+### Nuevos módulos
+- **`harness/memory_rag/memory_bootstrap.py`** — `bootstrap_memory` (primera instalación: `<root>/{data/lancedb,backups}` + `.swarmind_config.json` idempotente y mergeable con `backup_memory`), `default_memory_root` (env `MEMORY_ROOT` > `~/Documents/Memory_Proyects`, pathlib cross-platform), `detect_project_local_memory` (fork `harness/db/lancedb`), `migrate_local_to_central` (ausente ⇒ copiar, no volátil más nuevo ⇒ append, volátil/stale/ilegible ⇒ skip con warning WHAT+WHY+WHERE), `prune_volatile_collections` (volátil > 1 GB ⇒ drop regenerable).
+
+### Acoplamiento aditivo (0 regresión)
+- `scripts/setup_swarmind.py` paso 4: `_bootstrap_memory()` — bootstrap → detect → migrar (dry-run ✓).
+- `memory_config.__post_init__`: `logger.warning` accionable cuando cae al fallback legacy (bug raíz: faltaba `.swarmind_config.json` ⇒ `memory_root=None` ⇒ fork silencioso de 4.7 GB).
+
+### Ejecución real (esta máquina)
+- Verificado: `get_memory_config().lancedb_path` ⇒ central ✓ · prune **-9.59 GB** (99.99% del store central eran volátiles) · INCIDENTE: 13 tablas de valor locales sin `_versions/*.manifest` (pérdida externa; ningún script del repo toca `_versions`) ⇒ recuperación one-off con pylance (lectura directa de fragments ⇒ parquet) ⇒ fusión al central **13/13 con deltas exactos (65 filas de valor; 41 de cognición que se habrían perdido)** + archivo de seguridad `backups/recovered_fragments_20261017_193140` · fork local retirado **-4.70 GB** · **total liberado 14.29 GB**.
+
+### Tests
+- `test_memory_bootstrap.py` (17): RED evidenciado (`ModuleNotFoundError`), GREEN con API no-deprecada `list_tables().tables`, **cobertura 100%** del módulo (98 líneas, 0 miss).
+- Kill-check mutante: **2/2 mutantes reales muertos (100%)** con 5 no-ops (`IsNot`/`In`/`NotIn`) excluidos honestamente; `ruff` 0, `vulture` 0.
+
 ## [2026-10-16] Round skills/agentes/MCP + ADR fr-0001 cost-aware routing
 
 ### Nuevos módulos
