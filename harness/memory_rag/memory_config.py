@@ -182,6 +182,14 @@ class MemoryConfig:
             else:
                 base = Path(__file__).resolve().parent.parent  # harness/
                 self.lancedb_path = str(base / "db" / "lancedb")
+                logger.warning(
+                    "WHAT: usando memoria local legacy (harness/db/lancedb). "
+                    "WHY: no se encontró .swarmind_config.json con memory_root "
+                    "válido (primera instalación sin bootstrap). "
+                    "WHERE: memory_config.__post_init__; "
+                    "FIX: ejecuta `python scripts/setup_swarmind.py` o "
+                    "`bootstrap_memory()` para crear la memoria colectiva."
+                )
 
     def to_dict(self) -> dict:
         d = asdict(self)

@@ -162,6 +162,50 @@ def _sync_global(dry_run: bool) -> bool:
     return True
 
 
+def _bootstrap_memory() -> bool:
+    """Bootstrap de memoria colectiva + migración de fork local (ciclo 11.20).
+
+    WHAT: crea la memoria colectiva (data/lancedb + backups +
+    .swarmind_config.json) si es primera instalación, detecta un fork
+    local del proyecto (harness/db/lancedb) y migra sus tablas de valor.
+    WHY: sin .swarmind_config.json el harness cae al fallback legacy y
+    creó un fork de 4.8 GB; la memoria colectiva debe ser SSOT en toda
+    instalación nueva (win/linux/mac).
+    WHERE: paso 5 del setup, tras dependencias y antes de verificación.
+
+    Returns:
+        True si el bootstrap/migración no tuvo errores fatales.
+    """
+    try:
+        from harness.memory_rag.memory_bootstrap import (
+            bootstrap_memory,
+            detect_project_local_memory,
+            migrate_local_to_central,
+        )
+
+        report = bootstrap_memory()
+        logger.info("  Memoria colectiva: %s", report.memory_root)
+        if report.created:
+            logger.info("  ✅ .swarmind_config.json creado (primera instalación)")
+
+        fork = detect_project_local_memory(_ROOT)
+        if fork is not None:
+            logger.info(
+                "  🔀 Fork local detectado (%d tablas) → migrando al central",
+                len(fork.tables),
+            )
+            mig = migrate_local_to_central(fork.db_dir, report.data_dir)
+            logger.info(
+                "     copied=%d appended=%d skipped_volatile=%d skipped_stale=%d",
+                len(mig.copied), len(mig.appended),
+                len(mig.skipped_volatile), len(mig.skipped_stale),
+            )
+        return True
+    except Exception as e:  # noqa: BLE001 — setup no debe abortar por memoria
+        logger.error("  ❌ Error en bootstrap de memoria: %s", e)
+        return False
+
+
 def _verify() -> bool:
     """Verifica que el sistema funciona (imports + smoke test).
 
@@ -220,7 +264,13 @@ def main() -> None:
     else:
         steps_ok = _install_deps(skip_uv=args.skip_uv) and steps_ok
 
-    # 4. Sync global (cerebro + motor)
+    # 4. Memoria colectiva (bootstrap + migración de fork local)
+    if args.dry_run:
+        logger.info("  [simulado] Bootstrap memoria colectiva + migración")
+    else:
+        steps_ok = _bootstrap_memory() and steps_ok
+
+    # 5. Sync global (cerebro + motor)
     if args.skip_sync:
         logger.info("  [skip] Sync a opencode global")
     elif args.dry_run:
@@ -228,13 +278,13 @@ def main() -> None:
     else:
         steps_ok = _sync_global(dry_run=False) and steps_ok
 
-    # 5. Verificación
+    # 6. Verificación
     if args.dry_run:
         logger.info("  [simulado] Verificar imports + smoke test")
     else:
         steps_ok = _verify() and steps_ok
 
-    # 6. Menú de configuración (memoria central, backup, opciones)
+    # 7. Menú de configuración (memoria central, backup, opciones)
     if args.skip_config:
         logger.info("  [skip] Menú de configuración")
     elif args.dry_run:
