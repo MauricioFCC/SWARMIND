@@ -159,15 +159,37 @@
   contratos (RED: ModuleNotFoundError), cobertura 100% del módulo;
   kill-check 2/2 reales (100%) con no-ops excluidos honestamente.
   Detalle: `docs/.MEJORAS_SWARMIND.md` 11.20.
-- **Frontera 11.21 (propuesto — spec)**: **auto-actualización
-  anti-reversión** (`specs/self-update.md`): el harness lee el repo
-  remoto y se actualiza solo en las 3 plataformas con `merge --ff-only`
-  + gate de monotonicidad (`blocked_downgrade` nunca degrada) + log
-  JSONL append-only con `audit_log` que detecta reversiones
-  (`to >= from >= max(previas)`); degradación suave offline/sucio/
-  divergido = 0 cambios, jamás `reset --hard`. Implementación TDD = ciclo
-  11.21 (10 contratos con remoto `file://` sin red).
-- **Pendiente (evals de frontera)**: LLM-as-judge con escape "Unknown" +
+- **Frontera 11.21 (este ciclo)**: **auto-actualización anti-reversión
+  implementada** (`specs/self-update.md` → accepted+implemented). Research
+  anexada: **ADR-0010 anti-rollback** (`max_seen_version` monotónico en el
+  journal + downgrade solo deliberado `allow_downgrade`+`justification` ⇒
+  `downgrade_forced` auditable) y journaling *roll forward* con **prefix
+  property** = el invariante de `merge --ff-only` (InterSystems/SQLite WAL;
+  `branch.*.mergeoptions --ff-only` como defense-in-depth). Módulo
+  `harness/self_update/` en 3 piezas SRP (`core` 451 LC + `journal` 108 +
+  `versions` 33), CLI `scripts/self_update.py` (`--check/--apply/--audit`)
+  y **paso 7 del setup** con degradación suave que nunca bloquea. Gate
+  central: `floor = max(local, max_seen_journal)` y `remote < floor` ⇒
+  bloqueado aunque `remote > local`; `max_seen` **nunca baja**. Solo mutan
+  worktree `updated`/`downgrade_forced` vía ff-only, con intento WAL
+  registrado antes del merge. 20 contratos git reales (bare locales, sin
+  red) + **6 tests fake-git** (runner en memoria: 4.2 s vs 171 s) que
+  cubren todos los guards. **Kill-check en 3 rondas** (ronda 1 reportó
+  100% pero era engañoso: el harness numeraba posiciones en BFS y mutaba
+  en DFS ⇒ mal etiquetado) → ronda 2 expuso **7 gaps reales de aserción**
+  → ronda 3 tras reforzar 6 contratos + añadir 3: **44/44 = 100%**
+  (core 33 + versions 2 + journal 9, 0 supervivientes, 2 equivalentes
+  por construcción documentados). Cobertura **100% del paquete** (273
+  stmts) con los 24 tests rápidos (2.9 s); marker `slow` solo en los 15
+  de integración git. RED: ModuleNotFoundError. Detalle:
+  `docs/.MEJORAS_SWARMIND.md` 11.21. **Gate 11.21:** suite completa
+  **7075 passed, 0 failed** (527s; base 7036 + 39); kill-check **44/44 =
+  100%**; cobertura **100%** del paquete (273 stmts) con los 24 tests
+  rápidos; `ruff` 0 · `vulture` 0.
+- **Gate 11.21:** suite completa **7075 passed, 38 skipped, 16 xfailed,
+  0 failed** (527s; base 7036 + 39 de `test_self_update.py`). Kill-check
+  **44/44 = 100%**. Cobertura **100%** del paquete `harness/self_update/`
+  (273 stmts) con los 24 tests rápidos (2.9s). `ruff` 0 · `vulture` 0.- **Pendiente (evals de frontera)**: LLM-as-judge con escape "Unknown" +
   scorecards por corrida (Anthropic 2026); ACP lo cubre `packages/acp` de
   OpenCode (el harness Python no necesita implementarlo — validar `opencode
   acp` cuando el binario esté en PATH).

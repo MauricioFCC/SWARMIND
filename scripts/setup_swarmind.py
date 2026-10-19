@@ -171,7 +171,7 @@ def _bootstrap_memory() -> bool:
     WHY: sin .swarmind_config.json el harness cae al fallback legacy y
     creó un fork de 4.8 GB; la memoria colectiva debe ser SSOT en toda
     instalación nueva (win/linux/mac).
-    WHERE: paso 5 del setup, tras dependencias y antes de verificación.
+    WHERE: paso 4 del setup, tras dependencias y antes de sync global.
 
     Returns:
         True si el bootstrap/migración no tuvo errores fatales.
@@ -204,6 +204,33 @@ def _bootstrap_memory() -> bool:
     except Exception as e:  # noqa: BLE001 — setup no debe abortar por memoria
         logger.error("  ❌ Error en bootstrap de memoria: %s", e)
         return False
+
+
+def _self_update() -> None:
+    """Auto-actualización desde remoto anti-reversión (ciclo 11.21).
+
+    WHAT: check remoto + apply ff-only con guards (gate de monotonicidad,
+    journal WAL) y audit_log de reversión.
+    WHY: mandato — toda instalación local sigue al repo remoto
+    (win/linux/mac) sin permitir reversiones; degradación suave.
+    WHERE: paso 7 del setup, tras verificación; NUNCA bloquea el setup.
+    """
+    log_path = _ROOT / ".swarmind" / "update_log.jsonl"
+    try:
+        from harness.self_update import apply_update, audit_log, check_remote
+
+        check = check_remote(_ROOT)
+        result = apply_update(check, repo=_ROOT, log_path=log_path)
+        logger.info(
+            "  Actualización remota: %s — %s", result.action.value, result.detail
+        )
+        if result.changed:
+            logger.info("  ✅ Repo actualizado; reinicia opencode para cargarlo")
+        violaciones = audit_log(log_path)
+        if violaciones:
+            logger.error("  ⚠️  audit_log: %d violación(es) de reversión", len(violaciones))
+    except Exception as e:  # noqa: BLE001 — degradación suave, nunca bloquea
+        logger.warning("  Auto-actualización degradada (no bloquea): %s", e)
 
 
 def _verify() -> bool:
@@ -284,7 +311,13 @@ def main() -> None:
     else:
         steps_ok = _verify() and steps_ok
 
-    # 7. Menú de configuración (memoria central, backup, opciones)
+    # 7. Auto-actualización desde remoto (anti-reversión, degradación suave)
+    if args.dry_run:
+        logger.info("  [simulado] Auto-actualización desde remoto (check + apply)")
+    else:
+        _self_update()  # nunca bloquea el setup (spec self-update.md)
+
+    # 8. Menú de configuración (memoria central, backup, opciones)
     if args.skip_config:
         logger.info("  [skip] Menú de configuración")
     elif args.dry_run:

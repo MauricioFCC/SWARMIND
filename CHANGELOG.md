@@ -2,6 +2,30 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-10-17] Auto-actualización desde remoto anti-reversión (ciclo 11.21)
+
+### Spec
+- **`specs/self-update.md`** — `proposed` → **`accepted + implemented`**. Investigación frontera anexada: **ADR-0010 anti-rollback** (`max_seen_version` monotónico persistido + downgrade como acción deliberada con `allow_downgrade`+`justification` ⇒ evento `downgrade_forced` auditable) y journaling *roll forward* con **prefix property** ("si existe una actualización, existen todas las anteriores" = el invariante de `--ff-only`, InterSystems/SQLite WAL). Defense-in-depth: `git config branch.<b>.mergeoptions --ff-only` y MITRE MID-030 (la referencia anti-rollback solo avanza tras confirmación).
+
+### Nuevos módulos
+- **`harness/self_update/core.py`** — `parse_version` (pyproject `project.version` → fallback `git describe --tags`, normalizado a tupla comparable), `check_remote` (fetch **solo lectura** ⇒ `UP_TO_DATE/BEHIND/AHEAD/DIVERGED/OFFLINE/NO_GIT/NO_REMOTE`, nunca lanza) y `apply_update` (guards → `merge --ff-only`). Runner `run_git` inyectable (0 shell injection: `subprocess.run` argv-list + `check=False` + timeout).
+- **`harness/self_update/journal.py`** — `append_log` (UNA línea JSON por evento, append-only, crea padres), `audit_log` (para `updated`: `to >= from` y `to >= max_previa`; para `downgrade_forced`: `justification` no vacía; línea ilegible = violación) y `max_seen_version` (cota histórica que **nunca baja**).
+- **`harness/self_update/versions.py`** — `parse_semver` (`v1.2.3-rc1` → `(1,2,3)`, normaliza a ≥3 componentes) + `fmt_version`.
+- **`scripts/self_update.py`** — CLI `--check` / `--apply` / `--audit` (+ `--allow-downgrade` + `--justification`, `--repo/--remote/--branch/--log`). Exit: **0** ok/degradado, **1** violación de audit o ff fallido, **2** fatal.
+
+### Acoplamiento aditivo (0 regresión)
+- `scripts/setup_swarmind.py` **paso 7** (tras verificación): `_self_update()` — check → apply → audit con **degradación suave que nunca bloquea el setup**; `--dry-run` lo simula.
+- `.gitignore`: `.swarmind/` (journal por-maquina, no se versiona).
+
+### Invariante central
+`floor = max(version_local, max_seen_journal)`; `remote < floor` ⇒ **bloqueado** (incluso con `remote > local`, porque el journal pudo haber visto una versión mayor). Solo mutan worktree `updated`/`downgrade_forced`, siempre vía `--ff-only`, con el intento registrado **antes** del merge (WAL crash-safe) y el resultado después. Nunca `reset --hard`, nunca stash drop.
+
+### Tests
+- `test_self_update.py` (**39 tests**): RED evidenciado (`ModuleNotFoundError`) → GREEN. **15 contratos de integración** sobre **remotos bare locales por path** (sin red, cross-platform, marcados `slow`) + **24 tests fake-git/puros** (runner en memoria: subset en **2.9 s vs ~171 s** con subprocess) que ejercitan todos los guards sin ~450 spawns de proceso. Marker `slow` aplicado por test (los fake corren en `-m "not slow"` para iterraciones rápidas y CI T1).
+- **Kill-check en 3 rondas**: ronda 1 con operadores extendidos (`Eq↔NotEq`, `In↔NotIn`, `Is↔IsNot`, `Gt↔LtE`, `GtE↔Lt`, `BoolOp and↔or`) reportó 100%… **pero era engañoso**: el harness numeraba posiciones en BFS (`ast.walk`) y mutaba en DFS (`NodeTransformer`) ⇒ supervivientes mal etiquetados. Corregido el recorrido y re-ejecutado: ronda 2 expuso **7 gaps reales de aserción** (sha destino del journal, conteo parcial de `rev-list`, estado `AHEAD` vs `UP_TO_DATE`, detalle de degradación citando causa raiz, detalle de ff rechazado sin stderr, `to_commit` del resultado) ⇒ ronda 3 tras reforzar 6 contratos + añadir 3: **core 33/33 + versions 2/2 + journal 9/9 = 44/44 (100%, 0 supervivientes)**. Dos mutantes documentados como **equivalentes por construcción** (`url.code == 127`, `Is` en el primer `re.match` de `parse_semver`).
+- `ruff` 0 · `vulture` 0 · **cobertura 100% del paquete `harness/self_update/` (273 stmts, 0 miss) solo con los 24 tests rápidos** · **FSZ 0 funciones >30 LC** en el módulo nuevo.
+- **Gate del ciclo:** suite completa **7075 passed, 38 skipped, 16 xfailed, 0 failed** (527s; base 7036 + 39 de `test_self_update.py`).
+
 ## [2026-10-17] Memoria colectiva en 1ª instalación + recuperación de fragments
 
 ### Spec

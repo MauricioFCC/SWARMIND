@@ -160,3 +160,8 @@ scripts/deploy_local.json
 # Perfiles de capacidad locales confidenciales (tuning de ESTA maquina) - NUNCA pushear.
 # La plantilla SI se versiona (.opencode/config/ollama_local.example.yaml).
 .opencode/config/ollama_local.yaml
+
+# Journal de auto-actualizacion anti-reversion (spec self-update.md, ciclo 11.21).
+# Registro POR-MAQUINA en <repo>/.swarmind/update_log.jsonl: lo crea el paso 7 del
+# setup o scripts/self_update.py; el audit_log deriva de el la cota max_seen local.
+.swarmind/

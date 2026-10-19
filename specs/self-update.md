@@ -1,7 +1,10 @@
 # Spec: Auto-actualización desde remoto anti-reversión (self-update)
 
-> Estado: **proposed** (spec-only, ciclo 11.21 = implementación TDD).
-> Dueño: `scripts/self_update.py` + `harness/self_update/` (a crear).
+> Estado: **accepted + implemented** (ciclo 11.21: spec → SDD → TDD
+> adversarial mutante → implementación en `harness/self_update/` +
+> CLI `scripts/self_update.py` + paso 7 del setup).
+> Dueño: `harness/self_update/` (`core.py` + `journal.py` + `versions.py`)
+> y `scripts/self_update.py`.
 > Mandato: cada instalación local del harness debe leer el repo remoto,
 > actualizarse cuando el remoto avanza (win/linux/mac) y dejar un **log de
 > actualización que impida reversiones** (nunca degradar, nunca borrar).
@@ -37,21 +40,38 @@ actualizó, cuándo, ni desde/hacia qué versión.
 - **No-update-in-flight**: aplicar el update en punto seguro (arranque o
   CLI explícito), nunca en medio de una sesión activa; tras aplicar,
   notificar "reinicio requerido" (patrón RPA/RE-ANCHOR del harness).
+- **FRS 2026 (investigación de este ciclo)**: ADR-0010 anti-rollback
+  (FabianSchurig/open-connect) ⇒ **`max_seen_version` monotónico**
+  persistido en el journal (no solo comparación par a par) y **downgrade
+  como acción deliberada**: requiere flag `allow_downgrade=True` +
+  `justification` no vacío, queda como evento `downgrade_forced` en el
+  audit log (auditable + autorizado ≠ accidente). Journaling "roll
+  forward": *prefix property* — si existe una actualización, existen
+  todas las anteriores = exactamente el invariante de `--ff-only`
+  (InterSystems/SQLite WAL). Defense-in-depth git:
+  `git config branch.<b>.mergeoptions --ff-only` (git-automation 2026:
+  "ff-only promotion makes divergence impossible", enforceable
+  server-side) y preferir *roll-forward* sobre retroceso de puntero
+  (MITRE MID-030: la referencia anti-rollback solo avanza tras
+  confirmación).
 
 ## 3. Decisiones (qué hace / qué NO hace)
 
 | Escenario | Acción | Entrada en log |
 |---|---|---|
-| Remoto tiene commits nuevos (ff posible) y `remote_version > local` | `fetch` + `merge --ff-only` | `updated` (from→to) |
-| Igual versión/commit | nada | `noop` (solo `--check` lo imprime) |
-| `remote_version < local_version` (remoto atrasado o clon adelantado) | **bloquear** | `blocked_downgrade` |
-| Worktree local sucio (commits/stash/modify) | **abortar** sin tocar nada | `dirty_worktree` |
-| Divergencia (commits locales no empujados) | **abortar**, nunca `reset`/`force` | `diverged` |
-| Sin red / sin `git` / auth falla | degradar (exit 0 en startup) | `offline` / `no_git` / `auth_failed` |
+| Remoto tiene commits nuevos (ff posible) y `remote_version >= floor` | `fetch` + `merge --ff-only` | `updated` (from→to) |
+| Sin commits nuevos (behind=0, o solo ahead local) | nada | `noop` |
+| `remote_version < floor` donde `floor = max(local_version, max_seen_log)` | **bloquear** | `blocked_downgrade` |
+| Idem, pero `allow_downgrade=True` + `justification` no vacío | ff con lo del remoto | `downgrade_forced` + justification |
+| Worktree local sucio (commits/stash/modify) con cambios pendientes de pull | **abortar** sin tocar nada | `dirty_worktree` |
+| Divergencia (commits locales no empujados + commits remotos) | **abortar**, nunca `reset`/`force` | `diverged` |
+| Sin red / sin `git` / sin remoto / auth falla | degradar (exit 0 en startup) | `offline` / `no_git` / `no_remote` |
 
 **NUNCA** (anti-patrones): `git reset --hard`, `checkout` a versión
 anterior, `stash` drop automático, auto-update sin log, URLs de update no
-fijadas, aplicar update a mitad de sesión sin reinicio.
+fijadas, aplicar update a mitad de sesión sin reinicio. La única puerta
+de reversión es `allow_downgrade=True` + `justification` no vacío, que
+**nunca** reduce `max_seen_version` (el piso sigue en la cota histórica).
 
 **Qué NO se auto-actualiza**: datos (memoria central, `.env`, worktrees no
 tracked) — solo avanza el código tracked por git; los binarios/descargas
@@ -87,18 +107,31 @@ Cross-platform: `pathlib` + `subprocess` sin `shell=True`; resolución de
 
 ## 5. Contratos (TDD — ciclo 11.21)
 
-`harness/tests/test_self_update.py`:
+`harness/tests/test_self_update.py` (remotos bare locales vía path —
+sin red, cross-platform con git real):
 
-1. `check_remote` detecta `behind=3` contra un bare repo local.
-2. `apply_update` hace ff y registra `updated` con from/to exactos.
-3. Remoto más viejo ⇒ `blocked_downgrade` + **0 cambios en worktree**.
-4. Archivos sucios ⇒ `dirty_worktree` + 0 cambios (nunca stash).
-5. Commit local no empujado ⇒ `diverged` + 0 cambios (nunca reset).
-6. Sin red (run_git inyectado que falla) ⇒ `offline`, exit 0 en startup.
-7. `append_log` es append-only: 100 entradas ⇒ 100 líneas JSON válidas.
-8. `audit_log` marca reversion si `to < from` (mutante debe morir).
-9. Log espejo en MEMORY_ROOT se escribe igual.
-10. Idempotencia: segunda `apply_update` tras ff ⇒ `noop`.
+1. `check_remote` detecta `BEHIND behind=2` contra un bare repo local.
+2. Sin commits nuevos ⇒ `UP_TO_DATE behind=0`.
+3. `apply_update` hace ff y registra `updated` con from/to exactos
+   (versión + commit + máquina + OS).
+4. Remoto revierte la versión (`remote < floor = max(local, max_seen)`)
+   ⇒ `blocked_downgrade` + **0 cambios en worktree**.
+5. `allow_downgrade=True` + justification no vacío ⇒ `downgrade_forced`
+   con justification en el log; `max_seen` NO baja.
+6. `allow_downgrade` sin justification ⇒ se rechaza (queda como blocked).
+7. Archivos sucios (detrás) ⇒ `dirty_worktree` + 0 cambios (nunca stash).
+8. Divergencia (local ahead + remote behind) ⇒ `diverged` + 0 cambios
+   (nunca reset).
+9. Sin red (runner inyectado falla el fetch) ⇒ `offline`, exit 0.
+10. `git` ausente (runner 127) ⇒ `no_git`; remoto inexistente ⇒ `no_remote`.
+11. `append_log` append-only: 3 entradas ⇒ 3 líneas JSON válidas.
+12. `audit_log` detecta reversión (`to < from` o `to < max(previas)` y
+    `downgrade_forced` sin justification) — mutante debe morir; log limpio
+    ⇒ 0 violaciones.
+13. `max_seen_version` devuelve la cota histórica tras updates + vacío ⇒
+    `(0, 0, 0)`.
+14. Idempotencia: segunda `apply_update` tras ff ⇒ `noop` (1 sola
+    `updated` en el historial).
 
 Kill-check: flips de comparação en el monotonic gate + direction de ff +
 orden WAL (attempt antes que result). Suite + ruff + vulture.
