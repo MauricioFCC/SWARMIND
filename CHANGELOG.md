@@ -26,6 +26,11 @@
 - `ruff` 0 · `vulture` 0 · **cobertura 100% del paquete `harness/self_update/` (273 stmts, 0 miss) solo con los 24 tests rápidos** · **FSZ 0 funciones >30 LC** en el módulo nuevo.
 - **Gate del ciclo:** suite completa **7075 passed, 38 skipped, 16 xfailed, 0 failed** (527s; base 7036 + 39 de `test_self_update.py`).
 
+### Propagación al global (Opción A SSOT) + fix de drift
+- **Bug:** el módulo nuevo no viajaba a `~/.config/opencode/harness/` porque `_HARNESS_INCLUDE` es una lista blanca estática (mismo bug del fix precedent `ea092dc0`). Auditoría de los 9 subdirectorios del motor fuera de la lista: `failure_registry` **sí** lo importa un módulo ya propagado (`evolve_loop/failure_distiller.py`) ⇒ **ImportError en runtime del global**; `alpha_mining` lo referencian **3 skills** (contrato SSOT); `run_commands` ya iba vía `_HARNESS_FILES`; `complex_problems`/`federation` son huérfanos (0 consumidores) ⇒ no se propagan (KISS).
+- **Fix:** `self_update` + `failure_registry` + `alpha_mining` añadidos a `_HARNESS_INCLUDE` (~234 KB, solo `.py`) y **2 contratos nuevos** en `test_setup_verification.py`: test explícito de los 3 paquetes + `test_harness_include_sin_drift_de_dependencias` (**auto-detectable**: escanea el código que viaja al global y exige que toda referencia `harness.<paquete>` apunte a un paquete también propagado). Fase RED observada acusando `['failure_registry']`.
+- **Verificación:** sync ejecutado (912 archivos) · provenancia real del import `C:\Users\USUARIO\.config\opencode\harness\evolve_loop\failure_distiller.py` · health-check `SETUP OK` · `ruff` 0.
+
 ## [2026-10-17] Memoria colectiva en 1ª instalación + recuperación de fragments
 
 ### Spec

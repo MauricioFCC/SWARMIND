@@ -189,7 +189,17 @@
 - **Gate 11.21:** suite completa **7075 passed, 38 skipped, 16 xfailed,
   0 failed** (527s; base 7036 + 39 de `test_self_update.py`). Kill-check
   **44/44 = 100%**. Cobertura **100%** del paquete `harness/self_update/`
-  (273 stmts) con los 24 tests rápidos (2.9s). `ruff` 0 · `vulture` 0.- **Pendiente (evals de frontera)**: LLM-as-judge con escape "Unknown" +
+  (273 stmts) con los 24 tests rápidos (2.9s). `ruff` 0 · `vulture` 0.
+- **Propagación 11.21 (fix de drift SSOT):** `_HARNESS_INCLUDE` es lista
+  blanca estática ⇒ el módulo nuevo no viajaba al global (mismo bug del
+  fix precedent `ea092dc0`). Auditoría: `failure_registry` lo importa
+  `evolve_loop/failure_distiller.py` (ya propagado) ⇒ **ImportError real
+  en el global**; `alpha_mining` lo referencian 3 skills. Añadidos
+  `self_update` + `failure_registry` + `alpha_mining` + **2 contratos**
+  (explícito + `test_harness_include_sin_drift_de_dependencias`
+  auto-detectable, RED acusó `['failure_registry']`). Sync 912 archivos,
+  import con provenencia global verificada, `SETUP OK`.
+- **Pendiente (evals de frontera)**: LLM-as-judge con escape "Unknown" +
   scorecards por corrida (Anthropic 2026); ACP lo cubre `packages/acp` de
   OpenCode (el harness Python no necesita implementarlo — validar `opencode
   acp` cuando el binario esté en PATH).

@@ -94,12 +94,22 @@ _REGISTRY_FILE = "skills/skills_registry.yaml"
 _CURATED_PARTS = frozenset({"skills", "agents"})
 
 # Directorios del motor (harness) que se sincronizan al global.
-# Se excluyen datos runtime (db/, tests locales, caches).
+# Criterio: paquetes Python del motor en runtime + sus dependencias
+# directas + los referenciados por skills del cerebro (SSOT). Se excluyen
+# datos runtime (tests locales, caches) y paquetes huerfanos sin
+# consumidor fuera de si mismos (complex_problems, federation).
 _HARNESS_INCLUDE = ["orchestrator", "memory_rag", "tools_sandbox", "model_router",
                     "evolve_loop", "qa", "security", "guardrails", "hooks",
                     "context", "evals", "aifactory", "observability", "parallel",
                     "plugins", "gateway", "db", "benchmarks", "scheduler",
-                    "validation", "reverse_engineering"]
+                    "validation", "reverse_engineering",
+                    # 11.21: motor de auto-actualizacion (nuevo).
+                    "self_update",
+                    # Dependencia de evolve_loop/failure_distiller.py (ya
+                    # propagado): sin esto el global lanza ImportError.
+                    "failure_registry",
+                    # Referenciado por 3 skills del cerebro (contrato SSOT).
+                    "alpha_mining"]
 # Archivos raiz del paquete harness (fix ADR-0042: incluye __init__.py y
 # __main__.py para que el global sea un paquete importable; security_policy.py
 # vive en harness/qa/ y se copia via el directorio qa; scheduler.py paso a ser

@@ -15,6 +15,7 @@ ubicacion global re-instalable en cualquier PC nuevo.
 """
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -99,6 +100,53 @@ def test_harness_include_cubre_context_evals_validation() -> None:
     include = sync_opencode_global._HARNESS_INCLUDE
     for required in ("validation", "context", "evals"):
         assert required in include, f"Falta '{required}' en _HARNESS_INCLUDE"
+
+
+def test_harness_include_cubre_self_update_y_failure_registry() -> None:
+    """Regresion 11.21: self_update, failure_registry y alpha_mining al global.
+
+    ``self_update`` es el motor de auto-actualizacion (ciclo 11.21).
+    ``failure_registry`` lo importa ``evolve_loop/failure_distiller.py`` (ya
+    propagado): omitirlo deja un ImportError en runtime del harness global.
+    ``alpha_mining`` lo referencian 3 skills del cerebro (contrato SSOT).
+    """
+    include = sync_opencode_global._HARNESS_INCLUDE
+    for required in ("self_update", "failure_registry", "alpha_mining"):
+        assert required in include, f"Falta '{required}' en _HARNESS_INCLUDE"
+
+
+def test_harness_include_sin_drift_de_dependencias() -> None:
+    """Ningun paquete del motor importado por codigo propagado queda fuera.
+
+    Contrato auto-detectable (no lista hardcodeada): escanea el codigo que SÍ
+    viaja al global (archivos raiz + ``_HARNESS_INCLUDE`` + paquetes de
+    ``_HARNESS_FILES``) y exige que toda referencia ``harness.<paquete>``
+    apunte a un paquete tambien propagado. Sin esto, el harness global lanza
+    ImportError en runtime por dependencias fantasma (drift silencioso).
+    """
+    src = ROOT / "harness"
+    propagados = set(sync_opencode_global._HARNESS_INCLUDE)
+    for entry in sync_opencode_global._HARNESS_FILES:
+        if (src / entry).is_dir():
+            propagados.add(entry)
+
+    # Codigo que viaja al global: archivos raiz + subpaquetes propagados.
+    fuentes: list[Path] = [p for p in src.glob("*.py") if p.is_file()]
+    for pkg in propagados:
+        fuentes.extend(p for p in (src / pkg).rglob("*.py") if p.is_file())
+
+    patron = re.compile(r"harness\.([a-z_][a-z0-9_]*)")
+    rotos: set[str] = set()
+    for archivo in fuentes:
+        for nombre in patron.findall(archivo.read_text(encoding="utf-8", errors="ignore")):
+            es_paquete = (src / nombre).is_dir() and (src / nombre / "__init__.py").is_file()
+            if es_paquete and nombre not in propagados:
+                rotos.add(nombre)
+
+    assert not rotos, (
+        "Dependencias del motor NO propagadas al global (drift): "
+        f"{sorted(rotos)}. Anadelas a _HARNESS_INCLUDE o excluya el importador."
+    )
 
 
 # ---------------------------------------------------------------------------
