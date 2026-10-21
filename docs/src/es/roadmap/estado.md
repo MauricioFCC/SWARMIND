@@ -5,6 +5,31 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-17)
+
+### Estado 2026-10-17 (Ciclo 11.22 — Optimalidad de memoria: feedback + TTL proactivo + paridad)
+
+- **Diagnóstico con evidencia**: 99.7% del almacenamiento de la memoria central
+  eran caches regenerables (`semantic_cache` 138 MB/5201 fragments +
+  `agent_workspace_logs` 48 MB) y las 13 colecciones de **valor** (información
+  que sostiene las decisiones) sumaban ~0.3 MB, casi todas schema-only.
+- **2 correcciones de diseño por IDP** (no reimplementar):
+  - `SemanticCache.clear_expired()` **ya existía y era proactivo** — la brecha
+    era que **nadie lo invocaba** ⇒ fix: barrido probabilístico en `set()` cada
+    `SWEEP_EVERY_N_SETS=100` inserts (no un `purge_expired()` duplicado).
+  - `dispatch()` no puede puntuar éxito; ya existía el hook post-run
+    `record_skill_outcome(skill_name, success)` ⇒ el seam correcto era ese hook.
+- **Entregables (4 items, 15 contratos)**: `feedback_scorer.py`
+  (`score_outcome` → `skill_effectiveness` + `agent_performance`, DI +
+  degradación suave, cableado backward-compatible en `record_skill_outcome`) ·
+  `memory_parity.py` (`audit_parity` → `ParityReport`, umbral `is_imbalanced`,
+  no lanza con path inexistente) · sección **no fatal** `memory_parity` en
+  `verify_swarmind_setup.py` (sigue `SETUP OK`) · `VOLATILE_MAX_BYTES`
+  **1 GiB → 256 MiB**.
+- **TDD + verificación**: RED observado en cada check; kill-check **5 killed /
+  0 survived**; test end-to-end puebla **AMBAS** colecciones de valor;
+  `ruff` 0, archivos tocados 114 passed / 0 failed.
+
 ## Estado Actual (2026-10-15)
 
 ### Estado 2026-10-15 (Auditoria del acople OpenCode: agentes lanzables, plugin V2, MCP y doctrina global)

@@ -267,6 +267,30 @@ def test_verify_reporta_todos_los_checks(
     assert expected_keys.issubset(results[name].keys()), f"Keys incompletas en {name}"
 
 
+def test_memory_parity_es_no_fatal_en_health_check(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """memory_parity NO falla el exit code aunque detecte desbalance (Item 4).
+
+    Contrato 14: el health-check sigue en SETUP OK (exit 0) si las caches
+    dominan y las colecciones de valor estan vacias; solo avisa (warning).
+    """
+    from harness.memory_rag import memory_parity
+
+    fake = memory_parity.ParityReport(
+        cache_bytes=100_000, value_bytes=10,
+        value_collections_empty=("a", "b", "c"), is_imbalanced=True,
+    )
+    monkeypatch.setattr(memory_parity, "audit_parity", lambda *_a, **_k: fake)
+
+    check = verify_swarmind_setup.check_memory_parity(tmp_path)
+    assert check["fatal"] is False
+    assert check["ok"] is False  # avisa del desbalance
+
+    # _report no debe marcar exit 1 por un check no fatal
+    assert verify_swarmind_setup._report({"memory_parity": check}) == 0
+
+
 # ---------------------------------------------------------------------------
 # 4. Persistencia de env vars (Causa 3 ADR-0042)
 # ---------------------------------------------------------------------------

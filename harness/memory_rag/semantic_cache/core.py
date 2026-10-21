@@ -18,6 +18,7 @@ from .constants import (
     COLLECTION_SEMANTIC_CACHE,
     DEFAULT_SIMILARITY_THRESHOLD,
     DEFAULT_TTL_SECONDS,
+    SWEEP_EVERY_N_SETS,
 )
 from .models import CacheEntry
 from .ops import _SemanticCacheOpsMixin
@@ -64,6 +65,8 @@ class SemanticCache(_SemanticCacheOpsMixin):
         self._threshold = threshold
         self._default_ttl = default_ttl
         self._embedding_fn = embedding_fn or self._default_embedding
+        #: Inserts desde el ultimo barrido proactivo de expiradas (Item 3).
+        self._sets_since_sweep = 0
         self._stats: dict[str, Any] = {
             "hits": 0,
             "misses": 0,
@@ -253,10 +256,33 @@ class SemanticCache(_SemanticCacheOpsMixin):
                 "SemanticCache SET (hash=%s, agent=%s, len=%d chars)",
                 prompt_hash[:8], agent_role, len(response),
             )
+            self._maybe_sweep()
             return True
         except Exception as exc:  # noqa: BLE001
             logger.warning("SemanticCache set failed: %s", exc)
             return False
+
+    def _maybe_sweep(self) -> None:
+        """Barrido proactivo de entradas expiradas (best-effort).
+
+        Cada ``SWEEP_EVERY_N_SETS`` inserts invoca ``clear_expired()`` para
+        acotar la coleccion en disco sin escanear en cada ``set()``. Sin este
+        sweeper el TTL solo se aplicaba en read perezoso y la coleccion crecia
+        sin cota (Item 3). Si ``clear_expired`` lanza, ``set()`` no se rompe
+        (degradacion suave).
+
+        WHERE: ``SemanticCache._maybe_sweep``
+        """
+        self._sets_since_sweep += 1
+        if self._sets_since_sweep < SWEEP_EVERY_N_SETS:
+            return
+        self._sets_since_sweep = 0
+        try:
+            removed = self.clear_expired()
+            if removed:
+                logger.info("SemanticCache auto-sweep: %d expired removed", removed)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("SemanticCache auto-sweep failed: %s", exc)
 
     def get_stats(self) -> dict[str, Any]:
         """Return cache statistics."""

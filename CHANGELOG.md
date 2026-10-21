@@ -2,6 +2,26 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-10-17] Optimalidad de memoria: feedback + TTL proactivo + paridad (ciclo 11.22)
+
+### Spec
+- **`docs/specs/memory-optimality.md`** — `accepted + implemented`. Diagnóstico previo con evidencia: **99.7% del almacenamiento de la memoria central eran caches regenerables** (`semantic_cache` 138 MB / 5201 fragments + `agent_workspace_logs` 48 MB) y las **13 colecciones de valor** (que sostienen las decisiones) sumaban ~0.3 MB, casi todas *schema-only*. 4 items, 15 contratos, TDD adversarial + kill-check.
+
+### Correcciones de diseño por IDP (no reimplementar)
+- **Item 3:** `SemanticCache.clear_expired()` **ya existía y ya era proactivo** (recorría todas las entradas, LanceDB+memory, retornaba count). La brecha real era que **nadie lo invocaba como sweeper** ⇒ la colección crecía sin cota pese al TTL. Fix: barrido **probabilístico** cableado en `set()` (cada `SWEEP_EVERY_N_SETS=100` inserts), no un `purge_expired()` nuevo (habría duplicado).
+- **Item 1:** `dispatch()` **no** puede puntuar éxito (en dispatch aún no se conoce). Ya existía el hook post-run `AgentDispatcher.record_skill_outcome(skill_name, success)` (su docstring lo diseña explícitamente). El seam correcto era **ese hook**, no `dispatch()`.
+
+### Nuevos módulos + acoplamiento aditivo (0 regresión)
+- **`harness/evolve_loop/feedback_scorer.py`** — `score_outcome(store, skill_name, *, success, agent_role, metrics)` escribe en `skill_effectiveness` + `agent_performance` (embeddings deterministas `fallback_embedding`, métricas serializadas a JSON); `run_report` cuenta filas. DI total, **degradación suave** (nunca lanza). Cableado en `record_skill_outcome` (que gana `agent_role` opcional, backward-compatible).
+- **`harness/memory_rag/memory_parity.py`** — `audit_parity(db_path) -> ParityReport` (frozen dataclass) detecta `is_imbalanced` (cache > 4× valor **y** ≥3 colecciones de valor vacías). NO lanza con path inexistente.
+- **`scripts/verify_swarmind_setup.py`** — sección **no fatal** `memory_parity` (⚠️ sin afectar exit code): el health-check sigue en `SETUP OK` aunque haya desbalance.
+- **`semantic_cache`** — constante `SWEEP_EVERY_N_SETS=100` + `_maybe_sweep()` best-effort en `set()`; `VOLATILE_MAX_BYTES` baja de **1 GiB → 256 MiB** (cota efectiva: la cache regenerable no debe dominar el SSOT).
+
+### Tests + gate del ciclo
+- **RED observado** en cada check: `ModuleNotFoundError` (`memory_parity`, `feedback_scorer`, `SWEEP_EVERY_N_SETS`), `ImportError`, y aserciones de atributo. Nuevos: `test_feedback_scorer.py` (8), `test_memory_parity.py` (6) + `TestSemanticCacheAutoSweep` (4) + contrato 14 no-fatal. Test end-to-end que invoca `record_skill_outcome` y afirma escritura en **AMBAS** colecciones de valor.
+- **Kill-check mutante: 5 killed / 0 survived** (feedback `if skill_name`/`if agent_role`→False y degradación→raise; parity `and`→`or`; sweep counter sin incremento).
+- `ruff` 0 · archivos tocados **114 passed, 0 failed** · gate: suite completa (verificado abajo).
+
 ## [2026-10-17] Auto-actualización desde remoto anti-reversión (ciclo 11.21)
 
 ### Spec

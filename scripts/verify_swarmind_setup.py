@@ -235,6 +235,51 @@ def persist_env_vars() -> dict:
     }
 
 
+def check_memory_parity(memory_root: Path | None = None) -> dict:
+    """Seccion NO fatal: paridad caches-vs-valor de la memoria central.
+
+    Item 4 (docs/specs/memory-optimality.md): alerta cuando las caches
+    regenerables dominan el almacenamiento mientras las colecciones de valor
+    (informacion que sostiene las decisiones) estan vacias. Es INFORMATIVA:
+    nunca hace fallar el exit code del health-check (``fatal=False``).
+
+    Args:
+        memory_root: Raiz de memoria (default: env/Path.home()).
+
+    Returns:
+        Dict con ok, why, where y ``fatal=False``.
+    """
+    root = memory_root or _MEMORY_ROOT
+    db_dir = root / "data" / "lancedb"
+    try:
+        from harness.memory_rag.memory_parity import audit_parity
+    except ImportError as exc:
+        # Degradacion suave en PC fresco: sin harness importable no hay paridad.
+        logger.debug("memory_parity no disponible (harness no importable): %s", exc)
+        return {
+            "ok": True,
+            "why": "Paridad de memoria no disponible (harness no importable).",
+            "where": str(db_dir),
+            "fatal": False,
+        }
+    report = audit_parity(db_dir)
+    if report.is_imbalanced:
+        why = (
+            f"DESBALANCE caches-vs-valor: cache={report.cache_bytes}B domina >4x "
+            f"valor={report.value_bytes}B; {len(report.value_collections_empty)} "
+            "colecciones de valor vacias. WHY: cache regenerable no aporta recall "
+            "(Item 3). ACCION: poblar colecciones de valor / barrer caches "
+            "(SemanticCache.clear_expired)."
+        )
+        return {"ok": False, "why": why, "where": str(db_dir), "fatal": False}
+    return {
+        "ok": True,
+        "why": f"Paridad OK: cache={report.cache_bytes}B vs valor={report.value_bytes}B.",
+        "where": str(db_dir),
+        "fatal": False,
+    }
+
+
 def run_checks(global_dir: Path | None = None,
                memory_root: Path | None = None) -> dict:
     """Ejecuta todos los health-checks del setup.
@@ -249,6 +294,7 @@ def run_checks(global_dir: Path | None = None,
     return {
         "harness_global": check_harness_global(global_dir),
         "memory_central": check_memory_central(memory_root),
+        "memory_parity": check_memory_parity(memory_root),
         "env_vars": check_env_vars(),
     }
 
@@ -267,7 +313,14 @@ def _report(results: dict) -> int:
     logger.info("=" * 60)
     exit_code = 0
     for name, check in results.items():
-        status = "✅" if check["ok"] else "❌"
+        fatal = check.get("fatal", True)
+        if check["ok"]:
+            status = "✅"
+        elif fatal:
+            status = "❌"
+        else:
+            # Check no fatal (p. ej. memory_parity): avisa sin fallar el setup.
+            status = "⚠️"
         logger.info("%s %-15s WHAT: %s", status, name, check["why"])
         logger.info("   WHERE: %s", check["where"])
         if "env" in check:
@@ -276,7 +329,7 @@ def _report(results: dict) -> int:
         if check.get("set_vars"):
             for k, v in check["set_vars"].items():
                 logger.info("   ➕ persistido: %s = %s", k, v)
-        if not check["ok"]:
+        if not check["ok"] and fatal:
             exit_code = 1
     logger.info("=" * 60)
     if exit_code == 0:

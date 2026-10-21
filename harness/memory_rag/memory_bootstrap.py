@@ -41,7 +41,13 @@ VOLATILE_COLLECTIONS: frozenset[str] = frozenset(
 )
 
 #: Tope por colección volátil (1 GB). Excedido => se elimina y regenera.
-VOLATILE_MAX_BYTES = 1_073_741_824
+#: Tope por coleccion volatil (256 MiB). Excedido => se elimina y regenera.
+#: WHY cota efectiva (Item 3): la cache regenerable no debe dominar el SSOT.
+#: En 2026-10 semantic_cache alcanzo 138 MB (5201 fragments) mientras las 13
+#: colecciones de VALOR sumaban ~0.3 MB: 99.7% del almacenamiento era cache.
+#: Bajar la cota de 1 GiB a 256 MiB acota ese dominio sin perder recall
+#: (la cache se regenera; el valor es lo persiste).
+VOLATILE_MAX_BYTES = 268_435_456
 
 _BYTES_PER_MB = 1_048_576
 

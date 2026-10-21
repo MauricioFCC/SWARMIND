@@ -216,10 +216,15 @@ class TestPruneVolatile:
 
 
 class TestCapConstante:
-    """La política de capes es la del spec (1 GB por colección volátil)."""
+    """La política de cap es la del spec (256 MiB por colección volátil).
 
-    def test_cap_es_1gb(self) -> None:
-        assert VOLATILE_MAX_BYTES == 1_073_741_824
+    Bajado de 1 GiB en el Item 3 (docs/specs/memory-optimality.md): la cache
+    regenerable no debe dominar el SSOT (semantic_cache=138MB vs 0.3MB de
+    conocimiento de valor).
+    """
+
+    def test_cap_es_256mib(self) -> None:
+        assert VOLATILE_MAX_BYTES == 268_435_456
         assert VOLATILE_COLLECTIONS == frozenset(
             {"semantic_cache", "agent_workspace_logs"}
         )

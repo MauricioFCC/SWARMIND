@@ -518,3 +518,53 @@ class TestSemanticCacheInit:
         cache = SemanticCache(embedding_fn=custom_fn)
         result = cache._embedding_fn("test")
         assert np.all(result == 1.0)
+
+
+class TestSemanticCacheAutoSweep:
+    """Barrido probabilístico de entradas expiradas en set() (Item 3).
+
+    ``clear_expired()`` ya es proactivo pero nadie lo invocaba: la coleccion
+    ``semantic_cache`` en disco crecia sin cota (138 MB) pese al TTL. El fix
+    cablea ``clear_expired()`` cada ``SWEEP_EVERY_N_SETS`` inserts.
+    """
+
+    def test_set_triggers_sweep_at_threshold(self, semantic_cache):
+        """Al llegar al umbral, set() invoca clear_expired() (barrido)."""
+        from harness.memory_rag.semantic_cache import SWEEP_EVERY_N_SETS
+
+        with patch.object(
+            semantic_cache, "clear_expired", return_value=0
+        ) as sweeper:
+            semantic_cache._sets_since_sweep = SWEEP_EVERY_N_SETS - 1
+            semantic_cache.set("prompt umbral", "respuesta")
+            sweeper.assert_called_once()
+        assert semantic_cache._sets_since_sweep == 0  # contador reseteado
+
+    def test_set_does_not_sweep_before_threshold(self, semantic_cache):
+        """Por debajo del umbral NO se barre (no escanea en cada insert)."""
+        from harness.memory_rag.semantic_cache import SWEEP_EVERY_N_SETS
+
+        with patch.object(
+            semantic_cache, "clear_expired", return_value=0
+        ) as sweeper:
+            semantic_cache._sets_since_sweep = 0
+            for i in range(SWEEP_EVERY_N_SETS - 2):
+                semantic_cache.set(f"prompt {i}", "respuesta")
+            sweeper.assert_not_called()
+
+    def test_sweep_failure_does_not_break_set(self, semantic_cache):
+        """Si clear_expired lanza, set() sigue devolviendo True (best-effort)."""
+        from harness.memory_rag.semantic_cache import SWEEP_EVERY_N_SETS
+
+        with patch.object(
+            semantic_cache, "clear_expired", side_effect=RuntimeError("boom")
+        ):
+            semantic_cache._sets_since_sweep = SWEEP_EVERY_N_SETS - 1
+            result = semantic_cache.set("prompt resiliente", "respuesta")
+        assert result is True
+
+    def test_clear_expired_idempotent(self, semantic_cache):
+        """Tras un barrido, la segunda llamada retorna 0 (idempotente)."""
+        semantic_cache.set("prompt vivo", "respuesta")
+        semantic_cache.clear_expired()
+        assert semantic_cache.clear_expired() == 0
