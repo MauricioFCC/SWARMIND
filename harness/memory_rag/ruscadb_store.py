@@ -21,6 +21,7 @@ from .ruscadb import (
     create_table,
     execute,
     insert_record,
+    list_tables,
 )
 from .ruscadb import (
     open as rdb_open,
@@ -55,23 +56,18 @@ class RuscaDBStore:
                 ])
                 self._collections.add(name)
             except RuscadbError as exc:
-                logger.warning("Could not create collection '%s': %s", name, exc)
+                logger.debug("Could not create collection '%s': %s", name, exc)
+            self._collections.add(name)
 
     def list_collections(self) -> list[str]:
         try:
-            rows = execute(self._handle, "SHOW TABLES")
-        except RuscadbError:
-            try:
-                rows = execute(self._handle, "SELECT name FROM sqlite_master WHERE type='table'")
-            except RuscadbError:
+            names = list_tables(self._handle)
+            if names:
+                self._collections = set(names)
                 return sorted(self._collections)
-        names = []
-        for r in (json.loads(rows) if isinstance(rows, str) else rows):
-            if isinstance(r, dict):
-                for v in r.values():
-                    if isinstance(v, str):
-                        names.append(v)
-        return sorted(set(names) | self._collections)
+        except RuscadbError:
+            pass
+        return sorted(self._collections)
 
     def create_collection(self, name: str, schema: Any = None) -> None:
         if name in self.list_collections():
@@ -84,7 +80,8 @@ class RuscaDBStore:
                 {"name": "created_at", "type": "Text"},
             ])
         except RuscadbError as exc:
-            logger.warning("create_collection '%s' failed: %s", name, exc)
+            logger.debug("create_collection '%s' failed: %s", name, exc)
+        self._collections.add(name)
         self._collections.add(name)
 
     def insert(self, collection: str, vectors: Any, metadata: list[dict[str, Any]], now: str | None = None) -> list[str]:

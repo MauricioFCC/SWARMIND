@@ -152,6 +152,8 @@ def load_library(path: str | os.PathLike[str] | None = None) -> ctypes.CDLL:
     library.ruscadb_create_table.restype = c_int
     library.ruscadb_insert_record.argtypes = [c_void_p, c_char_p, c_char_p]
     library.ruscadb_insert_record.restype = c_int
+    library.ruscadb_list_tables.argtypes = [c_void_p, ctypes.c_char_p, c_size_t]
+    library.ruscadb_list_tables.restype = c_int
     library.ruscadb_last_error.argtypes = [c_char_p, c_size_t]
     library.ruscadb_last_error.restype = c_size_t
     return library
@@ -324,6 +326,19 @@ def insert_record(handle, table, record):
     payload = _json.dumps(record, ensure_ascii=False).encode('utf-8')
     table_b = table.encode('utf-8')
     _check(_lib().ruscadb_insert_record(handle, table_b, ctypes.c_char_p(payload + b'\x00')))
+
+def list_tables(handle):
+    import json as _json
+    buf_size = 65536
+    buf = ctypes.create_string_buffer(buf_size)
+    rc = _lib().ruscadb_list_tables(handle, buf, c_size_t(buf_size))
+    _check(rc)
+    text = buf.value.decode('utf-8', errors='replace')
+    try:
+        return _json.loads(text)
+    except _json.JSONDecodeError:
+        return [t for t in text.split(',') if t]
+
 
 
 __all__ = [

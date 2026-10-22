@@ -165,3 +165,10 @@ scripts/deploy_local.json
 # Registro POR-MAQUINA en <repo>/.swarmind/update_log.jsonl: lo crea el paso 7 del
 # setup o scripts/self_update.py; el audit_log deriva de el la cota max_seen local.
 .swarmind/
+
+# RuscaDB runtime artifacts
+ruscadb.db
+*.wal
+*.manifest.json
+*.lock
+*.cache.json
