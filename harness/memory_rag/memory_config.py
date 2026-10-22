@@ -117,6 +117,7 @@ def _memory_root_from_config() -> str | None:
 
 class MemoryBackend(str, Enum):
     LANCEDB = "lancedb"          # LanceDB (default, recomendado)
+    RUSCADB = "ruscadb"          # RuscaDB (multi-modelo + vector, Rust)
     MEMORY = "memory"            # In-memory (sin persistencia, tests)
 
 
@@ -148,6 +149,7 @@ class MemoryConfig:
 
     # Rutas
     lancedb_path: str = ""
+    ruscadb_path: str = ""
 
     # Embeddings
     embedding_dim: int = 384
@@ -214,6 +216,7 @@ class MemoryConfig:
         return cls(
             backend=MemoryBackend(os.environ.get("MEMORY_BACKEND", "lancedb")),
             lancedb_path=os.environ.get(_LANCEDB_PATH_ENV, ""),
+            ruscadb_path=os.environ.get("RUSCADB_PATH", ""),
             embedding_dim=int(os.environ.get("EMBEDDING_DIM", "384")),
             allow_fallback=os.environ.get("MEMORY_FALLBACK", "false").lower() == "true",
             telemetry_level=TelemetryLevel(
