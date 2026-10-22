@@ -164,7 +164,7 @@ def mem_store():
     with patch.object(
         LanceVectorStore, "_try_import_lancedb", return_value=None
     ):
-        store = LanceVectorStore(db_path="/tmp/test_mem", allow_fallback=True)
+        store = LanceVectorStore(db_path="/tmp/test_mem", allow_fallback=True, backend="lancedb")
         yield store
 
 
@@ -233,7 +233,7 @@ def lancedb_store(mock_lancedb):
         patch("harness.memory_rag.lance_vector_store.Path.mkdir"),
     ]
     with patches[0], patches[1]:
-        store = LanceVectorStore(db_path="/fake/path", allow_fallback=False)
+        store = LanceVectorStore(db_path="/fake/path", allow_fallback=False, backend="lancedb")
         yield store
 
 
@@ -279,5 +279,5 @@ def lancedb_store_with_data(mock_lancedb):
         patch("harness.memory_rag.lance_vector_store.Path.mkdir"),
     ]
     with patches[0], patches[1]:
-        store = LanceVectorStore(db_path="/fake/path", allow_fallback=False)
+        store = LanceVectorStore(db_path="/fake/path", allow_fallback=False, backend="lancedb")
         yield store
