@@ -292,3 +292,10 @@ skills:
     version: 1.0.0
     project_agnostic: true
     sha256: 6a952ad03d481fb66ef4ca1b33ff0703c92fa0c821a9de0e66e310ef7882837d
+
+  - name: cert-master
+    domain: education
+    description: "Usar cuando el usuario quiere convertir material de estudio (PDFs, programas, transcripciones) en apuntes para Obsidian, Notion o Markdown, con quizzes y mapas de contenido. Alcance: notas de estudio, resumenes, preparacion de examenes, certificaciones y oposiciones; educacion y estudio. | UPG.NAM.FRS (reglas en base_principles.md)"
+    version: 1.0.0
+    project_agnostic: true
+    sha256: 661b41f399e0eb7e6acca08bbe47415db0425c9e86b4534300810e9b7612efa4
