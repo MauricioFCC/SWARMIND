@@ -148,6 +148,6 @@ def test_self_improver_recursive_round() -> None:
         t.set('system_prompt', t.get('system_prompt', '') + ' [v]')
         return t
     si = SelfImprover()
-    res = si.run_recursive_round('skill1', base, exec_fn, proposer_fn=prop, mode='parallel', k=1)
+    res = si.run_recursive_round('skill1', base, exec_fn, proposer_fn=prop, mode='parallel', k=1, base_dir=tempfile.mkdtemp())
     assert res.ok is True
     assert si.recursive_harness is not None
