@@ -172,3 +172,6 @@ ruscadb.db
 *.manifest.json
 *.lock
 *.cache.json
+
+# Recursion context scratchpad
+ctx/
