@@ -22,6 +22,7 @@ from harness.evolve_loop.library_drift import (
 )
 from harness.evolve_loop.procedural_memory import ProceduralMemory, ProceduralSkill
 from harness.evolve_loop.prompt_evolver import PromptEvolver
+from harness.evolve_loop.recursive_harness import RecursiveHarness
 from harness.evolve_loop.self_improver import ImprovementRound, SelfImprover
 from harness.evolve_loop.skill_generator import SkillGenerator
 from harness.evolve_loop.skill_utility import SkillUtility, SkillUtilityTracker
@@ -47,6 +48,7 @@ __all__ = [
     "ProceduralMemory",
     "ProceduralSkill",
     "PromptEvolver",
+    "RecursiveHarness",
     "SeedSource",
     "SelfImprover",
     "SkillGenerator",

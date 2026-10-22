@@ -589,6 +589,8 @@ Objetivo: 80%    (proximo hito)
 
 - **2026-10-22**: MCP interconnect (11.23): circuit breaker + health/retry en MCPManager, puente in-process inter-proyecto (project_bridge), web frontier (exa/tavily), seguridad (security_scan), 26 servers. 7 tests nuevos.
 
+- **2026-10-22**: Integracion Harness2 (11.24): recursive harnessing (Propose-Probe-Compose) en `harness/harness2/` + `RecursiveHarness` en evolve_loop. 9 tests.
+
 ---
 
 > *Este roadmap se actualiza tras cada hito significativo. Proximas revisiones: semanal.*

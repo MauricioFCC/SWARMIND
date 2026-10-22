@@ -2,6 +2,13 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-10-22] Integracion Harness2 (Google Research): recursive harnessing (ciclo 11.24)
+
+### Resumen
+- **`harness/harness2/`** (NUEVO): paquete con 8 componentes editables, `HarnessTree`, validacion, contexto/evidencia, proposer, probe, library, improvement harness (lecciones persistentes), recursion paralela/secuencial (Propose-Probe-Compose).
+- **`harness/evolve_loop/recursive_harness.py`**: `RecursiveHarness` envuelve el paquete y se exporta.
+- **Tests:** 9 (test_harness2.py). Ruff 0.
+
 ## [2026-10-22] MCP interconnect: confiabilidad + inter-proyecto + web frontier + seguridad (ciclo 11.23)
 
 ### Resumen
