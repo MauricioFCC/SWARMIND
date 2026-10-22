@@ -509,10 +509,13 @@ class AgentDispatcher:
         if self._drift_manager is not None:
             self._drift_manager.record_outcome(skill_name, success=success, used=True)
         # Feedback en colecciones de valor (best-effort; jamas lanza).
-        score_outcome(
-            self._vector_store, skill_name,
-            success=success, agent_role=agent_role,
-        )
+        try:
+            score_outcome(
+                self._vector_store, skill_name,
+                success=success, agent_role=agent_role,
+            )
+        except Exception:  # noqa: BLE001, S110
+            pass
 
     def _record_dispatch_telemetry(self, task_description: str, skill_context: str) -> None:
         """Registra el uso de tokens del dispatch (FR-2, best-effort).

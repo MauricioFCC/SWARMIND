@@ -106,8 +106,22 @@ def test_proposer_error() -> None:
         p.call('m', {}, 'l')
 
 
+def test_mcp_manager_wired() -> None:
+    import tempfile
+    from pathlib import Path
+
+    from harness.tools_sandbox.mcp_manager import MCPManager
+    d = Path(tempfile.mkdtemp())
+    m = MCPManager.wired(base_dir=d)
+    assert 'project_bridge' in m.get_connected_servers()
+    assert m.execute('project_list', {}).success is True
+
+
 def test_recursive_harness_integration() -> None:
+    import tempfile
+
     from harness.evolve_loop.recursive_harness import RecursiveHarness
+    from harness.harness2 import HarnessTree
     base = HarnessTree(components={'system_prompt': 'base'})
     def exec_fn(tid, h):
         return {'success': True, 'output': 'ok'}
@@ -120,3 +134,20 @@ def test_recursive_harness_integration() -> None:
     assert res.ok is True
     rh.adopt('adopted', base, lesson='adopted lesson')
     assert 'adopted lesson' in rh.guidance()
+
+
+def test_self_improver_recursive_round() -> None:
+
+    from harness.evolve_loop.self_improver import SelfImprover
+    from harness.harness2 import HarnessTree
+    base = HarnessTree(components={'system_prompt': 'base'})
+    def exec_fn(tid, h):
+        return {'success': True, 'output': 'ok'}
+    def prop(mission, root, label):
+        t = HarnessTree.from_dict(dict(root))
+        t.set('system_prompt', t.get('system_prompt', '') + ' [v]')
+        return t
+    si = SelfImprover()
+    res = si.run_recursive_round('skill1', base, exec_fn, proposer_fn=prop, mode='parallel', k=1)
+    assert res.ok is True
+    assert si.recursive_harness is not None

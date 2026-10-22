@@ -645,3 +645,19 @@ class MCPManager:
         for name in list(self._servers.keys()):
             findings.extend(self.security_scan_server(name))
         return findings
+
+    @classmethod
+    def wired(cls, config_path: Any = None, base_dir: Any = None) -> MCPManager:
+        """Factory: manager cargado + bridge inter-proyecto cableado."""
+        m = cls()
+        if config_path is not None:
+            try:
+                m.load_servers(str(config_path))
+            except Exception:  # noqa: BLE001, S110
+                pass
+        try:
+            from .mcp_project_bridge import register_project_bridge
+            register_project_bridge(m, base_dir=base_dir)
+        except Exception:  # noqa: BLE001, S110
+            pass
+        return m
