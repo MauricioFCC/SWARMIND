@@ -190,6 +190,52 @@ class RuscaDBStore:
                 pass
         return res[:top_k]
 
+    def execute(self, sql: str) -> Any:
+        try:
+            return execute(self._handle, sql)
+        except RuscadbError as exc:
+            logger.warning('execute failed: %s', exc)
+            return None
+
+    def full_text_search(self, collection: str, query: str, top_k: int = 10) -> list[dict[str, Any]]:
+        try:
+            rows = execute(self._handle, "SELECT * FROM " + collection + " WHERE MATCH(title, '" + query.replace(chr(39), chr(39)+chr(39)) + "')")
+        except RuscadbError:
+            try:
+                rows = execute(self._handle, "SELECT * FROM " + collection + " WHERE MATCH(content, '" + query.replace(chr(39), chr(39)+chr(39)) + "')")
+            except RuscadbError as exc:
+                logger.warning('full_text_search failed: %s', exc)
+                return []
+        parsed = json.loads(rows) if isinstance(rows, str) else rows
+        out = []
+        for r in (parsed or []):
+            if not isinstance(r, dict):
+                continue
+            meta = self._unwrap_scalar(r.get('metadata'))
+            if isinstance(meta, str):
+                try:
+                    meta = json.loads(meta)
+                except json.JSONDecodeError:
+                    meta = {'raw': meta}
+            rid = self._unwrap_scalar(r.get('id'))
+            out.append({'id': rid, 'metadata': meta, 'score': 0.0})
+        return out[:top_k]
+
+    def graph_traverse(self, collection: str, depth: int = 2) -> list[dict[str, Any]]:
+        try:
+            rows = execute(self._handle, "SELECT * FROM " + collection + " TRAVERSE edges DEPTH " + str(depth))
+        except RuscadbError as exc:
+            logger.warning('graph_traverse failed: %s', exc)
+            return []
+        parsed = json.loads(rows) if isinstance(rows, str) else rows
+        out = []
+        for r in (parsed or []):
+            if not isinstance(r, dict):
+                continue
+            rid = self._unwrap_scalar(r.get('id'))
+            out.append({'id': rid, 'raw': r})
+        return out
+
     def _keyword_score(self, text: str, query: str) -> float:
         if not text or not query:
             return 0.0
