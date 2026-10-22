@@ -34,7 +34,7 @@ from harness.memory_rag.lance_vector_store import (
     LanceVectorStore,
     VectorStoreError,
 )
-from harness.memory_rag.memory_config import MemoryConfig
+from harness.memory_rag.memory_config import MemoryBackend, MemoryConfig
 
 # ===========================================================================
 # TESTS — Errores y hardening
@@ -48,7 +48,7 @@ class TestErrorHandling:
         """El mensaje de ImportError es claro y descriptivo."""
         with patch.object(LanceVectorStore, "_try_import_lancedb", return_value=None):  # noqa: SIM117
             with pytest.raises(ImportError) as excinfo:
-                LanceVectorStore(db_path="/tmp/x", allow_fallback=False)
+                LanceVectorStore(db_path="/tmp/x", allow_fallback=False, backend="lancedb")
         msg = str(excinfo.value)
         assert "LanceDB no esta instalado" in msg
         assert "pip install lancedb" in msg
@@ -67,7 +67,7 @@ class TestErrorHandling:
             patch("harness.memory_rag.lance_vector_store.Path.mkdir"),
         ]
         with patches[0], patches[1], pytest.raises(RuntimeError) as excinfo:
-            LanceVectorStore(db_path="/custom/path", allow_fallback=False)
+            LanceVectorStore(db_path="/custom/path", allow_fallback=False, backend="lancedb")
         msg = str(excinfo.value)
         assert "/custom/path" in msg
         assert "access denied" in msg
@@ -107,6 +107,7 @@ class TestErrorHandling:
     def test_from_config_with_config(self):
         """from_config con MemoryConfig explícito."""
         cfg = MemoryConfig(
+            backend=MemoryBackend.LANCEDB,
             lancedb_path="/custom/lancedb",
             allow_fallback=True,
         )

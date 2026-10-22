@@ -113,8 +113,8 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 - **deepseek-harness patterns — plugin lifecycle + session replay**: `harness/plugins/registry.py` extends `PluginBase` with `on_load()`/`on_unload()`/`events` (no-op defaults), `ToolRegistry` accepts an optional `event_bus` (DI) and auto-subscribes plugins to `on_{event}` handlers; `load_all()`/`unload_all()` are idempotent. `harness/observability/session_replay.py` provides `SessionReplay` to replay recorded sessions (Markdown/JSON export) with `SessionNotFoundError`. Demo: `harness/plugins/tools/example_tool.py` (`GreeterTool`).
 
 ### Memory & RAG
-- Central portable memory with LanceDB vector store (`harness/memory_rag/lance_vector_store.py`), semantic cache, SQLite-vec adapter (edge/offline backend), federated search, context window management, and `shapley_flow` optimization.
-- **Hybrid RAG (RRF)** (`harness/memory_rag/hybrid_retriever.py`): `HybridRetriever` fuses dense vector (LanceDB embeddings) and sparse BM25 (SQLite FTS5) rankings with **Reciprocal Rank Fusion** (k=60) — documents present in both rankings rank higher; DI over `FTSSearch` + `LanceVectorStore`.
+- Central portable memory with RuscaDB multi-model store (LanceDB legacy, opt-in) (`harness/memory_rag/lance_vector_store.py`), semantic cache, SQLite-vec adapter (edge/offline backend), federated search, context window management, and `shapley_flow` optimization.
+- **Hybrid RAG (RRF)** (`harness/memory_rag/hybrid_retriever.py`): `HybridRetriever` fuses dense vector (RuscaDB embeddings) and sparse BM25 (SQLite FTS5) rankings with **Reciprocal Rank Fusion** (k=60) — documents present in both rankings rank higher; DI over `FTSSearch` + `LanceVectorStore`.
 - **Corrective RAG (CRAG)** (`harness/memory_rag/corrective_retriever.py`): `CorrectiveRetriever` validates retrieval quality *before* generation (arXiv:2401.15884) — if poor, applies query rewrite or falls back to an alternative source, reporting the `corrective_action` taken (`none`/`rewrite`/`fallback`).
 - `AgentKPITracker`, compression strategies, context assembler, token budget managers, and skill loader.
 

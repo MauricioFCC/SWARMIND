@@ -61,7 +61,7 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin):
             backend = _os.environ.get('VECTOR_BACKEND')
         if backend is None and config is not None:
             backend = getattr(config, 'vector_backend', None)
-        backend = (backend or 'lancedb').lower()
+        backend = (backend or 'ruscadb').lower()
         self._backend = backend
         if backend == 'ruscadb':
             try:

@@ -145,7 +145,7 @@ class MemoryConfig:
         kpi_collections: Conjunto de colecciones KPI activas.
         auto_create_collections: Crear colecciones automáticamente al iniciar.
     """
-    backend: MemoryBackend = MemoryBackend.LANCEDB
+    backend: MemoryBackend = MemoryBackend.RUSCADB
 
     # Rutas
     lancedb_path: str = ""
@@ -214,7 +214,7 @@ class MemoryConfig:
     def from_env(cls) -> MemoryConfig:
         """Carga configuración desde variables de entorno."""
         return cls(
-            backend=MemoryBackend(os.environ.get("MEMORY_BACKEND", "lancedb")),
+            backend=MemoryBackend(os.environ.get("MEMORY_BACKEND", "ruscadb")),
             lancedb_path=os.environ.get(_LANCEDB_PATH_ENV, ""),
             ruscadb_path=os.environ.get("RUSCADB_PATH", ""),
             embedding_dim=int(os.environ.get("EMBEDDING_DIM", "384")),

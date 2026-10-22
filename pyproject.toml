@@ -38,7 +38,6 @@ classifiers = [
 dependencies = [
     "firecrawl-anydoc>=0.1.9",
     "hypothesis>=6.167.1",
-    "lancedb>=0.38.0",
     "numpy>=2.5.3",
     "pytest-asyncio>=1.4.0",
     "pyyaml>=6.0",
@@ -48,6 +47,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+lancedb = ["lancedb>=0.38.0"]
 dev = [
     "pytest>=8",
     "pytest-cov>=5",
