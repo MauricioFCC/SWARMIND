@@ -154,6 +154,8 @@ def load_library(path: str | os.PathLike[str] | None = None) -> ctypes.CDLL:
     library.ruscadb_insert_record.restype = c_int
     library.ruscadb_list_tables.argtypes = [c_void_p, ctypes.c_char_p, c_size_t]
     library.ruscadb_list_tables.restype = c_int
+    library.ruscadb_last_inserted_id.argtypes = [ctypes.c_char_p, c_size_t]
+    library.ruscadb_last_inserted_id.restype = c_size_t
     library.ruscadb_last_error.argtypes = [c_char_p, c_size_t]
     library.ruscadb_last_error.restype = c_size_t
     return library
@@ -338,6 +340,16 @@ def list_tables(handle):
         return _json.loads(text)
     except _json.JSONDecodeError:
         return [t for t in text.split(',') if t]
+
+
+def last_inserted_id() -> str:
+    """Devuelve el ULID del ultimo registro insertado en este hilo."""
+    buf_size = 64
+    buf = ctypes.create_string_buffer(buf_size)
+    length = int(_lib().ruscadb_last_inserted_id(buf, c_size_t(buf_size)))
+    if length <= 0:
+        return ''
+    return buf.value.decode('utf-8', errors='replace')
 
 
 

@@ -21,6 +21,7 @@ from .ruscadb import (
     create_table,
     execute,
     insert_record,
+    last_inserted_id,
     list_tables,
 )
 from .ruscadb import (
@@ -103,6 +104,11 @@ class RuscaDBStore:
             }
             try:
                 insert_record(self._handle, collection, rec)
+                rid_rusca = last_inserted_id()
+                if rid_rusca:
+                    meta_with_rid = dict(metadata[i] if i < len(metadata) else {})
+                    meta_with_rid["_rid"] = rid_rusca
+                    rec["scalars"]["metadata"] = json.dumps(meta_with_rid)
             except RuscadbError as exc:
                 logger.warning("insert failed: %s", exc)
         try:
