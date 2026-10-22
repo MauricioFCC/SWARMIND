@@ -27,7 +27,7 @@ class Proposer:
     call_fn: Callable[[str, Any, str], Any]
     max_attempts: int = 2
 
-    def call(self, mission: str, root: Any, label: str, *, harvest: str = "", max_attempts: int | None = None) -> Any:
+    def call(self, mission: str, root: Any, label: str, *, max_attempts: int | None = None) -> Any:
         attempts = max_attempts or self.max_attempts
         last_exc: Exception | None = None
         for i in range(1, attempts + 1):

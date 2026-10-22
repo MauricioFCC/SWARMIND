@@ -14,8 +14,6 @@ def build(
     task_id: str,
     rollouts: Sequence[RunView],
     *,
-    harness_dir: Path | None = None,
-    library_dir: Path | None = None,
     pool: Sequence[tuple[str, Path, RunView | None]] | None = None,
     decisions: dict[str, str] | None = None,
 ) -> HarnessTree:
