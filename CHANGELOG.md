@@ -2,6 +2,14 @@
 
 > Documento de trazabilidad de cambios.
 
+## [2026-10-22] MCP interconnect: confiabilidad + inter-proyecto + web frontier + seguridad (ciclo 11.23)
+
+### Resumen
+- **`mcp_manager`**: circuit breaker por servidor (closed/open/half_open), `health_check`, `reconnect`, `execute_with_retry`, `record_success`/`record_failure`, `security_scan`/`security_scan_server`, flag `strict_security`. `execute` y `connect_all` integrados.
+- **`mcp_project_bridge`** (NUEVO): `ProjectRegistry` + `InProcessMCPClient` + `register_project_bridge`. Expone tools MCP `project_list`, `project_status`, `knowledge_put`, `knowledge_get`, `knowledge_search` sobre `.opencode/federated/*.json`.
+- **Catalogo**: +exa, +tavily, +project_bridge (26 servers). Keywords web search / inter-proyecto, categorias `web` e `interproject`.
+- **Tests**: 7 nuevos (bridge) + conteo registry 23->26. Ruff 0.
+
 ## [2026-10-17] Optimalidad de memoria: feedback + TTL proactivo + paridad (ciclo 11.22)
 
 ### Spec

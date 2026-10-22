@@ -587,6 +587,8 @@ Objetivo: 80%    (proximo hito)
 - **2026-06**: Lazy loading PEP 562 (72x mas rapido). 6 nuevas tecnicas (WFP, PBT, CEN, BTR, AGR, SVE).
 - **2026-05**: Fundacion del sistema con agentes base, memoria federada, skill router, estandares automaticos.
 
+- **2026-10-22**: MCP interconnect (11.23): circuit breaker + health/retry en MCPManager, puente in-process inter-proyecto (project_bridge), web frontier (exa/tavily), seguridad (security_scan), 26 servers. 7 tests nuevos.
+
 ---
 
 > *Este roadmap se actualiza tras cada hito significativo. Proximas revisiones: semanal.*

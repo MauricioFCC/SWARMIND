@@ -89,6 +89,14 @@ TASK_SERVER_KEYWORDS: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
         ("memoria persistente", "grafo de conocimiento"),
         ("memory",),
     ),
+    (
+        ("busqueda web", "web search", "investigar", "research", "buscar en la web", "fuentes"),
+        ("fetch", "firecrawl", "exa", "tavily"),
+    ),
+    (
+        ("proyecto", "inter-proyecto", "federado", "compartir conocimiento", "project bridge"),
+        ("project_bridge",),
+    ),
 )
 
 
@@ -150,7 +158,7 @@ def servers_for_task(task: str) -> tuple[str, ...]:
 CATEGORIES: dict[str, tuple[str, ...]] = {
     "reverse-engineering": ("rea", "rc_devtools", "ghidra_mcp", "radare2"),
     "browser": ("playwright", "chrome_devtools"),
-    "web": ("fetch", "firecrawl"),
+    "web": ("fetch", "firecrawl", "exa", "tavily"),
     "data": ("postgres", "supabase"),
     "vcs": ("github", "git"),
     "devops": ("kubernetes",),
@@ -159,6 +167,7 @@ CATEGORIES: dict[str, tuple[str, ...]] = {
     "reasoning": ("sequentialthinking",),
     "utility": ("time", "memory"),
     "code": ("serena",),
+    "interproject": ("project_bridge",),
 }
 
 #: Skill -> servers MCP que esa skill aprovecha (cableado skill <-> herramienta).
@@ -171,10 +180,10 @@ SKILL_TO_TOOLS: dict[str, tuple[str, ...]] = {
     "data-science": ("postgres", "supabase"),
     "quant-trading": ("postgres", "supabase"),
     "alpha-research": ("postgres", "supabase"),
-    "science-doc": ("context7", "fetch", "firecrawl"),
-    "legal-doc": ("context7", "fetch"),
-    "ads-optimizer": ("firecrawl", "playwright"),
-    "mcp-toolkit": ("fetch", "time", "sequentialthinking", "context7"),
+    "science-doc": ("context7", "fetch", "firecrawl", "exa", "tavily"),
+    "legal-doc": ("context7", "fetch", "exa"),
+    "ads-optimizer": ("firecrawl", "playwright", "exa"),
+    "mcp-toolkit": ("fetch", "time", "sequentialthinking", "context7", "project_bridge"),
 }
 
 

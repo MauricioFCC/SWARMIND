@@ -658,6 +658,61 @@ servers:
 # ---------------------------------------------------------------------------
 # Organizacion: cada herramienta en su categoria (espejo de mcp_catalog.CATEGORIES).
 # ---------------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
+  # 20. exa - busqueda web semantica para agentes (Exa).
+  #     Fuente: https://github.com/exa-labs/exa-mcp-server
+  #     Runtime: Node (npx). Env: EXA_API_KEY.
+  # ---------------------------------------------------------------------------
+  - name: exa
+    transport: stdio
+    command: npx
+    args: ['-y', 'exa-mcp-server']
+    env:
+      EXA_API_KEY: '${EXA_API_KEY}'
+    description: 'Exa: busqueda web semantica y extraccion de contenido para agentes'
+    tools:
+      - web_search_exa
+      - get_code_context_exa
+    enabled: false
+    install_hint: 'Node.js y: npx -y exa-mcp-server (env EXA_API_KEY)'
+
+  # ---------------------------------------------------------------------------
+  # 21. tavily - busqueda web optimizada para LLMs (Tavily).
+  #     Fuente: https://github.com/tavily-ai/tavily-mcp
+  #     Runtime: Node (npx). Env: TAVILY_API_KEY.
+  # ---------------------------------------------------------------------------
+  - name: tavily
+    transport: stdio
+    command: npx
+    args: ['-y', 'tavily-mcp']
+    env:
+      TAVILY_API_KEY: '${TAVILY_API_KEY}'
+    description: 'Tavily: busqueda web y extraccion para agentes LLM'
+    tools:
+      - tavily-search
+      - tavily-extract
+    enabled: false
+    install_hint: 'Node.js y: npx -y tavily-mcp (env TAVILY_API_KEY)'
+
+  # ---------------------------------------------------------------------------
+  # 22. project_bridge - puente in-process para comunicacion entre proyectos.
+  #     NO es un subproceso: se registra via register_project_bridge() en el
+  #     MCPManager. Entrada documental para que el catalogo lo conozca.
+  # ---------------------------------------------------------------------------
+  - name: project_bridge
+    transport: stdio
+    command: project_bridge
+    args: ['in-process']
+    description: 'Puente in-process: proyectos federados y conocimiento compartido'
+    tools:
+      - project_list
+      - project_status
+      - knowledge_put
+      - knowledge_get
+      - knowledge_search
+    enabled: false
+    install_hint: 'Registrado en memoria por harness.tools_sandbox.mcp_project_bridge.register_project_bridge()'
+
 categories:
   reverse-engineering: [rea, rc_devtools, ghidra_mcp, radare2]
   browser: [playwright, chrome_devtools]
