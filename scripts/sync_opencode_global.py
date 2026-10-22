@@ -109,7 +109,9 @@ _HARNESS_INCLUDE = ["orchestrator", "memory_rag", "tools_sandbox", "model_router
                     # propagado): sin esto el global lanza ImportError.
                     "failure_registry",
                     # Referenciado por 3 skills del cerebro (contrato SSOT).
-                    "alpha_mining"]
+                    "alpha_mining",
+                    # 11.24: recursive harnessing (Harness2-inspired).
+                    "harness2"]
 # Archivos raiz del paquete harness (fix ADR-0042: incluye __init__.py y
 # __main__.py para que el global sea un paquete importable; security_policy.py
 # vive en harness/qa/ y se copia via el directorio qa; scheduler.py paso a ser
