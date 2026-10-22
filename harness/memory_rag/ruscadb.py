@@ -84,7 +84,9 @@ def _library_candidates(path: str | os.PathLike[str] | None) -> list[Path]:
     if explicit:
         candidates.append(Path(explicit))
     # buscar en el directorio del propio modulo (dll embebida)
-    candidates.append(Path(__file__).resolve().parent)
+    _self_dir = Path(__file__).resolve().parent
+    for _name in _library_names():
+        candidates.append(_self_dir / _name)
     for profile in ("debug", "release"):
         for name in _library_names():
             candidates.append(Path("target") / profile / name)

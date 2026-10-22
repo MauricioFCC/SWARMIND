@@ -64,20 +64,31 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin):
         backend = (backend or 'lancedb').lower()
         self._backend = backend
         if backend == 'ruscadb':
-            from ..ruscadb_store import RuscaDBStore
-            self._rusca = RuscaDBStore(db_path=db_path, allow_fallback=allow_fallback, config=config)
-            self.db_path = self._rusca.db_path
-            self._lancedb_available = False
-            self._db = None
-            self._mem_collections = {}
-            self._embedding_dim = 384
-            self._allow_fallback = allow_fallback
-            for _m in ('create_collection','list_collections','insert','update_records',
-                       'search','hybrid_search','_keyword_score','get_collection_stats',
-                       'delete_collection','clear','from_config'):
-                if hasattr(self._rusca, _m):
-                    setattr(self, _m, getattr(self._rusca, _m))
-            return
+            try:
+                from ..ruscadb_store import RuscaDBStore
+                self._rusca = RuscaDBStore(db_path=db_path, allow_fallback=allow_fallback, config=config)
+                self.db_path = self._rusca.db_path
+            except (ImportError, FileNotFoundError, OSError) as exc:
+                import logging as _log
+                _log.getLogger('harness.memory_rag.lance_vector_store').warning(
+                    'RuscaDB no disponible (%s); fallback a lancedb', exc
+                )
+                backend = 'lancedb'
+                self._backend = backend
+                self._rusca = None
+            if getattr(self, '_rusca', None) is not None:
+                self._lancedb_available = False
+                self._db = None
+                self._mem_collections = {}
+                self._embedding_dim = 384
+                self._allow_fallback = allow_fallback
+                for _m in ('create_collection','list_collections','insert','update_records',
+                           'search','hybrid_search','_keyword_score','get_collection_stats',
+                           'delete_collection','clear','from_config','execute',
+                           'full_text_search','graph_traverse'):
+                    if hasattr(self._rusca, _m):
+                        setattr(self, _m, getattr(self._rusca, _m))
+                return
         self._rusca = None
         if config:
             self.db_path = db_path or config.lancedb_path

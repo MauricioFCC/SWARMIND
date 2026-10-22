@@ -7,6 +7,15 @@ import tempfile
 
 import pytest
 
+try:
+    from harness.memory_rag.ruscadb import load_library
+    load_library()
+    _RUSCADB_AVAILABLE = True
+except Exception:  # noqa: BLE001
+    _RUSCADB_AVAILABLE = False
+
+pytestmark = pytest.mark.skipif(not _RUSCADB_AVAILABLE, reason="RuscaDB C-ABI dll not available")
+
 from harness.memory_rag.ruscadb_store import RuscaDBStore
 
 
