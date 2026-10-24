@@ -591,6 +591,8 @@ Objetivo: 80%    (proximo hito)
 
 - **2026-10-22**: Integracion Harness2 (11.24): recursive harnessing (Propose-Probe-Compose) en `harness/harness2/` + `RecursiveHarness` en evolve_loop. 9 tests.
 
+- **2026-10-24**: RuscaDB grafo (11.36): edges + last_inserted_id + graph_traverse. Ruff 0.
+
 ---
 
 > *Este roadmap se actualiza tras cada hito significativo. Proximas revisiones: semanal.*

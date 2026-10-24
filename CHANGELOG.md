@@ -2,6 +2,13 @@
 
 > Documento de trazabilidad de cambios.
 
+
+## [2026-10-24] RuscaDB grafo (edges + last_inserted_id) (ciclo 11.36)
+
+- C-ABI: insert_record acepta edges; last_inserted_id devuelve ULID.
+- Binding Python: last_inserted_id().
+- RuscaDBStore: captura _rid, acepta edges, graph_traverse.
+- Ruff 0, tests pasan.
 ## [2026-10-22] Integracion Harness2 (Google Research): recursive harnessing (ciclo 11.24)
 
 ### Resumen

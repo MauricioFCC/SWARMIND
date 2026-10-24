@@ -85,7 +85,7 @@ class RuscaDBStore:
         self._collections.add(name)
         self._collections.add(name)
 
-    def insert(self, collection: str, vectors: Any, metadata: list[dict[str, Any]], now: str | None = None) -> list[str]:
+    def insert(self, collection: str, vectors: Any, metadata: list[dict[str, Any]], now: str | None = None, edges: list[list[dict[str, str]]] | None = None) -> list[str]:
         if collection not in self.list_collections():
             self.create_collection(collection)
         import datetime as _dt
@@ -102,6 +102,8 @@ class RuscaDBStore:
                 "vector": arr[i].tolist(),
                 "vector_meta": {"model_id": "swarmind", "dim": arr.shape[1], "metric": "L2"},
             }
+            if edges and i < len(edges) and edges[i]:
+                rec["edges"] = edges[i]
             try:
                 insert_record(self._handle, collection, rec)
                 rid_rusca = last_inserted_id()
