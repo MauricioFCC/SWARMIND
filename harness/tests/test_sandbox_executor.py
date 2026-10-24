@@ -347,6 +347,87 @@ class TestBackendDetection:
 
 
 # ============================================================================
+# Fallback por dependencias del proyecto (oraculos: hypothesis en Windows)
+# ============================================================================
+
+
+class TestProjectDepsFallback:
+    """Scripts que requieren deps del proyecto no se rompen cuando docker no
+    puede aportarlas (no-POSIX: el site-packages trae extensiones nativas)."""
+
+    def test_docker_cannot_supply_deps_on_nt(self, monkeypatch) -> None:
+        """En Windows el backend docker NO puede aportar las deps del proyecto."""
+        monkeypatch.setattr(sandbox_executor.os, "name", "nt")
+        assert sandbox_executor._docker_supplies_project_deps() is False
+
+    def test_docker_supplies_deps_on_posix_with_site_packages(
+        self, monkeypatch
+    ) -> None:
+        """En POSIX con site-packages presente, docker SI aporta las deps."""
+        monkeypatch.setattr(sandbox_executor.os, "name", "posix")
+        monkeypatch.setattr(
+            sandbox_executor, "_host_site_packages", lambda: Path("/tmp/sp")
+        )
+        assert sandbox_executor._docker_supplies_project_deps() is True
+
+    def test_require_deps_falls_back_to_host_when_docker_cannot(
+        self, monkeypatch, tmp_path
+    ) -> None:
+        """require_project_deps + docker sin deps -> interprete host (no docker)."""
+        _force_backend(monkeypatch, "docker")
+        monkeypatch.setattr(
+            sandbox_executor, "_docker_supplies_project_deps", lambda: False
+        )
+        captured = _capture_run(monkeypatch)
+        host_calls: list[list[str]] = []
+
+        def fake_run_host(self, cmd, timeout_s, env, workdir):
+            host_calls.append(list(cmd))
+            return SandboxResult("", "", 0, backend="subprocess")
+
+        monkeypatch.setattr(SandboxExecutor, "_run_host", fake_run_host)
+        script = tmp_path / "pbt_check.py"
+        script.write_text("print('x')", encoding="utf-8")
+        ex = SandboxExecutor()
+        assert ex.backend == "docker"
+
+        ex.run_script(script, require_project_deps=True)
+
+        assert host_calls and host_calls[0][0] == sys.executable
+        assert captured == {}, "docker no debe invocarse cuando no aporta las deps"
+
+    def test_require_deps_uses_docker_when_available(
+        self, monkeypatch, tmp_path
+    ) -> None:
+        """Con deps disponibles, require_project_deps sigue usando docker."""
+        _force_backend(monkeypatch, "docker")
+        monkeypatch.setattr(
+            sandbox_executor, "_docker_supplies_project_deps", lambda: True
+        )
+        captured = _capture_run(monkeypatch)
+        script = tmp_path / "pbt_check.py"
+        script.write_text("print('x')", encoding="utf-8")
+
+        SandboxExecutor().run_script(script, require_project_deps=True)
+
+        assert "docker" in captured["cmd"][0]
+
+    def test_default_does_not_fall_back(self, monkeypatch, tmp_path) -> None:
+        """Mutation (sin require_project_deps) mantiene docker como aislamiento."""
+        _force_backend(monkeypatch, "docker")
+        monkeypatch.setattr(
+            sandbox_executor, "_docker_supplies_project_deps", lambda: False
+        )
+        captured = _capture_run(monkeypatch)
+        script = tmp_path / "mutant_check.py"
+        script.write_text("print('x')", encoding="utf-8")
+
+        SandboxExecutor().run_script(script)
+
+        assert "docker" in captured["cmd"][0]
+
+
+# ============================================================================
 # Backend windows-jobobject
 # ============================================================================
 

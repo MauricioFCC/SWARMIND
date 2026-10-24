@@ -48,6 +48,7 @@ import argparse
 import logging
 import os
 import shutil
+import sys
 from pathlib import Path
 
 from setup_memory_central import ensure_memory_structure
@@ -64,14 +65,28 @@ _ROOT = _HERE.parent                               # Swarmind/
 _SRC_OPENCODE = _ROOT / ".opencode"
 _SRC_HARNESS = _ROOT / "harness"
 
+#: SSOT de los servers MCP (el harness los usa via MCPManager; opencode via `mcp`).
+_SRC_MCP_YAML = _SRC_HARNESS / "tools_sandbox" / "mcp_servers.yaml"
+
+#: Doctrina SWARMIND. OpenCode la carga desde ~/.config/opencode/AGENTS.md y la
+#: combina con la de cada proyecto (estandar AGENTS.md: el mismo archivo sirve a
+#: Claude Code y Codex, asi el cerebro viaja a cualquier harness).
+_SRC_AGENTS_MD = _ROOT / "AGENTS.md"
+
+#: `_ROOT` en sys.path para importar el harness (mcp_opencode).
+if str(_ROOT) not in sys.path:
+    sys.path.insert(1, str(_ROOT))
+
 # Config global de opencode: ~/.config/opencode (NO ~/.opencode)
 _GLOBAL = Path(os.environ.get(
     "OPENCODE_GLOBAL_DIR",
     str(Path.home() / ".config" / "opencode"),
 ))
 
-# Partes del cerebro que se sincronizan al global
-_BRAIN_DIRS = ["agents", "skills", "core"]
+# Partes del cerebro que se sincronizan al global.
+# "commands" = comandos de opencode (.opencode/commands/*.md -> /mcp, /dispatch,
+# /ver): el acople 1:1 con OpenCode, tambien viaja al global.
+_BRAIN_DIRS = ["agents", "skills", "core", "commands"]
 _REGISTRY_FILE = "skills/skills_registry.yaml"
 
 # Partes del cerebro que el usuario puede curar: sin --force NO se borran
@@ -79,12 +94,24 @@ _REGISTRY_FILE = "skills/skills_registry.yaml"
 _CURATED_PARTS = frozenset({"skills", "agents"})
 
 # Directorios del motor (harness) que se sincronizan al global.
-# Se excluyen datos runtime (db/, tests locales, caches).
+# Criterio: paquetes Python del motor en runtime + sus dependencias
+# directas + los referenciados por skills del cerebro (SSOT). Se excluyen
+# datos runtime (tests locales, caches) y paquetes huerfanos sin
+# consumidor fuera de si mismos (complex_problems, federation).
 _HARNESS_INCLUDE = ["orchestrator", "memory_rag", "tools_sandbox", "model_router",
                     "evolve_loop", "qa", "security", "guardrails", "hooks",
                     "context", "evals", "aifactory", "observability", "parallel",
                     "plugins", "gateway", "db", "benchmarks", "scheduler",
-                    "validation"]
+                    "validation", "reverse_engineering",
+                    # 11.21: motor de auto-actualizacion (nuevo).
+                    "self_update",
+                    # Dependencia de evolve_loop/failure_distiller.py (ya
+                    # propagado): sin esto el global lanza ImportError.
+                    "failure_registry",
+                    # Referenciado por 3 skills del cerebro (contrato SSOT).
+                    "alpha_mining",
+                    # 11.24: recursive harnessing (Harness2-inspired).
+                    "harness2"]
 # Archivos raiz del paquete harness (fix ADR-0042: incluye __init__.py y
 # __main__.py para que el global sea un paquete importable; security_policy.py
 # vive en harness/qa/ y se copia via el directorio qa; scheduler.py paso a ser
@@ -312,6 +339,56 @@ def _ensure_memory_central(dry_run: bool = False) -> dict:
     return result
 
 
+def _sync_mcp_config(dry_run: bool = False) -> int:
+    """Registra los servers MCP de la SSOT en la config GLOBAL de opencode.
+
+    Traduce `harness/tools_sandbox/mcp_servers.yaml` a `mcp.servers` de OpenCode
+    (local/remote) para que opencode pueda USAR las herramientas del harness.
+    Este es el acople oficial: `scripts/deploy_all.py --sync-global` -> aqui.
+
+    Args:
+        dry_run: Si True, solo simula.
+
+    Returns:
+        Numero de servers MCP registrados (0 si no hay SSOT).
+    """
+    from harness.tools_sandbox.mcp_opencode import load_servers, sync_config_file
+
+    servers = load_servers(_SRC_MCP_YAML)
+    if not servers:
+        logger.warning("  \u26a0\ufe0f  SSOT MCP sin servers: %s", _SRC_MCP_YAML)
+        return 0
+    # El render de modelos escribe opencode.jsonc; respetar ese si existe.
+    target = _GLOBAL / "opencode.jsonc"
+    if not target.exists() and (_GLOBAL / "opencode.json").exists():
+        target = _GLOBAL / "opencode.json"
+    sync_config_file(target, servers, dry_run=dry_run)
+    return len(servers)
+
+
+def _sync_agents_md(dry_run: bool = False) -> int:
+    """Copia la doctrina SWARMIND (``AGENTS.md``) al config global de opencode.
+
+    OpenCode carga ``~/.config/opencode/AGENTS.md`` en TODAS las sesiones (doc
+    oficial de Instructions) y la combina con el AGENTS.md de cada proyecto.
+    Sin este paso la doctrina (reglas RSF/ERR/CMT/VER, workflow VER) solo
+    existia dentro del repo SWARMIND; los demas proyectos quedaban sin ella.
+
+    Args:
+        dry_run: Si True, solo simula.
+
+    Returns:
+        1 si copio (o copiaria), 0 si la fuente no existe.
+    """
+    if not _SRC_AGENTS_MD.is_file():
+        logger.warning("  ⚠️  AGENTS.md fuente no existe: %s", _SRC_AGENTS_MD)
+        return 0
+    dst = _GLOBAL / "AGENTS.md"
+    if not dry_run:
+        shutil.copy2(_SRC_AGENTS_MD, dst)
+    return 1
+
+
 def sync_global(dry_run: bool = False, quiet: bool = False,
                 cerebro: bool = False, motor: bool = False,
                 mode: str = "copy", force: bool = False) -> dict:
@@ -366,6 +443,20 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
             stats["skills_registry"] = 1
             if not quiet:
                 logger.info("  âœ… skills_registry.yaml %s", "(simulado)" if dry_run else "actualizado")
+
+        # Doctrina: AGENTS.md global (OpenCode Instructions + estandar universal
+        # que tambien leen Claude Code y Codex).
+        agents_md = _sync_agents_md(dry_run=dry_run)
+        stats["agents_md"] = agents_md
+        if not quiet:
+            logger.info("  \u2705 %-10s %s", "AGENTS.md",
+                        "(simulado)" if dry_run else f"-> {_GLOBAL / 'AGENTS.md'}")
+
+    if do_cerebro:
+        mcp_count = _sync_mcp_config(dry_run=dry_run)
+        stats["mcp_servers"] = mcp_count
+        if not quiet:
+            logger.info("  \u2705 %-10s %d servers -> opencode", "mcp", mcp_count)
 
     if do_motor:
         count = _sync_harness_to_global(dry_run=dry_run)

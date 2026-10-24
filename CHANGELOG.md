@@ -2,6 +2,116 @@
 
 > Documento de trazabilidad de cambios.
 
+
+## [2026-10-24] RuscaDB grafo (edges + last_inserted_id) (ciclo 11.36)
+
+- C-ABI: insert_record acepta edges; last_inserted_id devuelve ULID.
+- Binding Python: last_inserted_id().
+- RuscaDBStore: captura _rid, acepta edges, graph_traverse.
+- Ruff 0, tests pasan.
+## [2026-10-22] Integracion Harness2 (Google Research): recursive harnessing (ciclo 11.24)
+
+### Resumen
+- **`harness/harness2/`** (NUEVO): paquete con 8 componentes editables, `HarnessTree`, validacion, contexto/evidencia, proposer, probe, library, improvement harness (lecciones persistentes), recursion paralela/secuencial (Propose-Probe-Compose).
+- **`harness/evolve_loop/recursive_harness.py`**: `RecursiveHarness` envuelve el paquete y se exporta.
+- **Tests:** 9 (test_harness2.py). Ruff 0.
+
+## [2026-10-22] MCP interconnect: confiabilidad + inter-proyecto + web frontier + seguridad (ciclo 11.23)
+
+### Resumen
+- **`mcp_manager`**: circuit breaker por servidor (closed/open/half_open), `health_check`, `reconnect`, `execute_with_retry`, `record_success`/`record_failure`, `security_scan`/`security_scan_server`, flag `strict_security`. `execute` y `connect_all` integrados.
+- **`mcp_project_bridge`** (NUEVO): `ProjectRegistry` + `InProcessMCPClient` + `register_project_bridge`. Expone tools MCP `project_list`, `project_status`, `knowledge_put`, `knowledge_get`, `knowledge_search` sobre `.opencode/federated/*.json`.
+- **Catalogo**: +exa, +tavily, +project_bridge (26 servers). Keywords web search / inter-proyecto, categorias `web` e `interproject`.
+- **Tests**: 7 nuevos (bridge) + conteo registry 23->26. Ruff 0.
+
+## [2026-10-17] Optimalidad de memoria: feedback + TTL proactivo + paridad (ciclo 11.22)
+
+### Spec
+- **`docs/specs/memory-optimality.md`** — `accepted + implemented`. Diagnóstico previo con evidencia: **99.7% del almacenamiento de la memoria central eran caches regenerables** (`semantic_cache` 138 MB / 5201 fragments + `agent_workspace_logs` 48 MB) y las **13 colecciones de valor** (que sostienen las decisiones) sumaban ~0.3 MB, casi todas *schema-only*. 4 items, 15 contratos, TDD adversarial + kill-check.
+
+### Correcciones de diseño por IDP (no reimplementar)
+- **Item 3:** `SemanticCache.clear_expired()` **ya existía y ya era proactivo** (recorría todas las entradas, LanceDB+memory, retornaba count). La brecha real era que **nadie lo invocaba como sweeper** ⇒ la colección crecía sin cota pese al TTL. Fix: barrido **probabilístico** cableado en `set()` (cada `SWEEP_EVERY_N_SETS=100` inserts), no un `purge_expired()` nuevo (habría duplicado).
+- **Item 1:** `dispatch()` **no** puede puntuar éxito (en dispatch aún no se conoce). Ya existía el hook post-run `AgentDispatcher.record_skill_outcome(skill_name, success)` (su docstring lo diseña explícitamente). El seam correcto era **ese hook**, no `dispatch()`.
+
+### Nuevos módulos + acoplamiento aditivo (0 regresión)
+- **`harness/evolve_loop/feedback_scorer.py`** — `score_outcome(store, skill_name, *, success, agent_role, metrics)` escribe en `skill_effectiveness` + `agent_performance` (embeddings deterministas `fallback_embedding`, métricas serializadas a JSON); `run_report` cuenta filas. DI total, **degradación suave** (nunca lanza). Cableado en `record_skill_outcome` (que gana `agent_role` opcional, backward-compatible).
+- **`harness/memory_rag/memory_parity.py`** — `audit_parity(db_path) -> ParityReport` (frozen dataclass) detecta `is_imbalanced` (cache > 4× valor **y** ≥3 colecciones de valor vacías). NO lanza con path inexistente.
+- **`scripts/verify_swarmind_setup.py`** — sección **no fatal** `memory_parity` (⚠️ sin afectar exit code): el health-check sigue en `SETUP OK` aunque haya desbalance.
+- **`semantic_cache`** — constante `SWEEP_EVERY_N_SETS=100` + `_maybe_sweep()` best-effort en `set()`; `VOLATILE_MAX_BYTES` baja de **1 GiB → 256 MiB** (cota efectiva: la cache regenerable no debe dominar el SSOT).
+
+### Tests + gate del ciclo
+- **RED observado** en cada check: `ModuleNotFoundError` (`memory_parity`, `feedback_scorer`, `SWEEP_EVERY_N_SETS`), `ImportError`, y aserciones de atributo. Nuevos: `test_feedback_scorer.py` (8), `test_memory_parity.py` (6) + `TestSemanticCacheAutoSweep` (4) + contrato 14 no-fatal. Test end-to-end que invoca `record_skill_outcome` y afirma escritura en **AMBAS** colecciones de valor.
+- **Kill-check mutante: 5 killed / 0 survived** (feedback `if skill_name`/`if agent_role`→False y degradación→raise; parity `and`→`or`; sweep counter sin incremento).
+- `ruff` 0 · archivos tocados **114 passed, 0 failed** · gate: suite completa (verificado abajo).
+
+## [2026-10-17] Auto-actualización desde remoto anti-reversión (ciclo 11.21)
+
+### Spec
+- **`specs/self-update.md`** — `proposed` → **`accepted + implemented`**. Investigación frontera anexada: **ADR-0010 anti-rollback** (`max_seen_version` monotónico persistido + downgrade como acción deliberada con `allow_downgrade`+`justification` ⇒ evento `downgrade_forced` auditable) y journaling *roll forward* con **prefix property** ("si existe una actualización, existen todas las anteriores" = el invariante de `--ff-only`, InterSystems/SQLite WAL). Defense-in-depth: `git config branch.<b>.mergeoptions --ff-only` y MITRE MID-030 (la referencia anti-rollback solo avanza tras confirmación).
+
+### Nuevos módulos
+- **`harness/self_update/core.py`** — `parse_version` (pyproject `project.version` → fallback `git describe --tags`, normalizado a tupla comparable), `check_remote` (fetch **solo lectura** ⇒ `UP_TO_DATE/BEHIND/AHEAD/DIVERGED/OFFLINE/NO_GIT/NO_REMOTE`, nunca lanza) y `apply_update` (guards → `merge --ff-only`). Runner `run_git` inyectable (0 shell injection: `subprocess.run` argv-list + `check=False` + timeout).
+- **`harness/self_update/journal.py`** — `append_log` (UNA línea JSON por evento, append-only, crea padres), `audit_log` (para `updated`: `to >= from` y `to >= max_previa`; para `downgrade_forced`: `justification` no vacía; línea ilegible = violación) y `max_seen_version` (cota histórica que **nunca baja**).
+- **`harness/self_update/versions.py`** — `parse_semver` (`v1.2.3-rc1` → `(1,2,3)`, normaliza a ≥3 componentes) + `fmt_version`.
+- **`scripts/self_update.py`** — CLI `--check` / `--apply` / `--audit` (+ `--allow-downgrade` + `--justification`, `--repo/--remote/--branch/--log`). Exit: **0** ok/degradado, **1** violación de audit o ff fallido, **2** fatal.
+
+### Acoplamiento aditivo (0 regresión)
+- `scripts/setup_swarmind.py` **paso 7** (tras verificación): `_self_update()` — check → apply → audit con **degradación suave que nunca bloquea el setup**; `--dry-run` lo simula.
+- `.gitignore`: `.swarmind/` (journal por-maquina, no se versiona).
+
+### Invariante central
+`floor = max(version_local, max_seen_journal)`; `remote < floor` ⇒ **bloqueado** (incluso con `remote > local`, porque el journal pudo haber visto una versión mayor). Solo mutan worktree `updated`/`downgrade_forced`, siempre vía `--ff-only`, con el intento registrado **antes** del merge (WAL crash-safe) y el resultado después. Nunca `reset --hard`, nunca stash drop.
+
+### Tests
+- `test_self_update.py` (**39 tests**): RED evidenciado (`ModuleNotFoundError`) → GREEN. **15 contratos de integración** sobre **remotos bare locales por path** (sin red, cross-platform, marcados `slow`) + **24 tests fake-git/puros** (runner en memoria: subset en **2.9 s vs ~171 s** con subprocess) que ejercitan todos los guards sin ~450 spawns de proceso. Marker `slow` aplicado por test (los fake corren en `-m "not slow"` para iterraciones rápidas y CI T1).
+- **Kill-check en 3 rondas**: ronda 1 con operadores extendidos (`Eq↔NotEq`, `In↔NotIn`, `Is↔IsNot`, `Gt↔LtE`, `GtE↔Lt`, `BoolOp and↔or`) reportó 100%… **pero era engañoso**: el harness numeraba posiciones en BFS (`ast.walk`) y mutaba en DFS (`NodeTransformer`) ⇒ supervivientes mal etiquetados. Corregido el recorrido y re-ejecutado: ronda 2 expuso **7 gaps reales de aserción** (sha destino del journal, conteo parcial de `rev-list`, estado `AHEAD` vs `UP_TO_DATE`, detalle de degradación citando causa raiz, detalle de ff rechazado sin stderr, `to_commit` del resultado) ⇒ ronda 3 tras reforzar 6 contratos + añadir 3: **core 33/33 + versions 2/2 + journal 9/9 = 44/44 (100%, 0 supervivientes)**. Dos mutantes documentados como **equivalentes por construcción** (`url.code == 127`, `Is` en el primer `re.match` de `parse_semver`).
+- `ruff` 0 · `vulture` 0 · **cobertura 100% del paquete `harness/self_update/` (273 stmts, 0 miss) solo con los 24 tests rápidos** · **FSZ 0 funciones >30 LC** en el módulo nuevo.
+- **Gate del ciclo:** suite completa **7075 passed, 38 skipped, 16 xfailed, 0 failed** (527s; base 7036 + 39 de `test_self_update.py`).
+
+### Propagación al global (Opción A SSOT) + fix de drift
+- **Bug:** el módulo nuevo no viajaba a `~/.config/opencode/harness/` porque `_HARNESS_INCLUDE` es una lista blanca estática (mismo bug del fix precedent `ea092dc0`). Auditoría de los 9 subdirectorios del motor fuera de la lista: `failure_registry` **sí** lo importa un módulo ya propagado (`evolve_loop/failure_distiller.py`) ⇒ **ImportError en runtime del global**; `alpha_mining` lo referencian **3 skills** (contrato SSOT); `run_commands` ya iba vía `_HARNESS_FILES`; `complex_problems`/`federation` son huérfanos (0 consumidores) ⇒ no se propagan (KISS).
+- **Fix:** `self_update` + `failure_registry` + `alpha_mining` añadidos a `_HARNESS_INCLUDE` (~234 KB, solo `.py`) y **2 contratos nuevos** en `test_setup_verification.py`: test explícito de los 3 paquetes + `test_harness_include_sin_drift_de_dependencias` (**auto-detectable**: escanea el código que viaja al global y exige que toda referencia `harness.<paquete>` apunte a un paquete también propagado). Fase RED observada acusando `['failure_registry']`.
+- **Verificación:** sync ejecutado (912 archivos) · provenancia real del import `C:\Users\USUARIO\.config\opencode\harness\evolve_loop\failure_distiller.py` · health-check `SETUP OK` · `ruff` 0.
+
+## [2026-10-17] Memoria colectiva en 1ª instalación + recuperación de fragments
+
+### Spec
+- **`specs/memory-lifecycle.md`** — ciclo de vida de la memoria con research frontera anexada (arXiv:2607.21503 memoria-como-ciclo-de-vida + políticas de caches 2026): 13 colecciones de **valor** vs `semantic_cache`/`agent_workspace_logs` **regenerables** (cap 1 GB por colección, jamás respaldar ni migrar); qué NO guardar: secretos, PII en logs, tool-outputs > 4K (ya en `artifact_store`), chunks duplicados.
+
+### Nuevos módulos
+- **`harness/memory_rag/memory_bootstrap.py`** — `bootstrap_memory` (primera instalación: `<root>/{data/lancedb,backups}` + `.swarmind_config.json` idempotente y mergeable con `backup_memory`), `default_memory_root` (env `MEMORY_ROOT` > `~/Documents/Memory_Proyects`, pathlib cross-platform), `detect_project_local_memory` (fork `harness/db/lancedb`), `migrate_local_to_central` (ausente ⇒ copiar, no volátil más nuevo ⇒ append, volátil/stale/ilegible ⇒ skip con warning WHAT+WHY+WHERE), `prune_volatile_collections` (volátil > 1 GB ⇒ drop regenerable).
+
+### Acoplamiento aditivo (0 regresión)
+- `scripts/setup_swarmind.py` paso 4: `_bootstrap_memory()` — bootstrap → detect → migrar (dry-run ✓).
+- `memory_config.__post_init__`: `logger.warning` accionable cuando cae al fallback legacy (bug raíz: faltaba `.swarmind_config.json` ⇒ `memory_root=None` ⇒ fork silencioso de 4.7 GB).
+
+### Ejecución real (esta máquina)
+- Verificado: `get_memory_config().lancedb_path` ⇒ central ✓ · prune **-9.59 GB** (99.99% del store central eran volátiles) · INCIDENTE: 13 tablas de valor locales sin `_versions/*.manifest` (pérdida externa; ningún script del repo toca `_versions`) ⇒ recuperación one-off con pylance (lectura directa de fragments ⇒ parquet) ⇒ fusión al central **13/13 con deltas exactos (65 filas de valor; 41 de cognición que se habrían perdido)** + archivo de seguridad `backups/recovered_fragments_20261017_193140` · fork local retirado **-4.70 GB** · **total liberado 14.29 GB**.
+
+### Tests
+- `test_memory_bootstrap.py` (17): RED evidenciado (`ModuleNotFoundError`), GREEN con API no-deprecada `list_tables().tables`, **cobertura 100%** del módulo (98 líneas, 0 miss).
+- Kill-check mutante: **2/2 mutantes reales muertos (100%)** con 5 no-ops (`IsNot`/`In`/`NotIn`) excluidos honestamente; `ruff` 0, `vulture` 0.
+
+## [2026-10-16] Round skills/agentes/MCP + ADR fr-0001 cost-aware routing
+
+### Nuevos módulos
+- **`harness/security/mcp_security_scan.py`** — parser JSONC real (comentarios blanked preservando numeración, trailing commas, `://` intacto) + `scan_mcp_config` determinista con 5 categorías OWASP MCP Top-10: shell crudo, pin ausente (rug-pull), secretos en env (masking SEG), http sin TLS, endpoints internos (superficie SSRF). Spec corregida contra la config real (`command` argv-list, `environment`, `mcp.servers` anidado).
+- **`harness/security/skill_guard.py`** — frontmatter obligatorio (name/domain/description/version/project_agnostic) + 7 patrones de prosa hostil case-insensitive (arXiv 2608.29596). Dogfood en las 42 skills: 0 hostiles, 5 `domain` faltantes corregidos.
+- **`harness/model_router/cost_policy.py`** (ADR fr-0001) — escalera free→small→standard→frontier; `estimated_cost_usd`; escalación por costo incremental (umbral $0.05 ⇒ escalón `standard`); tier `free` para complejidad ≤ 2 + output ≤ 2000; veto de presupuesto de salida (> 4000 tokens ⇒ vetar `OUTPUT_BUDGET_VETO_MODELS` salvo `force_tier`); `pick_voting_tier` k-in-1 con el tier de menor input (gate ≥ 70, confidence < 0.7).
+
+### Acoplamiento aditivo (0 regresión)
+- `CascadeRouter.plan_cost_aware_escalation` — planifica la escalera por costo sin tocar `run()`.
+- `session_affinity.should_switch_on_cache_health` + `CACHE_HEALTH_MIN_HIT_RATE = 0.60` — rompe la afinidad cuando el cache de prompt está roto (alineado con `TokenUsageTracker.cache_health`).
+
+### Skills y agentes
+- **Skills nuevos** `mcp-security` + `alpha-mining` (SKILL.md + SKILL.min.md + registry sha256); `SKILL_TO_AGENT` y `DOMAIN_SKILLS` cableados.
+- **Agente `alpha-miner`** (mode: subagent, variante `.agent.min.md`, permisos del coordinator, delegation policy keywords).
+- 5 skills preexistentes (architecture, data-science, evolve, hedgefund, rust-lang) corregidas con `domain:` faltante.
+
+### Tests
+- `test_security_mcp_scan.py` (18) + `test_security_skill_guard.py` (16) + `test_cost_policy.py` (28) = **62 contratos nuevos** (RED evidenciado).
+- Kill-check mutante: skill_guard+mcp 5/5 (100%); cost_policy 11/11 muertos + 5 equivalentes = 100% efectivo.
+
 ## [2026-10-07] Calibración probabilística + fingerprint de opciones (Misellium→Swarmind)
 
 ### Nuevos módulos

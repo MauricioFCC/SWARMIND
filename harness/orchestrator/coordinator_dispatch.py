@@ -36,6 +36,7 @@ from harness.orchestrator.routing_mutation import (
     mutate,
 )
 from harness.orchestrator.skill_bundler import SkillBundler
+from harness.tools_sandbox.mcp_catalog import servers_for_task
 
 logger = logging.getLogger("harness.orchestrator.coordinator_dispatch")
 
@@ -70,6 +71,7 @@ class DispatchPlan:
     Attributes:
         agent: Agente especializado asignado.
         skills: Skills cargadas (<= presupuesto).
+        tools: Servers MCP (herramientas) aplicables a la tarea.
         backend: "local" o "cloud".
         deterministic: True si va por path sin LLM.
         output_contract: Contrato JSON de salida (enfocado).
@@ -82,6 +84,7 @@ class DispatchPlan:
 
     agent: str
     skills: tuple[str, ...] = ()
+    tools: tuple[str, ...] = ()
     backend: str = "local"
     deterministic: bool = False
     output_contract: str = '{"result": "string"}'
@@ -246,16 +249,19 @@ def dispatch(
             f"routing mutado (QD): persona={mutant.persona}, "
             f"topo={mutant.topology}, temp={mutant.temperature}"
         )
+    tools = servers_for_task(lowered)
     backend = "local"
     reason = f"agente {agent} + {len(skills)} skills (local-first)"
     if _is_frontier_task(lowered):
         backend = "cloud"
         reason = "tarea frontier-only: cloud justificado (TKN)"
+    if tools:
+        reason = f"{reason}; {len(tools)} herramientas MCP: {', '.join(tools)}"
     if mutation:
         reason = f"{reason}; {mutation}"
     logger.info("dispatch: %s -> %s/%s", task[:60], agent, backend)
     return DispatchPlan(
-        agent=agent, skills=skills, backend=backend,
+        agent=agent, skills=skills, tools=tools, backend=backend,
         deterministic=False,
         output_contract='{"result": "string", "evidence": ["string"]}',
         oracle=oracle_sample, cloud_tokens=0 if backend == "local" else -1,

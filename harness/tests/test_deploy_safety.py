@@ -276,3 +276,44 @@ def test_guard_permite_num_ctx_seguro(tmp_path: Path, monkeypatch: pytest.Monkey
 
     assert stats["status"] == "ok"
     assert (path / ".opencode" / "opencode.json").is_file()
+
+
+class TestLimpiezaPluginLegado:
+    """El directorio legado ``.opencode/plugin/`` (singular, layout V1) se retira.
+
+    OpenCode V2 descubre el plugin en ``.opencode/plugins/`` (plural). Tras la
+    migracion de layout, los espejos que conservan el singular (copias de
+    deploys previos) cargarian ``compaction-context.js`` DOS veces y el hook de
+    compactacion quedaria registrado duplicado. La fuente no tiene el singular
+    (``_sync_tree`` no borra entradas ausentes en origen), asi que la
+    limpieza es responsabilidad del deploy.
+    """
+
+    def test_elimina_el_dir_legado_del_destino(self, tmp_path: Path) -> None:
+        dst = tmp_path / "proj" / ".opencode"
+        legacy = dst / "plugin"
+        legacy.mkdir(parents=True)
+        (legacy / "compaction-context.js").write_text("// v1", encoding="utf-8")
+
+        removed = da._remove_legacy_opencode_paths(dst, dry_run=False)
+
+        assert removed == 1, "debe reportar 1 entrada legada eliminada"
+        assert not legacy.exists(), "el dir singular plugin/ debe desaparecer del destino"
+
+    def test_dry_run_no_destruye(self, tmp_path: Path) -> None:
+        dst = tmp_path / "proj" / ".opencode"
+        legacy = dst / "plugin"
+        legacy.mkdir(parents=True)
+
+        removed = da._remove_legacy_opencode_paths(dst, dry_run=True)
+
+        assert removed == 1, "dry-run debe reportar lo que eliminaria"
+        assert legacy.exists(), "dry-run nunca destruye"
+
+    def test_sin_legado_es_noop(self, tmp_path: Path) -> None:
+        dst = tmp_path / "proj" / ".opencode"
+        dst.mkdir(parents=True)
+        (dst / "plugins").mkdir()
+
+        assert da._remove_legacy_opencode_paths(dst, dry_run=False) == 0
+        assert (dst / "plugins").is_dir(), "el layout V2 plural NO se toca"

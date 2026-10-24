@@ -50,10 +50,10 @@ def _reset_global_config():
 class TestMemoryConfigDefault:
     """Verifica los valores por defecto de MemoryConfig."""
 
-    def test_backend_default_lancedb(self):
-        """El backend por defecto es lancedb."""
+    def test_backend_default_ruscadb(self):
+        """El backend por defecto es ruscadb."""
         config = MemoryConfig()
-        assert config.backend == MemoryBackend.LANCEDB
+        assert config.backend == MemoryBackend.RUSCADB
 
     def test_lancedb_path_default_se_resuelve(self):
         """lancedb_path se resuelve automaticamente si no se especifica."""
@@ -144,7 +144,7 @@ class TestMemoryConfigSerialization:
         """to_dict retorna dict con campos esenciales."""
         config = MemoryConfig()
         d = config.to_dict()
-        assert d["backend"] == "lancedb"
+        assert d["backend"] == "ruscadb"
         assert d["embedding_dim"] == 384
         assert d["telemetry_level"] == "basic"
         assert "lancedb_path" in d
@@ -181,7 +181,7 @@ class TestMemoryConfigSerialization:
     def test_from_dict_con_dict_vacio(self):
         """from_dict con dict vacio retorna config por defecto."""
         config = MemoryConfig.from_dict({})
-        assert config.backend == MemoryBackend.LANCEDB
+        assert config.backend == MemoryBackend.RUSCADB
         assert config.embedding_dim == 384
 
 
@@ -220,11 +220,11 @@ class TestMemoryConfigFromEnv:
     def test_from_env_sin_vars_usa_defaults(self, mock_home):
         """from_env sin variables de entorno usa valores por defecto.
         Se mockea Path.home porque el environment sin HOME puede fallar.
-        MEMORY_BACKEND default es 'lancedb' directamente."""
+        MEMORY_BACKEND default es 'ruscadb' directamente."""
         mock_home.return_value = Path("/tmp/fake_home")
         # from_env usa os.environ.get("MEMORY_BACKEND", "lancedb") → default
         config = MemoryConfig.from_env()
-        assert config.backend == MemoryBackend.LANCEDB
+        assert config.backend == MemoryBackend.RUSCADB
         assert config.embedding_dim == 384
         assert config.telemetry_level == TelemetryLevel.BASIC
         assert config.allow_fallback is False
@@ -261,7 +261,7 @@ class TestGlobalConfigFunctions:
         set_memory_config(custom)
         reset_memory_config()
         config = get_memory_config()
-        assert config.backend == MemoryBackend.LANCEDB  # Default
+        assert config.backend == MemoryBackend.RUSCADB  # Default
 
 
 # ===========================================================================

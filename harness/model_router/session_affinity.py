@@ -28,6 +28,38 @@ VALID_TIERS: frozenset[str] = frozenset({"small", "frontier"})
 #: TTL por defecto de la afinidad de sesion (segundos).
 DEFAULT_TTL_S = 1800.0
 
+#: Hit-rate minimo de cache de prompt por debajo del cual la afinidad
+#: debe romperse y cambiar de modelo (ADR fr-0001, mejora 3; alineado
+#: con ``TokenUsageTracker.cache_health`` — frontera 2026: <60% con
+#: volumen = cache-buster estructural).
+CACHE_HEALTH_MIN_HIT_RATE = 0.60
+
+
+def should_switch_on_cache_health(
+    cache_hit_rate: float,
+    min_hit_rate: float = CACHE_HEALTH_MIN_HIT_RATE,
+) -> bool:
+    """¿Romper la afinidad y cambiar de modelo por cache roto (ADR fr-0001)?
+
+    WHAT: True cuando el hit-rate de cache de prompt de la sesion cae
+    por debajo de ``min_hit_rate`` (cada switch pierde el cache de
+    prefijo, pero PERMANECER en un modelo con cache roto es aun mas
+    caro: se re-paga el prefill completo en cada turno).
+    WHY: ADR fr-0001 mejora 3 — la afinidad ciega al cache-health
+    perpetua modelos con cache-buster estructural (timestamps, tools
+    dinamicas); frontera 2026: <60% con volumen = hasta -70% de spend
+    recuperable.
+    WHERE: antes de servir desde afinidad en ``SessionAffinityRouter``.
+
+    Args:
+        cache_hit_rate: Hit-rate actual de cache (0.0-1.0).
+        min_hit_rate: Umbral minimo aceptable (default 0.60).
+
+    Returns:
+        True si conviene cambiar de modelo.
+    """
+    return cache_hit_rate < min_hit_rate
+
 
 @dataclass(frozen=True)
 class AffinityConfig:

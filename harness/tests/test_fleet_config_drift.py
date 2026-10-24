@@ -32,11 +32,13 @@ _TIMEOUT_SECONDS = 3
 #: se retira "qwen2.5-coder" de la lista: ahora ES parte de la flota
 #: (`qwen2.5-coder-3b-iq4-xs`, tier coding).
 _RETIRED = (
-    "bonsai", "olmoe", "lfm2.5", "llama3.2", "qwen3:4b",
-    # "deepseek-r1:" (tag cloud); NO "deepseek-r1" a secas: la flota local
-    # tiene `deepseek-r1-distill-qwen-7b-q2-k` (Q2_K CUDA).
+    "olmoe", "lfm2.5", "llama3.2", "qwen3:4b",
+    # "deepseek-r1:" (tag cloud); NO "deepseek-r1" a secas.
     "deepseek-r1:", "glm-z1", "deepseek-v4-flash",
-    "jackod", "mimo", "ornith", "qwen3-vl",
+    "jackod", "ornith", "qwen3-vl",
+    # Flota declarada previa (2026-10-08): NO instalada en disco.
+    "qwen3-5-4b", "phi-4-mini-instruct", "qwen2.5-coder-3b",
+    "deepseek-r1-distill-qwen-7b",
 )
 
 #: Retirados 2026-10-01 (BSOD TDR): el coordinador borrara sus blobs DESPUES
@@ -88,12 +90,24 @@ def _yaml_tiers() -> dict[str, dict[str, Any]]:
 def _declared_aliases() -> frozenset[str]:
     """Ids declarados en el `opencode.json` del repo (aliases de flota).
 
+    Tolerante a la forma nativa V2 (``providers``) y a la V1 legada
+    (``provider``): el guard anti-retirados debe cubrir ambos shape.
+
     Returns:
-        Conjunto de ids de `provider.ollama.models`.
+        Conjunto de ids de ``providers.*.models`` (V2) o
+        ``provider.*.models`` (V1).
     """
     data: dict[str, Any] = json.loads(_OPENCODE_JSON.read_text(encoding="utf-8"))
-    models = data.get("provider", {}).get("ollama", {}).get("models", {})
-    return frozenset(models) if isinstance(models, dict) else frozenset()
+    declared: set[str] = set()
+    for section in ("providers", "provider"):
+        block = data.get(section)
+        if not isinstance(block, dict):
+            continue
+        for provider in block.values():
+            models = (provider or {}).get("models")
+            if isinstance(models, dict):
+                declared.update(str(name) for name in models)
+    return frozenset(declared)
 
 
 @pytest.fixture(scope="module")

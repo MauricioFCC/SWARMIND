@@ -77,6 +77,17 @@ class AgentBus(_MessagingMixin, _ReadingMixin):
         """
         self.store = vector_store or LanceVectorStore()
         self._embedding_fn = fallback_embedding
+        self._summary_comm = None
+
+    @property
+    def summary_comm(self):
+        if self._summary_comm is None and hasattr(self.store, "full_text_search"):
+            try:
+                from .summary_comm import SummaryCommunication
+                self._summary_comm = SummaryCommunication(self.store)
+            except Exception:  # noqa: BLE001
+                self._summary_comm = None
+        return self._summary_comm
 
     # ------------------------------------------------------------------
     # Internal: shared payload builder

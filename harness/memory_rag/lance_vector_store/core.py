@@ -20,7 +20,7 @@ import numpy as np
 import harness.memory_rag.lance_vector_store as _lance_vector_store
 
 from ..lance_schemas import DEFAULT_COLLECTIONS
-from ..memory_config import MemoryConfig
+from ..memory_config import MemoryBackend, MemoryConfig
 from .backends import _LanceDBBackendMixin, _MemoryBackendMixin
 from .constants import LANCEDB_ROOT
 from .exceptions import VectorStoreError
@@ -45,6 +45,7 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin):
         db_path: str | None = None,
         allow_fallback: bool = False,
         config: MemoryConfig | None = None,
+        backend: str | None = None,
     ) -> None:
         """Inicializa el vector store con conexion a LanceDB.
 
@@ -55,6 +56,40 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin):
             config: MemoryConfig opcional. Si se provee, db_path y allow_fallback
                     se toman del config si no se especifican explicitamente.
         """
+        import os as _os
+        if backend is None:
+            backend = _os.environ.get('VECTOR_BACKEND')
+        if backend is None and config is not None:
+            backend = getattr(config, 'vector_backend', None)
+        backend = (backend or 'ruscadb').lower()
+        self._backend = backend
+        if backend == 'ruscadb':
+            try:
+                from ..ruscadb_store import RuscaDBStore
+                self._rusca = RuscaDBStore(db_path=db_path, allow_fallback=allow_fallback, config=config)
+                self.db_path = self._rusca.db_path
+            except (ImportError, FileNotFoundError, OSError) as exc:
+                import logging as _log
+                _log.getLogger('harness.memory_rag.lance_vector_store').warning(
+                    'RuscaDB no disponible (%s); fallback a lancedb', exc
+                )
+                backend = 'lancedb'
+                self._backend = backend
+                self._rusca = None
+            if getattr(self, '_rusca', None) is not None:
+                self._lancedb_available = False
+                self._db = None
+                self._mem_collections = {}
+                self._embedding_dim = 384
+                self._allow_fallback = allow_fallback
+                for _m in ('create_collection','list_collections','insert','update_records',
+                           'search','hybrid_search','_keyword_score','get_collection_stats',
+                           'delete_collection','clear','from_config','execute',
+                           'full_text_search','graph_traverse'):
+                    if hasattr(self._rusca, _m):
+                        setattr(self, _m, getattr(self._rusca, _m))
+                return
+        self._rusca = None
         if config:
             self.db_path = db_path or config.lancedb_path
             if not allow_fallback:
@@ -388,8 +423,10 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin):
             LanceVectorStore configurado.
         """
         cfg = config or _lance_vector_store.get_memory_config()
+        db_path = cfg.ruscadb_path if cfg.backend == MemoryBackend.RUSCADB else cfg.lancedb_path
         return cls(
-            db_path=cfg.lancedb_path,
+            db_path=db_path,
             allow_fallback=cfg.allow_fallback,
             config=cfg,
+            backend=cfg.backend.value if hasattr(cfg.backend, "value") else str(cfg.backend),
         )

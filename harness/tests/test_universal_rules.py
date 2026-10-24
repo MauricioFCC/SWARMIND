@@ -192,7 +192,7 @@ class TestNAM:
         """NAM: clases en PascalCase (no snake_case)."""
         bad = re.compile(r"^class [a-z][a-z0-9_]*[(:]")
         for py_file in (ROOT / "harness").rglob("*.py"):
-            if "/tests/" in str(py_file) or "/scripts/" in str(py_file):
+            if "/tests/" in py_file.as_posix() or "/scripts/" in py_file.as_posix():
                 continue
             for i, line in enumerate(py_file.read_text(encoding="utf-8").splitlines(), 1):
                 if bad.search(line):
@@ -204,7 +204,7 @@ class TestNAM:
         """NAM: funciones en snake_case (no camelCase)."""
         bad = re.compile(r"^    def [a-z][a-z0-9_]*[A-Z]")
         for py_file in (ROOT / "harness").rglob("*.py"):
-            if "/tests/" in str(py_file):
+            if "/tests/" in py_file.as_posix():
                 continue
             for i, line in enumerate(py_file.read_text(encoding="utf-8").splitlines(), 1):
                 if bad.search(line):
@@ -217,7 +217,7 @@ class TestNAM:
         # Patron: tipo_ (no _) seguido de _ al inicio de la linea (asignacion)
         bad = re.compile(r"^\s*(str|int|bool|list|dict|flt|obj)_[a-z][a-z0-9_]*\s*=")
         for py_file in (ROOT / "harness").rglob("*.py"):
-            if "/tests/" in str(py_file):
+            if "/tests/" in py_file.as_posix():
                 continue
             for i, line in enumerate(py_file.read_text(encoding="utf-8").splitlines(), 1):
                 if line.lstrip().startswith("#"):
@@ -262,7 +262,7 @@ class TestTYP:
         """TYP: usar list[int], dict[str, T] (PEP 585) en lugar de List, Dict."""
         current_file = Path(__file__).resolve()
         for py_file in (ROOT / "harness").rglob("*.py"):
-            if "/tests/" in str(py_file) or py_file.resolve() == current_file:
+            if "/tests/" in py_file.as_posix() or py_file.resolve() == current_file:
                 continue
             for i, line in enumerate(py_file.read_text(encoding="utf-8").splitlines(), 1):
                 if line.lstrip().startswith("from typing") or line.lstrip().startswith("import typing"):
@@ -286,7 +286,7 @@ class TestIMM:
         """IMM: al menos una dataclass usa frozen=True (modelo de datos)."""
         found = False
         for py_file in (ROOT / "harness").rglob("*.py"):
-            if "/tests/" in str(py_file):
+            if "/tests/" in py_file.as_posix():
                 continue
             if "@dataclass(frozen=True)" in py_file.read_text(encoding="utf-8"):
                 found = True
@@ -314,7 +314,7 @@ class TestSOL:
     def test_no_class_inherits_more_than_2_levels(self) -> None:
         """SOL: jerarquias de herencia max 2 niveles (OCP: preferir composicion)."""
         for py_file in (ROOT / "harness").rglob("*.py"):
-            if "/tests/" in str(py_file):
+            if "/tests/" in py_file.as_posix():
                 continue
             for i, line in enumerate(py_file.read_text(encoding="utf-8").splitlines(), 1):
                 m = re.match(r"^class \w+\(([^)]+)\):", line)
@@ -387,7 +387,7 @@ class TestFSZ:
         """FSZ: ninguna funcion debe tener mas de 200 lineas (objetivo: 30)."""
         violations: list[str] = []
         for py_file in (ROOT / "harness").rglob("*.py"):
-            if "/tests/" in str(py_file):
+            if "/tests/" in py_file.as_posix():
                 continue
             lines = py_file.read_text(encoding="utf-8").splitlines()
             in_func = False
@@ -615,7 +615,7 @@ def scan_rule_compliance(verbose: bool = False) -> dict[str, list[str]]:
                 violations["UPG"].append(f"pyproject: dep pre-release '{dep}'")
 
     for py_file in (ROOT / "harness").rglob("*.py"):
-        if "/tests/" in str(py_file):
+        if "/tests/" in py_file.as_posix():
             continue
         lines = py_file.read_text(encoding="utf-8").splitlines()
         in_func = False

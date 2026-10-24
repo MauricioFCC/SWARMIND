@@ -1,4 +1,4 @@
-"""GeminiAdapter — Adaptador para Gemini CLI de Google.
+﻿"""GeminiAdapter â€” Adaptador para Gemini CLI de Google.
 
 Convierte agentes Swarmind (.opencode/agents/) al formato nativo de Gemini CLI:
 
@@ -12,7 +12,6 @@ Referencia: ai.google.dev/gemini-cli
 from __future__ import annotations
 
 import logging
-import shutil
 from pathlib import Path
 
 from harness.orchestrator.multi_harness.converter_base import (
@@ -48,7 +47,6 @@ class GeminiAdapter(HarnessConverter):
             ExportResult con el resultado.
         """
         agents: list[Path] = self._get_opencode_agents()
-        errors: list[str] = []
 
         if not agents:
             return ExportResult(success=True, files_exported=0)
@@ -58,15 +56,7 @@ class GeminiAdapter(HarnessConverter):
             return ExportResult(success=True, files_exported=len(agents))
 
         target_agents_dir: Path = self._ensure_target_dir("agents")
-        count: int = 0
-        for agent_file in agents:
-            dest: Path = target_agents_dir / agent_file.name
-            try:
-                shutil.copy2(str(agent_file), str(dest))
-                count += 1
-                logger.debug("[Gemini] Exportado agente: %s", agent_file.name)
-            except OSError as exc:
-                errors.append(f"Error copiando {agent_file.name}: {exc}")
+        count, errors = self._copy_agents(target_agents_dir, "Gemini")
 
         return ExportResult(
             success=len(errors) == 0,
@@ -85,7 +75,6 @@ class GeminiAdapter(HarnessConverter):
             ExportResult con el resultado.
         """
         skills: list[Path] = self._get_opencode_skills()
-        errors: list[str] = []
 
         if not skills:
             return ExportResult(success=True, files_exported=0)
@@ -95,14 +84,7 @@ class GeminiAdapter(HarnessConverter):
             return ExportResult(success=True, files_exported=len(skills))
 
         target_skills_dir: Path = self._ensure_target_dir("skills")
-        count: int = 0
-        for skill_file in skills:
-            dest: Path = target_skills_dir / skill_file.name
-            try:
-                shutil.copy2(str(skill_file), str(dest))
-                count += 1
-            except OSError as exc:
-                errors.append(f"Error copiando {skill_file.name}: {exc}")
+        count, errors = self._copy_skills(target_skills_dir, "Gemini")
 
         return ExportResult(
             success=len(errors) == 0,
@@ -125,7 +107,7 @@ class GeminiAdapter(HarnessConverter):
             ExportResult con el resultado.
         """
         instructions: list[str] = [
-            "# Swarmind — Instrucciones de Sistema para Gemini CLI",
+            "# Swarmind â€” Instrucciones de Sistema para Gemini CLI",
             "",
             "> Generado automaticamente por Multi-Harness Adapter Layer.",
             "> Fuente: .opencode/",

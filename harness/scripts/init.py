@@ -199,11 +199,11 @@ def setup_mcp_servers(base: Path) -> None:
         try:
             choice = input("  Selecciona un numero (1-6): ").strip()
             server_map = {
-                "1": ("filesystem", "npx @modelcontextprotocol/server-filesystem"),
-                "2": ("github", "npx @modelcontextprotocol/server-github"),
-                "3": ("postgres", "npx @modelcontextprotocol/server-postgres"),
-                "4": ("memory", "npx @modelcontextprotocol/server-memory"),
-                "5": ("brave_search", "npx @modelcontextprotocol/server-brave-search"),
+                "1": ("filesystem", "npx -y @modelcontextprotocol/server-filesystem /path/to/allowed/dir"),
+                "2": ("github", "docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server"),
+                "3": ("postgres", "npx -y @modelcontextprotocol/server-postgres postgresql://user:pass@host:5432/db"),
+                "4": ("memory", "npx -y @modelcontextprotocol/server-memory"),
+                "5": ("brave_search", "BRAVE_API_KEY=xxx npx -y @brave/brave-search-mcp-server"),
             }
             if choice in server_map:
                 name, install_cmd = server_map[choice]

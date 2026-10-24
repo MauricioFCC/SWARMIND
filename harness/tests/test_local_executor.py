@@ -311,8 +311,8 @@ def test_low_vram_degrades_to_smallest_text_model() -> None:
     )
     out = ex.execute("resume esto")
     assert out.executed_locally is True
-    # Flota 2026-10-08: el mas chico que cabe (3300MB) es el coder 3B.
-    assert out.model == "qwen2.5-coder-3b-iq4-xs"
+    # Flota instalada 2026-10-14: el mas chico que cabe (2600MB) es phi-reasoning.
+    assert out.model == "phi-4-mini-reasoning-q4-k-m"
     # La ventana enviada respeta el techo anti-TDR.
     assert client.last_kwargs["options"]["num_ctx"] <= 8192
 

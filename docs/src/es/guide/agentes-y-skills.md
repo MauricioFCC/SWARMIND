@@ -494,7 +494,7 @@ harness/
 > **fuente unica de verdad** del cerebro (agents, skills, core, registry). Se
 > sincroniza automaticamente al global `~/.config/opencode/` en **cada commit**
 > (pre-commit hook → `scripts/sync_opencode_global.py`) y se propaga como
-> **mirror local** completo a todos los proyectos de DEV-SPACE
+> **mirror local** completo a todos los proyectos de <workspace>
 > (`scripts/deploy_all.py`, preservando la config propia de cada uno). Guia
 > completa: [Opcion A — SSOT Global OpenCode](opcion-a-ssot-global.md).
 

@@ -22,6 +22,7 @@ from harness.context.skill_inherit import (
     parse_inherit,
     resolve_inherit,
 )
+from harness.evolve_loop.feedback_scorer import score_outcome
 from harness.evolve_loop.library_drift import LibraryDriftManager
 from harness.evolve_loop.skill_generator import REGISTRY_PATH, SkillGenerator
 from harness.memory_rag.lance_vector_store import (
@@ -483,24 +484,40 @@ class AgentDispatcher:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def record_skill_outcome(self, skill_name: str, *, success: bool) -> None:
+    def record_skill_outcome(
+        self, skill_name: str, *, success: bool, agent_role: str | None = None,
+        state_snapshot: dict | None = None,
+    ) -> None:
         """Registra el outcome real de una skill usada en un dispatch.
 
-        WHAT: delega en ``LibraryDriftManager.record_outcome`` para acumular
-        evidencia de utilidad (recuperacion + helpful/hurt). WHY: el outcome de
-        una skill se conoce DESPUES de que el agente termina (no en
-        ``dispatch``), asi que el caller que ejecuta la tarea y conoce el
-        resultado invoca este metodo para cerrar el ciclo (Library Drift).
-        WHERE: caller de ``AgentDispatcher`` tras evaluar el resultado; no-op si
-        no se inyecto ``drift_manager`` (backward-compatible).
+        WHAT: (1) delega en ``LibraryDriftManager.record_outcome`` para
+        evidencia de utilidad (recuperacion + helpful/hurt); (2) escribe la
+        efectividad en las colecciones de valor ``skill_effectiveness`` y
+        ``agent_performance`` via ``feedback_scorer`` (Item 1,
+        docs/specs/memory-optimality.md). WHY: el outcome se conoce DESPUES
+        de que el agente termina (no en ``dispatch``), asi que el caller que
+        ejecuta la tarea invoca este metodo para cerrar el ciclo. WHERE:
+        caller de ``AgentDispatcher`` tras evaluar el resultado; ambas
+        acciones son best-effort y backward-compatible (no-op si faltan
+        ``drift_manager``/``_vector_store``).
 
         Args:
             skill_name: Nombre del skill inyectado en el dispatch.
             success: ``True`` si la trayectoria guiada por el skill fue correcta.
+            agent_role: Rol del agente que ejecuto (opcional; si se provee
+                tambien se escribe ``agent_performance``).
         """
-        if self._drift_manager is None:
-            return
-        self._drift_manager.record_outcome(skill_name, success=success, used=True)
+        if self._drift_manager is not None:
+            self._drift_manager.record_outcome(skill_name, success=success, used=True)
+        # Feedback en colecciones de valor (best-effort; jamas lanza).
+        try:
+            score_outcome(
+                self._vector_store, skill_name,
+                success=success, agent_role=agent_role,
+                state_snapshot=state_snapshot,
+            )
+        except Exception:  # noqa: BLE001, S110
+            pass
 
     def _record_dispatch_telemetry(self, task_description: str, skill_context: str) -> None:
         """Registra el uso de tokens del dispatch (FR-2, best-effort).

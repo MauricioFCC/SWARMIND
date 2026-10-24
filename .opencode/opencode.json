@@ -4,44 +4,190 @@
     ".opencode/core/base_principles.min.md"
   ],
   "model": "opencode-go/deepseek-v4.1-flash",
-  "small_model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs",
-  "agent": {
+  "agents": {
     "coordinator": {
-      "mode": "primary",
+      "mode": "all",
       "model": "opencode-go/deepseek-v4.1-flash",
-      "permission": {
-        "task": {
-          "*": "ask",
-          "builder-*": "allow",
-          "scientist-*": "allow",
-          "guardian-*": "allow"
+      "permissions": [
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "ask"
+        },
+        {
+          "action": "subagent",
+          "resource": "builder",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "guardian",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "scientist",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "reviewer",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "architect",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "test-writer",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "security-engineer",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "researcher",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "release-ops",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "token-budget-auditor",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "platform-engineer",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "product-manager",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "qa-engineer",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "backend-engineer",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "frontend-engineer",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "data-engineer",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "database-administrator",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "mobile-engineer",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "devops",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "evolve",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "evolve-engineer",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "evolve-analyzer",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "evolve-researcher",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
+          "resource": "alpha-miner",
+          "effect": "allow"
         }
-      }
+      ]
     },
     "builder": {
       "mode": "subagent",
       "model": "opencode-go/deepseek-v4.1-flash",
-      "permission": {
-        "edit": "allow",
-        "bash": "ask"
-      }
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "allow"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "ask"
+        }
+      ]
     },
     "guardian": {
       "mode": "subagent",
       "model": "opencode-go/deepseek-v4.1-flash",
-      "permission": {
-        "edit": "deny",
-        "bash": "allow"
-      }
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "allow"
+        }
+      ]
     },
     "scientist": {
       "mode": "subagent",
       "model": "opencode-go/deepseek-v4.1-flash",
-      "permission": {
-        "edit": "deny",
-        "bash": "ask",
-        "webfetch": "allow"
-      }
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "ask"
+        },
+        {
+          "action": "webfetch",
+          "resource": "*",
+          "effect": "allow"
+        }
+      ]
     },
     "reviewer": {
       "model": "opencode-go/deepseek-v4.1-flash"
@@ -108,74 +254,177 @@
     },
     "token-budget-auditor": {
       "model": "opencode-go/deepseek-v4.1-flash"
+    },
+    "title": {
+      "model": "llamacpp/mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
     }
   },
-  "provider": {
-    "llamacpp": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "llama.cpp (llama-swap local :11434)",
-      "options": {
-        "baseURL": "http://127.0.0.1:11434/v1"
-      },
-      "models": {
-        "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs": {
-          "name": "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs (reasoning/general)",
-          "reasoning": true,
-          "tools": true,
-          "options": {
-            "num_ctx": 12288
-          }
-        },
-        "phi-4-mini-reasoning-q4-k-m": {
-          "name": "phi-4-mini-reasoning-q4-k-m (reasoning/general)",
-          "reasoning": true,
-          "tools": true,
-          "options": {
-            "num_ctx": 32768
-          }
-        },
-        "qwen3-4b-thinking-2507-q4-k-m": {
-          "name": "qwen3-4b-thinking-2507-q4-k-m (reasoning/general)",
-          "reasoning": true,
-          "tools": true,
-          "options": {
-            "num_ctx": 65536
-          }
-        },
-        "qwen3-embedding-0-6b": {
-          "name": "qwen3-embedding-0-6b (embeddings/RAG)",
-          "reasoning": false,
-          "tools": false,
-          "options": {
-            "num_ctx": 8192
-          }
-        },
-        "ternary-bonsai-2-27b-ptq1-0": {
-          "name": "ternary-bonsai-2-27b-ptq1-0 (reasoning/general)",
-          "reasoning": true,
-          "tools": true,
-          "options": {
-            "num_ctx": 8192
-          }
-        }
-      }
+  "permissions": [
+    {
+      "action": "shell",
+      "resource": "git status *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git diff *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git log *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git push *",
+      "effect": "ask"
+    },
+    {
+      "action": "shell",
+      "resource": "sudo *",
+      "effect": "deny"
     }
-  },
-  "skills": {
-    "paths": [
-      ".opencode/skills"
+  ],
+  "policies": [
+    {
+      "action": "tool.use",
+      "resource": "shell:sudo *",
+      "effect": "deny"
+    }
+  ],
+  "watcher": {
+    "ignore": [
+      ".venv/**",
+      "**/__pycache__/**",
+      "**/*.pyc",
+      "node_modules/**",
+      "dist/**",
+      "coverage/**",
+      "logs/**",
+      "**/*.log",
+      ".opencode/federated/**",
+      "harness/tests/test_universal_rules_state.json"
     ]
   },
+  "skills": [
+    ".opencode/skills"
+  ],
   "compaction": {
     "auto": true,
-    "prune": true,
-    "reserved": 2000
+    "keep": {
+      "tokens": 15000
+    }
   },
   "tool_output": {
     "max_lines": 200,
     "max_bytes": 8192
   },
-  "experimental": {
-    "mcp_timeout": 30000
+  "mcp": {
+    "timeout": {
+      "catalog": 90000,
+      "execution": 90000
+    }
+  },
+  "providers": {
+    "llamacpp": {
+      "package": "aisdk:@ai-sdk/openai-compatible",
+      "name": "llama.cpp (llama-swap local :11434)",
+      "settings": {
+        "baseURL": "http://127.0.0.1:11434/v1"
+      },
+      "models": {
+        "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs": {
+          "name": "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs (reasoning/general)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 8192
+          },
+          "settings": {
+            "num_ctx": 8192
+          }
+        },
+        "phi-4-mini-reasoning-q4-k-m": {
+          "name": "phi-4-mini-reasoning-q4-k-m (reasoning/general)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 8192
+          },
+          "settings": {
+            "num_ctx": 8192
+          }
+        },
+        "qwen3-4b-thinking-2507-q4-k-m": {
+          "name": "qwen3-4b-thinking-2507-q4-k-m (reasoning/general)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 8192
+          },
+          "settings": {
+            "num_ctx": 8192
+          }
+        },
+        "qwen3-embedding-0-6b": {
+          "name": "qwen3-embedding-0-6b (embeddings/RAG)",
+          "capabilities": {
+            "tools": false,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 8192
+          },
+          "settings": {
+            "num_ctx": 8192
+          }
+        },
+        "ternary-bonsai-2-27b-ptq1-0": {
+          "name": "ternary-bonsai-2-27b-ptq1-0 (reasoning/general)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 8192
+          },
+          "settings": {
+            "num_ctx": 8192
+          }
+        }
+      }
+    }
   }
 }

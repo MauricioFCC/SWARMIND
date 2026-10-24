@@ -37,7 +37,7 @@ Todo el código fuente vive dentro de `harness/`, dividido en dominios:
 > **NUEVO (2026-08):** `.opencode/` es el cerebro del sistema (23 agents,
 > 35 skills, core, registry). Se sincroniza automáticamente al global
 > `~/.config/opencode/` en cada commit (pre-commit hook) y se propaga como
-> mirror local a todos los proyectos de DEV-SPACE.
+> mirror local a todos los proyectos de <workspace>.
 
 | Ruta | Contenido | Sync |
 |------|-----------|------|
@@ -53,7 +53,7 @@ Scripts clave:
 | Script | Función |
 |--------|---------|
 | `scripts/sync_opencode_global.py` | SWARMIND `.opencode/` → `~/.config/opencode/` (SSOT global) |
-| `scripts/deploy_all.py` | SWARMIND → mirrors locales de DEV-SPACE (preserva config propia) |
+| `scripts/deploy_all.py` | SWARMIND → mirrors locales de <workspace> (preserva config propia) |
 | `harness/scripts/install_hooks.py` | Instala pre-commit (QA rápido + sync global automático) |
 
 Guía completa: [docs/src/es/guide/opcion-a-ssot-global.md](../guide/opcion-a-ssot-global.md).
