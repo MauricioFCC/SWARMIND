@@ -153,7 +153,7 @@ class RuscaDBStore:
 
     def delete_collection(self, name: str) -> None:
         try:
-            execute(self._handle, f"DROP TABLE {name}")
+            execute(self._handle, "DELETE FROM " + name)
         except RuscadbError:
             pass
         self._collections.discard(name)
