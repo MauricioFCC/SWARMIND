@@ -147,7 +147,9 @@ def test_self_improver_recursive_round() -> None:
         t = HarnessTree.from_dict(dict(root))
         t.set('system_prompt', t.get('system_prompt', '') + ' [v]')
         return t
-    si = SelfImprover()
+    from harness.evolve_loop.cognition_sync import CognitionSync
+    from harness.memory_rag.lance_vector_store import LanceVectorStore
+    si = SelfImprover(cognition=CognitionSync(vector_store=LanceVectorStore(backend="memory")))
     res = si.run_recursive_round('skill1', base, exec_fn, proposer_fn=prop, mode='parallel', k=1, base_dir=tempfile.mkdtemp())
     assert res.ok is True
     assert si.recursive_harness is not None
