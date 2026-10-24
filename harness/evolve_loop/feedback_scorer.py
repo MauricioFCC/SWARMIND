@@ -103,6 +103,7 @@ def score_outcome(
     success: bool,
     agent_role: str | None = None,
     metrics: dict[str, Any] | None = None,
+    state_snapshot: dict[str, Any] | None = None,
 ) -> bool:
     """Puntua un outcome en las colecciones de valor (best-effort).
 
@@ -116,6 +117,8 @@ def score_outcome(
         success: True si la trayectoria fue correcta.
         agent_role: Rol del agente (``None`` => no escribe performance).
         metrics: Metricas adicionales serializadas a JSON.
+        state_snapshot: Snapshot del estado restaurado para credit assignment
+            (frontier: arXiv:2604.09459 — restored-state comparison).
 
     Returns:
         True si al menos una fila se escribio.
@@ -124,14 +127,17 @@ def score_outcome(
         return False
     ts = datetime.now(UTC).isoformat()
     written = False
+    snap_json = json.dumps(state_snapshot or {}, ensure_ascii=False)
     if skill_name:
         written = _write_row(store, COLLECTION_SKILL_EFFECTIVENESS, {
             "skill_name": skill_name, "success": success, "ts": ts,
+            "state_snapshot": snap_json,
         }) or written
     if agent_role:
         written = _write_row(store, COLLECTION_AGENT_PERFORMANCE, {
             "agent_role": agent_role, "success": success, "ts": ts,
             "metrics": json.dumps(metrics or {}, ensure_ascii=False),
+            "state_snapshot": snap_json,
         }) or written
     return written
 

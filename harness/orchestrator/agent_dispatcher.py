@@ -485,7 +485,8 @@ class AgentDispatcher:
     # ------------------------------------------------------------------
 
     def record_skill_outcome(
-        self, skill_name: str, *, success: bool, agent_role: str | None = None
+        self, skill_name: str, *, success: bool, agent_role: str | None = None,
+        state_snapshot: dict | None = None,
     ) -> None:
         """Registra el outcome real de una skill usada en un dispatch.
 
@@ -513,6 +514,7 @@ class AgentDispatcher:
             score_outcome(
                 self._vector_store, skill_name,
                 success=success, agent_role=agent_role,
+                state_snapshot=state_snapshot,
             )
         except Exception:  # noqa: BLE001, S110
             pass
