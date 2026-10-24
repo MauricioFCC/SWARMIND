@@ -90,11 +90,12 @@ def _library_candidates(path: str | os.PathLike[str] | None) -> list[Path]:
     for profile in ("debug", "release"):
         for name in _library_names():
             candidates.append(Path("target") / profile / name)
-    # rutas absolutas del proyecto RuscaDB (desarrollo)
-    for base in ("C:/Users/USUARIO/Documents/DEV-SPACE/RuscaDB/target/debug",
-                 "C:/Users/USUARIO/Documents/DEV-SPACE/RuscaDB/target/release"):
-        for name in _library_names():
-            candidates.append(Path(base) / name)
+    # rutas del proyecto RuscaDB via env (portable, ADR-0035)
+    rusca_root = os.environ.get("RUSCADB_ROOT")
+    if rusca_root:
+        for profile in ("debug", "release"):
+            for name in _library_names():
+                candidates.append(Path(rusca_root) / "target" / profile / name)
     return candidates
 
 

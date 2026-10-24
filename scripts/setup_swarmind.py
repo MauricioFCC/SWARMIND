@@ -262,10 +262,12 @@ def _setup_ruscadb() -> bool:
     """
     import shutil as _sh
     candidates = [
-        Path("C:/Users/USUARIO/Documents/DEV-SPACE/RuscaDB"),
         _ROOT.parent / "RuscaDB",
         Path.home() / ".config" / "opencode" / "ruscadb",
     ]
+    rusca_env = os.environ.get("RUSCADB_ROOT")
+    if rusca_env:
+        candidates.insert(0, Path(rusca_env))
     rusca_dir = None
     for c in candidates:
         if (c / "Cargo.toml").is_file():

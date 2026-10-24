@@ -6,7 +6,7 @@
 
 Swarmind es el **repositorio central del framework**. Su cerebro (`.opencode/`
 con agents, skills, core y skills_registry) se distribuye a otros proyectos de
-DEV-SPACE mediante un esquema **SSOT (Single Source of Truth)**:
+<workspace> mediante un esquema **SSOT (Single Source of Truth)**:
 
 ```
 ~/.config/opencode/          ← CONFIG GLOBAL opencode (SSOT del cerebro)
@@ -46,7 +46,7 @@ versionado) actualiza el mirror de todos los proyectos bajo demanda.
 | Componente | Archivo | Alcance | Trigger |
 |------------|---------|---------|---------|
 | Sync global | `scripts/sync_opencode_global.py` | SWARMIND `.opencode/` → `~/.config/opencode/` | Pre-commit hook + manual |
-| Deploy proyectos | `scripts/deploy_all.py` | SWARMIND → cada proyecto DEV-SPACE (mirror) | Manual (`python scripts/deploy_all.py`) |
+| Deploy proyectos | `scripts/deploy_all.py` | SWARMIND → cada proyecto <workspace> (mirror) | Manual (`python scripts/deploy_all.py`) |
 | Hook pre-commit | `harness/scripts/install_hooks.py` | QA rapido + sync global | Cada `git commit` |
 
 ### Sync global (`sync_opencode_global.py`)
@@ -62,7 +62,7 @@ uv run python scripts/sync_opencode_global.py --quiet  # Modo silencioso (hook)
 
 ### Deploy a proyectos (`deploy_all.py`)
 
-Actualiza el mirror de todos los proyectos de DEV-SPACE. **Estándar v2.5**:
+Actualiza el mirror de todos los proyectos de <workspace>. **Estándar v2.5**:
 los proyectos reciben solo `.opencode/` (125 archivos) + las **33 skills** +
 `skills_registry.yaml`. El motor (`harness/`) **NO se copia** — vive una sola
 vez en opencode global (elimina ~5.3 GB de duplicación). **Preserva siempre
@@ -145,7 +145,7 @@ agents/ (40 archivos) · skills/ (63 archivos) · core/ (13 archivos) · skills_
 > **Importante**: opencode carga la config al inicio (no hay hot-reload).
 > Reinicia opencode despues del primer sync para que tome los cambios.
 
-### 4.4 Desplegar a proyectos de DEV-SPACE
+### 4.4 Desplegar a proyectos de <workspace>
 
 ```powershell
 uv run python scripts/deploy_all.py --dry-run   # Ver que va a hacer
@@ -172,8 +172,8 @@ uv run python scripts/sync_opencode_global.py
 
 | Variable | Default | Uso |
 |----------|---------|-----|
-| `DEV_SPACE_ROOT` | `<home>/Documents/DEV-SPACE` | Raiz de proyectos |
-| `HERMES_ROOT` | `<home>/Documents/DEV-SPACE/Hermes_Memory_Proyects` | Memoria central |
+| `DEV_SPACE_ROOT` | `<home>/Documents/<workspace>` | Raiz de proyectos |
+| `HERMES_ROOT` | `<home>/Documents/<workspace>/Hermes_Memory_Proyects` | Memoria central |
 | `OPENCODE_GLOBAL_DIR` | `<home>/.config/opencode` | SSOT global opencode |
 
 Todas las rutas usan `Path.home()` con override por env var — portables entre
@@ -185,7 +185,7 @@ maquinas y usuarios.
    `.opencode/core/`).
 2. **Commit** → el hook corre QA rapido + sync global.
 3. **Opcional**: `uv run python scripts/deploy_all.py` para propagar a todos
-   los proyectos de DEV-SPACE.
+   los proyectos de <workspace>.
 4. Los proyectos quedan **abiertos** (mirror local + config propia intacta) para
    cualquier editor.
 
