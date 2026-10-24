@@ -254,6 +254,58 @@ def _verify() -> bool:
         return False
 
 
+def _setup_ruscadb() -> bool:
+    """Intenta compilar/copiar RuscaDB (C-ABI) para habilitar backend ruscadb.
+
+    Busca el repo RuscaDB en ubicaciones conocidas; si cargo esta disponible
+    compila ruscadb-ffi y copia la dll al paquete. Si no, degrada a lancedb/memory.
+    """
+    import shutil as _sh
+    candidates = [
+        Path("C:/Users/USUARIO/Documents/DEV-SPACE/RuscaDB"),
+        _ROOT.parent / "RuscaDB",
+        Path.home() / ".config" / "opencode" / "ruscadb",
+    ]
+    rusca_dir = None
+    for c in candidates:
+        if (c / "Cargo.toml").is_file():
+            rusca_dir = c
+            break
+    if rusca_dir is None:
+        logger.info("  RuscaDB no encontrado localmente; backend ruscadb sera opt-in (fallback lancedb/memory).")
+        return True
+    logger.info("  RuscaDB encontrado en %s", rusca_dir)
+    cargo = shutil.which("cargo")
+    if cargo is None:
+        logger.info("  cargo no disponible; usando dll precompilada si existe.")
+    else:
+        logger.info("  Compilando ruscadb-ffi (cargo build)...")
+        try:
+            result = subprocess.run(
+                [cargo, "build", "-p", "ruscadb-ffi"],
+                cwd=rusca_dir, capture_output=True, text=True, check=False,
+                timeout=_LONG_CMD_TIMEOUT_SECONDS,
+            )
+            if result.returncode != 0:
+                logger.warning("  cargo build fallo: %s", result.stderr[-300:])
+            else:
+                logger.info("  ✅ ruscadb-ffi compilado")
+        except Exception as e:  # noqa: BLE001
+            logger.warning("  cargo build error: %s", e)
+    # copiar dll si existe
+    for profile in ("debug", "release"):
+        dll = rusca_dir / "target" / profile / "ruscadb_ffi.dll"
+        if dll.is_file():
+            dst = _ROOT / "harness" / "memory_rag" / "ruscadb_ffi.dll"
+            try:
+                _sh.copyfile(dll, dst)
+                logger.info("  ✅ dll copiada a %s", dst)
+                return True
+            except Exception as e:  # noqa: BLE001
+                logger.warning("  No se pudo copiar dll: %s", e)
+    logger.info("  dll no disponible; backend ruscadb sera opt-in (fallback lancedb/memory).")
+    return True
+
 def main() -> None:
     """CLI principal del setup."""
     parser = argparse.ArgumentParser(description="Setup inicial de Swarmind (v2.5)")
@@ -296,6 +348,12 @@ def main() -> None:
         logger.info("  [simulado] Bootstrap memoria colectiva + migración")
     else:
         steps_ok = _bootstrap_memory() and steps_ok
+
+    # 4b. RuscaDB (compilar/copiar dll si esta disponible)
+    if args.dry_run:
+        logger.info("  [simulado] Setup RuscaDB (compilar/copiar dll)")
+    else:
+        steps_ok = _setup_ruscadb() and steps_ok
 
     # 5. Sync global (cerebro + motor)
     if args.skip_sync:
