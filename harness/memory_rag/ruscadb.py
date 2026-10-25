@@ -21,10 +21,12 @@ La ruta de la biblioteca se toma de ``RUSCADB_FFI_LIB`` o de
 from __future__ import annotations
 
 import ctypes
+import json as _json
 import os
 import sys
 from ctypes import POINTER, c_char_p, c_int, c_size_t, c_uint32, c_uint64, c_void_p
 from pathlib import Path
+from typing import Any
 
 #: Tamano de pagina de RuscaDB (4 KiB), espejo del C-ABI.
 PAGE_SIZE = 4096
@@ -161,7 +163,82 @@ def load_library(path: str | os.PathLike[str] | None = None) -> ctypes.CDLL:
     library.ruscadb_last_inserted_id.restype = c_size_t
     library.ruscadb_last_error.argtypes = [c_char_p, c_size_t]
     library.ruscadb_last_error.restype = c_size_t
+    _bind_extended(library)
     return library
+
+
+def _bind_optional(
+    library: ctypes.CDLL,
+    name: str,
+    argtypes: list[Any],
+    restype: Any,
+) -> bool:
+    """Enlaza una funcion del ABI solo si la DLL la exporta.
+
+    Permite que una DLL antigua siga funcionando con las funciones basicas
+    mientras el adaptador degrada las capacidades extendidas.
+
+    Args:
+        library: Biblioteca ya cargada.
+        name: Nombre del simbolo C.
+        argtypes: Tipos de los argumentos.
+        restype: Tipo de retorno.
+
+    Returns:
+        True si el simbolo existe y quedo enlazado.
+    """
+    symbol = getattr(library, name, None)
+    if symbol is None:
+        return False
+    symbol.argtypes = argtypes
+    symbol.restype = restype
+    return True
+
+
+def _bind_extended(library: ctypes.CDLL) -> None:
+    """Enlaza las funciones extendidas (opcionales) del C-ABI."""
+    _bind_optional(
+        library,
+        "ruscadb_open_opts",
+        [c_char_p, c_uint32, c_char_p, c_int, _HANDLE_P],
+        c_int,
+    )
+    _bind_optional(library, "ruscadb_create_index", [c_void_p, c_char_p, c_char_p], c_int)
+    _bind_optional(
+        library,
+        "ruscadb_update_record",
+        [c_void_p, c_char_p, c_char_p, c_char_p],
+        c_int,
+    )
+    _bind_optional(
+        library, "ruscadb_delete_record", [c_void_p, c_char_p, c_char_p], c_int
+    )
+    _bind_optional(library, "ruscadb_last_affected", [], ctypes.c_int64)
+    _bind_optional(
+        library,
+        "ruscadb_get_record",
+        [c_void_p, c_char_p, c_char_p, c_char_p, c_size_t],
+        c_int,
+    )
+    _bind_optional(
+        library,
+        "ruscadb_put_blob",
+        [c_void_p, _U8P, c_size_t, c_char_p, c_size_t],
+        c_int,
+    )
+    _bind_optional(library, "ruscadb_blob_len", [c_void_p, c_char_p], c_size_t)
+    _bind_optional(
+        library, "ruscadb_get_blob", [c_void_p, c_char_p, _U8P, c_size_t], c_int
+    )
+    _bind_optional(library, "ruscadb_gc_blobs", [c_void_p], c_int)
+    _bind_optional(library, "ruscadb_last_lsn", [c_void_p], c_uint64)
+    _bind_optional(
+        library, "ruscadb_integrity_check", [c_void_p, c_char_p, c_size_t], c_int
+    )
+    _bind_optional(library, "ruscadb_backup", [c_void_p, c_char_p], c_int)
+    _bind_optional(
+        library, "ruscadb_explain", [c_void_p, c_char_p, c_char_p, c_size_t], c_int
+    )
 
 
 def _lib() -> ctypes.CDLL:
@@ -355,6 +432,338 @@ def last_inserted_id() -> str:
     return buf.value.decode('utf-8', errors='replace')
 
 
+def _require(name: str) -> None:
+    """Verifica que la DLL exporte una funcion extendida.
+
+    Args:
+        name: Simbolo C requerido.
+
+    Raises:
+        RuscadbError: si la DLL cargada no lo exporta (version antigua).
+    """
+    if getattr(_lib(), name, None) is None:
+        raise RuscadbError(
+            RC_DOMAIN_ERROR,
+            f"la DLL de RuscaDB no exporta {name}; recompila con "
+            "`cargo build -p ruscadb-ffi`",
+        )
+
+
+def capabilities() -> dict[str, bool]:
+    """Devuelve que funciones extendidas expone la DLL cargada.
+
+    Returns:
+        Mapa ``nombre -> disponible`` para las capacidades extendidas.
+    """
+    library = _lib()
+    names = (
+        "ruscadb_open_opts",
+        "ruscadb_create_index",
+        "ruscadb_update_record",
+        "ruscadb_delete_record",
+        "ruscadb_get_record",
+        "ruscadb_put_blob",
+        "ruscadb_get_blob",
+        "ruscadb_gc_blobs",
+        "ruscadb_last_lsn",
+        "ruscadb_integrity_check",
+        "ruscadb_backup",
+        "ruscadb_explain",
+    )
+    return {name: getattr(library, name, None) is not None for name in names}
+
+
+def open_with_options(
+    data_path: str | os.PathLike[str],
+    pool_capacity: int = 8,
+    blob_path: str | os.PathLike[str] | None = None,
+    readonly: bool = False,
+) -> c_void_p:
+    """Abre una base con blob store opcional y modo solo lectura.
+
+    Args:
+        data_path: Ruta del archivo de paginas.
+        pool_capacity: Numero de marcos del buffer pool.
+        blob_path: Directorio del blob store, o None.
+        readonly: Abre en modo solo lectura (lectores concurrentes).
+
+    Returns:
+        El handle opaco del ABI.
+
+    Raises:
+        RuscadbError: si el ABI devuelve un error.
+    """
+    library = _lib()
+    if getattr(library, "ruscadb_open_opts", None) is None:
+        return open(data_path, pool_capacity)
+    handle = c_void_p()
+    bytes_path = os.fsencode(os.fspath(data_path))
+    blob_bytes = os.fsencode(os.fspath(blob_path)) if blob_path else None
+    _check(
+        library.ruscadb_open_opts(
+            bytes_path,
+            c_uint32(pool_capacity),
+            blob_bytes,
+            c_int(1 if readonly else 0),
+            ctypes.byref(handle),
+        )
+    )
+    return handle
+
+
+def create_index(handle: c_void_p, table: str, column: str) -> None:
+    """Crea un indice secundario sobre ``table.column``.
+
+    Args:
+        handle: Handle devuelto por :func:`open`.
+        table: Tabla destino.
+        column: Columna a indexar.
+
+    Raises:
+        RuscadbError: si la DLL no lo soporta o el motor falla.
+    """
+    _require("ruscadb_create_index")
+    _check(_lib().ruscadb_create_index(handle, table.encode("utf-8"), column.encode("utf-8")))
+
+
+def last_affected() -> int:
+    """Devuelve las filas afectadas por el ultimo update/delete.
+
+    Returns:
+        Numero de filas (0 si no hubo cambios).
+    """
+    library = _lib()
+    if getattr(library, "ruscadb_last_affected", None) is None:
+        return 0
+    return int(library.ruscadb_last_affected())
+
+
+def update_record(handle: c_void_p, table: str, rid: str, scalars: dict[str, Any]) -> int:
+    """Actualiza columnas de una fila por su ``RecordId`` (ULID).
+
+    Args:
+        handle: Handle devuelto por :func:`open`.
+        table: Tabla destino.
+        rid: ULID del registro.
+        scalars: Columnas nuevas (parciales).
+
+    Returns:
+        1 si actualizo, 0 si la fila no existia.
+
+    Raises:
+        RuscadbError: si la DLL no lo soporta o el motor falla.
+    """
+    _require("ruscadb_update_record")
+    payload = _json.dumps(scalars, ensure_ascii=False).encode("utf-8")
+    _check(
+        _lib().ruscadb_update_record(
+            handle, table.encode("utf-8"), rid.encode("utf-8"), payload
+        )
+    )
+    return last_affected()
+
+
+def delete_record(handle: c_void_p, table: str, rid: str) -> int:
+    """Borra logicamente (MVCC) una fila por su ``RecordId``.
+
+    Args:
+        handle: Handle devuelto por :func:`open`.
+        table: Tabla destino.
+        rid: ULID del registro.
+
+    Returns:
+        1 si borro, 0 si no existia.
+
+    Raises:
+        RuscadbError: si la DLL no lo soporta o el motor falla.
+    """
+    _require("ruscadb_delete_record")
+    _check(
+        _lib().ruscadb_delete_record(
+            handle, table.encode("utf-8"), rid.encode("utf-8")
+        )
+    )
+    return last_affected()
+
+
+def get_record(handle: c_void_p, table: str, rid: str) -> dict[str, Any] | None:
+    """Devuelve el registro completo (escalares, doc, aristas, vector).
+
+    Args:
+        handle: Handle devuelto por :func:`open`.
+        table: Tabla destino.
+        rid: ULID del registro.
+
+    Returns:
+        El registro como dict, o None si no existe.
+
+    Raises:
+        RuscadbError: si la DLL no lo soporta o el motor falla.
+    """
+    _require("ruscadb_get_record")
+    size = 65536
+    for _ in range(8):
+        buffer = ctypes.create_string_buffer(size)
+        code = int(
+            _lib().ruscadb_get_record(
+                handle,
+                table.encode("utf-8"),
+                rid.encode("utf-8"),
+                buffer,
+                c_size_t(size),
+            )
+        )
+        if code == RC_BUFFER_TOO_SMALL:
+            size *= 4
+            continue
+        _check(code)
+        text = buffer.value.decode("utf-8", errors="replace")
+        return _json.loads(text) if text else None
+    raise RuscadbError(RC_BUFFER_TOO_SMALL, last_error())
+
+
+def put_blob(handle: c_void_p, data: bytes) -> str:
+    """Almacena un blob content-addressed y devuelve su hash SHA-256.
+
+    Args:
+        handle: Handle abierto con ``blob_path``.
+        data: Contenido binario.
+
+    Returns:
+        El hash hexadecimal del blob.
+
+    Raises:
+        RuscadbError: si la DLL no lo soporta o el motor falla.
+    """
+    _require("ruscadb_put_blob")
+    payload = bytes(data)
+    buffer = (ctypes.c_uint8 * len(payload)).from_buffer_copy(payload)
+    out = ctypes.create_string_buffer(128)
+    _check(
+        _lib().ruscadb_put_blob(
+            handle, ctypes.cast(buffer, _U8P), c_size_t(len(payload)), out, c_size_t(len(out))
+        )
+    )
+    return out.value.decode("utf-8", errors="replace")
+
+
+def blob_len(handle: c_void_p, blob_hash: str) -> int:
+    """Devuelve la longitud en bytes de un blob.
+
+    Args:
+        handle: Handle abierto con ``blob_path``.
+        blob_hash: Hash devuelto por :func:`put_blob`.
+
+    Returns:
+        Longitud en bytes (0 si no existe).
+    """
+    library = _lib()
+    if getattr(library, "ruscadb_blob_len", None) is None:
+        return 0
+    return int(library.ruscadb_blob_len(handle, blob_hash.encode("utf-8")))
+
+
+def get_blob(handle: c_void_p, blob_hash: str) -> bytes:
+    """Lee el contenido binario de un blob.
+
+    Args:
+        handle: Handle abierto con ``blob_path``.
+        blob_hash: Hash devuelto por :func:`put_blob`.
+
+    Returns:
+        Los bytes del blob (vacio si no existe).
+
+    Raises:
+        RuscadbError: si la DLL no lo soporta o la lectura falla.
+    """
+    _require("ruscadb_get_blob")
+    size = blob_len(handle, blob_hash)
+    if size <= 0:
+        return b""
+    buffer = (ctypes.c_uint8 * size)()
+    _check(
+        _lib().ruscadb_get_blob(
+            handle, blob_hash.encode("utf-8"), ctypes.cast(buffer, _U8P), c_size_t(size)
+        )
+    )
+    return bytes(buffer)
+
+
+def gc_blobs(handle: c_void_p) -> int:
+    """Purga blobs sin referencias vivas.
+
+    Args:
+        handle: Handle abierto con ``blob_path``.
+
+    Returns:
+        Numero de blobs eliminados.
+    """
+    _require("ruscadb_gc_blobs")
+    _check(_lib().ruscadb_gc_blobs(handle))
+    return last_affected()
+
+
+def last_lsn(handle: c_void_p) -> int:
+    """Devuelve el LSN del ultimo commit confirmado."""
+    library = _lib()
+    if getattr(library, "ruscadb_last_lsn", None) is None:
+        return 0
+    return int(library.ruscadb_last_lsn(handle))
+
+
+def integrity_check(handle: c_void_p) -> dict[str, Any]:
+    """Ejecuta la verificacion de integridad del motor.
+
+    Args:
+        handle: Handle abierto.
+
+    Returns:
+        Reporte con ``wal_ok``, ``heap_ok``, ``vector_ok`` y ``details``.
+    """
+    _require("ruscadb_integrity_check")
+    buffer = ctypes.create_string_buffer(65536)
+    _check(_lib().ruscadb_integrity_check(handle, buffer, c_size_t(len(buffer))))
+    return _json.loads(buffer.value.decode("utf-8", errors="replace"))
+
+
+def backup(handle: c_void_p, destination: str | os.PathLike[str]) -> int:
+    """Crea un backup online de la base en ``destination``.
+
+    Args:
+        handle: Handle abierto.
+        destination: Ruta destino del backup.
+
+    Returns:
+        Numero de archivos copiados.
+    """
+    _require("ruscadb_backup")
+    _check(_lib().ruscadb_backup(handle, os.fsencode(os.fspath(destination))))
+    return last_affected()
+
+
+def explain(handle: c_void_p, sql: str) -> list[str]:
+    """Devuelve el plan de ejecucion de una consulta RQL.
+
+    Args:
+        handle: Handle abierto.
+        sql: Consulta RQL.
+
+    Returns:
+        Lineas del plan.
+    """
+    _require("ruscadb_explain")
+    # El motor espera la sentencia `EXPLAIN ...` completa.
+    query = sql.strip()
+    if not query.upper().startswith("EXPLAIN"):
+        query = "EXPLAIN " + query
+    buffer = ctypes.create_string_buffer(65536)
+    _check(
+        _lib().ruscadb_explain(
+            handle, query.encode("utf-8"), buffer, c_size_t(len(buffer))
+        )
+    )
+    return _json.loads(buffer.value.decode("utf-8", errors="replace"))
+
 
 __all__ = [
     "PAGE_SIZE",
@@ -365,14 +774,31 @@ __all__ = [
     "RC_OK",
     "RC_PANIC",
     "RuscadbError",
+    "backup",
+    "blob_len",
+    "capabilities",
     "close",
     "commit",
+    "create_index",
     "create_table",
+    "delete_record",
     "execute",
+    "explain",
+    "gc_blobs",
+    "get_blob",
+    "get_record",
     "insert_record",
+    "integrity_check",
+    "last_affected",
     "last_error",
+    "last_inserted_id",
+    "last_lsn",
+    "list_tables",
     "load_library",
     "open",
+    "open_with_options",
+    "put_blob",
     "read_page",
+    "update_record",
     "write_page",
 ]

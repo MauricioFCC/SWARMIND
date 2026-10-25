@@ -85,7 +85,9 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin):
                 for _m in ('create_collection','list_collections','insert','update_records',
                            'search','hybrid_search','_keyword_score','get_collection_stats',
                            'delete_collection','clear','from_config','execute',
-                           'full_text_search','graph_traverse'):
+                           'full_text_search','graph_traverse','delete','get_record',
+                           'put_blob','get_blob','attach_blob','gc_blobs','integrity',
+                           'backup','current_lsn','explain'):
                     if hasattr(self._rusca, _m):
                         setattr(self, _m, getattr(self._rusca, _m))
                 return

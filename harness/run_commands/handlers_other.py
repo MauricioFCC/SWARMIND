@@ -47,6 +47,34 @@ def _handle_rag_ingest(store, cmd: str) -> None:
         _rc.logger.error("[RAG] \u274c Error: %s", e)
 
 
+def _handle_rag_search(store, cmd: str) -> None:
+    """Handle ``!rag search <consulta>`` — recuperacion dual-level (GraphRAG).
+
+    Combina BM25 (nivel local) y expansion por grafo (nivel global) sobre
+    RuscaDB; si la coleccion no tiene aristas, degrada a busqueda FTS.
+    """
+    from harness.memory_rag.graph_rag_retriever import GraphRAGRetriever
+
+    query = cmd[len("!rag search") :].strip()
+    if not query:
+        _rc.logger.info("[RAG] Uso: !rag search <consulta>")
+        return
+    collections = store.list_collections()
+    collection = "rag_chunks" if "rag_chunks" in collections else "memory"
+    if collection not in collections:
+        _rc.logger.info("[RAG] No hay colecciones con contenido. Ejecuta '!rag ingest'.")
+        return
+    retriever = GraphRAGRetriever(store, collection=collection, depth=2)
+    results = retriever.retrieve(query, top_k=5)
+    if not results:
+        _rc.logger.info("[RAG] Sin resultados para: %s", query)
+        return
+    _rc.logger.info("[RAG] %d resultados en '%s':", len(results), collection)
+    for rank, item in enumerate(results, start=1):
+        text = (item.get("text") or "").replace("\n", " ")[:160]
+        _rc.logger.info("  %d. [%.4f] %s", rank, item.get("score", 0.0), text)
+
+
 def _handle_rag_stats(store) -> None:
     """Handle ``!rag stats`` — muestra estadisticas de la BD RAG."""
     colls = store.list_collections()

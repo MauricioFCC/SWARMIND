@@ -5,6 +5,15 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-25)
+
+### Estado 2026-10-25 (Ciclo 11.45 — Potencial completo de RuscaDB)
+- RuscaDB: extension del C-ABI (open_opts, create_index, update/delete/get por RecordId, blob CAS, integrity, backup, last_lsn, explain).
+- RuscaDBStore: FTS sobre columna text, indices, RRF hibrido, grafo BFS, blob attach, operacional.
+- Frontier: AdaptiveRetriever (arXiv:2403.14403), GraphRAGRetriever (arXiv:2410.05779 / 2404.16130), SummaryCommunication (arXiv:2607.27942).
+- Comando !rag search (dual-level).
+- Ruff 0, Vulture 0, tests verdes.
+
 ## Estado Actual (2026-10-17)
 
 ### Estado 2026-10-17 (Ciclo 11.22 — Optimalidad de memoria: feedback + TTL proactivo + paridad)

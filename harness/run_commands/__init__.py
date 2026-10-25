@@ -71,6 +71,7 @@ from .handlers_other import (
     _handle_hooks_install,
     _handle_hooks_uninstall,
     _handle_rag_ingest,
+    _handle_rag_search,
     _handle_rag_stats,
 )
 
@@ -104,6 +105,7 @@ _COMMAND_TABLE: tuple[tuple[str, str, str], ...] = (
     ("!mcp for", "_handle_mcp_for", "cmd"),
     ("!mcp skill", "_handle_mcp_skill", "cmd"),
     ("!rag ingest", "_handle_rag_ingest", "store_cmd"),
+    ("!rag search", "_handle_rag_search", "store_cmd"),
     ("!rag stats", "_handle_rag_stats", "store"),
 )
 
@@ -225,6 +227,7 @@ __all__ = [
     "_handle_mcp_list",
     "_handle_mcp_skill",
     "_handle_rag_ingest",
+    "_handle_rag_search",
     "_handle_rag_stats",
     "_handle_schedule_add",
     "_handle_schedule_list",

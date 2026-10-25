@@ -1,3 +1,12 @@
+## [11.45] - 2026-10-25
+
+### Added
+- Extension del C-ABI de RuscaDB: open_opts (blob + readonly), create_index, update/delete/get por RecordId, blob CAS, integrity_check, backup, last_lsn, explain.
+- RuscaDBStore usa columna text para FTS, indices secundarios, RRF hibrido, grafo BFS, blob attach, operacional (integrity/backup/lsn/explain).
+- GraphRAGRetriever (dual-level BM25+grafo) y AdaptiveRetriever (estrategia por complejidad).
+- Comando !rag search.
+- Spec docs/specs/ruscadb-full-potential.md.
+
 # CHANGELOG — Swarmind Multi-Agent Harness
 
 > Documento de trazabilidad de cambios.
