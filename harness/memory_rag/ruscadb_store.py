@@ -145,7 +145,7 @@ class RuscaDBStore:
         # Guardia: bajo pytest nunca tocar la DB personal, aunque el entorno
         # (setx) la apunte. Usa un DB compartido por proceso (no por instancia)
         # para evitar proliferacion de archivos; la contencion se serializa con
-        # _OPEN_LOCK en open/close.
+        # _OPEN_LOCK (RLock) en open/close.
         if os.environ.get("PYTEST_CURRENT_TEST") and not db_path:
             base_dir = Path(__file__).resolve().parent.parent / "db" / "test"
             base_dir.mkdir(parents=True, exist_ok=True)

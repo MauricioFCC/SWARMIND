@@ -22,7 +22,15 @@ import json
 import os
 from pathlib import Path
 
-import lancedb
+try:
+    import lancedb
+    _LANCEDB_AVAILABLE = True
+except ImportError:
+    _LANCEDB_AVAILABLE = False
+
+import pytest
+
+pytestmark = pytest.mark.skipif(not _LANCEDB_AVAILABLE, reason="lancedb not installed")
 
 from harness.memory_rag.memory_bootstrap import (
     VOLATILE_COLLECTIONS,
