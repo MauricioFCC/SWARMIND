@@ -217,7 +217,7 @@ AGENTS:
     - token-budget-auditor
 
 SKILLS:
-  total: 42
+  total: 43
   skill_list:
     - ads-optimizer
     - agent-rigor
@@ -228,6 +228,7 @@ SKILLS:
     - atdd-spec
     - behavioral-economics
     - business-strategy
+    - cert-master
     - codebase-comprehension
     - communication
     - creative-design
@@ -270,6 +271,7 @@ SKILLS:
     - atdd-spec
     - behavioral-economics
     - business-strategy
+    - cert-master
     - codebase-comprehension
     - communication
     - creative-design

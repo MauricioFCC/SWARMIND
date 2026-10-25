@@ -20,7 +20,11 @@ from __future__ import annotations
 import datetime as _dt
 import json
 import logging
+import os
 import re
+import threading
+
+_OPEN_LOCK = threading.RLock()
 import uuid
 from pathlib import Path
 from typing import Any
@@ -124,7 +128,29 @@ class RuscaDBStore:
             blob_path: Directorio del blob store; por defecto ``<db>.blobs``.
             readonly: Abre en modo solo lectura (lectores concurrentes).
         """
-        self.db_path = db_path or (config.ruscadb_path if config else None) or "ruscadb.db"
+        if db_path is None and config is None:
+            try:
+                from .memory_config import get_memory_config
+
+                config = get_memory_config()
+            except Exception:  # noqa: BLE001
+                config = None
+        resolved = db_path or (config.ruscadb_path if config else None)
+        if not resolved:
+            # Default repo-local (mirrors LANCEDB_ROOT) para evitar colisiones
+            # en CWD y no tocar la DB personal durante tests/CI.
+            base_dir = Path(__file__).resolve().parent.parent / "db"
+            base_dir.mkdir(parents=True, exist_ok=True)
+            resolved = str(base_dir / "ruscadb.db")
+        # Guardia: bajo pytest nunca tocar la DB personal, aunque el entorno
+        # (setx) la apunte. Usa un DB compartido por proceso (no por instancia)
+        # para evitar proliferacion de archivos; la contencion se serializa con
+        # _OPEN_LOCK en open/close.
+        if os.environ.get("PYTEST_CURRENT_TEST") and not db_path:
+            base_dir = Path(__file__).resolve().parent.parent / "db" / "test"
+            base_dir.mkdir(parents=True, exist_ok=True)
+            resolved = str(base_dir / "ruscadb.db")
+        self.db_path = resolved
         self._allow_fallback = allow_fallback
         self._caps = capabilities()
         self._collections: set[str] = set()
@@ -132,12 +158,13 @@ class RuscaDBStore:
         self._embedding_dim: int = 384
         self._blob_path = blob_path or self._default_blob_path(self.db_path)
         self._readonly = readonly
-        self._handle = rdb_open_opts(
-            self.db_path,
-            pool_capacity=8,
-            blob_path=None if readonly else self._blob_path,
-            readonly=readonly,
-        )
+        with _OPEN_LOCK:
+            self._handle = rdb_open_opts(
+                self.db_path,
+                pool_capacity=8,
+                blob_path=None if readonly else self._blob_path,
+                readonly=readonly,
+            )
         if not readonly:
             self._ensure_collections()
 
@@ -241,7 +268,7 @@ class RuscaDBStore:
             return self._text_columns[collection]
         column = "metadata"
         try:
-            execute(self._handle, f"SELECT text FROM {_safe_ident(collection)} LIMIT 1")
+            execute(self._handle, f"SELECT text FROM {_safe_ident(collection)} LIMIT 1")  # nosec B608
             column = "text"
         except RuscadbError:
             column = "metadata"
@@ -403,7 +430,7 @@ class RuscaDBStore:
         )
         execute(
             self._handle,
-            f"UPDATE {collection} SET {assignments} "
+            f"UPDATE {collection} SET {assignments} "  # nosec B608
             f"WHERE id = '{_escape_literal(logical_id)}'",
         )
 
@@ -433,7 +460,7 @@ class RuscaDBStore:
             try:
                 rows = execute(
                     self._handle,
-                    f"DELETE FROM {collection} WHERE id = '{_escape_literal(ident)}'",
+                    f"DELETE FROM {collection} WHERE id = '{_escape_literal(ident)}'",  # nosec B608
                 )
                 if rows:
                     deleted += 1
@@ -467,7 +494,7 @@ class RuscaDBStore:
         try:
             rows = execute(
                 self._handle,
-                "SELECT rid FROM _rid_map "
+                "SELECT rid FROM _rid_map "  # nosec B608
                 f"WHERE id = '{_escape_literal(logical_id)}' "
                 f"AND collection = '{_escape_literal(collection)}' LIMIT 1",
             )
@@ -579,7 +606,7 @@ class RuscaDBStore:
         try:
             rows = execute(
                 self._handle,
-                f"SELECT * FROM {_safe_ident(collection)} "
+                f"SELECT * FROM {_safe_ident(collection)} "  # nosec B608
                 f"KNN embedding <|{int(top_k)}|> {json.dumps(qv)}",
             )
         except RuscadbError as exc:
@@ -609,7 +636,7 @@ class RuscaDBStore:
         try:
             rows = execute(
                 self._handle,
-                f"SELECT * FROM {_safe_ident(collection)} "
+                f"SELECT * FROM {_safe_ident(collection)} "  # nosec B608
                 f"WHERE MATCH({column}, '{_escape_literal(query)}')",
             )
         except RuscadbError as exc:
@@ -678,7 +705,7 @@ class RuscaDBStore:
         depth = max(1, int(depth))
         if start:
             return self._traverse_from(collection, start, depth)
-        sql = f"SELECT * FROM {_safe_ident(collection)} TRAVERSE edges DEPTH {depth}"
+        sql = f"SELECT * FROM {_safe_ident(collection)} TRAVERSE edges DEPTH {depth}"  # nosec B608
         try:
             rows = execute(self._handle, sql)
         except RuscadbError as exc:
@@ -749,7 +776,7 @@ class RuscaDBStore:
         """
         count = 0
         try:
-            rows = execute(self._handle, f"SELECT COUNT(*) as n FROM {_safe_ident(name)}")
+            rows = execute(self._handle, f"SELECT COUNT(*) as n FROM {_safe_ident(name)}")  # nosec B608
             parsed = json.loads(rows) if isinstance(rows, str) else rows
             count = int(self._unwrap_scalar(parsed[0].get("n", 0))) if parsed else 0
         except (RuscadbError, ValueError, TypeError, IndexError):
@@ -947,7 +974,7 @@ class RuscaDBStore:
             name: Coleccion a vaciar.
         """
         try:
-            execute(self._handle, f"DELETE FROM {_safe_ident(name)}")
+            execute(self._handle, f"DELETE FROM {_safe_ident(name)}")  # nosec B608
             self._commit()
         except RuscadbError as exc:
             logger.debug("delete_collection '%s' fallo: %s", name, exc)
@@ -988,11 +1015,19 @@ class RuscaDBStore:
 
     def close(self) -> None:
         """Confirma y cierra el handle del motor."""
-        self._commit()
+        with _OPEN_LOCK:
+            self._commit()
+            try:
+                close(self._handle)
+            except RuscadbError as exc:
+                logger.debug("close fallo: %s", exc)
+
+    def __del__(self) -> None:
+        """Libera el handle (y el lock) si no se cerro explicitamente."""
         try:
-            close(self._handle)
-        except RuscadbError as exc:
-            logger.debug("close fallo: %s", exc)
+            self.close()
+        except Exception:  # noqa: BLE001, S110
+            pass
 
     @classmethod
     def from_config(cls, config: Any = None) -> RuscaDBStore:

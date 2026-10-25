@@ -282,6 +282,9 @@ def open(
 ) -> c_void_p:
     """Abre (o crea) una base RuscaDB.
 
+    Reintenta unas pocas veces ante ``base en uso`` (lock transitorio por
+    handles no liberados por el GC) ejecutando ``gc.collect()`` entre intentos.
+
     Args:
         data_path: Ruta del archivo de paginas.
         pool_capacity: Numero de marcos del buffer pool (>= 1).
@@ -292,12 +295,22 @@ def open(
     Raises:
         RuscadbError: si el ABI devuelve un error.
     """
-    handle = c_void_p()
-    bytes_path = os.fsencode(os.fspath(data_path))
-    _check(
-        _lib().ruscadb_open(bytes_path, c_uint32(pool_capacity), ctypes.byref(handle))
-    )
-    return handle
+    import gc
+    import time
+
+    last_exc: RuscadbError | None = None
+    for attempt in range(5):
+        try:
+            return _open_once(data_path, pool_capacity)
+        except RuscadbError as exc:
+            last_exc = exc
+            if "base en uso" not in str(exc) and "bloqueada" not in str(exc):
+                raise
+            gc.collect()
+            time.sleep(0.05 * (attempt + 1))
+    if last_exc is not None:
+        raise last_exc
+    raise RuscadbError(RC_DOMAIN_ERROR, "open fallo sin detalle")
 
 
 def read_page(handle: c_void_p, page_id: int) -> bytes:
@@ -473,6 +486,27 @@ def capabilities() -> dict[str, bool]:
     return {name: getattr(library, name, None) is not None for name in names}
 
 
+def _open_once(data_path: str | os.PathLike[str], pool_capacity: int) -> c_void_p:
+    """Apertura unica sin reintentos (implementacion de :func:`open`).
+
+    Args:
+        data_path: Ruta del archivo de paginas.
+        pool_capacity: Numero de marcos del buffer pool.
+
+    Returns:
+        El handle opaco del ABI.
+
+    Raises:
+        RuscadbError: si el ABI devuelve un error.
+    """
+    handle = c_void_p()
+    bytes_path = os.fsencode(os.fspath(data_path))
+    _check(
+        _lib().ruscadb_open(bytes_path, c_uint32(pool_capacity), ctypes.byref(handle))
+    )
+    return handle
+
+
 def open_with_options(
     data_path: str | os.PathLike[str],
     pool_capacity: int = 8,
@@ -496,19 +530,34 @@ def open_with_options(
     library = _lib()
     if getattr(library, "ruscadb_open_opts", None) is None:
         return open(data_path, pool_capacity)
-    handle = c_void_p()
-    bytes_path = os.fsencode(os.fspath(data_path))
-    blob_bytes = os.fsencode(os.fspath(blob_path)) if blob_path else None
-    _check(
-        library.ruscadb_open_opts(
-            bytes_path,
-            c_uint32(pool_capacity),
-            blob_bytes,
-            c_int(1 if readonly else 0),
-            ctypes.byref(handle),
-        )
-    )
-    return handle
+    import gc
+    import time
+
+    last_exc: RuscadbError | None = None
+    for attempt in range(5):
+        try:
+            handle = c_void_p()
+            bytes_path = os.fsencode(os.fspath(data_path))
+            blob_bytes = os.fsencode(os.fspath(blob_path)) if blob_path else None
+            _check(
+                library.ruscadb_open_opts(
+                    bytes_path,
+                    c_uint32(pool_capacity),
+                    blob_bytes,
+                    c_int(1 if readonly else 0),
+                    ctypes.byref(handle),
+                )
+            )
+            return handle
+        except RuscadbError as exc:
+            last_exc = exc
+            if "base en uso" not in str(exc) and "bloqueada" not in str(exc):
+                raise
+            gc.collect()
+            time.sleep(0.05 * (attempt + 1))
+    if last_exc is not None:
+        raise last_exc
+    raise RuscadbError(RC_DOMAIN_ERROR, "open_with_options fallo sin detalle")
 
 
 def create_index(handle: c_void_p, table: str, column: str) -> None:

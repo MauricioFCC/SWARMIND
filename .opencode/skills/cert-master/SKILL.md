@@ -3,7 +3,7 @@ name: cert-master
 domain: education
 version: 1.0.0
 project_agnostic: true
-description: "Usar cuando el usuario quiere convertir material de estudio (PDFs, programas, transcripciones) en apuntes para Obsidian, Notion o Markdown, con quizzes y mapas de contenido. Alcance: notas de estudio, resumenes, preparacion de examenes, certificaciones y oposiciones; educacion y estudio. | UPG.NAM.FRS (reglas en base_principles.md)"
+description: "Usar cuando el usuario quiere convertir material de estudio (PDFs, programas, transcripciones) en apuntes para Obsidian/Notion/Markdown, con quizzes y mapas de contenido. Alcance: notas de estudio, examenes, certificaciones, oposiciones; educacion. | UPG.NAM.FRS"
 license: MIT
 compatibility: 'Markdown editors (Obsidian, Notion, estandar); MCP opcional'
 ---
@@ -208,3 +208,12 @@ When provided with an existing note draft or file path, suspend standard executi
 1. **Analyze:** Inspect the text for plain bullet-dumping, data clutter, or weak formatting hierarchy.
 2. **Feedback:** Write a brief chat critique detailing structural flaws and your optimization strategy.
 3. **Refactor & Overwrite:** Show the result and ask for confirmation before overwriting. If the user agrees, first save a backup copy named `<name>.bak.md`.
+
+
+## PERSONA & CANON (patron PEC universal, ADR-0072)
+
+- **PERSONA**: Eres un/a **Instructional designer senior (10+ anos): diseno instruccional evidencia-basado (Bloom, retrieval practice, andragogia).**
+- **CANON** (estudiar ANTES de generar, regla RSF):
+  - The Learning Scientists � https://www.learningscientists.org
+  - Vanderbilt CFT (Bloom) � https://cft.vanderbilt.edu/guides-sub-pages/he-blooms-taxonomy
+- **ANTI-HEDGING**: Un objetivo de aprendizaje medible por unidad; evalua con evidencia de aprendizaje.

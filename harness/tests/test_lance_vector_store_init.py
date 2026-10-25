@@ -6,6 +6,15 @@ _try_import_lancedb y _ensure_lancedb_collections.
 """
 from __future__ import annotations
 
+import os
+
+os.environ["VECTOR_BACKEND"] = "lancedb"
+os.environ["RUSCADB_PATH"] = ""
+
+from harness.memory_rag.memory_config import reset_memory_config
+
+reset_memory_config()
+
 import logging
 from unittest.mock import MagicMock, patch
 
@@ -26,7 +35,7 @@ class TestInitAndStorage:
     def test_init_memory_fallback(self):
         """__init__ con allow_fallback=True y LanceDB ausente crea store en memoria."""
         with patch.object(LanceVectorStore, "_try_import_lancedb", return_value=None):
-            store = LanceVectorStore(db_path="/tmp/mem", allow_fallback=True)
+            store = LanceVectorStore(db_path="/tmp/mem", allow_fallback=True, backend="lancedb")
         assert store._lancedb_available is False
         assert store._db is None
         assert len(store._mem_collections) == len(DEFAULT_COLLECTIONS)

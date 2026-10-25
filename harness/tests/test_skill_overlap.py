@@ -46,7 +46,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 REGISTRY_PATH = _PROJECT_ROOT / ".opencode" / "skills" / "skills_registry.yaml"
 
 #: N de skills esperado en el registry (ronda 2; +2 comprension/arquitectura).
-EXPECTED_SKILLS = 42
+EXPECTED_SKILLS = 43
 
 #: Score de solape >= a este valor = "pico" que DEBE ser accionable.
 PEAK_THRESHOLD = 0.8
@@ -379,7 +379,7 @@ def test_registry_has_expected_skills(skills: tuple[Skill, ...]) -> None:
 
 
 def test_scorer_returns_ordered_pairs(pairs: tuple[OverlapPair, ...]) -> None:
-    """861 pares (42*41/2) ordenados por score descendente (determinista)."""
+    """903 pares (43*42/2) ordenados por score descendente (determinista)."""
     assert len(pairs) == EXPECTED_SKILLS * (EXPECTED_SKILLS - 1) // 2
     scores = [p.score for p in pairs]
     assert scores == sorted(scores, reverse=True)
