@@ -239,6 +239,12 @@ def _bind_extended(library: ctypes.CDLL) -> None:
     _bind_optional(
         library, "ruscadb_explain", [c_void_p, c_char_p, c_char_p, c_size_t], c_int
     )
+    _bind_optional(
+        library, "ruscadb_execute_at", [c_void_p, c_char_p, c_uint64, c_char_p, c_size_t], c_int
+    )
+    _bind_optional(
+        library, "ruscadb_open_encrypted", [c_char_p, c_uint32, c_char_p, _HANDLE_P], c_int
+    )
 
 
 def _lib() -> ctypes.CDLL:
@@ -482,6 +488,8 @@ def capabilities() -> dict[str, bool]:
         "ruscadb_integrity_check",
         "ruscadb_backup",
         "ruscadb_explain",
+        "ruscadb_execute_at",
+        "ruscadb_open_encrypted",
     )
     return {name: getattr(library, name, None) is not None for name in names}
 
@@ -814,6 +822,54 @@ def explain(handle: c_void_p, sql: str) -> list[str]:
     return _json.loads(buffer.value.decode("utf-8", errors="replace"))
 
 
+def execute_at(handle: c_void_p, sql: str, snapshot_tx_id: int = 0) -> list[Any]:
+    """Ejecuta una consulta en un snapshot historico (time travel, SPEC-0129).
+
+    Args:
+        handle: Handle abierto.
+        sql: Consulta RQL.
+        snapshot_tx_id: TxId (LSN) del snapshot; 0 = snapshot actual.
+
+    Returns:
+        Filas visibles en ese snapshot.
+    """
+    _require("ruscadb_execute_at")
+    buffer = ctypes.create_string_buffer(65536)
+    _check(
+        _lib().ruscadb_execute_at(
+            handle, sql.encode("utf-8"), c_uint64(snapshot_tx_id), buffer, c_size_t(len(buffer))
+        )
+    )
+    return _json.loads(buffer.value.decode("utf-8", errors="replace"))
+
+
+def open_encrypted(
+    data_path: str | os.PathLike[str],
+    passphrase: str,
+    pool_capacity: int = 8,
+) -> c_void_p:
+    """Abre (o crea) una base cifrada con passphrase (Argon2id).
+
+    Args:
+        data_path: Ruta del archivo de paginas.
+        passphrase: Secreto del usuario.
+        pool_capacity: Numero de marcos del buffer pool.
+
+    Returns:
+        El handle opaco del ABI.
+    """
+    _require("ruscadb_open_encrypted")
+    handle = c_void_p()
+    _check(
+        _lib().ruscadb_open_encrypted(
+            os.fsencode(os.fspath(data_path)),
+            c_uint32(pool_capacity),
+            passphrase.encode("utf-8"),
+            ctypes.byref(handle),
+        )
+    )
+    return handle
+
 __all__ = [
     "PAGE_SIZE",
     "RC_BUFFER_TOO_SMALL",
@@ -832,6 +888,7 @@ __all__ = [
     "create_table",
     "delete_record",
     "execute",
+    "execute_at",
     "explain",
     "gc_blobs",
     "get_blob",
@@ -845,6 +902,7 @@ __all__ = [
     "list_tables",
     "load_library",
     "open",
+    "open_encrypted",
     "open_with_options",
     "put_blob",
     "read_page",

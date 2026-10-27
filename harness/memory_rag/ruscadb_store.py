@@ -1065,6 +1065,133 @@ class RuscaDBStore:
     def _first_collection(self) -> str:
         cols = self.list_collections()
         return cols[0] if cols else "memory"
+    def execute_at(self, sql: str, snapshot_tx_id: int = 0) -> list[Any]:
+        """Ejecuta RQL en un snapshot historico (time travel, SPEC-0129).
+
+        Args:
+            sql: Consulta RQL.
+            snapshot_tx_id: TxId (LSN); 0 = actual.
+
+        Returns:
+            Filas visibles en ese snapshot.
+        """
+        from .ruscadb import execute_at as _execute_at
+
+        try:
+            return _execute_at(self._handle, sql, snapshot_tx_id)
+        except RuscadbError as exc:
+            logger.warning("execute_at fallo: %s", exc)
+            return []
+
+    def open_encrypted_store(db_path: str, passphrase: str) -> RuscaDBStore:
+        """Factory para abrir un store cifrado.
+
+        Args:
+            db_path: Ruta de la base.
+            passphrase: Secreto del usuario.
+
+        Returns:
+            Instancia de RuscaDBStore sobre handle cifrado.
+        """
+        from .ruscadb import open_encrypted as _open_encrypted
+
+        store = RuscaDBStore.__new__(RuscaDBStore)
+        store.db_path = db_path
+        store._allow_fallback = False
+        store._caps = capabilities()
+        store._collections = set()
+        store._text_columns = {}
+        store._embedding_dim = 384
+        store._blob_path = store._default_blob_path(db_path)
+        store._readonly = False
+        store._handle = _open_encrypted(db_path, passphrase)
+        store._ensure_collections()
+        return store
+
+    def fts_search_mode(self, collection: str, query: str, mode: str = "exact", top_k: int = 10) -> list[dict[str, Any]]:
+        """FTS con modo (exact/phrase/fuzzy) — Spec ruscadb-fts-advanced.
+
+        Fuzzy se resuelve client-side (Levenshtein) porque RQL no expone
+        MATCH ... FUZZY todavia (SPEC-0117 marca integracion futura).
+
+        Args:
+            collection: Coleccion.
+            query: Texto.
+            mode: 'exact', 'fuzzy', 'phrase'.
+            top_k: Limite.
+
+        Returns:
+            Resultados normalizados.
+        """
+        if mode == "phrase":
+            q = '"' + query + '"'
+            try:
+                rows = execute(self._handle, f"SELECT * FROM {_safe_ident(collection)} WHERE MATCH({self._text_column(collection)}, '{_escape_literal(q)}')")
+            except RuscadbError as exc:
+                logger.warning("fts_search_mode fallo: %s", exc)
+                return []
+            out = self._parse_rows(rows)
+            for rank, item in enumerate(out):
+                item["score"] = 1.0 / (rank + 1)
+            return out[:top_k]
+
+        if mode == "fuzzy":
+            # client-side: scan all rows, filter by edit distance <= 2
+            try:
+                rows = execute(self._handle, f"SELECT * FROM {_safe_ident(collection)}")
+            except RuscadbError as exc:
+                logger.warning("fts_search_mode fallo: %s", exc)
+                return []
+            parsed = self._parse_rows(rows)
+            q_tokens = query.lower().split()
+            filtered = []
+            for item in parsed:
+                text = (item.get("text") or "").lower()
+                if any(self._edit_distance(qt, wt) <= 2 for qt in q_tokens for wt in text.split()):
+                    filtered.append(item)
+            for rank, item in enumerate(filtered):
+                item["score"] = 1.0 / (rank + 1)
+            return filtered[:top_k]
+
+        # exact
+        return self.full_text_search(collection, query, top_k=top_k)
+
+    @staticmethod
+    def _edit_distance(a: str, b: str) -> int:
+        """Distancia de Levenshtein entre dos strings."""
+        if a == b:
+            return 0
+        if not a:
+            return len(b)
+        if not b:
+            return len(a)
+        prev = list(range(len(b) + 1))
+        for i, ca in enumerate(a, 1):
+            cur = [i]
+            for j, cb in enumerate(b, 1):
+                cost = 0 if ca == cb else 1
+                cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost))
+            prev = cur
+        return prev[-1]
+
+    def semantic_cache_get(self, key: str) -> Any:
+        """Consulta el cache semantico persistente de RuscaDB (Spec ruscadb-semantic-cache).
+
+        Args:
+            key: Clave de cache.
+
+        Returns:
+            Valor cacheado o None.
+        """
+        try:
+            rows = execute(self._handle, f"SELECT * FROM semantic_cache WHERE id = '{_escape_literal(key)}' LIMIT 1")
+            parsed = __import__("json").loads(rows) if isinstance(rows, str) else rows
+            if parsed:
+                return self._unwrap_scalar(parsed[0].get("metadata"))
+        except (RuscadbError, Exception):  # noqa: BLE001, S110
+            pass
+        return None
+
     def _keyword_score(self, text: str, query: str) -> float:
         """Score lexical simple (compatibilidad con LanceVectorStore).
 
