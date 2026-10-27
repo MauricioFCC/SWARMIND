@@ -992,6 +992,79 @@ class RuscaDBStore:
         if not self._readonly:
             self._ensure_collections()
 
+    def rerank(self, collection: str, query: str, candidates: list[dict[str, Any]], top_k: int = 5) -> list[dict[str, Any]]:
+        """Rerankea candidatos con ColBERT-style MaxSim (Spec ruscadb-colbert-rerank).
+
+        Args:
+            collection: Coleccion origen (informativa).
+            query: Consulta.
+            candidates: Candidatos a rerankear.
+            top_k: Numero de resultados.
+
+        Returns:
+            Lista rerankeada.
+        """
+        from .colbert_rerank import rerank as _rerank
+
+        return _rerank(query, candidates, top_k=top_k)
+
+    def graph_stats(self, collection: str) -> dict[str, Any]:
+        """Calcula PageRank sobre el grafo de la coleccion (Spec ruscadb-graph-algorithms).
+
+        Args:
+            collection: Coleccion origen.
+
+        Returns:
+            Mapa nodo -> score PageRank.
+        """
+        from .graph_algorithms import pagerank
+
+        adj: dict[str, list[str]] = {}
+        try:
+            rows = self.graph_traverse(collection, depth=3)
+        except Exception:  # noqa: BLE001
+            rows = []
+        for r in rows:
+            rid = str(r.get("id") or "")
+            if rid:
+                adj.setdefault(rid, [])
+        # inferir aristas desde metadata si existen
+        for r in rows:
+            meta = r.get("metadata") or {}
+            edges = meta.get("edges") or []
+            if isinstance(edges, list):
+                src = str(r.get("id") or "")
+                for e in edges:
+                    if isinstance(e, dict) and e.get("target"):
+                        adj.setdefault(src, []).append(str(e["target"]))
+        return pagerank(adj)
+
+    def prepare(self, sql: str) -> str:
+        """Registra un SQL en el cache de prepared statements.
+
+        Args:
+            sql: Consulta RQL.
+
+        Returns:
+            Clave canonica.
+        """
+        from .prepared_statements import PreparedStatementCache
+
+        cache = getattr(self, "_prepared_cache", None)
+        if cache is None:
+            cache = PreparedStatementCache()
+            self._prepared_cache = cache
+        return cache.put(sql)
+
+    def ts_bucket_sql(self, bucket_sec: int, agg: str = "COUNT(*)") -> str:
+        """Genera RQL de time_bucket (Spec ruscadb-timeseries)."""
+        from .timeseries_helpers import time_bucket_sql
+
+        return time_bucket_sql(self._first_collection(), bucket_sec, agg=agg)
+
+    def _first_collection(self) -> str:
+        cols = self.list_collections()
+        return cols[0] if cols else "memory"
     def _keyword_score(self, text: str, query: str) -> float:
         """Score lexical simple (compatibilidad con LanceVectorStore).
 
