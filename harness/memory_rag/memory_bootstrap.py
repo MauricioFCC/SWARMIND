@@ -30,7 +30,24 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-import lancedb
+try:
+    import lancedb as _lancedb_mod
+except ImportError:  # pragma: no cover - lancedb es extra opcional
+    _lancedb_mod = None
+
+
+def _lancedb():
+    """Importa lancedb de forma perezosa (extra opcional)."""
+    if _lancedb_mod is not None:
+        return _lancedb_mod
+    try:
+        import lancedb
+
+        return lancedb
+    except ImportError as exc:  # pragma: no cover
+        raise RuntimeError(
+            "lancedb no disponible: instala `swarmind-harness[lancedb]`"
+        ) from exc
 
 logger = logging.getLogger("harness.memory_rag.memory_bootstrap")
 
@@ -205,7 +222,7 @@ def _list_tables(db: object, db_dir: Path | None = None) -> set[str]:
     ``prune_volatile_collections``.
 
     Args:
-        db: Conexion ``lancedb.connect(...)``.
+        db: Conexion ``_lancedb().connect(...)``.
         db_dir: Directorio de la base (opcional, para listing directo).
 
     Returns:
@@ -254,7 +271,7 @@ def migrate_local_to_central(
         MigrationReport con tablas copiadas/appended/skipped.
     """
     central_db.mkdir(parents=True, exist_ok=True)
-    central_conn = lancedb.connect(str(central_db))
+    central_conn = _lancedb().connect(str(central_db))
     central_names = _list_tables(central_conn, central_db)
 
     copied: list[str] = []
@@ -262,9 +279,9 @@ def migrate_local_to_central(
     skipped_volatile: list[str] = []
     skipped_stale: list[str] = []
 
-    for table in sorted(_list_tables(lancedb.connect(str(local_db)), local_db)):
+    for table in sorted(_list_tables(_lancedb().connect(str(local_db)), local_db)):
         try:
-            rows = lancedb.connect(str(local_db)).open_table(table).to_arrow()
+            rows = _lancedb().connect(str(local_db)).open_table(table).to_arrow()
         except Exception as e:  # noqa: BLE001 — tabla corrupta/ilegible, skip
             logger.warning(
                 "Tabla '%s' corrupta/ilegible en local (%s) → skip",
@@ -332,7 +349,7 @@ def prune_volatile_collections(
     Returns:
         Lista ordenada de colecciones eliminadas.
     """
-    db = lancedb.connect(str(central_db))
+    db = _lancedb().connect(str(central_db))
     removed: list[str] = []
     for table in sorted(_list_tables(db) & VOLATILE_COLLECTIONS):
         size = _table_bytes(central_db, table)

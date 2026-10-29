@@ -108,6 +108,32 @@ def _escape_literal(value: str) -> str:
     return str(value).replace("'", "''")
 
 
+#: Marcadores tipicos de prompt-injection / memory poisoning (OWASP ASI06, 2026).
+_INJECTION_MARKERS = (
+    "ignore previous instructions",
+    "ignore all previous",
+    "system prompt",
+    "you are now",
+    "disregard the above",
+    "override safety",
+    "<script",
+    "javascript:",
+)
+
+
+def _looks_like_injection(text: str) -> bool:
+    """Heuristica ligera de memory poisoning (OWASP ASI06).
+
+    Args:
+        text: Texto a evaluar.
+
+    Returns:
+        True si contiene marcadores sospechosos.
+    """
+    low = (text or "").lower()
+    return any(m in low for m in _INJECTION_MARKERS)
+
+
 class RuscaDBStore:
     """Vector store respaldado por RuscaDB (driving adapter del C-ABI)."""
 
@@ -167,6 +193,11 @@ class RuscaDBStore:
             )
         if not readonly:
             self._ensure_collections()
+        # Cache de resultados de RQL (Spec ruscadb-query-cache) — in-memory, TTL 300s.
+        from .query_cache import QueryResultCache
+
+        self._query_cache = QueryResultCache(ttl_sec=300.0)
+        self._query_cache_enabled = True
 
     @staticmethod
     def _default_blob_path(db_path: str) -> str:
@@ -332,6 +363,18 @@ class RuscaDBStore:
             ids.append(rid)
             meta = dict(metadata[i]) if i < len(metadata) else {}
             text = texts[i] if texts and i < len(texts) else self._derive_text(meta)
+            # Provenance / trust tagging (OWASP ASI06, frontier 2026): aditivo,
+            # nunca pisa valores explicitos del caller.
+            import hashlib as _hl
+            if "source" not in meta:
+                meta["source"] = "agent"
+            if "trust_tier" not in meta:
+                meta["trust_tier"] = "user_stated"
+            if "content_hash" not in meta:
+                meta["content_hash"] = _hl.sha256((text or "").encode("utf-8")).hexdigest()
+            if _looks_like_injection(text) or _looks_like_injection(str(meta)):
+                meta["trust_tier"] = "quarantined"
+                logger.warning("memory_guard: entrada en cuarentena (posible poisoning)")
             scalars: dict[str, Any] = {
                 "id": rid,
                 "metadata": json.dumps(meta, ensure_ascii=False),
@@ -364,6 +407,7 @@ class RuscaDBStore:
             except RuscadbError as exc:
                 logger.warning("insert en '%s' fallo: %s", collection, exc)
         self._commit()
+        self.invalidate_cache(collection)
         return ids
 
     def _map_rid(self, collection: str, logical_id: str, rid_rusca: str) -> None:
@@ -467,6 +511,7 @@ class RuscaDBStore:
             except RuscadbError as exc:
                 logger.warning("delete en '%s' fallo: %s", collection, exc)
         self._commit()
+        self.invalidate_cache(collection)
         return deleted
 
     @staticmethod
@@ -804,6 +849,40 @@ class RuscaDBStore:
         except RuscadbError as exc:
             logger.warning("execute fallo: %s", exc)
             return None
+
+    def cached_execute(self, sql: str, collection: str | None = None) -> Any:
+        """Ejecuta RQL con cache de resultados (Spec ruscadb-query-cache).
+
+        Args:
+            sql: Consulta RQL.
+            collection: Coleccion afectada (para invalidacion).
+
+        Returns:
+            Resultado cacheado o fresco.
+        """
+        if not self._query_cache_enabled:
+            return self.execute(sql)
+        cached = self._query_cache.get(sql)
+        if cached is not None:
+            return cached
+        result = self.execute(sql)
+        self._query_cache.set(sql, result, collection=collection)
+        return result
+
+    def invalidate_cache(self, collection: str) -> int:
+        """Invalida la cache de resultados para una coleccion.
+
+        Args:
+            collection: Coleccion a invalidar.
+
+        Returns:
+            Numero de entradas invalidadas.
+        """
+        return self._query_cache.invalidate(collection)
+
+    def query_cache_stats(self) -> dict[str, int]:
+        """Estadisticas de la cache de resultados."""
+        return self._query_cache.stats()
 
     # ------------------------------------------------------------------
     # Multimodal (blob store content-addressed)
@@ -1191,6 +1270,26 @@ class RuscaDBStore:
         except (RuscadbError, Exception):  # noqa: BLE001, S110
             pass
         return None
+
+    def adaptive_search(self, query: str, top_k: int = 5, collection: str = "memory") -> list[Any]:
+        """Retrieval adaptativo (arXiv:2403.14403) sobre este store.
+
+        Args:
+            query: Consulta de texto.
+            top_k: Numero de resultados.
+            collection: Coleccion.
+
+        Returns:
+            Lista de resultados ordenados.
+        """
+        try:
+            from .adaptive_retriever import AdaptiveRetriever
+
+            ar = AdaptiveRetriever.from_store(self, collection=collection)
+            return ar.retrieve(query, top_k=top_k)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("adaptive_search fallo: %s", exc)
+            return []
 
     def _keyword_score(self, text: str, query: str) -> float:
         """Score lexical simple (compatibilidad con LanceVectorStore).

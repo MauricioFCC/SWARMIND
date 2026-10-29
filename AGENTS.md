@@ -48,7 +48,7 @@ nunca afirma, verifica**. Al completar cualquier cambio:
 
 1. **Investigar antes de ejecutar** (RSF/FRS): lee el código existente, revisa
    `git log`, verifica que no esté implementado (IDP).
-2. **Skills**: los skills viven en `.opencode/skills/` (42 skills, formato spec
+2. **Skills**: los skills viven en `.opencode/skills/` (43 skills, formato spec
    Agent Skills de la Linux Foundation). Cada skill tiene `SKILL.md` +
    `SKILL.min.md` + frontmatter (name/domain/description/version/
    project_agnostic). Valida con `python scripts/validate_skills.py --strict`.

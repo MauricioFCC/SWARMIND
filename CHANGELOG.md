@@ -1,3 +1,22 @@
+## [11.52] - 2026-10-28
+
+### Added
+- `memory_bootstrap`: import perezoso de `lancedb` (desbloquea 2 modulos de test y CI).
+- `static_embeddings`: carga perezosa cacheada de model2vec + fallback a `fallback_embedding`.
+- `RuscaDBStore`: cache de resultados (QueryResultCache) cableado (`cached_execute`, `invalidate_cache`, `query_cache_stats`) con invalidacion en insert/delete.
+- `RuscaDBStore`: retrieval adaptativo (`adaptive_search`) via `AdaptiveRetriever.from_store`.
+- `RuscaDBStore.insert`: provenance/trust tagging (source, trust_tier, content_hash) + deteccion de injection (OWASP ASI06).
+- `check_architecture.py`: F4 ciclos de import (Tarjan SCC); 0 ciclos.
+- Docs: `docs/specs/audit-implementacion-2026-10-28.md`, `docs/research/frontier-2026-10-28.md`.
+
+### Changed
+- `AGENTS.md`: 42 -> 43 skills.
+- roadmap/MEJORAS actualizados a 11.52.
+
+### Fixed
+- `static_embeddings`: model2vec se cargaba en cada `embed()` (O(load) por llamada).
+- `memory_bootstrap`: import duro de lancedb rompia coleccion de tests sin el extra.
+
 ## [11.45] - 2026-10-25
 
 ### Added

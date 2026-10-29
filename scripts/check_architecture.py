@@ -105,11 +105,86 @@ def check_function_size() -> list[str]:
     return errors
 
 
+
+
+def check_import_cycles() -> list[str]:
+    """F4: detecta ciclos de import entre modulos de harness/ (Tarjan SCC)."""
+    import ast as _ast
+    from collections import defaultdict
+
+    errors: list[str] = []
+    files: dict[str, Path] = {}
+    graph: dict[str, set[str]] = defaultdict(set)
+    for path in HARNESS.rglob("*.py"):
+        if "tests" in path.parts or "__pycache__" in path.parts:
+            continue
+        rel = path.relative_to(ROOT).with_suffix("")
+        name = ".".join(rel.parts)
+        name = name.removesuffix(".__init__")
+        files[name] = path
+    for name, path in files.items():
+        try:
+            tree = _ast.parse(path.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue
+        for node in _ast.walk(tree):
+            targets: list[str] = []
+            if isinstance(node, _ast.ImportFrom) and node.module and node.level == 0:
+                targets.append(node.module)
+            elif isinstance(node, _ast.Import):
+                targets.extend(a.name for a in node.names)
+            for mod in targets:
+                if not mod.startswith("harness"):
+                    continue
+                parts = mod.split(".")
+                for i in range(len(parts), 0, -1):
+                    cand = ".".join(parts[:i])
+                    if cand in files:
+                        graph[name].add(cand)
+                        break
+    index = {"n": 0}
+    stack: list[str] = []
+    low: dict[str, int] = {}
+    idx: dict[str, int] = {}
+    on_stack: set[str] = set()
+    sccs: list[list[str]] = []
+
+    def strongconnect(v: str) -> None:
+        idx[v] = index["n"]
+        low[v] = index["n"]
+        index["n"] += 1
+        stack.append(v)
+        on_stack.add(v)
+        for w in graph.get(v, ()):
+            if w not in idx:
+                strongconnect(w)
+                low[v] = min(low[v], low[w])
+            elif w in on_stack:
+                low[v] = min(low[v], idx[w])
+        if low[v] == idx[v]:
+            comp: list[str] = []
+            while True:
+                w = stack.pop()
+                on_stack.discard(w)
+                comp.append(w)
+                if w == v:
+                    break
+            if len(comp) > 1:
+                sccs.append(comp)
+
+    for node in list(files):
+        if node not in idx:
+            strongconnect(node)
+    for comp in sccs:
+        errors.append("ciclo de import: " + " <-> ".join(sorted(comp)[:4]))
+    return errors
+
 def main() -> int:
     all_errors: list[str] = []
     all_errors.extend(check_domain_purity())
     all_errors.extend(check_module_size())
     all_errors.extend(check_function_size())
+    all_errors.extend(check_import_cycles())
     strict = "--strict" in sys.argv
     if all_errors:
         print(f"{'FAIL' if strict else 'WARN'}: {len(all_errors)} violaciones arquitectonicas:")
