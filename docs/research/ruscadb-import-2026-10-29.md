@@ -19,11 +19,14 @@
 
 Stubs (no listos): RQL (SPEC-0161..0165), PreparedStmtReal, SegmentedWal, MvccGcReal, AcornSearch, PersistentHnsw, BlockMaxWand. Placeholder: MlKem.
 
-## 2. Verificacion del FFI
+## 2. Verificacion del FFI (actualizado)
 
-- `crates/ruscadb-ffi/src/lib.rs` expone solo las **13 funciones base**.
-- **Ninguno** de los 8 modulos nuevos esta expuesto via C-ABI.
-- Las **14 funciones extendidas** que SWARMIND usa (time travel, encryption, create_index, update/delete/get, blobs, integrity, backup, last_lsn, explain, open_opts, open_encrypted) **NO estan en el codigo fuente** de RuscaDB (se perdieron del arbol, probablemente por el commit de Ola 14 que reescribio el FFI). Solo sobreviven en el DLL compilado (`target/debug/ruscadb_ffi.dll`, 4.9 MB) que SWARMIND ya importo.
+- `crates/ruscadb-ffi/src/lib.rs` expone **29 funciones**: 13 base + 16 extendidas.
+- Las 14 funciones extendidas que SWARMIND usa (time travel, encryption, create_index,
+  update/delete/get, blobs, integrity, backup, last_lsn, explain, open_opts, open_encrypted)
+  fueron **re-aplicadas** al arbol actual (commit `0060119`) y el DLL se recompilo
+  (`target/debug/ruscadb_ffi.dll`, 4.92 MB).
+- **Ninguno** de los 8 modulos nuevos (RaBitQ, Gorilla, Ssi, etc.) esta expuesto via C-ABI.
 
 ## 3. Conclusion: que se debe cablear
 
@@ -36,15 +39,17 @@ Prioridad para futuras olas (cuando RuscaDB los exponga):
 4. **CrdtSyncReal** → `mcp_project_bridge` / federated memory entre proyectos.
 5. **PageChecksum** → verificacion de backups (`integrity()` ya expuesto).
 
-## 4. Accion recomendada
+## 4. Accion recomendada (actualizada)
 
-- **No rebuild** del DLL desde el fuente actual: perderia las 14 funciones extendidas.
-- **Re-aplicar** las extensiones del FFI al arbol actual de RuscaDB (time travel, encryption, create_index, blobs, integrity, backup, last_lsn, explain, open_opts, open_encrypted) y commitearlas en ese repo, para que el ABI sea reproducible.
-- **Esperar** a que RuscaDB exponga RaBitQ/Gorilla/Ssi/CRDT via FFI (o extenderlo nosotros) antes de cablear en SWARMIND.
+- Las extensiones del FFI ya estan re-aplicadas y commiteadas (`0060119`) en el repo RuscaDB;
+  el DLL se recompilo y SWARMIND lo importo (14/14 capacidades `True`).
+- **Esperar** a que RuscaDB exponga RaBitQ/Gorilla/Ssi/CRDT via FFI (o extenderlo nosotros)
+  antes de cablear en SWARMIND.
 - El spec `ruscadb-ivf-pq.md` sigue `proposed`; no iniciar hasta que el FFI lo soporte.
 
-## 5. Estado actual de SWARMIND (sin cambios)
+## 5. Estado actual de SWARMIND (post-import)
 
-- DLL actual (4.9 MB) intacta y funcional: 14/14 capacidades `True`.
+- DLL actual (4.92 MB) intacta y funcional: 14/14 capacidades `True`.
 - `capabilities()` reporta todo disponible.
-- No se requiere cambio de codigo en SWARMIND en este ciclo.
+- Tests `test_ruscadb_store.py`: 11 passed.
+- No se requiere cambio de codigo adicional en SWARMIND en este ciclo.
