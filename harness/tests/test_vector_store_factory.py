@@ -119,8 +119,10 @@ def test_lance_store_explicit_backend_stays_lance(tmp_path):
 
 def test_delete_and_close_are_part_of_port(tmp_path):
     """delete() y close() existen en ambos adaptadores (paridad de puerto)."""
+    # Backend memory explicito: este test verifica el contrato del puerto, no
+    # el motor persistente (evita depender de lancedb/mocks de otros tests).
     store = get_vector_store(
-        backend="lancedb", db_path=str(tmp_path / "crud"), allow_fallback=True
+        backend="memory", db_path=str(tmp_path / "crud"), allow_fallback=True
     )
     try:
         import numpy as np
