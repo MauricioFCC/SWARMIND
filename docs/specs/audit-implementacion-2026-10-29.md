@@ -168,6 +168,36 @@ Límite declarado: el KNN binario actual **escanea** la tabla y cuantiza en la
 query; no hay índice IVF/HNSW de códigos ni `nprobe`. El control de costo/recall
 es `oversample` (1..8) ajustado por el tuner.
 
+### 3.5 Prueba de instalación limpia (Docker, ciclo 11.57)
+
+Escenario: contenedor `python:3.12-slim`, `git clone` del remoto, `pip install .`
+como usuario nuevo (sin GPU, sin LanceDB, sin DLL de RuscaDB) y ejecución del
+smoke + suite completa.
+
+| # | Gap encontrado | Evidencia | Fix |
+|---|---|---|---|
+| G1 | `pip install .` descargaba **torch 2.15 + 17 paquetes CUDA + triton** (GBs) sin que `harness` importara torch | `pip install --dry-run` en el contenedor | `torch` → extra `[gpu]`; `firecrawl-anydoc` → `[docs]`; core = numpy/pyyaml/requests/schedule |
+| G2 | `networkx` y `pydantic` eran transitivas de torch: al quitarlo rompen `knowledge_graph` y `task_manager` | `ModuleNotFoundError: networkx`; `PydanticTask() takes no arguments` | declaradas en `dependencies` |
+| G3 | `gpu_accel.get_device_info()` importaba torch sin guard | `ModuleNotFoundError: torch` | degrada con `available=False`, `torch_version=None` |
+| G4 | `python -m harness --help` exigía LanceDB y salía 1 | rc=1 en el contenedor | parsea primero; backend válido = LanceDB **o** RuscaDB; mensaje actualizado |
+| G5 | `capabilities()` lanzaba `FileNotFoundError` sin DLL | smoke en Linux | devuelve 0/17 `False` |
+| G6 | `LanceVectorStore.insert([[...]])` fallaba con listas | `'list' object has no attribute 'shape'` | normaliza a ndarray 2-D |
+| G7 | `SemanticCache()` sin backend lanzaba ImportError | 3 tests de init | `LanceVectorStore(allow_fallback=True)` |
+| G8 | backend `memory` intentaba abrir LanceDB | `_stats_lancedb` sobre mock filtrado | `memory` = in-memory puro |
+| G9 | Tests no portables (solo Windows/LanceDB) | 60 errors + 27 failures | skipif/patches; `conftest` usa `memory` si no hay motor |
+| G10 | `sync_opencode_global` no incluía `domain` (drift) | `test_harness_include_sin_drift_de_dependencias` | añadido a `_HARNESS_INCLUDE` |
+| G11 | El gate de arquitectura ignoraba 75 archivos con BOM (F5 subcontaba 162) | `utf-8` + `ast.parse` → SyntaxError silencioso | `_read_source` con `utf-8-sig`; baseline F5 re-congelado en 929 |
+| G12 | Sin Dockerfile/smoke/CI de instalación limpia | — | `Dockerfile`, `.dockerignore`, `scripts/new_user_smoke.py`, job `fresh-install` |
+
+Resultado tras los fixes (mismo contenedor, remoto):
+
+- `pip install .` → **15 s**, sin torch ni CUDA.
+- `scripts/new_user_smoke.py` → 4/4 PASS (import 14 ms sin torch/lancedb,
+  backend memory, RuscaDB 0/17 degradado, CLI `--help`).
+- Colección: **7314 tests, 0 errores**.
+- Suite completa: **7137 passed, 162 skipped, 15 xfailed, 0 failed** (~69 s).
+- `docker build` + `docker run` del repo → OK.
+
 ## 4. Investigación aplicada
 
 Ver `docs/research/frontier-2026-10-29.md` (6 frentes con fuentes 2023-2026):

@@ -5,6 +5,16 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-30d)
+
+### Estado 2026-10-30 (Ciclo 11.57 — Onboarding validado en Docker)
+- Instalación limpia reproducida en `python:3.12-slim` desde el remoto.
+- Core sin torch/CUDA (extras `[gpu]`/`[docs]`); instala en ~15 s.
+- `new_user_smoke.py` + job CI `fresh-install` + Dockerfile.
+- Degradación correcta sin DLL de RuscaDB ni LanceDB (backend memory).
+- Suite Linux: 7137 passed / 162 skipped / 0 failed.
+- Gate F5 corregido (BOM); baseline 70/929.
+
 ## Estado Actual (2026-10-30c)
 
 ### Estado 2026-10-30 (Ciclo 11.56 — RaBitQ cableado + tuning por carga)

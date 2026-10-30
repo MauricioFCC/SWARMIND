@@ -1,3 +1,32 @@
+## [11.57] - 2026-10-30
+
+### Added
+- Prueba de instalación limpia reproducible: `Dockerfile`, `.dockerignore` y
+  `scripts/new_user_smoke.py` (import liviano, backend memory, degradación de
+  RuscaDB, CLI `--help`, opcional `--lancedb`).
+- Job T1 `fresh-install` en CI (Python 3.12, sin extras) + sección de
+  instalación limpia en el README (`pip` y Docker).
+
+### Changed
+- Core de dependencias ligero: `torch` → extra `[gpu]`; `firecrawl-anydoc` →
+  extra `[docs]`; `networkx` y `pydantic` declaradas explícitamente (antes
+  llegaban como transitivas de torch).
+- `harness.gpu_accel.get_device_info()` degrada sin torch.
+- `python -m harness --help` ya no exige LanceDB; el chequeo de backend acepta
+  RuscaDB y el mensaje explica ambas vías.
+- Backend `memory` es in-memory puro (no intenta LanceDB); `SemanticCache()`
+  sin backend degrada con warning.
+- Gate de arquitectura lee `utf-8-sig` (antes ignoraba 75 archivos con BOM y
+  subcontaba F5); baseline re-congelado en F3=70 / F5=929.
+
+### Fixed
+- `LanceVectorStore.insert` acepta listas además de ndarray.
+- `capabilities()` devuelve todo `False` si la DLL no está en la plataforma.
+
+### Verified
+- Docker `python:3.12-slim` + clone remoto: smoke 4/4, 7314 tests
+  colectados, suite 7137 passed / 0 failed.
+
 ## [11.56] - 2026-10-30
 
 ### Added

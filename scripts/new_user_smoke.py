@@ -94,14 +94,44 @@ def check_cli_help() -> str:
     return "CLI --help OK"
 
 
+def check_lancedb_persistence() -> str:
+    """Valida el extra ``lancedb`` (persistencia real) si esta instalado."""
+    try:
+        import lancedb  # noqa: F401
+    except ImportError as exc:
+        raise AssertionError(
+            'lancedb no instalado (pip install "Swarmind-harness[lancedb]")'
+        ) from exc
+    from harness.memory_rag.lance_vector_store import LanceVectorStore
+
+    with tempfile.TemporaryDirectory() as tmp:
+        path = str(Path(tmp) / "lancedb")
+        store = LanceVectorStore(db_path=path, allow_fallback=False, backend="lancedb")
+        try:
+            store.create_collection("smoke")
+            store.insert(
+                "smoke",
+                [[1.0, 0.0], [0.0, 1.0]],
+                [{"text": "a"}, {"text": "b"}],
+            )
+            hits = store.search("smoke", [1.0, 0.0], top_k=1)
+            if not hits:
+                raise AssertionError("search lancedb devolvio 0 resultados")
+        finally:
+            store.close()
+    return "lancedb OK (insert/search persistente)"
+
+
 def main() -> int:
     """Ejecuta todos los checks y reporta PASS/FAIL."""
-    checks = (
+    checks = [
         ("import", check_import_harness),
         ("memory", check_memory_backend),
         ("ruscadb", check_ruscadb_optional),
         ("cli", check_cli_help),
-    )
+    ]
+    if "--lancedb" in sys.argv[1:]:
+        checks.append(("lancedb", check_lancedb_persistence))
     failures = 0
     for name, check in checks:
         try:
