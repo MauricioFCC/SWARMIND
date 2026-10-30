@@ -20,8 +20,11 @@
   subcontaba F5); baseline re-congelado en F3=70 / F5=929.
 
 ### Fixed
-- `LanceVectorStore.insert` acepta listas además de ndarray.
+- `LanceVectorStore.insert` y `search` aceptan listas además de ndarray.
 - `capabilities()` devuelve todo `False` si la DLL no está en la plataforma.
+- LanceDB: `create_collection` crea con sample row (0.33+ no acepta `data=[]`);
+  el insert solo aplana columnas del schema; la dimension del vector se toma del
+  primer insert (con mensaje accionable si no coincide).
 
 ### Verified
 - Docker `python:3.12-slim` + clone remoto: smoke 4/4, 7314 tests

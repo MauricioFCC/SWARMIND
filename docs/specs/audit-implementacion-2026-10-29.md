@@ -189,6 +189,15 @@ smoke + suite completa.
 | G11 | El gate de arquitectura ignoraba 75 archivos con BOM (F5 subcontaba 162) | `utf-8` + `ast.parse` → SyntaxError silencioso | `_read_source` con `utf-8-sig`; baseline F5 re-congelado en 929 |
 | G12 | Sin Dockerfile/smoke/CI de instalación limpia | — | `Dockerfile`, `.dockerignore`, `scripts/new_user_smoke.py`, job `fresh-install` |
 
+Gaps adicionales al validar el extra `[lancedb]` (persistencia real):
+
+| # | Gap | Evidencia | Fix |
+|---|---|---|---|
+| G13 | `create_collection` usaba `create_table(data=[])`, rechazado por LanceDB 0.33+ | `Cannot create table from empty list without a schema` | sample row + `delete("id = 'init'")` |
+| G14 | `_insert_lancedb` aplanaba TODAS las claves de metadata y LanceDB rechaza campos fuera del schema | `field 'text' does not exist in table schema` | solo columnas presentes en `tbl.schema`; el resto va en `metadata` JSON |
+| G15 | La tabla se creaba con dim fija 384; embeddings de otra dimensión fallaban con error crudo de Lance | `Cannot cast to FixedSizeList(384)` | `create_collection(dim=...)` + dim real del primer insert + mensaje accionable |
+| G16 | `LanceVectorStore.search([...])` fallaba con listas | `'list' object has no attribute 'tolist'` | normaliza la query a ndarray |
+
 Resultado tras los fixes (mismo contenedor, remoto):
 
 - `pip install .` → **15 s**, sin torch ni CUDA.
