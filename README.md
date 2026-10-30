@@ -58,6 +58,40 @@ launcher.bat   # Windows
 ```
 
 > **Alternative:** `python scripts/setup_swarmind.py` performs the same auto-setup
+
+### Fresh install without the setup script (pip / Docker)
+
+The core install is intentionally light: **no GPU and no LanceDB required**.
+
+```bash
+git clone https://github.com/MauricioFCC/SWARMIND.git
+cd SWARMIND
+python -m pip install .            # numpy, pyyaml, requests, schedule
+python scripts/new_user_smoke.py   # import + memory backend + CLI + degradation
+```
+
+Optional extras:
+
+| Extra | What it adds |
+|---|---|
+| `.[lancedb]` | LanceDB backend (persistent vector store) |
+| `.[gpu]` | PyTorch (CUDA) for `harness/gpu_optimize.py` |
+| `.[docs]` | `firecrawl-anydoc` for PDF/DOCX ingestion |
+| `.[test]` | pytest, hypothesis, pytest-asyncio, ... |
+
+Docker (reproducible fresh-user check, Linux):
+
+```bash
+docker build -t swarmind-harness .
+docker run --rm swarmind-harness
+# with LanceDB:
+docker build --build-arg EXTRAS=lancedb -t swarmind-harness:lancedb .
+```
+
+> **Platform note:** the RuscaDB C-ABI ships as a per-platform artifact
+> (`ruscadb_ffi.dll` on Windows). On Linux/macOS without it, `capabilities()`
+> reports `False` and the harness degrades to LanceDB or the in-memory backend;
+> install `.[lancedb]` for persistence.
 > (Windows-oriented, uses copy instead of symlinks). Use `install.sh` / `install.ps1`
 > for idempotent, symlink-based setup on any OS.
 

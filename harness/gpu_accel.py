@@ -135,7 +135,18 @@ def get_device_info() -> dict[str, Any]:
         Dict con: available, device, device_name, memory_gb,
         cuda_version (si aplica) y torch_version.
     """
-    import torch as _torch
+    try:
+        import torch as _torch
+    except ImportError:
+        # GPU opcional: `pip install ".[gpu]"`. Sin torch se reporta el estado
+        # degradado en vez de romper health-checks/diagnosticos.
+        return {
+            "available": False,
+            "device": "cpu",
+            "device_name": "CPU (torch no instalado)",
+            "memory_gb": 0.0,
+            "torch_version": None,
+        }
 
     info: dict[str, Any] = {
         "available": HAVE_CUDA,

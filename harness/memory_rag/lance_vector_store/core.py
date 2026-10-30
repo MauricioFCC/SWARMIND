@@ -28,7 +28,7 @@ import harness.memory_rag.lance_vector_store as _lance_vector_store
 
 from ..lance_schemas import DEFAULT_COLLECTIONS
 from ..memory_config import MemoryBackend, MemoryConfig
-from .backends import _LanceDBBackendMixin, _MemoryBackendMixin
+from .backends import _LanceDBBackendMixin
 from .constants import LANCEDB_ROOT
 from .exceptions import VectorStoreError
 from .lifecycle import _LifecycleMixin
@@ -62,7 +62,7 @@ def _resolve_backend(backend: str | None, config: Any = None) -> str:
     return str(backend or DEFAULT_BACKEND).lower()
 
 
-class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin, _LifecycleMixin):
+class LanceVectorStore(_LanceDBBackendMixin, _LifecycleMixin):
     """
     Unified vector store that wraps LanceDB.
 
@@ -160,6 +160,10 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin, _LifecycleMixi
             # que el motor no esta disponible y se degrada a LanceDB.
             logger.info("Fallback de backend: ruscadb no disponible, se usa lancedb")
             resolved = "lancedb"
+        if resolved == "memory":
+            # El backend memory ES el fallback in-memory: no tiene sentido
+            # exigir lancedb para usarlo.
+            allow_fallback = True
         self._backend = resolved
         self._rusca = None
         if config:

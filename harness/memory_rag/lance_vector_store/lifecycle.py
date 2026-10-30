@@ -11,14 +11,19 @@ from datetime import UTC, datetime
 from typing import Any
 
 from ..lance_schemas import DEFAULT_COLLECTIONS
+from .backends import _MemoryBackendMixin
 from .exceptions import VectorStoreError
 from .models import _Collection
 
 logger = logging.getLogger("harness.memory_rag.lance_vector_store")
 
 
-class _LifecycleMixin:
-    """Metodos de ciclo de vida compartidos por los backends del store."""
+class _LifecycleMixin(_MemoryBackendMixin):
+    """Metodos de ciclo de vida compartidos por los backends del store.
+
+    Hereda del mixin in-memory para que ``delete``/``clear`` puedan operar sobre
+    ``_mem_collections``; el store compone dos bases (SOL: <=2).
+    """
 
     def delete_collection(self, name: str) -> None:
         """Elimina una coleccion completa.

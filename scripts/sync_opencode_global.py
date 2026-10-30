@@ -111,7 +111,10 @@ _HARNESS_INCLUDE = ["orchestrator", "memory_rag", "tools_sandbox", "model_router
                     # Referenciado por 3 skills del cerebro (contrato SSOT).
                     "alpha_mining",
                     # 11.24: recursive harnessing (Harness2-inspired).
-                    "harness2"]
+                    "harness2",
+                    # Puertos/Protocolos de dominio (ADR-0104): importados por
+                    # memory_rag y hybrid_retriever; sin esto el global rompe.
+                    "domain"]
 # Archivos raiz del paquete harness (fix ADR-0042: incluye __init__.py y
 # __main__.py para que el global sea un paquete importable; security_policy.py
 # vive en harness/qa/ y se copia via el directorio qa; scheduler.py paso a ser

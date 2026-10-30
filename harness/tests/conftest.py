@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -18,6 +19,33 @@ from harness.tests.mock_vector_store import MockVectorStore
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(1, str(PROJECT_ROOT))
+
+
+def _select_test_backend() -> None:
+    """Sin LanceDB ni RuscaDB, usa el backend memory para que la suite corra.
+
+    Un usuario nuevo en Linux/macOS puede no tener la DLL de RuscaDB ni el
+    extra ``lancedb``; sin este fallback, componentes que construyen un store
+    por defecto (AgentBus, debate, ...) lanzarian ImportError en los tests.
+    """
+    if os.environ.get("VECTOR_BACKEND"):
+        return
+    try:
+        import lancedb  # noqa: F401
+
+        return
+    except ImportError:
+        pass
+    try:
+        from harness.memory_rag.ruscadb import load_library
+
+        load_library()
+        return
+    except Exception:  # noqa: BLE001 - sin backend nativo disponible
+        os.environ["VECTOR_BACKEND"] = "memory"
+
+
+_select_test_backend()
 
 
 # ---------------------------------------------------------------------------

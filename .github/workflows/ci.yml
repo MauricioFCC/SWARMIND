@@ -346,7 +346,41 @@ jobs:
         run: uv run python scripts/check_architecture.py --gate --ratchet
 
   # ---------------------------------------------------------------------------
-  # T1.8: Agents discovery — ~5s
+  # T1.8: Fresh install — ~60s
+  # Un usuario nuevo instala el paquete (sin GPU ni LanceDB) y pasa el smoke:
+  # import liviano, backend memory, CLI --help y degradacion de RuscaDB.
+  # ---------------------------------------------------------------------------
+  fresh-install:
+    name: fresh-install
+    runs-on: ubuntu-latest
+    needs: lint
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Instalar como usuario nuevo (sin extras)
+        run: python -m pip install --no-cache-dir .
+
+      - name: Smoke de instalacion limpia
+        run: python scripts/new_user_smoke.py
+
+      - name: Instalar extras de test
+        run: python -m pip install --no-cache-dir ".[test]"
+
+      - name: Tests portables (sin backend nativo)
+        run: >
+          python -m pytest -q
+          harness/tests/test_memory_guard.py
+          harness/tests/test_vector_store_factory.py
+          harness/tests/test_semantic_cache_extended.py
+          harness/tests/test_lance_vector_store_crud.py
+
+  # ---------------------------------------------------------------------------
+  # T1.9: Agents discovery — ~5s
   # Verifica que los agentes se descubren correctamente
   # ---------------------------------------------------------------------------
   agents:
