@@ -339,23 +339,10 @@ jobs:
       - name: Instalar dependencias
         run: uv sync
 
-      - name: Fitness functions (gate F1/F2/F4)
+      - name: Fitness functions (gate F1/F2/F4/F6)
+        # F6 valida firmas puerto->adaptador (no solo hasattr) y el script
+        # fuerza sys.path al repo para no medir una copia global de harness.
         run: uv run python scripts/check_architecture.py --gate
-
-      - name: Contrato de puertos de dominio
-        # Conformance estatica (sin abrir DB): ambos adaptadores exponen los
-        # metodos del puerto. Evita el drift "puerto declarado, adaptador mudo".
-        run: |
-          uv run python -c "
-          from harness.domain.ports import VectorStorePort
-          from harness.memory_rag.lance_vector_store import LanceVectorStore
-          from harness.memory_rag.ruscadb_store import RuscaDBStore
-          required = [n for n in dir(VectorStorePort) if not n.startswith('_')]
-          for cls in (RuscaDBStore, LanceVectorStore):
-              missing = [n for n in required if not hasattr(cls, n)]
-              assert not missing, f'{cls.__name__} no cumple VectorStorePort: {missing}'
-          print(f'OK: {len(required)} metodos del puerto en 2 adaptadores')
-          "
 
   # ---------------------------------------------------------------------------
   # T1.8: Agents discovery — ~5s

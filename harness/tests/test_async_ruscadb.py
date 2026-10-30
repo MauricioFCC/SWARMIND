@@ -63,8 +63,10 @@ def test_async_hybrid_and_fts(async_store):
         return hybrid, fts
 
     hybrid, fts = asyncio.run(scenario())
-    assert isinstance(hybrid, list)
-    assert isinstance(fts, list)
+    assert hybrid, "hybrid_search async devolvio lista vacia"
+    assert hybrid[0]["text"] == "gato domestico"
+    assert fts, "full_text_search async devolvio lista vacia"
+    assert fts[0]["text"] == "gato domestico"
 
 
 def test_async_delete_and_execute(async_store):

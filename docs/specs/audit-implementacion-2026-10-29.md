@@ -99,6 +99,29 @@
 ### H8 (⚪) — `AGENTS.md` / docs desfasados
 - Actualizados roadmap, CHANGELOG, MEJORAS y estado de specs a 11.53.
 
+## 3.1 Correcciones de la revisión adversarial (post-commit `ec6f08c7`)
+
+Una revisión independiente del diff detectó 1 BLOCK y 8 WARN; todos corregidos
+y cubiertos con tests:
+
+| # | Hallazgo | Fix | Evidencia |
+|---|---|---|---|
+| B1 | `test_lance_vector_store_init.py` fijaba `VECTOR_BACKEND=lancedb` con `os.environ` a nivel de módulo → contaminaba la suite y rompía los tests de default `ruscadb` | `monkeypatch` en fixture autouse del módulo + fixture de aislamiento en los tests nuevos | `pytest harness/tests -k "default_backend_returns_ruscadb or lance_store_redirects_to_ruscadb"` → 2 passed |
+| W1 | Firmas puerto≠adaptador (`query_text` vs `keyword_filter`), invisible para `hasattr` | `LanceVectorStore.hybrid_search` usa `query_text` + alias `keyword_filter`; `search(..., **kwargs)`; F6 compara `inspect.signature` | `check_architecture.py --gate` → F6 OK |
+| W2 | `RuscaDBStore.search` ignoraba `filters` (bypass en AgentBus/context_assembler) | `_matches_filters` aplicado en search/FTS/hybrid | `test_search_honors_metadata_filters` |
+| W3 | `__new__` degradaba a LanceDB *fail-open* sin `allow_fallback` (DB bloqueada → memoria partida) | distingue librería ausente (degrada) de fallo del motor (fail-fast con WHAT/WHY/WHERE) | `test_ruscadb_failure_without_fallback_fails_fast` / `..._with_fallback_degrades` |
+| W4 | `allow_quarantined` no se propagaba en `hybrid_search` | opciones pasadas a `search`/`full_text_search` (RRF resetea score: sin doble ponderación) | `test_hybrid_search_honors_allow_quarantined` |
+| W5 | `semantic_cache_clear/delete` devolvían `True` con DELETE fallido | usan `execute()` de bajo nivel y devuelven `False` | `test_semantic_cache_persistent.py` |
+| W6 | `semantic_cache_purge_expired` era O(n²) y con cap silencioso de 1000 | un escaneo + borrado por lote (`_semantic_cache_delete_rows`), cap 10000 documentado | tests de caché persistentes |
+| W7 | TTL *fail-open* si `cached_at` era ilegible | fail-closed: TTL exigible + fecha ilegible ⇒ expirada | `test_ttl_expiry_returns_none` |
+| W8 | F4 ignoraba imports relativos; el CLI pasó a bloquear sin `--gate` | resolución de `level>0` contra el paquete + exclusion del patrón facade; default advise-only restaurado | gate con 0 ciclos reales; `default_exit=0`, `gate_exit=0` |
+| N1 | Tests decorativos (asserts no falsables) | asserts concretos (contenido async, valor tras borrar fila exacta, TTL real) | conteos abajo |
+
+> ⚪ Hallazgo extra: al ejecutarse como script, `sys.path[0]` es `scripts/`, por
+> lo que F6 podía importar una copia global de `harness`
+> (`~/.config/opencode/harness`). El checker ahora fuerza `ROOT` en
+> `sys.path` antes de importar.
+
 ## 4. Investigación aplicada
 
 Ver `docs/research/frontier-2026-10-29.md` (6 frentes con fuentes 2023-2026):
@@ -113,14 +136,16 @@ MeanCache, GPTCache), single-writer (SQLite WAL, DuckDB), fitness functions
 |---|---|
 | `ruff check harness scripts` | All checks passed |
 | `vulture ... --min-confidence 80` | 0 hallazgos |
-| `python scripts/check_architecture.py --gate` | OK (F1/F2/F4) |
-| `pytest test_vector_store_factory.py` | 9 passed |
-| `pytest test_trust_aware_retrieval.py` | 14 passed |
+| `python scripts/check_architecture.py --gate` | OK (F1/F2/F4/F6) |
+| `python scripts/check_architecture.py` (default) | exit 0 (advise-only) |
+| `pytest test_vector_store_factory.py` | 11 passed |
+| `pytest test_trust_aware_retrieval.py` | 17 passed |
 | `pytest test_async_ruscadb.py` | 6 passed |
-| `pytest test_semantic_cache_persistent.py` | 5 passed |
+| `pytest test_semantic_cache_persistent.py` | 6 passed |
 | Lote memoria (11 archivos) | 239 passed, 17 skipped |
 | Lote retrieval/compactación (6 archivos) | 74 passed |
 | Lote buses/run_commands (5 archivos) | 163 passed |
+| Lote gates tras review (6 archivos) | 130 passed |
 | `pytest --collect-only -q` | 7236 tests |
 
 ## 6. Pendientes (siguiente ciclo)

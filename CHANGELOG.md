@@ -38,6 +38,17 @@
 - `MCPCommand` faltaba en los imports de `harness.qa` pese a estar en `__all__`.
 - `semantic_cache_get` devolvía el wrapper `{"value": ...}` y silenciaba todo
   error con `except Exception`.
+- Revisión adversarial: aislamiento de `VECTOR_BACKEND` en tests (antes se
+  fijaba con `os.environ` a nivel de módulo y contaminaba la suite).
+- Revisión adversarial: `RuscaDBStore.search` ignoraba `filters` (bypass de
+  filtrado en AgentBus/context_assembler); ahora post-filtra por metadata.
+- Revisión adversarial: `LanceVectorStore.__new__` degradaba a LanceDB
+  *fail-open* aunque `allow_fallback=False`; ahora falla rápido con
+  WHAT/WHY/WHERE (solo degrada si falta la librería o `allow_fallback=True`).
+- Revisión adversarial: `allow_quarantined` no se propagaba en
+  `hybrid_search`; el caché semántico devolvía `True` con DELETE fallido;
+  TTL fail-open con fecha ilegible; purga O(n²); F4 ignoraba imports
+  relativos; CLI bloqueaba sin `--gate`. Todo corregido y con tests.
 
 ## [11.52] - 2026-10-28
 

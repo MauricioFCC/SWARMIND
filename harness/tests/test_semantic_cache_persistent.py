@@ -1,6 +1,8 @@
-"""Integracion SemanticCache + RuscaDBStore (cache persistente, ADR-0098)."""
+"""Integracion SemanticCache + RuscaDBStore (cache persistente, ADR-0104)."""
 
 from __future__ import annotations
+
+import time
 
 import pytest
 
@@ -38,17 +40,28 @@ def test_set_get_exact_hit_uses_persistent_cache(cache):
     assert stats["sets"] == 1
 
 
-def test_similarity_path_does_not_crash(cache):
-    """La busqueda por similitud funciona sobre RuscaDB (sin atributos LanceDB)."""
+def test_similarity_path_serves_value_without_exact_row(cache):
+    """Sin fila persistente, la ruta KNN devuelve la respuesta concreta."""
     cache.set("consulta de prueba", "respuesta-2")
-    # Prompt distinto: no hay hit exacto, se ejerce la ruta KNN.
-    assert cache.get("otra consulta distinta") in (None, "respuesta-2")
+    prompt_hash = cache._hash_prompt("consulta de prueba")
+    cache._store.execute(
+        f"DELETE FROM semantic_cache WHERE id = '{prompt_hash}'"
+    )
+    # El hit exacto ya no existe: debe resolver por similitud vectorial.
+    assert cache.get("consulta de prueba") == "respuesta-2"
 
 
 def test_clear_resets_collection(cache):
     """clear() borra la coleccion de cache y la recrea."""
     cache.set("p", "r")
     assert cache.clear() == 1
+    assert cache.get("p") is None
+
+
+def test_ttl_expiry_returns_none(cache):
+    """Una entrada con TTL vencido no se sirve (ni exacta ni por similitud)."""
+    assert cache.set("p", "r", ttl_seconds=0.001) is True
+    time.sleep(0.02)
     assert cache.get("p") is None
 
 
@@ -59,11 +72,10 @@ def test_clear_expired_delegates_to_store(cache):
     assert cache.get("p") == "r"
 
 
-def test_delete_entry_on_expiry(cache):
-    """Una entrada expirada se elimina del cache persistente."""
-    cache.set("p", "r", ttl_seconds=1)
-    # Forzar expiracion reescribiendo la fila con TTL ya vencido.
-    assert cache._try_remove_pending("hash-inexistente") is False
+def test_delete_entry_removes_both_representations(cache):
+    """_delete_entry borra la fila persistente y la vectorial."""
+    cache.set("p", "r")
     assert cache._persistent_cache() is not None
-    assert cache._delete_entry(cache._hash_prompt("p")) is None
+    cache._delete_entry(cache._hash_prompt("p"))
     assert cache.get("p") is None
+    assert cache._store.semantic_cache_get(cache._hash_prompt("p")) is None

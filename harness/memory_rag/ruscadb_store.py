@@ -660,6 +660,26 @@ class RuscaDBStore:
     # ------------------------------------------------------------------
 
     @staticmethod
+    def _matches_filters(item: dict[str, Any], filters: dict[str, Any] | None) -> bool:
+        """Comprueba igualdad campo->valor sobre el item o su metadata.
+
+        Args:
+            item: Resultado normalizado (``id``/``text``/``metadata``/...).
+            filters: Filtros pedidos por el llamador (None = sin filtro).
+
+        Returns:
+            True si el item satisface todos los filtros.
+        """
+        if not filters:
+            return True
+        meta = item.get("metadata") if isinstance(item.get("metadata"), dict) else {}
+        for key, value in filters.items():
+            if item.get(key) == value or meta.get(key) == value:
+                continue
+            return False
+        return True
+
+    @staticmethod
     def _trust_options(kwargs: dict[str, Any]) -> dict[str, Any]:
         """Extrae las opciones de gobernanza de retrieval de los kwargs.
 
@@ -783,6 +803,7 @@ class RuscaDBStore:
             logger.warning("search en '%s' fallo: %s", collection, exc)
             return []
         out = self._parse_rows(rows)
+        out = [item for item in out if self._matches_filters(item, kwargs.get("filters"))]
         for rank, item in enumerate(out):
             item["score"] = 1.0 / (rank + 1)
         return self._apply_trust_and_recency(
@@ -798,7 +819,8 @@ class RuscaDBStore:
             collection: Coleccion destino.
             query: Texto de consulta.
             top_k: Numero maximo de resultados.
-            **kwargs: ``allow_quarantined``, ``min_trust``, ``half_life_days``.
+            **kwargs: ``filters``, ``allow_quarantined``, ``min_trust``,
+                ``half_life_days``.
 
         Returns:
             Lista de ``{id, metadata, score, trust_tier}`` ordenada por BM25.
@@ -816,6 +838,7 @@ class RuscaDBStore:
             logger.warning("full_text_search en '%s' fallo: %s", collection, exc)
             return []
         out = self._parse_rows(rows)
+        out = [item for item in out if self._matches_filters(item, kwargs.get("filters"))]
         for rank, item in enumerate(out):
             item["score"] = 1.0 / (rank + 1)
         return self._apply_trust_and_recency(
@@ -842,15 +865,21 @@ class RuscaDBStore:
             query_vector: Vector de consulta.
             query_text: Texto de consulta (opcional).
             top_k: Numero de resultados fusionados.
-            **kwargs: ``allow_quarantined``, ``min_trust``, ``half_life_days``.
+            **kwargs: ``filters``, ``allow_quarantined``, ``min_trust``,
+                ``half_life_days``.
 
         Returns:
             Lista fusionada, deduplicada y gobernada por id.
         """
         options = self._trust_options(kwargs)
-        dense = self.search(collection, query_vector, top_k=top_k * 2)
+        filters = kwargs.get("filters")
+        dense = self.search(
+            collection, query_vector, top_k=top_k * 2, **options, filters=filters
+        )
         sparse = (
-            self.full_text_search(collection, query_text, top_k=top_k * 2)
+            self.full_text_search(
+                collection, query_text, top_k=top_k * 2, **options, filters=filters
+            )
             if query_text
             else []
         )
@@ -1424,7 +1453,9 @@ class RuscaDBStore:
         cached_at = meta.get("cached_at")
         if isinstance(ttl, (int, float)) and ttl > 0:
             age = self._age_days(cached_at, _dt.datetime.now(_dt.UTC))
-            if age is not None and age * 86400.0 > float(ttl):
+            # Fail-closed: si el TTL es exigible y no se puede datar la
+            # entrada, se trata como expirada (nunca servir contenido obsoleto).
+            if age is None or age * 86400.0 > float(ttl):
                 self._cache_expired += 1
                 self._cache_misses += 1
                 return None
@@ -1490,9 +1521,10 @@ class RuscaDBStore:
             "ttl_sec": ttl_sec,
         }
         try:
-            self.execute(
+            execute(
+                self._handle,
                 "DELETE FROM semantic_cache "  # nosec B608
-                f"WHERE id = '{_escape_literal(key)}'"
+                f"WHERE id = '{_escape_literal(key)}'",
             )
             insert_record(
                 self._handle,
@@ -1518,10 +1550,11 @@ class RuscaDBStore:
         """Vacia el cache semantico persistente.
 
         Returns:
-            True si el motor confirmo el borrado.
+            True si el motor confirmo el borrado; False si fallo (sin fingir
+            exito).
         """
         try:
-            self.execute("DELETE FROM semantic_cache")  # nosec B608
+            execute(self._handle, "DELETE FROM semantic_cache")  # nosec B608
             self._commit()
         except (RuscadbError, ValueError) as exc:
             logger.warning("semantic_cache_clear fallo: %s", exc)
@@ -1548,36 +1581,58 @@ class RuscaDBStore:
     def semantic_cache_delete(self, key: str) -> bool:
         """Elimina una entrada concreta del cache semantico persistente.
 
+        Borra la fila persistente (``id = key``) y la fila vectorial homonima
+        (``metadata.prompt_hash == key``) para que la ruta de similitud no
+        sirva una entrada eliminada.
+
         Args:
             key: Clave a eliminar.
 
         Returns:
-            True si el motor confirmo el borrado.
+            True si el motor confirmo el borrado; False en caso contrario.
         """
-        try:
-            self.execute(
-                "DELETE FROM semantic_cache "  # nosec B608
-                f"WHERE id = '{_escape_literal(key)}'"
-            )
-            self._commit()
-        except (RuscadbError, ValueError) as exc:
-            logger.warning("semantic_cache_delete fallo: %s", exc)
-            return False
-        # La misma entrada logica tambien vive como fila vectorial (prompt_hash
-        # en metadata): borrarla evita que la ruta de similitud la sirva.
-        for item in self.semantic_cache_entries():
-            meta = item.get("metadata") or {}
-            row_id = item.get("id")
-            if row_id and meta.get("prompt_hash") == key:
-                self.delete("semantic_cache", [str(row_id)])
-        self.invalidate_cache("semantic_cache")
-        return True
+        vector_ids = [
+            str(item["id"])
+            for item in self.semantic_cache_entries()
+            if item.get("id") and (item.get("metadata") or {}).get("prompt_hash") == key
+        ]
+        return self._semantic_cache_delete_rows([key], vector_ids)
 
-    def semantic_cache_entries(self, limit: int = 1000) -> list[dict[str, Any]]:
+    def _semantic_cache_delete_rows(
+        self, keys: list[str], vector_ids: list[str]
+    ) -> bool:
+        """Borra filas del cache (persistentes y vectoriales) y confirma.
+
+        Args:
+            keys: Claves persistentes (columna ``id``).
+            vector_ids: Ids logicos de filas vectoriales a borrar.
+
+        Returns:
+            True si todas las sentencias se ejecutaron sin error.
+        """
+        ok = True
+        for key in keys:
+            try:
+                execute(
+                    self._handle,
+                    "DELETE FROM semantic_cache "  # nosec B608
+                    f"WHERE id = '{_escape_literal(key)}'",
+                )
+            except (RuscadbError, ValueError) as exc:
+                logger.warning("semantic_cache_delete '%s' fallo: %s", key, exc)
+                ok = False
+        if vector_ids:
+            self.delete("semantic_cache", vector_ids)
+        self._commit()
+        self.invalidate_cache("semantic_cache")
+        return ok
+
+    def semantic_cache_entries(self, limit: int = 10000) -> list[dict[str, Any]]:
         """Lista las entradas del cache semantico con sus metadatos.
 
         Args:
-            limit: Maximo de entradas a devolver.
+            limit: Maximo de entradas a devolver (cap explicito y documentado;
+                el cache se purga periodicamente para no superarlo).
 
         Returns:
             Lista de ``{id, text, metadata, created_at}``.
@@ -1598,25 +1653,41 @@ class RuscaDBStore:
     ) -> int:
         """Purga entradas expiradas del cache semantico persistente.
 
+        Un solo escaneo; despues borra en lote (sin re-escanear la tabla por
+        cada expirada, que hacia la purga O(n²)).
+
         Args:
             default_ttl: TTL a aplicar cuando la entrada no lo declara.
 
         Returns:
-            Numero de entradas eliminadas.
+            Numero de entradas eliminadas (0 si la operacion fallo).
         """
-        removed = 0
         now = _dt.datetime.now(_dt.UTC)
-        for item in self.semantic_cache_entries():
+        entries = self.semantic_cache_entries()
+        expired_keys: list[str] = []
+        for item in entries:
             meta = item.get("metadata") or {}
             ttl = meta.get("ttl_sec", default_ttl)
             if not isinstance(ttl, (int, float)) or ttl <= 0:
                 continue
-            age = self._age_days(meta.get("cached_at") or item.get("created_at"), now)
-            if age is not None and age * 86400.0 > float(ttl):
-                key = str(item.get("id") or "")
-                if key and self.semantic_cache_delete(key):
-                    removed += 1
-        return removed
+            age = self._age_days(
+                meta.get("cached_at") or item.get("created_at"), now
+            )
+            key = str(item.get("id") or "")
+            if key and (age is None or age * 86400.0 > float(ttl)):
+                expired_keys.append(key)
+        if not expired_keys:
+            return 0
+        expired = set(expired_keys)
+        vector_ids = [
+            str(item["id"])
+            for item in entries
+            if item.get("id")
+            and (item.get("metadata") or {}).get("prompt_hash") in expired
+            and str(item["id"]) not in expired
+        ]
+        ok = self._semantic_cache_delete_rows(expired_keys, vector_ids)
+        return len(expired_keys) if ok else 0
 
     def adaptive_search(self, query: str, top_k: int = 5, collection: str = "memory") -> list[Any]:
         """Retrieval adaptativo (arXiv:2403.14403) sobre este store.

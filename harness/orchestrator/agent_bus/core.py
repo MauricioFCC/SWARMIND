@@ -22,18 +22,11 @@ from harness.common import fallback_embedding
 from harness.memory_rag.lance_vector_store import LanceVectorStore
 
 from .constants import _COLLECTION, _VALID_MESSAGE_TYPES
-
-
-class AgentBusError(Exception):
-    """Error base del AgentBus (fusionado desde exceptions.py)."""
-
-
-class InvalidMessageError(AgentBusError):
-    """El mensaje no cumple con el esquema requerido."""
-
-
+from .errors import AgentBusError, InvalidMessageError
 from .messaging import _MessagingMixin
 from .reading import _ReadingMixin
+
+__all__ = ["AgentBus", "AgentBusError", "InvalidMessageError"]
 
 logger = logging.getLogger(__name__)
 

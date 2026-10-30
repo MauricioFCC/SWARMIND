@@ -4,12 +4,14 @@ Verifica:
 - F1: Domain no importa Infrastructure.
 - F2: Domain no importa frameworks externos.
 - F3: Tamano de modulo <= 500 lineas (advisory: deuda legacy).
-- F4: Sin ciclos de import entre modulos de ``harness/`` (Tarjan SCC).
+- F4: Sin ciclos de import entre modulos de ``harness/`` (Tarjan SCC,
+  incluye imports relativos; excluye el patron facade paquete<->submodulo).
 - F5: Tamano de funcion <= 30 lineas (advisory: deuda legacy).
+- F6: Los adaptadores cumplen la FIRMA de los puertos de dominio.
 
 Modos:
 - Sin flags (default): reporta todo, advise-only, exit 0.
-- ``--gate``: BLOQUEA (exit 1) con violaciones de F1/F2/F4; F3/F5 advisory.
+- ``--gate``: BLOQUEA (exit 1) con violaciones de F1/F2/F4/F6; F3/F5 advisory.
 - ``--strict``: BLOQUEA con cualquier violacion (incluye deuda legacy).
 - ``--json``: emite el reporte como JSON (util para CI/telemetria).
 
@@ -24,10 +26,17 @@ import os
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 HARNESS = ROOT / "harness"
 DOMAIN = HARNESS / "domain"
+
+# El repo debe ganar a cualquier copia instalada/global de `harness` (p. ej.
+# ~/.config/opencode/harness): al ejecutarse como script, sys.path[0] es
+# `scripts/`, no la raiz del repo.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 # Frameworks prohibidos en Domain
 FORBIDDEN_FRAMEWORKS = {
@@ -47,7 +56,24 @@ MAX_MODULE_LINES = 500
 MAX_FUNCTION_LINES = 30
 
 #: Reglas que bloquean merge en modo ``--gate`` (barato y sin deuda legacy).
-BLOCKING_RULES = ("F1", "F2", "F4")
+BLOCKING_RULES = ("F1", "F2", "F4", "F6")
+
+#: Contratos puerto -> adaptadores que deben cumplirlos (F6).
+PORT_CONTRACTS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
+    (
+        "harness.domain.ports",
+        "VectorStorePort",
+        (
+            ("harness.memory_rag.ruscadb_store", "RuscaDBStore"),
+            ("harness.memory_rag.lance_vector_store", "LanceVectorStore"),
+        ),
+    ),
+    (
+        "harness.domain.ports",
+        "TextSearchPort",
+        (("harness.memory_rag.ruscadb_store", "RuscaDBStore"),),
+    ),
+)
 
 
 def _scan_domain() -> tuple[list[str], list[str]]:
@@ -153,8 +179,47 @@ def _iter_module_imports(node: ast.AST) -> list[ast.AST]:
     return found
 
 
+def _resolve_import_targets(
+    node: ast.AST, module_name: str, is_package: bool
+) -> list[str]:
+    """Resuelve los modulos destino de un nodo de import (absoluto o relativo).
+
+    Args:
+        node: Nodo ``Import`` o ``ImportFrom``.
+        module_name: Nombre punteado del modulo que contiene el import.
+        is_package: True si el archivo es un ``__init__.py``.
+
+    Returns:
+        Lista de nombres de modulo candidatos (puede incluir simbolos; la
+        resolucion por prefijo los descarta).
+    """
+    if isinstance(node, ast.Import):
+        return [alias.name for alias in node.names]
+    if not isinstance(node, ast.ImportFrom):
+        return []
+    if node.level == 0:
+        return [node.module] if node.module else []
+    package_parts = module_name.split(".") if is_package else module_name.split(".")[:-1]
+    drop = node.level - 1
+    if drop > len(package_parts):
+        return []
+    base_parts = package_parts[: len(package_parts) - drop]
+    base = ".".join(base_parts)
+    targets: list[str] = []
+    if node.module:
+        targets.append(f"{base}.{node.module}" if base else node.module)
+    else:
+        # ``from . import x``: cada alias puede ser un submodulo.
+        for alias in node.names:
+            targets.append(f"{base}.{alias.name}" if base else alias.name)
+    return targets
+
+
 def _module_graph() -> tuple[dict[str, Path], dict[str, set[str]]]:
     """Construye el grafo de imports internos de ``harness/``.
+
+    Incluye imports relativos (``from ..x import y``), que son el estilo
+    dominante en ``harness/memory_rag/**`` y antes eran invisibles para F4.
 
     Returns:
         ``(archivos, grafo)``: mapa nombre->ruta y adyacencia entre modulos.
@@ -172,21 +237,23 @@ def _module_graph() -> tuple[dict[str, Path], dict[str, set[str]]]:
             tree = ast.parse(path.read_text(encoding="utf-8"))
         except SyntaxError:
             continue
+        is_package = path.name == "__init__.py"
         for node in _iter_module_imports(tree):
-            targets: list[str] = []
-            if isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
-                targets.append(node.module)
-            elif isinstance(node, ast.Import):
-                targets.extend(a.name for a in node.names)
-            for mod in targets:
+            for mod in _resolve_import_targets(node, name, is_package):
                 if not mod.startswith("harness"):
                     continue
                 parts = mod.split(".")
                 for i in range(len(parts), 0, -1):
                     cand = ".".join(parts[:i])
-                    if cand in files:
-                        graph[name].add(cand)
+                    if cand not in files:
+                        continue
+                    # Un submodulo que importa su propio paquete (__init__) es
+                    # el patron facade (re-export) y no un ciclo accionable: el
+                    # paquete ya esta en sys.modules cuando se importa el hijo.
+                    if name.startswith(f"{cand}."):
                         break
+                    graph[name].add(cand)
+                    break
     return files, graph
 
 
@@ -228,6 +295,85 @@ def check_import_cycles() -> list[str]:
     return errors
 
 
+def check_port_conformance() -> list[str]:
+    """F6: los adaptadores cumplen la FIRMA de los puertos (no solo ``hasattr``).
+
+    ``isinstance`` sobre un ``runtime_checkable`` Protocol solo verifica que el
+    atributo exista; un ``hybrid_search(..., keyword_filter)`` vs
+    ``query_text`` pasaria invisible y fallaria en runtime. Aqui se comparan
+    los parametros requeridos y los nombres.
+
+    Returns:
+        Lista de desajustes legibles (vacia si todos los contratos se cumplen).
+    """
+    import importlib
+
+    errors: list[str] = []
+    for port_module, port_name, adapters in PORT_CONTRACTS:
+        try:
+            port = getattr(importlib.import_module(port_module), port_name)
+        except (ImportError, AttributeError) as exc:
+            errors.append(f"F6: no se pudo importar {port_module}.{port_name}: {exc}")
+            continue
+        port_methods = {
+            name: value
+            for name, value in vars(port).items()
+            if not name.startswith("_") and callable(value)
+        }
+        for adapter_module, adapter_name in adapters:
+            try:
+                adapter = getattr(importlib.import_module(adapter_module), adapter_name)
+            except (ImportError, AttributeError) as exc:
+                errors.append(f"F6: {adapter_name} no importable: {exc}")
+                continue
+            for method_name, port_method in port_methods.items():
+                adapter_method = getattr(adapter, method_name, None)
+                if adapter_method is None:
+                    errors.append(
+                        f"F6: {adapter_name} no implementa {port_name}.{method_name}"
+                    )
+                    continue
+                errors.extend(
+                    f"F6: {adapter_name}.{method_name} {detail}"
+                    for detail in _signature_mismatches(port_method, adapter_method)
+                )
+    return errors
+
+
+def _signature_mismatches(port_method: Any, adapter_method: Any) -> list[str]:
+    """Detecta desajustes de firma entre el puerto y su adaptador.
+
+    Args:
+        port_method: Funcion declarada en el Protocol.
+        adapter_method: Implementacion en el adaptador.
+
+    Returns:
+        Lista de mensajes (vacia si la firma es compatible).
+    """
+    import inspect
+
+    port_params = inspect.signature(port_method).parameters
+    adapter_params = inspect.signature(adapter_method).parameters
+    errors: list[str] = []
+    for name, param in port_params.items():
+        if name == "self" or param.kind in (
+            inspect.Parameter.VAR_KEYWORD,
+            inspect.Parameter.VAR_POSITIONAL,
+        ):
+            continue
+        if name not in adapter_params:
+            errors.append(f"no acepta el parametro del puerto '{name}'")
+    for name, param in adapter_params.items():
+        if name == "self" or param.kind in (
+            inspect.Parameter.VAR_KEYWORD,
+            inspect.Parameter.VAR_POSITIONAL,
+        ):
+            continue
+        if param.default is inspect.Parameter.empty and name not in port_params:
+            errors.append(f"exige un parametro extra no declarado en el puerto '{name}'")
+    return errors
+
+
 def run_checks() -> dict[str, list[str]]:
     """Ejecuta todas las fitness functions y agrupa los hallazgos por regla.
 
@@ -241,6 +387,7 @@ def run_checks() -> dict[str, list[str]]:
         "F3": check_module_size(),
         "F4": check_import_cycles(),
         "F5": check_function_size(),
+        "F6": check_port_conformance(),
     }
 
 
@@ -255,7 +402,14 @@ def main(argv: list[str] | None = None) -> int:
     """
     args = list(sys.argv[1:] if argv is None else argv)
     findings = run_checks()
-    blocking = BLOCKING_RULES if "--strict" not in args else tuple(findings)
+    if "--strict" in args:
+        blocking: tuple[str, ...] = tuple(findings)
+    elif "--gate" in args:
+        blocking = BLOCKING_RULES
+    else:
+        # Default: advise-only (exit 0). Bloquear solo con --gate/--strict evita
+        # romper scripts/hooks que invocan el checker sin flags.
+        blocking = ()
     blocking_errors = [err for rule in blocking for err in findings[rule]]
     advisory = [err for rule, errs in findings.items() if rule not in blocking
                 for err in errs]

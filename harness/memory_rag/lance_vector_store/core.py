@@ -104,16 +104,37 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin, _LifecycleMixi
         if _resolve_backend(backend, config) != "ruscadb":
             return super().__new__(cls)
         try:
+            from ..ruscadb import load_library
+
+            load_library()
+        except (ImportError, OSError) as exc:
+            # El artefacto dinamico no esta en esta plataforma/instalacion:
+            # degradar es el unico camino (no hay motor que abrir).
+            logger.warning(
+                "RuscaDB no instalado (%s); backend efectivo = lancedb", exc
+            )
+            return super().__new__(cls)
+        try:
             from ..ruscadb_store import RuscaDBStore
 
             return RuscaDBStore(
                 db_path=db_path, allow_fallback=allow_fallback, config=config
             )
         except (ImportError, OSError, RuntimeError) as exc:
-            logger.warning(
-                "RuscaDB no disponible (%s); backend efectivo = lancedb", exc
-            )
-            return super().__new__(cls)
+            if allow_fallback:
+                logger.warning(
+                    "RuscaDB fallo (%s) con allow_fallback=True; backend = lancedb",
+                    exc,
+                )
+                return super().__new__(cls)
+            # Fail-fast: desviar escrituras a otra base produce memoria
+            # partida y perdida silenciosa de persistencia (DB bloqueada,
+            # corrupta o lock de otro proceso).
+            raise RuntimeError(
+                "LanceVectorStore | WHAT=adaptador_ruscadb_no_disponible | "
+                f"WHY={exc} | WHERE=LanceVectorStore.__new__ | "
+                "sugerencia: allow_fallback=True o backend='lancedb'"
+            ) from exc
 
     def __init__(
         self,
@@ -330,6 +351,7 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin, _LifecycleMixi
         query_vector: np.ndarray,
         top_k: int = 5,
         filters: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> list[dict[str, Any]]:
         """
         Vector similarity search with optional metadata filtering.
@@ -339,6 +361,9 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin, _LifecycleMixi
             query_vector: 1-D query embedding.
             top_k: Number of results to return.
             filters: Optional dict of field -> value for pre-filtering.
+            **kwargs: Opciones de gobernanza aceptadas por el puerto
+                (``allow_quarantined``/``min_trust``/``half_life_days``);
+                LanceDB no las aplica (no hay trust tagging nativo).
 
         Returns:
             List of result dicts with keys: id, score, metadata, created_at.
@@ -356,8 +381,9 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin, _LifecycleMixi
         self,
         collection: str,
         query_vector: np.ndarray,
-        keyword_filter: str,
+        query_text: str = "",
         top_k: int = 5,
+        **kwargs: Any,
     ) -> list[dict[str, Any]]:
         """
         Hybrid search combining vector similarity with keyword filtering.
@@ -368,16 +394,20 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin, _LifecycleMixi
         Args:
             collection: Collection name.
             query_vector: 1-D query embedding.
-            keyword_filter: Keyword string to match against metadata fields.
+            query_text: Keyword string to match against metadata fields.
             top_k: Number of results to return.
+            **kwargs: ``keyword_filter`` se acepta como alias historico.
 
         Returns:
             List of result dicts.
         """
+        alias = kwargs.pop("keyword_filter", None)
+        if alias is not None:
+            query_text = str(alias)
         # Start with vector search, then re-rank by keyword presence
         vector_results = self.search(collection, query_vector, top_k * 3)
 
-        kw_lower = keyword_filter.lower()
+        kw_lower = query_text.lower()
 
         def _keyword_score(item: dict[str, Any]) -> float:
             meta = item.get("metadata", {})

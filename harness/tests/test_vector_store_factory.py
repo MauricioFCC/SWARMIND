@@ -20,6 +20,12 @@ except Exception:  # noqa: BLE001
     _RUSCADB_AVAILABLE = False
 
 
+@pytest.fixture(autouse=True)
+def _clean_backend_env(monkeypatch):
+    """Aisla la resolucion de backend de `VECTOR_BACKEND` del shell."""
+    monkeypatch.delenv("VECTOR_BACKEND", raising=False)
+
+
 def test_default_backend_returns_ruscadb(tmp_path):
     """Sin backend explicito la factory devuelve el adaptador RuscaDB."""
     store = get_vector_store(db_path=str(tmp_path / "t.db"))
@@ -125,5 +131,37 @@ def test_delete_and_close_are_part_of_port(tmp_path):
         assert len(ids) == 2
         assert store.delete("memory", ids) == 2
         assert store.get_collection_stats("memory")["item_count"] == 0
+    finally:
+        store.close()
+
+
+def _break_ruscadb_store(monkeypatch):
+    """Fuerza un fallo de apertura del store (DB bloqueada/corrupta)."""
+    import harness.memory_rag.ruscadb_store as store_module
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("base en uso")
+
+    monkeypatch.setattr(store_module, "RuscaDBStore", _boom)
+
+
+def test_ruscadb_failure_without_fallback_fails_fast(tmp_path, monkeypatch):
+    """Sin allow_fallback, un fallo real del motor NO se degrada en silencio."""
+    _break_ruscadb_store(monkeypatch)
+    with pytest.raises(RuntimeError) as excinfo:
+        LanceVectorStore(db_path=str(tmp_path / "locked.db"))
+    message = str(excinfo.value)
+    assert "adaptador_ruscadb_no_disponible" in message
+    assert "base en uso" in message
+
+
+def test_ruscadb_failure_with_fallback_degrades(tmp_path, monkeypatch):
+    """Con allow_fallback=True el fallo degrada explicitamente a LanceDB."""
+    _break_ruscadb_store(monkeypatch)
+    store = LanceVectorStore(
+        db_path=str(tmp_path / "fallback"), allow_fallback=True
+    )
+    try:
+        assert type(store) is LanceVectorStore
     finally:
         store.close()

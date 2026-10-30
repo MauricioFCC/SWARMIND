@@ -163,6 +163,35 @@ def test_hybrid_search_applies_governance(store):
     assert "trust_weight" in results[0]
 
 
+def test_search_honors_metadata_filters(store):
+    """filters se aplica sobre metadata (antes se ignoraba en silencio)."""
+    store.insert(
+        "mem",
+        [[1.0, 0.0], [0.9, 0.1]],
+        [{"channel": "a"}, {"channel": "b"}],
+        texts=["mensaje a", "mensaje b"],
+    )
+    results = store.search("mem", [1.0, 0.0], top_k=5, filters={"channel": "a"})
+    assert results
+    assert {item["metadata"]["channel"] for item in results} == {"a"}
+
+
+def test_hybrid_search_honors_allow_quarantined(store):
+    """hybrid_search propaga allow_quarantined a las busquedas internas."""
+    store.insert(
+        "mem",
+        [[1.0, 0.0]],
+        [{"trust_tier": "quarantined"}],
+        texts=["gato sospechoso"],
+    )
+    assert store.hybrid_search("mem", [1.0, 0.0], query_text="gato", top_k=5) == []
+    results = store.hybrid_search(
+        "mem", [1.0, 0.0], query_text="gato", top_k=5, allow_quarantined=True
+    )
+    assert results
+    assert results[0]["trust_tier"] == "quarantined"
+
+
 def test_hybrid_rrf_score_is_rank_based(store):
     """El score hibrido es RRF puro * confianza (sin doble ponderacion)."""
     store.insert(

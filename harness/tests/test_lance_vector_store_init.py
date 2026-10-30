@@ -6,15 +6,6 @@ _try_import_lancedb y _ensure_lancedb_collections.
 """
 from __future__ import annotations
 
-import os
-
-os.environ["VECTOR_BACKEND"] = "lancedb"
-os.environ["RUSCADB_PATH"] = ""
-
-from harness.memory_rag.memory_config import reset_memory_config
-
-reset_memory_config()
-
 import logging
 from unittest.mock import MagicMock, patch
 
@@ -22,7 +13,22 @@ import pytest
 
 from harness.memory_rag.lance_schemas import DEFAULT_COLLECTIONS
 from harness.memory_rag.lance_vector_store import LanceVectorStore
-from harness.memory_rag.memory_config import MemoryConfig
+from harness.memory_rag.memory_config import MemoryConfig, reset_memory_config
+
+
+@pytest.fixture(autouse=True)
+def _force_lancedb_backend(monkeypatch):
+    """Fija el backend LanceDB solo durante este modulo (sin contaminar el resto).
+
+    Antes se hacia con ``os.environ`` a nivel de modulo: al importar durante la
+    coleccion, ``VECTOR_BACKEND=lancedb`` quedaba activo para TODA la suite y
+    rompia tests de otros modulos (que esperan el default ``ruscadb``).
+    """
+    monkeypatch.setenv("VECTOR_BACKEND", "lancedb")
+    monkeypatch.setenv("RUSCADB_PATH", "")
+    reset_memory_config()
+    yield
+    reset_memory_config()
 
 # ===========================================================================
 # TESTS — Inicialización y storage
