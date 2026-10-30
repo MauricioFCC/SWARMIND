@@ -431,14 +431,6 @@ def test_fallback_cosine_is_saturated_not_discriminative(
     assert max(p.score for p in pairs) < PEAK_THRESHOLD
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "DECISION DE PRODUCTO (ronda 2): healthtech~sociology comparte "
-        "'sistemas/digital' sin anti-trigger cruzado; add 'para X ver Y' o "
-        "aceptar. Ver specs/ronda2-solapamiento.md"
-    ),
-)
 def test_attention_band_pairs_are_documented(pairs: tuple[OverlapPair, ...]) -> None:
     """Los pares de la banda de atencion declaran desambiguacion.
 

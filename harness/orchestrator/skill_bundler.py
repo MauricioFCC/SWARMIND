@@ -253,6 +253,12 @@ _TASK_DOC_KEYWORDS: tuple[str, ...] = ("doc", "docs", "documentacion")
 #: Skills de documentacion disparadas por `_TASK_DOC_KEYWORDS`.
 _TASK_DOC_SKILLS: tuple[str, ...] = ("science-doc", "legal-doc")
 
+#: Skills atadas a un lenguaje/framework: solo se cargan si la tarea menciona
+#: el trigger como palabra completa (evita cargar Rust para un endpoint Python).
+_LANGUAGE_SKILL_TRIGGERS: dict[str, tuple[str, ...]] = {
+    "rust-lang": ("rust", "cargo", "crate", "tokio", "borrow"),
+}
+
 
 @dataclass
 class AgentConfig:
@@ -466,6 +472,14 @@ class SkillBundler:
             return []
 
         if task:
+            # Filtro por lenguaje/framework: una skill de Rust no aplica a una
+            # tarea Python (falso positivo del mapeo curado por dominio).
+            skills = [
+                skill
+                for skill in skills
+                if skill not in _LANGUAGE_SKILL_TRIGGERS
+                or match_keywords(task, _LANGUAGE_SKILL_TRIGGERS[skill])
+            ]
             if match_keywords(task, _TASK_TEST_KEYWORDS) and "security-audit" not in skills:
                 skills.append("security-audit")
             if match_keywords(task, _TASK_DOC_KEYWORDS):
@@ -474,6 +488,18 @@ class SkillBundler:
                         skills.append(skill)
 
         return _deduplicate_near_duplicates(skills)
+
+    def skill_for_agent(self, agent: str) -> str | None:
+        """Devuelve la skill homonima del agente si existe en el registry.
+
+        Args:
+            agent: Rol del agente elegido (p. ej. ``"evolve"``).
+
+        Returns:
+            Nombre de la skill si el registry la declara; ``None`` si no.
+        """
+        names = {str(skill.get("name", "")) for skill in self._skills}
+        return agent if agent in names else None
 
     def compose(
         self,

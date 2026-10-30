@@ -38,7 +38,7 @@ Auditoría con `--preview --select PERF,FURB,RUF` (2026-10-30):
 | Regla | Conteo | Acción |
 |---|---|---|
 | RUF069 (float equality `==`) | 475 | revisar por módulo (matemática tolerante) |
-| RUF100 (unused-noqa) | 437 | ya aplicado el cleanup correcto? **no**: queda pendiente con config completa y suite verde |
+| RUF100 (unused-noqa) | 438 | **no se auto-fixea**: `--select RUF100` evalúa contra el rule-set activo y borra noqa válidos (lección §2). Queda bajo el ratchet (solo falla si sube). |
 | RUF052 (used `_` var) | 97 | renombrar |
 | PERF401 (comprehension) | 65 | refactor progresivo |
 | RUF067/FURB113/FURB118/... | ~150 | refactor progresivo |

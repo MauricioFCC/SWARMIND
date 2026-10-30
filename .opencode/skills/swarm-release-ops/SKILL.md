@@ -108,3 +108,7 @@ uv run safety check -r /tmp/requirements.txt --output text
 - [ ] Tests portables Windows/Linux
 - [ ] Version/changelog actualizados
 - [ ] Rollback documentado
+
+## Ejemplo
+
+PR con checks rojos: lee el job (`ruff`, `pytest` o `mutation`), reproduce el fallo en local con `uv run`, corrige y re-ejecuta; no se mergea hasta que el check este verde.

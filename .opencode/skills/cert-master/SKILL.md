@@ -217,3 +217,7 @@ When provided with an existing note draft or file path, suspend standard executi
   - The Learning Scientists � https://www.learningscientists.org
   - Vanderbilt CFT (Bloom) � https://cft.vanderbilt.edu/guides-sub-pages/he-blooms-taxonomy
 - **ANTI-HEDGING**: Un objetivo de aprendizaje medible por unidad; evalua con evidencia de aprendizaje.
+
+## Ejemplo
+
+Sube un PDF de 120 paginas y genera `notes.md` con mapa de temas, 30 flashcards y 10 preguntas de examen; cada respuesta cita la pagina fuente.

@@ -56,3 +56,10 @@ project_agnostic: true
   umbrales NVIDIA cortan el overfitting de backtest.
 - Factores con divisiones por cero o logs de negativos: el evaluador
   devuelve NaN y `decide` los rechaza con `insufficient_data`/`low_ic`.
+
+## Ejemplo
+
+```bash
+python -m harness.alpha_mining --factor "ts_rank(close, 20)" --walk-forward 5
+```
+Reporta RankIC medio, turnover y DSR; si el p-valor deflactado > 0.05, el factor se descarta.

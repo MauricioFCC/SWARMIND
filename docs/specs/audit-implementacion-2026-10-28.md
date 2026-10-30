@@ -97,12 +97,16 @@
 7. Docs: AGENTS.md (43 skills), roadmap/MEJORAS/CHANGELOG a 11.52.
 8. `validate_skills.py --strict`: 43 skills validos.
 
-## 6. Pendientes (proximos ciclos)
+## 6. Pendientes (proximos ciclos) — estado 2026-10-30
 
-- `ruscadb-ivf-pq`, `ruscadb-mcp-server`, `ruscadb-zstd-compression`, `ruscadb-async-io`
-  cableado real, `ruscadb-semantic-cache` (set + metrics), `ruscadb-rql-advanced` (requiere
-  feature `sql-std` en la DLL).
-- Consumir `harness/domain/ports.py` en `vector_store_factory` y eliminar la delegacion
-  por `setattr` de `LanceVectorStore`.
-- CI: añadir `check_architecture.py --strict` como gate T1 (hoy solo domain purity pasa).
-- MemoryGuard estricto (schema validation) opcional vía env `SWARMIND_MEMORY_GUARD_STRICT=1`.
+- `ruscadb-ivf-pq`, `ruscadb-mcp-server`, `ruscadb-zstd-compression`: cableado
+  real **bloqueado upstream** (requiere la DLL); `ruscadb-async-io` **hecho**
+  (thread offload + write actor); `ruscadb-semantic-cache` **hecho** (set +
+  metrics); `ruscadb-rql-advanced` sigue requiriendo feature `sql-std`.
+- **Consumir `harness/domain/ports.py` en `vector_store_factory`** y eliminar
+  la delegacion por `setattr`: **hecho** (`isinstance(store, VectorStorePort)`
+  + factory con contrato).
+- CI: `check_architecture.py` como gate T1: **hecho** (`--gate --ratchet` con
+  F1/F2/F4/F6/F8 y F7).
+- MemoryGuard estricto via `SWARMIND_MEMORY_GUARD_STRICT=1`: **hecho**
+  (`ruscadb_store` + `test_memory_governance`).

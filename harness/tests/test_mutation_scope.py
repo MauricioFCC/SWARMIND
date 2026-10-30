@@ -159,6 +159,23 @@ class TestScores:
         assert scope_mod.evaluate(scope, {"harness/kernel": None}) == []
 
 
+class TestAllCore:
+    """Modo nocturno: selección sin diff de kernel+domain."""
+
+    def test_lists_kernel_and_domain_files(self):
+        """Devuelve al menos loop.py y ports.py, todos bajo core."""
+        files = scope_mod.files_for_packages()
+        assert "harness/kernel/loop.py" in files
+        assert "harness/domain/ports.py" in files
+        assert all(
+            name.startswith(("harness/kernel/", "harness/domain/")) for name in files
+        )
+
+    def test_missing_package_is_ignored(self, tmp_path):
+        """Un paquete inexistente devuelve lista vacía (no rompe)."""
+        assert scope_mod.files_for_packages(("harness/nope",), root=tmp_path) == []
+
+
 class TestCheckStatsCli:
     """Modo `--check-stats` (usado en CI para depurar)."""
 

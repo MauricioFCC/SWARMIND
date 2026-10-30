@@ -51,11 +51,10 @@ mide este riesgo en las 36 skills y lo convierte en un **gate de CI** verificabl
 
 ## 4. Gaps (pares en banda de atención sin decisión)
 
-- `healthtech ~ sociology` (0.111): comparten "sistemas/digital", ninguno cita al
-  otro. **Requiere decisión de producto** → test `xfail(strict=True, no bloqueante)`.
-  Opciones: (a) añadir a `healthtech` "para dinámicas sociales/digitales ver
-  sociology" y a `sociology` "para sistemas de salud ver healthtech"; o (b)
-  aceptar el solape (dominios distintos). **No se aplica en esta ronda.**
+- `healthtech ~ sociology` (0.111): **resuelto** (2026-10-30). Se aplicó la
+  opción (a): `healthtech` cita "Ver sociology" y `sociology` cita "Ver
+  healthtech para salud clinica", ambas dentro del presupuesto de 320 chars.
+  El gate `test_attention_band_pairs_are_documented` pasa sin `xfail`.
 
 ## 5. Propuesta de composición declarada (NO aplicada)
 

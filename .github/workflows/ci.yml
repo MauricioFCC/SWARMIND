@@ -566,6 +566,52 @@ jobs:
         if: always()
         run: rm -f setup.cfg
 
+  # =============================================================================
+  # TIER 3 — Mutación nocturna del core (kernel + domain)
+  # =============================================================================
+  mutation-nightly:
+    name: mutation-nightly
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Cache uv
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Instalar dependencias
+        run: |
+          uv sync --group test
+          uv pip install mutmut
+
+      - name: Mutación core (kernel 90 % / domain 75 %)
+        run: uv run python scripts/mutation_scope.py --all-core --run --max-children 2
+
+      - name: Subir stats nightly
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mutmut-nightly-stats
+          path: mutants/mutmut-cicd-stats.json
+          if-no-files-found: warn
+
+      - name: Cleanup setup.cfg
+        if: always()
+        run: rm -f setup.cfg
+
   coverage:
     name: coverage
     runs-on: ubuntu-latest

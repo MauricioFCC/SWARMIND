@@ -18,6 +18,7 @@ Ver agent_discovery.py para el patrón recursivo aplicado.
 
 from __future__ import annotations
 
+import difflib
 import hashlib
 import logging
 import re
@@ -105,6 +106,7 @@ _WORD_TRIGGERS: dict[str, tuple[str, ...]] = {
         "implement", "create", "build", "code", "api",
         "rust", "golang", "python", "frontend", "backend",
         "database", "docker", "deploy", "app",
+        "endpoint", "rest", "microservicio", "servicio",
     ),
     "scientist": (
         "research", "paper", "architecture", "pattern",
@@ -131,6 +133,24 @@ def _is_whole_word(text: str, word: str) -> bool:
         True si ``word`` aparece delimitada por espacios.
     """
     return " " + word + " " in " " + text + " "
+
+
+#: Negacion seguida de hasta 5 palabras antes del trigger.
+_NEGATION_RE = re.compile(r"\b(no|sin|nunca|ni)\b(?:\s+\w+){0,5}\s+$")
+
+
+def _is_negated(text: str, word: str) -> bool:
+    """True si la primera aparicion de ``word`` esta negada cerca.
+
+    Args:
+        text: Texto normalizado.
+        word: Trigger a comprobar.
+
+    Returns:
+        True si hay una negacion en las 5 palabras previas.
+    """
+    match = re.search(rf"\b{re.escape(word)}\b", text)
+    return bool(match and _NEGATION_RE.search(text[: match.start()]))
 
 
 def _strip_role_lines(text: str) -> str:
@@ -368,6 +388,10 @@ class DelegationEngine:
     def _score_message(self, text: str) -> dict[str, float]:
         """Puntua un mensaje (ya saneado y en minusculas) por agente.
 
+        Normaliza guiones (``micro-servicio`` == ``microservicio``), ignora
+        triggers negados ("no toques el test") y tolera typos en tokens largos
+        (``segurida`` -> ``seguridad``) con `difflib`.
+
         Args:
             text: Mensaje saneado y normalizado a minusculas.
 
@@ -375,20 +399,43 @@ class DelegationEngine:
             Mapa agente -> score acumulado. Siempre incluye "coordinator".
         """
         scores: dict[str, float] = {"coordinator": 0.0}
+        flattened = text.replace("-", "")
         for agent, patterns in _PHRASE_TRIGGERS.items():
             for pat in patterns:
-                if pat in text:
+                normalized = pat.replace("-", "")
+                if normalized in flattened and not _is_negated(text, pat.split()[0]):
                     scores[agent] = scores.get(agent, 0.0) + len(pat) * 2
         for agent, words in _WORD_TRIGGERS.items():
-            for w in words:
-                if _is_whole_word(text, w):
-                    scores[agent] = scores.get(agent, 0.0) + len(w)
-        for w in _GUARDIAN_SPLIT_WORDS:
-            if w in text.split():
-                scores["guardian"] = scores.get("guardian", 0.0) + len(w)
-        if " test " in " " + text + " ":
+            for word in words:
+                if _is_whole_word(flattened, word) and not _is_negated(text, word):
+                    scores[agent] = scores.get(agent, 0.0) + len(word)
+        for word in _GUARDIAN_SPLIT_WORDS:
+            if word in flattened.split() and not _is_negated(text, word):
+                scores["guardian"] = scores.get("guardian", 0.0) + len(word)
+        if " test " in " " + flattened + " " and not _is_negated(text, "test"):
             scores["guardian"] = scores.get("guardian", 0.0) + 4
+        self._score_typos(text, scores)
         return scores
+
+    def _score_typos(self, text: str, scores: dict[str, float]) -> None:
+        """Suma evidencia debil por typos cercanos a triggers conocidos."""
+        vocabulary = {
+            word
+            for words in _WORD_TRIGGERS.values()
+            for word in words
+            if len(word) >= 6
+        } | {word for word in _GUARDIAN_SPLIT_WORDS if len(word) >= 6}
+        owner = {
+            word: agent
+            for agent, words in _WORD_TRIGGERS.items()
+            for word in words
+        }
+        owner.update({word: "guardian" for word in _GUARDIAN_SPLIT_WORDS})
+        for token in re.findall(r"[a-z]{6,}", text):
+            if token in owner or _is_negated(text, token):
+                continue
+            for candidate in difflib.get_close_matches(token, vocabulary, n=1, cutoff=0.86):
+                scores[owner[candidate]] = scores.get(owner[candidate], 0.0) + len(candidate) * 0.5
 
     def _record_decision(self, agent: str, score: float, message: str) -> None:
         """Registra la decision de routing en el trace.

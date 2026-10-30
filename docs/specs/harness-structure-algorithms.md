@@ -73,10 +73,11 @@ Tres ejes, en orden de impacto:
 
 ## 5. Siguientes pasos (P2)
 
+- **Hecho — mutación nocturna**: job `mutation-nightly` (schedule/dispatch) con
+  `mutation_scope.py --all-core` (kernel 90 %, domain 75 %).
+- **Hecho — allowlist preview**: `scripts/check_ruff_preview.py` (10 códigos).
 - **P2 — endurecer preview**: mover a la allowlist los códigos del ratchet que
   lleguen a cero (FURB113/118, PERF401, RUF052/069/100).
-- **P2 — mutación nocturna completa**: correr `mutation_scope.py --run` sobre
-  todos los paquetes (no solo el diff) en schedule, con reporte por paquete.
 - **P2 — Aho-Corasick**: evaluar cuando `AUDIT_RULES`/corpus de prompts crezcan
   (hoy k pequeño: la regla de decisión dice no refactorizar).
 

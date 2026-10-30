@@ -56,3 +56,7 @@ project_agnostic: true
 - [ ] Transporte TLS si es remoto; interno documentado con dueño.
 - [ ] Permisos mínimos (least-privilege): el server solo ve lo que necesita.
 - [ ] `scan_mcp_config` en verde (0 high) antes de commitear.
+
+## Ejemplo
+
+Antes de instalar un MCP de terceros: revisa permisos (least privilege), valida URLs contra SSRF, escanea secrets en el manifiesto y fija version + hash; si el rug-pull check falla, no se instala.

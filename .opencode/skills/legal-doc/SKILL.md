@@ -112,3 +112,7 @@ estado_verificacion: VERIFICADA   # si falla el cotejo -> APÓCRIFA-REVISAR
 - [Fuentes, especialidades y arquitectura](references/fuentes-y-especialidades.md) — fuentes N1/N2, especialidades por jurisdicción, keywords y las 6 capas de análisis.
 - [NLP jurídico, argument mining y enterprise](references/nlp-juridico-2026.md) — SaulLM/LexBERT, extracción de argumentos, discurso y framework enterprise (LuMay AI).
 - [Verificación de citas](references/verificacion-citas.md) — contexto regulatorio, LegalGraphRAG, vigencia, diagnostic checklists y multi-jurisdicción.
+
+## Ejemplo
+
+Para una clausula de no competencia en Colombia: cita la norma (CST art. 44), la jurisprudencia (CSJ SL) y distingue validez temporal/espacial antes de emitir el concepto.

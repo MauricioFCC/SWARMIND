@@ -72,3 +72,7 @@ project_agnostic: true
 - Hardcodear API keys o tokens (SEG).
 - Registrar un server sin verificar su comando y tools.
 - Cargar servers pesados al arranque sin necesidad (timeouts).
+
+## Ejemplo
+
+Tarea: scrapear un catalogo; elige `playwright` para JS dinamico, `fetch` para HTML estatico y `postgres` para persistir. Declara la eleccion y el fallback.

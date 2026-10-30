@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import logging
 import random
+import re
+import unicodedata
 import zlib
 from dataclasses import dataclass
 from functools import lru_cache
@@ -237,7 +239,13 @@ def dispatch(
     agents = active_selector.select(task, skill="general")
     agent = agents[0] if agents else "coordinator"
     domain = _domain_for(lowered)
-    skills = tuple(active_bundler.select_skills(domain, task)[:max_skills])
+    skills = tuple(active_bundler.select_skills(domain, task))
+    # El agente elegido carga su skill homonima (SSOT del registry) antes del
+    # tope de presupuesto: "evolve" debe llevar la skill "evolve".
+    agent_skill = active_bundler.skill_for_agent(agent)
+    if agent_skill:
+        skills = tuple(dict.fromkeys((agent_skill, *skills)))
+    skills = skills[:max_skills]
     if not skills:
         skills = ("general",)
     mutant = _mutate_routing(agent, skills, task)
@@ -269,8 +277,17 @@ def dispatch(
     )
 
 
+def _strip_accents(text: str) -> str:
+    """Elimina diacríticos (``diseña`` -> ``disena``) para matching robusto."""
+    decomposed = unicodedata.normalize("NFKD", text)
+    return "".join(char for char in decomposed if not unicodedata.combining(char))
+
+
 def _is_frontier_task(lowered: str) -> bool:
     """True si la tarea requiere frontier (diseno/arquitectura profunda).
+
+    Normaliza acentos (``diseña`` -> ``disena``) y acepta variantes naturales
+    ("disena una arquitectura escalable") además del literal historico.
 
     Args:
         lowered: Tarea en minusculas.
@@ -278,5 +295,10 @@ def _is_frontier_task(lowered: str) -> bool:
     Returns:
         True para diseno/arquitectura completa.
     """
-    markers = ("arquitectura hexagonal completa", "disena la arquitectura")
-    return any(m in lowered for m in markers)
+    normalized = _strip_accents(lowered)
+    if "arquitectura hexagonal completa" in normalized:
+        return True
+    words = set(re.findall(r"[a-z]+", normalized))
+    return "arquitectura" in words and bool(
+        words & {"disena", "disenar", "diseno", "design", "escalable", "completa"}
+    )

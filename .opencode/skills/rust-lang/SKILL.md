@@ -112,3 +112,12 @@ fn main() -> std::io::Result<()> {
 - [Patrones Rust, organigrama y errores](references/patrones-y-errores.md) — principios, roles, ownership/async/error handling y errores del compilador.
 - [Performance y FFI](references/performance-y-ffi.md) — pirámide de performance, tips de optimización, FFI con Python (PyO3) y reglas de ABI.
 - [Crates y comandos](references/crates-y-comandos.md) — crates recomendados y referencia completa de comandos.
+
+## Ejemplo
+
+```rust
+let mut v = vec![1, 2, 3];
+let first = &v[0];
+v.push(4); // no compila: `first` sigue prestando v
+```
+Solucion: clonar el valor o reordenar para liberar el prestamo.

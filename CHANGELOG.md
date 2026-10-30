@@ -1,3 +1,44 @@
+## [11.64] - 2026-10-30
+
+### Added
+- `EvalSuite.run(concurrency>1)`: pool de hilos con orden estable, aislamiento
+  de fallos por evaluacion y resultados directos intercalados (6 tests).
+- `CognitionSync.delete_lesson`: borrado real por id (True/False, idempotente,
+  fallo del store contenido) y `_bump_access` persiste `access_count` y
+  `last_accessed` vía `update_records` (7 tests).
+- Gates de skills M5/M6 en `validate_skills`: `## Ejemplo` obligatorio y
+  rechazo de cuerpos duplicados (mismo contenido, distinto nombre). Se añadió
+  la sección de ejemplo a 10 skills que no la tenían (43/43 con ejemplo).
+- `BatchedEmbeddingService.stop()`: apagado público que cancela futuros
+  pendientes y detiene el loop de batching.
+- Job CI `mutation-nightly` (schedule/dispatch) con
+  `mutation_scope.py --all-core` (kernel 90 %, domain 75 %).
+
+### Changed
+- `SkillBundler`: filtro por lenguaje (`rust-lang` solo si la tarea menciona
+  Rust) y `skill_for_agent` (el agente elegido carga su skill homónima).
+- `AgentSelector`: bonus del verbo primario (desempata "implementa api y audita
+  seguridad" a favor de builder).
+- `DelegationEngine`: matching sin guiones (`micro-servicio`), tolerancia a
+  typos (`difflib`, `segurida`→`seguridad`) y respeto a negaciones ("no toques
+  el test" no activa guardian).
+- `DifficultyRouter`: los thresholds del constructor ya se aplican (shallow/
+  deep) en vez de ignorarse.
+- `_is_frontier_task`: normaliza acentos y acepta variantes ("diseña una
+  arquitectura escalable").
+- `healthtech`/`sociology` se citan mutuamente (anti-trigger) sin exceder el
+  presupuesto de 320 chars; se elimina el último `xfail` de solapamiento.
+- Specs cerradas: `ruscadb-async-io` (implemented), `clean-architecture`
+  (implemented + composición root), auditorías 10-28/10-29 (pendientes con
+  estado), `o-n-2` AC-CG3 (cumplido con 8 benchmarks).
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`,
+  `check_complexity --gate=0`, `check_ruff_ratchet --gate=0`,
+  `check_ruff_preview --gate=0`, `audit_pep649 --gate=0`,
+  `mypy strict kernel+domain` OK, `validate_skills --strict` OK,
+  suite 7414 passed / 38 skipped / 1 xfailed (ADRs heredados) / 0 failed.
+
 ## [11.63] - 2026-10-30
 
 ### Added

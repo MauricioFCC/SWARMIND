@@ -42,6 +42,9 @@ MUTATION_THRESHOLDS: dict[str, float] = {
 #: Umbral para paquetes no listados (adapters/infra).
 DEFAULT_THRESHOLD = 0.40
 
+#: Paquetes "core" que corre la mutación nocturna (rápida, sin diff).
+CORE_PACKAGES: tuple[str, ...] = ("harness/kernel", "harness/domain")
+
 #: Directorio de tests y prefijo de la raíz de código mutable.
 TESTS_ROOT = "harness/tests"
 
@@ -133,6 +136,31 @@ def changed_files(base: str, head: str = "HEAD") -> list[str]:
         for line in completed.stdout.splitlines()
         if is_mutable(line.strip())
     )
+
+
+def files_for_packages(
+    packages: tuple[str, ...] = CORE_PACKAGES, root: Path = ROOT
+) -> list[str]:
+    """Lista todos los ``.py`` de los paquetes indicados (modo nocturno).
+
+    Args:
+        packages: Paquetes a incluir.
+        root: Raíz del repo.
+
+    Returns:
+        Rutas relativas ordenadas (vacío si el paquete no existe).
+    """
+    files: list[str] = []
+    for package in packages:
+        base = root / package
+        if not base.is_dir():
+            continue
+        files.extend(
+            path.relative_to(root).as_posix()
+            for path in base.rglob("*.py")
+            if "__pycache__" not in path.parts
+        )
+    return sorted(set(files))
 
 
 def _module_dotted(path: str) -> str:
@@ -322,6 +350,11 @@ def main(argv: list[str] | None = None) -> int:
         "--write-config", action="store_true", help="escribe setup.cfg del primer paquete"
     )
     parser.add_argument("--run", action="store_true", help="ejecuta mutmut (POSIX)")
+    parser.add_argument(
+        "--all-core",
+        action="store_true",
+        help="muta todos los .py de kernel+domain (nocturna, sin diff)",
+    )
     parser.add_argument("--max-children", type=int, default=2, help="workers de mutmut")
     parser.add_argument("--json", action="store_true", help="salida JSON del scope")
     parser.add_argument(
@@ -344,7 +377,11 @@ def main(argv: list[str] | None = None) -> int:
         return 1 if failures else 0
 
     try:
-        files = changed_files(args.base, args.head)
+        files = (
+            files_for_packages()
+            if args.all_core
+            else changed_files(args.base, args.head)
+        )
     except RuntimeError as exc:
         print(str(exc), file=sys.stderr)
         return 2

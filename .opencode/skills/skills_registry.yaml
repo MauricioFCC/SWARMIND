@@ -4,7 +4,7 @@ skills:
     description: "Usar cuando el usuario busca investigar o validar factores de alpha. alpha, factores, ML, feature engineering, validacion estadistica, backtesting. Alcance: investigacion (falsacion, walk-forward); para motor de datos ver quant-trading. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 532efcc93abec3f6a1c8313ddc446470c1af10f0cc2cbead012536e4650185b0
+    sha256: 80cdd7d8d97b1c04df2dc185c78e07ad43b7b5932b8b0586a7c52aac75dc244f
 
   - name: evolve
     domain: meta
@@ -15,10 +15,11 @@ skills:
 
   - name: healthtech
     domain: healthtech
-    description: "Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos. Alcance: salud digital y sistemas clinicos; para seguridad general ver security-audit. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos. Alcance: salud digital y sistemas clinicos; para seguridad general ver security-audit. | UPG·NAM·FRS (reglas en base_principles.md) Ver sociology."
     version: 1.0.0
     project_agnostic: true
-    sha256: 16d4c2b1bacabf9330cefed58c73523d7f97d386af7898a92cf8a823efdfe9aa
+    sha256: c8b412f9f19dfcc53ac51a31b0864e82f27525d182d2b37ba99494b060e3b679
+
 
   - name: hedgefund
     domain: financial
@@ -32,7 +33,7 @@ skills:
     description: "Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia. Alcance: analisis juridico y normativo; para documentacion cientifica ver science-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 3c0bb6824da76d48ec60862da4a8f537c93d5ea2411c629f97c1f048802dc46a
+    sha256: 9e09c898d22e975b8ae70a1e109e38f02aad0ae9e3100a77bb9fc2d0b9acf5ea
 
   - name: math-doc
     domain: academic
@@ -46,7 +47,7 @@ skills:
     description: "Usar cuando el dominio es punto de venta o retail. POS, retail, e-commerce, inventario, facturacion, pagos, logistica. Alcance: POS y retail omnicanal; para estrategia de negocio ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 043ff761f7b0d8689c0612c6f2bb5c50f640398ea5c5643837199e3449ef3747
+    sha256: 5faaf1283b57ec092d8788541c266be682c8b260fa07437de482fe89f0824c14
 
   - name: quant-trading
     domain: quantitative
@@ -60,7 +61,7 @@ skills:
     description: "Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica. Alcance: implementacion tactica; para doctrina institucional ver hedgefund. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 385e95403420ab416fd50be59209308bb9c35911305ce92cbe34c5c2b1eb62c3
+    sha256: c00b7251e8debac27454a2475549f8ce3480a64ecfcd55c61e3828e5cc22bf65
 
   - name: science-doc
     domain: academic
@@ -81,7 +82,7 @@ skills:
     description: "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes. Alcance: Rust y sistemas seguros; para arquitectura de sistemas ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 96e0185d2cfa86f6d19232706b127a3372cc6ea4eedd7c7c8d08d7877402d27a
+    sha256: 5d1dadd8b985d6fd2d358814909e26a97a95111cc39105c3673cf0dba79e3120
 
   - name: architecture
     domain: architecture
@@ -169,10 +170,11 @@ skills:
 
   - name: sociology
     domain: sociology
-    description: "Usar cuando el problema involucra dinamicas sociales o de grupos. sociologia, antropologia, redes, cultura digital, grupos, sistemas multi-agente. Alcance: dinamicas sociales y redes; para psicologia individual ver psychology. | UPG·NAM·FRS (reglas en base_principles.md)"
+    description: "Usar cuando el problema involucra dinamicas sociales o de grupos. sociologia, antropologia, redes, cultura digital, grupos, sistemas multi-agente. Alcance: dinamicas sociales y redes; para psicologia individual ver psychology. | UPG·NAM·FRS (reglas en base_principles.md) Ver healthtech para salud clinica."
     version: 1.0.0
     project_agnostic: true
-    sha256: 26bb12e1f7450e6cf26653de7a896c3655b9ca65cef0f4f11f9fecf599ef6797
+    sha256: da57f2eb3855e6ee6dc670cb32a07c2df7fd5375acb036c70fb7bcc5402ce315
+
 
   - name: devops-infra
     domain: devops
@@ -221,7 +223,7 @@ skills:
     description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. Alcance: releases y CI/CD del repo SWARMIND; para infra generica ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 140b4c6e22024e71a0f4083032e4acb9f558598531016b528573539d19c15597
+    sha256: ec609ded4cbe5bf3af41ea23c76dd11903ae1f087caf7c07144b0026ad3c27b9
 
   - name: atdd-spec
     domain: testing
@@ -277,25 +279,25 @@ skills:
     description: "Usar cuando hay que elegir o cablear herramientas MCP para una tarea (browser, scraping, db, kubernetes, reverse engineering, observabilidad, data, devops). Alcance: seleccion de herramientas MCP del harness; para comprension de codigo ver codebase-comprehension; para RE ver reverse-engineering. | UPG·NAM·FRS"
     version: 1.0.0
     project_agnostic: true
-    sha256: 9c41e4493f1bd8505db124140eb699206c4f188d6b5b39f7c9a17b7b6354a5ba
+    sha256: 1d07a6b567e53ba902601bc26c6e8ca0c45efb4d83f3da53c9af24f35b47128a
 
   - name: mcp-security
     domain: security
     description: "Usar cuando se auditan, endurecen o instalan servidores MCP (mcp, owasp, supply-chain, rug-pull, ssrf, least-privilege, secrets). Alcance: seguridad de la capa MCP; para auditoria general ver security-audit; para elegir herramientas ver mcp-toolkit. | UPG*NAM*FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 9fabee94c95fa2fbf4e8586a64fb4778246ceb661d6af22cbacd4d9a6cecb7f7
+    sha256: 5500f8604b8f9df1ce8e6ae627c5dd1f91e36e840c4a808f275445c184ffd7b2
 
   - name: alpha-mining
     domain: quantitative
     description: "Usar cuando se minan, generan o evaluan factores alpha con el harness (factor, dsl, rankic, ast, mcts, factor zoo, mining loop). Alcance: mineria operativa con harness/alpha_mining; para investigacion de factores ver alpha-research; para el motor de trading ver quant-trading. | UPG*NAM*FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 6a952ad03d481fb66ef4ca1b33ff0703c92fa0c821a9de0e66e310ef7882837d
+    sha256: 8e2dc1b6bf17323efbcb8841b844b4583a1cae117a5f221ab4eb0193c64f1f56
 
   - name: cert-master
     domain: education
     description: "Usar cuando el usuario quiere convertir material de estudio (PDFs, programas, transcripciones) en apuntes para Obsidian/Notion/Markdown, con quizzes y mapas de contenido. Alcance: notas de estudio, examenes, certificaciones, oposiciones; educacion. | UPG.NAM.FRS"
     version: 1.0.0
     project_agnostic: true
-    sha256: a841775d1622493279cd38ce213822737d99054531822e396cc140a02a5c4bcb
+    sha256: 4e2c77b8bfaf4f002d6bb4014f3a7c755e9afb7b516bb12e3be2b321981f0574

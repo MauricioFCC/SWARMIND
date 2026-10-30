@@ -5,6 +5,18 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-30i)
+
+### Estado 2026-10-30 (Ciclo 11.64 — cierre de pendientes de implementación)
+- Pendientes de código cerrados: concurrencia de `EvalSuite`, borrado/refuerzo
+  de `CognitionSync`, `stop()` de embeddings, gates M5/M6 de skills.
+- Routing: filtro por lenguaje, skill del agente, verbo primario, negaciones,
+  typos, guiones y acentos; thresholds de `DifficultyRouter` aplicados.
+- Mutación nocturna del core (job `mutation-nightly`).
+- Specs de auditoría y arquitectura cerradas con estado explícito.
+- Único pendiente de producto: ninguno en `xfail`; quedan decisiones P2 de
+  endurecimiento (preview ratchet y Aho-Corasick condicionado a corpus).
+
 ## Estado Actual (2026-10-30h)
 
 ### Estado 2026-10-30 (Ciclo 11.63 — cierre P2: preview, mutación scoped, PEP 649)

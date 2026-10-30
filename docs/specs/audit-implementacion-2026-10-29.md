@@ -233,13 +233,12 @@ MeanCache, GPTCache), single-writer (SQLite WAL, DuckDB), fitness functions
 | Lote gates tras review (6 archivos) | 130 passed |
 | `pytest --collect-only -q` | 7236 tests |
 
-## 6. Pendientes (siguiente ciclo)
+## 6. Pendientes (siguiente ciclo) — estado 2026-10-30
 
-1. **Actor de escritura único** con cola bounded y backpressure tipado
-   (`asyncio.Queue` + worker dedicado) — P1.
-2. **Ratchet de deuda F3/F5**: congelar los 824 hallazgos y bloquear solo
-   incrementos (patrón `tach unchecked`).
-3. **`last_accessed` + refuerzo por uso** en recencia (MemoryBank/MemoryOS).
-4. **Invalidación por `dataset_version`** y umbral fail-closed en caché.
-5. **Re-exponer RaBitQ/MCP/zstd**: requiere cambios en RuscaDB (FFI), fuera del
-   alcance de SWARMIND; specs marcados `blocked-upstream`.
+| # | Item | Estado |
+|---|---|---|
+| 1 | **Actor de escritura único** con cola bounded y backpressure tipado | **Hecho**: `harness/memory_rag/write_actor.py` + tests |
+| 2 | **Ratchet de deuda F3/F5**: congelar hallazgos y bloquear solo incrementos | **Hecho**: `check_architecture --gate --ratchet` (F7) |
+| 3 | **`last_accessed` + refuerzo por uso** en recencia (MemoryBank/MemoryOS) | **Hecho**: `_apply_trust_and_recency` prioriza `last_accessed` |
+| 4 | **Invalidación por `dataset_version`** y umbral fail-closed en caché | **Hecho**: `SemanticCache` (dataset_version/fail_closed) |
+| 5 | **Re-exponer RaBitQ/MCP/zstd** | **Bloqueado upstream** (requiere cambios en la DLL de RuscaDB; specs `blocked-upstream`) |
