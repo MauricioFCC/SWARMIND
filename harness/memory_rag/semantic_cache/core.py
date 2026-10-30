@@ -72,7 +72,7 @@ class SemanticCache(_SemanticCacheOpsMixin):
             adaptive_threshold: Si True, el umbral se aprende por familia de
                 prompt con ``record_feedback`` (vCache).
         """
-        self._store = vector_store or LanceVectorStore()
+        self._store = vector_store or LanceVectorStore(allow_fallback=True)
         self._threshold = threshold
         self._default_ttl = default_ttl
         self._embedding_fn = embedding_fn or self._default_embedding

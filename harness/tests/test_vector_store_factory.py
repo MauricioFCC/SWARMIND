@@ -28,6 +28,8 @@ def _clean_backend_env(monkeypatch):
 
 def test_default_backend_returns_ruscadb(tmp_path):
     """Sin backend explicito la factory devuelve el adaptador RuscaDB."""
+    if not _RUSCADB_AVAILABLE:
+        pytest.skip("RuscaDB C-ABI dll not available en esta plataforma")
     store = get_vector_store(db_path=str(tmp_path / "t.db"))
     try:
         assert isinstance(store, RuscaDBStore)
@@ -147,6 +149,10 @@ def _break_ruscadb_store(monkeypatch):
 
 def test_ruscadb_failure_without_fallback_fails_fast(tmp_path, monkeypatch):
     """Sin allow_fallback, un fallo real del motor NO se degrada en silencio."""
+    import harness.memory_rag.ruscadb as ruscadb_module
+
+    # Simula la DLL presente (en Linux no existe) para llegar al fallo del store.
+    monkeypatch.setattr(ruscadb_module, "load_library", lambda *a, **k: object())
     _break_ruscadb_store(monkeypatch)
     with pytest.raises(RuntimeError) as excinfo:
         LanceVectorStore(db_path=str(tmp_path / "locked.db"))
