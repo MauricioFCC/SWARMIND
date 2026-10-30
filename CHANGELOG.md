@@ -1,3 +1,32 @@
+## [11.59] - 2026-10-30
+
+### Added
+- Investigación de frontera aplicada a la reestructuración de CQE
+  (3 sesiones de research en segundo plano, rama concurrente con el kernel
+  de frontera de SWARMIND) y 3 specs nuevas para SWARMIND:
+
+  - `docs/specs/cqe-restructuring-support.md`: soporte de la extracción
+    strangler-fig con `cargo-crate-split`, `cargo-coverage-gate`,
+    `archunit-rust`, `cargo-hakari/nextest partitioning`, `cargo-rubric`
+    y spec-kit; el desacople real de CQE en `cqe-math` (ADF → `signal_processing`
+    con inversión de dependencia a `math::ols::ols_fit`).
+  - `docs/specs/o-n-2-hotspots-gate.md`: 6 fórmulas de complejidad a
+    aplicar en hotpaths de CQE (Wilder/SMMA, KAMA, OBV, VWAP, Karp-Rabin,
+    Fenwick tree, Cholesky rank-1, QR row-append) con gate `Ir` ratio
+    N/2N/4N < 2.4 y las 10 áreas target de complejidad (43 módulos de CQE).
+  - `docs/specs/kernel-event-driven-nautilus.md`: kernel event-driven
+    NautilusTrader aplicado a SWARMIND y al defecto caliente de CQE,
+    con actores ractor/kameo/spawned/actix (supervisión OneForOne/RestForOne,
+    no OneForAll), `backtest==live` por inyección de `Clock`, determinismo
+    con `madsim` (DST) y crash-only por replay en boundary.
+- Inventario y auditoría comparada SWARMIND (624 módulos src / 45 specs /
+  43 skills / 50 agentes vs CQE: 43 módulos domain / 250k LOC / 37 specs /
+  22 pendientes / 6 crates workspace tras Ola 2).
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`;
+  3 specs nuevas como `proposed` en `docs/specs/`.
+
 ## [11.58] - 2026-10-30
 
 ### Removed
