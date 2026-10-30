@@ -296,13 +296,16 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin, _LifecycleMixi
 
         Args:
             collection: Target collection name.
-            vectors: 2-D numpy array of shape (n_items, dim).
+            vectors: Matriz (n_items, dim) o vector unico (lista o ndarray).
             metadata: List of dicts, one per vector.
 
         Returns:
             List of inserted record IDs.
         """
-        n = vectors.shape[0]
+        array = np.asarray(vectors, dtype=np.float32)
+        if array.ndim == 1:
+            array = array.reshape(1, -1)
+        n = array.shape[0]
         if n == 0:
             return []
 
@@ -310,9 +313,9 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin, _LifecycleMixi
         now = datetime.now(UTC).isoformat()
 
         if self._lancedb_available and self._db is not None:
-            ids = self._insert_lancedb(collection, vectors, metadata, now)
+            ids = self._insert_lancedb(collection, array, metadata, now)
         else:
-            ids = self._insert_memory(collection, vectors, metadata, now)
+            ids = self._insert_memory(collection, array, metadata, now)
 
         return ids
 

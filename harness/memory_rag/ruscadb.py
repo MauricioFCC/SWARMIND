@@ -635,10 +635,13 @@ def _require(name: str) -> None:
 def capabilities() -> dict[str, bool]:
     """Devuelve que funciones extendidas expone la DLL cargada.
 
+    Si la biblioteca no esta disponible en la plataforma (p. ej. Linux sin
+    artefacto compilado), devuelve todas las capacidades en ``False`` en lugar
+    de lanzar: el import del paquete y los smokes de instalacion deben pasar.
+
     Returns:
         Mapa ``nombre -> disponible`` para las capacidades extendidas.
     """
-    library = _lib()
     names = (
         "ruscadb_open_opts",
         "ruscadb_create_index",
@@ -658,6 +661,10 @@ def capabilities() -> dict[str, bool]:
         "ruscadb_quantize",
         "ruscadb_search_bq",
     )
+    try:
+        library = _lib()
+    except (OSError, ImportError):
+        return {name: False for name in names}
     return {name: getattr(library, name, None) is not None for name in names}
 
 

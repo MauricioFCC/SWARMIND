@@ -478,12 +478,24 @@ class TestCheckLancedbOrExit:
         mock_exit.assert_not_called()
 
     def test_no_lancedb_exit(self):
-        """Debe hacer sys.exit(1) si HAS_LANCEDB es False."""
+        """Debe hacer sys.exit(1) si no hay LanceDB ni RuscaDB."""
         with patch("harness.run.HAS_LANCEDB", False), \
+             patch("harness.memory_rag.ruscadb.capabilities",
+                   return_value={"ruscadb_open": False}), \
              patch("harness.run.sys.exit") as mock_exit:
             from harness.run import _check_lancedb_or_exit
             _check_lancedb_or_exit()
         mock_exit.assert_called_once_with(1)
+
+    def test_ruscadb_available_without_lancedb(self):
+        """RuscaDB disponible basta: no debe exigir LanceDB."""
+        with patch("harness.run.HAS_LANCEDB", False), \
+             patch("harness.memory_rag.ruscadb.capabilities",
+                   return_value={"ruscadb_open": True}), \
+             patch("harness.run.sys.exit") as mock_exit:
+            from harness.run import _check_lancedb_or_exit
+            _check_lancedb_or_exit()
+        mock_exit.assert_not_called()
 
 
 # ===================================================================
