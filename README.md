@@ -49,7 +49,7 @@ cd SWARMIND
 # 3. Run the test suite
 uv run python -m pytest harness/tests/ -q
 
-# 4. Optional: enable CUDA GPU acceleration (reinstalls the torch CUDA wheel)
+# 4. Optional: CUDA GPU acceleration (installs torch + the CUDA wheel)
 python scripts/enable_gpu.py
 
 # 5. Launch the interactive menu
@@ -159,11 +159,11 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 ### GPU Acceleration
 - CUDA 12.6, RTX 4060 8GB, torch 2.13.0+cu126.
 - `harness/gpu_accel.py` + `harness/gpu_optimize.py` with measured speedups: vector search **x10.9 (10k)**, **x9.2 (100k)**, and embeddings at **41µs/msg**.
-- `scripts/enable_gpu.py` reinstalls the torch CUDA wheel after every `uv sync`.
+- `scripts/enable_gpu.py` installs torch with CUDA wheels (`.[gpu]` is the pip equivalent) and verifies the GPU.
 
 ### Developer Experience
 - One-command setup (`scripts/setup_swarmind.py`) and config menu (`config_swarmind.py`).
-- CPU-only PyPI torch wheel replaced by the CUDA wheel through a single script, portable across Linux/Mac/Windows.
+- Torch is an optional extra: `pip install ".[gpu]"` (or `scripts/enable_gpu.py` for the CUDA build); the core install stays CPU-light.
 - Full test suite, ruff-clean code, zero dead code (vulture), and zero architecture debt.
 
 ## Architecture
@@ -253,13 +253,14 @@ memory store. An interactive config menu is available via `config_swarmind.py`.
 
 ### GPU (optional)
 
-The PyPI torch wheel resolved by the lockfile is CPU-only on Windows/Linux. After setting up, activate CUDA with:
+The core install does **not** include torch (the harness never imports it
+eagerly). To use the GPU helpers, install the extra and verify CUDA:
 
 ```bash
 python scripts/enable_gpu.py
 ```
 
-This reinstalls the torch CUDA wheel and verifies it. **Important:** do not run `uv sync` after enabling CUDA, otherwise the CPU wheel is restored and the CUDA binary is lost; re-run `python scripts/enable_gpu.py` after any `uv sync`.
+`enable_gpu.py` installs the CUDA wheel and verifies it. It is safe to run after any `uv sync`, because the core dependencies no longer pin a CPU torch wheel.
 
 ### Portability
 
@@ -291,13 +292,17 @@ Interactive commands (`harness/run_commands/`):
 Central memory is the single source of truth (SSOT):
 
 - Default root: `~/Documents/Memory_Proyects` (override with `MEMORY_ROOT`).
-- Contains `data/lancedb` plus backups.
+- Contains the RuscaDB database (`data/ruscadb.db` by default), the optional
+  LanceDB store (`data/lancedb`) and backups.
 
 Resolution priority in `memory_config.py`:
 
-1. `LANCEDB_PATH` environment variable
-2. `.swarmind_config.json` (`MEMORY_ROOT`)
-3. Legacy `harness/db/lancedb`
+1. `RUSCADB_PATH` / `LANCEDB_PATH` environment variables (per backend)
+2. `.swarmind_config.json` (`memory_root`)
+3. Legacy `harness/db/*` defaults
+
+RuscaDB is the default backend; LanceDB is opt-in (`.[lancedb]`) and used
+automatically on platforms without the RuscaDB C-ABI.
 
 Backups are managed with `scripts/backup_memory.py`:
 

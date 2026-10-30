@@ -1,4 +1,4 @@
-﻿"""
+"""
 Secure execution environment for MCP (Model Context Protocol) tools.
 
 Provides a sandboxed executor that runs tools via subprocess with timeouts,

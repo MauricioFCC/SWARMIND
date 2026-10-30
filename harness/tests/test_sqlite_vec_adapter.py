@@ -1,4 +1,4 @@
-﻿"""Tests para SQLiteVecAdapter — backend vectorial portable (sqlite-vec o fallback).
+"""Tests para SQLiteVecAdapter — backend vectorial portable (sqlite-vec o fallback).
 
 Cubre:
 - Lifecycle (initialize, close, is_connected, context manager)

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Generate /llms.txt and /llms-full.txt for LLM consumption (llms.txt standard).
 
 Scans ``harness/`` and ``.opencode/`` recursively, building a curated index

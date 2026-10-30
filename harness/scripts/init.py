@@ -1,4 +1,4 @@
-﻿"""
+"""
 Harness bootstrap — cross-platform project initializer.
 Creates the directory structure and initializes LanceDB storage.
 Runs on Windows, macOS, and Linux (pure Python, no shell dependencies).

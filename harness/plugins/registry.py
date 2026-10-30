@@ -1,4 +1,4 @@
-﻿"""Tool Registry — Auto-discovery via import-time registration.
+"""Tool Registry — Auto-discovery via import-time registration.
 
 Incluye el patron de ciclo de vida inspirado en deepseek-harness (Cordis):
 on_load/on_unload en PluginBase y suscripcion automatica al EventBus

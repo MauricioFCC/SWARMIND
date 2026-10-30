@@ -1,4 +1,4 @@
-﻿"""
+"""
 GPU Acceleration Module — Swarmind Harness
 
 Provee aceleracion GPU para operaciones del sistema multi-agente.

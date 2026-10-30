@@ -7,8 +7,9 @@
 
 Harness Python de orquestación multi-agente (opencode, Claude Code, Codex)
 con: orchestrator con fan-out paralelo + votación gobernada, model routing
-small/frontier con fallback, memoria central portable (LanceDB + SQLite-vec),
-token economics, validación PBT/mutation real, y aceleración GPU CUDA.
+small/frontier con fallback, memoria central portable (RuscaDB por defecto;
+LanceDB opcional), token economics, validación PBT/mutation real, y
+aceleración GPU CUDA.
 
 ## Reglas universales (siempre activas)
 
@@ -57,7 +58,7 @@ nunca afirma, verifica**. Al completar cualquier cambio:
 4. **Docs oficiales**: README.md (inglés, público), docs/src/es/ (español,
    primario), CHANGELOG.md, docs/.MEJORAS_SWARMIND.md. Los ADR NO se mencionan
    en la documentación pública.
-5. **Tests**: pytest en `harness/tests/` (7096 passing, 0 failed). TDD siempre-on.
+5. **Tests**: pytest en `harness/tests/` (~7.3k passing, 0 failed; Linux sin GPU/LanceDB 7137 passed). TDD siempre-on.
    Ruff 0 errores, vulture 0 dead code, deuda AGR 0.
 6. **Commits**: conventional commit en español (`feat(scope): mensaje`).
 7. **Push**: los ADR (docs/src/es/adr/) se versionan localmente pero NO se

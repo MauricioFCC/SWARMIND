@@ -1,4 +1,4 @@
-﻿"""
+"""
 SkillBundler — Dynamic Agent Composition from Skill Registry.
 
 Implementacion del patron SIGMA (Skill-Incidence Graphs, arXiv:2606.19758):

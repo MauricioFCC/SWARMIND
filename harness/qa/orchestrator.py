@@ -1,4 +1,4 @@
-﻿"""L5 — QAOrchestrator: Orquestacion de calidad extremo a extremo.
+"""L5 — QAOrchestrator: Orquestacion de calidad extremo a extremo.
 
 Capa superior del pipeline QA 5-capas que coordina la ejecucion
 completa del ciclo de calidad swarmind:

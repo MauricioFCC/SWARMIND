@@ -1,4 +1,4 @@
-﻿# pragma: allowlist secret
+# pragma: allowlist secret
 """Tests de inicialización para LanceVectorStore.
 
 Extraído de test_lance_vector_store.py — pruebas de __init__, _init_storage(),

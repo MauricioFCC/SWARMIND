@@ -1,4 +1,4 @@
-﻿"""Tests de task_protocol — lifecycle A2A y store idempotente (ADR-0058)."""
+"""Tests de task_protocol — lifecycle A2A y store idempotente (ADR-0058)."""
 from __future__ import annotations
 
 from pathlib import Path

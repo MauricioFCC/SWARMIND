@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tests para MCPExecutor — cobertura completa de mcp_executor.py.
 
 Cubre:

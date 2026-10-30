@@ -1,4 +1,4 @@
-﻿"""CursorAdapter â€” Adaptador para Cursor IDE.
+"""CursorAdapter â€” Adaptador para Cursor IDE.
 
 Convierte agentes Swarmind (.opencode/agents/) al formato nativo de Cursor:
 

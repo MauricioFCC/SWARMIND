@@ -1,4 +1,4 @@
-﻿"""Tests de federation_bus — gobernanza deny-by-default y activación (ADR-0058)."""
+"""Tests de federation_bus — gobernanza deny-by-default y activación (ADR-0058)."""
 from __future__ import annotations
 
 import subprocess

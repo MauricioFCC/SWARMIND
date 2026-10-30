@@ -1,4 +1,4 @@
-﻿# pragma: allowlist secret
+# pragma: allowlist secret
 """Tests exhaustivos para LanceVectorStore con branch coverage >80%.
 
 Los tests se han organizado en varios archivos para mejor mantenibilidad:
@@ -73,12 +73,12 @@ class TestErrorHandling:
         assert "access denied" in msg
 
     def test_insert_lancedb_open_fails_propagates(self, lancedb_store, mock_lancedb):
-        """Si open_table falla en insert, la excepción se propaga."""
+        """Si LanceDB falla al crear/abrir la tabla, el error se propaga."""
         mock_lancedb["db_conn"].open_table.side_effect = RuntimeError(
             "table missing"
         )
         vec = np.ones((1, 384), dtype=np.float32)
-        with pytest.raises(RuntimeError) as excinfo:
+        with pytest.raises(VectorStoreError) as excinfo:
             lancedb_store.insert("missing_table", vec, [{"k": "v"}])
         assert "table missing" in str(excinfo.value)
 

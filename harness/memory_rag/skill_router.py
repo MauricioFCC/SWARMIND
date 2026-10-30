@@ -1,4 +1,4 @@
-﻿"""
+"""
 skill_router.py â€” Router semantico de skills via LanceDB.
 
 Selecciona SOLO los skills relevantes para una tarea usando similitud

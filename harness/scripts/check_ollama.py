@@ -1,4 +1,4 @@
-﻿"""check_ollama.py — Diagnostico de Ollama via API OpenAI-compatible (/v1).
+"""check_ollama.py — Diagnostico de Ollama via API OpenAI-compatible (/v1).
 
 WHAT: Verifica el binario Ollama y su API HTTP. Habla el endpoint
 OpenAI-compatible ``GET /v1/models`` (que Ollama expone en /v1) en lugar de

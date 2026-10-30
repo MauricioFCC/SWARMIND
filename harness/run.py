@@ -1,4 +1,4 @@
-﻿"""
+"""
 Harness — Multi-Agent Execution Engine (portable base)
 Entry point for the agent orchestration system with LanceDB memory.
 

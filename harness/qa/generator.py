@@ -1,4 +1,4 @@
-﻿"""L3 — TestCaseGenerator: Generacion de casos de prueba con guardrails.
+"""L3 — TestCaseGenerator: Generacion de casos de prueba con guardrails.
 
 Genera casos de prueba a partir de especificaciones usando Gen AI,
 aplicando multiples guardrails anti-alucinacion para garantizar:

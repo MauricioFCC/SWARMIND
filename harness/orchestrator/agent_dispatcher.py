@@ -1,4 +1,4 @@
-﻿"""
+"""
 Agent Dispatcher — Skill-aware task routing.
 
 Finds relevant procedural skills for a task description and includes them

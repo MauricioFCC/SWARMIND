@@ -1,4 +1,4 @@
-﻿"""CodexAdapter â€” Adaptador para Codex CLI de OpenAI.
+"""CodexAdapter â€” Adaptador para Codex CLI de OpenAI.
 
 Convierte agentes Swarmind (.opencode/agents/) al formato nativo de Codex CLI:
 

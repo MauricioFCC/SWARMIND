@@ -1,4 +1,4 @@
-﻿"""Task management module using LanceDB with SQLite fallback.
+"""Task management module using LanceDB with SQLite fallback.
 
 Manages the 'tasks_board' collection with full CRUD, status transitions,
 and agent-based querying. Uses Pydantic models when available.

@@ -23,27 +23,15 @@ if str(PROJECT_ROOT) not in sys.path:
 
 
 def _select_test_backend() -> None:
-    """Sin LanceDB ni RuscaDB, usa el backend memory para que la suite corra.
+    """Aisla la suite del backend real (RuscaDB/LanceDB) por defecto.
 
-    Un usuario nuevo en Linux/macOS puede no tener la DLL de RuscaDB ni el
-    extra ``lancedb``; sin este fallback, componentes que construyen un store
-    por defecto (AgentBus, debate, ...) lanzarian ImportError en los tests.
+    Los tests deben ser hermeticos en cualquier plataforma: por defecto se usa
+    el backend ``memory`` (sin locks de motor ni DLL). Los tests que ejercitan
+    RuscaDB/LanceDB pasan ``db_path``/``backend`` explicitos. Para correr la
+    suite contra un backend real: ``SWARMIND_TEST_BACKEND=ruscadb pytest ...``.
     """
-    if os.environ.get("VECTOR_BACKEND"):
-        return
-    try:
-        import lancedb  # noqa: F401
-
-        return
-    except ImportError:
-        pass
-    try:
-        from harness.memory_rag.ruscadb import load_library
-
-        load_library()
-        return
-    except Exception:  # noqa: BLE001 - sin backend nativo disponible
-        os.environ["VECTOR_BACKEND"] = "memory"
+    override = os.environ.get("SWARMIND_TEST_BACKEND")
+    os.environ["VECTOR_BACKEND"] = override or "memory"
 
 
 _select_test_backend()

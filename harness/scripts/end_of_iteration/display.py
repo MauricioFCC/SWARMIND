@@ -1,4 +1,4 @@
-﻿"""
+"""
 Display — Helpers de visualización para reportes de iteración.
 
 Extraído de __init__.py para reducir el monolito.

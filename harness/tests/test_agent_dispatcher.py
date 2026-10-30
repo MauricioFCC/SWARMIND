@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tests para AgentDispatcher — skill-aware task routing.
 
 Cubre: dispatch síncrono, búsqueda en YAML registry, búsqueda LanceDB,

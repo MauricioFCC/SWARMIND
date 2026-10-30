@@ -1,4 +1,4 @@
-﻿"""
+"""
 Phase 5: Commit Preparation — classify changes, suggest message, interactive commit.
 """
 from __future__ import annotations

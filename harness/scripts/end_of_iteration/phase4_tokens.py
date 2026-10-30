@@ -1,4 +1,4 @@
-﻿"""
+"""
 Phase 4: Token Report — estimate consumption and efficiency.
 """
 from __future__ import annotations

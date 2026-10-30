@@ -1,4 +1,4 @@
-﻿"""
+"""
 HITL Guard — Human-in-the-Loop approval for destructive actions.
 
 Intercepts dangerous operations (DROP TABLE, rm -rf, terraform destroy, etc.)

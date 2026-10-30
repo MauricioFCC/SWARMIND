@@ -1,4 +1,4 @@
-﻿"""Provider executors - OpenAI, Anthropic, Google implementations.
+"""Provider executors - OpenAI, Anthropic, Google implementations.
 
 Health checks, cost tracking, budget control y metricas extraidos a provider_health.py.
 """

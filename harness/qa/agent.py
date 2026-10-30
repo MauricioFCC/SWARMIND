@@ -1,4 +1,4 @@
-﻿"""L4 — AutonomousTestAgent: Ejecucion autonoma de tests con MCP.
+"""L4 — AutonomousTestAgent: Ejecucion autonoma de tests con MCP.
 
 Agente autonomo que ejecuta y supervisa tests usando el protocolo MCP
 (Model Context Protocol). Capaz de:

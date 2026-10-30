@@ -1,4 +1,4 @@
-﻿"""PipelineMACU — DAG vivo con replanning continuo.
+"""PipelineMACU — DAG vivo con replanning continuo.
 
 Implementa el patron del paper MACU (arXiv:2606.01533):
 - Manager descompone tarea en DAG

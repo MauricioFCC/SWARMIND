@@ -1,4 +1,4 @@
-﻿"""
+"""
 Write-Ahead Log — Resiliencia ante fallos con retry/cancelacion.
 
 Basado en patron Write-Ahead Log de sistemas de bases de datos.

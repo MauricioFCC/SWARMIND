@@ -563,9 +563,13 @@ class TestSelfImprovement:
         total = sum(len(v) for v in results.values())
         assert total >= 0
         state = load_state()
-        state["violation_history"][datetime.now(UTC).isoformat()] = {
+        history = state.setdefault("violation_history", {})
+        history[datetime.now(UTC).isoformat()] = {
             rule: len(v) for rule, v in results.items()
         }
+        # Cap del historial: el archivo es estado local, no un log sin limite.
+        for stale in sorted(history)[:-20]:
+            history.pop(stale, None)
         save_state(state)
 
 

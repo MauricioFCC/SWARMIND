@@ -1,4 +1,4 @@
-﻿"""GeminiAdapter â€” Adaptador para Gemini CLI de Google.
+"""GeminiAdapter â€” Adaptador para Gemini CLI de Google.
 
 Convierte agentes Swarmind (.opencode/agents/) al formato nativo de Gemini CLI:
 

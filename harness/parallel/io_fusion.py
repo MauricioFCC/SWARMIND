@@ -1,4 +1,4 @@
-﻿"""Async I/O Fusion — BatchAccumulator para operaciones I/O batch.
+"""Async I/O Fusion — BatchAccumulator para operaciones I/O batch.
 
 Fusiona operaciones I/O individuales en batches para reducir round-trips
 a backends (LanceDB, Chroma, Qdrant, disco).

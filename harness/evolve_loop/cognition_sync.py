@@ -1,4 +1,4 @@
-﻿"""
+"""
 Cognition store synchronisation.
 
 Manages the ``asi_cognition_store`` collection — a persistent knowledge base

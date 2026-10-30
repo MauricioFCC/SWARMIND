@@ -1,4 +1,4 @@
-﻿"""Nudge System — Auto-persistencia de contexto (nudges periodicos).
+"""Nudge System — Auto-persistencia de contexto (nudges periodicos).
 
 Los agentes de memoria usan "nudges" periodicos donde el agente persiste
 automaticamente contexto importante a la memoria de largo plazo.

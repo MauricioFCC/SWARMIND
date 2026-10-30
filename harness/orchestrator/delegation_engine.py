@@ -1,4 +1,4 @@
-﻿"""Delegation engine with UNIVERSAL auto-routing.
+"""Delegation engine with UNIVERSAL auto-routing.
 
 CONSOLIDACIÓN: 21 agentes especializados → 5 roles universales:
   - @coordinator (entry point, auto-detecta y delega)

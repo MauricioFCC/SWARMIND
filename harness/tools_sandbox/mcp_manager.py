@@ -1,4 +1,4 @@
-﻿"""
+"""
 MCP Manager — manages a pool of MCP client connections to multiple servers.
 
 Provides a unified interface to discover and execute tools across

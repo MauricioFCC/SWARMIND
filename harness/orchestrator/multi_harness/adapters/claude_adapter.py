@@ -1,4 +1,4 @@
-﻿"""ClaudeAdapter â€” Adaptador para Claude Code por Anthropic.
+"""ClaudeAdapter â€” Adaptador para Claude Code por Anthropic.
 
 Convierte agentes Swarmind (.opencode/agents/) al formato nativo de Claude Code:
 
