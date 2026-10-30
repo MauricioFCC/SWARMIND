@@ -277,6 +277,26 @@ def _gate_curated_orphans(
     return len(orphans)
 
 
+#: Artefactos runtime que NO viajan al global (solo codigo/esquema).
+#: Compartido con `verify_global_sync.py` para que sync y verificacion no driften.
+_IGNORED_DIR_NAMES = frozenset(
+    {"__pycache__", "lancedb", "_archived", "iteration_reports", "import"}
+)
+_IGNORED_SUFFIXES = (".pyc", ".so", ".pyd", ".lance")
+_IGNORED_FILE_NAMES = frozenset({".DS_Store"})
+
+
+def _ignore_for_harness(_directory: str, names: list[str]) -> set[str]:
+    """Filtro de ``copytree`` para el motor (caches y datos runtime)."""
+    return {
+        name
+        for name in names
+        if name in _IGNORED_DIR_NAMES
+        or name in _IGNORED_FILE_NAMES
+        or name.endswith(_IGNORED_SUFFIXES)
+    }
+
+
 def _sync_harness_to_global(dry_run: bool = False) -> int:
     """Sincroniza el motor (harness/) a ~/.config/opencode/harness.
 
@@ -306,10 +326,7 @@ def _sync_harness_to_global(dry_run: bool = False) -> int:
             # Excluye datos runtime gigantes (LanceDB ~6GB, iteration_reports):
             # el global solo necesita db/schema, no los datos (ADR-0038).
             shutil.copytree(src, target, dirs_exist_ok=True,
-                            ignore=shutil.ignore_patterns(
-                                "__pycache__", "*.pyc", "*.so", "*.pyd",
-                                ".DS_Store", "lancedb", "_archived",
-                                "iteration_reports", "import", "*.lance"))
+                            ignore=_ignore_for_harness)
         count += sum(1 for _ in src.rglob("*.py") if _.is_file())
 
     # Copiar archivos raÃ­z de harness

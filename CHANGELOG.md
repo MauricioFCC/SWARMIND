@@ -1,3 +1,22 @@
+## [11.65] - 2026-10-30
+
+### Added
+- `scripts/verify_global_sync.py`: compara por sha256 la SSOT del repo contra
+  el global de OpenCode (harness + cerebro + registry + AGENTS.md) y falla con
+  drift; usa la **misma política de exclusión** que el sync (cachés, LanceDB,
+  iteration_reports, import, binarios) para no reportar datos runtime.
+- `scripts/publish.py`: flujo verificable push → sync global → verify, con
+  `--dry-run`, bloqueo si el árbol está sucio y `-u origin <branch>` cuando no
+  hay upstream.
+- 16 tests nuevos (`test_publish.py`, `test_verify_global_sync.py`).
+
+### Changed
+- `sync_opencode_global.py`: constantes `_IGNORED_DIR_NAMES/_IGNORED_SUFFIXES`
+  compartidas con el verificador (sync y verificación ya no pueden divergir).
+
+### Verified
+- `publish.py` ejecutado (push + sync + verify): `GLOBAL SINCRONIZADO`
+  (0 faltantes / 0 divergentes), 965 archivos propagados.
 ## [11.64] - 2026-10-30
 
 ### Added

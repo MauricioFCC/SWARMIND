@@ -5,6 +5,14 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-30j)
+
+### Estado 2026-10-30 (Ciclo 11.65 — push + propagación verificable)
+- `scripts/publish.py` (push + sync + verify) y
+  `scripts/verify_global_sync.py` (hash SSOT vs global, sin falsos positivos de
+  runtime). Política de exclusión compartida con el sync.
+- Flujo de publicación verificado: global con 0 faltantes / 0 divergentes.
+
 ## Estado Actual (2026-10-30i)
 
 ### Estado 2026-10-30 (Ciclo 11.64 — cierre de pendientes de implementación)
