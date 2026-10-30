@@ -30,6 +30,7 @@ from harness.alpha_mining.factor_dsl import (
     Expr,
     Field,
     Operator,
+    _ts_rank,
     abstract_gene,
     complexity,
     evaluate,
@@ -266,3 +267,41 @@ class TestGatesEstructurales:
 
     def test_max_nodos_es_constante_documentada(self) -> None:
         assert MAX_NODES == 32
+
+
+def _naive_ts_rank(x, window):
+    """Referencia O(T*W) para el test de equivalencia del Fenwick."""
+    out = np.full(x.shape, np.nan)
+    for column in range(x.shape[1]):
+        series = x[:, column]
+        for t in range(window - 1, x.shape[0]):
+            segment = series[t - window + 1 : t + 1]
+            finite = np.isfinite(segment)
+            count = int(finite.sum())
+            current = series[t]
+            if count < 2 or not np.isfinite(current):
+                continue
+            values = segment[finite]
+            below = int((values < current).sum())
+            equal = int((values == current).sum())
+            out[t, column] = (below + (equal - 1) / 2.0) / (count - 1)
+    return out
+
+
+class TestTsRankEquivalence:
+    """Fenwick vs referencia ingenua: mismo resultado, distinta complejidad."""
+
+    @pytest.mark.parametrize("seed", [0, 1, 2, 3, 4])
+    def test_fenwick_matches_naive_with_ties_and_nan(self, seed):
+        """Paneles con empates y NaN producen exactamente el mismo rank."""
+        rng = np.random.default_rng(seed)
+        x = np.round(rng.normal(0.0, 1.0, size=(40, 3)), 1)
+        x[rng.random(x.shape) < 0.15] = np.nan
+        expected = _naive_ts_rank(x, window=7)
+        got = _ts_rank(x, window=7)
+        np.testing.assert_allclose(got, expected, equal_nan=True)
+
+    def test_window_gt_rows_is_all_nan(self):
+        """Ventana mayor que la serie no produce valores (sin crash)."""
+        x = np.arange(10.0).reshape(5, 2)
+        assert np.isnan(_ts_rank(x, window=50)).all()

@@ -13,9 +13,9 @@
 | PY-02 | Declarar `asyncio_default_fixture_loop_scope` / `asyncio_default_test_loop_scope` (default cambiará a `function`) | `pyproject.toml` |
 | PY-03 | Hypothesis con perfil por entorno: `ci` (`derandomize`, `database=None`, `deadline=None`) / `dev` | `harness/tests/conftest.py` (`HYPOTHESIS_PROFILE`) |
 | PY-04 | Free-threaded: build separado `python3.14t`, no default; no planificar rendimiento sobre JIT (PEP 744 experimental; PEP 836 retirado 2026-10-19) | CI usa build GIL estándar |
-| PY-05 | PEP 649/749: anotaciones diferidas — auditar `__annotations__`/`get_type_hints` antes de subir `requires-python` | pendiente auditoría (P1) |
-| PY-06 | mypy 2.0: `-n auto` en CI (hasta 5x); strict incremental por `[[tool.mypy.overrides]]` empezando por `harness/domain/` | pendiente (P1) |
-| PY-07 | Ruff `preview=true` solo en `[tool.ruff.lint]`; adoptar PERF/FURB/RUF con ratchet, nunca big-bang | pendiente (P2, ver §3) |
+| PY-05 | PEP 649/749: anotaciones diferidas — auditar `__annotations__`/`get_type_hints` antes de subir `requires-python` | auditoría pendiente (P2); el kernel no introspecciona anotaciones |
+| PY-06 | mypy 2.x: `-n auto` en CI (cap 8 workers); strict incremental por `[[tool.mypy.overrides]]`, empezando por `harness/kernel/` y `harness/domain/` | **hecho**: `pyproject.toml` + job `type-check` bloqueante (7 archivos strict-clean) |
+| PY-07 | Ruff `preview=true` solo en `[tool.ruff.lint]`; adoptar PERF/FURB/RUF con ratchet, nunca big-bang | **hecho (ratchet)**: `scripts/check_ruff_ratchet.py` + baseline (1 272 hallazgos/20 reglas); allowlist de preview en P2 |
 | PY-08 | `per-file-ignores` heredado: usar `extend-per-file-ignores` (el otro *reemplaza*) | convención de config |
 
 ## 2. Lección adversarial verificada (RUF100, 2026-10-30)

@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from itertools import combinations
+from itertools import combinations, starmap
 from pathlib import Path
 
 import numpy as np
@@ -310,7 +310,7 @@ def compute_overlap_pairs(skills: tuple[Skill, ...]) -> tuple[OverlapPair, ...]:
         Tupla de ``OverlapPair`` ordenada por ``score`` descendente y, ante
         empate, por nombre (determinista).
     """
-    pairs = [_pair_for(a, b) for a, b in combinations(skills, 2)]
+    pairs = list(starmap(_pair_for, combinations(skills, 2)))
     return tuple(sorted(pairs, key=lambda p: (-p.score, p.skill_a, p.skill_b)))
 
 

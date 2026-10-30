@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import sys
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -165,8 +166,9 @@ def run_command(
     Args:
         cmd: Comando completo (p. ej. ``"!iteration end --quick"``).
         harness_root: Raiz del harness (requerido por comandos de iteracion).
-        **kwargs: Reservado; solo se consume ``store`` para inyectar el
-            vector store y evitar su creacion perezosa.
+        **kwargs: ``store`` inyecta el vector store; ``bus`` (opcional) publica
+            ``command.start/end/error`` con ``trace_id`` correlacionado;
+            ``trace_id`` fija la correlacion (si se omite se genera).
 
     Returns:
         Lo que retorne el handler (normalmente None).
@@ -175,6 +177,28 @@ def run_command(
         ValueError: si el comando no esta en la tabla canonica
             (WHAT desconocido / WHY sin handler asociado / WHERE tabla).
     """
+    bus = kwargs.pop("bus", None)
+    trace_id = kwargs.pop("trace_id", None) or uuid.uuid4().hex
+    _emit_command(bus, "command.start", cmd, trace_id)
+    try:
+        result = _resolve_and_run(cmd, harness_root, kwargs)
+    except Exception as exc:
+        _emit_command(
+            bus,
+            "command.error",
+            cmd,
+            trace_id,
+            error=f"{type(exc).__name__}: {exc}",
+        )
+        raise
+    _emit_command(bus, "command.end", cmd, trace_id)
+    return result
+
+
+def _resolve_and_run(
+    cmd: str, harness_root: Path | None, kwargs: dict[str, Any]
+) -> Any:
+    """Resuelve el handler del comando y lo ejecuta (tabla canonica)."""
     cmd_clean = cmd.strip().lower()
     for prefix, handler_name, signature in _COMMAND_TABLE:
         if not cmd_clean.startswith(prefix):
@@ -195,6 +219,23 @@ def run_command(
         f"ValueError: comando no reconocido '{cmd}'. WHY: no existe en la "
         "tabla canonica de run_commands. WHERE: run_command._COMMAND_TABLE."
     )
+
+
+def _emit_command(
+    bus: Any,
+    kind: str,
+    cmd: str,
+    trace_id: str,
+    *,
+    error: str = "",
+) -> None:
+    """Publica un evento de ciclo de vida del comando (no-op sin bus)."""
+    if bus is None:
+        return
+    payload: dict[str, Any] = {"cmd": cmd}
+    if error:
+        payload["error"] = error
+    bus.publish(kind, payload, trace_id=trace_id, source="run_commands")
 
 
 __all__ = [

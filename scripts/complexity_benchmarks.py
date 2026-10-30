@@ -18,9 +18,9 @@ from harness.memory_rag.cache_threshold import AdaptiveThreshold
 from harness.memory_rag.memory_heat import heat_score
 from harness.memory_rag.ruscadb_store import RuscaDBStore
 
-#: Escalas medidas por el gate (N, 2N, 4N). Suficientemente grandes para que
-#: la medición domine el ruido del scheduler (~ms por muestra).
-SCALES: tuple[int, ...] = (10_000, 20_000, 40_000)
+#: Escalas medidas por el gate (N, 2N, 4N, 8N). Suficientemente grandes para
+#: que la medición domine el ruido del scheduler (~ms por muestra).
+SCALES: tuple[int, ...] = (10_000, 20_000, 40_000, 80_000)
 
 
 def _bench_mailbox(n: int) -> None:
@@ -93,6 +93,27 @@ def _bench_oversample_observe(n: int) -> None:
         tuner.observe("bench", recall=0.5 if index % 3 == 0 else 1.0)
 
 
+#: Paneles reutilizados por el benchmark de TS_RANK (construcción fuera del reloj).
+_TS_RANK_PANELS: dict[int, Any] = {}
+
+
+def _bench_ts_rank(n: int) -> None:
+    """Rank rolling con ventana proporcional a n (Fenwick: O(n log n)).
+
+    La ventana crece con ``n`` (``n // 10``): si alguien vuelve a la versión
+    ingenua O(n·W), el ratio se dispara a ~4 y el gate falla.
+    """
+    import numpy as np
+
+    from harness.alpha_mining.factor_dsl import _ts_rank
+
+    panel = _TS_RANK_PANELS.get(n)
+    if panel is None:
+        panel = np.random.default_rng(7).normal(0.0, 1.0, size=(n, 1))
+        _TS_RANK_PANELS[n] = panel
+    _ts_rank(panel, max(2, n // 10))
+
+
 #: Nombre -> (funcion, clase esperada de complejidad).
 BENCHMARKS: Mapping[str, tuple[Callable[[int], Any], str]] = {
     "kernel.mailbox": (_bench_mailbox, "linear"),
@@ -102,6 +123,7 @@ BENCHMARKS: Mapping[str, tuple[Callable[[int], Any], str]] = {
     "memory.heat_score": (_bench_heat_score, "linear"),
     "cache.adaptive_observe": (_bench_adaptive_observe, "linear"),
     "bq.oversample_observe": (_bench_oversample_observe, "linear"),
+    "alpha.ts_rank": (_bench_ts_rank, "n_log_n"),
 }
 
 

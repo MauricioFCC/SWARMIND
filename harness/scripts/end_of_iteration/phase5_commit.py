@@ -206,8 +206,7 @@ def _do_git_commit(commit_msg: str) -> bool:
     """Execute git commit and git push."""
     try:
         msg_path = Path(HARNESS_ROOT) / ".commit_msg.tmp"
-        with open(msg_path, "w", encoding="utf-8") as f:
-            f.write(commit_msg)
+        Path(msg_path).write_text(commit_msg, encoding="utf-8")
 
         result = subprocess.run(
             ["git", "commit", "-F", str(msg_path)],
@@ -267,14 +266,12 @@ def interactive_commit(commit_msg: str) -> None:
             _safe_print(f"  {_cyan('[EDIT]')} Abriendo editor para modificar el mensaje...")
             msg_path = Path(HARNESS_ROOT) / ".commit_msg_edit.tmp"
             try:
-                with open(msg_path, "w", encoding="utf-8") as f:
-                    f.write(commit_msg)
+                Path(msg_path).write_text(commit_msg, encoding="utf-8")
                 editor = os.environ.get("EDITOR", "")
                 if not editor:
                     editor = "notepad" if sys.platform == "win32" else "vim"
                 subprocess.run([editor, str(msg_path)], cwd=str(PROJECT_ROOT), check=False)
-                with open(msg_path, "r", encoding="utf-8") as f:
-                    edited_msg = f.read()
+                edited_msg = Path(msg_path).read_text(encoding="utf-8")
                 if edited_msg.strip():
                     _do_git_commit(edited_msg)
                 else:

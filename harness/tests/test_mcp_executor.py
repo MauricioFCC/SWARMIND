@@ -13,6 +13,7 @@ Cubre:
 """
 from __future__ import annotations
 
+import math
 import subprocess
 import sys
 import tempfile
@@ -466,7 +467,7 @@ class TestValidateOutput:
     def test_validates_type_number(self, executor: MCPExecutor) -> None:
         """validate_output debe aceptar int o float para tipo 'number'."""
         assert executor.validate_output(42, {"type": "number"})[0] is True
-        assert executor.validate_output(3.14, {"type": "number"})[0] is True
+        assert executor.validate_output(math.pi, {"type": "number"})[0] is True
 
     def test_validates_type_boolean(self, executor: MCPExecutor) -> None:
         """validate_output debe validar tipo boolean."""

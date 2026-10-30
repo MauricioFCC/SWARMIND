@@ -975,10 +975,10 @@ class RuscaDBStore:
             e ``include_evicted``.
         """
         return {
-            "allow_quarantined": bool(kwargs.get("allow_quarantined", False)),
+            "allow_quarantined": bool(kwargs.get("allow_quarantined")),
             "min_trust": float(kwargs.get("min_trust", 0.0)),
             "half_life_days": kwargs.get("half_life_days"),
-            "include_evicted": bool(kwargs.get("include_evicted", False)),
+            "include_evicted": bool(kwargs.get("include_evicted")),
         }
 
     def _retrieval_options(

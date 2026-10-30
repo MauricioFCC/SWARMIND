@@ -150,8 +150,7 @@ class SkillGenerator:
         # --- 1. Write .md file ---
         md_path = AUTO_SKILLS_DIR / f"{slug}.md"
         md_content = self._build_md_content(slug, domain, agent, task_description, steps)
-        with open(str(md_path), "w", encoding="utf-8") as f:
-            f.write(md_content)
+        Path(str(md_path)).write_text(md_content, encoding="utf-8")
         logger.info("Skill .md written: %s", md_path)
 
         # --- 2. Register in YAML registry ---

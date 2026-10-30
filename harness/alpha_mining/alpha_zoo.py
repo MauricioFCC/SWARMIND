@@ -128,7 +128,11 @@ class AlphaZoo:
         self._path = path
         self._entries: list[ZooEntry] = []
         self._failures: Counter[str] = Counter()
+        # Indice exacto formula -> presencia: el dedup exacto pasa de O(n) a
+        # O(1) antes del loop de similitud (que sigue siendo O(n) por AST).
+        self._formulas: set[str] = set()
         self._load()
+        self._formulas = {entry.formula for entry in self._entries}
 
     @property
     def entries(self) -> tuple[ZooEntry, ...]:
@@ -151,9 +155,9 @@ class AlphaZoo:
             True si es duplicado por formula o similitud >= min_originality.
         """
         formula = to_formula(expr)
+        if formula in self._formulas:
+            return True
         for existing in self._entries:
-            if existing.formula == formula:
-                return True
             if subtree_similarity(expr, parse_expr(existing.tree)) >= min_originality:
                 return True
         return False
@@ -177,6 +181,7 @@ class AlphaZoo:
             )
             return False
         self._entries.append(entry)
+        self._formulas.add(entry.formula)
         self._append({"kind": "factor", **_entry_to_record(entry)})
         return True
 

@@ -14,6 +14,7 @@ import logging
 import re
 import uuid
 from datetime import UTC, datetime
+from itertools import starmap
 from typing import Any
 
 import numpy as np
@@ -203,9 +204,7 @@ class _LanceDBBackendMixin:
             ) from exc
 
         # Construir clausula WHERE desde los filtros (clave/valor validados)
-        conditions = [
-            self._safe_where_comparison(k, v) for k, v in filters.items()
-        ]
+        conditions = list(starmap(self._safe_where_comparison, filters.items()))
         where_clause = " AND ".join(conditions)
 
         # Leer registros existentes para actualizar metadata JSON

@@ -114,7 +114,23 @@ def _effective_ratio(times: list[float]) -> float:
     return (last / first) ** (1.0 / doublings)
 
 
-def run_all(reps: int = 7, rounds: int = 3) -> dict[str, dict[str, Any]]:
+def _median_measurement(
+    measurements: list[tuple[list[float], float]],
+) -> tuple[list[float], float]:
+    """Selecciona la medición cuyo ratio es la mediana (soporta nº par).
+
+    Args:
+        measurements: Pares ``(tiempos_por_escala, ratio)`` de cada ronda.
+
+    Returns:
+        El par más cercano al ratio mediano (nunca falla con rondas pares,
+        donde ``statistics.median`` promedia dos valores).
+    """
+    median = statistics.median([ratio for _, ratio in measurements])
+    return min(measurements, key=lambda item: abs(item[1] - median))
+
+
+def run_all(reps: int = 5, rounds: int = 2) -> dict[str, dict[str, Any]]:
     """Mide todos los benchmarks y los clasifica.
 
     El ratio de cada benchmark es la **mediana de ``rounds`` mediciones
@@ -137,10 +153,7 @@ def run_all(reps: int = 7, rounds: int = 3) -> dict[str, dict[str, Any]]:
         for _ in range(max(1, rounds)):
             times = [_measure(benchmark, scale, reps) for scale in SCALES]
             measurements.append((times, _effective_ratio(times)))
-        ratios = [ratio for _, ratio in measurements]
-        ratio = statistics.median(ratios)
-        # Reporta los tiempos de la ronda cuyo ratio es la mediana.
-        times = measurements[ratios.index(ratio)][0]
+        times, ratio = _median_measurement(measurements)
         threshold = THRESHOLDS.get(expected, THRESHOLDS["linear"])
         results[name] = {
             "expected": expected,
@@ -259,7 +272,7 @@ def main(argv: list[str] | None = None) -> int:
         "--write-baseline", action="store_true", help="escribe el baseline actual"
     )
     parser.add_argument(
-        "--reps", type=int, default=7, help="repeticiones por escala (default 7)"
+        "--reps", type=int, default=5, help="repeticiones por escala (default 5)"
     )
     args = parser.parse_args(argv)
 

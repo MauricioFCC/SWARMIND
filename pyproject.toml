@@ -161,6 +161,26 @@ ignore = ["EXE001"]
 ".opencode/core/router_v2.py" = ["F401"]
 
 # ---------------------------------------------------------------------------
+# mypy 2.x: estricto incremental por paquete.
+# `strict` es opcion por modulo; se adopta empezando por los paquetes puros
+# (kernel sin dominio, domain sin infraestructura). El resto sigue informativo
+# en CI hasta bajar la deuda global.
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.14"
+ignore_missing_imports = true
+# Detecta secciones mal escritas cuando hay varios overrides.
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = ["harness.kernel", "harness.kernel.*"]
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["harness.domain", "harness.domain.*"]
+strict = true
+
+# ---------------------------------------------------------------------------
 # Vulture (detección de código muerto)
 # ---------------------------------------------------------------------------
 [tool.vulture]

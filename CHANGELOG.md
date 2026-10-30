@@ -1,3 +1,44 @@
+## [11.62] - 2026-10-30
+
+### Added
+- `RequestTracker` (AC-KN5): correlación req/resp por `trace_id` sobre el
+  kernel, timeout tipado (`RequestTimeoutError` con WHAT/WHY/WHERE) y reloj
+  inyectable (tests deterministas sin `sleep`). 8 tests.
+- `AgentDispatcher(dispatch(..., trace_id=...))` publica `agent.dispatch` y
+  devuelve `trace_id`; `run_command(..., bus=..., trace_id=...)` emite
+  `command.start/end/error` con el mismo trace. 7 tests.
+- mypy strict incremental: `[[tool.mypy.overrides]]` para `harness.kernel` y
+  `harness.domain` + `warn_unused_configs`; CI bloqueante (7 archivos
+  strict-clean) y `-n auto` en el chequeo global informativo.
+- Ratchet de Ruff sobre preview (`scripts/check_ruff_ratchet.py` +
+  `scripts/ruff_baseline.json`): conteo por regla, solo falla si un conteo
+  sube; job CI `ruff-ratchet`. 54 fixes seguros aplicados (1 326 → 1 272).
+- `harness/alpha_mining/rolling_rank.py`: `Fenwick` + `ts_rank` con ventana
+  deslizante O(T log m) (antes O(T·W)), con equivalencia verificada frente a
+  la referencia ingenua (empates y NaN).
+- Gate de complejidad con escala 8N (`10k/20k/40k/80k`), benchmark
+  `alpha.ts_rank` (ventana proporcional a n: una regresión a O(n·W) dispara el
+  ratio a ~4) y medición robusta (mínimo de 5 × mediana de 2 rondas).
+- `docs/research/frontier-2026-10-30-algorithms.md`: fórmulas, costes, reglas
+  de decisión y estado del arte de gates (mypy 2.x, Ruff ratchet, buses
+  request/reply, mutación scoped).
+
+### Changed
+- `AlphaZoo` mantiene un set de fórmulas para dedup exacto O(1) antes del loop
+  de similitud de AST (`_formulas`).
+- `factor_dsl` delega el rank rolling en `rolling_rank` (módulo < 500 líneas).
+- 54 fixes seguros de Ruff preview (FURB101/103/110/113, RUF005/031/056, etc.)
+  en todo el repo; guardas de equivalencia cubiertas por la suite.
+
+### Fixed
+- `_median_measurement`: con nº par de rondas `statistics.median` promedia y
+  el valor no existe en la lista (bug detectado por test adversarial).
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`,
+  `check_complexity --gate=0` (8 benchmarks), `check_ruff_ratchet --gate=0`,
+  `mypy strict kernel+domain` OK, `validate_skills --strict` OK.
+
 ## [11.61] - 2026-10-30
 
 ### Added

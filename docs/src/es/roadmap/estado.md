@@ -5,6 +5,22 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-30g)
+
+### Estado 2026-10-30 (Ciclo 11.62 — ola P1/P2 + algoritmos O(n²)→O(n))
+- AC-KN5 cerrado: `RequestTracker` (trace_id + timeout tipado) y wiring en
+  `agent_dispatcher` y `run_commands` (start/end/error correlacionados).
+- mypy strict bloqueante en `harness.kernel` y `harness.domain`; global con
+  `-n auto` informativo.
+- Ratchet de Ruff preview (baseline 1 272 hallazgos / 20 reglas) + 54 fixes
+  seguros aplicados; job CI `ruff-ratchet`.
+- Algoritmos: `ts_rank` con Fenwick O(T log m); dedup exacto O(1) en AlphaZoo;
+  gate de complejidad con 8N y benchmark `alpha.ts_rank`.
+- Investigación de frontera documentada (fórmulas + reglas de decisión):
+  `docs/research/frontier-2026-10-30-algorithms.md`.
+- Pendientes P2: allowlist de preview en lint, mutación scoped por `git diff`,
+  auditoría PEP 649, Aho-Corasick si crece el corpus de reglas.
+
 ## Estado Actual (2026-10-30f)
 
 ### Estado 2026-10-30 (Ciclo 11.61 — kernel + gate de complejidad + algoritmos)

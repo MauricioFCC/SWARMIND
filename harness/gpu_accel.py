@@ -75,8 +75,7 @@ def force_cpu() -> None:
 
 def force_gpu() -> None:
     """Forzar uso de GPU si esta disponible."""
-    global HAVE_CUDA, DEVICE
-    global _HARDWARE_CUDA  # noqa: PLW0602
+    global HAVE_CUDA, DEVICE, _HARDWARE_CUDA  # noqa: PLW0602
     if _HARDWARE_CUDA:
         HAVE_CUDA = True
         DEVICE = "cuda:0"

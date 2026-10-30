@@ -359,10 +359,7 @@ class MiningLoop:
             recompensa) + 1 mutacion del peor.
         """
         ranked = sorted(pool, key=lambda t: (-t.reward, t.hypothesis))
-        offspring = [
-            crossover(better, worse)
-            for better, worse in zip(ranked[0::2], ranked[1::2])
-        ]
+        offspring = list(map(crossover, ranked[0::2], ranked[1::2]))
         if ranked:
             offspring.append(mutate(ranked[-1], reflect_hook))
         return tuple(offspring)

@@ -93,9 +93,7 @@ class TestProceduralMemoryInit:
         """
         with tempfile.TemporaryDirectory() as tmp:
             skill_path = Path(tmp) / "existing_skill.md"
-            with open(skill_path, "w", encoding="utf-8") as f:
-                f.write(
-                    "# existing_skill\n"
+            Path(skill_path).write_text("# existing_skill\n"
                     "**Agent:** @builder\n"
                     "**Version:** 1\n"
                     "\n"
@@ -105,8 +103,7 @@ class TestProceduralMemoryInit:
                     "2. Segundo paso\n"
                     "\n"
                     "---\n"
-                    "*Generado automaticamente por Procedural Memory*\n"
-                )
+                    "*Generado automaticamente por Procedural Memory*\n", encoding="utf-8")
             pm = ProceduralMemory(skills_dir=str(tmp))
             assert "existing_skill" in pm._skills
             skill = pm._skills["existing_skill"]

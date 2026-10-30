@@ -253,3 +253,33 @@ class TestKnowledgeBaseDeFallos:
         fresh = AlphaZoo(tmp_path / "zoo.jsonl")
 
         assert dict(fresh.failure_modes()) == {"complejidad": 1}
+
+
+class TestFormulaIndex:
+    """Indice exacto formulas: dedup O(1) antes del loop de similitud."""
+
+    def test_reload_populates_formula_index(self, tmp_path: Path) -> None:
+        """Al recargar el journal, el indice refleja todas las formulas."""
+        zoo = AlphaZoo(tmp_path / "zoo.jsonl")
+        expr = Expr.apply(Operator.RANK, _CLOSE)
+        zoo.add(_entry("rank(close)", to_dict(expr), FactorFamily.MEAN_REVERSION, 0.4))
+
+        fresh = AlphaZoo(tmp_path / "zoo.jsonl")
+
+        assert fresh._formulas == {"rank(close)"}
+
+    def test_exact_duplicate_short_circuits_similarity(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """Un duplicado exacto se rechaza sin calcular similitud de AST."""
+        import harness.alpha_mining.alpha_zoo as zoo_module
+
+        zoo = AlphaZoo(tmp_path / "zoo.jsonl")
+        expr = Expr.apply(Operator.RANK, _CLOSE)
+        zoo.add(_entry("rank(close)", to_dict(expr), FactorFamily.MEAN_REVERSION, 0.4))
+
+        def _boom(*_args, **_kwargs):
+            raise AssertionError("no debe calcularse similitud para un duplicado exacto")
+
+        monkeypatch.setattr(zoo_module, "subtree_similarity", _boom)
+        assert zoo.is_similar(expr) is True

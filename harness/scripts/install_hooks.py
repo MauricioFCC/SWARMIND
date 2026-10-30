@@ -291,8 +291,7 @@ def install_hook() -> bool:
 
     # ── Write the new self-contained hook ──────────────────────────
     try:
-        with open(_HOOK_PATH, "w", encoding="utf-8", newline="\n") as f:
-            f.write(_LOCAL_HOOK_TEMPLATE)
+        Path(_HOOK_PATH).write_text(_LOCAL_HOOK_TEMPLATE, encoding="utf-8", newline="\n")
         if sys.platform != "win32":
             st = os.stat(_HOOK_PATH)
             os.chmod(_HOOK_PATH, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)

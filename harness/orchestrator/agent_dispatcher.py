@@ -11,6 +11,8 @@ import functools
 import logging
 import os
 import re
+import uuid
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +32,7 @@ from harness.memory_rag.lance_vector_store import (
     LanceVectorStore,
 )
 from harness.observability.token_telemetry import TokenTelemetry
+from harness.orchestrator.agent_bus.kernel_bus import KernelBus
 from harness.orchestrator.hidden_body import (
     _body_keyword_score,
     combine_hidden_body_score,
@@ -331,6 +334,7 @@ class AgentDispatcher:
         *,
         telemetry: TokenTelemetry | None = None,
         drift_manager: LibraryDriftManager | None = None,
+        bus: KernelBus | None = None,
     ) -> None:
         """Inicializa la instancia de la clase.
 
@@ -341,10 +345,13 @@ class AgentDispatcher:
             drift_manager: Gestor de retiro por outcome (Library Drift). Si es
                 ``None`` (default) el dispatcher no acumula utilidad de skills:
                 backward-compatible.
+            bus: KernelBus opcional para publicar ``agent.dispatch`` con
+                ``trace_id`` correlacionado (AC-KN5). ``None`` = sin eventos.
         """
         self._vector_store = vector_store
         self._telemetry = telemetry
         self._drift_manager = drift_manager
+        self._bus = bus
         self._stats: dict[str, Any] = {
             "total_dispatches": 0,
             "skill_matches": 0,
@@ -428,13 +435,20 @@ class AgentDispatcher:
         logger.debug("No skill found for: %s", task_description[:80])
         return None
 
-    def dispatch(self, agent_role: str, task_description: str) -> dict[str, Any]:
+    def dispatch(
+        self,
+        agent_role: str,
+        task_description: str,
+        *,
+        trace_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Dispatch a task to an agent, optionally including skill context.
 
         Args:
             agent_role: The target agent (e.g. "software-engineer").
             task_description: What needs to be done.
+            trace_id: Correlación req/resp (AC-KN5); si se omite se genera.
 
         Returns:
             Dict with:
@@ -443,8 +457,10 @@ class AgentDispatcher:
               - ``used_skill``: Whether a skill was injected.
               - ``skill_context``: The skill .md content (or empty str).
               - ``reasoning_mode``: "from_scratch" or "guided_by_skill".
+              - ``trace_id``: Correlación del despacho (para logs/event store).
         """
         self._stats["total_dispatches"] += 1
+        trace = trace_id or uuid.uuid4().hex
 
         skill = self.find_skill_for_task(task_description)
 
@@ -454,6 +470,7 @@ class AgentDispatcher:
             "used_skill": False,
             "skill_context": "",
             "reasoning_mode": "from_scratch",
+            "trace_id": trace,
         }
 
         if skill is not None and skill.get("similarity", 0) >= SIMILARITY_THRESHOLD:
@@ -478,7 +495,24 @@ class AgentDispatcher:
             )
 
         self._record_dispatch_telemetry(task_description, result["skill_context"])
+        self._emit_dispatch(trace, result)
         return result
+
+    def _emit_dispatch(self, trace: str, result: Mapping[str, Any]) -> None:
+        """Publica ``agent.dispatch`` con el ``trace_id`` correlacionado."""
+        if self._bus is None:
+            return
+        self._bus.publish(
+            "agent.dispatch",
+            {
+                "agent": result["agent"],
+                "used_skill": result["used_skill"],
+                "skill_name": result.get("skill_name", ""),
+                "reasoning_mode": result["reasoning_mode"],
+            },
+            trace_id=trace,
+            source="agent_dispatcher",
+        )
 
     # ------------------------------------------------------------------
     # Internal helpers

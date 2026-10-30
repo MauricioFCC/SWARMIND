@@ -14,15 +14,15 @@ class TestEffectiveRatio:
 
     def test_linear_growth_is_two(self):
         """Duplicar el coste por cada duplicación de n da ratio 2.0."""
-        assert gate._effective_ratio([1.0, 2.0, 4.0]) == pytest.approx(2.0)
+        assert gate._effective_ratio([1.0, 2.0, 4.0, 8.0]) == pytest.approx(2.0)
 
     def test_quadratic_growth_is_four(self):
         """Coste cuadrático (n²) da ratio 4.0."""
-        assert gate._effective_ratio([1.0, 4.0, 16.0]) == pytest.approx(4.0)
+        assert gate._effective_ratio([1.0, 4.0, 16.0, 64.0]) == pytest.approx(4.0)
 
     def test_zero_first_time_is_infinite(self):
         """Un tiempo base nulo no se puede normalizar: ratio infinito."""
-        assert math.isinf(gate._effective_ratio([0.0, 1.0, 2.0]))
+        assert math.isinf(gate._effective_ratio([0.0, 1.0, 2.0, 4.0]))
 
     def test_single_scale_is_neutral(self, monkeypatch):
         """Con una sola escala no hay duplicaciones: ratio 1.0."""
@@ -66,6 +66,20 @@ class TestEvaluate:
     def test_baseline_absent_does_not_fail(self):
         """Sin baseline solo aplica el umbral absoluto."""
         assert gate.evaluate({"bench": self._entry(2.2)}, {}) == []
+
+
+class TestMedianMeasurement:
+    """Selección robusta de la ronda mediana (nº par de rondas)."""
+
+    def test_odd_rounds_picks_exact_median(self):
+        """Con 3 rondas se elige la del medio por ratio."""
+        measurements = [([1.0], 1.5), ([2.0], 2.0), ([3.0], 2.5)]
+        assert gate._median_measurement(measurements)[0] == [2.0]
+
+    def test_even_rounds_does_not_crash(self):
+        """Con 2 rondas el promedio no está en la lista: se elige la más cercana."""
+        measurements = [([1.0], 1.5), ([2.0], 2.5)]
+        assert gate._median_measurement(measurements)[0] == [1.0]
 
 
 class TestBaseline:

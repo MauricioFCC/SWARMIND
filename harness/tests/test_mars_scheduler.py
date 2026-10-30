@@ -333,7 +333,7 @@ class TestMARSSchedulerRecordOutcome:
         s.record_outcome("t1", "a", True, 1.0, 50.0)
         # Q-table key es (agent_id, task_id)
         assert ("a", "t1") in s._q_table
-        q_after = s._q_table[("a", "t1")]
+        q_after = s._q_table["a", "t1"]
         # Q debe estar dentro de [0, 1] aproximadamente
         assert -1.0 <= q_after <= 2.0
 

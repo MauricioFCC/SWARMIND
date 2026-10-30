@@ -150,7 +150,7 @@ def _small_model_ref(config: Mapping[str, Any]) -> Any:
     ``small_model`` top-level."""
     title = ((config.get("agents") or {}).get("title")) or {}
     ref = title.get("model") if isinstance(title, Mapping) else None
-    return ref if ref else config.get("small_model")
+    return ref or config.get("small_model")
 
 
 def _agent_entries(config: Mapping[str, Any]) -> Mapping[str, Any]:

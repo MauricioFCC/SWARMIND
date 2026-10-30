@@ -34,6 +34,8 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from .rolling_rank import ts_rank as _ts_rank
+
 #: Maximo de nodos de un AST (AlphaAgent: complexity control).
 MAX_NODES = 32
 #: Ventana temporal minima aceptada.
@@ -484,26 +486,6 @@ def _cs_rank(x: NDArray[np.float64]) -> NDArray[np.float64]:
         ranks = np.empty(count, dtype=float)
         ranks[order] = np.arange(count, dtype=float)
         out[row_index, finite] = ranks / (count - 1)
-    return out
-
-
-def _ts_rank(x: NDArray[np.float64], window: int) -> NDArray[np.float64]:
-    """Rank del ultimo valor dentro de la ventana (midrank, por columna)."""
-    out = np.full(x.shape, np.nan)
-    for column in range(x.shape[1]):
-        series = x[:, column]
-        for t in range(window - 1, x.shape[0]):
-            segment = series[t - window + 1 : t + 1]
-            finite = np.isfinite(segment)
-            count = int(finite.sum())
-            current = series[t]
-            if count < 2 or not np.isfinite(current):
-                continue
-            values = segment[finite]
-            below = int((values < current).sum())
-            equal = int((values == current).sum())
-            midrank = below + (equal - 1) / 2.0
-            out[t, column] = midrank / (count - 1)
     return out
 
 

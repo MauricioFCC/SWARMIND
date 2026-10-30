@@ -195,8 +195,7 @@ def generate_llms_txt() -> str:
     content = "\n".join(lines)
 
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
-    with open(str(LLMS_TXT), "w", encoding="utf-8") as f:
-        f.write(content)
+    Path(str(LLMS_TXT)).write_text(content, encoding="utf-8")
     logger.info(f"[OK] {LLMS_TXT} — {len(content)} caracteres")
 
     return content
@@ -238,8 +237,7 @@ def generate_llms_full_txt() -> str:
     estimated_tokens = len(full) // 4
 
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
-    with open(str(LLMS_FULL_TXT), "w", encoding="utf-8") as f:
-        f.write(full)
+    Path(str(LLMS_FULL_TXT)).write_text(full, encoding="utf-8")
     logger.info(f"[OK] {LLMS_FULL_TXT} — {len(full)} caracteres, ~{estimated_tokens} tokens estimados")
 
     return full

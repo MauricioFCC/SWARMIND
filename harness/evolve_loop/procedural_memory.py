@@ -81,8 +81,7 @@ class ProceduralMemory:
         for fpath in sorted(skills_path.iterdir()):
             if fpath.suffix == ".md":
                 name = fpath.stem
-                with open(fpath, encoding="utf-8") as f:
-                    content = f.read()
+                content = Path(fpath).read_text(encoding="utf-8")
                 lines = content.split("\n")
                 description = ""
                 steps = []
@@ -149,8 +148,7 @@ class ProceduralMemory:
             skill.version = self._skills.get(safe_name, skill).version + 1
 
         filepath = str(Path(self._skills_dir) / f"{safe_name}.md")
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(skill.to_markdown())
+        Path(filepath).write_text(skill.to_markdown(), encoding="utf-8")
 
         self._skills[safe_name] = skill
         logger.info(

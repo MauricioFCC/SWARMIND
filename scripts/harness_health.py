@@ -266,7 +266,7 @@ def _build_lift_report(args: argparse.Namespace) -> dict[str, float]:
     real = _try_catalog()
     if real is not None:
         catalog, runner = real
-        skills = requested if requested else list(catalog.skills())
+        skills = requested or list(catalog.skills())
         evaluator = SkillLiftEvaluator(runner=runner)
         results = [
             evaluator.evaluate(skill, [task.id for task in catalog.tasks_for_skill(skill)], trials=args.trials)
@@ -276,7 +276,7 @@ def _build_lift_report(args: argparse.Namespace) -> dict[str, float]:
         return evaluator.report(results)
 
     evaluator = SkillLiftEvaluator(runner=_thin_lift_runner)
-    skills = requested if requested else list(_DEMO_SKILLS)
+    skills = requested or list(_DEMO_SKILLS)
     return evaluator.report(
         evaluator.evaluate_all(skills, list(_DEMO_LIFT_TASKS), trials=args.trials)
     )

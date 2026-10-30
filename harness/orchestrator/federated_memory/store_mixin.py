@@ -159,8 +159,7 @@ class _StoreMixin:
         """Lista todos los proyectos que han contribuido conocimiento."""
         projects = set()
         with self._lock:
-            for record in self._local_store.values():
-                projects.add(record.source_project)
+            projects.update(record.source_project for record in self._local_store.values())
         return projects
 
     def get_stats(self) -> dict:
