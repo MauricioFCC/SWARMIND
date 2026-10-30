@@ -86,6 +86,8 @@ docker build -t swarmind-harness .
 docker run --rm swarmind-harness
 # with LanceDB:
 docker build --build-arg EXTRAS=lancedb -t swarmind-harness:lancedb .
+# or with compose (non-root UID 1001, ./data mounted):
+docker compose build && docker compose run --rm swarmind
 ```
 
 > **Platform note:** the RuscaDB C-ABI ships as a per-platform artifact

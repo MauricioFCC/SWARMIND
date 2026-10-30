@@ -1,3 +1,30 @@
+## [11.58] - 2026-10-30
+
+### Removed
+- 63 artefactos `*.cover` (copias obsoletas de módulos) del árbol de trabajo.
+- `push.bat` (referenciaba `scripts/export_to_drive.py`, inexistente).
+- Dependencia `schedule` (0 imports en `harness/`).
+- `harness/tests/*_state.json` del control de versiones (estado local de tests;
+  ahora ignorados y con historial capado a 20 entradas).
+
+### Changed
+- 75 archivos normalizados a UTF-8 sin BOM (el BOM rompía `ast.parse` en
+  herramientas y provocaba que el gate ignorara archivos).
+- `conftest.py`: la suite usa el backend `memory` por defecto
+  (`SWARMIND_TEST_BACKEND` para forzar uno real); elimina fallos por lock
+  single-writer de RuscaDB en Windows y hace la suite hermética.
+- `docker-compose.yml` actualizado (sin `version:` obsoleto, Python 3.12,
+  `EXTRAS` alineado con el Dockerfile) y Dockerfile con usuario no-root 1001.
+- README/AGENTS/SETUP: torch como extra `[gpu]`, memoria RuscaDB por defecto,
+  resolución `RUSCADB_PATH`/`LANCEDB_PATH`, conteo real de tests (~7.3k).
+- `.gitignore`: `data/` (estado runtime) y state files de tests.
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`.
+- Suite local Windows: 7252 passed / 51 skipped / 1 failed por *drift* real de
+  la flota Ollama instalada (`test_declared_fleet_installed`, gate local_only).
+- Docker `python:3.12-slim` (core y `[test,lancedb]`): suites verdes.
+
 ## [11.57] - 2026-10-30
 
 ### Added

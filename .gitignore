@@ -181,3 +181,6 @@ harness/tests/test_universal_rules_state.json
 
 # Estado local de tests (no versionar)
 harness/tests/test_opencode_config_sync_state.json
+
+# Runtime local (memoria/estado del harness)
+data/

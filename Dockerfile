@@ -28,6 +28,11 @@ COPY . /app
 RUN python -m pip install --upgrade pip \
     && python -m pip install ".[${EXTRAS}]"
 
+# Usuario no-root (UID 1001) para ejecutar el harness y montar ./data.
+RUN useradd --create-home --uid 1001 harness \
+    && chown -R 1001:1001 /app
+USER 1001
+
 # Smoke de instalacion limpia (import, memory backend, CLI, degradacion RuscaDB)
 RUN python scripts/new_user_smoke.py
 
