@@ -3,7 +3,7 @@
 ### Removed
 - 63 artefactos `*.cover` (copias obsoletas de módulos) del árbol de trabajo.
 - `push.bat` (referenciaba `scripts/export_to_drive.py`, inexistente).
-- Dependencia `schedule` (0 imports en `harness/`).
+- ~~Dependencia `schedule`~~ (se conserva: `scheduler/lance.py` y `scripts/init.py` la importan de forma perezosa).
 - `harness/tests/*_state.json` del control de versiones (estado local de tests;
   ahora ignorados y con historial capado a 20 entradas).
 
