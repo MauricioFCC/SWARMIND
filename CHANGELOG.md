@@ -23,7 +23,9 @@
 - `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`.
 - Suite local Windows: 7252 passed / 51 skipped / 1 failed por *drift* real de
   la flota Ollama instalada (`test_declared_fleet_installed`, gate local_only).
-- Docker `python:3.12-slim` (core y `[test,lancedb]`): suites verdes.
+- Docker `python:3.12-slim`, clone del remoto: core **7138 passed / 0 failed**
+  (162 skipped) y `[test,lancedb]` **7155 passed / 0 failed** (145 skipped);
+  smoke 4/4 y 5/5.
 
 ## [11.57] - 2026-10-30
 
