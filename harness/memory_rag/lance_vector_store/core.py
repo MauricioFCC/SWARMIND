@@ -15,7 +15,6 @@ from __future__ import annotations
 import logging
 import os
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -26,7 +25,6 @@ import numpy as np
 # sigan afectando a __init__() y from_config().
 import harness.memory_rag.lance_vector_store as _lance_vector_store
 
-from ..lance_schemas import DEFAULT_COLLECTIONS
 from ..memory_config import MemoryBackend, MemoryConfig
 from .backends import _LanceDBBackendMixin
 from .constants import LANCEDB_ROOT
@@ -189,61 +187,6 @@ class LanceVectorStore(_LanceDBBackendMixin, _LifecycleMixin):
     # ------------------------------------------------------------------
     # Initialisation
     # ------------------------------------------------------------------
-
-    def _init_storage(self) -> None:
-        """Intenta abrir LanceDB; si no hay motor, cae al fallback in-memory."""
-        if self._backend == "memory":
-            # Backend memory = in-memory puro: no intentar LanceDB (evita
-            # depender de un lancedb mockeado/parcial en tests y CI).
-            self._init_memory_collections()
-            return
-        lancedb = self._try_import_lancedb()
-        if lancedb is not None:
-            try:
-                Path(self.db_path).mkdir(parents=True, exist_ok=True)
-                self._db = lancedb.connect(self.db_path)
-                self._lancedb_available = True
-                logger.info("LanceVectorStore connected to %s", self.db_path)
-                self._ensure_lancedb_collections()
-                return
-            except Exception as exc:
-                logger.warning("LanceDB connect failed: %s", exc)
-                if not self._allow_fallback:
-                    raise RuntimeError(
-                        f"LanceDB no pudo conectarse en {self.db_path}: {exc}\n"
-                        "Verifica que LanceDB este instalado y la ruta sea valida.\n"
-                        '  pip install "Swarmind-harness[lancedb]"\n'
-                        "  python harness/scripts/init.py"
-                    ) from exc
-                logger.warning(
-                    "Usando fallback in-memory (allow_fallback=True). "
-                    "NO RECOMENDADO para produccion."
-                )
-        elif not self._allow_fallback:
-            raise ImportError(
-                "LanceDB no esta instalado. Es OBLIGATORIO para el backend "
-                "'lancedb'.\n"
-                "  pip install lancedb   (o: pip install \"Swarmind-harness[lancedb]\")\n"
-                "  python harness/scripts/init.py\n"
-                "Alternativas: backend='memory' (tests) o RuscaDB (DLL nativa)."
-            )
-
-        self._init_memory_collections()
-
-    def _init_memory_collections(self) -> None:
-        """Inicializa el fallback in-memory con las colecciones por defecto."""
-        logger.warning(
-            "LanceVectorStore usando fallback in-memory (dict + numpy). "
-            "Rendimiento limitado y sin persistencia."
-        )
-        self._lancedb_available = False
-        self._db = None
-        for name, info in DEFAULT_COLLECTIONS.items():
-            self._mem_collections[name] = _Collection(
-                name=name,
-                schema_def=info["schema"],
-                last_updated=datetime.now(UTC).isoformat(),
-            )
 
     # ------------------------------------------------------------------
     # Collection management
