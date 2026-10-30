@@ -74,25 +74,37 @@ class _LanceDBBackendMixin:
     ) -> list[str]:
         """Inserta vectores en una tabla LanceDB (helper de ``insert``)."""
         tbl = self._db.open_table(collection)  # type: ignore[union-attr]
-        rows: list[dict[str, Any]] = []
+        field_names = {field.name for field in tbl.schema}
         ids: list[str] = []
+        rows: list[dict[str, Any]] = []
         for i in range(vectors.shape[0]):
             rid = str(uuid.uuid4())
             ids.append(rid)
-            # Build row with serialized metadata fields for schema compatibility
-            row: dict[str, Any] = {
-                "id": rid,
-                "vector": vectors[i].tolist(),
-                "metadata": json.dumps(metadata[i]),
-                "created_at": now,
-            }
-            for k, v in metadata[i].items():
-                if k == "metadata":
-                    continue
-                row[k] = serialize_for_schema(v)
-            rows.append(row)
+            rows.append(self._lancedb_row(rid, vectors[i], metadata[i], now, field_names))
         tbl.add(rows)
         return ids
+
+    @staticmethod
+    def _lancedb_row(
+        rid: str,
+        vector: np.ndarray,
+        meta: dict[str, Any],
+        now: str,
+        field_names: set[str],
+    ) -> dict[str, Any]:
+        """Construye una fila valida para el schema LanceDB de la tabla."""
+        row: dict[str, Any] = {
+            "id": rid,
+            "vector": vector.tolist(),
+            "metadata": json.dumps(meta),
+            "created_at": now,
+        }
+        for key, value in meta.items():
+            # Solo columnas declaradas: el resto vive serializado en `metadata`
+            # (LanceDB rechaza campos fuera del schema).
+            if key != "metadata" and key in field_names:
+                row[key] = serialize_for_schema(value)
+        return row
 
     @staticmethod
     def _is_safe_filter_value(value: Any) -> bool:
@@ -233,31 +245,6 @@ class _LanceDBBackendMixin:
                 )
 
         return len(existing)
-
-    def _delete_lancedb(self, collection: str, ids: list[str]) -> int:
-        """Elimina filas por id en LanceDB (helper de ``delete``).
-
-        Args:
-            collection: Tabla destino.
-            ids: Ids a eliminar.
-
-        Returns:
-            Numero de ids solicitados (LanceDB no reporta el conteo exacto).
-
-        Raises:
-            CollectionNotFoundError: Si la tabla no existe.
-        """
-        try:
-            tbl = self._db.open_table(collection)
-        except Exception as exc:
-            raise CollectionNotFoundError(
-                f"Collection '{collection}' not found in LanceDB: {exc}"
-            ) from exc
-        quoted = ", ".join(
-            "'" + str(rid).replace("'", "''") + "'" for rid in ids
-        )
-        tbl.delete(f"id IN ({quoted})")
-        return len(ids)
 
     def _search_lancedb(
         self,

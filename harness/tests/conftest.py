@@ -5,6 +5,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -232,6 +233,16 @@ def mock_lancedb():
     table.count_rows.return_value = 0
     table.search.return_value.limit.return_value.to_list.return_value = []
     table.to_arrow.return_value.num_rows = 0
+    # Schema minimo realista: las columnas por defecto + las que usan los tests
+    # al insertar metadata plana (evita que `_insert_lancedb` las descarte).
+    table.schema = [
+        SimpleNamespace(name=name)
+        for name in (
+            "id", "vector", "metadata", "created_at", "text", "title",
+            "domain", "tags", "chunk", "agent", "content", "source",
+            "session_id", "trust_tier",
+        )
+    ]
 
     table_list_mock = MagicMock(name="table_list")
     table_list_mock.tables = list(DEFAULT_COLLECTIONS.keys())
