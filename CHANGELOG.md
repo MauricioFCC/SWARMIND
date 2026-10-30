@@ -1,3 +1,30 @@
+## [11.63] - 2026-10-30
+
+### Added
+- `scripts/check_ruff_preview.py`: allowlist explícita de 10 reglas preview en
+  cero (FURB101/103/110/140/142/152/154, RUF021/031/056) + step CI. Se
+  descartó `preview = true` global tras medir que en Ruff 0.16.6 habilita 138
+  reglas preview de categorías no seleccionadas.
+- `scripts/mutation_scope.py`: mutación scoped por `git diff` con umbrales por
+  paquete (kernel 90 %, domain 75 %, memory_rag 70 %, resto 40 %), mapeo
+  fuente→tests por nombre/import, config mutmut 3.x generada y `--check-stats`.
+  Job CI `mutation` ahora usa el diff del PR; Windows devuelve exit 2 (WSL).
+- `scripts/audit_pep649.py` + `scripts/pep649_baseline.json`: auditoría
+  PEP 649/749 con baseline justificado (3 `inspect.signature` en scripts) y
+  gate en CI; `test_pep649_annotations.py` verifica `get_type_hints` y
+  `dataclasses.fields` del kernel/domain.
+
+### Changed
+- Specs `tdd-mutation-gate.md` (implemented con AC-MU1..MU7) y
+  `harness-structure-algorithms.md` (AL-07/AL-08/AR-05) actualizadas.
+- `python-314-practices.md`: PY-05/PY-06/PY-07 marcados hechos.
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`,
+  `check_complexity --gate=0`, `check_ruff_ratchet --gate=0`,
+  `check_ruff_preview --gate=0`, `audit_pep649 --gate=0`,
+  `mypy strict kernel+domain` OK, suite 7389 passed / 0 failed.
+
 ## [11.62] - 2026-10-30
 
 ### Added

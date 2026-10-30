@@ -5,6 +5,18 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-30h)
+
+### Estado 2026-10-30 (Ciclo 11.63 — cierre P2: preview, mutación scoped, PEP 649)
+- Allowlist de reglas Ruff preview (10 códigos) con gate propio; `preview=true`
+  global descartado por activar 138 reglas ajenas en Ruff 0.16.6.
+- Mutación scoped por `git diff` con umbrales por paquete (kernel 90 %,
+  domain 75 %, memory_rag 70 %) y job CI adaptado.
+- Auditoría PEP 649 con baseline justificado (3 usos de `inspect.signature`) y
+  tests de contrato de anotaciones del kernel/domain.
+- Pendientes: mutación nocturna completa y endurecer la allowlist preview
+  (mover códigos del ratchet cuando lleguen a cero).
+
 ## Estado Actual (2026-10-30g)
 
 ### Estado 2026-10-30 (Ciclo 11.62 — ola P1/P2 + algoritmos O(n²)→O(n))

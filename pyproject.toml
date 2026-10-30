@@ -130,6 +130,18 @@ target-version = "py312"
 ignore = ["EXE001"]
 
 # ---------------------------------------------------------------------------
+# Preview: allowlist EXPLICITA por codigo en un gate dedicado.
+# NO se activa `preview = true` global: en Ruff 0.16.6 habilita reglas preview
+# de categorias no seleccionadas (medido: 138 hallazgos nuevos en UP/SIM/NPY/
+# C4/PLW/D301/PT). En su lugar:
+#   - `scripts/check_ruff_preview.py` corre `--preview --select <allowlist>` y
+#     falla si alguna de las reglas allowlisted vuelve a tener hallazgos.
+#   - `scripts/check_ruff_ratchet.py` vigila el resto (PERF/FURB/RUF) y solo
+#     falla si un conteo SUBE.
+# Al llegar a cero un codigo, se anade a ALLOWLIST y queda bloqueado.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # Per-file ignores justificados (patrones intencionales, NO deuda):
 #   - E402 en scripts/run.py/tests: sys.path.insert(1, ROOT) DEBE preceder a
 #     los imports de harness.* para ejecucion standalone desde cualquier CWD

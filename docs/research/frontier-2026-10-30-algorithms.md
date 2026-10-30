@@ -101,9 +101,16 @@ Fuentes (leídas en sesión):
   [README](https://raw.githubusercontent.com/boxed/mutmut/master/README.rst) ·
   [docs](https://mutmut.readthedocs.io/en/latest/)
 
-## 6. Pendiente de la frontera (P2)
+## 6. Estado de los gates (actualizado)
 
-- Activar `preview = true` en lint con allowlist por código y `ruff` pinneado;
-  el ratchet ya bloquea incrementos (baseline: 1 272 hallazgos / 20 reglas).
-- Escalar mutación por módulo en 3 jobs (kernel 90 %, domain 75 %).
-- Evaluar Aho-Corasick cuando `AUDIT_RULES` o el corpus de prompts crezcan.
+- **Allowlist de preview**: `preview = true` global se descartó tras medirlo:
+  en Ruff 0.16.6 habilita 138 reglas preview de categorías no seleccionadas.
+  La allowlist vive en `scripts/check_ruff_preview.py` (10 códigos en cero) y
+  el resto se vigila con el ratchet (baseline 1 272 hallazgos / 20 reglas).
+- **Mutación scoped**: `scripts/mutation_scope.py` mapea `git diff` → fuentes →
+  tests → paquete, aplica umbrales (kernel 90 %, domain 75 %, memory_rag 70 %,
+  resto 40 %) y corre mutmut por paquete en POSIX (Windows → exit 2 con WSL).
+- **PEP 649**: `scripts/audit_pep649.py` + baseline con 3 `inspect.signature`
+  justificados; el kernel/domain no introspecciona anotaciones (test de
+  contrato con `get_type_hints` y `dataclasses.fields`).
+- Pendiente P2: mutación nocturna completa, Aho-Corasick si crece el corpus.

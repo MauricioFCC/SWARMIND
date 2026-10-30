@@ -35,7 +35,10 @@ Tres ejes, en orden de impacto:
 | AL-04 | `factor_dsl._ts_rank` usa Fenwick sobre valores comprimidos | Ventana móvil O(T·W) → O(T log m) con resultado idéntico (midrank) | `_Fenwick` + `TestTsRankEquivalence` + benchmark `alpha.ts_rank` |
 | AL-05 | `AlphaZoo` mantiene un set de fórmulas para dedup exacto O(1) antes del loop de similitud | El caso frecuente (duplicado exacto) deja de costar O(n·AST) | `AlphaZoo._formulas` + `TestFormulaIndex` |
 | AL-06 | Ratchet de Ruff sobre preview (conteo por regla vs baseline) | Ruff no tiene baseline nativo (issue #1149); solo falla si un conteo sube | `scripts/check_ruff_ratchet.py` + `ruff_baseline.json` |
+| AL-07 | Allowlist de reglas preview en gate dedicado (no `preview=true` global) | En Ruff 0.16.6 `preview=true` global habilita 138 reglas ajenas (medido); la allowlist fija 10 códigos en cero | `scripts/check_ruff_preview.py` + tests |
+| AL-08 | Mutación scoped por `git diff` con umbrales por paquete | Pagar mutación solo por lo que cambió y exigir más al core (kernel 90 %) | `scripts/mutation_scope.py` + job `mutation` |
 | AR-04 | `RequestTracker` con `trace_id` + timeout tipado + reloj inyectable | Correlación req/resp determinista, sin `sleep` en tests | `harness/orchestrator/request_tracker.py` |
+| AR-05 | Auditoría PEP 649 con baseline justificado (anotaciones en runtime) | PEP 649 difiere la evaluación; un uso nuevo sin justificar puede romper el contrato de tipos | `scripts/audit_pep649.py` + `pep649_baseline.json` |
 | AGR-01 | Ninguna función nueva supera 30 líneas (F5 sin tocar el ratchet) | La deuda no crece; se extraen helpers en lugar de ampliar el baseline | F5 929 → 929 |
 
 ## 3. Criterios de aceptación
@@ -62,24 +65,22 @@ Tres ejes, en orden de impacto:
 | mypy strict incremental (kernel + domain) | **Hecho** | `[[tool.mypy.overrides]]` + CI bloqueante; 7 archivos strict-clean |
 | mypy `-n auto` en CI | **Hecho** | job `type-check` (global informativo) |
 | Ruff ratchet (preview PERF/FURB/RUF) | **Hecho** | `scripts/check_ruff_ratchet.py` + job `ruff-ratchet`; 54 fixes seguros aplicados |
+| Allowlist de reglas preview | **Hecho** | `scripts/check_ruff_preview.py` (10 códigos en cero) + step CI |
+| Mutación scoped por diff | **Hecho** | `scripts/mutation_scope.py` + job `mutation` |
+| Auditoría PEP 649 | **Hecho** | `scripts/audit_pep649.py` + 3 usos justificados + step CI |
 | Escala 8N en el gate | **Hecho** | `SCALES=(10k,20k,40k,80k)`; 8 benchmarks, ~48 s local |
-| mutación scoped por PR | **Parcial** | T2 muta 9 módulos fijos; el scoping por `git diff` sigue en P2 |
 | seed determinista en runs | **Hecho (kernel)** | `seq` canónica + FIFO + `replay()` |
 
 ## 5. Siguientes pasos (P2)
 
-- **P1 — AC-KN5**: migrar `run_commands` y `agent_dispatcher` a `KernelBus`
-  con `trace_id` correlacionado y timeouts tipados (contrato externo intacto).
-- **P1 — mypy strict incremental**: empezar por `harness/kernel/` y
-  `harness/domain/` con `[[tool.mypy.overrides]]`; CI con `-n auto`.
-- **P2 — ruff preview con allowlist**: activar `preview=true` solo en lint y
-  bajar RUF069/PERF401 por módulo (el ratchet ya bloquea incrementos).
-- **P2 — mutación scoped por PR**: generar `pytest_add_cli_args_test_selection`
-  desde `git diff` y separar umbrales por paquete (kernel 90 %, domain 75 %).
+- **P2 — endurecer preview**: mover a la allowlist los códigos del ratchet que
+  lleguen a cero (FURB113/118, PERF401, RUF052/069/100).
+- **P2 — mutación nocturna completa**: correr `mutation_scope.py --run` sobre
+  todos los paquetes (no solo el diff) en schedule, con reporte por paquete.
 - **P2 — Aho-Corasick**: evaluar cuando `AUDIT_RULES`/corpus de prompts crezcan
   (hoy k pequeño: la regla de decisión dice no refactorizar).
 
-## 5. Referencias
+## 6. Referencias
 
 - [NautilusTrader architecture](https://nautilustrader.io/docs/latest/concepts/architecture/)
 - [iai-callgrind / gungraun regressions](https://gungraun.github.io/gungraun/latest/html/regressions.html)

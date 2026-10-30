@@ -336,6 +336,9 @@ jobs:
       - name: Ratchet (solo regresiones)
         run: uv run python scripts/check_ruff_ratchet.py --gate
 
+      - name: Allowlist de reglas preview (debe estar en cero)
+        run: uv run python scripts/check_ruff_preview.py --gate
+
   # ---------------------------------------------------------------------------
   # T1.6: Compile check — ~5s
   # Verifica que todos los archivos .py compilan sin errores de sintaxis
@@ -418,6 +421,11 @@ jobs:
         # fuerza sys.path al repo para no medir una copia global de harness.
         # F7 (ratchet) bloquea si la deuda F3/F5 crece vs baseline.
         run: uv run python scripts/check_architecture.py --gate --ratchet
+
+      - name: Auditoría PEP 649 (anotaciones en runtime)
+        # Falla si aparece get_type_hints/__annotations__/signature nuevo sin
+        # registrar y justificar en scripts/pep649_baseline.json.
+        run: uv run python scripts/audit_pep649.py --gate
 
   # ---------------------------------------------------------------------------
   # T1.8: Fresh install — ~60s
@@ -513,6 +521,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+        with:
+          # El scoping por diff necesita el commit base del PR (no shallow).
+          fetch-depth: 0
 
       - uses: actions/setup-python@v7
         with:
@@ -534,92 +545,14 @@ jobs:
           uv sync --group test
           uv pip install mutmut
 
-      - name: Configurar mutmut (setup.cfg temporal)
-        # Subconjunto estrategico de logica core pura con tests dedicados.
-        # NO incluye pbt_stage.py (hypothesis en subprocess, lento).
-        # El archivo NO se versiona (cleanup al final).
+      - name: Mutación scoped por diff (umbrales por paquete)
+        # Selecciona SOLO los archivos mutables del PR y los agrupa por paquete
+        # (kernel 90 %, domain 75 %, memory_rag 70 %, resto 40 %). Genera la
+        # config de mutmut 3.x, corre y evalua con `mutmut-cicd-stats.json`.
         run: |
-          cat > setup.cfg <<'MUTMUT_CFG'
-          [mutmut]
-          source_paths =
-              harness/
-          only_mutate =
-              harness/memory_rag/cache_geometry.py
-              harness/memory_rag/compaction.py
-              harness/memory_rag/reversible_compaction.py
-              harness/memory_rag/shaped_cache.py
-              harness/memory_rag/cache_threshold.py
-              harness/memory_rag/binary_tuning.py
-              harness/memory_rag/write_actor.py
-              harness/memory_rag/memory_heat.py
-              harness/memory_rag/memory_reconciliation.py
-          pytest_add_cli_args_test_selection =
-              harness/tests/test_cache_geometry.py
-              harness/tests/test_compaction.py
-              harness/tests/test_reversible_compaction.py
-              harness/tests/test_semantic_cache_extended.py
-              harness/tests/test_cache_threshold.py
-              harness/tests/test_binary_search.py
-              harness/tests/test_write_actor.py
-              harness/tests/test_memory_heat.py
-              harness/tests/test_memory_reconciliation.py
-              harness/tests/test_pbt_core.py
-          MUTMUT_CFG
-          echo "setup.cfg temporal creado (no se versiona)"
-
-      - name: Ejecutar mutation testing
-        # --max-children 2: runner hosted standard = 2 vCPU
-        run: uv run mutmut run --max-children 2
-
-      - name: Exportar stats CI/CD
-        # Genera mutants/mutmut-cicd-stats.json
-        run: uv run mutmut export-cicd-stats || true
-
-      - name: Mostrar mutantes no eliminados
-        run: uv run mutmut results || true
-
-      - name: Enforce mutation score (>= 70%)
-        # Gate equivalente a --fail-under=70 (no existe en mutmut 3.x)
-        run: |
-          uv run python - <<'PY'
-          """Gate de mutation score (doctrina TST, >= 70%).
-
-          Lee mutants/mutmut-cicd-stats.json y falla si score < 70%
-          o si hay mutantes sin tests asociados (no_tests > 0).
-          """
-          import json
-          import pathlib
-          import sys
-
-          stats_path = pathlib.Path("mutants/mutmut-cicd-stats.json")
-          if not stats_path.exists():
-              print("WARN: mutmut-cicd-stats.json no encontrado, saltando gate")
-              sys.exit(0)
-
-          stats = json.loads(stats_path.read_text(encoding="utf-8"))
-          denominator = stats["total"] - stats["no_tests"] - stats["skipped"]
-          score = stats["killed"] / denominator if denominator > 0 else 0.0
-          print(f"mutation score: {score:.1%} ({stats['killed']}/{denominator})")
-          print(
-              f"killed={stats['killed']} survived={stats['survived']} "
-              f"no_tests={stats['no_tests']} timeout={stats['timeout']} "
-              f"suspicious={stats['suspicious']} skipped={stats['skipped']} "
-              f"total={stats['total']}"
-          )
-          # ALERT-ONLY: reporta sin bloquear (el job mutation NO es required).
-          if stats["no_tests"] > 0:
-              print(
-                  f"::warning::{stats['no_tests']} mutantes sin tests asociados "
-                  "(ajusta pytest_add_cli_args_test_selection) [alert-only]"
-              )
-          if score < 0.70:
-              print(
-                  f"::warning::mutation score {score:.1%} < 70% (gate TST) "
-                  "[alert-only, no bloquea]"
-              )
-          else:
-              print(f"PASS: mutation score {score:.1%} >= 70%")
-          PY
+          uv run python scripts/mutation_scope.py \
+            --base "${{ github.event.pull_request.base.sha }}" \
+            --run --max-children 2
 
       - name: Subir stats de mutation
         if: always()

@@ -92,8 +92,8 @@ class TestBaseline:
         results = {"bench": {"expected": "linear", "ratio": 2.05, "threshold": 2.6, "ok": True}}
         gate.write_baseline(results)
         loaded = gate.load_baseline()
-        assert loaded["bench"]["ratio"] == 2.05
-        assert loaded["bench"]["threshold"] == 2.6
+        assert loaded["bench"]["ratio"] == pytest.approx(2.05)
+        assert loaded["bench"]["threshold"] == pytest.approx(2.6)
 
     def test_load_missing_baseline_is_empty(self, tmp_path, monkeypatch):
         """Baseline ausente no rompe el gate (solo umbral absoluto)."""
