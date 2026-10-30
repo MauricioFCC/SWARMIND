@@ -5,6 +5,16 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-30e)
+
+### Estado 2026-10-30 (Ciclo 11.60 — Validación E2E + prácticas Python 3.14)
+- Flujo end-to-end verificado (smoke, setup, skills, gates, suite).
+- Memoria central: cache 2250 MB -> 110 MB (TTL + reclaim de fragments).
+- asyncio 3.16-safe + scopes pytest-asyncio + perfiles hypothesis ci/dev.
+- Specs: python-314-practices y tdd-mutation-gate.
+- Pendientes: mypy strict incremental (P1), ruff preview con ratchet (P2),
+  auditoría PEP 649 de get_type_hints, mutación nocturna ampliada.
+
 ## Estado Actual (2026-10-30d)
 
 ### Estado 2026-10-30 (Ciclo 11.57 — Onboarding validado en Docker)

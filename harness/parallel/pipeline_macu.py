@@ -16,6 +16,7 @@ Referencia: arXiv:2606.01533 — Multi-Agent Computer Use (MACU)
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 import time
 import uuid
@@ -321,7 +322,7 @@ class PipelineMACU:
             async def _execute_one(task: PipelineTask) -> tuple:
                 await self.mark_running(task.task_id)
                 try:
-                    result: Any = await dispatch_fn(task) if asyncio.iscoroutinefunction(dispatch_fn) else dispatch_fn(task)
+                    result: Any = await dispatch_fn(task) if inspect.iscoroutinefunction(dispatch_fn) else dispatch_fn(task)
                     new_tasks: list[PipelineTask] = await self.mark_completed(task.task_id, result)
                     return task.task_id, result, new_tasks
                 except Exception as exc:  # noqa: BLE001

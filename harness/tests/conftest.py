@@ -38,6 +38,24 @@ _select_test_backend()
 
 
 # ---------------------------------------------------------------------------
+# Perfiles de hypothesis (PBT): el perfil "ci" evita flakes y crecimiento
+# del directorio .hypothesis/ en CI (derandomize, sin database, sin deadline).
+# ---------------------------------------------------------------------------
+import hypothesis
+
+hypothesis.settings.register_profile(
+    "ci",
+    database=None,
+    deadline=None,
+    derandomize=True,
+    print_blob=True,
+    suppress_health_check=[hypothesis.HealthCheck.too_slow],
+)
+hypothesis.settings.register_profile("dev", deadline=None)
+hypothesis.settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "dev"))
+
+
+# ---------------------------------------------------------------------------
 # Colecciones por defecto (compatibles con LanceVectorStore.DEFAULT_COLLECTIONS)
 # para que los tests existentes sigan funcionando sin cambios.
 # ---------------------------------------------------------------------------

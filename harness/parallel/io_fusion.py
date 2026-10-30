@@ -17,6 +17,7 @@ Referencia: arXiv:2606.01533 (MACU) — async I/O fusion.
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 import threading
 import time
@@ -161,7 +162,7 @@ class BatchAccumulator[T]:
 
         start: float = time.perf_counter()
         try:
-            if asyncio.iscoroutinefunction(self._flush_fn):
+            if inspect.iscoroutinefunction(self._flush_fn):
                 await self._flush_fn(batch)
             else:
                 self._flush_fn(batch)

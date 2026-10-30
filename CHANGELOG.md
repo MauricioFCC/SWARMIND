@@ -1,3 +1,32 @@
+## [11.60] - 2026-10-30
+
+### Added
+- Specs nuevas: `docs/specs/python-314-practices.md` (prácticas 3.13/3.14
+  verificadas: free-threaded, PEP 649/749, deprecaciones asyncio 3.16, mypy 2.0
+  paralelo, ruff preview con ratchet, hypothesis perfiles) y
+  `docs/specs/tdd-mutation-gate.md` (política de mutación: scope por PR,
+  umbrales core 70 %, Windows vía WSL, lección adversarial RUF100).
+- Lección adversarial documentada: `ruff --select RUF100 --fix` es destructivo
+  (evalúa "unused" contra el rule-set activo); 437 noqa eliminados expusieron
+  452 violaciones → revertido con git y re-aplicados solo los fixes válidos.
+- Limpieza de la memoria central: barrido TTL del cache semántico (76 entradas
+  expiradas) y reclaim de 2 141 MB de fragments huérfanos (colección recreada
+  con 0 filas): 2 250 MB → 110 MB; `memory_parity` pasa de 2 250 MB a 110 MB
+  (quedan 13 colecciones de valor vacías: acción de ingest, no de limpieza).
+
+### Changed
+- `asyncio.iscoroutinefunction` → `inspect.iscoroutinefunction` en
+  `harness/parallel/` (removal 3.16).
+- `pyproject.toml`: `asyncio_default_fixture_loop_scope/test_loop_scope =
+  "function"` (apaga PytestDeprecationWarning y blinda el cambio de default).
+- `conftest.py`: perfiles de hypothesis (`ci` con derandomize/database=None/
+  deadline=None; `dev`) seleccionables con `HYPOTHESIS_PROFILE`.
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`,
+  `validate_skills --strict` OK, `new_user_smoke` 4/4,
+  `verify_swarmind_setup` SETUP OK, suite local 7252 passed / 51 skipped.
+
 ## [11.59] - 2026-10-30
 
 ### Added
