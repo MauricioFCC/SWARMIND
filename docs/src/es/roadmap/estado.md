@@ -5,6 +5,19 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-30f)
+
+### Estado 2026-10-30 (Ciclo 11.61 — kernel + gate de complejidad + algoritmos)
+- Kernel event-driven implementado (`harness/kernel/`) y adoptado por el
+  orchestrator vía `KernelBus` (single-loop FIFO, backpressure tipado, replay).
+- Gate de complejidad N/2N/4N con baseline portable (`check_complexity.py`);
+  job CI bloqueante. 7 benchmarks medidos ≈2.0 (lineales).
+- Algoritmos: índice invertido tool→server en MCPManager y dedupe O(1) en
+  servers_for_task; hotspot O(n·m) eliminado.
+- Arquitectura: contrato F8 `kernel-agnostico` + contratos por paquete.
+- Pendientes: AC-KN5 (run_commands/agent_dispatcher al KernelBus), mypy strict
+  incremental (P1), ruff preview con ratchet (P2), escala 8N en el gate (P2).
+
 ## Estado Actual (2026-10-30e)
 
 ### Estado 2026-10-30 (Ciclo 11.60 — Validación E2E + prácticas Python 3.14)

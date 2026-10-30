@@ -158,6 +158,10 @@ class MCPManager:
         self._servers: dict[str, MCPServerConfig] = {}
         self._clients: dict[str, MCPClient] = {}
         self._tool_index: dict[str, MCPTool] = {}  # tool_name -> MCPTool
+        # Indice invertido tool -> server (solo enabled). Se construye de forma
+        # perezosa y se invalida al registrar/habilitar/deshabilitar/eliminar
+        # servidores: find_server_for_tool pasa de O(total_tools) a O(1).
+        self._tool_server_index: dict[str, str] | None = None
         self._index_ts: float = 0.0
         self._cache_ttl: float = _DEFAULT_CACHE_TTL
         self._circuit_threshold: int = max(1, int(circuit_threshold))
@@ -213,6 +217,7 @@ class MCPManager:
             args=args or [],
             env=env or {},
         )
+        self._tool_server_index = None
         target = f"command={command!r}" if transport == "stdio" else f"url={url}"
         logger.info(
             "Registered MCP server '%s' (%s: %s, enabled=%s)",
@@ -234,6 +239,7 @@ class MCPManager:
         """Enable a server (will connect on next ``connect_all``)."""
         if name in self._servers:
             self._servers[name].enabled = True
+            self._tool_server_index = None
             logger.info("Enabled MCP server '%s'", name)
 
     def disable_server(self, name: str) -> None:
@@ -384,11 +390,21 @@ class MCPManager:
         return self._tool_index.get(name)
 
     def find_server_for_tool(self, tool_name: str) -> str | None:
-        """Find which server provides a given tool."""
-        for name, config in self._servers.items():
-            if config.enabled and tool_name in config.tools:
-                return name
-        return None
+        """Find which server provides a given tool.
+
+        Complejidad O(1) amortizada: usa el indice invertido
+        ``tool -> server`` (solo servidores habilitados), reconstruido solo
+        cuando cambia el registro de servidores.
+        """
+        if self._tool_server_index is None:
+            index: dict[str, str] = {}
+            for name, config in self._servers.items():
+                if not config.enabled:
+                    continue
+                for tool in config.tools:
+                    index.setdefault(tool, name)
+            self._tool_server_index = index
+        return self._tool_server_index.get(tool_name)
 
     # ------------------------------------------------------------------
     # Tool execution
@@ -490,6 +506,7 @@ class MCPManager:
     def _invalidate_index(self) -> None:
         """Force the tool index to be rebuilt on next access."""
         self._tool_index.clear()
+        self._tool_server_index = None
         self._index_ts = 0.0
 
     def set_cache_ttl(self, ttl_seconds: float) -> None:

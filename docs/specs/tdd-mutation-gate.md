@@ -1,6 +1,6 @@
 # Spec — TDD adversarial con mutantes (gate por módulo)
 
-> Estado: accepted — Dueño: harness (CI T2 + scripts) — Frontera: 2026-10-30.
+> Estado: **accepted** (gate T2 activo en CI; Windows delega a WSL/Docker) — Dueño: harness (CI T2 + scripts) — Frontera: 2026-10-30.
 > Base: mutmut 3.8.1 (oct-2026), Cosmic Ray/mutatest evaluados, Stryker `break`
 > como referencia de umbral; T2 ya corre mutmut en CI (4 módulos).
 
@@ -31,7 +31,7 @@
 | Crit | Requisito |
 |---|---|
 | AC-MU1 | `mutmut run` sobre los módulos del PR en CI T2: parseo de `mutmut results --all true` y falla si score < umbral del módulo (core 70 %). |
-| AC-MU2 | Nocturna: suite completa de mutación sobre `harness/memory_rag/{cache_geometry,compaction,reversible_compaction,shaped_cache}` (ya configurado) + nuevos módulos de memoria gobernada (cache_threshold, binary_tuning, write_actor, memory_heat, memory_reconciliation). |
+| AC-MU2 | Nocturna: suite completa de mutación sobre `harness/memory_rag/{cache_geometry,compaction,reversible_compaction,shaped_cache,cache_threshold,binary_tuning,write_actor,memory_heat,memory_reconciliation}` (ya configurado en CI T2: 9 módulos + 10 archivos de test). |
 | AC-MU3 | Todo mutante *survivor* en core se justifica como mutante equivalente en el PR (o se mata). |
 | AC-MU4 | La suite nunca se parchea para "pintar verde": los asserts débiles (sin oráculo) se endurecen, no se eliminan. |
 | AC-MU5 | En Windows local, mutación solo vía WSL/Docker (documentado en este spec). |

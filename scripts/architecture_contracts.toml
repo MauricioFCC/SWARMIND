@@ -31,3 +31,11 @@ forbidden = [
     "harness.run_commands",
 ]
 allowed = []
+
+# El kernel es el sustrato determinista: agnostico del dominio. No puede
+# importar NADA de harness (solo stdlib); la composicion concreta vive en
+# harness/orchestrator/agent_bus/kernel_bus.py (adaptador).
+[[contracts]]
+name = "kernel-agnostico"
+module = "harness.kernel"
+allowed = ["harness.kernel"]

@@ -145,12 +145,14 @@ def servers_for_task(task: str) -> tuple[str, ...]:
         return ()
     lowered = task.strip().lower()
     known = set(catalog_servers())
-    selected: list[str] = []
+    # Dict ordenado como "ordered set": dedupe O(1) preservando el orden de
+    # aparicion del catalogo (antes: `name not in selected` era O(n²)).
+    selected: dict[str, None] = {}
     for keywords, servers in TASK_SERVER_KEYWORDS:
         if any(k in lowered for k in keywords):
             for name in servers:
-                if name in known and name not in selected:
-                    selected.append(name)
+                if name in known:
+                    selected[name] = None
     return tuple(selected)
 
 

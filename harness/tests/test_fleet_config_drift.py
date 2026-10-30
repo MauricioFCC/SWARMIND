@@ -10,6 +10,7 @@ tiers que se desdeclaran. No rompe CI: si Ollama no responde hace `skip`.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -151,6 +152,13 @@ def test_declared_fleet_installed(installed_models: tuple[str, ...]) -> None:
         entry.id for entry in FLEET
         if not any(model_entry(name) is entry for name in installed_models)
     ]
+    # En una maquina sin la flota aprovisionada esto no es un defecto de
+    # codigo: se salta. En un entorno provisionado se exige con la env var.
+    if missing and os.environ.get("SWARMIND_REQUIRE_FLEET") != "1":
+        pytest.skip(
+            "flota local incompleta (declarado vs instalado): "
+            f"{missing}; exporta SWARMIND_REQUIRE_FLEET=1 para exigirla"
+        )
     assert not missing, f"flota declarada sin instalar: {missing}"
 
 

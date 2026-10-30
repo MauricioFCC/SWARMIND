@@ -438,6 +438,38 @@ class TestFindServerForTool:
         manager.register_server("srv", "http://localhost:3100", tools=["tool"], enabled=False)
         assert manager.find_server_for_tool("tool") is None
 
+    def test_reverse_index_is_reused(self, manager: MCPManager) -> None:
+        """El indice invertido se construye una vez (O(1) por lookup)."""
+        manager.register_server("srv", "http://localhost:3100", tools=["a", "b"], enabled=True)
+        assert manager.find_server_for_tool("a") == "srv"
+        first = manager._tool_server_index
+        assert first is not None
+        manager.find_server_for_tool("b")
+        assert manager._tool_server_index is first
+
+    def test_reverse_index_invalidated_on_register(self, manager: MCPManager) -> None:
+        """Registrar un servidor nuevo invalida el indice (no sirve datos viejos)."""
+        manager.register_server("srv1", "http://localhost:3100", tools=["a"], enabled=True)
+        assert manager.find_server_for_tool("a") == "srv1"
+        manager.register_server("srv2", "http://localhost:3200", tools=["c"], enabled=True)
+        assert manager.find_server_for_tool("c") == "srv2"
+
+    def test_reverse_index_invalidated_on_enable_and_disable(self, manager: MCPManager) -> None:
+        """Habilitar/deshabilitar servidores refresca el indice."""
+        manager.register_server("srv", "http://localhost:3100", tools=["tool"], enabled=False)
+        assert manager.find_server_for_tool("tool") is None
+        manager.enable_server("srv")
+        assert manager.find_server_for_tool("tool") == "srv"
+        manager.disable_server("srv")
+        assert manager.find_server_for_tool("tool") is None
+
+    def test_reverse_index_invalidated_on_remove(self, manager: MCPManager) -> None:
+        """Eliminar un servidor invalida el indice."""
+        manager.register_server("srv", "http://localhost:3100", tools=["tool"], enabled=True)
+        assert manager.find_server_for_tool("tool") == "srv"
+        manager.remove_server("srv")
+        assert manager.find_server_for_tool("tool") is None
+
 
 # ===========================================================================
 # Tests: Tool execution

@@ -114,7 +114,10 @@ _HARNESS_INCLUDE = ["orchestrator", "memory_rag", "tools_sandbox", "model_router
                     "harness2",
                     # Puertos/Protocolos de dominio (ADR-0104): importados por
                     # memory_rag y hybrid_retriever; sin esto el global rompe.
-                    "domain"]
+                    "domain",
+                    # 11.61: sustrato determinista importado por
+                    # orchestrator/agent_bus/kernel_bus.py.
+                    "kernel"]
 # Archivos raiz del paquete harness (fix ADR-0042: incluye __init__.py y
 # __main__.py para que el global sea un paquete importable; security_policy.py
 # vive en harness/qa/ y se copia via el directorio qa; scheduler.py paso a ser

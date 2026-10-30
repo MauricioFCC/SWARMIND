@@ -263,6 +263,41 @@ jobs:
           --min-confidence 80
 
   # ---------------------------------------------------------------------------
+  # T1.7: Complejidad algorítmica — gate N/2N/4N
+  # Mide funciones puras (kernel, memoria gobernada, cache, BQ) y falla si el
+  # ratio por duplicación de escala supera el umbral de su clase (spec
+  # docs/specs/o-n-2-hotspots-gate.md). Sin tiempos absolutos: portable.
+  # ---------------------------------------------------------------------------
+  complexity:
+    name: complexity
+    runs-on: ubuntu-latest
+    needs: lint
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Cache uv
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Instalar dependencias
+        run: uv sync
+
+      - name: Gate de complejidad (N/2N/4N + ratchet de ratios)
+        run: uv run python scripts/check_complexity.py --gate
+
+  # ---------------------------------------------------------------------------
   # T1.6: Compile check — ~5s
   # Verifica que todos los archivos .py compilan sin errores de sintaxis
   # ---------------------------------------------------------------------------
@@ -474,11 +509,21 @@ jobs:
               harness/memory_rag/compaction.py
               harness/memory_rag/reversible_compaction.py
               harness/memory_rag/shaped_cache.py
+              harness/memory_rag/cache_threshold.py
+              harness/memory_rag/binary_tuning.py
+              harness/memory_rag/write_actor.py
+              harness/memory_rag/memory_heat.py
+              harness/memory_rag/memory_reconciliation.py
           pytest_add_cli_args_test_selection =
               harness/tests/test_cache_geometry.py
               harness/tests/test_compaction.py
               harness/tests/test_reversible_compaction.py
               harness/tests/test_semantic_cache_extended.py
+              harness/tests/test_cache_threshold.py
+              harness/tests/test_binary_search.py
+              harness/tests/test_write_actor.py
+              harness/tests/test_memory_heat.py
+              harness/tests/test_memory_reconciliation.py
               harness/tests/test_pbt_core.py
           MUTMUT_CFG
           echo "setup.cfg temporal creado (no se versiona)"

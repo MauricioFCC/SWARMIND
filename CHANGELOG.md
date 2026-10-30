@@ -1,3 +1,50 @@
+## [11.61] - 2026-10-30
+
+### Added
+- Kernel event-driven (`harness/kernel/`): envelope inmutable
+  (`MessageEnvelope`), buzón acotado con backpressure tipado
+  (`BoundedMailbox`), event log append-only (`EventLog`) y loop determinista
+  FIFO (`KernelLoop`, `fail_fast` configurable). 20 tests.
+- `KernelBus` en `harness/orchestrator/agent_bus/kernel_bus.py`: bus
+  determinista del orchestrator (subscribe/publish/drain/replay/stats) sobre el
+  kernel, con `trace_id` correlacionado y errores WHAT/WHY/WHERE. 11 tests.
+- Gate de complejidad `scripts/check_complexity.py` + baseline
+  `scripts/complexity_baseline.json`: mide 7 funciones puras a N/2N/4N con
+  mínimo de 7 muestras y mediana de 3 rondas (robusto a ruido), GC desactivado
+  durante la medición, y falla por umbral (2.8/3.2/5.0) o por regresión vs
+  baseline (1.35x con piso 0.9x del umbral). Medición 2026-10-30: 1.96–2.13
+  (todas lineales).
+- Job CI `complexity` (gate bloqueante) y mutación T2 ampliada a 9 módulos de
+  memoria gobernada (cache_threshold, binary_tuning, write_actor, memory_heat,
+  memory_reconciliation incluidos).
+- Spec nueva `docs/specs/harness-structure-algorithms.md` (estructura,
+  arquitectura y algoritmos del ciclo).
+
+### Changed
+- `MCPManager.find_server_for_tool`: índice invertido `tool → server`
+  (O(1) amortizado) con invalidación en register/enable/disable/remove/connect.
+- `servers_for_task`: deduplicación con dict ordenado (elimina el peor caso
+  O(n²) conservando el orden del catálogo).
+- Contratos F8 evaluados por prefijo de paquete (módulo + submodulos) y nuevo
+  contrato `kernel-agnostico`: `harness.kernel` solo importa `harness.kernel.*`.
+- Invariante de replay: el event log solo registra mensajes aceptados por el
+  buzón (la backpressure no consume `seq` ni deja eventos fantasma).
+- Refactor de tamaño: `EventLog.append`, `KernelLoop.submit/_dispatch` y
+  `KernelBus.publish` extraen helpers para no superar 30 líneas (F5 sin deuda).
+
+### Docs
+- Specs actualizadas a `implemented`: kernel (AC-KN1..KN4/KN6 cumplidos,
+  AC-KN5 parcial), gate O(n²) (AC-CG1..CG5 con evidencia) y mutación (AC-MU2).
+- `scripts/sync_opencode_global.py`: `kernel` añadido a `_HARNESS_INCLUDE` (el
+  contrato de drift del global lo detectaba como dependencia no propagada).
+- `test_declared_fleet_installed`: salta si la flota local está incompleta
+  (prerrequisito no aprovisionado, no defecto de código); en un entorno
+  provisionado se exige con `SWARMIND_REQUIRE_FLEET=1`.
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`,
+  `check_complexity --gate=0`, `validate_skills --strict` OK.
+
 ## [11.60] - 2026-10-30
 
 ### Added

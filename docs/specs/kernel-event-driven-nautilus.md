@@ -1,6 +1,8 @@
 # Spec — Kernel event-driven para SWARMIND (mensaje/actor + determinismo)
 
-> Estado: proposed — Dueño: harness/orchestrator — Frontera: 2026-10-30.
+> Estado: **implemented** (núcleo + bus del orchestrator) — Dueño: harness/orchestrator — Frontera: 2026-10-30.
+> Evidencia: `harness/kernel/` (envelope/mailbox/event_log/loop, 20 tests) y
+> `harness/orchestrator/agent_bus/kernel_bus.py` (KernelBus, 11 tests).
 > Scope: patrón de kernel que unifica mensajes/actores en la infraestructura de
 > SWARMIND (no el comando de un proyecto cliente). El análisis referencia
 > NautilusTrader / actix / ractor / kameo como instancias del patrón, pero el
@@ -71,15 +73,15 @@ el proceso. Para supervisión I/O se necesita `'unwind'` y para el kernel `'abor
 
 ## 3. Criterios de aceptación para SWARMIND
 
-| Crit | Requisito |
-|---|---|
-| AC-KN1 | SWARMIND `harness/orchestrator/**` formaliza su kernel actual en un solo loop determinista (cada agente como actor, mensajes como payload, cola FIFO por handler). |
-| AC-KN2 | Handlers no hace `spawn()` por mensaje (patrón fail-fast de kernel single-loop). Se acepta `spawn` solo si declara servicios I/O (con su propia cola). |
-| AC-KN3 | Cabecera de mensaje **inmutable**: SWARMIND conserva el rastro de cada envío/mensaje en el event store basado en la serie `swarmind::msg::{ts, seq, kind, trace_id, payload}`. |
-| AC-KN4 | `bounded-queue-mailbox`: la存fera de entrada tiene capacidad limitada con backpressure real. Nada se descarta silenciosamente; cuando se retrase y `halt_threshold` se cumpla, el system aborta. |
-| AC-KN5 | SWARMIND `run_commands` y `agent dispatcher` integran el modelo con *trace_id* correlacionado para req/resp y timeouts con clases de error What/Why/Where. |
-| AC-KN6 | Determinismo: runs aceptan `seed` y reproduccen el misma secuencia (azim no requiere madsim, solo el schema de task_queue). |
-| AC-KN7 | En CQE-style restructuración, el patrón se aplica desde SWARMIND a kernels de terceros (por ejemplo CQE Ola 4.5), pero con kernel SWARMIND como componente de supervisión; el patrón de kernel es el mismo. |
+| Crit | Requisito | Estado / evidencia |
+|---|---|---|
+| AC-KN1 | SWARMIND `harness/orchestrator/**` formaliza su kernel actual en un solo loop determinista (cada agente como actor, mensajes como payload, cola FIFO por handler). | **Cumplido**: `harness/kernel/loop.py` (`KernelLoop`) + `KernelBus` en `harness/orchestrator/agent_bus/kernel_bus.py` (subscribe/publish/drain). |
+| AC-KN2 | Handlers no hace `spawn()` por mensaje (patrón fail-fast de kernel single-loop). Se acepta `spawn` solo si declara servicios I/O (con su propia cola). | **Cumplido**: `KernelLoop.run()` consume el buzón en el hilo llamador; `test_kernel.py` prueba orden FIFO sin procesos. |
+| AC-KN3 | Cabecera de mensaje **inmutable**: SWARMIND conserva el rastro de cada envío/mensaje en el event store basado en la serie `swarmind::msg::{ts, seq, kind, trace_id, payload}`. | **Cumplido**: `MessageEnvelope` frozen + `MappingProxyType`, `EventLog.append/replay` (`seq/kind/payload/trace_id/source/created_at`). |
+| AC-KN4 | `bounded-queue-mailbox`: la esfera de entrada tiene capacidad limitada con backpressure real. Nada se descarta silenciosamente; cuando se retrase y `halt_threshold` se cumpla, el system aborta. | **Cumplido**: `BoundedMailbox.put` → `MailboxFullError` tipado; el mensaje rechazado no consume `seq` ni entra al log. |
+| AC-KN5 | SWARMIND `run_commands` y `agent dispatcher` integran el modelo con *trace_id* correlacionado para req/resp y timeouts con clases de error What/Why/Where. | **Parcial**: `KernelBus.publish(trace_id=...)` propaga correlación; falta migrar `run_commands`/`agent_dispatcher` al bus (P1). |
+| AC-KN6 | Determinismo: runs aceptan `seed` y reproduccen el misma secuencia (azim no requiere madsim, solo el schema de task_queue). | **Cumplido para el kernel**: secuencia canónica = `seq` monotónica + FIFO; `replay()` reconstruye el orden exacto. |
+| AC-KN7 | En CQE-style restructuración, el patrón se aplica desde SWARMIND a kernels de terceros (por ejemplo CQE Ola 4.5), pero con kernel SWARMIND como componente de supervisión; el patrón de kernel es el mismo. | **Habilitado**: kernel agnóstico del dominio (0 imports de agentes/tools); CQE lo consume como cliente, no como comparación. |
 
 ## 4. Referencias
 

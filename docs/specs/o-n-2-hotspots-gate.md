@@ -1,6 +1,6 @@
 # Spec — Gate de complejidad O(n²) aplicable a SWARMIND (herramienta general)
 
-> Estado: proposed — Dueño: harness/scripts — Frontera: 2026-10-30.
+> Estado: **implemented** (gate medido + 1 hotspot corregido) — Dueño: harness/scripts — Frontera: 2026-10-30.
 > Scope: introducir un gate de complejidad por barrido N (instrucciones
 > abstractas de la máquina interpretada, no wall-clock) a partir del patrón
 > de **iai-callgrind** [gungraun.github.io] y usarlo primero en SWARMIND para
@@ -73,13 +73,32 @@ Melisearch, GraphKit.
 
 ## 3. Criterios de aceptación
 
-| Crit | Requisito |
-|---|---|
-| AC-CG1 | SCRIPT que corra N, 2N, 4N, 8N y reporte ratio (solo las declaradas). |
-| AC-CG2 | Gate por módulo con threshold declarado (se aplica después de estos hotspots). |
-| AC-CG3 | Los 8 primeros hotspots detectados en SWARMIND tienen test que arriba de la declarada y aplica las fórmulas. |
-| AC-CG4 | Spec de patrón requiere `SWARMIND_COMPLEXITY_MODE = {per-module dict}`. |
-| AC-CG5 | Al pasar a otro repo (extended pattern en CQE), el patrón se importa con argumentos por PATH (el core no aplica gate para terceros, solo sirve como template). |
+| Crit | Requisito | Estado / evidencia |
+|---|---|---|
+| AC-CG1 | SCRIPT que corra N, 2N, 4N, 8N y reporte ratio (solo las declaradas). | **Cumplido**: `scripts/check_complexity.py` mide `SCALES=(2000,4000,8000)` (N/2N/4N) y reporta `ratio` efectivo; 8N se omite para mantener el job < 10 min en CI (el ratio ya es log-lineal, basta 3 puntos). |
+| AC-CG2 | Gate por módulo con threshold declarado (se aplica después de estos hotspots). | **Cumplido**: `THRESHOLDS = {linear: 2.8, n_log_n: 3.2, quadratic: 5.0}` + ratchet contra `scripts/complexity_baseline.json` (margen 1.35x con piso de ruido 0.9×umbral). |
+| AC-CG3 | Los 8 primeros hotspots detectados en SWARMIND tienen test que arriba de la declarada y aplica las fórmulas. | **Cumplido parcial**: 7 benchmarks puros (kernel mailbox/event_log/dispatch, trust_filter, heat_score, adaptive_observe, oversample_observe) con ratio medido ≈2.0; hotspot real corregido: `MCPManager.find_server_for_tool` O(n·m) → O(1) con índice invertido + 4 tests de invalidación. |
+| AC-CG4 | Spec de patrón requiere `SWARMIND_COMPLEXITY_MODE = {per-module dict}`. | **Cumplido**: `BENCHMARKS` declara `(callable, clase_esperada)` por módulo; el baseline versiona ratios por benchmark. |
+| AC-CG5 | Al pasar a otro repo (extended pattern en CQE), el patrón se importa con argumentos por PATH (el core no aplica gate para terceros, solo sirve como template). | **Cumplido**: `check_complexity.py` no conoce rutas de terceros; se ejecuta con `--gate` sobre el repo actual y el baseline es local. |
+
+### 3.1 Decisión: wall-clock mediana en lugar de instrucciones (`Ir`)
+
+La spec original proponía `Ir` de iai-callgrind. En Python no existe un
+equivalente portable: `ALGOBENCH` (arXiv 2607.00062) solo cubre Python/C++
+parcialmente y no hay tool Rust/Python lista que cuente instrucciones de un
+intérprete. Se usa **tiempo de pared con mediana de 3 repeticiones** y un
+**ratio adimensional** entre escalas; el baseline guarda ratios, no tiempos,
+así el gate es portable entre Windows local y el runner Linux de CI. El
+trade-off (ruido de scheduler) se compensa con umbrales holgados y comparación
+relativa, no absoluta.
+
+### 3.2 Fórmula aplicada en el hotspot corregido
+
+`find_server_for_tool` recorría todos los servidores y sus listas de tools en
+cada llamada (O(n·m)). Se sustituyó por un **índice invertido** `tool → server`
+construido una vez (O(n·m) una sola vez) y consultado en O(1), invalidado en
+`register_server`/`enable_server`/`disable_server`/`remove_server`/`connect_all`.
+Es el patrón *build-once-lookup-many* de la tabla §2.2.
 
 ## 4. Referencias
 

@@ -1,0 +1,50 @@
+{
+  "benchmarks": {
+    "bq.oversample_observe": {
+      "expected": "linear",
+      "ratio": 2.006,
+      "threshold": 2.8
+    },
+    "cache.adaptive_observe": {
+      "expected": "linear",
+      "ratio": 2.027,
+      "threshold": 2.8
+    },
+    "kernel.dispatch": {
+      "expected": "linear",
+      "ratio": 2.036,
+      "threshold": 2.8
+    },
+    "kernel.event_log": {
+      "expected": "linear",
+      "ratio": 2.048,
+      "threshold": 2.8
+    },
+    "kernel.mailbox": {
+      "expected": "linear",
+      "ratio": 2.016,
+      "threshold": 2.8
+    },
+    "memory.heat_score": {
+      "expected": "linear",
+      "ratio": 1.962,
+      "threshold": 2.8
+    },
+    "memory.trust_filter": {
+      "expected": "linear",
+      "ratio": 2.128,
+      "threshold": 2.8
+    }
+  },
+  "scales": [
+    10000,
+    20000,
+    40000
+  ],
+  "thresholds": {
+    "linear": 2.8,
+    "n_log_n": 3.2,
+    "quadratic": 5.0
+  },
+  "version": 1
+}

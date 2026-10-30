@@ -442,7 +442,12 @@ def check_declarative_contracts() -> list[str]:
             continue
         forbidden = tuple(str(item) for item in contract.get("forbidden", []))
         allowed = tuple(str(item) for item in contract.get("allowed", []))
-        for dep in sorted(graph.get(module, set())):
+        # El contrato cubre el modulo y, si es paquete, todos sus submodulos.
+        deps: set[str] = set()
+        for candidate, edges in graph.items():
+            if candidate == module or candidate.startswith(f"{module}."):
+                deps |= edges
+        for dep in sorted(deps):
             if _matches_prefix(dep, forbidden):
                 errors.append(
                     f"F8: '{module}' importa '{dep}' prohibido por el contrato '{name}'"
