@@ -194,7 +194,10 @@ class LanceVectorStore(_LanceDBBackendMixin, _LifecycleMixin):
     # ------------------------------------------------------------------
 
     def create_collection(
-        self, name: str, schema: dict[str, str] | None = None
+        self,
+        name: str,
+        schema: dict[str, str] | None = None,
+        dim: int | None = None,
     ) -> None:
         """
         Create a new collection.
@@ -202,25 +205,32 @@ class LanceVectorStore(_LanceDBBackendMixin, _LifecycleMixin):
         Args:
             name: Collection name.
             schema: Optional dict of field_name -> type_string.
+            dim: Dimension del embedding para la tabla LanceDB; por defecto
+                ``_embedding_dim`` (384). Necesario si el modelo no es 384.
         """
         if self._lancedb_available and self._db is not None:
-            try:
-                sample = generate_sample_row(name)
-                self._db.create_table(name, data=[sample], mode="overwrite")
-                self._db.open_table(name).delete("id = 'init'")
-                logger.info("Created LanceDB table '%s' with full schema", name)
-            except Exception as exc:
-                raise VectorStoreError(
-                    f"Failed to create LanceDB table '{name}': {exc}"
-                ) from exc
-        else:
-            if name in self._mem_collections:
-                logger.warning("Collection '%s' already exists; overwriting.", name)
-            self._mem_collections[name] = _Collection(
-                name=name,
-                schema_def=schema or {},
-                last_updated=datetime.now(UTC).isoformat(),
-            )
+            self._create_lancedb_collection(name, dim)
+            return
+        if name in self._mem_collections:
+            logger.warning("Collection '%s' already exists; overwriting.", name)
+        self._mem_collections[name] = _Collection(
+            name=name,
+            schema_def=schema or {},
+            last_updated=datetime.now(UTC).isoformat(),
+        )
+
+    def _create_lancedb_collection(self, name: str, dim: int | None) -> None:
+        """Crea la tabla LanceDB con un sample row (schema inferido)."""
+        try:
+            sample = generate_sample_row(name)
+            sample["vector"] = [0.0] * int(dim or self._embedding_dim)
+            self._db.create_table(name, data=[sample], mode="overwrite")
+            self._db.open_table(name).delete("id = 'init'")
+            logger.info("Created LanceDB table '%s' with full schema", name)
+        except Exception as exc:
+            raise VectorStoreError(
+                f"Failed to create LanceDB table '{name}': {exc}"
+            ) from exc
 
     def list_collections(self) -> list[str]:
         """Return list of available collection names."""
@@ -252,16 +262,21 @@ class LanceVectorStore(_LanceDBBackendMixin, _LifecycleMixin):
         array = self._normalized_matrix(vectors)
         if array is None:
             return []
-
-        ids: list[str] = []
+        self._ensure_collection_for(collection, array)
         now = datetime.now(UTC).isoformat()
-
         if self._lancedb_available and self._db is not None:
-            ids = self._insert_lancedb(collection, array, metadata, now)
-        else:
-            ids = self._insert_memory(collection, array, metadata, now)
+            return self._insert_lancedb(collection, array, metadata, now)
+        return self._insert_memory(collection, array, metadata, now)
 
-        return ids
+    def _ensure_collection_for(
+        self, collection: str, array: np.ndarray
+    ) -> None:
+        """Crea la coleccion si falta y fija la dimension del embedding."""
+        if collection not in self.list_collections():
+            # La tabla LanceDB fija la dimension del vector en el schema: se
+            # crea con la dimension real del primer insert (no asumir 384).
+            self.create_collection(collection, dim=int(array.shape[1]))
+        self._embedding_dim = int(array.shape[1])
 
     @staticmethod
     def _normalized_matrix(vectors: np.ndarray) -> np.ndarray | None:
