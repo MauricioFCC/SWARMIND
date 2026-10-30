@@ -328,7 +328,7 @@ class LanceVectorStore(_LanceDBBackendMixin, _LifecycleMixin):
 
         Args:
             collection: Collection name.
-            query_vector: 1-D query embedding.
+            query_vector: 1-D query embedding (lista o ndarray).
             top_k: Number of results to return.
             filters: Optional dict of field -> value for pre-filtering.
             **kwargs: Opciones de gobernanza aceptadas por el puerto
@@ -338,10 +338,11 @@ class LanceVectorStore(_LanceDBBackendMixin, _LifecycleMixin):
         Returns:
             List of result dicts with keys: id, score, metadata, created_at.
         """
+        array = np.asarray(query_vector, dtype=np.float32).reshape(-1)
         if self._lancedb_available and self._db is not None:
-            return self._search_lancedb(collection, query_vector, top_k, filters)
+            return self._search_lancedb(collection, array, top_k, filters)
 
-        return self._search_memory(collection, query_vector, top_k, filters)
+        return self._search_memory(collection, array, top_k, filters)
 
     # ------------------------------------------------------------------
     # Hybrid search
