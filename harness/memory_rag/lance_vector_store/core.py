@@ -25,6 +25,7 @@ import numpy as np
 # sigan afectando a __init__() y from_config().
 import harness.memory_rag.lance_vector_store as _lance_vector_store
 
+from ..lance_migration import generate_sample_row
 from ..memory_config import MemoryBackend, MemoryConfig
 from .backends import _LanceDBBackendMixin
 from .constants import LANCEDB_ROOT
@@ -204,8 +205,10 @@ class LanceVectorStore(_LanceDBBackendMixin, _LifecycleMixin):
         """
         if self._lancedb_available and self._db is not None:
             try:
-                self._db.create_table(name, data=[], mode="overwrite")
-                logger.info("Created LanceDB table '%s'", name)
+                sample = generate_sample_row(name)
+                self._db.create_table(name, data=[sample], mode="overwrite")
+                self._db.open_table(name).delete("id = 'init'")
+                logger.info("Created LanceDB table '%s' with full schema", name)
             except Exception as exc:
                 raise VectorStoreError(
                     f"Failed to create LanceDB table '{name}': {exc}"

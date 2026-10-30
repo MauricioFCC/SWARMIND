@@ -40,10 +40,14 @@ class TestCollectionManagement:
         assert any("already exists" in rec.message for rec in caplog.records)
 
     def test_create_collection_lancedb(self, lancedb_store, mock_lancedb):
-        """create_collection en modo LanceDB crea tabla."""
+        """create_collection en modo LanceDB crea tabla con sample row."""
         lancedb_store.create_collection("custom_table")
-        mock_lancedb["db_conn"].create_table.assert_called_with(
-            "custom_table", data=[], mode="overwrite"
+        args, kwargs = mock_lancedb["db_conn"].create_table.call_args
+        assert args[0] == "custom_table"
+        assert kwargs["mode"] == "overwrite"
+        assert kwargs["data"][0]["id"] == "init"
+        mock_lancedb["db_conn"].open_table.return_value.delete.assert_called_with(
+            "id = 'init'"
         )
 
     def test_create_collection_lancedb_fails(self, lancedb_store, mock_lancedb):
