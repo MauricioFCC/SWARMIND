@@ -45,6 +45,27 @@ _HANDLE_P = POINTER(c_void_p)
 # Biblioteca cargada de forma perezosa (una sola vez por proceso).
 _LIB: ctypes.CDLL | None = None
 
+#: Funciones extendidas que ``capabilities()`` reporta (contrato estable).
+_CAPABILITY_NAMES: tuple[str, ...] = (
+    "ruscadb_open_opts",
+    "ruscadb_create_index",
+    "ruscadb_update_record",
+    "ruscadb_delete_record",
+    "ruscadb_get_record",
+    "ruscadb_put_blob",
+    "ruscadb_get_blob",
+    "ruscadb_gc_blobs",
+    "ruscadb_last_lsn",
+    "ruscadb_integrity_check",
+    "ruscadb_backup",
+    "ruscadb_explain",
+    "ruscadb_execute_at",
+    "ruscadb_open_encrypted",
+    "ruscadb_alter_table",
+    "ruscadb_quantize",
+    "ruscadb_search_bq",
+)
+
 
 class RuscadbError(RuntimeError):
     """Error devuelto por el C-ABI de RuscaDB."""
@@ -642,30 +663,14 @@ def capabilities() -> dict[str, bool]:
     Returns:
         Mapa ``nombre -> disponible`` para las capacidades extendidas.
     """
-    names = (
-        "ruscadb_open_opts",
-        "ruscadb_create_index",
-        "ruscadb_update_record",
-        "ruscadb_delete_record",
-        "ruscadb_get_record",
-        "ruscadb_put_blob",
-        "ruscadb_get_blob",
-        "ruscadb_gc_blobs",
-        "ruscadb_last_lsn",
-        "ruscadb_integrity_check",
-        "ruscadb_backup",
-        "ruscadb_explain",
-        "ruscadb_execute_at",
-        "ruscadb_open_encrypted",
-        "ruscadb_alter_table",
-        "ruscadb_quantize",
-        "ruscadb_search_bq",
-    )
     try:
         library = _lib()
     except (OSError, ImportError):
-        return {name: False for name in names}
-    return {name: getattr(library, name, None) is not None for name in names}
+        return {name: False for name in _CAPABILITY_NAMES}
+    return {
+        name: getattr(library, name, None) is not None
+        for name in _CAPABILITY_NAMES
+    }
 
 
 def _open_once(data_path: str | os.PathLike[str], pool_capacity: int) -> c_void_p:

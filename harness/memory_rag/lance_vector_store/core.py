@@ -302,11 +302,8 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin, _LifecycleMixi
         Returns:
             List of inserted record IDs.
         """
-        array = np.asarray(vectors, dtype=np.float32)
-        if array.ndim == 1:
-            array = array.reshape(1, -1)
-        n = array.shape[0]
-        if n == 0:
+        array = self._normalized_matrix(vectors)
+        if array is None:
             return []
 
         ids: list[str] = []
@@ -318,6 +315,14 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin, _LifecycleMixi
             ids = self._insert_memory(collection, array, metadata, now)
 
         return ids
+
+    @staticmethod
+    def _normalized_matrix(vectors: np.ndarray) -> np.ndarray | None:
+        """Normaliza la entrada a matriz 2-D float32 (None si esta vacia)."""
+        array = np.asarray(vectors, dtype=np.float32)
+        if array.ndim == 1:
+            array = array.reshape(1, -1)
+        return None if array.shape[0] == 0 else array
 
     # ------------------------------------------------------------------
     # Update

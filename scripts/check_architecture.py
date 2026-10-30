@@ -99,7 +99,7 @@ def _scan_domain() -> tuple[list[str], list[str]]:
     if not DOMAIN.exists():
         return frameworks, infra
     for path in DOMAIN.rglob("*.py"):
-        text = path.read_text(encoding="utf-8")
+        text = _read_source(path)
         try:
             tree = ast.parse(text)
         except SyntaxError as exc:
@@ -121,6 +121,18 @@ def _scan_domain() -> tuple[list[str], list[str]]:
     return frameworks, infra
 
 
+def _read_source(path: Path) -> str:
+    """Lee un archivo Python tolerando BOM UTF-8 (utf-8-sig).
+
+    Args:
+        path: Archivo a leer.
+
+    Returns:
+        El contenido como texto.
+    """
+    return path.read_text(encoding="utf-8-sig")
+
+
 def check_domain_purity() -> list[str]:
     """F1/F2: Domain no importa frameworks ni infraestructura."""
     frameworks, infra = _scan_domain()
@@ -135,7 +147,7 @@ def check_module_size() -> list[str]:
             if not f.endswith(".py"):
                 continue
             path = Path(root) / f
-            n = len(path.read_text(encoding="utf-8").splitlines())
+            n = len(_read_source(path).splitlines())
             if n > MAX_MODULE_LINES:
                 errors.append(f"{path}: {n} lineas > {MAX_MODULE_LINES}")
     return errors
@@ -150,7 +162,7 @@ def check_function_size() -> list[str]:
                 continue
             path = Path(root) / f
             try:
-                tree = ast.parse(path.read_text(encoding="utf-8"))
+                tree = ast.parse(_read_source(path))
             except SyntaxError:
                 continue
             for node in ast.walk(tree):
@@ -246,7 +258,7 @@ def _module_graph() -> tuple[dict[str, Path], dict[str, set[str]]]:
         files[name] = path
     for name, path in files.items():
         try:
-            tree = ast.parse(path.read_text(encoding="utf-8"))
+            tree = ast.parse(_read_source(path))
         except SyntaxError:
             continue
         is_package = path.name == "__init__.py"
