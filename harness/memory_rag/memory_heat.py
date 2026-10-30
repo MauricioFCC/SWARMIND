@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+import math
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
@@ -113,7 +114,7 @@ def heat_score(
     age = _age_days(last_accessed, now)
     if age is None or half_life_days <= 0:
         return 0.0
-    decay = 0.5 ** (age / half_life_days)
+    decay = math.exp(-(math.log(2.0) / half_life_days) * age)
     return max(float(access_count), 0.0) * decay
 
 

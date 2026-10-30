@@ -402,17 +402,23 @@ class SemanticCache(_SemanticCacheOpsMixin):
             Numero de entradas eliminadas.
         """
         target = str(self._dataset_version if version is None else version)
-        removed = 0
-        seen: set[str] = set()
+        stale: list[str] = []
         for meta in self._list_cache_entries():
             prompt_hash = str(meta.get("prompt_hash") or "")
-            if not prompt_hash or prompt_hash in seen:
+            if not prompt_hash or prompt_hash in stale:
                 continue
             if str(meta.get("dataset_version", "")) == target:
                 continue
-            seen.add(prompt_hash)
-            self._delete_entry(prompt_hash)
-            removed += 1
+            stale.append(prompt_hash)
+        if not stale:
+            return 0
+        batch = getattr(self._store, "semantic_cache_delete_many", None)
+        if callable(batch):
+            removed = int(batch(stale) or 0)
+        else:
+            for prompt_hash in stale:
+                self._delete_entry(prompt_hash)
+            removed = len(stale)
         if removed:
             logger.info("SemanticCache invalidated %d stale-version entries", removed)
         return removed

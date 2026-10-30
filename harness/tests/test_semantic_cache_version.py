@@ -75,3 +75,22 @@ def test_fail_open_default_serves_unverified(store):
     cache = SemanticCache(vector_store=store)
     cache.set("p", "r")
     assert cache.get("p") == "r"
+
+
+def test_invalidate_version_uses_batch_delete(store, monkeypatch):
+    """La invalidacion borra en lote (una llamada, no una por entrada)."""
+    v1 = SemanticCache(vector_store=store, dataset_version="v1")
+    v1.set("p", "r")
+    v2 = SemanticCache(vector_store=store, dataset_version="v2")
+    calls: list[list[str]] = []
+    original = store.semantic_cache_delete_many
+
+    def _spy(keys):
+        calls.append(list(keys))
+        return original(keys)
+
+    monkeypatch.setattr(store, "semantic_cache_delete_many", _spy)
+    assert v2.invalidate_version() == 1
+    assert len(calls) == 1
+    assert v2.get("p") is None
+

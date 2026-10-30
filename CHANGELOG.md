@@ -23,6 +23,23 @@
 - `docs/specs/ruscadb-ivf-pq.md`: estado implemented-parcial + evidencia y
   limite (sin indice IVF persistente; `nprobe` no aplica, se usa oversample).
 
+### Performance
+- `_apply_trust_and_recency` y `heat_score` usan `exp(-ln2*edad/vida)` con la
+  tasa precomputada por consulta (antes division + `pow` por cada resultado).
+- `dreaming.consolidate_dir`: numeracion con `enumerate` (antes
+  `list.index` por entrada: O(n^2) y nombres duplicados con dicts iguales).
+- `latency_aware`: mapa `id -> posicion` para el orden estable (antes
+  `subtasks.index` dentro del `sort`: O(n^2 log n)).
+- `risk_analyzer.get_risks`: mapa de rangos de `RiskLevel` (antes
+  `levels.index` por riesgo).
+- `SemanticCache.invalidate_version`: borrado en lote con
+  `semantic_cache_delete_many` (un escaneo) en vez de uno por entrada (O(n^2)).
+
+### Fixed
+- `RuscaDBStore.close()` idempotente: marca `_handle = None` al cerrar para que
+  `__del__` no cierre de nuevo un indice de handle reciclado por otra instancia
+  (doble close que invalidaba stores nuevos durante el GC).
+
 ## [11.55] - 2026-10-30
 
 ### Added

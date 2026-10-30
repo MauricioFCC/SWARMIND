@@ -20,6 +20,7 @@ from __future__ import annotations
 import datetime as _dt
 import json
 import logging
+import math
 import os
 import re
 import threading
@@ -1054,6 +1055,11 @@ class RuscaDBStore:
             Lista filtrada, re-puntuada y ordenada por score descendente.
         """
         reference = now or _dt.datetime.now(_dt.UTC)
+        decay_rate = 0.0
+        if half_life_days and float(half_life_days) > 0:
+            # ln(2)/vida_media: un solo logaritmo por consulta en vez de una
+            # division + pow por cada resultado.
+            decay_rate = math.log(2.0) / float(half_life_days)
         kept: list[dict[str, Any]] = []
         for item in items:
             meta = item.get("metadata") if isinstance(item.get("metadata"), dict) else {}
@@ -1070,7 +1076,7 @@ class RuscaDBStore:
             if weight < min_trust:
                 continue
             recency = 1.0
-            if half_life_days:
+            if decay_rate > 0.0:
                 # Refuerzo por uso: last_accessed (si existe) manda sobre
                 # created_at; recordar una memoria la rejuvenece (MemoryBank).
                 stamp = (
@@ -1081,7 +1087,7 @@ class RuscaDBStore:
                 )
                 age = self._age_days(stamp, reference)
                 if age is not None:
-                    recency = 0.5 ** (age / float(half_life_days))
+                    recency = math.exp(-decay_rate * age)
             base = float(item.get("score", 0.0))
             item["trust_tier"] = tier
             item["trust_weight"] = weight
@@ -2165,6 +2171,29 @@ class RuscaDBStore:
         ]
         return self._semantic_cache_delete_rows([key], vector_ids)
 
+    def semantic_cache_delete_many(self, keys: list[str]) -> int:
+        """Elimina varias entradas del cache con un solo escaneo.
+
+        Args:
+            keys: Claves persistentes a eliminar.
+
+        Returns:
+            Numero de claves procesadas (0 si la operacion fallo).
+        """
+        unique = [key for key in dict.fromkeys(keys) if key]
+        if not unique:
+            return 0
+        wanted = set(unique)
+        entries = self.semantic_cache_entries()
+        vector_ids = [
+            str(item["id"])
+            for item in entries
+            if item.get("id")
+            and (item.get("metadata") or {}).get("prompt_hash") in wanted
+        ]
+        ok = self._semantic_cache_delete_rows(unique, vector_ids)
+        return len(unique) if ok else 0
+
     def _semantic_cache_delete_rows(
         self, keys: list[str], vector_ids: list[str]
     ) -> bool:
@@ -2292,24 +2321,38 @@ class RuscaDBStore:
 
     def _commit(self) -> None:
         """Confirma los cambios pendientes (WAL-first)."""
+        handle = getattr(self, "_handle", None)
+        if handle is None:
+            return
         try:
-            commit(self._handle)
+            commit(handle)
         except RuscadbError as exc:
             logger.debug("commit fallo: %s", exc)
 
     def close(self) -> None:
-        """Confirma y cierra el handle del motor."""
+        """Confirma y cierra el handle del motor (idempotente).
+
+        Marca ``_handle = None`` tras cerrar para que ``__del__`` no vuelva a
+        cerrar un indice de handle ya reciclado por otra instancia (doble
+        close silencioso que invalidaba stores nuevos en tests/GC).
+        """
+        handle = getattr(self, "_handle", None)
+        if handle is None:
+            return
         with _OPEN_LOCK:
             self._commit()
             try:
-                close(self._handle)
+                close(handle)
             except RuscadbError as exc:
                 logger.debug("close fallo: %s", exc)
+            finally:
+                self._handle = None
 
     def __del__(self) -> None:
         """Libera el handle (y el lock) si no se cerro explicitamente."""
         try:
-            self.close()
+            if getattr(self, "_handle", None) is not None:
+                self.close()
         except Exception:  # noqa: BLE001, S110
             pass
 

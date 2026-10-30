@@ -180,8 +180,10 @@ class DreamingConsolidator:
 
         result = self.consolidate(entries)
 
-        for entry in result.entries:
-            key = entry.get("key", entry.get("id", f"entry_{result.entries.index(entry)}"))
+        for position, entry in enumerate(result.entries):
+            key = entry.get(
+                "key", entry.get("id", f"entry_{position}")
+            )
             safe_name = str(key).replace(":", "_").replace("/", "_").replace(" ", "_")
             out_path = dest_path / f"{safe_name}.json"
             out_path.write_text(

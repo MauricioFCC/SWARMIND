@@ -146,9 +146,9 @@ class CriticalPath:
                 adj[dep].append(s.id)
 
         # Orden estable: nodos listos = [ruta crítica primero, luego original].
+        order = {s.id: index for index, s in enumerate(subtasks)}
         ready = [s.id for s in subtasks if indegree[s.id] == 0]
-        ready.sort(key=lambda n: (0 if n in critical_set else 1,
-                                  subtasks.index(by_id[n])))
+        ready.sort(key=lambda n: (0 if n in critical_set else 1, order[n]))
 
         ordered: list = []
         while ready:
@@ -158,8 +158,7 @@ class CriticalPath:
                 indegree[nxt] -= 1
                 if indegree[nxt] == 0:
                     ready.append(nxt)
-            ready.sort(key=lambda n: (0 if n in critical_set else 1,
-                                      subtasks.index(by_id[n])))
+            ready.sort(key=lambda n: (0 if n in critical_set else 1, order[n]))
 
         # Ciclos residuales: añadir los que quedaron al final (orden original).
         appended = {s.id for s in ordered}

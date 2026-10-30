@@ -255,3 +255,18 @@ def test_semantic_cache_set_rejects_empty_key(store):
     """Clave vacia es un error de programacion, no un miss silencioso."""
     with pytest.raises(ValueError):
         store.semantic_cache_set("", "x")
+
+
+def test_recency_weight_matches_closed_form(store):
+    """El decaimiento equivale a 0.5**(edad/vida_media)."""
+    old = (dt.datetime.now(dt.UTC) - dt.timedelta(days=30)).isoformat()
+    store.insert(
+        "mem",
+        [[1.0, 0.0]],
+        [{"trust_tier": "user_stated"}],
+        texts=["hace 30 dias"],
+        now=old,
+    )
+    results = store.search("mem", [1.0, 0.0], top_k=1, half_life_days=30)
+    assert results[0]["recency_weight"] == pytest.approx(0.5, abs=0.01)
+
