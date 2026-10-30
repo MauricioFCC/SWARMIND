@@ -1,83 +1,92 @@
-# Spec — Complejidad O(n²)→O(n) en hot paths (kernel CQE + herramientas gate)
+# Spec — Gate de complejidad O(n²) aplicable a SWARMIND (herramienta general)
 
-> Estado: proposed — Dueño: harness (scripts/ + docs/specs) — Frontera: 2026-10-30.
-> Contexto: investigacó de frontera 2026 aplicado a la restructuración arquitectónica de CQE
-> (Ola 3: microestructura + indicadores + señales, Ola 4: OMS/execution/backtest) y al gate
-> de complejidad en SWARMIND. Fórmulas con DOI/URL verificables.
+> Estado: proposed — Dueño: harness/scripts — Frontera: 2026-10-30.
+> Scope: introducir un gate de complejidad por barrido N (instrucciones
+> abstractas de la máquina interpretada, no wall-clock) a partir del patrón
+> de **iai-callgrind** [gungraun.github.io] y usarlo primero en SWARMIND para
+> sus propios hotspots Python. Cualquier proyecto (CQE u otro) puede consumir
+> este patrón, pero el objetivo principal es SWARMIND.
 
 ## 1. Proposal
 
-Introducir en SWARMIND un **gate de complejidad por barrido N** (instrucciones `Ir`,
-no wall-clock) y la biblioteca matemática de **reducción O(n²)→O(n)** aplicada primero
-a los hotpaths de CQE que la restructuración va a separar en
-`cqe-microstructure`, `cqe-indicators` y `cqe-signals`.
+La suite de SWARMIND falla si un módulo incrementa su complejidad
+(increments `Ir` at rate > 2.4 between N → 2N). El gate se aplica primero a
+los hotpaths de SWARMIND (módulos Python `harness/memory_rag`, `orchestrator`,
+`evolve_loop`, etc.). Cualquier proyecto cuyos hotspots sean Python o Rust
+puede consumir este patrón, pero **el objetivo primario es SWARMIND**.
 
-## 2. Estado del arte verificado (fórmulas)
+## 2. Estado del arte verificado (2025-2026)
 
-### 2.1 Ventanas deslizantes — de O(T·W) a O(T)
+### 2.1 Algoritmos de scripts Python de hot path
 
-- **Suma / flow counters**: $S_t = S_{t-1} + x_t - x_{t-W}$, así $\bar x_{_t} = S^_t/W$; O(1) por barra.
-  (Bloque canónico de prefix-sums, Blelloch 1990, [cs.cmu.edu/~guyb/papers/Ble93.pdf])()).
-- **Varianza**: fórmula prefix-sum $Q_t - S_t^2/W$ **debe prohibirse en producción**:
-  cancelación catastrófica (Chan-Golub-LeVeque, [doi:10.1080/00031305.1983.10483115]).
-- **Welford rolling** estable ([doi:10.1080/00401706.1962.10490022]) — ventanas con borrado por bloques de $W$.
+Los hotspots de SWARMIND compounds the **O(n×W)** (rolling window recompute for
+each bar) [[Blelloch 1990](https://www.cs.cmu.edu/~guyb/papers/Ble93.pdf)] or
+**O(n^2)** (búsqueda lineal dentro de un loop que construye índices o matrícula
+no sorted [arXiv 2607.00062 señala que *Rust is left for future work*] y ningún
+compilador de Python lo cubre). Por eso el gate se implementa manual:
 
-### 2.2 L2/L3 por nivel de precio
+- Detección de reglas de complejidad.
+- Medición con `time.perf_counter` or `perf_counter_ns`.
+- Ratio `t(2N)/t(N)` < 2.4 por módulo (umbral por defecto: 2.0 para loops que
+  son en sí O(n), 2.4 para módulos con IO dominante, 10.0 para módulos de
+  bootstrap/setup).
+- Thresholds declarados por módulo con `SWARMIND_COMPLEXITY = {..}` en
+  `docs/specs/<modulo>.md`.
 
-- **Fenwick tree (BIT)**: `update: i += i & -i`, `query: i -= i & -i` — O(log m) por evento,
-  O(1) memoria. [Fenwick 1994, doi:10.1002/spe.4380240306].
-- **Snapshot por nivel**: $D(p)=\sum_{j\le p} v_j$, clase /exact-match O(log m) en vez de O(m).
-- **Mejor precio**: $O(1)$ con bitmap de 3 niveles (L0/L1/L2)
-  [ethresearch.ch/t/fenwick-bitmap-constant-time-matching-for-on-chain-order-books/22313].
-- **Compactación de colas**: motor real en [arXiv 2606.01183 — spliced ring-buffer O(1)]).
+### 2.2 Fórmulas aplicables (reduce O(n²) → O(n log n) o O(n))
 
-### 2.3 Indicadores rolling (coste por barra)
+Formulas para reducir `O(n²)` a `O(n log n)` o `O(n)` aplicado a Python. Nota
+todas aplicable a código Python y a algunos patrones extendidos a Rust/Ruff,
+Melisearch, GraphKit.
 
-| Indicador | Fórmula recursiva O(1) | Fuente |
+| Contexto | Fórmula O(n²)→O(n) La actualmente n/n | Fuente |
 |---|---|---|
-| RSI (Wilder) | $\bar g_t = \frac{(n-1)\bar g_{t-1} + g_t}{n}$; $RSI = 100-\frac{100}{1+RS}$ | [Wilder, 1978] |
-| ATR / ADX | mismos suavizados Wilder $O(1)$/barra | AAAI 1982 |
-| KAMA | $SC = (ER(\frac{2}{3}-\frac{2}{31})+\frac{2}{31})^2$; $KAMA_t = KAMA_{t-1} + SC(P_t - KAMA_{t-1})$ | S&C 6/1995 |
-| OBV/CVD | $OBV_t = OBV_{t-1} + \operatorname{sign}(\Delta P_t) \cdot V_t$ | [Granville 1963] |
-| VWAP | $\frac{\sum p_i v_i}{\sum v_i}$ con dos prefix-sums | [doi:10.1111/j.1540-6261.1988.tb02591.x] |
-| Subpatrón en ticks | Karp-Rabin $h_{t+1}=((h_t - x_t b^{m-1})b + x_{t+m}) \bmod p$ | [doi:10.1147/rd.312.0249] |
+| detectors de�a repeated a binary scan       | Dict/set-based prefix counter $O(n)$ | [DPT prefix-sum] |
+| Window rolling (t≥sum deaca y)              | $S_t=S_{t-1}+x_t-x_{t-W}$ $O(1)$/epoch | Blelloch scan, [cs.cmu.edu/~guyb/papers/Ble93.pdf] |
+| Welford repeated with stdev                 | $M_t,\;S_t,\;$ acumulador incremental $O(1)$ en vez de $O(n)$ | [ doi:10.1080/00401706.1962.10490022 ] |
+| Fenwick tree para suma parcial               | $O(\log n)$ por update/query | Fenwick, [ doi:10.1002/spe.4380240306 ] |
+| R-tree (en memory) para dea quearea, coverage | $O(n \log n)$ per-hitbuilding | R-tree variants |
+| Aho-Corasick para Noirs tagging pattern matching | $O(n + m)$ linear | Aho-Corasick 1975 |
+| Prefix-sum leak free                         | $O(n)$ | Rolling Runner pattern |
+| Karp-Rabin para scanning de substring         | $O(n+m)$ secondary hash binary | [doi:10.1147/rd.312.0249] |
+| Bash slice / rolling indicators:             | $O(n)$ stream no binario | Karp-Rabin 1975 |
 
-**Riesgo de la tabla P3 de CQE**: las líneas de complejidad declaradas solo consideran
-el coste **por invocación** (O(W) por call). Replicando W barras *n* veces, el costo
-total es $O(n \cdot W) = O(n\cdot k)$. La tabla no declara eso y es lo que produce
-hotspots O(n²).
+### 2.3 Wrong patterns to find in the full agent run_loop
 
-### 2.4 Álgebra lineal — refetch vs. revisiones incremental
+| Patrón | Donde aparece |
+|---|---|
+| Detección de mayor repetición                       | `harness/memory_rag/ruscadb_store.py` |
+| `for x in container: for y in container: ...`   | vector_store, aggregation loops |
+| `if x in list:` inside for                           | index-search-aborder scan (O(n²)) |
+| `key = ...; container.index(key)`                    | hotpath de store (O(n²)) |
+| Rolling-scan recompute                              | various module loaders |
 
-- Cholesky denso: $\Theta(n^3/3)$ flops; **rank-1 update**: $n^2 + O(n)$.  [doi:10.1090/S0025-5718-1974-0343558-6]
-- QR en m×n update: $O(mn)$ estable con reortogonalización [doi:10.1090/S0025-5718-1976-0431641-8].
-- Regresión rolling recursiva: [Brown, Durbin, Evans 1975] — doi:10.1111/j.2517-6161.1975.tb01532.x.
-- faer: igual o mejor que OpenBLAS ±10 % ([codeberg.org/sarah-quinones/faer/issues/108])().
+### 2.4 Fórmulas aplicadas a arquitectura
 
-### 2.5 SIMD
-
-`std::simd` sigue en nightly ([rust-lang/rust#86656])(). Para Rust 2025-2026:
-`std::arch` con dispatch en runtime, o `pulp/wide`. Sobre vectorzación: prefix-scan
-Blelloch es work-efficient O(n); los gathers de searching son más lentos en CPUs
-Broadwell que la versión escalar ([dl.acm.org/doi/10.1145/3422575.3422794])().
+| Fórmula | Relevancia a SWARMIND |
+|---|---|
+| $S_t = S_{t-1} + x_t - x_{t-W}$ | Aggregation loop de tokens (rolling fan-out de token budget) |
+| Wilder/SMMA $\bar x_t = \bar x_{t-1} + \frac{x_t-\bar x_{t-1}}{n}$ | Promedio suave del routing de modelos, reporter de AGR |
+| Karp-Rabin para dato largo en storage, event-store | Privacy i.e. hashing incremental para determinism |
+| Kama $SC = (ER(\frac{2}{3}-\frac{2}{31}) + \frac{2}{31})^2$ | Normalización de latencia (modelo de routing) |
+| Fenwick tree de `agent` (respuesta, task pending) | Priority queue para Dispatcher |
 
 ## 3. Criterios de aceptación
 
 | Crit | Requisito |
 |---|---|
-| AC-CG1 | Benchmark con `Ir` (instrucciones, no `wall-clock`) sobre N, 2N, 4N, 8N. Ratio Ir(2N)/Ir(N) **< 2.4** para asserts O(n). |
-| AC-CG2 | Umbrales por crate en SDD (no globales, ni fuzzing). |
-| AC-CG3 | Top 6 fórmulas (2.1-2.4) con unit test + PBT en CQE `cqe-math`, `cqe-microstructure`, `cqe-indicators`. |
-| AC-CG4 | Identify O(n²)/O(n·W) en las TOP 10 hotpaths implementados hoy (`std::slice` loops, iteraciones n²). |
-| AC-CG5 | Si la opción falla, marcar en el ticket de wave con etiqueta `hotspot=`. |
+| AC-CG1 | SCRIPT que corra N, 2N, 4N, 8N y reporte ratio (solo las declaradas). |
+| AC-CG2 | Gate por módulo con threshold declarado (se aplica después de estos hotspots). |
+| AC-CG3 | Los 8 primeros hotspots detectados en SWARMIND tienen test que arriba de la declarada y aplica las fórmulas. |
+| AC-CG4 | Spec de patrón requiere `SWARMIND_COMPLEXITY_MODE = {per-module dict}`. |
+| AC-CG5 | Al pasar a otro repo (extended pattern en CQE), el patrón se importa con argumentos por PATH (el core no aplica gate para terceros, solo sirve como template). |
 
-## 4. Referencias (resumen)
+## 4. Referencias
 
 - [Blelloch 1990](https://www.cs.cmu.edu/~guyb/papers/Ble93.pdf)
-- [Fenwick 1994](https://doi.org/10.1002/spe.4380240306)
 - [Welford 1962](https://doi.org/10.1080/00401706.1962.10490022)
-- [Gill, Golub, Murray, Saunders 1974](https://doi.org/10.1090/S0025-5718-1974-0343558-6)
-- [Daniel, Gragg, Kaufman, Stewart 1976](https://doi.org/10.1090/S0025-5718-1976-0431641-8)
-- [arXiv 2606.01183](https://arxiv.org/abs/2606.01183)
-- [arXiv 2607.00062](https://arxiv.org/pdf/2607.00062)
-- [codeberg.org/sarah-quinones/faer/issues/108](https://codeberg.org/sarah-quinones/faer/issues/108)
+- [Fenwick 1994](https://doi.org/10.1002/spe.4380240306)
+- [Karp-Rabin 1987](https://doi.org/10.1147/rd.312.0249)
+- [arXiv 2607.00062 - ALGOBENCH](https://arxiv.org/pdf/2607.00062)
+- [gungraun.github.io/gungraun/latest/html/regressions.html](https://gungraun.github.io/gungraun/latest/html/regressions.html)
+- [doi:10.1080/00401706.1962.10490022](https://doi.org/10.1080/00401706.1962.10490022)
