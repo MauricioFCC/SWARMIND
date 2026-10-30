@@ -159,6 +159,8 @@ class RuscaDBStore:
         config: Any = None,
         blob_path: str | None = None,
         readonly: bool = False,
+        memory_guard: Any = None,
+        strict_guard: bool | None = None,
     ) -> None:
         """Abre la base y garantiza las colecciones base.
 
@@ -168,6 +170,10 @@ class RuscaDBStore:
             config: MemoryConfig opcional con ``ruscadb_path``.
             blob_path: Directorio del blob store; por defecto ``<db>.blobs``.
             readonly: Abre en modo solo lectura (lectores concurrentes).
+            memory_guard: Guard de escritura opcional (``MemoryGuard``); si se
+                inyecta, cada insert valida su metadata (SSGM write gate).
+            strict_guard: Si True un fallo del guard lanza ``ValueError``; si
+                es None se toma de ``SWARMIND_MEMORY_GUARD_STRICT``.
         """
         if db_path is None and config is None:
             try:
@@ -199,6 +205,10 @@ class RuscaDBStore:
         self._embedding_dim: int = 384
         self._blob_path = blob_path or self._default_blob_path(self.db_path)
         self._readonly = readonly
+        self._memory_guard = memory_guard
+        if strict_guard is None:
+            strict_guard = os.environ.get("SWARMIND_MEMORY_GUARD_STRICT", "") == "1"
+        self._strict_guard = bool(strict_guard)
         with _OPEN_LOCK:
             self._handle = rdb_open_opts(
                 self.db_path,
@@ -382,6 +392,8 @@ class RuscaDBStore:
             rid = str(uuid.uuid4())
             ids.append(rid)
             meta = dict(metadata[i]) if i < len(metadata) else {}
+            # Write gate (SSGM / MAPLE-Guard): valida antes de etiquetar.
+            meta = self._apply_write_gate(collection, meta)
             text = texts[i] if texts and i < len(texts) else self._derive_text(meta)
             # Provenance / trust tagging (OWASP ASI06, frontier 2026): aditivo,
             # nunca pisa valores explicitos del caller.
@@ -477,6 +489,94 @@ class RuscaDBStore:
             except RuscadbError as exc:
                 logger.warning("update en '%s' fallo: %s", collection, exc)
         self._commit()
+
+    def record_access(
+        self, collection: str, ids: list[str], now: str | None = None
+    ) -> int:
+        """Marca uso de registros para refuerzo por recencia (MemoryBank/MemoryOS).
+
+        Actualiza ``last_accessed`` y ``access_count`` en la metadata. El
+        retrieval usa ``last_accessed`` (si existe) como referencia del
+        decaimiento temporal, de modo que una memoria recordada vuelve a
+        competir por relevancia sin reescribir su ``created_at``.
+
+        Args:
+            collection: Coleccion de los registros.
+            ids: Ids logicos (o ULIDs) usados en el retrieval.
+            now: Timestamp ISO; por defecto UTC actual.
+
+        Returns:
+            Numero de registros efectivamente actualizados.
+        """
+        _safe_ident(collection)
+        stamp = now or _dt.datetime.now(_dt.UTC).isoformat()
+        records: list[dict[str, Any]] = []
+        for logical_id in ids:
+            rid = self.resolve_rid(collection, str(logical_id))
+            if not rid and self._looks_like_ulid(str(logical_id)):
+                rid = str(logical_id)
+            if not rid:
+                continue
+            raw = self.get_record(collection, rid)
+            if not raw:
+                continue
+            meta = self._record_metadata(raw)
+            meta["last_accessed"] = stamp
+            meta["access_count"] = int(meta.get("access_count", 0) or 0) + 1
+            meta["_rid"] = rid
+            scalars = raw.get("scalars") or {}
+            records.append(
+                {
+                    "id": str(logical_id),
+                    "text": self._unwrap_scalar(scalars.get("text")) or "",
+                    "metadata": meta,
+                }
+            )
+        if records:
+            self.update_records(collection, records)
+        return len(records)
+
+    def _apply_write_gate(
+        self, collection: str, meta: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Valida la metadata con ``MemoryGuard`` antes de escribir (SSGM).
+
+        Sin guard inyectado no hay cambio de comportamiento (backward
+        compatible). Con guard: si la validacion falla, la entrada se marca en
+        cuarentena; si ``SWARMIND_MEMORY_GUARD_STRICT=1`` se rechaza con
+        WHAT/WHY/WHERE.
+
+        Args:
+            collection: Coleccion destino.
+            meta: Metadata a validar.
+
+        Returns:
+            Metadata efectiva (posiblemente en cuarentena).
+
+        Raises:
+            ValueError: En modo estricto si la validacion falla.
+        """
+        guard = getattr(self, "_memory_guard", None)
+        if guard is None:
+            return meta
+        errors = guard.validate(collection, meta)
+        if not errors:
+            return meta
+        if self._strict_guard:
+            raise ValueError(
+                "RuscaDBStore.insert | WHAT=write_bloqueado | "
+                f"WHY=guard_validation | WHERE=_apply_write_gate | "
+                f"collection={collection!r} | errores={errors}"
+            )
+        logger.warning(
+            "write gate: entrada en cuarentena (collection=%s, errores=%s)",
+            collection,
+            errors,
+        )
+        gated = dict(meta)
+        gated["trust_tier"] = "quarantined"
+        gated["guard_errors"] = errors
+        return gated
 
     def _update_by_logical_id(
         self, collection: str, logical_id: str, scalars: dict[str, Any]
@@ -764,9 +864,15 @@ class RuscaDBStore:
                 continue
             recency = 1.0
             if half_life_days:
-                age = self._age_days(
-                    item.get("created_at") or meta.get("created_at"), reference
+                # Refuerzo por uso: last_accessed (si existe) manda sobre
+                # created_at; recordar una memoria la rejuvenece (MemoryBank).
+                stamp = (
+                    meta.get("last_accessed")
+                    or item.get("last_accessed")
+                    or item.get("created_at")
+                    or meta.get("created_at")
                 )
+                age = self._age_days(stamp, reference)
                 if age is not None:
                     recency = 0.5 ** (age / float(half_life_days))
             base = float(item.get("score", 0.0))
@@ -1445,6 +1551,20 @@ class RuscaDBStore:
         Returns:
             Valor cacheado o None si no existe o expiro.
         """
+        stored = self.semantic_cache_get_meta(key)
+        return None if stored is None else stored[0]
+
+    def semantic_cache_get_meta(
+        self, key: str
+    ) -> tuple[Any, dict[str, Any]] | None:
+        """Como :meth:`semantic_cache_get` pero devuelve tambien la metadata.
+
+        Args:
+            key: Clave de cache.
+
+        Returns:
+            ``(valor, metadata)`` o ``None`` si no existe o expiro.
+        """
         stored = self._semantic_cache_row(key)
         if stored is None:
             return None
@@ -1460,7 +1580,7 @@ class RuscaDBStore:
                 self._cache_misses += 1
                 return None
         self._cache_hits += 1
-        return value
+        return value, meta
 
     def _semantic_cache_row(self, key: str) -> tuple[Any, dict[str, Any]] | None:
         """Lee la fila cruda del cache semantico.
@@ -1501,7 +1621,11 @@ class RuscaDBStore:
         return value, meta
 
     def semantic_cache_set(
-        self, key: str, value: Any, ttl_sec: float | None = None
+        self,
+        key: str,
+        value: Any,
+        ttl_sec: float | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         """Guarda un valor en el cache semantico persistente (upsert).
 
@@ -1509,6 +1633,8 @@ class RuscaDBStore:
             key: Clave de cache (identificador de la entrada).
             value: Valor serializable a JSON.
             ttl_sec: TTL opcional en segundos; ``None`` = sin expiracion.
+            metadata: Metadatos extra (p. ej. ``dataset_version``/``verified``)
+                que la invalidacion por version necesita leer.
 
         Returns:
             True si la escritura se confirmo; False si el motor la rechazo.
@@ -1516,10 +1642,12 @@ class RuscaDBStore:
         if not isinstance(key, str) or not key.strip():
             raise ValueError("semantic_cache_set: key vacia o no-str")
         payload = json.dumps(value, ensure_ascii=False, default=str)
-        meta = {
+        meta: dict[str, Any] = {
             "cached_at": _dt.datetime.now(_dt.UTC).isoformat(),
             "ttl_sec": ttl_sec,
         }
+        if metadata:
+            meta.update({str(k): v for k, v in metadata.items()})
         try:
             execute(
                 self._handle,

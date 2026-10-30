@@ -339,10 +339,11 @@ jobs:
       - name: Instalar dependencias
         run: uv sync
 
-      - name: Fitness functions (gate F1/F2/F4/F6)
+      - name: Fitness functions (gate F1/F2/F4/F6 + ratchet de deuda)
         # F6 valida firmas puerto->adaptador (no solo hasattr) y el script
         # fuerza sys.path al repo para no medir una copia global de harness.
-        run: uv run python scripts/check_architecture.py --gate
+        # F7 (ratchet) bloquea si la deuda F3/F5 crece vs baseline.
+        run: uv run python scripts/check_architecture.py --gate --ratchet
 
   # ---------------------------------------------------------------------------
   # T1.8: Agents discovery — ~5s

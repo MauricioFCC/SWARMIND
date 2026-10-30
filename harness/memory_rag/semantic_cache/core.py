@@ -51,6 +51,8 @@ class SemanticCache(_SemanticCacheOpsMixin):
         default_ttl: int = DEFAULT_TTL_SECONDS,
         embedding_fn: Callable[[str], np.ndarray] | None = None,
         auto_create_collection: bool = True,
+        dataset_version: str = "",
+        fail_closed: bool = False,
     ) -> None:
         """
         Args:
@@ -60,11 +62,18 @@ class SemanticCache(_SemanticCacheOpsMixin):
             embedding_fn: Funcion para convertir texto a vector. Si None, se usa
                          embedding de caracteres (deterministico, no requiere modelo).
             auto_create_collection: Si True, crea la coleccion si no existe.
+            dataset_version: Version del dataset/modelo que produjo las
+                respuestas. Forma parte de la clave: un bump invalida en bloque.
+            fail_closed: Si True, un hit solo se sirve cuando la entrada trae
+                ``verified=True`` (politica fail-closed de vCache); el resto se
+                trata como miss.
         """
         self._store = vector_store or LanceVectorStore()
         self._threshold = threshold
         self._default_ttl = default_ttl
         self._embedding_fn = embedding_fn or self._default_embedding
+        self._dataset_version = dataset_version
+        self._fail_closed = fail_closed
         #: Inserts desde el ultimo barrido proactivo de expiradas (Item 3).
         self._sets_since_sweep = 0
         self._stats: dict[str, Any] = {
@@ -108,8 +117,14 @@ class SemanticCache(_SemanticCacheOpsMixin):
         effective_threshold = threshold if threshold is not None else self._threshold
 
         # 1. Hash exacto (cache hit perfecto, mas rapido)
-        exact_hash = self._hash_prompt(prompt)
+        exact_hash = self._cache_key(prompt)
         exact_result = self._search_exact(exact_hash, agent_role)
+        if exact_result is not None:
+            response, entry = exact_result
+            if self._fail_closed and not entry.metadata.get("verified"):
+                # Fail-closed: el hit exacto no esta verificado; se evalua por
+                # similitud (que aplica el mismo filtro) o se trata como miss.
+                exact_result = None
         if exact_result is not None:
             response, entry = exact_result
             if entry.is_expired():
@@ -147,6 +162,14 @@ class SemanticCache(_SemanticCacheOpsMixin):
 
             meta = result.get("metadata", {})
             if not isinstance(meta, dict):
+                continue
+
+            # Version-keyed invalidation: entradas de otra version no se sirven.
+            if str(meta.get("dataset_version", "")) != str(self._dataset_version):
+                continue
+
+            # Politica fail-closed: solo se sirven respuestas verificadas.
+            if self._fail_closed and not meta.get("verified"):
                 continue
 
             # Post-filter: agent_role
@@ -217,7 +240,7 @@ class SemanticCache(_SemanticCacheOpsMixin):
         """
         self._stats["sets"] += 1
         now = datetime.now(UTC).isoformat()
-        prompt_hash = self._hash_prompt(prompt)
+        prompt_hash = self._cache_key(prompt)
         effective_ttl = ttl_seconds or self._default_ttl
 
         # --- Fix #5: eliminar [PENDING] previo para evitar duplicados ---
@@ -245,6 +268,8 @@ class SemanticCache(_SemanticCacheOpsMixin):
         lancedb_meta = entry.to_dict()
         lancedb_meta["response"] = response  # asegurar que response este presente
         lancedb_meta["prompt_text_short"] = prompt[:200]
+        lancedb_meta["dataset_version"] = self._dataset_version
+        lancedb_meta["verified"] = bool((metadata or {}).get("verified", False))
 
         try:
             self._store.insert(
@@ -256,7 +281,15 @@ class SemanticCache(_SemanticCacheOpsMixin):
             if persistent is not None and self._native_lance() is None:
                 setter = getattr(persistent, "semantic_cache_set", None)
                 if callable(setter):
-                    setter(prompt_hash, response, effective_ttl)
+                    setter(
+                        prompt_hash,
+                        response,
+                        effective_ttl,
+                        {
+                            "dataset_version": self._dataset_version,
+                            "verified": bool((metadata or {}).get("verified", False)),
+                        },
+                    )
             logger.debug(
                 "SemanticCache SET (hash=%s, agent=%s, len=%d chars)",
                 prompt_hash[:8], agent_role, len(response),
@@ -301,6 +334,8 @@ class SemanticCache(_SemanticCacheOpsMixin):
         stats["collection"] = COLLECTION_SEMANTIC_CACHE
         stats["threshold"] = self._threshold
         stats["default_ttl_seconds"] = self._default_ttl
+        stats["dataset_version"] = self._dataset_version
+        stats["fail_closed"] = self._fail_closed
         return stats
 
     def clear(self) -> int:
@@ -320,6 +355,31 @@ class SemanticCache(_SemanticCacheOpsMixin):
         except Exception as exc:  # noqa: BLE001
             logger.warning("SemanticCache clear failed: %s", exc)
         return 0
+
+    def invalidate_version(self, version: str | None = None) -> int:
+        """Invalida en bloque las entradas de otra version de dataset.
+
+        Args:
+            version: Version objetivo; ``None`` usa ``self._dataset_version``.
+
+        Returns:
+            Numero de entradas eliminadas.
+        """
+        target = str(self._dataset_version if version is None else version)
+        removed = 0
+        seen: set[str] = set()
+        for meta in self._list_cache_entries():
+            prompt_hash = str(meta.get("prompt_hash") or "")
+            if not prompt_hash or prompt_hash in seen:
+                continue
+            if str(meta.get("dataset_version", "")) == target:
+                continue
+            seen.add(prompt_hash)
+            self._delete_entry(prompt_hash)
+            removed += 1
+        if removed:
+            logger.info("SemanticCache invalidated %d stale-version entries", removed)
+        return removed
 
     def clear_expired(self) -> int:
         """

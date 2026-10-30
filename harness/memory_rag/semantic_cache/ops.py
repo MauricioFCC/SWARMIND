@@ -43,6 +43,54 @@ class _SemanticCacheOpsMixin:
             return self._store
         return None
 
+    def _list_cache_entries(self) -> list[dict[str, Any]]:
+        """Lista los metadatos de las entradas del cache (cualquier backend).
+
+        Returns:
+            Lista de dicts de metadata; las entradas persistentes exponen su
+            clave como ``prompt_hash``.
+        """
+        persistent = self._persistent_cache()
+        if persistent is not None and self._native_lance() is None:
+            entries = getattr(persistent, "semantic_cache_entries", None)
+            if not callable(entries):
+                return []
+            return [
+                {
+                    "prompt_hash": str(item.get("id") or ""),
+                    **(item.get("metadata") or {}),
+                }
+                for item in entries()
+            ]
+        try:
+            db = self._native_lance()
+            if db is not None:
+                rows = (
+                    db.open_table(COLLECTION_SEMANTIC_CACHE)
+                    .search()
+                    .limit(100000)
+                    .to_list()
+                )
+                out: list[dict[str, Any]] = []
+                for row in rows:
+                    meta = row.get("metadata")
+                    if isinstance(meta, str):
+                        try:
+                            meta = json.loads(meta)
+                        except (json.JSONDecodeError, TypeError):
+                            meta = {}
+                    if isinstance(meta, dict):
+                        out.append(meta)
+                return out
+            col = getattr(self._store, "_mem_collections", {}).get(
+                COLLECTION_SEMANTIC_CACHE
+            )
+            if col:
+                return [dict(item.metadata) for item in col.items.values()]
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("semantic_cache: %s", exc)
+        return []
+
     def _uses_lancedb_scores(self) -> bool:
         """Indica si los scores del store son distancias L2 (LanceDB)."""
         return self._native_lance() is not None
@@ -64,8 +112,30 @@ class _SemanticCacheOpsMixin:
 
     @staticmethod
     def _hash_prompt(prompt: str) -> str:
-        """Generar hash deterministico del prompt para busqueda exacta."""
-        return hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+        """Hash SHA-256 estable del prompt (sin version de dataset).
+
+        Args:
+            prompt: Texto a hashear.
+
+        Returns:
+            Hexadecimal SHA-256.
+        """
+        return hashlib.sha256(prompt.encode()).hexdigest()
+
+    def _cache_key(self, prompt: str) -> str:
+        """Clave del cache: version de dataset + prompt.
+
+        Un bump de ``dataset_version`` cambia todas las claves y deja de servir
+        respuestas de la version anterior sin escanear la tabla.
+
+        Args:
+            prompt: Prompt normalizado del agente.
+
+        Returns:
+            SHA-256 hexadecimal de ``<version>\\n<prompt>``.
+        """
+        version = str(getattr(self, "_dataset_version", "") or "")
+        return self._hash_prompt(f"{version}\n{prompt}")
 
     def _search_exact(
         self, prompt_hash: str, agent_role: str
@@ -164,7 +234,15 @@ class _SemanticCacheOpsMixin:
             ``(respuesta, entrada)`` o ``None`` si no hay valor vigente.
         """
         try:
-            value = store.semantic_cache_get(prompt_hash)
+            getter = getattr(store, "semantic_cache_get_meta", None)
+            if callable(getter):
+                stored = getter(prompt_hash)
+                if stored is None:
+                    return None
+                value, extra = stored
+            else:
+                value = store.semantic_cache_get(prompt_hash)
+                extra = {}
         except Exception as exc:  # noqa: BLE001
             logger.debug("semantic_cache_get fallo: %s", exc)
             return None
@@ -179,6 +257,7 @@ class _SemanticCacheOpsMixin:
             created_at=stamp,
             last_accessed=stamp,
             ttl_seconds=self._default_ttl,
+            metadata=dict(extra),
         )
 
     def _update_hit_count(self, entry: CacheEntry) -> None:

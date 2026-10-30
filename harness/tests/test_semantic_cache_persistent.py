@@ -76,6 +76,7 @@ def test_delete_entry_removes_both_representations(cache):
     """_delete_entry borra la fila persistente y la vectorial."""
     cache.set("p", "r")
     assert cache._persistent_cache() is not None
-    cache._delete_entry(cache._hash_prompt("p"))
+    key = cache._cache_key("p")
+    cache._delete_entry(key)
     assert cache.get("p") is None
-    assert cache._store.semantic_cache_get(cache._hash_prompt("p")) is None
+    assert cache._store.semantic_cache_get(key) is None

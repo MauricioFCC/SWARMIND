@@ -8,11 +8,15 @@ Verifica:
   incluye imports relativos; excluye el patron facade paquete<->submodulo).
 - F5: Tamano de funcion <= 30 lineas (advisory: deuda legacy).
 - F6: Los adaptadores cumplen la FIRMA de los puertos de dominio.
+- F7: La deuda legacy (F3/F5) solo baja respecto a
+  `scripts/architecture_baseline.json` (ratchet; requiere `--ratchet`).
 
 Modos:
 - Sin flags (default): reporta todo, advise-only, exit 0.
-- ``--gate``: BLOQUEA (exit 1) con violaciones de F1/F2/F4/F6; F3/F5 advisory.
+- ``--gate``: BLOQUEA (exit 1) con F1/F2/F4/F6 (+F7 si se pasa ``--ratchet``).
 - ``--strict``: BLOQUEA con cualquier violacion (incluye deuda legacy).
+- ``--ratchet``: compara F3/F5 con el baseline (solo permite reducir).
+- ``--write-baseline``: congela los conteos actuales de deuda.
 - ``--json``: emite el reporte como JSON (util para CI/telemetria).
 
 Uso: python scripts/check_architecture.py [--gate|--strict] [--json]
@@ -57,6 +61,10 @@ MAX_FUNCTION_LINES = 30
 
 #: Reglas que bloquean merge en modo ``--gate`` (barato y sin deuda legacy).
 BLOCKING_RULES = ("F1", "F2", "F4", "F6")
+
+#: Baseline de deuda (ratchet): solo se permite reducir, nunca aumentar.
+RATCHET_BASELINE = ROOT / "scripts" / "architecture_baseline.json"
+RATCHET_RULES = ("F3", "F5")
 
 #: Contratos puerto -> adaptadores que deben cumplirlos (F6).
 PORT_CONTRACTS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
@@ -374,14 +382,64 @@ def _signature_mismatches(port_method: Any, adapter_method: Any) -> list[str]:
     return errors
 
 
-def run_checks() -> dict[str, list[str]]:
-    """Ejecuta todas las fitness functions y agrupa los hallazgos por regla.
+def check_debt_ratchet(findings: dict[str, list[str]]) -> list[str]:
+    """F7: la deuda legacy (F3/F5) solo puede bajar respecto al baseline.
+
+    Args:
+        findings: Resultado de ``run_checks`` con las listas por regla.
 
     Returns:
-        dict ``F1..F5`` -> lista de violaciones (vacia si pasa).
+        Lista de incrementos de deuda (vacia si no aumento).
+    """
+    if not RATCHET_BASELINE.exists():
+        return [f"F7: falta el baseline {RATCHET_BASELINE}"]
+    try:
+        baseline = json.loads(RATCHET_BASELINE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"F7: baseline ilegible ({exc})"]
+    limits = baseline.get("rules", {})
+    errors: list[str] = []
+    for rule in RATCHET_RULES:
+        current = len(findings.get(rule, []))
+        allowed = int(limits.get(rule, 0))
+        if current > allowed:
+            errors.append(
+                f"F7: deuda {rule} aumento {allowed} -> {current} "
+                "(el ratchet solo permite reducir; corrige o justifica el baseline)"
+            )
+    return errors
+
+
+def write_debt_baseline(findings: dict[str, list[str]]) -> Path:
+    """Escribe el baseline de deuda con los conteos actuales.
+
+    Args:
+        findings: Resultado de ``run_checks``.
+
+    Returns:
+        Ruta del baseline escrito.
+    """
+    payload = {
+        "generated": "auto",
+        "rules": {rule: len(findings.get(rule, [])) for rule in RATCHET_RULES},
+    }
+    RATCHET_BASELINE.write_text(
+        json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+    )
+    return RATCHET_BASELINE
+
+
+def run_checks(ratchet: bool = False) -> dict[str, list[str]]:
+    """Ejecuta todas las fitness functions y agrupa los hallazgos por regla.
+
+    Args:
+        ratchet: Si True, agrega F7 (incremento de deuda vs baseline).
+
+    Returns:
+        dict ``F1..F7`` -> lista de violaciones (vacia si pasa).
     """
     frameworks, infra = _scan_domain()
-    return {
+    findings = {
         "F1": infra,
         "F2": frameworks,
         "F3": check_module_size(),
@@ -389,6 +447,9 @@ def run_checks() -> dict[str, list[str]]:
         "F5": check_function_size(),
         "F6": check_port_conformance(),
     }
+    if ratchet:
+        findings["F7"] = check_debt_ratchet(findings)
+    return findings
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -401,16 +462,21 @@ def main(argv: list[str] | None = None) -> int:
         Exit code: 0 si pasa el modo elegido, 1 si hay violaciones bloqueantes.
     """
     args = list(sys.argv[1:] if argv is None else argv)
-    findings = run_checks()
+    findings = run_checks(ratchet="--ratchet" in args)
+    if "--write-baseline" in args:
+        path = write_debt_baseline(findings)
+        print(f"baseline escrito: {path} -> {len(findings['F3'])} F3, "
+              f"{len(findings['F5'])} F5")
+        return 0
     if "--strict" in args:
         blocking: tuple[str, ...] = tuple(findings)
     elif "--gate" in args:
-        blocking = BLOCKING_RULES
+        blocking = BLOCKING_RULES + (("F7",) if "--ratchet" in args else ())
     else:
         # Default: advise-only (exit 0). Bloquear solo con --gate/--strict evita
         # romper scripts/hooks que invocan el checker sin flags.
         blocking = ()
-    blocking_errors = [err for rule in blocking for err in findings[rule]]
+    blocking_errors = [err for rule in blocking for err in findings.get(rule, [])]
     advisory = [err for rule, errs in findings.items() if rule not in blocking
                 for err in errs]
     if "--json" in args:

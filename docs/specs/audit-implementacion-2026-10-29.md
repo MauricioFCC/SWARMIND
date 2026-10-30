@@ -122,6 +122,24 @@ y cubiertos con tests:
 > (`~/.config/opencode/harness`). El checker ahora fuerza `ROOT` en
 > `sys.path` antes de importar.
 
+## 3.2 Cierre de gaps del research (ciclo 11.54)
+
+Se implementaron las capacidades que no dependen de cambios en RuscaDB:
+
+| Gap | Implementación | Test |
+|---|---|---|
+| Write gate (SSGM) | `RuscaDBStore(memory_guard=...)` + `SWARMIND_MEMORY_GUARD_STRICT=1`; cuarentena o `ValueError` con WHAT/WHY/WHERE | `test_memory_governance.py` (6) |
+| Refuerzo por uso | `record_access()` (`last_accessed` + `access_count`); el decaimiento prefiere `last_accessed` | `test_memory_governance.py` |
+| Invalidación por versión de caché | `dataset_version` en `_cache_key` + `invalidate_version()` | `test_semantic_cache_version.py` (5) |
+| Fail-closed del caché | `SemanticCache(fail_closed=True)` exige `verified=True` (hit exacto y similitud) | `test_semantic_cache_version.py` |
+| Actor de escritura único | `WriteActor` (hilo dedicado, cola bounded) + `MemoryBackpressureError`; `write_actor=True` | `test_write_actor.py` (6) |
+| Ratchet de deuda | `--ratchet` + `scripts/architecture_baseline.json`; F7 bloquea incrementos | `test_architecture_ratchet.py` (6) |
+
+Con esto, los únicos gaps abiertos son los que exigen cambio upstream
+(RaBitQ/IVF-PQ, columnas de gobernanza) o políticas no triviales (evicción por
+calor, umbral aprendido, reconciliación programada), documentados en
+`docs/research/frontier-2026-10-29.md` §9.1.
+
 ## 4. Investigación aplicada
 
 Ver `docs/research/frontier-2026-10-29.md` (6 frentes con fuentes 2023-2026):

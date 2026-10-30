@@ -5,6 +5,19 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-30)
+
+### Estado 2026-10-30 (Ciclo 11.54 — Cierre de gaps del research)
+- Write gate SSGM (`MemoryGuard` inyectable, cuarentena / strict) y refuerzo
+  por uso (`record_access`, `last_accessed`).
+- Cache semantico version-keyed (`dataset_version`, `invalidate_version`) y
+  fail-closed (`verified=True`).
+- Actor de escritura single-writer con cola bounded y `MemoryBackpressureError`.
+- Gate de arquitectura con ratchet de deuda (F7) y baseline congelado.
+- Gaps restantes: RaBitQ/IVF-PQ (bloqueado por FFI de RuscaDB), columnas de
+  gobernanza, eviccion por calor, umbral aprendido, reconciliacion programada.
+- Ruff 0, Vulture 0, gates verdes.
+
 ## Estado Actual (2026-10-29)
 
 ### Estado 2026-10-29 (Ciclo 11.53 — Puertos/adaptadores y memoria gobernada)

@@ -1,4 +1,8 @@
-from .async_ruscadb import AsyncRuscaDBStore
+from .async_ruscadb import (
+    AsyncRuscaDBStore,
+    MemoryBackpressureError,
+    WriteActor,
+)
 from .context_window_manager import ContextSection, ContextWindow, ContextWindowManager
 from .optimization_pipeline import (
     OptimizationPipeline,
@@ -38,6 +42,7 @@ __all__ = [
     "ContextWindowManager",
     # Skill Loader
     "LazySkillLoader",
+    "MemoryBackpressureError",
     # Optimization Pipeline
     "OptimizationPipeline",
     "OptimizationResult",
@@ -55,6 +60,7 @@ __all__ = [
     # Token Budget
     "TokenBudget",
     "TokenPool",
+    "WriteActor",
     "create_loader",
     "create_pipeline",
     "create_shapley_flow",

@@ -1,3 +1,31 @@
+## [11.54] - 2026-10-30
+
+### Added
+- `RuscaDBStore(memory_guard=..., strict_guard=...)`: write gate SSGM que valida
+  la metadata antes de escribir (cuarentena por defecto; `ValueError` con
+  WHAT/WHY/WHERE si `SWARMIND_MEMORY_GUARD_STRICT=1`). Cierra el gap de
+  `MemoryGuard` sin cablear.
+- `RuscaDBStore.record_access()` + `AsyncRuscaDBStore.record_access()`:
+  refuerzo por uso (`last_accessed`, `access_count`); el decaimiento temporal
+  prefiere `last_accessed` sobre `created_at` (MemoryBank/MemoryOS).
+- `SemanticCache(dataset_version=..., fail_closed=...)`: invalidacion en bloque
+  por version (`_cache_key` + `invalidate_version`) y politica fail-closed
+  (solo `verified=True`).
+- `WriteActor` + `MemoryBackpressureError`: actor single-writer con cola
+  acotada y backpressure tipado; `AsyncRuscaDBStore(write_actor=True)`.
+- `scripts/check_architecture.py`: F7 ratchet de deuda contra
+  `scripts/architecture_baseline.json` (`--ratchet`, `--write-baseline`).
+
+### Changed
+- CI y `.githooks/pre-commit` ejecutan `--gate --ratchet`.
+- `RuscaDBStore.semantic_cache_get_meta()` expone valor + metadatos (TTL y
+  version) al cache semantico.
+
+### Docs
+- `docs/research/frontier-2026-10-29.md` §9: matriz de gaps
+  (implementado / parcial / bloqueado) y §9.1 con lo abierto y por que.
+- `docs/specs/audit-implementacion-2026-10-29.md`: §3.2 cierre de gaps.
+
 ## [11.53] - 2026-10-29
 
 ### Added
