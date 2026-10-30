@@ -112,6 +112,41 @@ def test_record_access_then_recency_uses_access_time(store):
     assert after[0]["text"] == "memoria antigua"
 
 
+def test_governance_columns_are_declared(store):
+    """El esquema base declara las columnas de gobernanza indexables."""
+    from harness.memory_rag.ruscadb_store import _SCHEMA
+
+    names = {column["name"] for column in _SCHEMA}
+    assert {
+        "source",
+        "trust_tier",
+        "session_id",
+        "derived_from",
+        "write_gate_verdict",
+    } <= names
+
+
+def test_insert_writes_governance_columns(store):
+    """El insert puebla las columnas (no solo el JSON de metadata)."""
+    store.insert(
+        "mem",
+        [[1.0, 0.0]],
+        [
+            {
+                "trust_tier": "user_stated",
+                "session_id": "ses-42",
+                "derived_from": "doc-9",
+            }
+        ],
+        texts=["contenido"],
+    )
+    raw = store.execute("SELECT * FROM mem")
+    assert "ses-42" in raw
+    assert "doc-9" in raw
+    assert "user_stated" in raw
+    assert "allowed" in raw
+
+
 def test_record_access_unknown_ids_is_noop(store):
     """Ids inexistentes no lanzan y devuelven 0."""
     assert store.record_access("mem", ["no-existe"]) == 0

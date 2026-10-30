@@ -65,12 +65,23 @@ logger = logging.getLogger("harness.memory_rag.ruscadb_store")
 _DEFAULT_COLLECTIONS = ("memory", "semantic_cache", "agent_workspace_logs")
 
 #: Esquema base de una coleccion (``text`` es la columna FTS BM25).
+#: Las columnas de gobernanza son de primera clase (indexables) para que el
+#: retrieval no dependa de parsear JSON; las tablas legacy no las tienen y el
+#: insert degrada a metadata (ver ``_insert_row``).
 _SCHEMA = (
     {"name": "id", "type": "Text"},
     {"name": "text", "type": "Text"},
     {"name": "metadata", "type": "Text"},
     {"name": "created_at", "type": "Text"},
+    {"name": "source", "type": "Text"},
+    {"name": "trust_tier", "type": "Text"},
+    {"name": "session_id", "type": "Text"},
+    {"name": "derived_from", "type": "Text"},
+    {"name": "write_gate_verdict", "type": "Text"},
 )
+
+#: Columnas de gobernanza que se indexan si el motor lo soporta.
+_GOVERNANCE_COLUMNS = ("trust_tier", "session_id")
 
 #: Identificadores RQL seguros (evita inyeccion por nombre de coleccion/columna).
 _IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -161,6 +172,8 @@ class RuscaDBStore:
         readonly: bool = False,
         memory_guard: Any = None,
         strict_guard: bool | None = None,
+        heat_policy: Any = None,
+        reconcile_every: int | None = None,
     ) -> None:
         """Abre la base y garantiza las colecciones base.
 
@@ -174,6 +187,10 @@ class RuscaDBStore:
                 inyecta, cada insert valida su metadata (SSGM write gate).
             strict_guard: Si True un fallo del guard lanza ``ValueError``; si
                 es None se toma de ``SWARMIND_MEMORY_GUARD_STRICT``.
+            heat_policy: ``HeatPolicy`` opcional; si se inyecta, el retrieval
+                aplica su vida media por coleccion y excluye ``evicted``.
+            reconcile_every: Cada cuantas escrituras se reconcilia la memoria
+                (SSGM); 0/None lo desactiva (env ``SWARMIND_RECONCILE_EVERY``).
         """
         if db_path is None and config is None:
             try:
@@ -209,6 +226,15 @@ class RuscaDBStore:
         if strict_guard is None:
             strict_guard = os.environ.get("SWARMIND_MEMORY_GUARD_STRICT", "") == "1"
         self._strict_guard = bool(strict_guard)
+        self._heat_policy = heat_policy
+        if reconcile_every is None:
+            reconcile_every = int(
+                os.environ.get("SWARMIND_RECONCILE_EVERY", "0") or 0
+            )
+        self._reconcile_every = max(int(reconcile_every), 0)
+        self._reconcile_counter = 0
+        #: Tablas creadas con el esquema legacy (sin columnas de gobernanza).
+        self._legacy_tables: set[str] = set()
         with _OPEN_LOCK:
             self._handle = rdb_open_opts(
                 self.db_path,
@@ -272,6 +298,8 @@ class RuscaDBStore:
             create_table(self._handle, name, list(_SCHEMA))
             self._index(name, "id")
             self._index(name, "created_at")
+            for column in _GOVERNANCE_COLUMNS:
+                self._index(name, column)
         except RuscadbError as exc:
             logger.debug("create_collection '%s' fallo: %s", name, exc)
         self._collections.add(name)
@@ -412,6 +440,9 @@ class RuscaDBStore:
                 "metadata": json.dumps(meta, ensure_ascii=False),
                 "created_at": now,
             }
+            # Columnas de gobernanza indexables (tablas nuevas). En tablas
+            # legacy el insert reintenta sin ellas (ver _insert_row).
+            scalars.update(self._governance_scalars(meta))
             if column == "text":
                 scalars["text"] = text
             record: dict[str, Any] = {
@@ -432,15 +463,76 @@ class RuscaDBStore:
                     resolved.append({"label": str(edge.get("label", "link")), "target": target})
                 record["edges"] = resolved
             try:
-                insert_record(self._handle, collection, record)
-                rid_rusca = last_inserted_id()
+                rid_rusca = self._insert_row(collection, record)
                 if rid_rusca:
                     self._map_rid(collection, rid, rid_rusca)
             except RuscadbError as exc:
                 logger.warning("insert en '%s' fallo: %s", collection, exc)
         self._commit()
         self.invalidate_cache(collection)
+        self._maybe_reconcile()
         return ids
+
+    @staticmethod
+    def _governance_scalars(meta: dict[str, Any]) -> dict[str, str]:
+        """Extrae las columnas de gobernanza indexables desde la metadata.
+
+        Args:
+            meta: Metadata ya normalizada (con ``trust_tier``/``source``).
+
+        Returns:
+            dict con las 5 columnas de gobernanza (el motor exige que el insert
+            incluya todas las columnas declaradas en el esquema).
+        """
+        scalars: dict[str, str] = {}
+        for column in ("source", "trust_tier", "session_id", "derived_from"):
+            value = meta.get(column)
+            scalars[column] = value if isinstance(value, str) else ""
+        verdict = meta.get("write_gate_verdict")
+        if not isinstance(verdict, str) or not verdict:
+            verdict = "quarantined" if meta.get("trust_tier") == "quarantined" else "allowed"
+        scalars["write_gate_verdict"] = verdict
+        return scalars
+
+    def _insert_row(self, collection: str, record: dict[str, Any]) -> str | None:
+        """Inserta una fila, degradando si la tabla no tiene columnas nuevas.
+
+        Args:
+            collection: Tabla destino.
+            record: Registro con ``scalars``/``vector``.
+
+        Returns:
+            ULID insertado (o None si el motor no lo devuelve).
+
+        Raises:
+            RuscadbError: Si el motor rechaza el insert sin columnas nuevas.
+        """
+        governance = ("source", "trust_tier", "session_id", "derived_from",
+                      "write_gate_verdict")
+        if collection in self._legacy_tables:
+            legacy = dict(record)
+            legacy["scalars"] = {
+                key: value
+                for key, value in record["scalars"].items()
+                if key not in governance
+            }
+            insert_record(self._handle, collection, legacy)
+            return last_inserted_id()
+        try:
+            insert_record(self._handle, collection, record)
+        except RuscadbError as exc:
+            legacy = dict(record)
+            legacy["scalars"] = {
+                key: value
+                for key, value in record["scalars"].items()
+                if key not in governance
+            }
+            logger.debug(
+                "insert con columnas de gobernanza fallo (%s); reintento legacy", exc
+            )
+            insert_record(self._handle, collection, legacy)
+            self._legacy_tables.add(collection)
+        return last_inserted_id()
 
     def _map_rid(self, collection: str, logical_id: str, rid_rusca: str) -> None:
         """Registra el mapeo id logico -> ULID fisico en ``_rid_map``.
@@ -744,6 +836,13 @@ class RuscaDBStore:
                     meta = {"raw": meta}
             elif not isinstance(meta, dict):
                 meta = {"value": meta}
+            # Columnas de gobernanza indexables: si la metadata no las trae,
+            # se exponen desde la fila (tablas nuevas).
+            for column in ("source", "trust_tier", "session_id", "derived_from",
+                           "write_gate_verdict"):
+                value = self._unwrap_scalar(row.get(column))
+                if isinstance(value, str) and value and column not in meta:
+                    meta[column] = value
             out.append(
                 {
                     "id": self._unwrap_scalar(row.get("id")),
@@ -787,13 +886,32 @@ class RuscaDBStore:
             kwargs: kwargs recibidos por ``search``/``full_text_search``/``hybrid_search``.
 
         Returns:
-            dict con ``allow_quarantined``, ``min_trust`` y ``half_life_days``.
+            dict con ``allow_quarantined``, ``min_trust``, ``half_life_days``
+            e ``include_evicted``.
         """
         return {
             "allow_quarantined": bool(kwargs.get("allow_quarantined", False)),
             "min_trust": float(kwargs.get("min_trust", 0.0)),
             "half_life_days": kwargs.get("half_life_days"),
+            "include_evicted": bool(kwargs.get("include_evicted", False)),
         }
+
+    def _retrieval_options(
+        self, kwargs: dict[str, Any], collection: str
+    ) -> dict[str, Any]:
+        """Opciones de retrieval con la vida media de la politica de calor.
+
+        Args:
+            kwargs: Opciones explicitas del llamador.
+            collection: Coleccion consultada.
+
+        Returns:
+            Opciones efectivas (``half_life_days`` de la politica si aplica).
+        """
+        options = self._trust_options(kwargs)
+        if options["half_life_days"] is None and self._heat_policy is not None:
+            options["half_life_days"] = self._heat_policy.half_life_for(collection)
+        return options
 
     @staticmethod
     def _age_days(created_at: Any, reference: _dt.datetime) -> float | None:
@@ -828,6 +946,7 @@ class RuscaDBStore:
         allow_quarantined: bool = False,
         min_trust: float = 0.0,
         half_life_days: float | None = None,
+        include_evicted: bool = False,
         now: _dt.datetime | None = None,
     ) -> list[dict[str, Any]]:
         """Filtra por confianza y pondera por recencia (retrieval gobernado).
@@ -844,6 +963,7 @@ class RuscaDBStore:
             allow_quarantined: Servir tambien entradas en cuarentena.
             min_trust: Peso minimo de confianza aceptado.
             half_life_days: Vida media del decaimiento en dias (None = off).
+            include_evicted: Incluir entradas evacuadas por la politica de calor.
             now: Instante de referencia para la edad (default UTC actual).
 
         Returns:
@@ -853,6 +973,9 @@ class RuscaDBStore:
         kept: list[dict[str, Any]] = []
         for item in items:
             meta = item.get("metadata") if isinstance(item.get("metadata"), dict) else {}
+            if meta.get("evicted") and not include_evicted:
+                logger.debug("retrieval: entrada evacuada excluida id=%s", item.get("id"))
+                continue
             tier = str(meta.get("trust_tier") or "user_stated")
             weight = TRUST_TIER_WEIGHTS.get(tier)
             if weight is None:
@@ -913,7 +1036,7 @@ class RuscaDBStore:
         for rank, item in enumerate(out):
             item["score"] = 1.0 / (rank + 1)
         return self._apply_trust_and_recency(
-            out, top_k, **self._trust_options(kwargs)
+            out, top_k, **self._retrieval_options(kwargs, collection)
         )
 
     def full_text_search(
@@ -948,7 +1071,7 @@ class RuscaDBStore:
         for rank, item in enumerate(out):
             item["score"] = 1.0 / (rank + 1)
         return self._apply_trust_and_recency(
-            out, top_k, **self._trust_options(kwargs)
+            out, top_k, **self._retrieval_options(kwargs, collection)
         )
 
     def hybrid_search(
@@ -977,7 +1100,7 @@ class RuscaDBStore:
         Returns:
             Lista fusionada, deduplicada y gobernada por id.
         """
-        options = self._trust_options(kwargs)
+        options = self._retrieval_options(kwargs, collection)
         filters = kwargs.get("filters")
         dense = self.search(
             collection, query_vector, top_k=top_k * 2, **options, filters=filters
@@ -1028,7 +1151,7 @@ class RuscaDBStore:
             Nodos alcanzables normalizados.
         """
         depth = max(1, int(depth))
-        options = self._trust_options(kwargs)
+        options = self._retrieval_options(kwargs, collection)
         if start:
             nodes = self._traverse_from(collection, start, depth)
         else:
@@ -1094,6 +1217,70 @@ class RuscaDBStore:
             "metadata": self._record_metadata(record),
             "raw": record,
         }
+
+    def entries(self, collection: str, limit: int = 10000) -> list[dict[str, Any]]:
+        """Lista registros normalizados de una coleccion (scan acotado).
+
+        Args:
+            collection: Coleccion a leer.
+            limit: Maximo de filas (cap explicito y documentado).
+
+        Returns:
+            Lista de ``{id, text, metadata, created_at, raw}``.
+        """
+        _safe_ident(collection)
+        try:
+            rows = execute(
+                self._handle,
+                f"SELECT * FROM {collection} LIMIT {max(1, int(limit))}",  # nosec B608
+            )
+        except RuscadbError as exc:
+            logger.debug("entries '%s' fallo: %s", collection, exc)
+            return []
+        return self._parse_rows(rows)
+
+    def reconcile(self, collection: str | None = None) -> dict[str, Any]:
+        """Reconcilia la memoria (injection, tamper y duplicados).
+
+        Args:
+            collection: Coleccion concreta; ``None`` reconcilia las colecciones
+                de memoria (excluye caches y el mapa interno de rids).
+
+        Returns:
+            dict coleccion -> reporte serializable.
+        """
+        from .memory_reconciliation import reconcile_collection
+
+        excluded = {"semantic_cache", "_rid_map", "agent_workspace_logs"}
+        if collection:
+            targets = [collection]
+        else:
+            targets = [
+                name for name in self.list_collections() if name not in excluded
+            ]
+        reports: dict[str, Any] = {}
+        for target in targets:
+            report = reconcile_collection(self, target)
+            reports[target] = {
+                "scanned": report.scanned,
+                "quarantined": report.quarantined,
+                "duplicates": report.duplicates,
+                "ok": report.ok,
+            }
+        return reports
+
+    def _maybe_reconcile(self) -> None:
+        """Dispara la reconciliacion periodica (SSGM) cada N escrituras."""
+        if self._reconcile_every <= 0 or self._readonly:
+            return
+        self._reconcile_counter += 1
+        if self._reconcile_counter < self._reconcile_every:
+            return
+        self._reconcile_counter = 0
+        try:
+            self.reconcile()
+        except Exception as exc:  # noqa: BLE001 - la reconciliacion nunca rompe writes
+            logger.warning("reconciliacion periodica fallo: %s", exc)
 
     def get_collection_stats(self, name: str) -> dict[str, Any]:
         """Devuelve el conteo de filas y el LSN de la coleccion.
@@ -1654,8 +1841,7 @@ class RuscaDBStore:
                 "DELETE FROM semantic_cache "  # nosec B608
                 f"WHERE id = '{_escape_literal(key)}'",
             )
-            insert_record(
-                self._handle,
+            self._insert_row(
                 "semantic_cache",
                 {
                     "scalars": {
@@ -1663,6 +1849,11 @@ class RuscaDBStore:
                         "text": payload,
                         "metadata": json.dumps(meta, ensure_ascii=False),
                         "created_at": meta["cached_at"],
+                        "source": "cache",
+                        "trust_tier": "derived",
+                        "session_id": "",
+                        "derived_from": "",
+                        "write_gate_verdict": "allowed",
                     }
                 },
             )

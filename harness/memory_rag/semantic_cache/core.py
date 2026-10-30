@@ -13,6 +13,7 @@ from typing import Any
 
 import numpy as np
 
+from ..cache_threshold import AdaptiveThreshold
 from ..lance_vector_store import LanceVectorStore
 from .constants import (
     COLLECTION_SEMANTIC_CACHE,
@@ -53,6 +54,7 @@ class SemanticCache(_SemanticCacheOpsMixin):
         auto_create_collection: bool = True,
         dataset_version: str = "",
         fail_closed: bool = False,
+        adaptive_threshold: bool = False,
     ) -> None:
         """
         Args:
@@ -67,6 +69,8 @@ class SemanticCache(_SemanticCacheOpsMixin):
             fail_closed: Si True, un hit solo se sirve cuando la entrada trae
                 ``verified=True`` (politica fail-closed de vCache); el resto se
                 trata como miss.
+            adaptive_threshold: Si True, el umbral se aprende por familia de
+                prompt con ``record_feedback`` (vCache).
         """
         self._store = vector_store or LanceVectorStore()
         self._threshold = threshold
@@ -74,6 +78,11 @@ class SemanticCache(_SemanticCacheOpsMixin):
         self._embedding_fn = embedding_fn or self._default_embedding
         self._dataset_version = dataset_version
         self._fail_closed = fail_closed
+        self._adaptive = (
+            AdaptiveThreshold(base=threshold, store=self._store)
+            if adaptive_threshold
+            else None
+        )
         #: Inserts desde el ultimo barrido proactivo de expiradas (Item 3).
         self._sets_since_sweep = 0
         self._stats: dict[str, Any] = {
@@ -115,6 +124,10 @@ class SemanticCache(_SemanticCacheOpsMixin):
         """
         self._stats["total_requests"] += 1
         effective_threshold = threshold if threshold is not None else self._threshold
+        if self._adaptive is not None:
+            effective_threshold = max(
+                effective_threshold, self._adaptive.threshold_for(prompt)
+            )
 
         # 1. Hash exacto (cache hit perfecto, mas rapido)
         exact_hash = self._cache_key(prompt)
@@ -336,6 +349,9 @@ class SemanticCache(_SemanticCacheOpsMixin):
         stats["default_ttl_seconds"] = self._default_ttl
         stats["dataset_version"] = self._dataset_version
         stats["fail_closed"] = self._fail_closed
+        stats["adaptive_threshold"] = self._adaptive is not None
+        if self._adaptive is not None:
+            stats["adaptive"] = self._adaptive.stats()
         return stats
 
     def clear(self) -> int:
@@ -355,6 +371,26 @@ class SemanticCache(_SemanticCacheOpsMixin):
         except Exception as exc:  # noqa: BLE001
             logger.warning("SemanticCache clear failed: %s", exc)
         return 0
+
+    def record_feedback(self, prompt: str, correct: bool) -> float:
+        """Registra si un hit fue correcto y ajusta el umbral (vCache).
+
+        Args:
+            prompt: Prompt que produjo el hit.
+            correct: True si la respuesta cacheada fue correcta.
+
+        Returns:
+            Umbral aprendido para esa familia de prompt.
+
+        Raises:
+            RuntimeError: Si el umbral adaptativo no esta activo.
+        """
+        if self._adaptive is None:
+            raise RuntimeError(
+                "SemanticCache.record_feedback | WHAT=umbral_no_adaptativo | "
+                "WHY=adaptive_threshold=False | WHERE=record_feedback"
+            )
+        return self._adaptive.observe(prompt, correct)
 
     def invalidate_version(self, version: str | None = None) -> int:
         """Invalida en bloque las entradas de otra version de dataset.

@@ -5,7 +5,23 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-30b)
+
+### Estado 2026-10-30 (Ciclo 11.55 — Cierre de gaps parciales)
+- Gobernanza indexada: columnas `source/trust_tier/session_id/derived_from/
+  write_gate_verdict` (fallback metadata en tablas legacy).
+- Reconciliacion SSGM programable (`reconcile_every`) con tamper/duplicados.
+- Eviccion por calor STM/MTM/LTM + vida media por coleccion.
+- Umbral adaptativo por prompt (vCache) con feedback y persistencia.
+- Contratos declarativos de dependencias (F8, `architecture_contracts.toml`).
+- Batching de inserts (`WriteBatcher`) y lecturas opcionales por actor.
+- Unico gap restante: RaBitQ/IVF-PQ (bloqueado por el C-ABI de RuscaDB;
+  contrato en `docs/specs/ruscadb-ivf-pq.md` §6).
+- Ruff 0, Vulture 0, gate F1/F2/F4/F6/F7/F8 OK.
+
 ## Estado Actual (2026-10-30)
+
+- **Siguiente accion concreta (gap upstream #1)**: exponer `ruscadb_quantize` + `ruscadb_search_bq` en el C-ABI de RuscaDB (`docs/specs/ruscadb-ivf-pq.md` §6) para habilitar KNN binario + rescore. Trigger: memoria vectorial > 256 MiB, p95 > 50 ms o `RUSCADB_BQ=1`.
 
 ### Estado 2026-10-30 (Ciclo 11.54 — Cierre de gaps del research)
 - Write gate SSGM (`MemoryGuard` inyectable, cuarentena / strict) y refuerzo

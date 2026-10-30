@@ -24,6 +24,7 @@ import asyncio
 import logging
 import queue
 import threading
+import time
 from concurrent.futures import Future
 from typing import Any, Self
 
@@ -135,6 +136,131 @@ class WriteActor:
             logger.warning("WriteActor: el hilo no termino en %.1fs", timeout)
 
 
+class WriteBatcher:
+    """Coalesce inserciones en lotes antes de tocar el motor (write batching).
+
+    Reduce el overhead por fila (commit/parseo del C-ABI) agrupando inserts de
+    la misma coleccion. Si el lote no alcanza ``max_batch``, queda pendiente
+    hasta ``flush()`` (llamado al cerrar o por el llamador).
+
+    Args:
+        store: Store sincrono subyacente.
+        max_batch: Numero de inserts que dispara el flush.
+        max_delay: Segundos maximos que un insert espera por companeros antes
+            de forzar el flush (evita deadlock con trafico bajo).
+    """
+
+    def __init__(
+        self, store: Any, max_batch: int = 16, max_delay: float = 0.01
+    ) -> None:
+        if max_batch < 2:
+            raise ValueError("WriteBatcher: max_batch debe ser >= 2")
+        self._store = store
+        self._max_batch = int(max_batch)
+        self._max_delay = max(float(max_delay), 0.0)
+        self._lock = threading.Lock()
+        self._pending: dict[str, list[dict[str, Any]]] = {}
+
+    @property
+    def pending(self) -> int:
+        """Numero de inserts en espera de flush."""
+        with self._lock:
+            return sum(len(bucket) for bucket in self._pending.values())
+
+    def submit(
+        self,
+        collection: str,
+        vectors: Any,
+        metadata: list[dict[str, Any]],
+        texts: list[str] | None = None,
+        timeout: float = 30.0,
+    ) -> list[str]:
+        """Encola un insert y espera sus ids (flushea al alcanzar el lote).
+
+        Args:
+            collection: Coleccion destino.
+            vectors: Matriz o vector unico.
+            metadata: Metadata por fila.
+            texts: Textos explicitos por fila (opcional).
+            timeout: Segundos maximos de espera.
+
+        Returns:
+            Ids logicos insertados para esta peticion.
+
+        Raises:
+            TimeoutError: Si el lote no se completa a tiempo.
+        """
+        future: Future[list[str]] = Future()
+        with self._lock:
+            bucket = self._pending.setdefault(collection, [])
+            bucket.append(
+                {
+                    "vectors": vectors,
+                    "metadata": metadata,
+                    "texts": texts,
+                    "future": future,
+                }
+            )
+            if len(bucket) >= self._max_batch:
+                self._flush_locked(collection)
+        deadline = time.monotonic() + self._max_delay
+        while not future.done() and time.monotonic() < deadline:
+            time.sleep(0.001)
+        if not future.done():
+            with self._lock:
+                self._flush_locked(collection)
+        return future.result(timeout=timeout)
+
+    def flush(self) -> int:
+        """Fuerza el flush de todos los lotes pendientes.
+
+        Returns:
+            Numero de inserts enviados al motor.
+        """
+        with self._lock:
+            sent = 0
+            for collection in list(self._pending):
+                sent += self._flush_locked(collection)
+            return sent
+
+    def _flush_locked(self, collection: str) -> int:
+        """Ejecuta un insert agregado (debe llamarse con el lock tomado)."""
+        import numpy as np
+
+        batch = self._pending.pop(collection, [])
+        if not batch:
+            return 0
+        matrices = [np.atleast_2d(np.asarray(item["vectors"], dtype=np.float32))
+                    for item in batch]
+        counts = [matrix.shape[0] for matrix in matrices]
+        stacked = np.vstack(matrices)
+        metadata: list[dict[str, Any]] = []
+        texts: list[str] = []
+        texts_present = any(item["texts"] for item in batch)
+        for item in batch:
+            metadata.extend(item["metadata"])
+            if texts_present:
+                row_texts = item["texts"] or []
+                texts.extend(row_texts[i] if i < len(row_texts) else ""
+                             for i in range(len(item["metadata"])))
+        try:
+            ids = self._store.insert(
+                collection,
+                stacked,
+                metadata,
+                **({"texts": texts} if texts_present else {}),
+            )
+        except BaseException as exc:  # noqa: BLE001 - se propaga a cada future
+            for item in batch:
+                item["future"].set_exception(exc)
+            return 0
+        offset = 0
+        for item, count in zip(batch, counts, strict=True):
+            item["future"].set_result(ids[offset: offset + count])
+            offset += count
+        return len(batch)
+
+
 class AsyncRuscaDBStore:
     """Wrapper async que delega en un store sincrono via ``to_thread``.
 
@@ -144,6 +270,9 @@ class AsyncRuscaDBStore:
         write_actor: Si True, las escrituras se confinan a un ``WriteActor``
             (single-writer con cola acotada).
         queue_size: Capacidad de la cola del actor.
+        batch_size: Si > 1, agrupa inserts en lotes de ese tamano.
+        read_through_actor: Si True, las lecturas tambien pasan por el actor
+            (serializacion estricta; por defecto lecturas en paralelo).
     """
 
     def __init__(
@@ -152,10 +281,14 @@ class AsyncRuscaDBStore:
         executor: Any = None,
         write_actor: bool = False,
         queue_size: int = DEFAULT_WRITE_QUEUE_SIZE,
+        batch_size: int = 0,
+        read_through_actor: bool = False,
     ) -> None:
         self._store = store
         self._executor = executor
         self._actor = WriteActor(store, queue_size=queue_size) if write_actor else None
+        self._batcher = WriteBatcher(store, batch_size) if batch_size > 1 else None
+        self._read_through_actor = read_through_actor
 
     @classmethod
     def from_path(
@@ -188,6 +321,11 @@ class AsyncRuscaDBStore:
         """Actor de escritura, si esta activo."""
         return self._actor
 
+    @property
+    def batcher(self) -> WriteBatcher | None:
+        """Batcher de inserts, si esta activo."""
+        return self._batcher
+
     async def _run(self, func: Any, *args: Any, **kwargs: Any) -> Any:
         """Ejecuta ``func`` en un hilo sin bloquear el event loop.
 
@@ -219,6 +357,21 @@ class AsyncRuscaDBStore:
             return await self._run(func, *args, **kwargs)
         return await self._run(self._actor.submit, func, *args, **kwargs)
 
+    async def _read(self, func: Any, *args: Any, **kwargs: Any) -> Any:
+        """Ejecuta una lectura (por el actor si ``read_through_actor``).
+
+        Args:
+            func: Callable de lectura.
+            *args: Argumentos posicionales.
+            **kwargs: Argumentos nombrados.
+
+        Returns:
+            El resultado del callable.
+        """
+        if self._actor is not None and self._read_through_actor:
+            return await self._run(self._actor.submit, func, *args, **kwargs)
+        return await self._run(func, *args, **kwargs)
+
     async def search(
         self, collection: str, query_vector: Any, top_k: int = 5, **kwargs: Any
     ) -> list[dict[str, Any]]:
@@ -233,7 +386,7 @@ class AsyncRuscaDBStore:
         Returns:
             Lista de resultados ordenada por cercania.
         """
-        return await self._run(
+        return await self._read(
             self._store.search, collection, query_vector, top_k=top_k, **kwargs
         )
 
@@ -257,7 +410,7 @@ class AsyncRuscaDBStore:
         Returns:
             Lista fusionada por Reciprocal Rank Fusion.
         """
-        return await self._run(
+        return await self._read(
             self._store.hybrid_search,
             collection,
             query_vector,
@@ -284,6 +437,11 @@ class AsyncRuscaDBStore:
         Returns:
             Ids logicos insertados.
         """
+        if self._batcher is not None:
+            texts = kwargs.pop("texts", None)
+            return await self._write(
+                self._batcher.submit, collection, vectors, metadata, texts
+            )
         return await self._write(
             self._store.insert, collection, vectors, metadata, **kwargs
         )
@@ -319,7 +477,7 @@ class AsyncRuscaDBStore:
         Returns:
             Lista ordenada por relevancia lexical.
         """
-        return await self._run(
+        return await self._read(
             self._store.full_text_search, collection, query, top_k=top_k, **kwargs
         )
 
@@ -347,7 +505,9 @@ class AsyncRuscaDBStore:
         return await self._run(self._store.execute, sql)
 
     async def close(self) -> None:
-        """Cierra el actor (si existe) y el store subyacente."""
+        """Flushea lotes pendientes y cierra actor + store subyacente."""
+        if self._batcher is not None:
+            await self._run(self._batcher.flush)
         if self._actor is not None:
             await self._run(self._actor.close)
         await self._run(self._store.close)
@@ -366,4 +526,5 @@ __all__ = [
     "AsyncRuscaDBStore",
     "MemoryBackpressureError",
     "WriteActor",
+    "WriteBatcher",
 ]

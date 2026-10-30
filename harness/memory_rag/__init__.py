@@ -2,8 +2,11 @@ from .async_ruscadb import (
     AsyncRuscaDBStore,
     MemoryBackpressureError,
     WriteActor,
+    WriteBatcher,
 )
+from .cache_threshold import AdaptiveThreshold
 from .context_window_manager import ContextSection, ContextWindow, ContextWindowManager
+from .memory_heat import HeatPolicy, HeatReport, apply_heat_policy
 from .optimization_pipeline import (
     OptimizationPipeline,
     OptimizationResult,
@@ -32,6 +35,7 @@ __all__ = [
     "PRIORITY_HIGH",
     "PRIORITY_LOW",
     "PRIORITY_NORMAL",
+    "AdaptiveThreshold",
     "AsyncRuscaDBStore",
     "BudgetManager",
     "CacheEntry",
@@ -40,6 +44,8 @@ __all__ = [
     "ContextWindow",
     # Context Window Manager
     "ContextWindowManager",
+    "HeatPolicy",
+    "HeatReport",
     # Skill Loader
     "LazySkillLoader",
     "MemoryBackpressureError",
@@ -61,6 +67,8 @@ __all__ = [
     "TokenBudget",
     "TokenPool",
     "WriteActor",
+    "WriteBatcher",
+    "apply_heat_policy",
     "create_loader",
     "create_pipeline",
     "create_shapley_flow",

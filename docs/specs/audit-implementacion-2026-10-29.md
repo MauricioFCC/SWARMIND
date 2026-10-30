@@ -140,6 +140,20 @@ Con esto, los únicos gaps abiertos son los que exigen cambio upstream
 calor, umbral aprendido, reconciliación programada), documentados en
 `docs/research/frontier-2026-10-29.md` §9.1.
 
+### 3.3 Cierre de los gaps parciales (ciclo 11.55)
+
+| Gap parcial | Implementación | Test |
+|---|---|---|
+| Columnas de gobernanza indexadas | `_SCHEMA` con `source`/`trust_tier`/`session_id`/`derived_from`/`write_gate_verdict` + índices; fallback a metadata en tablas legacy | `test_memory_governance.py` (8) |
+| Reconciliación SSGM periódica | `memory_reconciliation.reconcile_collection` + `RuscaDBStore.reconcile()` + `reconcile_every`/`SWARMIND_RECONCILE_EVERY` | `test_memory_reconciliation.py` (8) |
+| Evicción por calor STM/MTM/LTM y γ por colección | `memory_heat.py`: `heat_score`, segmentos, `apply_heat_policy`, `half_life_for`; `evicted` oculto en retrieval | `test_memory_heat.py` (6) |
+| Umbral aprendido por prompt (vCache) | `cache_threshold.AdaptiveThreshold` (cubos, feedback, persistencia) + `SemanticCache(adaptive_threshold=True)` | `test_cache_threshold.py` (11) |
+| Contratos declarativos (tach) | F8 lee `scripts/architecture_contracts.toml` (forbidden/allow-list) en el gate | `test_architecture_contracts.py` (7) |
+| Batching + lecturas por actor | `WriteBatcher` (coalescing con flush por tamaño/`max_delay`), `read_through_actor=True` | `test_write_actor.py` (12) |
+
+Único gap restante: **RaBitQ/IVF-PQ**, bloqueado por el C-ABI de RuscaDB
+(contrato propuesto en `docs/specs/ruscadb-ivf-pq.md` §6).
+
 ## 4. Investigación aplicada
 
 Ver `docs/research/frontier-2026-10-29.md` (6 frentes con fuentes 2023-2026):

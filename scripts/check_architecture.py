@@ -60,11 +60,14 @@ MAX_MODULE_LINES = 500
 MAX_FUNCTION_LINES = 30
 
 #: Reglas que bloquean merge en modo ``--gate`` (barato y sin deuda legacy).
-BLOCKING_RULES = ("F1", "F2", "F4", "F6")
+BLOCKING_RULES = ("F1", "F2", "F4", "F6", "F8")
 
 #: Baseline de deuda (ratchet): solo se permite reducir, nunca aumentar.
 RATCHET_BASELINE = ROOT / "scripts" / "architecture_baseline.json"
 RATCHET_RULES = ("F3", "F5")
+
+#: Contratos declarativos de dependencias (patron tach).
+CONTRACTS_FILE = ROOT / "scripts" / "architecture_contracts.toml"
 
 #: Contratos puerto -> adaptadores que deben cumplirlos (F6).
 PORT_CONTRACTS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
@@ -382,6 +385,51 @@ def _signature_mismatches(port_method: Any, adapter_method: Any) -> list[str]:
     return errors
 
 
+def check_declarative_contracts() -> list[str]:
+    """F8: valida los contratos declarativos de ``architecture_contracts.toml``.
+
+    Returns:
+        Lista de violaciones (vacia si todos los contratos se cumplen).
+    """
+    import tomllib
+
+    if not CONTRACTS_FILE.exists():
+        return [f"F8: falta {CONTRACTS_FILE}"]
+    try:
+        payload = tomllib.loads(CONTRACTS_FILE.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        return [f"F8: contratos ilegibles ({exc})"]
+    contracts = payload.get("contracts", [])
+    if not contracts:
+        return ["F8: no hay contratos declarados"]
+    _, graph = _module_graph()
+    errors: list[str] = []
+    for contract in contracts:
+        name = str(contract.get("name") or "sin-nombre")
+        module = str(contract.get("module") or "")
+        if not module:
+            errors.append(f"F8: contrato '{name}' sin 'module'")
+            continue
+        forbidden = tuple(str(item) for item in contract.get("forbidden", []))
+        allowed = tuple(str(item) for item in contract.get("allowed", []))
+        for dep in sorted(graph.get(module, set())):
+            if _matches_prefix(dep, forbidden):
+                errors.append(
+                    f"F8: '{module}' importa '{dep}' prohibido por el contrato '{name}'"
+                )
+            elif allowed and not _matches_prefix(dep, allowed):
+                errors.append(
+                    f"F8: '{module}' importa '{dep}' fuera de la allow-list "
+                    f"del contrato '{name}'"
+                )
+    return errors
+
+
+def _matches_prefix(module: str, prefixes: tuple[str, ...]) -> bool:
+    """Indica si ``module`` coincide con algun prefijo (exacto o anidado)."""
+    return any(module == p or module.startswith(f"{p}.") for p in prefixes)
+
+
 def check_debt_ratchet(findings: dict[str, list[str]]) -> list[str]:
     """F7: la deuda legacy (F3/F5) solo puede bajar respecto al baseline.
 
@@ -446,6 +494,7 @@ def run_checks(ratchet: bool = False) -> dict[str, list[str]]:
         "F4": check_import_cycles(),
         "F5": check_function_size(),
         "F6": check_port_conformance(),
+        "F8": check_declarative_contracts(),
     }
     if ratchet:
         findings["F7"] = check_debt_ratchet(findings)

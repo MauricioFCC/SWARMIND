@@ -1,3 +1,33 @@
+## [11.55] - 2026-10-30
+
+### Added
+- Columnas de gobernanza de primera clase (`source`, `trust_tier`,
+  `session_id`, `derived_from`, `write_gate_verdict`) en `_SCHEMA`, con indices
+  y fallback transparente a metadata en tablas legacy.
+- `memory_reconciliation`: job de reconciliacion SSGM (injection, tamper por
+  `content_hash`, duplicados) + `RuscaDBStore.reconcile()` y disparo cada N
+  escrituras (`reconcile_every`/`SWARMIND_RECONCILE_EVERY`).
+- `memory_heat`: score de calor, segmentacion STM/MTM/LTM, eviccion reversible
+  (`evicted`) y vida media por coleccion (`HeatPolicy.half_life_for`).
+- `cache_threshold.AdaptiveThreshold`: umbral aprendido por familia de prompt
+  (vCache) con `SemanticCache(adaptive_threshold=True)` y
+  `record_feedback(prompt, correct)`.
+- `scripts/architecture_contracts.toml` + F8 en el gate: contratos
+  declarativos de dependencias (forbidden/allow-list, patron tach).
+- `WriteBatcher`: coalescing de inserts con flush por tamano y `max_delay`;
+  `AsyncRuscaDBStore(batch_size=N, read_through_actor=True)`.
+
+### Changed
+- El retrieval excluye entradas `evicted` salvo `include_evicted=True`.
+- `RuscaDBStore.insert` escribe columnas de gobernanza y cachea el modo legacy
+  por coleccion para no reintentar en cada fila.
+
+### Docs
+- `docs/research/frontier-2026-10-29.md` §9: los 6 gaps parciales pasan a ✅;
+  §9.1 queda solo con RaBitQ (upstream) y caveats.
+- `docs/specs/ruscadb-ivf-pq.md` §6: contrato ABI propuesto
+  (`ruscadb_quantize` + `ruscadb_search_bq`) con criterios de aceptacion.
+
 ## [11.54] - 2026-10-30
 
 ### Added

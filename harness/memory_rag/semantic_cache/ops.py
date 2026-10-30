@@ -61,6 +61,7 @@ class _SemanticCacheOpsMixin:
                     **(item.get("metadata") or {}),
                 }
                 for item in entries()
+                if (item.get("metadata") or {}).get("kind") != "threshold"
             ]
         try:
             db = self._native_lance()
