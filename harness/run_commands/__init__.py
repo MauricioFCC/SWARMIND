@@ -131,22 +131,25 @@ def _get_pkg_attr(attr_name: str, fallback_fn: Any) -> Any:
 def _create_store() -> Any:
     """Crea perezosamente el vector store para handlers que lo requieren.
 
+    Delega en la factory de puertos (``vector_store_factory``), que resuelve
+    el backend efectivo (RuscaDB por defecto) y valida ``VectorStorePort``.
+
     Returns:
-        Instancia de LanceVectorStore.
+        Adaptador de memoria que cumple ``VectorStorePort``.
 
     Raises:
         RuntimeError: si el backend no esta disponible
             (WHAT fallo import / WHY store requerido / WHERE modulo).
     """
     try:
-        from harness.db.vector_store import LanceVectorStore
+        from harness.memory_rag.vector_store_factory import get_vector_store
     except ImportError as exc:
         raise RuntimeError(
             f"RuntimeError: no se pudo crear el vector store ({exc}). WHY: "
-            "el comando requiere LanceVectorStore y su backend no esta "
+            "el comando requiere un vector store y su backend no esta "
             "disponible. WHERE: run_commands._create_store."
         ) from exc
-    return LanceVectorStore()
+    return get_vector_store()
 
 
 def run_command(

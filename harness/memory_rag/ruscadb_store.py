@@ -134,6 +134,21 @@ def _looks_like_injection(text: str) -> bool:
     return any(m in low for m in _INJECTION_MARKERS)
 
 
+#: Peso de confianza por procedencia (SSGM / mnemonic sovereignty, 2026).
+#: ``quarantined`` = 0.0: nunca se sirve por defecto (deny-by-default).
+TRUST_TIER_WEIGHTS: dict[str, float] = {
+    "verified": 1.0,
+    "user_stated": 1.0,
+    "derived": 0.85,
+    "agent": 0.7,
+    "external": 0.5,
+    "quarantined": 0.0,
+}
+
+#: Vida media (dias) por defecto del decaimiento temporal tipo recencia.
+DEFAULT_HALF_LIFE_DAYS = 30.0
+
+
 class RuscaDBStore:
     """Vector store respaldado por RuscaDB (driving adapter del C-ABI)."""
 
@@ -198,6 +213,11 @@ class RuscaDBStore:
 
         self._query_cache = QueryResultCache(ttl_sec=300.0)
         self._query_cache_enabled = True
+        # Metricas del cache semantico persistente (Spec ruscadb-semantic-cache).
+        self._cache_hits = 0
+        self._cache_misses = 0
+        self._cache_expired = 0
+        self._cache_sets = 0
 
     @staticmethod
     def _default_blob_path(db_path: str) -> str:
@@ -629,23 +649,128 @@ class RuscaDBStore:
                     "id": self._unwrap_scalar(row.get("id")),
                     "text": self._unwrap_scalar(row.get("text")) or "",
                     "metadata": meta,
+                    "created_at": self._unwrap_scalar(row.get("created_at")),
                     "raw": row,
                 }
             )
         return out
 
+    # ------------------------------------------------------------------
+    # Gobernanza de retrieval: confianza + recencia
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _trust_options(kwargs: dict[str, Any]) -> dict[str, Any]:
+        """Extrae las opciones de gobernanza de retrieval de los kwargs.
+
+        Args:
+            kwargs: kwargs recibidos por ``search``/``full_text_search``/``hybrid_search``.
+
+        Returns:
+            dict con ``allow_quarantined``, ``min_trust`` y ``half_life_days``.
+        """
+        return {
+            "allow_quarantined": bool(kwargs.get("allow_quarantined", False)),
+            "min_trust": float(kwargs.get("min_trust", 0.0)),
+            "half_life_days": kwargs.get("half_life_days"),
+        }
+
+    @staticmethod
+    def _age_days(created_at: Any, reference: _dt.datetime) -> float | None:
+        """Antiguedad en dias de un timestamp ISO-8601.
+
+        Args:
+            created_at: Timestamp (str ISO o datetime).
+            reference: Instante de referencia (UTC aware).
+
+        Returns:
+            Dias transcurridos, o ``None`` si no se puede interpretar.
+        """
+        if isinstance(created_at, _dt.datetime):
+            moment = created_at
+        elif isinstance(created_at, str) and created_at:
+            try:
+                moment = _dt.datetime.fromisoformat(created_at)
+            except ValueError:
+                return None
+        else:
+            return None
+        if moment.tzinfo is None:
+            moment = moment.replace(tzinfo=_dt.UTC)
+        delta = reference - moment.astimezone(_dt.UTC)
+        return max(delta.total_seconds() / 86400.0, 0.0)
+
+    def _apply_trust_and_recency(
+        self,
+        items: list[dict[str, Any]],
+        top_k: int,
+        *,
+        allow_quarantined: bool = False,
+        min_trust: float = 0.0,
+        half_life_days: float | None = None,
+        now: _dt.datetime | None = None,
+    ) -> list[dict[str, Any]]:
+        """Filtra por confianza y pondera por recencia (retrieval gobernado).
+
+        Modelo (frontier 2026): el score final es
+        ``score * trust_weight * 0.5 ** (edad_dias / half_life)``. Las entradas
+        en cuarentena se excluyen salvo ``allow_quarantined=True``
+        (deny-by-default, MAPLE-Guard). Sin ``half_life_days`` no hay
+        decaimiento (ranking identico al del motor).
+
+        Args:
+            items: Resultados ya puntuados por el motor.
+            top_k: Numero maximo de resultados devueltos.
+            allow_quarantined: Servir tambien entradas en cuarentena.
+            min_trust: Peso minimo de confianza aceptado.
+            half_life_days: Vida media del decaimiento en dias (None = off).
+            now: Instante de referencia para la edad (default UTC actual).
+
+        Returns:
+            Lista filtrada, re-puntuada y ordenada por score descendente.
+        """
+        reference = now or _dt.datetime.now(_dt.UTC)
+        kept: list[dict[str, Any]] = []
+        for item in items:
+            meta = item.get("metadata") if isinstance(item.get("metadata"), dict) else {}
+            tier = str(meta.get("trust_tier") or "user_stated")
+            weight = TRUST_TIER_WEIGHTS.get(tier)
+            if weight is None:
+                weight = TRUST_TIER_WEIGHTS["external"]
+            if tier == "quarantined" and not allow_quarantined:
+                logger.debug("retrieval: entrada en cuarentena excluida id=%s", item.get("id"))
+                continue
+            if weight < min_trust:
+                continue
+            recency = 1.0
+            if half_life_days:
+                age = self._age_days(
+                    item.get("created_at") or meta.get("created_at"), reference
+                )
+                if age is not None:
+                    recency = 0.5 ** (age / float(half_life_days))
+            base = float(item.get("score", 0.0))
+            item["trust_tier"] = tier
+            item["trust_weight"] = weight
+            item["recency_weight"] = recency
+            item["score"] = base * weight * recency
+            kept.append(item)
+        kept.sort(key=lambda entry: entry.get("score", 0.0), reverse=True)
+        return kept[:top_k]
+
     def search(
         self, collection: str, query_vector: Any, top_k: int = 5, **kwargs: Any
     ) -> list[dict[str, Any]]:
-        """Busqueda densa KNN (HNSW) sobre la coleccion.
+        """Busqueda densa KNN (HNSW) con gobernanza de confianza/recencia.
 
         Args:
             collection: Coleccion destino.
             query_vector: Vector de consulta.
             top_k: Numero de vecinos.
+            **kwargs: ``allow_quarantined``, ``min_trust``, ``half_life_days``.
 
         Returns:
-            Lista de ``{id, metadata, score}`` ordenada por cercania.
+            Lista de ``{id, metadata, score, trust_tier}`` ordenada por cercania.
         """
         qv = np.asarray(query_vector, dtype=np.float32).tolist()
         try:
@@ -660,20 +785,23 @@ class RuscaDBStore:
         out = self._parse_rows(rows)
         for rank, item in enumerate(out):
             item["score"] = 1.0 / (rank + 1)
-        return out
+        return self._apply_trust_and_recency(
+            out, top_k, **self._trust_options(kwargs)
+        )
 
     def full_text_search(
-        self, collection: str, query: str, top_k: int = 10
+        self, collection: str, query: str, top_k: int = 10, **kwargs: Any
     ) -> list[dict[str, Any]]:
-        """Busqueda FTS BM25 (``MATCH``) sobre la columna de texto.
+        """Busqueda FTS BM25 (``MATCH``) con gobernanza de confianza.
 
         Args:
             collection: Coleccion destino.
             query: Texto de consulta.
             top_k: Numero maximo de resultados.
+            **kwargs: ``allow_quarantined``, ``min_trust``, ``half_life_days``.
 
         Returns:
-            Lista de ``{id, metadata, score}`` ordenada por BM25.
+            Lista de ``{id, metadata, score, trust_tier}`` ordenada por BM25.
         """
         if not query.strip():
             return []
@@ -690,7 +818,9 @@ class RuscaDBStore:
         out = self._parse_rows(rows)
         for rank, item in enumerate(out):
             item["score"] = 1.0 / (rank + 1)
-        return out[:top_k]
+        return self._apply_trust_and_recency(
+            out, top_k, **self._trust_options(kwargs)
+        )
 
     def hybrid_search(
         self,
@@ -700,20 +830,24 @@ class RuscaDBStore:
         top_k: int = 5,
         **kwargs: Any,
     ) -> list[dict[str, Any]]:
-        """Fusiona KNN + BM25 con Reciprocal Rank Fusion (RRF).
+        """Fusiona KNN + BM25 con Reciprocal Rank Fusion (RRF) gobernado.
 
         Implementa RRF (Cormack et al., 2009) con ``k=60``: robusta a escalas
-        distintas de score y estandar en retrieval hibrido (RAG-Fusion).
+        distintas de score y estandar en retrieval hibrido (RAG-Fusion). El
+        resultado se pondera por confianza de procedencia y, opcionalmente,
+        por recencia.
 
         Args:
             collection: Coleccion destino.
             query_vector: Vector de consulta.
             query_text: Texto de consulta (opcional).
             top_k: Numero de resultados fusionados.
+            **kwargs: ``allow_quarantined``, ``min_trust``, ``half_life_days``.
 
         Returns:
-            Lista fusionada y deduplicada por id.
+            Lista fusionada, deduplicada y gobernada por id.
         """
+        options = self._trust_options(kwargs)
         dense = self.search(collection, query_vector, top_k=top_k * 2)
         sparse = (
             self.full_text_search(collection, query_text, top_k=top_k * 2)
@@ -724,39 +858,55 @@ class RuscaDBStore:
         for source, items in (("dense", dense), ("sparse", sparse)):
             for rank, item in enumerate(items):
                 key = str(item["id"])
-                entry = fused.setdefault(key, dict(item))
+                if key not in fused:
+                    fused[key] = dict(item)
+                    # RRF puro: el score del motor ya trae el peso de confianza
+                    # aplicado; se descarta para no ponderarlo dos veces.
+                    fused[key]["score"] = 0.0
+                entry = fused[key]
                 entry[f"{source}_rank"] = rank
-                entry["score"] = entry.get("score", 0.0) + 1.0 / (_RRF_K + rank + 1)
+                entry["score"] += 1.0 / (_RRF_K + rank + 1)
         ranked = sorted(fused.values(), key=lambda item: item["score"], reverse=True)
-        return ranked[:top_k]
+        return self._apply_trust_and_recency(ranked, top_k, **options)
 
     def graph_traverse(
-        self, collection: str, depth: int = 2, start: str | None = None
+        self,
+        collection: str,
+        depth: int = 2,
+        start: str | None = None,
+        **kwargs: Any,
     ) -> list[dict[str, Any]]:
         """Recorre el grafo tipado de la coleccion (CSR o BFS por RecordId).
 
         Con ``start`` se hace BFS sobre las aristas del registro (RQL no admite
         ``TRAVERSE`` con ``WHERE``); sin ``start`` se usa el recorrido nativo
-        ``TRAVERSE edges DEPTH n`` del motor.
+        ``TRAVERSE edges DEPTH n`` del motor. Los nodos en cuarentena se
+        excluyen por defecto, igual que en el retrieval (OWASP ASI06).
 
         Args:
             collection: Coleccion destino.
             depth: Profundidad de recorrido (>= 1).
             start: ULID de inicio (opcional).
+            **kwargs: ``allow_quarantined``, ``min_trust``, ``half_life_days``.
 
         Returns:
             Nodos alcanzables normalizados.
         """
         depth = max(1, int(depth))
+        options = self._trust_options(kwargs)
         if start:
-            return self._traverse_from(collection, start, depth)
-        sql = f"SELECT * FROM {_safe_ident(collection)} TRAVERSE edges DEPTH {depth}"  # nosec B608
-        try:
-            rows = execute(self._handle, sql)
-        except RuscadbError as exc:
-            logger.warning("graph_traverse en '%s' fallo: %s", collection, exc)
-            return []
-        return self._parse_rows(rows)
+            nodes = self._traverse_from(collection, start, depth)
+        else:
+            sql = f"SELECT * FROM {_safe_ident(collection)} TRAVERSE edges DEPTH {depth}"  # nosec B608
+            try:
+                rows = execute(self._handle, sql)
+            except RuscadbError as exc:
+                logger.warning("graph_traverse en '%s' fallo: %s", collection, exc)
+                return []
+            nodes = self._parse_rows(rows)
+        for rank, item in enumerate(nodes):
+            item.setdefault("score", 1.0 / (rank + 1))
+        return self._apply_trust_and_recency(nodes, top_k=len(nodes), **options)
 
     def _traverse_from(
         self, collection: str, start: str, depth: int
@@ -1254,22 +1404,219 @@ class RuscaDBStore:
         return prev[-1]
 
     def semantic_cache_get(self, key: str) -> Any:
-        """Consulta el cache semantico persistente de RuscaDB (Spec ruscadb-semantic-cache).
+        """Consulta el cache semantico persistente de RuscaDB.
+
+        Implementa la lectura del Spec ``ruscadb-semantic-cache``: la clave se
+        resolvio en ``id`` y el valor viaja serializado en ``text`` con
+        metadatos de TTL. Contabiliza hit/miss/expirados para ``metrics``.
 
         Args:
             key: Clave de cache.
 
         Returns:
-            Valor cacheado o None.
+            Valor cacheado o None si no existe o expiro.
+        """
+        stored = self._semantic_cache_row(key)
+        if stored is None:
+            return None
+        value, meta = stored
+        ttl = meta.get("ttl_sec")
+        cached_at = meta.get("cached_at")
+        if isinstance(ttl, (int, float)) and ttl > 0:
+            age = self._age_days(cached_at, _dt.datetime.now(_dt.UTC))
+            if age is not None and age * 86400.0 > float(ttl):
+                self._cache_expired += 1
+                self._cache_misses += 1
+                return None
+        self._cache_hits += 1
+        return value
+
+    def _semantic_cache_row(self, key: str) -> tuple[Any, dict[str, Any]] | None:
+        """Lee la fila cruda del cache semantico.
+
+        Args:
+            key: Clave de cache.
+
+        Returns:
+            ``(valor, metadatos)`` o ``None`` si no existe.
+        """
+        sql = (
+            "SELECT * FROM semantic_cache "  # nosec B608
+            f"WHERE id = '{_escape_literal(key)}' LIMIT 1"
+        )
+        try:
+            rows = execute(self._handle, sql)
+            parsed = json.loads(rows) if isinstance(rows, str) else rows
+        except (RuscadbError, ValueError, TypeError) as exc:
+            logger.debug("semantic_cache_get fallo: %s", exc)
+            return None
+        if not parsed:
+            self._cache_misses += 1
+            return None
+        row = parsed[0]
+        meta = self._unwrap_scalar(row.get("metadata"))
+        if isinstance(meta, str):
+            try:
+                meta = json.loads(meta)
+            except json.JSONDecodeError:
+                meta = {}
+        if not isinstance(meta, dict):
+            meta = {}
+        raw = self._unwrap_scalar(row.get("text"))
+        try:
+            value = json.loads(raw) if isinstance(raw, str) else raw
+        except json.JSONDecodeError:
+            value = raw
+        return value, meta
+
+    def semantic_cache_set(
+        self, key: str, value: Any, ttl_sec: float | None = None
+    ) -> bool:
+        """Guarda un valor en el cache semantico persistente (upsert).
+
+        Args:
+            key: Clave de cache (identificador de la entrada).
+            value: Valor serializable a JSON.
+            ttl_sec: TTL opcional en segundos; ``None`` = sin expiracion.
+
+        Returns:
+            True si la escritura se confirmo; False si el motor la rechazo.
+        """
+        if not isinstance(key, str) or not key.strip():
+            raise ValueError("semantic_cache_set: key vacia o no-str")
+        payload = json.dumps(value, ensure_ascii=False, default=str)
+        meta = {
+            "cached_at": _dt.datetime.now(_dt.UTC).isoformat(),
+            "ttl_sec": ttl_sec,
+        }
+        try:
+            self.execute(
+                "DELETE FROM semantic_cache "  # nosec B608
+                f"WHERE id = '{_escape_literal(key)}'"
+            )
+            insert_record(
+                self._handle,
+                "semantic_cache",
+                {
+                    "scalars": {
+                        "id": key,
+                        "text": payload,
+                        "metadata": json.dumps(meta, ensure_ascii=False),
+                        "created_at": meta["cached_at"],
+                    }
+                },
+            )
+            self._commit()
+        except (RuscadbError, ValueError) as exc:
+            logger.warning("semantic_cache_set fallo: %s", exc)
+            return False
+        self._cache_sets += 1
+        self.invalidate_cache("semantic_cache")
+        return True
+
+    def semantic_cache_clear(self) -> bool:
+        """Vacia el cache semantico persistente.
+
+        Returns:
+            True si el motor confirmo el borrado.
         """
         try:
-            rows = execute(self._handle, f"SELECT * FROM semantic_cache WHERE id = '{_escape_literal(key)}' LIMIT 1")
-            parsed = __import__("json").loads(rows) if isinstance(rows, str) else rows
-            if parsed:
-                return self._unwrap_scalar(parsed[0].get("metadata"))
-        except (RuscadbError, Exception):  # noqa: BLE001, S110
-            pass
-        return None
+            self.execute("DELETE FROM semantic_cache")  # nosec B608
+            self._commit()
+        except (RuscadbError, ValueError) as exc:
+            logger.warning("semantic_cache_clear fallo: %s", exc)
+            return False
+        self.invalidate_cache("semantic_cache")
+        return True
+
+    def semantic_cache_metrics(self) -> dict[str, Any]:
+        """Metricas de acierto del cache semantico.
+
+        Returns:
+            ``{hits, misses, expired, sets, hit_rate}`` con ``hit_rate`` en
+            ``[0.0, 1.0]`` (0.0 si aun no hubo lecturas).
+        """
+        lookups = self._cache_hits + self._cache_misses
+        return {
+            "hits": self._cache_hits,
+            "misses": self._cache_misses,
+            "expired": self._cache_expired,
+            "sets": self._cache_sets,
+            "hit_rate": (self._cache_hits / lookups) if lookups else 0.0,
+        }
+
+    def semantic_cache_delete(self, key: str) -> bool:
+        """Elimina una entrada concreta del cache semantico persistente.
+
+        Args:
+            key: Clave a eliminar.
+
+        Returns:
+            True si el motor confirmo el borrado.
+        """
+        try:
+            self.execute(
+                "DELETE FROM semantic_cache "  # nosec B608
+                f"WHERE id = '{_escape_literal(key)}'"
+            )
+            self._commit()
+        except (RuscadbError, ValueError) as exc:
+            logger.warning("semantic_cache_delete fallo: %s", exc)
+            return False
+        # La misma entrada logica tambien vive como fila vectorial (prompt_hash
+        # en metadata): borrarla evita que la ruta de similitud la sirva.
+        for item in self.semantic_cache_entries():
+            meta = item.get("metadata") or {}
+            row_id = item.get("id")
+            if row_id and meta.get("prompt_hash") == key:
+                self.delete("semantic_cache", [str(row_id)])
+        self.invalidate_cache("semantic_cache")
+        return True
+
+    def semantic_cache_entries(self, limit: int = 1000) -> list[dict[str, Any]]:
+        """Lista las entradas del cache semantico con sus metadatos.
+
+        Args:
+            limit: Maximo de entradas a devolver.
+
+        Returns:
+            Lista de ``{id, text, metadata, created_at}``.
+        """
+        sql = (
+            "SELECT * FROM semantic_cache "  # nosec B608
+            f"LIMIT {max(1, int(limit))}"
+        )
+        try:
+            rows = execute(self._handle, sql)
+        except RuscadbError as exc:
+            logger.debug("semantic_cache_entries fallo: %s", exc)
+            return []
+        return self._parse_rows(rows)
+
+    def semantic_cache_purge_expired(
+        self, default_ttl: float | None = None
+    ) -> int:
+        """Purga entradas expiradas del cache semantico persistente.
+
+        Args:
+            default_ttl: TTL a aplicar cuando la entrada no lo declara.
+
+        Returns:
+            Numero de entradas eliminadas.
+        """
+        removed = 0
+        now = _dt.datetime.now(_dt.UTC)
+        for item in self.semantic_cache_entries():
+            meta = item.get("metadata") or {}
+            ttl = meta.get("ttl_sec", default_ttl)
+            if not isinstance(ttl, (int, float)) or ttl <= 0:
+                continue
+            age = self._age_days(meta.get("cached_at") or item.get("created_at"), now)
+            if age is not None and age * 86400.0 > float(ttl):
+                key = str(item.get("id") or "")
+                if key and self.semantic_cache_delete(key):
+                    removed += 1
+        return removed
 
     def adaptive_search(self, query: str, top_k: int = 5, collection: str = "memory") -> list[Any]:
         """Retrieval adaptativo (arXiv:2403.14403) sobre este store.

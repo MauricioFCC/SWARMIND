@@ -1,6 +1,6 @@
 # Spec — Zstd Compression (RuscaDB) en SWARMIND
 
-> Estado: proposed — Dueño: harness/memory_rag — Frontera: 2026-10.
+> Estado: blocked-upstream — Dueño: harness/memory_rag — Frontera: 2026-10.
 > RuscaDB spec: `zstd_compression.md`, `zstd_real.md`, `wal_compression.md`, `alp_compression.md`.
 
 ## 1. Objetivo

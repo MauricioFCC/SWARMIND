@@ -31,7 +31,7 @@ from datetime import UTC, datetime
 from enum import Enum, auto
 from uuid import uuid4
 
-from harness.qa import QALayer, QAMetadata
+from harness.qa.types import QALayer, QAMetadata
 
 logger = logging.getLogger(__name__)
 

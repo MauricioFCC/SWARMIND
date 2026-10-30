@@ -218,7 +218,7 @@ class TestNormalizeSimilarity:
         """When LanceDB is available, simulate L2→similarity conversion."""
         cache = SemanticCache()
         # Simulate LanceDB mode
-        with patch.object(cache._store, '_lancedb_available', True):
+        with patch.object(SemanticCache, "_uses_lancedb_scores", return_value=True):
             # L2=0 → sim=1.0
             assert cache._normalize_similarity(0.0) == 1.0
             # L2=0.1 → sim≈0.909
@@ -231,7 +231,7 @@ class TestNormalizeSimilarity:
         """In-memory mode uses cosine similarity directly, clamped to [0,1]."""
         cache = SemanticCache()
         # Simulate in-memory mode
-        with patch.object(cache._store, '_lancedb_available', False):
+        with patch.object(SemanticCache, "_uses_lancedb_scores", return_value=False):
             assert cache._normalize_similarity(1.0) == 1.0
             assert cache._normalize_similarity(0.5) == 0.5
             assert cache._normalize_similarity(0.0) == 0.0

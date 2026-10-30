@@ -1,6 +1,6 @@
 # Spec — Semantic Cache Persistente (RuscaDB) en SWARMIND
 
-> Estado: proposed — Dueño: harness/memory_rag — Frontera: 2026-10.
+> Estado: implemented (ciclo 11.53) — Dueño: harness/memory_rag — Frontera: 2026-10.
 > RuscaDB spec: `semantic_cache.md`, `semantic_cache_persistence.md`.
 
 ## 1. Objetivo
@@ -22,3 +22,11 @@ Delegar el semantic cache de SWARMIND al cache persistente de RuscaDB
 - Persistencia entre reinicios de opencode.
 
 ## 5. Esfuerzo: 2 dias.
+
+## 6. Evidencia (ciclo 11.53)
+
+- `RuscaDBStore.semantic_cache_set/get/delete/entries/purge_expired/metrics`.
+- `SemanticCache` usa la API persistente para el hit exacto y delega la
+  purga; ya no accede a `_lancedb_available`/`_db`/`_mem_collections`.
+- Tests: `harness/tests/test_semantic_cache_persistent.py` (5 passed),
+  `test_trust_aware_retrieval.py` (roundtrip/TTL/metrics).

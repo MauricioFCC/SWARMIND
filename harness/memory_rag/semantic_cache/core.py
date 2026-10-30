@@ -252,6 +252,11 @@ class SemanticCache(_SemanticCacheOpsMixin):
                 vec.reshape(1, -1),
                 [lancedb_meta],
             )
+            persistent = self._persistent_cache()
+            if persistent is not None and self._native_lance() is None:
+                setter = getattr(persistent, "semantic_cache_set", None)
+                if callable(setter):
+                    setter(prompt_hash, response, effective_ttl)
             logger.debug(
                 "SemanticCache SET (hash=%s, agent=%s, len=%d chars)",
                 prompt_hash[:8], agent_role, len(response),
@@ -328,9 +333,18 @@ class SemanticCache(_SemanticCacheOpsMixin):
             Numero de entradas eliminadas.
         """
         removed = 0
+        persistent = self._persistent_cache()
+        if persistent is not None and self._native_lance() is None:
+            purger = getattr(persistent, "semantic_cache_purge_expired", None)
+            if callable(purger):
+                removed = int(purger(self._default_ttl) or 0)
+            if removed > 0:
+                logger.info("SemanticCache eliminated %d expired entries", removed)
+            return removed
         try:
-            if self._store._lancedb_available and self._store._db is not None:
-                tbl = self._store._db.open_table(COLLECTION_SEMANTIC_CACHE)
+            db = self._native_lance()
+            if db is not None:
+                tbl = db.open_table(COLLECTION_SEMANTIC_CACHE)
                 # Escanear con limite alto para cubrir toda la tabla
                 all_entries = tbl.search().limit(100000).to_list()
                 for entry in all_entries:
@@ -343,7 +357,9 @@ class SemanticCache(_SemanticCacheOpsMixin):
                             removed += 1
             else:
                 # Fallback in-memory
-                col = self._store._mem_collections.get(COLLECTION_SEMANTIC_CACHE)
+                col = getattr(self._store, "_mem_collections", {}).get(
+                    COLLECTION_SEMANTIC_CACHE
+                )
                 if col:
                     to_delete = [
                         key

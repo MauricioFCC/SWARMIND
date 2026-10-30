@@ -1,3 +1,4 @@
+from .async_ruscadb import AsyncRuscaDBStore
 from .context_window_manager import ContextSection, ContextWindow, ContextWindowManager
 from .optimization_pipeline import (
     OptimizationPipeline,
@@ -19,6 +20,7 @@ from .token_budget import (
     TokenBudget,
     TokenPool,
 )
+from .vector_store_factory import get_vector_store
 
 __all__ = [
     "COLLECTION_SEMANTIC_CACHE",
@@ -26,6 +28,7 @@ __all__ = [
     "PRIORITY_HIGH",
     "PRIORITY_LOW",
     "PRIORITY_NORMAL",
+    "AsyncRuscaDBStore",
     "BudgetManager",
     "CacheEntry",
     "CacheSection",
@@ -55,5 +58,6 @@ __all__ = [
     "create_loader",
     "create_pipeline",
     "create_shapley_flow",
+    "get_vector_store",
     "minify_all_skills",
 ]

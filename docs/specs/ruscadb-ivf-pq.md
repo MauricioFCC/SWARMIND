@@ -1,6 +1,6 @@
 # Spec — IVF-PQ / RaBitQ Cuantizacion de Vectores
 
-> Estado: proposed — Dueño: harness/memory_rag — Frontera: 2026-10.
+> Estado: blocked-upstream — Dueño: harness/memory_rag — Frontera: 2026-10.
 > RuscaDB spec: `ivf_pq.md`, `ivf_clustering.md`, `rabitq_quantization.md`, `hnsw_budget_pq.md`.
 
 ## 1. Objetivo

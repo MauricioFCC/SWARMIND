@@ -4,6 +4,11 @@ Estos Protocolos definen los contratos que la capa de aplicacion consume.
 La infraestructura (adaptadores) los implementa. Las dependencias apuntan
 SIEMPRE hacia este modulo (Domain), nunca al reves.
 
+Los puertos siguen el principio de segregacion de interfaces (ISP, SOLID):
+un backend solo debe implementar el contrato que realmente ofrece. Un store
+que no soporta busqueda full-text NO implementa :class:`TextSearchPort`, y
+eso es valido; lo invalido es fingir el metodo.
+
 Referencia: Clean Architecture (Martin 2017), Hexagonal (Cockburn).
 """
 
@@ -14,7 +19,12 @@ from typing import Any, Protocol, runtime_checkable
 
 @runtime_checkable
 class VectorStorePort(Protocol):
-    """Contrato de un almacen vectorial (denso + disperso + grafo)."""
+    """Contrato minimo de un almacen vectorial (CRUD + busqueda densa/hibrida).
+
+    Todo backend de memoria (RuscaDB, LanceDB, in-memory) debe cumplirlo.
+    La busqueda lexical se declara aparte en :class:`TextSearchPort` porque
+    no todos los motores la ofrecen.
+    """
 
     def list_collections(self) -> list[str]: ...
 
@@ -41,10 +51,6 @@ class VectorStorePort(Protocol):
         **kwargs: Any,
     ) -> list[dict[str, Any]]: ...
 
-    def full_text_search(
-        self, collection: str, query: str, top_k: int = 10
-    ) -> list[dict[str, Any]]: ...
-
     def delete(self, collection: str, ids: list[str]) -> int: ...
 
     def delete_collection(self, name: str) -> None: ...
@@ -54,6 +60,15 @@ class VectorStorePort(Protocol):
     def get_collection_stats(self, name: str) -> dict[str, Any]: ...
 
     def close(self) -> None: ...
+
+
+@runtime_checkable
+class TextSearchPort(Protocol):
+    """Contrato opcional de busqueda lexical (BM25/FTS) sobre el mismo store."""
+
+    def full_text_search(
+        self, collection: str, query: str, top_k: int = 10
+    ) -> list[dict[str, Any]]: ...
 
 
 @runtime_checkable
@@ -97,5 +112,6 @@ __all__ = [
     "EventBusPort",
     "LLMPort",
     "MemoryPort",
+    "TextSearchPort",
     "VectorStorePort",
 ]

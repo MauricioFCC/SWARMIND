@@ -4,6 +4,15 @@
 > Fuente: repositorio RuscaDB (specs/ + docs/), HEAD 4b299cc (Ola 10 Frontier II).
 > Alcance: mapear las capacidades de RuscaDB que SWARMIND aun no aprovecha y
 > definir el plan de integracion. NO implementa; solo especifica.
+>
+> **Estado 2026-10-29 (ciclo 11.53)**: fases A y B cerradas salvo lo que el
+> C-ABI no expone. Implementado: FTS avanzado, ColBERT rerank, graph algorithms,
+> query cache, static embeddings, time travel, prepared statements, cache
+> semantico persistente, async I/O (thread offload). **Bloqueado upstream (sin
+> simbolo en la DLL, 29 funciones): IVF-PQ/RaBitQ, MCP server, zstd/WAL
+> compression, RQL avanzado (feature `sql-std`).** Ver
+> `docs/specs/audit-implementacion-2026-10-29.md`.
+
 
 ## 1. Inventario de capacidades RuscaDB no integradas en SWARMIND
 

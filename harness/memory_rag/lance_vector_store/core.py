@@ -2,11 +2,18 @@
 
 Extraido mecanicamente de ``lance_vector_store.py`` (regla AGR < 500 lineas).
 La clase conserva la misma API publica y privada; los metodos privados de
-backend viven en los mixins de ``backends.py``. Sin cambios de logica.
+backend viven en los mixins de ``backends.py``.
+
+Seleccion de backend (Clean Architecture, ADR-0098): la clase es el adaptador
+LanceDB/in-memory. Si el backend efectivo es ``ruscadb``, ``__new__`` devuelve
+un :class:`RuscaDBStore` real en lugar de un ``LanceVectorStore`` parcheado con
+``setattr``; asi el tipo del objeto refleja la infraestructura que lo respalda
+y no hay metodos huerfanos que fallaran sobre ``self._db = None``.
 """
 from __future__ import annotations
 
 import logging
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -24,12 +31,38 @@ from ..memory_config import MemoryBackend, MemoryConfig
 from .backends import _LanceDBBackendMixin, _MemoryBackendMixin
 from .constants import LANCEDB_ROOT
 from .exceptions import VectorStoreError
+from .lifecycle import _LifecycleMixin
 from .models import _Collection
 
 logger = logging.getLogger("harness.memory_rag.lance_vector_store")
 
+#: Backend por defecto (RuscaDB es la persistencia unica desde el ciclo 11.42).
+DEFAULT_BACKEND = "ruscadb"
 
-class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin):
+
+def _resolve_backend(backend: str | None, config: Any = None) -> str:
+    """Resuelve el backend efectivo de memoria.
+
+    Precedencia: argumento explicito > ``VECTOR_BACKEND`` > config > default.
+
+    Args:
+        backend: Backend pedido por el llamador.
+        config: MemoryConfig opcional con ``vector_backend`` o ``backend``.
+
+    Returns:
+        Nombre del backend en minusculas (``ruscadb``/``lancedb``/``memory``).
+    """
+    if backend is None:
+        backend = os.environ.get("VECTOR_BACKEND")
+    if backend is None and config is not None:
+        candidate = getattr(config, "vector_backend", None)
+        if candidate is None:
+            candidate = getattr(config, "backend", None)
+        backend = getattr(candidate, "value", candidate)
+    return str(backend or DEFAULT_BACKEND).lower()
+
+
+class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin, _LifecycleMixin):
     """
     Unified vector store that wraps LanceDB.
 
@@ -39,6 +72,48 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin):
 
     Collections are auto-created on first use.
     """
+
+    def __new__(
+        cls,
+        db_path: str | None = None,
+        allow_fallback: bool = False,
+        config: MemoryConfig | None = None,
+        backend: str | None = None,
+    ) -> Any:
+        """Devuelve el adaptador que corresponde al backend efectivo.
+
+        Con backend ``ruscadb`` (default) se construye y devuelve un
+        :class:`RuscaDBStore`; Python no invoca ``__init__`` de esta clase
+        porque el objeto devuelto no es una instancia de ``cls``. Si RuscaDB
+        no esta disponible se degrada a LanceDB/in-memory con warning.
+
+        Args:
+            db_path: Ruta de la base.
+            allow_fallback: Habilita fallback in-memory (LanceDB).
+            config: MemoryConfig opcional.
+            backend: Backend pedido.
+
+        Returns:
+            Instancia de RuscaDBStore o de LanceVectorStore.
+
+        Raises:
+            No propaga errores de RuscaDB: los convierte en fallback a LanceDB.
+        """
+        if cls is not LanceVectorStore:
+            return super().__new__(cls)
+        if _resolve_backend(backend, config) != "ruscadb":
+            return super().__new__(cls)
+        try:
+            from ..ruscadb_store import RuscaDBStore
+
+            return RuscaDBStore(
+                db_path=db_path, allow_fallback=allow_fallback, config=config
+            )
+        except (ImportError, OSError, RuntimeError) as exc:
+            logger.warning(
+                "RuscaDB no disponible (%s); backend efectivo = lancedb", exc
+            )
+            return super().__new__(cls)
 
     def __init__(
         self,
@@ -55,42 +130,16 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin):
             allow_fallback: Permitir fallback a memoria en RAM si LanceDB falla.
             config: MemoryConfig opcional. Si se provee, db_path y allow_fallback
                     se toman del config si no se especifican explicitamente.
+            backend: Backend solicitado; ``ruscadb`` solo llega aqui si
+                    ``__new__`` no pudo construir el adaptador RuscaDB.
         """
-        import os as _os
-        if backend is None:
-            backend = _os.environ.get('VECTOR_BACKEND')
-        if backend is None and config is not None:
-            backend = getattr(config, 'vector_backend', None)
-        backend = (backend or 'ruscadb').lower()
-        self._backend = backend
-        if backend == 'ruscadb':
-            try:
-                from ..ruscadb_store import RuscaDBStore
-                self._rusca = RuscaDBStore(db_path=db_path, allow_fallback=allow_fallback, config=config)
-                self.db_path = self._rusca.db_path
-            except (ImportError, FileNotFoundError, OSError) as exc:
-                import logging as _log
-                _log.getLogger('harness.memory_rag.lance_vector_store').warning(
-                    'RuscaDB no disponible (%s); fallback a lancedb', exc
-                )
-                backend = 'lancedb'
-                self._backend = backend
-                self._rusca = None
-            if getattr(self, '_rusca', None) is not None:
-                self._lancedb_available = False
-                self._db = None
-                self._mem_collections = {}
-                self._embedding_dim = 384
-                self._allow_fallback = allow_fallback
-                for _m in ('create_collection','list_collections','insert','update_records',
-                           'search','hybrid_search','_keyword_score','get_collection_stats',
-                           'delete_collection','clear','from_config','execute',
-                           'full_text_search','graph_traverse','delete','get_record',
-                           'put_blob','get_blob','attach_blob','gc_blobs','integrity',
-                           'backup','current_lsn','explain'):
-                    if hasattr(self._rusca, _m):
-                        setattr(self, _m, getattr(self._rusca, _m))
-                return
+        resolved = _resolve_backend(backend, config)
+        if resolved == "ruscadb":
+            # __new__ ya habria devuelto el RuscaDBStore; llegar aqui implica
+            # que el motor no esta disponible y se degrada a LanceDB.
+            logger.info("Fallback de backend: ruscadb no disponible, se usa lancedb")
+            resolved = "lancedb"
+        self._backend = resolved
         self._rusca = None
         if config:
             self.db_path = db_path or config.lancedb_path
@@ -384,35 +433,6 @@ class LanceVectorStore(_LanceDBBackendMixin, _MemoryBackendMixin):
     # ------------------------------------------------------------------
     # Utility
     # ------------------------------------------------------------------
-
-    def delete_collection(self, name: str) -> None:
-        """Remove an entire collection."""
-        if self._lancedb_available and self._db is not None:
-            try:
-                self._db.drop_table(name)
-            except Exception as exc:
-                raise VectorStoreError(
-                    f"Failed to drop LanceDB table '{name}': {exc}"
-                ) from exc
-        else:
-            if name in self._mem_collections:
-                del self._mem_collections[name]
-
-    def clear(self) -> None:
-        """Remove all collections and reset to defaults."""
-        if self._lancedb_available and self._db is not None:
-            for name in self._db.list_tables().tables:
-                try:
-                    self._db.drop_table(name)
-                except Exception as _exc:  # noqa: BLE001
-                    logger.warning("lance_vector_store: %s", _exc)
-        self._mem_collections.clear()
-        for name, info in DEFAULT_COLLECTIONS.items():
-            self._mem_collections[name] = _Collection(
-                name=name,
-                schema_def=info["schema"],
-                last_updated=datetime.now(UTC).isoformat(),
-            )
 
     @classmethod
     def from_config(cls, config: MemoryConfig | None = None) -> LanceVectorStore:

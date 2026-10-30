@@ -1,6 +1,6 @@
 # Spec — Clean Architecture Hexagonal (SWARMIND)
 
-> Estado: proposed — Dueño: harness/core — Frontera: 2026-10.
+> Estado: implemented-parcial (ciclo 11.53: F1/F2/F4 en CI) — Dueño: harness/core — Frontera: 2026-10.
 > Referencias: Clean Architecture (Martin 2017), Hexagonal (Cockburn), Fitness Functions (Ford/Parsons/Kua), ArchUnit, tach.
 
 ## 1. Objetivo
@@ -70,3 +70,16 @@ Herramientas: `tach` (ya en deps?), `import-linter`, o script custom en
 - Fase 1 (ports): 1-2 dias.
 - Fase 2 (migracion incremental): 1 semana.
 - Fase 3 (fitness functions en CI): 1 dia.
+
+## Evidencia (ciclo 11.53)
+
+- Puertos: `harness/domain/ports.py` (`VectorStorePort`, `TextSearchPort`,
+  `EmbeddingPort`, `LLMPort`, `MemoryPort`, `EventBusPort`).
+- Adaptadores: `RuscaDBStore` y `LanceVectorStore` cumplen el puerto
+  (conformance estatica en el job `architecture` de CI).
+- Composition root: `harness/memory_rag/vector_store_factory.py`.
+- Fitness functions: `scripts/check_architecture.py --gate` (F1 pureza de
+  dominio, F2 frameworks prohibidos, F4 ciclos Tarjan SCC) en pre-commit y
+  CI; F3/F5 (tamano) advisory con 822 hallazgos legacy.
+- PENDIENTE: capas Presentation/Application no estan separadas fisicamente
+  (el CLI importa `harness.*` directamente); ratchet de deuda F3/F5.

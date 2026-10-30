@@ -5,6 +5,22 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-29)
+
+### Estado 2026-10-29 (Ciclo 11.53 — Puertos/adaptadores y memoria gobernada)
+- **Clean Architecture real**: `LanceVectorStore.__new__` devuelve el adaptador
+  RuscaDB (sin `setattr`); `VectorStorePort`/`TextSearchPort` con conformance en
+  CI y `get_vector_store()` como único punto de construcción.
+- **Retrieval gobernado (OWASP ASI06 / SSGM)**: cuarentena deny-by-default,
+  `min_trust`, decaimiento temporal (`half_life_days`, default 30 d) y
+  anotaciones de confianza en `search`/FTS/hybrid.
+- **Cache semántico persistente** con métricas y purga delegada al store.
+- **Async I/O**: `AsyncRuscaDBStore` completo + `HybridRetriever.aretrieve`.
+- **Gate de arquitectura**: F1/F2/F4 bloqueantes en pre-commit y CI; 2 ciclos
+  reales corregidos; deuda de tamaño (824) declarada advisory.
+- Ruff 0, Vulture 0, 7236 tests recolectados, lotes afectados verdes.
+- Docs: ADR-0104, research frontier 2026-10-29, auditoría 2026-10-29.
+
 ## Estado Actual (2026-10-25)
 
 ### Estado 2026-10-25 (Ciclo 11.45 — Potencial completo de RuscaDB)

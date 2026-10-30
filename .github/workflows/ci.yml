@@ -309,7 +309,56 @@ jobs:
           "
 
   # ---------------------------------------------------------------------------
-  # T1.7: Agents discovery — ~5s
+  # T1.7: Architecture fitness functions — ~10s
+  # Bloquea ciclos de import (F4), pureza de dominio (F1/F2) y valida los
+  # puertos/adaptadores. La deuda legacy de tamano (F3/F5) queda advisory.
+  # ---------------------------------------------------------------------------
+  architecture:
+    name: architecture
+    runs-on: ubuntu-latest
+    needs: lint
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Cache uv
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Instalar dependencias
+        run: uv sync
+
+      - name: Fitness functions (gate F1/F2/F4)
+        run: uv run python scripts/check_architecture.py --gate
+
+      - name: Contrato de puertos de dominio
+        # Conformance estatica (sin abrir DB): ambos adaptadores exponen los
+        # metodos del puerto. Evita el drift "puerto declarado, adaptador mudo".
+        run: |
+          uv run python -c "
+          from harness.domain.ports import VectorStorePort
+          from harness.memory_rag.lance_vector_store import LanceVectorStore
+          from harness.memory_rag.ruscadb_store import RuscaDBStore
+          required = [n for n in dir(VectorStorePort) if not n.startswith('_')]
+          for cls in (RuscaDBStore, LanceVectorStore):
+              missing = [n for n in required if not hasattr(cls, n)]
+              assert not missing, f'{cls.__name__} no cumple VectorStorePort: {missing}'
+          print(f'OK: {len(required)} metodos del puerto en 2 adaptadores')
+          "
+
+  # ---------------------------------------------------------------------------
+  # T1.8: Agents discovery — ~5s
   # Verifica que los agentes se descubren correctamente
   # ---------------------------------------------------------------------------
   agents:

@@ -1,6 +1,6 @@
 # Spec — RQL Avanzado en SWARMIND
 
-> Estado: proposed — Dueño: harness/memory_rag — Frontera: 2026-10.
+> Estado: blocked-upstream — Dueño: harness/memory_rag — Frontera: 2026-10.
 > RuscaDB spec: `rql_cte.md`, `rql_subqueries.md`, `rql_window_functions.md`,
 > `rql_set_operations.md`, `rql_expression_language.md`, `query_extensions.md`.
 

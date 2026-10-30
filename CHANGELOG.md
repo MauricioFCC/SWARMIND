@@ -1,3 +1,44 @@
+## [11.53] - 2026-10-29
+
+### Added
+- `harness/domain/ports.py`: `TextSearchPort` (ISP) y contrato de ciclo de vida
+  (`delete`, `close`) en `VectorStorePort`; 2 consumidores de producción
+  (`vector_store_factory`, `hybrid_retriever`).
+- `harness/memory_rag/vector_store_factory.py`: resolución de backend
+  (arg > `VECTOR_BACKEND` > config > `ruscadb`), validación del puerto y errores
+  tipados.
+- `RuscaDBStore`: retrieval gobernado (`_apply_trust_and_recency`) con
+  cuarentena deny-by-default, `min_trust`, `half_life_days` y anotaciones
+  `trust_weight`/`recency_weight`; `created_at` en `_parse_rows`.
+- `RuscaDBStore`: cache semántico persistente completo (`semantic_cache_set`,
+  `semantic_cache_delete`, `semantic_cache_entries`,
+  `semantic_cache_purge_expired`, `semantic_cache_metrics`).
+- `AsyncRuscaDBStore`: `hybrid_search`, `delete`, `close`, `from_path`,
+  `async with`; `HybridRetriever.aretrieve`.
+- `harness/qa/types.py`: tipos compartidos del stack QA (rompe el ciclo de
+  imports).
+- `docs/adr/adr-0104-puertos-adaptadores-memoria.md`,
+  `docs/research/frontier-2026-10-29.md`,
+  `docs/specs/audit-implementacion-2026-10-29.md`.
+- CI: job T1 `architecture` + gate en `.githooks/pre-commit`.
+
+### Changed
+- `LanceVectorStore.__new__` devuelve `RuscaDBStore` real para backend
+  `ruscadb`; eliminado el bucle de `setattr`. `delete`/`close` extraídos a
+  `_LifecycleMixin` (`lance_vector_store/lifecycle.py`).
+- `SemanticCache`: deja de leer atributos privados de LanceDB; usa la API de
+  cache persistente del store cuando existe.
+- `run_commands._create_store()` usa la factory (antes importaba un módulo
+  inexistente y siempre fallaba).
+- `check_architecture.py`: modos `--gate`/`--strict`/`--json`; F4 ignora imports
+  diferidos (rompen ciclos por diseño).
+
+### Fixed
+- Ciclos de import `harness.qa ↔ harness.qa.detector ↔ harness.qa.predictor`.
+- `MCPCommand` faltaba en los imports de `harness.qa` pese a estar en `__all__`.
+- `semantic_cache_get` devolvía el wrapper `{"value": ...}` y silenciaba todo
+  error con `except Exception`.
+
 ## [11.52] - 2026-10-28
 
 ### Added

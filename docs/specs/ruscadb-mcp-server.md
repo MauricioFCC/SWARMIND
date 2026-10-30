@@ -1,6 +1,6 @@
 # Spec — RuscaDB como MCP Server en SWARMIND
 
-> Estado: proposed — Dueño: harness/tools_sandbox — Frontera: 2026-10.
+> Estado: blocked-upstream — Dueño: harness/tools_sandbox — Frontera: 2026-10.
 > RuscaDB spec: `mcp_server.md`, `mcp_advanced_write.md`, `mcp_write_tools.md`.
 
 ## 1. Objetivo

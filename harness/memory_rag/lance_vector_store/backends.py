@@ -234,6 +234,31 @@ class _LanceDBBackendMixin:
 
         return len(existing)
 
+    def _delete_lancedb(self, collection: str, ids: list[str]) -> int:
+        """Elimina filas por id en LanceDB (helper de ``delete``).
+
+        Args:
+            collection: Tabla destino.
+            ids: Ids a eliminar.
+
+        Returns:
+            Numero de ids solicitados (LanceDB no reporta el conteo exacto).
+
+        Raises:
+            CollectionNotFoundError: Si la tabla no existe.
+        """
+        try:
+            tbl = self._db.open_table(collection)
+        except Exception as exc:
+            raise CollectionNotFoundError(
+                f"Collection '{collection}' not found in LanceDB: {exc}"
+            ) from exc
+        quoted = ", ".join(
+            "'" + str(rid).replace("'", "''") + "'" for rid in ids
+        )
+        tbl.delete(f"id IN ({quoted})")
+        return len(ids)
+
     def _search_lancedb(
         self,
         collection: str,

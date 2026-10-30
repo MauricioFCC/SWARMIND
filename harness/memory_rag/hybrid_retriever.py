@@ -24,8 +24,8 @@ from typing import Any
 
 import numpy as np
 
+from harness.domain.ports import VectorStorePort
 from harness.memory_rag.fts_search import FTSSearch
-from harness.memory_rag.lance_vector_store import LanceVectorStore
 
 # ---------------------------------------------------------------------------
 # Constantes (MAG)
@@ -70,7 +70,7 @@ class HybridRetriever:
 
     def __init__(
         self,
-        vector_store: LanceVectorStore,
+        vector_store: VectorStorePort,
         fts_search: FTSSearch,
         embed_fn: Callable[[str], np.ndarray],
         collection: str = _DEFAULT_COLLECTION,
@@ -109,6 +109,27 @@ class HybridRetriever:
         sparse_results = self._sparse_retrieve(query, top_k)
         fused = self._fuse(dense_results, sparse_results)
         return sorted(fused, key=lambda item: item.score, reverse=True)[:top_k]
+
+    async def aretrieve(self, query: str, top_k: int = 5) -> list[HybridResult]:
+        """Version asincrona de :meth:`retrieve` (Spec ruscadb-async-io).
+
+        Ejecuta retrieval denso + disperso en un hilo del executor para no
+        bloquear el event loop del orchestrator (el C-ABI de RuscaDB es
+        sincrono y single-writer).
+
+        Args:
+            query: Consulta del usuario.
+            top_k: Maximo de resultados fusionados a devolver.
+
+        Returns:
+            Lista de HybridResult ordenada por score RRF descendente.
+
+        Raises:
+            ValueError: Si top_k no es positivo o la query es vacia.
+        """
+        import asyncio
+
+        return await asyncio.to_thread(self.retrieve, query, top_k)
 
     def _dense_retrieve(self, query: str, top_k: int) -> list[dict[str, Any]]:
         """Ejecuta la busqueda vectorial densa.

@@ -174,7 +174,9 @@ def mem_store_no_defaults():
     with patch.object(
         LanceVectorStore, "_try_import_lancedb", return_value=None
     ):
-        store = LanceVectorStore.__new__(LanceVectorStore)
+        # object.__new__ evita el redirect de backend de __new__ (ADR-0104):
+        # este fixture quiere un LanceVectorStore vacio, no un adaptador real.
+        store = object.__new__(LanceVectorStore)
         store._lancedb_available = False
         store._db = None
         store._mem_collections = {}
