@@ -108,13 +108,13 @@ def check_lancedb_persistence() -> str:
         path = str(Path(tmp) / "lancedb")
         store = LanceVectorStore(db_path=path, allow_fallback=False, backend="lancedb")
         try:
-            store.create_collection("smoke")
+            store.create_collection("smoke", dim=384)
             store.insert(
                 "smoke",
-                [[1.0, 0.0], [0.0, 1.0]],
+                [[1.0] + [0.0] * 383, [0.0, 1.0] + [0.0] * 382],
                 [{"text": "a"}, {"text": "b"}],
             )
-            hits = store.search("smoke", [1.0, 0.0], top_k=1)
+            hits = store.search("smoke", [1.0] + [0.0] * 383, top_k=1)
             if not hits:
                 raise AssertionError("search lancedb devolvio 0 resultados")
         finally:

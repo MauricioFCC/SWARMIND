@@ -431,3 +431,39 @@ def _make_vec(dim: int = 384, seed: int = 0) -> np.ndarray:
     rng = np.random.RandomState(seed)
     v = rng.randn(dim).astype(np.float32)
     return v / (np.linalg.norm(v) + 1e-12)
+
+
+class _FakeSchema(list):
+    """Schema minimo iterable con ``field()`` como pyarrow."""
+
+    def field(self, _name):
+        from types import SimpleNamespace
+
+        return SimpleNamespace(type=SimpleNamespace(list_size=3))
+
+
+class TestVectorDimensionGuard:
+    """La dimension del embedding debe coincidir con el schema de la tabla."""
+
+    def test_insert_dimension_mismatch_message(self, tmp_path):
+        """Un embedding de otra dimension falla con mensaje accionable."""
+        from types import SimpleNamespace
+
+        from harness.memory_rag.lance_vector_store import (
+            LanceVectorStore,
+            VectorStoreError,
+        )
+
+        schema = _FakeSchema(
+            [SimpleNamespace(name=name) for name in ("id", "vector", "metadata")]
+        )
+        store = LanceVectorStore(
+            db_path=str(tmp_path / "dim"), allow_fallback=True, backend="lancedb"
+        )
+        store._lancedb_available = True
+        store._db = SimpleNamespace(
+            list_tables=lambda: SimpleNamespace(tables=["c"]),
+            open_table=lambda _name: SimpleNamespace(schema=schema),
+        )
+        with pytest.raises(VectorStoreError, match="Dimension 2 != 3"):
+            store.insert("c", [[1.0, 0.0]], [{}])

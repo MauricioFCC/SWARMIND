@@ -20,7 +20,7 @@ import numpy as np
 
 from ..lance_migration import generate_sample_row, serialize_for_schema
 from ..lance_schemas import DEFAULT_COLLECTIONS
-from .exceptions import CollectionNotFoundError
+from .exceptions import CollectionNotFoundError, VectorStoreError
 from .models import _Collection, _StoredItem
 
 logger = logging.getLogger("harness.memory_rag.lance_vector_store")
@@ -75,6 +75,7 @@ class _LanceDBBackendMixin:
         """Inserta vectores en una tabla LanceDB (helper de ``insert``)."""
         tbl = self._db.open_table(collection)  # type: ignore[union-attr]
         field_names = {field.name for field in tbl.schema}
+        self._check_vector_dim(tbl, collection, int(vectors.shape[1]))
         ids: list[str] = []
         rows: list[dict[str, Any]] = []
         for i in range(vectors.shape[0]):
@@ -83,6 +84,21 @@ class _LanceDBBackendMixin:
             rows.append(self._lancedb_row(rid, vectors[i], metadata[i], now, field_names))
         tbl.add(rows)
         return ids
+
+    @staticmethod
+    def _check_vector_dim(tbl: Any, collection: str, dim: int) -> None:
+        """Falla con mensaje accionable si el embedding no encaja en la tabla."""
+        try:
+            vector_type = tbl.schema.field("vector").type
+        except (AttributeError, KeyError, TypeError):
+            return
+        expected = getattr(vector_type, "list_size", None)
+        if expected and int(expected) != int(dim):
+            raise VectorStoreError(
+                f"Dimension {dim} != {expected} de la tabla '{collection}'. "
+                "Usa el mismo modelo de embedding o crea la coleccion con "
+                "create_collection(name, dim=...)."
+            )
 
     @staticmethod
     def _lancedb_row(
