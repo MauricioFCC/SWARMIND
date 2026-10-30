@@ -154,6 +154,20 @@ calor, umbral aprendido, reconciliación programada), documentados en
 Único gap restante: **RaBitQ/IVF-PQ**, bloqueado por el C-ABI de RuscaDB
 (contrato propuesto en `docs/specs/ruscadb-ivf-pq.md` §6).
 
+### 3.4 Cierre del gap upstream y ajustes de carga (ciclo 11.56)
+
+| Gap | Implementación | Evidencia |
+|---|---|---|
+| RaBitQ (bloqueado upstream) | `ruscadb_quantize` + `ruscadb_search_bq` en el ABI; `RuscaDBStore.search_binary` (oversample + rescore float32) | `test_binary_search.py` (12) |
+| Ajuste de oversampling por carga real | `binary_tuning.OversampleTuner` (recall muestreado vs KNN exacto, EWMA, persistencia) + `binary_search_stats()` | `test_binary_search.py` |
+| Índices de gobernanza opt-in | `index_governance=True` / `SWARMIND_INDEX_GOVERNANCE=1`; se crean al crear o migrar la tabla | `test_binary_search.py::test_governance_indexes_are_opt_in` |
+| Migración de tablas legacy | `ALTER TABLE ADD COLUMN` (`ruscadb_alter_table`) con fallback a metadata | `test_binary_search.py::test_legacy_table_is_migrated_with_alter_table` |
+| Contratos declarativos (tooling) | F8 + `architecture_contracts.toml` + `--list-contracts` | `test_architecture_contracts.py` (7) |
+
+Límite declarado: el KNN binario actual **escanea** la tabla y cuantiza en la
+query; no hay índice IVF/HNSW de códigos ni `nprobe`. El control de costo/recall
+es `oversample` (1..8) ajustado por el tuner.
+
 ## 4. Investigación aplicada
 
 Ver `docs/research/frontier-2026-10-29.md` (6 frentes con fuentes 2023-2026):

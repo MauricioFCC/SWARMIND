@@ -4,6 +4,7 @@ from .async_ruscadb import (
     WriteActor,
     WriteBatcher,
 )
+from .binary_tuning import OversampleTuner
 from .cache_threshold import AdaptiveThreshold
 from .context_window_manager import ContextSection, ContextWindow, ContextWindowManager
 from .memory_heat import HeatPolicy, HeatReport, apply_heat_policy
@@ -52,6 +53,7 @@ __all__ = [
     # Optimization Pipeline
     "OptimizationPipeline",
     "OptimizationResult",
+    "OversampleTuner",
     # Prompt Cache Builder
     "PromptCacheBuilder",
     # Existing

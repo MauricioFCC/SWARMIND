@@ -1,6 +1,6 @@
 # Spec — IVF-PQ / RaBitQ Cuantizacion de Vectores
 
-> Estado: blocked-upstream — Dueño: harness/memory_rag — Frontera: 2026-10.
+> Estado: implemented-parcial (ciclo 11.56: RaBitQ + rescore) — Dueño: harness/memory_rag — Frontera: 2026-10.
 > RuscaDB spec: `ivf_pq.md`, `ivf_clustering.md`, `rabitq_quantization.md`, `hnsw_budget_pq.md`.
 
 ## 1. Objetivo
@@ -23,7 +23,7 @@ manteniendo recall >= 90%.
 
 ## 5. Esfuerzo: 1 semana.
 
-## 6. Contrato ABI propuesto (siguiente accion concreta)
+## 6. Contrato ABI implementado (ciclo 11.56)
 
 > Estado del bloqueo: `RabitqQuantizer` ya existe en RuscaDB
 > (`crates/ruscadb/src/rabitq.rs`: `encode`, `estimate_dot`, `estimate_l2`,
@@ -96,3 +96,18 @@ Notas de implementacion Rust:
   O(n) por query; el ahorro de memoria llega al no retener float32 en RAM).
 - Persistencia de codigos en una columna `embedding_bq` (requiere `ALTER TABLE`,
   no expuesto en el ABI).
+
+## 7. Evidencia (ciclo 11.56)
+
+- RuscaDB expone `ruscadb_quantize` + `ruscadb_search_bq` (commit 91ecb36)
+  y SWARMIND los importa (DLL 5.2 MB, 32 simbolos).
+- `RuscaDBStore.search_binary(...)` usa el ABI: candidatos 1-bit +
+  oversampling y rescore exacto float32; degrada a KNN exacto sin simbolo.
+- `OversampleTuner` ajusta el factor por carga real (recall muestreado vs
+  KNN exacto, EWMA + persistencia).
+- Tests: `harness/tests/test_binary_search.py` (12) cubren code_len(16)=2 B,
+  recall con oversample completo, determinismo, fallback y calibracion.
+- LIMITE: el motor escanea y cuantiza en la query (no hay indice IVF/HNSW
+  persistente de codigos); el ahorro de RAM llega al no retener float32 en
+  el heap del indice. `nprobe` no existe en este build: el control es
+  `oversample` (equivalente funcional al rerank factor).

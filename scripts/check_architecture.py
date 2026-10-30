@@ -13,10 +13,11 @@ Verifica:
 
 Modos:
 - Sin flags (default): reporta todo, advise-only, exit 0.
-- ``--gate``: BLOQUEA (exit 1) con F1/F2/F4/F6 (+F7 si se pasa ``--ratchet``).
+- ``--gate``: BLOQUEA (exit 1) con F1/F2/F4/F6/F8 (+F7 si se pasa ``--ratchet``).
 - ``--strict``: BLOQUEA con cualquier violacion (incluye deuda legacy).
 - ``--ratchet``: compara F3/F5 con el baseline (solo permite reducir).
 - ``--write-baseline``: congela los conteos actuales de deuda.
+- ``--list-contracts``: imprime los contratos declarativos cargados.
 - ``--json``: emite el reporte como JSON (util para CI/telemetria).
 
 Uso: python scripts/check_architecture.py [--gate|--strict] [--json]
@@ -385,6 +386,23 @@ def _signature_mismatches(port_method: Any, adapter_method: Any) -> list[str]:
     return errors
 
 
+def load_contracts() -> list[dict]:
+    """Carga los contratos declarativos del archivo TOML.
+
+    Returns:
+        Lista de contratos (vacia si el archivo no existe o es invalido).
+    """
+    import tomllib
+
+    if not CONTRACTS_FILE.exists():
+        return []
+    try:
+        payload = tomllib.loads(CONTRACTS_FILE.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return []
+    return list(payload.get("contracts", []))
+
+
 def check_declarative_contracts() -> list[str]:
     """F8: valida los contratos declarativos de ``architecture_contracts.toml``.
 
@@ -511,6 +529,10 @@ def main(argv: list[str] | None = None) -> int:
         Exit code: 0 si pasa el modo elegido, 1 si hay violaciones bloqueantes.
     """
     args = list(sys.argv[1:] if argv is None else argv)
+    if "--list-contracts" in args:
+        contracts = load_contracts()
+        print(json.dumps(contracts, indent=2, ensure_ascii=False))
+        return 0 if contracts else 1
     findings = run_checks(ratchet="--ratchet" in args)
     if "--write-baseline" in args:
         path = write_debt_baseline(findings)

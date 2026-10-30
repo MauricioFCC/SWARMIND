@@ -33,6 +33,7 @@ import numpy as np
 
 from .ruscadb import (
     RuscadbError,
+    alter_table_add_column,
     capabilities,
     close,
     commit,
@@ -50,6 +51,7 @@ from .ruscadb import (
     last_lsn,
     list_tables,
     put_blob,
+    search_bq,
     update_record,
 )
 from .ruscadb import (
@@ -174,6 +176,9 @@ class RuscaDBStore:
         strict_guard: bool | None = None,
         heat_policy: Any = None,
         reconcile_every: int | None = None,
+        index_governance: bool | None = None,
+        oversample_tuner: Any = None,
+        calibrate_bq: bool | None = None,
     ) -> None:
         """Abre la base y garantiza las colecciones base.
 
@@ -191,6 +196,11 @@ class RuscaDBStore:
                 aplica su vida media por coleccion y excluye ``evicted``.
             reconcile_every: Cada cuantas escrituras se reconcilia la memoria
                 (SSGM); 0/None lo desactiva (env ``SWARMIND_RECONCILE_EVERY``).
+            index_governance: Crea indices secundarios en ``trust_tier`` y
+                ``session_id`` (opt-in: env ``SWARMIND_INDEX_GOVERNANCE=1``).
+            oversample_tuner: ``OversampleTuner`` opcional para el KNN binario.
+            calibrate_bq: Muestrea recalls y ajusta el oversample
+                (env ``SWARMIND_BQ_CALIBRATE=1``).
         """
         if db_path is None and config is None:
             try:
@@ -233,8 +243,27 @@ class RuscaDBStore:
             )
         self._reconcile_every = max(int(reconcile_every), 0)
         self._reconcile_counter = 0
+        if index_governance is None:
+            index_governance = os.environ.get("SWARMIND_INDEX_GOVERNANCE", "") == "1"
+        self._index_governance = bool(index_governance)
+        if oversample_tuner is None:
+            from .binary_tuning import OversampleTuner
+
+            target = float(os.environ.get("SWARMIND_BQ_TARGET_RECALL", "0.90") or 0.90)
+            oversample_tuner = OversampleTuner(target_recall=target, store=self)
+        self._oversample_tuner = oversample_tuner
+        if calibrate_bq is None:
+            calibrate_bq = os.environ.get("SWARMIND_BQ_CALIBRATE", "") == "1"
+        self._calibrate_bq = bool(calibrate_bq)
+        self._calibration_rate = float(
+            os.environ.get("SWARMIND_BQ_SAMPLE_RATE", "0.05") or 0.05
+        )
+        self._binary_queries = 0
+        self._binary_calibrations = 0
         #: Tablas creadas con el esquema legacy (sin columnas de gobernanza).
         self._legacy_tables: set[str] = set()
+        #: Tablas ya migradas/verificadas con columnas de gobernanza.
+        self._governance_ready: set[str] = set()
         with _OPEN_LOCK:
             self._handle = rdb_open_opts(
                 self.db_path,
@@ -298,8 +327,9 @@ class RuscaDBStore:
             create_table(self._handle, name, list(_SCHEMA))
             self._index(name, "id")
             self._index(name, "created_at")
-            for column in _GOVERNANCE_COLUMNS:
-                self._index(name, column)
+            if self._index_governance:
+                for column in _GOVERNANCE_COLUMNS:
+                    self._index(name, column)
         except RuscadbError as exc:
             logger.debug("create_collection '%s' fallo: %s", name, exc)
         self._collections.add(name)
@@ -494,8 +524,46 @@ class RuscaDBStore:
         scalars["write_gate_verdict"] = verdict
         return scalars
 
+    def ensure_governance_columns(self, collection: str) -> list[str]:
+        """Agrega las columnas de gobernanza a una tabla legacy (ALTER TABLE).
+
+        Args:
+            collection: Tabla a evolucionar.
+
+        Returns:
+            Columnas agregadas efectivamente (vacio si no hay ALTER o ya existian).
+        """
+        _safe_ident(collection)
+        if not self._caps.get("ruscadb_alter_table"):
+            return []
+        added = self._add_missing_columns(collection)
+        if added:
+            self._governance_ready.add(collection)
+            self._legacy_tables.discard(collection)
+            self._commit()
+            if self._index_governance:
+                for column in _GOVERNANCE_COLUMNS:
+                    self._index(collection, column)
+            logger.info("migradas columnas de gobernanza en '%s': %s", collection, added)
+        return added
+
+    def _add_missing_columns(self, collection: str) -> list[str]:
+        """Intenta ALTER ADD COLUMN para cada columna de gobernanza."""
+        added: list[str] = []
+        for column in ("source", "trust_tier", "session_id", "derived_from",
+                       "write_gate_verdict"):
+            try:
+                alter_table_add_column(self._handle, collection, column, 2)
+                added.append(column)
+            except RuscadbError as exc:
+                text = str(exc).lower()
+                if "existe" in text or "exist" in text or "duplicad" in text:
+                    continue
+                logger.debug("ALTER %s.%s fallo: %s", collection, column, exc)
+        return added
+
     def _insert_row(self, collection: str, record: dict[str, Any]) -> str | None:
-        """Inserta una fila, degradando si la tabla no tiene columnas nuevas.
+        """Inserta una fila, migrando a columnas de gobernanza si hace falta.
 
         Args:
             collection: Tabla destino.
@@ -505,34 +573,50 @@ class RuscaDBStore:
             ULID insertado (o None si el motor no lo devuelve).
 
         Raises:
-            RuscadbError: Si el motor rechaza el insert sin columnas nuevas.
+            RuscadbError: Si el motor rechaza el insert incluso en modo legacy.
         """
-        governance = ("source", "trust_tier", "session_id", "derived_from",
-                      "write_gate_verdict")
+        if collection in self._governance_ready:
+            insert_record(self._handle, collection, record)
+            return last_inserted_id()
         if collection in self._legacy_tables:
-            legacy = dict(record)
-            legacy["scalars"] = {
-                key: value
-                for key, value in record["scalars"].items()
-                if key not in governance
-            }
-            insert_record(self._handle, collection, legacy)
+            insert_record(self._handle, collection, self._legacy_record(record))
             return last_inserted_id()
         try:
-            insert_record(self._handle, collection, record)
+            return self._insert_with_governance(collection, record)
         except RuscadbError as exc:
-            legacy = dict(record)
-            legacy["scalars"] = {
-                key: value
-                for key, value in record["scalars"].items()
-                if key not in governance
-            }
-            logger.debug(
-                "insert con columnas de gobernanza fallo (%s); reintento legacy", exc
-            )
-            insert_record(self._handle, collection, legacy)
+            logger.debug("insert con gobernanza fallo (%s); modo legacy", exc)
             self._legacy_tables.add(collection)
-        return last_inserted_id()
+            insert_record(self._handle, collection, self._legacy_record(record))
+            return last_inserted_id()
+
+    def _insert_with_governance(
+        self, collection: str, record: dict[str, Any]
+    ) -> str | None:
+        """Intenta el insert completo; si falta esquema, migra y reintenta."""
+        try:
+            insert_record(self._handle, collection, record)
+            self._governance_ready.add(collection)
+            return last_inserted_id()
+        except RuscadbError:
+            if not self._caps.get("ruscadb_alter_table"):
+                raise
+            self.ensure_governance_columns(collection)
+            insert_record(self._handle, collection, record)
+            self._governance_ready.add(collection)
+            return last_inserted_id()
+
+    @staticmethod
+    def _legacy_record(record: dict[str, Any]) -> dict[str, Any]:
+        """Copia el registro sin las columnas de gobernanza (tablas legacy)."""
+        governance = ("source", "trust_tier", "session_id", "derived_from",
+                      "write_gate_verdict")
+        legacy = dict(record)
+        legacy["scalars"] = {
+            key: value
+            for key, value in record["scalars"].items()
+            if key not in governance
+        }
+        return legacy
 
     def _map_rid(self, collection: str, logical_id: str, rid_rusca: str) -> None:
         """Registra el mapeo id logico -> ULID fisico en ``_rid_map``.
@@ -1038,6 +1122,170 @@ class RuscaDBStore:
         return self._apply_trust_and_recency(
             out, top_k, **self._retrieval_options(kwargs, collection)
         )
+
+    def _binary_factor(self, collection: str, oversample: int | None) -> int:
+        """Oversample efectivo: explicito o el ajustado por el tuner."""
+        if oversample is not None:
+            return int(oversample)
+        return self._oversample_tuner.value_for(collection)
+
+    def _run_binary(
+        self,
+        collection: str,
+        query: np.ndarray,
+        top_k: int,
+        factor: int,
+    ) -> list[dict[str, Any]] | None:
+        """Ejecuta ``search_bq``; None si el motor falla (para degradar)."""
+        try:
+            return search_bq(
+                self._handle,
+                collection,
+                query,
+                top_k=int(top_k),
+                oversample=max(factor, 1),
+            )
+        except RuscadbError as exc:
+            logger.warning(
+                "search_binary en '%s' fallo (%s); fallback a KNN exacto",
+                collection,
+                exc,
+            )
+            return None
+
+    def _binary_items(
+        self,
+        collection: str,
+        hits: list[dict[str, Any]],
+        factor: int,
+    ) -> list[dict[str, Any]]:
+        """Normaliza los hits binarios (resuelve RecordId -> registro)."""
+        items: list[dict[str, Any]] = []
+        for hit in hits:
+            record = self._resolve_hit_record(collection, str(hit.get("id") or ""))
+            if not record:
+                continue
+            item = self._record_to_item(record)
+            distance = float(hit.get("distance", 0.0) or 0.0)
+            item["distance"] = distance
+            item["oversample"] = factor
+            item["score"] = 1.0 / (1.0 + max(distance, 0.0))
+            items.append(item)
+        return items
+
+    def _resolve_hit_record(
+        self, collection: str, rid: str
+    ) -> dict[str, Any] | None:
+        """Resuelve un RecordId (ULID) a su registro completo."""
+        if not rid:
+            return None
+        record = self.get_record(collection, rid)
+        if record:
+            return record
+        resolved = self.resolve_rid(collection, rid)
+        return self.get_record(collection, resolved) if resolved else None
+
+    def _should_calibrate(self, calibrate: bool | None) -> bool:
+        """Decide si esta query entra en la muestra de calibracion."""
+        import random
+
+        enabled = self._calibrate_bq if calibrate is None else calibrate
+        return bool(enabled and self._calibration_rate > 0
+                    and random.random() < self._calibration_rate)
+
+    def search_binary(
+        self,
+        collection: str,
+        query_vector: Any,
+        top_k: int = 10,
+        oversample: int | None = None,
+        calibrate: bool | None = None,
+        **kwargs: Any,
+    ) -> list[dict[str, Any]]:
+        """KNN binario RaBitQ (1 bit/dim) con rescore exacto float32.
+
+        Usa ``ruscadb_search_bq`` (SPEC-0171): el motor estima distancias con
+        codigos de 1 bit, conserva ``top_k * oversample`` candidatos y los
+        re-puntua con los float32 originales. Si la DLL no expone el simbolo,
+        degrada al KNN exacto con warning (nunca falla en silencio).
+
+        El oversample se ajusta por carga real (``OversampleTuner``): con
+        ``calibrate`` activo se muestrea una fraccion de queries, se compara
+        contra el KNN exacto y se corrige el factor.
+
+        Args:
+            collection: Coleccion destino.
+            query_vector: Vector de consulta.
+            top_k: Numero de resultados finales.
+            oversample: Factor explicito; ``None`` usa el tuner por coleccion.
+            calibrate: Fuerza/desactiva el muestreo; ``None`` usa el store.
+            **kwargs: Opciones de gobernanza (``filters``/``trust``/``recency``).
+
+        Returns:
+            Lista de ``{id, text, metadata, distance, score, trust_tier}``.
+        """
+        options = self._retrieval_options(kwargs, collection)
+        if not self._caps.get("ruscadb_search_bq"):
+            logger.warning(
+                "search_binary: la DLL no exporta ruscadb_search_bq; KNN exacto"
+            )
+            return self.search(collection, query_vector, top_k=top_k, **kwargs)
+        factor = self._binary_factor(collection, oversample)
+        query, hits = self._binary_query(collection, query_vector, top_k, factor)
+        if hits is None or query is None:
+            return self.search(collection, query_vector, top_k=top_k, **kwargs)
+        self._binary_queries += 1
+        items = self._binary_items(collection, hits, factor)
+        if self._should_calibrate(calibrate):
+            self._calibrate_oversample(collection, query, top_k, items)
+        return self._apply_trust_and_recency(items, top_k, **options)
+
+    def _binary_query(
+        self,
+        collection: str,
+        query_vector: Any,
+        top_k: int,
+        factor: int,
+    ) -> tuple[np.ndarray | None, list[dict[str, Any]] | None]:
+        """Prepara la query y ejecuta ``search_bq`` (None si falla)."""
+        query = np.asarray(query_vector, dtype=np.float32).reshape(-1)
+        return query, self._run_binary(collection, query, top_k, factor)
+
+    def _calibrate_oversample(
+        self,
+        collection: str,
+        query: np.ndarray,
+        top_k: int,
+        binary_items: list[dict[str, Any]],
+    ) -> None:
+        """Muestrea recall@k frente al KNN exacto y ajusta el oversample.
+
+        Args:
+            collection: Coleccion consultada.
+            query: Vector de consulta.
+            top_k: Resultados comparados.
+            binary_items: Resultados del KNN binario ya normalizados.
+        """
+        exact = self.search(collection, query.tolist(), top_k=top_k)
+        if not exact:
+            return
+        exact_ids = {str(item.get("id")) for item in exact}
+        binary_ids = {str(item.get("id")) for item in binary_items}
+        recall = len(exact_ids & binary_ids) / max(len(exact_ids), 1)
+        self._binary_calibrations += 1
+        self._oversample_tuner.observe(collection, recall)
+
+    def binary_search_stats(self) -> dict[str, Any]:
+        """Telemetria del KNN binario (consultas, calibraciones, tuner).
+
+        Returns:
+            ``{queries, calibrations, tuner}``.
+        """
+        return {
+            "queries": self._binary_queries,
+            "calibrations": self._binary_calibrations,
+            "tuner": self._oversample_tuner.stats(),
+        }
 
     def full_text_search(
         self, collection: str, query: str, top_k: int = 10, **kwargs: Any

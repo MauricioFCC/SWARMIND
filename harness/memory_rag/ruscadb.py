@@ -245,6 +245,24 @@ def _bind_extended(library: ctypes.CDLL) -> None:
     _bind_optional(
         library, "ruscadb_open_encrypted", [c_char_p, c_uint32, c_char_p, _HANDLE_P], c_int
     )
+    _bind_optional(
+        library, "ruscadb_alter_table", [c_void_p, c_char_p, c_char_p, c_int], c_int
+    )
+    _bind_optional(
+        library,
+        "ruscadb_quantize",
+        [ctypes.POINTER(ctypes.c_float), c_size_t, c_size_t,
+         ctypes.POINTER(ctypes.c_ubyte), c_size_t,
+         ctypes.POINTER(ctypes.c_float), c_size_t],
+        c_int,
+    )
+    _bind_optional(
+        library,
+        "ruscadb_search_bq",
+        [c_void_p, c_char_p, ctypes.POINTER(ctypes.c_float), c_size_t,
+         c_size_t, c_size_t, c_char_p, c_size_t],
+        c_int,
+    )
 
 
 def _lib() -> ctypes.CDLL:
@@ -451,6 +469,152 @@ def last_inserted_id() -> str:
     return buf.value.decode('utf-8', errors='replace')
 
 
+def alter_table_add_column(
+    handle, table: str, column: str, type_code: int = 2
+) -> None:
+    """Agrega una columna a una tabla existente (ALTER TABLE ADD COLUMN).
+
+    Args:
+        handle: Handle abierto.
+        table: Tabla a evolucionar.
+        column: Columna nueva.
+        type_code: 0=INT, 1=FLOAT, 2=TEXT, 3=BOOL.
+
+    Raises:
+        RuscadbError: si la DLL no exporta ``ruscadb_alter_table`` o el motor
+            rechaza la evolucion.
+    """
+    _require("ruscadb_alter_table")
+    _check(
+        _lib().ruscadb_alter_table(
+            handle, table.encode("utf-8"), column.encode("utf-8"), c_int(type_code)
+        )
+    )
+
+
+def quantize(vectors, dim: int) -> tuple[bytes, list[float]]:
+    """Cuantiza vectores f32 a codigos RaBitQ (1 bit por dimension).
+
+    Args:
+        vectors: Matriz ``(n, dim)`` o vector unico.
+        dim: Dimension de los vectores.
+
+    Returns:
+        ``(codigos, normas)``: ``n * ceil(dim/8)`` bytes y ``n`` normas.
+
+    Raises:
+        RuscadbError: si la DLL no exporta ``ruscadb_quantize`` o el motor
+            rechaza la entrada.
+    """
+    import numpy as np
+
+    _require("ruscadb_quantize")
+    array = np.asarray(vectors, dtype=np.float32)
+    if array.ndim == 1:
+        array = array.reshape(1, -1)
+    return _run_quantize(array, int(dim))
+
+
+def _run_quantize(array, dim: int) -> tuple[bytes, list[float]]:
+    """Reserva buffers, llama al ABI y devuelve ``(codigos, normas)``."""
+    import numpy as np
+
+    count = int(array.shape[0])
+    code_len = (dim + 7) // 8
+    codes = (ctypes.c_ubyte * max(count * code_len, 1))()
+    norms = (ctypes.c_float * max(count, 1))()
+    flat = np.ascontiguousarray(array.reshape(-1))
+    _check(
+        _lib().ruscadb_quantize(
+            flat.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            c_size_t(count),
+            c_size_t(dim),
+            codes,
+            c_size_t(count * code_len),
+            norms,
+            c_size_t(count),
+        )
+    )
+    return bytes(codes[: count * code_len]), [float(value) for value in norms[:count]]
+
+
+def search_bq(
+    handle,
+    table: str,
+    query,
+    top_k: int = 10,
+    oversample: int = 3,
+) -> list[dict[str, object]]:
+    """KNN binario RaBitQ con oversampling + rescore exacto float32.
+
+    Args:
+        handle: Handle abierto.
+        table: Tabla con indice vectorial.
+        query: Vector de consulta.
+        top_k: Resultados deseados.
+        oversample: Candidatos antes del rescore (>= 1).
+
+    Returns:
+        Lista de ``{"id": RecordId, "distance": float}`` ordenada por distancia.
+
+    Raises:
+        RuscadbError: si la DLL no exporta ``ruscadb_search_bq`` o el motor
+            rechaza la consulta.
+    """
+    import json as _json
+
+    import numpy as np
+
+    _require("ruscadb_search_bq")
+    vector = np.ascontiguousarray(np.asarray(query, dtype=np.float32).reshape(-1))
+    text = _search_bq_payload(
+        handle,
+        table,
+        vector.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        vector.size,
+        top_k,
+        oversample,
+    )
+    return _parse_bq_hits(text, _json)
+
+
+def _parse_bq_hits(text: str, json_module) -> list[dict[str, object]]:
+    """Parsea el JSON de hits y descarta elementos no-dict."""
+    parsed = json_module.loads(text) if text else []
+    return [hit for hit in parsed if isinstance(hit, dict)]
+
+
+def _search_bq_payload(
+    handle,
+    table: str,
+    pointer,
+    dim: int,
+    top_k: int,
+    oversample: int,
+) -> str:
+    """Llama a ``ruscadb_search_bq`` reintentando con buffers mayores."""
+    for size in (65536, 1 << 20, 1 << 22):
+        buffer = ctypes.create_string_buffer(size)
+        rc = _lib().ruscadb_search_bq(
+            handle,
+            table.encode("utf-8"),
+            pointer,
+            c_size_t(dim),
+            c_size_t(int(top_k)),
+            c_size_t(max(int(oversample), 1)),
+            buffer,
+            c_size_t(size),
+        )
+        if rc == RC_OK:
+            return buffer.value.decode("utf-8", errors="replace")
+        if rc != RC_BUFFER_TOO_SMALL:
+            _check(rc)
+    raise RuscadbError(
+        RC_BUFFER_TOO_SMALL,
+        "ruscadb_search_bq: buffer insuficiente incluso con 4 MiB",
+    )
+
+
 def _require(name: str) -> None:
     """Verifica que la DLL exporte una funcion extendida.
 
@@ -490,6 +654,9 @@ def capabilities() -> dict[str, bool]:
         "ruscadb_explain",
         "ruscadb_execute_at",
         "ruscadb_open_encrypted",
+        "ruscadb_alter_table",
+        "ruscadb_quantize",
+        "ruscadb_search_bq",
     )
     return {name: getattr(library, name, None) is not None for name in names}
 

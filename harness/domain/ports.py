@@ -72,6 +72,20 @@ class TextSearchPort(Protocol):
 
 
 @runtime_checkable
+class BinarySearchPort(Protocol):
+    """Contrato opcional de KNN cuantizado (1 bit + rescore exacto)."""
+
+    def search_binary(
+        self,
+        collection: str,
+        query_vector: Any,
+        top_k: int = 10,
+        oversample: int = 3,
+        **kwargs: Any,
+    ) -> list[dict[str, Any]]: ...
+
+
+@runtime_checkable
 class EmbeddingPort(Protocol):
     """Contrato de un generador de embeddings."""
 
@@ -108,6 +122,7 @@ class EventBusPort(Protocol):
 
 
 __all__ = [
+    "BinarySearchPort",
     "EmbeddingPort",
     "EventBusPort",
     "LLMPort",

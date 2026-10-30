@@ -1,3 +1,28 @@
+## [11.56] - 2026-10-30
+
+### Added
+- RaBitQ cableado: `ruscadb.py` bindea `ruscadb_quantize` + `ruscadb_search_bq`
+  (y `ruscadb_alter_table`); `RuscaDBStore.search_binary()` hace KNN 1-bit con
+  oversampling y rescore exacto float32, con degradacion explicita a KNN exacto.
+- `binary_tuning.OversampleTuner`: ajuste del oversample por carga real
+  (recall muestreado vs KNN exacto, EWMA, topes 1..8, persistencia) y
+  `RuscaDBStore.binary_search_stats()`.
+- Migracion de tablas legacy con `ALTER TABLE ADD COLUMN` (columnas de
+  gobernanza) y fallback a metadata si el motor no lo soporta.
+- Indices secundarios de gobernanza opt-in (`index_governance` /
+  `SWARMIND_INDEX_GOVERNANCE=1`), tambien al migrar una tabla.
+- Tooling de contratos: `check_architecture.py --list-contracts`.
+
+### Changed
+- `WriteActor` y `WriteBatcher` viven en `harness/memory_rag/write_actor.py`
+  (modulos < 500 lineas); `async_ruscadb` los re-exporta.
+- `BinarySearchPort` en `harness/domain/ports.py` (puerto opcional, ISP).
+- DLL de RuscaDB actualizada (32 simbolos, 5.2 MB) con quantize/search_bq/alter.
+
+### Docs
+- `docs/specs/ruscadb-ivf-pq.md`: estado implemented-parcial + evidencia y
+  limite (sin indice IVF persistente; `nprobe` no aplica, se usa oversample).
+
 ## [11.55] - 2026-10-30
 
 ### Added

@@ -5,6 +5,18 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-30c)
+
+### Estado 2026-10-30 (Ciclo 11.56 — RaBitQ cableado + tuning por carga)
+- `ruscadb_quantize` + `ruscadb_search_bq` importados y usados por
+  `RuscaDBStore.search_binary` (KNN 1-bit + oversample + rescore float32).
+- `OversampleTuner` ajusta el factor con recall medido vs KNN exacto.
+- Migracion de tablas legacy via `ALTER TABLE ADD COLUMN`; indices de
+  gobernanza opt-in.
+- `--list-contracts` para auditar los contratos F8.
+- Limite: sin indice IVF persistente ni `nprobe` (fase 2 upstream).
+- Ruff 0, Vulture 0, gate F1/F2/F4/F6/F7/F8 OK.
+
 ## Estado Actual (2026-10-30b)
 
 ### Estado 2026-10-30 (Ciclo 11.55 — Cierre de gaps parciales)
