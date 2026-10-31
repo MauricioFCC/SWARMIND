@@ -23,7 +23,12 @@ from __future__ import annotations
 import sys
 from typing import Any
 
-from harness.cli_common import setup_logging
+from harness.cli_common import (
+    _cyan,
+    _warn,
+    get_harness_root,
+    setup_logging,
+)
 
 logger = setup_logging()
 
@@ -197,6 +202,49 @@ def _resolve_hitl_mode(parsed: dict[str, Any]) -> str:
     if parsed.get("hitl_sensitive"):
         return "hitl_sensitive"
     return "hitl"
+
+
+def print_update_notice_if_due(node=None) -> bool:
+    """Aviso de update en runtime (spec self-update-notice.md SU-01..SU-05).
+
+    Best-effort: nunca lanza ni bloquea el arranque (0 tokens). Si el remoto
+    tiene commits nuevos y fuera de cooldown, imprime el mensaje y el comando
+    directo. Env `SWARMIND_UPDATE_CHECK=0` lo desactiva (offline/servidores).
+
+    Args:
+        node: Override de raíz para tests (no perturba runs productivos).
+
+    Returns:
+        True si se imprimió el aviso, False en caso contrario.
+    """
+    import os
+
+    if os.environ.get("SWARMIND_UPDATE_CHECK", "") == "0":
+        return False
+    try:
+        text = _render_notice(node)
+    except (ImportError, OSError) as exc:  # fallback de runtime (SU-05)
+        logger.warning("update notice degradado: %s", exc)
+        return False
+    if text is None:
+        return False
+    print(_cyan(_warn(text)))
+    return True
+
+
+def _render_notice(node) -> str | None:
+    """Construye el texto del aviso (``None`` = no toca avisar)."""
+    from pathlib import Path
+
+    from harness.self_update.notice import UpdateNotice, update_notice
+
+    repo = node or get_harness_root()
+    if not repo:
+        return None
+    notice: UpdateNotice | None = update_notice(Path(repo))
+    if notice is None or notice.kind == "current":
+        return None
+    return f"[update] {notice.message}"
 
 
 def _start_sandbox_if_needed(

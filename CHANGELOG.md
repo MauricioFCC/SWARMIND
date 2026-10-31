@@ -1,3 +1,28 @@
+## [11.66] - 2026-10-30
+
+### Added
+- Aviso de update en runtime (la instalacion nueva avisa cuando el repo
+  avanza): `harness/self_update/notice.py` con rate-limit de 24 h (state
+  versionado en `.swarmind/update_notice.json`), degradado sin cacheo de
+  fallo (OFFLINE/NO_GIT/NO_REMOTE) y sin lanzar (SU-05). 15 tests.
+- Comando runtime `!update check|apply|audit` (spec AC-SU5): usa los guards
+  anti-reversion del core (ff-only, dirty worktree, max_seen; downgradeforzado
+  solo con `--allow-downgrade --justification=...`). 7 tests.
+- Hook de arranque: `run_support.print_update_notice_if_due` (env
+  `SWARMIND_UPDATE_CHECK=0` desactiva) llamado desde `python -m harness`.
+  4 tests.
+- Spec nueva `docs/specs/self-update-notice.md` (SU-01..SU-05,
+  AC-SU1..SU7, implemented).
+
+### Changed
+- `MockVectorStore` incluida previously; journal default compartido con
+  `scripts/self_update.py` (`.swarmind/update_log.jsonl`).
+
+### Verified
+- 7452 passed / 38 skipped / 1 xfailed (ADR heredado) / 0 failed; ruff,
+  vulture, architecture+ratchet, complexity, ruff-ratchet, preview,
+  pep649 y skills en verde.
+
 ## [11.65] - 2026-10-30
 
 ### Added

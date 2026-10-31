@@ -38,6 +38,13 @@ from harness.cli_common import (
     get_project_root,
     setup_logging,
 )
+from harness.run_support import (
+    _dispatch_task,
+    _handle_gateway_mode,
+    _parse_args,
+    _resolve_hitl_mode,
+    print_update_notice_if_due,
+)
 
 logger = setup_logging()
 
@@ -119,10 +126,6 @@ from harness.run_commands import (
 # ``from harness.run import _parse_args`` y los patches de los tests.
 from harness.run_support import (
     _USAGE_LINES,
-    _dispatch_task,
-    _handle_gateway_mode,
-    _parse_args,
-    _resolve_hitl_mode,
     _start_sandbox_if_needed,
 )
 
@@ -490,6 +493,8 @@ def main() -> None:
     _check_lancedb_or_exit()
 
     check_first_run(HARNESS_ROOT)
+
+    print_update_notice_if_due(HARNESS_ROOT)
 
     # --- Mode dispatch ---
     if parsed["gateway"]:

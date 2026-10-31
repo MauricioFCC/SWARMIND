@@ -5,6 +5,13 @@ from pathlib import Path
 from typing import Any
 
 import harness.run_commands as _rc
+from harness.self_update import (
+    Action,
+    apply_update,
+    audit_log,
+    check_remote,
+    fmt_version,
+)
 
 
 def _handle_rag_ingest(store, cmd: str) -> None:
@@ -222,3 +229,81 @@ __all__ = [
     "_handle_rag_ingest",
     "_handle_rag_stats",
 ]
+
+# ---------------------------------------------------------------------------
+# !update (self-update desde runtime; spec self-update-notice.md)
+# ---------------------------------------------------------------------------
+
+
+def _handle_update(cmd: str, harness_root: Path | None) -> None:
+    """``!update check|apply|audit``: auto-actualizacion con guards.
+
+    Rutea a las funciones puras de ``harness.self_update`` usando el journal
+    default del repo (``.swarmind/update_log.jsonl``). El ``apply`` respeta los
+    guards anti-reversion (ff-only, dirty worktree, max_seen); el downgrade
+    forzado requiere ``--allow-downgrade`` y ``--justification=...``.
+    """
+    repo = Path(harness_root or Path.cwd()).resolve()
+    log_path = repo / ".swarmind" / "update_log.jsonl"
+    accion, allow_downgrade, justification = _parse_update_args(cmd)
+    check = check_remote(repo) if accion in {"check", "apply"} else None
+    if accion == "check":
+        _log_update_check(check)
+        return
+    if accion == "audit":
+        violations = audit_log(log_path)
+        _rc.logger.info(
+            "!update audit | violaciones=%d %s",
+            len(violations),
+            violations[:5],
+        )
+        return
+    _apply_update_with_guards(repo, log_path, check, allow_downgrade, justification)
+
+
+def _parse_update_args(cmd: str) -> tuple[str, bool, str]:
+    """Parsea ``!update``: accion (default check), flag y justification."""
+    tokens = cmd.split()[1:]
+    accion = next((t for t in tokens if t in {"check", "apply", "audit"}), "check")
+    allow = "--allow-downgrade" in tokens
+    justification = ""
+    for token in tokens:
+        if token.startswith("--justification="):
+            justification = token.split("=", 1)[1].strip()
+    return accion, allow, justification
+
+
+def _log_update_check(check) -> None:
+    """Log del estado frente al remoto (sin mutar nada)."""
+    remote_v = check.remote_version
+    _rc.logger.info(
+        "!update | estado=%s behind=%d ahead=%d local=%s remote=%s",
+        check.state.value,
+        check.behind,
+        check.ahead,
+        fmt_version(check.local_version),
+        fmt_version(remote_v) if remote_v is not None else "?",
+    )
+
+
+def _apply_update_with_guards(
+    repo: Path, log_path: Path, check, allow: bool, justification: str
+) -> None:
+    """Aplica con los guards anti-reversion y reporta el resultado."""
+    result = apply_update(
+        check,
+        repo=repo,
+        log_path=log_path,
+        allow_downgrade=allow,
+        downgrade_justification=justification,
+    )
+    _rc.logger.info(
+        "!update | accion=%s changed=%s detail=%s from=%s to=%s",
+        result.action.value,
+        result.changed,
+        result.detail,
+        fmt_version(result.from_version),
+        fmt_version(result.to_version),
+    )
+    if result.action is Action.FAILED:
+        _rc.logger.error("!update | apply fallo: %s", result.detail)

@@ -5,6 +5,14 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-30k)
+
+### Estado 2026-10-30 (Ciclo 11.66 — self-update runtime: aviso + !update)
+- Instalaciones nuevas avisas cuando origin avanza (rate-limit 24h,
+  offline-safe, 0 tokens); `!update check|apply|audit` en runtime reusa los
+  guards anti-reversion del core (sin duplicar politica).
+- Specs: `self-update-notice.md` (implemented, AC-SU1..SU7).
+
 ## Estado Actual (2026-10-30j)
 
 ### Estado 2026-10-30 (Ciclo 11.65 — push + propagación verificable)

@@ -74,6 +74,7 @@ from .handlers_other import (
     _handle_rag_ingest,
     _handle_rag_search,
     _handle_rag_stats,
+    _handle_update,
 )
 
 logger = logging.getLogger("harness.run_commands")
@@ -86,6 +87,7 @@ logger = logging.getLogger("harness.run_commands")
 #         "cmd"       -> h(cmd)       | "none"  -> h()
 #         "root"      -> h(cmd, harness_root)
 _COMMAND_TABLE: tuple[tuple[str, str, str], ...] = (
+    ("!update", "_handle_update", "root"),
     ("!evolve mutate", "_handle_evolve_mutate", "store_cmd"),
     ("!schedule add", "_handle_schedule_add", "store_cmd"),
     ("!schedule list", "_handle_schedule_list", "store"),
@@ -275,6 +277,7 @@ __all__ = [
     "_handle_rag_stats",
     "_handle_schedule_add",
     "_handle_schedule_list",
+    "_handle_update",
     "_handle_watch_mode",
     "_ok",
     "_parse_iteration_flags",
