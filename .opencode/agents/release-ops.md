@@ -10,9 +10,9 @@ aliases: [release, release-ops, ci-ops, release-ops-dev]
 description: "Usar cuando se operan releases y CI/CD del repo SWARMIND (release, ci, workflow, github actions, auto-merge, tag, branch protection, safety, bandit). Alcance: release engineering del repo; para infra general ver devops; para plataforma ver platform-engineer. | UPG·NAM·FRS (reglas en base_principles.md)"
 steps: 8
 mode: subagent
-permission:
-  edit: allow
-  bash: allow
+permissions:
+  - { action: edit, resource: "*", effect: allow }
+  - { action: shell, resource: "*", effect: allow }
 ---
 
 # Release Ops | Release Engineering y CI/CD de SWARMIND

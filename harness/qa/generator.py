@@ -1,4 +1,4 @@
-﻿"""L3 — TestCaseGenerator: Generacion de casos de prueba con guardrails.
+"""L3 — TestCaseGenerator: Generacion de casos de prueba con guardrails.
 
 Genera casos de prueba a partir de especificaciones usando Gen AI,
 aplicando multiples guardrails anti-alucinacion para garantizar:
@@ -31,7 +31,7 @@ from datetime import UTC, datetime
 from enum import Enum, auto
 from uuid import uuid4
 
-from harness.qa import QALayer, QAMetadata
+from harness.qa.types import QALayer, QAMetadata
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-﻿"""
+"""
 DB Migration Discovery — Descubrimiento recursivo de colecciones y schemas.
 
 Extraído de migrate_db.py para separar concerns.

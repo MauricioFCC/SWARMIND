@@ -7,8 +7,9 @@
 
 Harness Python de orquestación multi-agente (opencode, Claude Code, Codex)
 con: orchestrator con fan-out paralelo + votación gobernada, model routing
-small/frontier con fallback, memoria central portable (LanceDB + SQLite-vec),
-token economics, validación PBT/mutation real, y aceleración GPU CUDA.
+small/frontier con fallback, memoria central portable (RuscaDB por defecto;
+LanceDB opcional), token economics, validación PBT/mutation real, y
+aceleración GPU CUDA.
 
 ## Reglas universales (siempre activas)
 
@@ -48,7 +49,7 @@ nunca afirma, verifica**. Al completar cualquier cambio:
 
 1. **Investigar antes de ejecutar** (RSF/FRS): lee el código existente, revisa
    `git log`, verifica que no esté implementado (IDP).
-2. **Skills**: los skills viven en `.opencode/skills/` (33 skills, formato spec
+2. **Skills**: los skills viven en `.opencode/skills/` (43 skills, formato spec
    Agent Skills de la Linux Foundation). Cada skill tiene `SKILL.md` +
    `SKILL.min.md` + frontmatter (name/domain/description/version/
    project_agnostic). Valida con `python scripts/validate_skills.py --strict`.
@@ -57,7 +58,7 @@ nunca afirma, verifica**. Al completar cualquier cambio:
 4. **Docs oficiales**: README.md (inglés, público), docs/src/es/ (español,
    primario), CHANGELOG.md, docs/.MEJORAS_SWARMIND.md. Los ADR NO se mencionan
    en la documentación pública.
-5. **Tests**: pytest en `harness/tests/` (4414 passing). TDD siempre-on.
+5. **Tests**: pytest en `harness/tests/` (~7.3k passing, 0 failed; Linux sin GPU/LanceDB 7137 passed). TDD siempre-on.
    Ruff 0 errores, vulture 0 dead code, deuda AGR 0.
 6. **Commits**: conventional commit en español (`feat(scope): mensaje`).
 7. **Push**: los ADR (docs/src/es/adr/) se versionan localmente pero NO se
@@ -67,6 +68,7 @@ nunca afirma, verifica**. Al completar cualquier cambio:
 
 - Roadmap: `docs/src/es/roadmap/estado.md`
 - Mejoras log: `docs/.MEJORAS_SWARMIND.md`
-- Agentes: `.opencode/agents/` (22 agentes)
+- Agentes: `.opencode/agents/` (25 agentes, `mode` declarado; flota del
+  coordinator sincronizada por contrato en `test_opencode_runtime_contract.py`)
 - Registry de skills: `.opencode/skills/skills_registry.yaml`
 - Principios completos: `.opencode/core/base_principles.md`

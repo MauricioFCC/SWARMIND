@@ -2,7 +2,7 @@
 #
 # Cierra el gap de calidad de tests del repo: coverage line (62%) no mide
 # debilidad de assertions; mutation testing SI. Ejecuta mutmut 3.7.0 (UPG:
-# ultima estable, requires-python >=3.10, CI usa 3.12) sobre un subconjunto
+# ultima estable, requires-python >=3.10, CI usa 3.14) sobre un subconjunto
 # ESTRATEGICO y acotado de modulos core puros para que el job dure < 30 min.
 #
 # Notas de diseno (UPG / sintaxis mutmut 3.8.x, verificada en source):
@@ -52,7 +52,7 @@ jobs:
 
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v10.2.0

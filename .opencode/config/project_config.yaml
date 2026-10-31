@@ -77,8 +77,8 @@ HARNESS:
     - telemetry_events
     - session_kpis
     - agent_interactions
-  agent_count: 24
-  skill_count: 36
+  agent_count: 25
+  skill_count: 42
   model_routing: "hybrid (local Ollama + cloud API)"
   hitl_enabled: true
   gateway_modes: ["cli"]
@@ -92,8 +92,81 @@ HARNESS:
 
 # ── Agent Ecosystem ───────────────────────────────────────────────────────────
 AGENTS:
-  total: 24
+  total: 25
   agent_list:
+    - alpha-miner
+    - architect
+    - backend-engineer
+    - builder
+    - coordinator
+    - data-engineer
+    - database-administrator
+    - devops
+    - evolve
+    - evolve-analyzer
+    - evolve-engineer
+    - evolve-researcher
+    - frontend-engineer
+    - guardian
+    - mobile-engineer
+    - platform-engineer
+    - product-manager
+    - qa-engineer
+    - release-ops
+    - researcher
+    - reviewer
+    - scientist
+    - security-engineer
+    - test-writer
+    - token-budget-auditor
+    - architect
+    - backend-engineer
+    - builder
+    - coordinator
+    - data-engineer
+    - database-administrator
+    - devops
+    - evolve
+    - evolve-analyzer
+    - evolve-engineer
+    - evolve-researcher
+    - frontend-engineer
+    - guardian
+    - mobile-engineer
+    - platform-engineer
+    - product-manager
+    - qa-engineer
+    - release-ops
+    - researcher
+    - reviewer
+    - scientist
+    - security-engineer
+    - test-writer
+    - token-budget-auditor
+    - architect
+    - backend-engineer
+    - builder
+    - coordinator
+    - data-engineer
+    - database-administrator
+    - devops
+    - evolve
+    - evolve-analyzer
+    - evolve-engineer
+    - evolve-researcher
+    - frontend-engineer
+    - guardian
+    - mobile-engineer
+    - platform-engineer
+    - product-manager
+    - qa-engineer
+    - release-ops
+    - researcher
+    - reviewer
+    - scientist
+    - security-engineer
+    - test-writer
+    - token-budget-auditor
     - architect
     - backend-engineer
     - builder
@@ -144,15 +217,19 @@ AGENTS:
     - token-budget-auditor
 
 SKILLS:
-  total: 36
+  total: 43
   skill_list:
     - ads-optimizer
     - agent-rigor
+    - alpha-mining
     - alpha-research
     - architecture
+    - architecture-review
     - atdd-spec
     - behavioral-economics
     - business-strategy
+    - cert-master
+    - codebase-comprehension
     - communication
     - creative-design
     - data-science
@@ -167,12 +244,15 @@ SKILLS:
     - legal-doc
     - linguistics
     - math-doc
+    - mcp-security
+    - mcp-toolkit
     - physical-sciences
     - pos-retail
     - process-over-tools
     - project-management
     - psychology
     - quant-trading
+    - reverse-engineering
     - risk-execution
     - risk-intelligence
     - rust-lang
@@ -182,13 +262,17 @@ SKILLS:
     - sociology
     - sustainability
     - swarm-release-ops
+    - mcp-toolkit
     - ads-optimizer
     - agent-rigor
     - alpha-research
     - architecture
+    - architecture-review
     - atdd-spec
     - behavioral-economics
     - business-strategy
+    - cert-master
+    - codebase-comprehension
     - communication
     - creative-design
     - data-science
@@ -209,11 +293,13 @@ SKILLS:
     - project-management
     - psychology
     - quant-trading
+    - reverse-engineering
     - risk-execution
     - risk-intelligence
     - rust-lang
     - science-doc
     - security-audit
+    - skill-engineering
     - sociology
     - sustainability
     - swarm-release-ops

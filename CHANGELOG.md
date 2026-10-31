@@ -1,6 +1,616 @@
+## [11.66] - 2026-10-30
+
+### Added
+- Aviso de update en runtime (la instalacion nueva avisa cuando el repo
+  avanza): `harness/self_update/notice.py` con rate-limit de 24 h (state
+  versionado en `.swarmind/update_notice.json`), degradado sin cacheo de
+  fallo (OFFLINE/NO_GIT/NO_REMOTE) y sin lanzar (SU-05). 15 tests.
+- Comando runtime `!update check|apply|audit` (spec AC-SU5): usa los guards
+  anti-reversion del core (ff-only, dirty worktree, max_seen; downgradeforzado
+  solo con `--allow-downgrade --justification=...`). 7 tests.
+- Hook de arranque: `run_support.print_update_notice_if_due` (env
+  `SWARMIND_UPDATE_CHECK=0` desactiva) llamado desde `python -m harness`.
+  4 tests.
+- Spec nueva `docs/specs/self-update-notice.md` (SU-01..SU-05,
+  AC-SU1..SU7, implemented).
+
+### Changed
+- `MockVectorStore` incluida previously; journal default compartido con
+  `scripts/self_update.py` (`.swarmind/update_log.jsonl`).
+
+### Verified
+- 7452 passed / 38 skipped / 1 xfailed (ADR heredado) / 0 failed; ruff,
+  vulture, architecture+ratchet, complexity, ruff-ratchet, preview,
+  pep649 y skills en verde.
+
+## [11.65] - 2026-10-30
+
+### Added
+- `scripts/verify_global_sync.py`: compara por sha256 la SSOT del repo contra
+  el global de OpenCode (harness + cerebro + registry + AGENTS.md) y falla con
+  drift; usa la **misma política de exclusión** que el sync (cachés, LanceDB,
+  iteration_reports, import, binarios) para no reportar datos runtime.
+- `scripts/publish.py`: flujo verificable push → sync global → verify, con
+  `--dry-run`, bloqueo si el árbol está sucio y `-u origin <branch>` cuando no
+  hay upstream.
+- 16 tests nuevos (`test_publish.py`, `test_verify_global_sync.py`).
+
+### Changed
+- `sync_opencode_global.py`: constantes `_IGNORED_DIR_NAMES/_IGNORED_SUFFIXES`
+  compartidas con el verificador (sync y verificación ya no pueden divergir).
+
+### Verified
+- `publish.py` ejecutado (push + sync + verify): `GLOBAL SINCRONIZADO`
+  (0 faltantes / 0 divergentes), 965 archivos propagados.
+- Suite completa: 7430 passed / 38 skipped / 1 xfailed (ADR heredado) / 0 failed.
+## [11.64] - 2026-10-30
+
+### Added
+- `EvalSuite.run(concurrency>1)`: pool de hilos con orden estable, aislamiento
+  de fallos por evaluacion y resultados directos intercalados (6 tests).
+- `CognitionSync.delete_lesson`: borrado real por id (True/False, idempotente,
+  fallo del store contenido) y `_bump_access` persiste `access_count` y
+  `last_accessed` vía `update_records` (7 tests).
+- Gates de skills M5/M6 en `validate_skills`: `## Ejemplo` obligatorio y
+  rechazo de cuerpos duplicados (mismo contenido, distinto nombre). Se añadió
+  la sección de ejemplo a 10 skills que no la tenían (43/43 con ejemplo).
+- `BatchedEmbeddingService.stop()`: apagado público que cancela futuros
+  pendientes y detiene el loop de batching.
+- Job CI `mutation-nightly` (schedule/dispatch) con
+  `mutation_scope.py --all-core` (kernel 90 %, domain 75 %).
+
+### Changed
+- `SkillBundler`: filtro por lenguaje (`rust-lang` solo si la tarea menciona
+  Rust) y `skill_for_agent` (el agente elegido carga su skill homónima).
+- `AgentSelector`: bonus del verbo primario (desempata "implementa api y audita
+  seguridad" a favor de builder).
+- `DelegationEngine`: matching sin guiones (`micro-servicio`), tolerancia a
+  typos (`difflib`, `segurida`→`seguridad`) y respeto a negaciones ("no toques
+  el test" no activa guardian).
+- `DifficultyRouter`: los thresholds del constructor ya se aplican (shallow/
+  deep) en vez de ignorarse.
+- `_is_frontier_task`: normaliza acentos y acepta variantes ("diseña una
+  arquitectura escalable").
+- `healthtech`/`sociology` se citan mutuamente (anti-trigger) sin exceder el
+  presupuesto de 320 chars; se elimina el último `xfail` de solapamiento.
+- Specs cerradas: `ruscadb-async-io` (implemented), `clean-architecture`
+  (implemented + composición root), auditorías 10-28/10-29 (pendientes con
+  estado), `o-n-2` AC-CG3 (cumplido con 8 benchmarks).
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`,
+  `check_complexity --gate=0`, `check_ruff_ratchet --gate=0`,
+  `check_ruff_preview --gate=0`, `audit_pep649 --gate=0`,
+  `mypy strict kernel+domain` OK, `validate_skills --strict` OK,
+  suite 7414 passed / 38 skipped / 1 xfailed (ADRs heredados) / 0 failed.
+
+## [11.63] - 2026-10-30
+
+### Added
+- `scripts/check_ruff_preview.py`: allowlist explícita de 10 reglas preview en
+  cero (FURB101/103/110/140/142/152/154, RUF021/031/056) + step CI. Se
+  descartó `preview = true` global tras medir que en Ruff 0.16.6 habilita 138
+  reglas preview de categorías no seleccionadas.
+- `scripts/mutation_scope.py`: mutación scoped por `git diff` con umbrales por
+  paquete (kernel 90 %, domain 75 %, memory_rag 70 %, resto 40 %), mapeo
+  fuente→tests por nombre/import, config mutmut 3.x generada y `--check-stats`.
+  Job CI `mutation` ahora usa el diff del PR; Windows devuelve exit 2 (WSL).
+- `scripts/audit_pep649.py` + `scripts/pep649_baseline.json`: auditoría
+  PEP 649/749 con baseline justificado (3 `inspect.signature` en scripts) y
+  gate en CI; `test_pep649_annotations.py` verifica `get_type_hints` y
+  `dataclasses.fields` del kernel/domain.
+
+### Changed
+- Specs `tdd-mutation-gate.md` (implemented con AC-MU1..MU7) y
+  `harness-structure-algorithms.md` (AL-07/AL-08/AR-05) actualizadas.
+- `python-314-practices.md`: PY-05/PY-06/PY-07 marcados hechos.
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`,
+  `check_complexity --gate=0`, `check_ruff_ratchet --gate=0`,
+  `check_ruff_preview --gate=0`, `audit_pep649 --gate=0`,
+  `mypy strict kernel+domain` OK, suite 7389 passed / 0 failed.
+
+## [11.62] - 2026-10-30
+
+### Added
+- `RequestTracker` (AC-KN5): correlación req/resp por `trace_id` sobre el
+  kernel, timeout tipado (`RequestTimeoutError` con WHAT/WHY/WHERE) y reloj
+  inyectable (tests deterministas sin `sleep`). 8 tests.
+- `AgentDispatcher(dispatch(..., trace_id=...))` publica `agent.dispatch` y
+  devuelve `trace_id`; `run_command(..., bus=..., trace_id=...)` emite
+  `command.start/end/error` con el mismo trace. 7 tests.
+- mypy strict incremental: `[[tool.mypy.overrides]]` para `harness.kernel` y
+  `harness.domain` + `warn_unused_configs`; CI bloqueante (7 archivos
+  strict-clean) y `-n auto` en el chequeo global informativo.
+- Ratchet de Ruff sobre preview (`scripts/check_ruff_ratchet.py` +
+  `scripts/ruff_baseline.json`): conteo por regla, solo falla si un conteo
+  sube; job CI `ruff-ratchet`. 54 fixes seguros aplicados (1 326 → 1 272).
+- `harness/alpha_mining/rolling_rank.py`: `Fenwick` + `ts_rank` con ventana
+  deslizante O(T log m) (antes O(T·W)), con equivalencia verificada frente a
+  la referencia ingenua (empates y NaN).
+- Gate de complejidad con escala 8N (`10k/20k/40k/80k`), benchmark
+  `alpha.ts_rank` (ventana proporcional a n: una regresión a O(n·W) dispara el
+  ratio a ~4) y medición robusta (mínimo de 5 × mediana de 2 rondas).
+- `docs/research/frontier-2026-10-30-algorithms.md`: fórmulas, costes, reglas
+  de decisión y estado del arte de gates (mypy 2.x, Ruff ratchet, buses
+  request/reply, mutación scoped).
+
+### Changed
+- `AlphaZoo` mantiene un set de fórmulas para dedup exacto O(1) antes del loop
+  de similitud de AST (`_formulas`).
+- `factor_dsl` delega el rank rolling en `rolling_rank` (módulo < 500 líneas).
+- 54 fixes seguros de Ruff preview (FURB101/103/110/113, RUF005/031/056, etc.)
+  en todo el repo; guardas de equivalencia cubiertas por la suite.
+
+### Fixed
+- `_median_measurement`: con nº par de rondas `statistics.median` promedia y
+  el valor no existe en la lista (bug detectado por test adversarial).
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`,
+  `check_complexity --gate=0` (8 benchmarks), `check_ruff_ratchet --gate=0`,
+  `mypy strict kernel+domain` OK, `validate_skills --strict` OK.
+
+## [11.61] - 2026-10-30
+
+### Added
+- Kernel event-driven (`harness/kernel/`): envelope inmutable
+  (`MessageEnvelope`), buzón acotado con backpressure tipado
+  (`BoundedMailbox`), event log append-only (`EventLog`) y loop determinista
+  FIFO (`KernelLoop`, `fail_fast` configurable). 20 tests.
+- `KernelBus` en `harness/orchestrator/agent_bus/kernel_bus.py`: bus
+  determinista del orchestrator (subscribe/publish/drain/replay/stats) sobre el
+  kernel, con `trace_id` correlacionado y errores WHAT/WHY/WHERE. 11 tests.
+- Gate de complejidad `scripts/check_complexity.py` + baseline
+  `scripts/complexity_baseline.json`: mide 7 funciones puras a N/2N/4N con
+  mínimo de 7 muestras y mediana de 3 rondas (robusto a ruido), GC desactivado
+  durante la medición, y falla por umbral (2.8/3.2/5.0) o por regresión vs
+  baseline (1.35x con piso 0.9x del umbral). Medición 2026-10-30: 1.96–2.13
+  (todas lineales).
+- Job CI `complexity` (gate bloqueante) y mutación T2 ampliada a 9 módulos de
+  memoria gobernada (cache_threshold, binary_tuning, write_actor, memory_heat,
+  memory_reconciliation incluidos).
+- Spec nueva `docs/specs/harness-structure-algorithms.md` (estructura,
+  arquitectura y algoritmos del ciclo).
+
+### Changed
+- `MCPManager.find_server_for_tool`: índice invertido `tool → server`
+  (O(1) amortizado) con invalidación en register/enable/disable/remove/connect.
+- `servers_for_task`: deduplicación con dict ordenado (elimina el peor caso
+  O(n²) conservando el orden del catálogo).
+- Contratos F8 evaluados por prefijo de paquete (módulo + submodulos) y nuevo
+  contrato `kernel-agnostico`: `harness.kernel` solo importa `harness.kernel.*`.
+- Invariante de replay: el event log solo registra mensajes aceptados por el
+  buzón (la backpressure no consume `seq` ni deja eventos fantasma).
+- Refactor de tamaño: `EventLog.append`, `KernelLoop.submit/_dispatch` y
+  `KernelBus.publish` extraen helpers para no superar 30 líneas (F5 sin deuda).
+
+### Docs
+- Specs actualizadas a `implemented`: kernel (AC-KN1..KN4/KN6 cumplidos,
+  AC-KN5 parcial), gate O(n²) (AC-CG1..CG5 con evidencia) y mutación (AC-MU2).
+- `scripts/sync_opencode_global.py`: `kernel` añadido a `_HARNESS_INCLUDE` (el
+  contrato de drift del global lo detectaba como dependencia no propagada).
+- `test_declared_fleet_installed`: salta si la flota local está incompleta
+  (prerrequisito no aprovisionado, no defecto de código); en un entorno
+  provisionado se exige con `SWARMIND_REQUIRE_FLEET=1`.
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`,
+  `check_complexity --gate=0`, `validate_skills --strict` OK.
+
+## [11.60] - 2026-10-30
+
+### Added
+- Specs nuevas: `docs/specs/python-314-practices.md` (prácticas 3.13/3.14
+  verificadas: free-threaded, PEP 649/749, deprecaciones asyncio 3.16, mypy 2.0
+  paralelo, ruff preview con ratchet, hypothesis perfiles) y
+  `docs/specs/tdd-mutation-gate.md` (política de mutación: scope por PR,
+  umbrales core 70 %, Windows vía WSL, lección adversarial RUF100).
+- Lección adversarial documentada: `ruff --select RUF100 --fix` es destructivo
+  (evalúa "unused" contra el rule-set activo); 437 noqa eliminados expusieron
+  452 violaciones → revertido con git y re-aplicados solo los fixes válidos.
+- Limpieza de la memoria central: barrido TTL del cache semántico (76 entradas
+  expiradas) y reclaim de 2 141 MB de fragments huérfanos (colección recreada
+  con 0 filas): 2 250 MB → 110 MB; `memory_parity` pasa de 2 250 MB a 110 MB
+  (quedan 13 colecciones de valor vacías: acción de ingest, no de limpieza).
+
+### Changed
+- `asyncio.iscoroutinefunction` → `inspect.iscoroutinefunction` en
+  `harness/parallel/` (removal 3.16).
+- `pyproject.toml`: `asyncio_default_fixture_loop_scope/test_loop_scope =
+  "function"` (apaga PytestDeprecationWarning y blinda el cambio de default).
+- `conftest.py`: perfiles de hypothesis (`ci` con derandomize/database=None/
+  deadline=None; `dev`) seleccionables con `HYPOTHESIS_PROFILE`.
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`,
+  `validate_skills --strict` OK, `new_user_smoke` 4/4,
+  `verify_swarmind_setup` SETUP OK, suite local 7252 passed / 51 skipped.
+
+## [11.59] - 2026-10-30
+
+### Added
+- Investigación de frontera aplicada a la reestructuración de CQE
+  (3 sesiones de research en segundo plano, rama concurrente con el kernel
+  de frontera de SWARMIND) y 3 specs nuevas para SWARMIND:
+
+  - `docs/specs/cqe-restructuring-support.md`: soporte de la extracción
+    strangler-fig con `cargo-crate-split`, `cargo-coverage-gate`,
+    `archunit-rust`, `cargo-hakari/nextest partitioning`, `cargo-rubric`
+    y spec-kit; el desacople real de CQE en `cqe-math` (ADF → `signal_processing`
+    con inversión de dependencia a `math::ols::ols_fit`).
+  - `docs/specs/o-n-2-hotspots-gate.md`: 6 fórmulas de complejidad a
+    aplicar en hotpaths de CQE (Wilder/SMMA, KAMA, OBV, VWAP, Karp-Rabin,
+    Fenwick tree, Cholesky rank-1, QR row-append) con gate `Ir` ratio
+    N/2N/4N < 2.4 y las 10 áreas target de complejidad (43 módulos de CQE).
+  - `docs/specs/kernel-event-driven-nautilus.md`: kernel event-driven
+    NautilusTrader aplicado a SWARMIND y al defecto caliente de CQE,
+    con actores ractor/kameo/spawned/actix (supervisión OneForOne/RestForOne,
+    no OneForAll), `backtest==live` por inyección de `Clock`, determinismo
+    con `madsim` (DST) y crash-only por replay en boundary.
+- Inventario y auditoría comparada SWARMIND (624 módulos src / 45 specs /
+  43 skills / 50 agentes vs CQE: 43 módulos domain / 250k LOC / 37 specs /
+  22 pendientes / 6 crates workspace tras Ola 2).
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`;
+  3 specs nuevas como `proposed` en `docs/specs/`.
+
+## [11.58] - 2026-10-30
+
+### Removed
+- 63 artefactos `*.cover` (copias obsoletas de módulos) del árbol de trabajo.
+- `push.bat` (referenciaba `scripts/export_to_drive.py`, inexistente).
+- ~~Dependencia `schedule`~~ (se conserva: `scheduler/lance.py` y `scripts/init.py` la importan de forma perezosa).
+- `harness/tests/*_state.json` del control de versiones (estado local de tests;
+  ahora ignorados y con historial capado a 20 entradas).
+
+### Changed
+- 75 archivos normalizados a UTF-8 sin BOM (el BOM rompía `ast.parse` en
+  herramientas y provocaba que el gate ignorara archivos).
+- `conftest.py`: la suite usa el backend `memory` por defecto
+  (`SWARMIND_TEST_BACKEND` para forzar uno real); elimina fallos por lock
+  single-writer de RuscaDB en Windows y hace la suite hermética.
+- `docker-compose.yml` actualizado (sin `version:` obsoleto, Python 3.12,
+  `EXTRAS` alineado con el Dockerfile) y Dockerfile con usuario no-root 1001.
+- README/AGENTS/SETUP: torch como extra `[gpu]`, memoria RuscaDB por defecto,
+  resolución `RUSCADB_PATH`/`LANCEDB_PATH`, conteo real de tests (~7.3k).
+- `.gitignore`: `data/` (estado runtime) y state files de tests.
+
+### Verified
+- `ruff=0`, `vulture=0`, `check_architecture --gate --ratchet=0`.
+- Suite local Windows: 7252 passed / 51 skipped / 1 failed por *drift* real de
+  la flota Ollama instalada (`test_declared_fleet_installed`, gate local_only).
+- Docker `python:3.12-slim`, clone del remoto: core **7138 passed / 0 failed**
+  (162 skipped) y `[test,lancedb]` **7155 passed / 0 failed** (145 skipped);
+  smoke 4/4 y 5/5.
+
+## [11.57] - 2026-10-30
+
+### Added
+- Prueba de instalación limpia reproducible: `Dockerfile`, `.dockerignore` y
+  `scripts/new_user_smoke.py` (import liviano, backend memory, degradación de
+  RuscaDB, CLI `--help`, opcional `--lancedb`).
+- Job T1 `fresh-install` en CI (Python 3.12, sin extras) + sección de
+  instalación limpia en el README (`pip` y Docker).
+
+### Changed
+- Core de dependencias ligero: `torch` → extra `[gpu]`; `firecrawl-anydoc` →
+  extra `[docs]`; `networkx` y `pydantic` declaradas explícitamente (antes
+  llegaban como transitivas de torch).
+- `harness.gpu_accel.get_device_info()` degrada sin torch.
+- `python -m harness --help` ya no exige LanceDB; el chequeo de backend acepta
+  RuscaDB y el mensaje explica ambas vías.
+- Backend `memory` es in-memory puro (no intenta LanceDB); `SemanticCache()`
+  sin backend degrada con warning.
+- Gate de arquitectura lee `utf-8-sig` (antes ignoraba 75 archivos con BOM y
+  subcontaba F5); baseline re-congelado en F3=70 / F5=929.
+
+### Fixed
+- `LanceVectorStore.insert` y `search` aceptan listas además de ndarray.
+- `capabilities()` devuelve todo `False` si la DLL no está en la plataforma.
+- LanceDB: `create_collection` crea con sample row (0.33+ no acepta `data=[]`);
+  el insert solo aplana columnas del schema; la dimension del vector se toma del
+  primer insert (con mensaje accionable si no coincide).
+
+### Verified
+- Docker `python:3.12-slim` + clone remoto: smoke 4/4, 7314 tests
+  colectados, suite 7137 passed / 0 failed.
+
+## [11.56] - 2026-10-30
+
+### Added
+- RaBitQ cableado: `ruscadb.py` bindea `ruscadb_quantize` + `ruscadb_search_bq`
+  (y `ruscadb_alter_table`); `RuscaDBStore.search_binary()` hace KNN 1-bit con
+  oversampling y rescore exacto float32, con degradacion explicita a KNN exacto.
+- `binary_tuning.OversampleTuner`: ajuste del oversample por carga real
+  (recall muestreado vs KNN exacto, EWMA, topes 1..8, persistencia) y
+  `RuscaDBStore.binary_search_stats()`.
+- Migracion de tablas legacy con `ALTER TABLE ADD COLUMN` (columnas de
+  gobernanza) y fallback a metadata si el motor no lo soporta.
+- Indices secundarios de gobernanza opt-in (`index_governance` /
+  `SWARMIND_INDEX_GOVERNANCE=1`), tambien al migrar una tabla.
+- Tooling de contratos: `check_architecture.py --list-contracts`.
+
+### Changed
+- `WriteActor` y `WriteBatcher` viven en `harness/memory_rag/write_actor.py`
+  (modulos < 500 lineas); `async_ruscadb` los re-exporta.
+- `BinarySearchPort` en `harness/domain/ports.py` (puerto opcional, ISP).
+- DLL de RuscaDB actualizada (32 simbolos, 5.2 MB) con quantize/search_bq/alter.
+
+### Docs
+- `docs/specs/ruscadb-ivf-pq.md`: estado implemented-parcial + evidencia y
+  limite (sin indice IVF persistente; `nprobe` no aplica, se usa oversample).
+
+### Performance
+- `_apply_trust_and_recency` y `heat_score` usan `exp(-ln2*edad/vida)` con la
+  tasa precomputada por consulta (antes division + `pow` por cada resultado).
+- `dreaming.consolidate_dir`: numeracion con `enumerate` (antes
+  `list.index` por entrada: O(n^2) y nombres duplicados con dicts iguales).
+- `latency_aware`: mapa `id -> posicion` para el orden estable (antes
+  `subtasks.index` dentro del `sort`: O(n^2 log n)).
+- `risk_analyzer.get_risks`: mapa de rangos de `RiskLevel` (antes
+  `levels.index` por riesgo).
+- `SemanticCache.invalidate_version`: borrado en lote con
+  `semantic_cache_delete_many` (un escaneo) en vez de uno por entrada (O(n^2)).
+
+### Fixed
+- `RuscaDBStore.close()` idempotente: marca `_handle = None` al cerrar para que
+  `__del__` no cierre de nuevo un indice de handle reciclado por otra instancia
+  (doble close que invalidaba stores nuevos durante el GC).
+
+## [11.55] - 2026-10-30
+
+### Added
+- Columnas de gobernanza de primera clase (`source`, `trust_tier`,
+  `session_id`, `derived_from`, `write_gate_verdict`) en `_SCHEMA`, con indices
+  y fallback transparente a metadata en tablas legacy.
+- `memory_reconciliation`: job de reconciliacion SSGM (injection, tamper por
+  `content_hash`, duplicados) + `RuscaDBStore.reconcile()` y disparo cada N
+  escrituras (`reconcile_every`/`SWARMIND_RECONCILE_EVERY`).
+- `memory_heat`: score de calor, segmentacion STM/MTM/LTM, eviccion reversible
+  (`evicted`) y vida media por coleccion (`HeatPolicy.half_life_for`).
+- `cache_threshold.AdaptiveThreshold`: umbral aprendido por familia de prompt
+  (vCache) con `SemanticCache(adaptive_threshold=True)` y
+  `record_feedback(prompt, correct)`.
+- `scripts/architecture_contracts.toml` + F8 en el gate: contratos
+  declarativos de dependencias (forbidden/allow-list, patron tach).
+- `WriteBatcher`: coalescing de inserts con flush por tamano y `max_delay`;
+  `AsyncRuscaDBStore(batch_size=N, read_through_actor=True)`.
+
+### Changed
+- El retrieval excluye entradas `evicted` salvo `include_evicted=True`.
+- `RuscaDBStore.insert` escribe columnas de gobernanza y cachea el modo legacy
+  por coleccion para no reintentar en cada fila.
+
+### Docs
+- `docs/research/frontier-2026-10-29.md` §9: los 6 gaps parciales pasan a ✅;
+  §9.1 queda solo con RaBitQ (upstream) y caveats.
+- `docs/specs/ruscadb-ivf-pq.md` §6: contrato ABI propuesto
+  (`ruscadb_quantize` + `ruscadb_search_bq`) con criterios de aceptacion.
+
+## [11.54] - 2026-10-30
+
+### Added
+- `RuscaDBStore(memory_guard=..., strict_guard=...)`: write gate SSGM que valida
+  la metadata antes de escribir (cuarentena por defecto; `ValueError` con
+  WHAT/WHY/WHERE si `SWARMIND_MEMORY_GUARD_STRICT=1`). Cierra el gap de
+  `MemoryGuard` sin cablear.
+- `RuscaDBStore.record_access()` + `AsyncRuscaDBStore.record_access()`:
+  refuerzo por uso (`last_accessed`, `access_count`); el decaimiento temporal
+  prefiere `last_accessed` sobre `created_at` (MemoryBank/MemoryOS).
+- `SemanticCache(dataset_version=..., fail_closed=...)`: invalidacion en bloque
+  por version (`_cache_key` + `invalidate_version`) y politica fail-closed
+  (solo `verified=True`).
+- `WriteActor` + `MemoryBackpressureError`: actor single-writer con cola
+  acotada y backpressure tipado; `AsyncRuscaDBStore(write_actor=True)`.
+- `scripts/check_architecture.py`: F7 ratchet de deuda contra
+  `scripts/architecture_baseline.json` (`--ratchet`, `--write-baseline`).
+
+### Changed
+- CI y `.githooks/pre-commit` ejecutan `--gate --ratchet`.
+- `RuscaDBStore.semantic_cache_get_meta()` expone valor + metadatos (TTL y
+  version) al cache semantico.
+
+### Docs
+- `docs/research/frontier-2026-10-29.md` §9: matriz de gaps
+  (implementado / parcial / bloqueado) y §9.1 con lo abierto y por que.
+- `docs/specs/audit-implementacion-2026-10-29.md`: §3.2 cierre de gaps.
+
+## [11.53] - 2026-10-29
+
+### Added
+- `harness/domain/ports.py`: `TextSearchPort` (ISP) y contrato de ciclo de vida
+  (`delete`, `close`) en `VectorStorePort`; 2 consumidores de producción
+  (`vector_store_factory`, `hybrid_retriever`).
+- `harness/memory_rag/vector_store_factory.py`: resolución de backend
+  (arg > `VECTOR_BACKEND` > config > `ruscadb`), validación del puerto y errores
+  tipados.
+- `RuscaDBStore`: retrieval gobernado (`_apply_trust_and_recency`) con
+  cuarentena deny-by-default, `min_trust`, `half_life_days` y anotaciones
+  `trust_weight`/`recency_weight`; `created_at` en `_parse_rows`.
+- `RuscaDBStore`: cache semántico persistente completo (`semantic_cache_set`,
+  `semantic_cache_delete`, `semantic_cache_entries`,
+  `semantic_cache_purge_expired`, `semantic_cache_metrics`).
+- `AsyncRuscaDBStore`: `hybrid_search`, `delete`, `close`, `from_path`,
+  `async with`; `HybridRetriever.aretrieve`.
+- `harness/qa/types.py`: tipos compartidos del stack QA (rompe el ciclo de
+  imports).
+- `docs/adr/adr-0104-puertos-adaptadores-memoria.md`,
+  `docs/research/frontier-2026-10-29.md`,
+  `docs/specs/audit-implementacion-2026-10-29.md`.
+- CI: job T1 `architecture` + gate en `.githooks/pre-commit`.
+
+### Changed
+- `LanceVectorStore.__new__` devuelve `RuscaDBStore` real para backend
+  `ruscadb`; eliminado el bucle de `setattr`. `delete`/`close` extraídos a
+  `_LifecycleMixin` (`lance_vector_store/lifecycle.py`).
+- `SemanticCache`: deja de leer atributos privados de LanceDB; usa la API de
+  cache persistente del store cuando existe.
+- `run_commands._create_store()` usa la factory (antes importaba un módulo
+  inexistente y siempre fallaba).
+- `check_architecture.py`: modos `--gate`/`--strict`/`--json`; F4 ignora imports
+  diferidos (rompen ciclos por diseño).
+
+### Fixed
+- Ciclos de import `harness.qa ↔ harness.qa.detector ↔ harness.qa.predictor`.
+- `MCPCommand` faltaba en los imports de `harness.qa` pese a estar en `__all__`.
+- `semantic_cache_get` devolvía el wrapper `{"value": ...}` y silenciaba todo
+  error con `except Exception`.
+- Revisión adversarial: aislamiento de `VECTOR_BACKEND` en tests (antes se
+  fijaba con `os.environ` a nivel de módulo y contaminaba la suite).
+- Revisión adversarial: `RuscaDBStore.search` ignoraba `filters` (bypass de
+  filtrado en AgentBus/context_assembler); ahora post-filtra por metadata.
+- Revisión adversarial: `LanceVectorStore.__new__` degradaba a LanceDB
+  *fail-open* aunque `allow_fallback=False`; ahora falla rápido con
+  WHAT/WHY/WHERE (solo degrada si falta la librería o `allow_fallback=True`).
+- Revisión adversarial: `allow_quarantined` no se propagaba en
+  `hybrid_search`; el caché semántico devolvía `True` con DELETE fallido;
+  TTL fail-open con fecha ilegible; purga O(n²); F4 ignoraba imports
+  relativos; CLI bloqueaba sin `--gate`. Todo corregido y con tests.
+
+## [11.52] - 2026-10-28
+
+### Added
+- `memory_bootstrap`: import perezoso de `lancedb` (desbloquea 2 modulos de test y CI).
+- `static_embeddings`: carga perezosa cacheada de model2vec + fallback a `fallback_embedding`.
+- `RuscaDBStore`: cache de resultados (QueryResultCache) cableado (`cached_execute`, `invalidate_cache`, `query_cache_stats`) con invalidacion en insert/delete.
+- `RuscaDBStore`: retrieval adaptativo (`adaptive_search`) via `AdaptiveRetriever.from_store`.
+- `RuscaDBStore.insert`: provenance/trust tagging (source, trust_tier, content_hash) + deteccion de injection (OWASP ASI06).
+- `check_architecture.py`: F4 ciclos de import (Tarjan SCC); 0 ciclos.
+- Docs: `docs/specs/audit-implementacion-2026-10-28.md`, `docs/research/frontier-2026-10-28.md`.
+
+### Changed
+- `AGENTS.md`: 42 -> 43 skills.
+- roadmap/MEJORAS actualizados a 11.52.
+
+### Fixed
+- `static_embeddings`: model2vec se cargaba en cada `embed()` (O(load) por llamada).
+- `memory_bootstrap`: import duro de lancedb rompia coleccion de tests sin el extra.
+
+## [11.45] - 2026-10-25
+
+### Added
+- Extension del C-ABI de RuscaDB: open_opts (blob + readonly), create_index, update/delete/get por RecordId, blob CAS, integrity_check, backup, last_lsn, explain.
+- RuscaDBStore usa columna text para FTS, indices secundarios, RRF hibrido, grafo BFS, blob attach, operacional (integrity/backup/lsn/explain).
+- GraphRAGRetriever (dual-level BM25+grafo) y AdaptiveRetriever (estrategia por complejidad).
+- Comando !rag search.
+- Spec docs/specs/ruscadb-full-potential.md.
+
 # CHANGELOG — Swarmind Multi-Agent Harness
 
 > Documento de trazabilidad de cambios.
+
+
+## [2026-10-24] RuscaDB grafo (edges + last_inserted_id) (ciclo 11.36)
+
+- C-ABI: insert_record acepta edges; last_inserted_id devuelve ULID.
+- Binding Python: last_inserted_id().
+- RuscaDBStore: captura _rid, acepta edges, graph_traverse.
+- Ruff 0, tests pasan.
+## [2026-10-22] Integracion Harness2 (Google Research): recursive harnessing (ciclo 11.24)
+
+### Resumen
+- **`harness/harness2/`** (NUEVO): paquete con 8 componentes editables, `HarnessTree`, validacion, contexto/evidencia, proposer, probe, library, improvement harness (lecciones persistentes), recursion paralela/secuencial (Propose-Probe-Compose).
+- **`harness/evolve_loop/recursive_harness.py`**: `RecursiveHarness` envuelve el paquete y se exporta.
+- **Tests:** 9 (test_harness2.py). Ruff 0.
+
+## [2026-10-22] MCP interconnect: confiabilidad + inter-proyecto + web frontier + seguridad (ciclo 11.23)
+
+### Resumen
+- **`mcp_manager`**: circuit breaker por servidor (closed/open/half_open), `health_check`, `reconnect`, `execute_with_retry`, `record_success`/`record_failure`, `security_scan`/`security_scan_server`, flag `strict_security`. `execute` y `connect_all` integrados.
+- **`mcp_project_bridge`** (NUEVO): `ProjectRegistry` + `InProcessMCPClient` + `register_project_bridge`. Expone tools MCP `project_list`, `project_status`, `knowledge_put`, `knowledge_get`, `knowledge_search` sobre `.opencode/federated/*.json`.
+- **Catalogo**: +exa, +tavily, +project_bridge (26 servers). Keywords web search / inter-proyecto, categorias `web` e `interproject`.
+- **Tests**: 7 nuevos (bridge) + conteo registry 23->26. Ruff 0.
+
+## [2026-10-17] Optimalidad de memoria: feedback + TTL proactivo + paridad (ciclo 11.22)
+
+### Spec
+- **`docs/specs/memory-optimality.md`** — `accepted + implemented`. Diagnóstico previo con evidencia: **99.7% del almacenamiento de la memoria central eran caches regenerables** (`semantic_cache` 138 MB / 5201 fragments + `agent_workspace_logs` 48 MB) y las **13 colecciones de valor** (que sostienen las decisiones) sumaban ~0.3 MB, casi todas *schema-only*. 4 items, 15 contratos, TDD adversarial + kill-check.
+
+### Correcciones de diseño por IDP (no reimplementar)
+- **Item 3:** `SemanticCache.clear_expired()` **ya existía y ya era proactivo** (recorría todas las entradas, LanceDB+memory, retornaba count). La brecha real era que **nadie lo invocaba como sweeper** ⇒ la colección crecía sin cota pese al TTL. Fix: barrido **probabilístico** cableado en `set()` (cada `SWEEP_EVERY_N_SETS=100` inserts), no un `purge_expired()` nuevo (habría duplicado).
+- **Item 1:** `dispatch()` **no** puede puntuar éxito (en dispatch aún no se conoce). Ya existía el hook post-run `AgentDispatcher.record_skill_outcome(skill_name, success)` (su docstring lo diseña explícitamente). El seam correcto era **ese hook**, no `dispatch()`.
+
+### Nuevos módulos + acoplamiento aditivo (0 regresión)
+- **`harness/evolve_loop/feedback_scorer.py`** — `score_outcome(store, skill_name, *, success, agent_role, metrics)` escribe en `skill_effectiveness` + `agent_performance` (embeddings deterministas `fallback_embedding`, métricas serializadas a JSON); `run_report` cuenta filas. DI total, **degradación suave** (nunca lanza). Cableado en `record_skill_outcome` (que gana `agent_role` opcional, backward-compatible).
+- **`harness/memory_rag/memory_parity.py`** — `audit_parity(db_path) -> ParityReport` (frozen dataclass) detecta `is_imbalanced` (cache > 4× valor **y** ≥3 colecciones de valor vacías). NO lanza con path inexistente.
+- **`scripts/verify_swarmind_setup.py`** — sección **no fatal** `memory_parity` (⚠️ sin afectar exit code): el health-check sigue en `SETUP OK` aunque haya desbalance.
+- **`semantic_cache`** — constante `SWEEP_EVERY_N_SETS=100` + `_maybe_sweep()` best-effort en `set()`; `VOLATILE_MAX_BYTES` baja de **1 GiB → 256 MiB** (cota efectiva: la cache regenerable no debe dominar el SSOT).
+
+### Tests + gate del ciclo
+- **RED observado** en cada check: `ModuleNotFoundError` (`memory_parity`, `feedback_scorer`, `SWEEP_EVERY_N_SETS`), `ImportError`, y aserciones de atributo. Nuevos: `test_feedback_scorer.py` (8), `test_memory_parity.py` (6) + `TestSemanticCacheAutoSweep` (4) + contrato 14 no-fatal. Test end-to-end que invoca `record_skill_outcome` y afirma escritura en **AMBAS** colecciones de valor.
+- **Kill-check mutante: 5 killed / 0 survived** (feedback `if skill_name`/`if agent_role`→False y degradación→raise; parity `and`→`or`; sweep counter sin incremento).
+- `ruff` 0 · archivos tocados **114 passed, 0 failed** · gate: suite completa (verificado abajo).
+
+## [2026-10-17] Auto-actualización desde remoto anti-reversión (ciclo 11.21)
+
+### Spec
+- **`specs/self-update.md`** — `proposed` → **`accepted + implemented`**. Investigación frontera anexada: **ADR-0010 anti-rollback** (`max_seen_version` monotónico persistido + downgrade como acción deliberada con `allow_downgrade`+`justification` ⇒ evento `downgrade_forced` auditable) y journaling *roll forward* con **prefix property** ("si existe una actualización, existen todas las anteriores" = el invariante de `--ff-only`, InterSystems/SQLite WAL). Defense-in-depth: `git config branch.<b>.mergeoptions --ff-only` y MITRE MID-030 (la referencia anti-rollback solo avanza tras confirmación).
+
+### Nuevos módulos
+- **`harness/self_update/core.py`** — `parse_version` (pyproject `project.version` → fallback `git describe --tags`, normalizado a tupla comparable), `check_remote` (fetch **solo lectura** ⇒ `UP_TO_DATE/BEHIND/AHEAD/DIVERGED/OFFLINE/NO_GIT/NO_REMOTE`, nunca lanza) y `apply_update` (guards → `merge --ff-only`). Runner `run_git` inyectable (0 shell injection: `subprocess.run` argv-list + `check=False` + timeout).
+- **`harness/self_update/journal.py`** — `append_log` (UNA línea JSON por evento, append-only, crea padres), `audit_log` (para `updated`: `to >= from` y `to >= max_previa`; para `downgrade_forced`: `justification` no vacía; línea ilegible = violación) y `max_seen_version` (cota histórica que **nunca baja**).
+- **`harness/self_update/versions.py`** — `parse_semver` (`v1.2.3-rc1` → `(1,2,3)`, normaliza a ≥3 componentes) + `fmt_version`.
+- **`scripts/self_update.py`** — CLI `--check` / `--apply` / `--audit` (+ `--allow-downgrade` + `--justification`, `--repo/--remote/--branch/--log`). Exit: **0** ok/degradado, **1** violación de audit o ff fallido, **2** fatal.
+
+### Acoplamiento aditivo (0 regresión)
+- `scripts/setup_swarmind.py` **paso 7** (tras verificación): `_self_update()` — check → apply → audit con **degradación suave que nunca bloquea el setup**; `--dry-run` lo simula.
+- `.gitignore`: `.swarmind/` (journal por-maquina, no se versiona).
+
+### Invariante central
+`floor = max(version_local, max_seen_journal)`; `remote < floor` ⇒ **bloqueado** (incluso con `remote > local`, porque el journal pudo haber visto una versión mayor). Solo mutan worktree `updated`/`downgrade_forced`, siempre vía `--ff-only`, con el intento registrado **antes** del merge (WAL crash-safe) y el resultado después. Nunca `reset --hard`, nunca stash drop.
+
+### Tests
+- `test_self_update.py` (**39 tests**): RED evidenciado (`ModuleNotFoundError`) → GREEN. **15 contratos de integración** sobre **remotos bare locales por path** (sin red, cross-platform, marcados `slow`) + **24 tests fake-git/puros** (runner en memoria: subset en **2.9 s vs ~171 s** con subprocess) que ejercitan todos los guards sin ~450 spawns de proceso. Marker `slow` aplicado por test (los fake corren en `-m "not slow"` para iterraciones rápidas y CI T1).
+- **Kill-check en 3 rondas**: ronda 1 con operadores extendidos (`Eq↔NotEq`, `In↔NotIn`, `Is↔IsNot`, `Gt↔LtE`, `GtE↔Lt`, `BoolOp and↔or`) reportó 100%… **pero era engañoso**: el harness numeraba posiciones en BFS (`ast.walk`) y mutaba en DFS (`NodeTransformer`) ⇒ supervivientes mal etiquetados. Corregido el recorrido y re-ejecutado: ronda 2 expuso **7 gaps reales de aserción** (sha destino del journal, conteo parcial de `rev-list`, estado `AHEAD` vs `UP_TO_DATE`, detalle de degradación citando causa raiz, detalle de ff rechazado sin stderr, `to_commit` del resultado) ⇒ ronda 3 tras reforzar 6 contratos + añadir 3: **core 33/33 + versions 2/2 + journal 9/9 = 44/44 (100%, 0 supervivientes)**. Dos mutantes documentados como **equivalentes por construcción** (`url.code == 127`, `Is` en el primer `re.match` de `parse_semver`).
+- `ruff` 0 · `vulture` 0 · **cobertura 100% del paquete `harness/self_update/` (273 stmts, 0 miss) solo con los 24 tests rápidos** · **FSZ 0 funciones >30 LC** en el módulo nuevo.
+- **Gate del ciclo:** suite completa **7075 passed, 38 skipped, 16 xfailed, 0 failed** (527s; base 7036 + 39 de `test_self_update.py`).
+
+### Propagación al global (Opción A SSOT) + fix de drift
+- **Bug:** el módulo nuevo no viajaba a `~/.config/opencode/harness/` porque `_HARNESS_INCLUDE` es una lista blanca estática (mismo bug del fix precedent `ea092dc0`). Auditoría de los 9 subdirectorios del motor fuera de la lista: `failure_registry` **sí** lo importa un módulo ya propagado (`evolve_loop/failure_distiller.py`) ⇒ **ImportError en runtime del global**; `alpha_mining` lo referencian **3 skills** (contrato SSOT); `run_commands` ya iba vía `_HARNESS_FILES`; `complex_problems`/`federation` son huérfanos (0 consumidores) ⇒ no se propagan (KISS).
+- **Fix:** `self_update` + `failure_registry` + `alpha_mining` añadidos a `_HARNESS_INCLUDE` (~234 KB, solo `.py`) y **2 contratos nuevos** en `test_setup_verification.py`: test explícito de los 3 paquetes + `test_harness_include_sin_drift_de_dependencias` (**auto-detectable**: escanea el código que viaja al global y exige que toda referencia `harness.<paquete>` apunte a un paquete también propagado). Fase RED observada acusando `['failure_registry']`.
+- **Verificación:** sync ejecutado (912 archivos) · provenancia real del import `~/.config/opencode/harness/evolve_loop/failure_distiller.py` · health-check `SETUP OK` · `ruff` 0.
+
+## [2026-10-17] Memoria colectiva en 1ª instalación + recuperación de fragments
+
+### Spec
+- **`specs/memory-lifecycle.md`** — ciclo de vida de la memoria con research frontera anexada (arXiv:2607.21503 memoria-como-ciclo-de-vida + políticas de caches 2026): 13 colecciones de **valor** vs `semantic_cache`/`agent_workspace_logs` **regenerables** (cap 1 GB por colección, jamás respaldar ni migrar); qué NO guardar: secretos, PII en logs, tool-outputs > 4K (ya en `artifact_store`), chunks duplicados.
+
+### Nuevos módulos
+- **`harness/memory_rag/memory_bootstrap.py`** — `bootstrap_memory` (primera instalación: `<root>/{data/lancedb,backups}` + `.swarmind_config.json` idempotente y mergeable con `backup_memory`), `default_memory_root` (env `MEMORY_ROOT` > `~/Documents/Memory_Proyects`, pathlib cross-platform), `detect_project_local_memory` (fork `harness/db/lancedb`), `migrate_local_to_central` (ausente ⇒ copiar, no volátil más nuevo ⇒ append, volátil/stale/ilegible ⇒ skip con warning WHAT+WHY+WHERE), `prune_volatile_collections` (volátil > 1 GB ⇒ drop regenerable).
+
+### Acoplamiento aditivo (0 regresión)
+- `scripts/setup_swarmind.py` paso 4: `_bootstrap_memory()` — bootstrap → detect → migrar (dry-run ✓).
+- `memory_config.__post_init__`: `logger.warning` accionable cuando cae al fallback legacy (bug raíz: faltaba `.swarmind_config.json` ⇒ `memory_root=None` ⇒ fork silencioso de 4.7 GB).
+
+### Ejecución real (esta máquina)
+- Verificado: `get_memory_config().lancedb_path` ⇒ central ✓ · prune **-9.59 GB** (99.99% del store central eran volátiles) · INCIDENTE: 13 tablas de valor locales sin `_versions/*.manifest` (pérdida externa; ningún script del repo toca `_versions`) ⇒ recuperación one-off con pylance (lectura directa de fragments ⇒ parquet) ⇒ fusión al central **13/13 con deltas exactos (65 filas de valor; 41 de cognición que se habrían perdido)** + archivo de seguridad `backups/recovered_fragments_20261017_193140` · fork local retirado **-4.70 GB** · **total liberado 14.29 GB**.
+
+### Tests
+- `test_memory_bootstrap.py` (17): RED evidenciado (`ModuleNotFoundError`), GREEN con API no-deprecada `list_tables().tables`, **cobertura 100%** del módulo (98 líneas, 0 miss).
+- Kill-check mutante: **2/2 mutantes reales muertos (100%)** con 5 no-ops (`IsNot`/`In`/`NotIn`) excluidos honestamente; `ruff` 0, `vulture` 0.
+
+## [2026-10-16] Round skills/agentes/MCP + ADR fr-0001 cost-aware routing
+
+### Nuevos módulos
+- **`harness/security/mcp_security_scan.py`** — parser JSONC real (comentarios blanked preservando numeración, trailing commas, `://` intacto) + `scan_mcp_config` determinista con 5 categorías OWASP MCP Top-10: shell crudo, pin ausente (rug-pull), secretos en env (masking SEG), http sin TLS, endpoints internos (superficie SSRF). Spec corregida contra la config real (`command` argv-list, `environment`, `mcp.servers` anidado).
+- **`harness/security/skill_guard.py`** — frontmatter obligatorio (name/domain/description/version/project_agnostic) + 7 patrones de prosa hostil case-insensitive (arXiv 2608.29596). Dogfood en las 42 skills: 0 hostiles, 5 `domain` faltantes corregidos.
+- **`harness/model_router/cost_policy.py`** (ADR fr-0001) — escalera free→small→standard→frontier; `estimated_cost_usd`; escalación por costo incremental (umbral $0.05 ⇒ escalón `standard`); tier `free` para complejidad ≤ 2 + output ≤ 2000; veto de presupuesto de salida (> 4000 tokens ⇒ vetar `OUTPUT_BUDGET_VETO_MODELS` salvo `force_tier`); `pick_voting_tier` k-in-1 con el tier de menor input (gate ≥ 70, confidence < 0.7).
+
+### Acoplamiento aditivo (0 regresión)
+- `CascadeRouter.plan_cost_aware_escalation` — planifica la escalera por costo sin tocar `run()`.
+- `session_affinity.should_switch_on_cache_health` + `CACHE_HEALTH_MIN_HIT_RATE = 0.60` — rompe la afinidad cuando el cache de prompt está roto (alineado con `TokenUsageTracker.cache_health`).
+
+### Skills y agentes
+- **Skills nuevos** `mcp-security` + `alpha-mining` (SKILL.md + SKILL.min.md + registry sha256); `SKILL_TO_AGENT` y `DOMAIN_SKILLS` cableados.
+- **Agente `alpha-miner`** (mode: subagent, variante `.agent.min.md`, permisos del coordinator, delegation policy keywords).
+- 5 skills preexistentes (architecture, data-science, evolve, hedgefund, rust-lang) corregidas con `domain:` faltante.
+
+### Tests
+- `test_security_mcp_scan.py` (18) + `test_security_skill_guard.py` (16) + `test_cost_policy.py` (28) = **62 contratos nuevos** (RED evidenciado).
+- Kill-check mutante: skill_guard+mcp 5/5 (100%); cost_policy 11/11 muertos + 5 equivalentes = 100% efectivo.
 
 ## [2026-10-07] Calibración probabilística + fingerprint de opciones (Misellium→Swarmind)
 

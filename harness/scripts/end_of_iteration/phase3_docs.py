@@ -1,4 +1,4 @@
-﻿"""
+"""
 Phase 3: Documentation Update — check staleness and auto-regenerate.
 """
 from __future__ import annotations

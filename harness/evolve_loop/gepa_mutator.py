@@ -1,4 +1,4 @@
-﻿"""
+"""
 GEPA (Genetic Evolutionary Prompt Algorithm) — prompt mutator inspirado en algoritmos evolutivos.
 
 Creates N mutated variants of an agent/system prompt, tests them in a sandbox,

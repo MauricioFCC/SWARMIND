@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -18,6 +20,39 @@ from harness.tests.mock_vector_store import MockVectorStore
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(1, str(PROJECT_ROOT))
+
+
+def _select_test_backend() -> None:
+    """Aisla la suite del backend real (RuscaDB/LanceDB) por defecto.
+
+    Los tests deben ser hermeticos en cualquier plataforma: por defecto se usa
+    el backend ``memory`` (sin locks de motor ni DLL). Los tests que ejercitan
+    RuscaDB/LanceDB pasan ``db_path``/``backend`` explicitos. Para correr la
+    suite contra un backend real: ``SWARMIND_TEST_BACKEND=ruscadb pytest ...``.
+    """
+    override = os.environ.get("SWARMIND_TEST_BACKEND")
+    os.environ["VECTOR_BACKEND"] = override or "memory"
+
+
+_select_test_backend()
+
+
+# ---------------------------------------------------------------------------
+# Perfiles de hypothesis (PBT): el perfil "ci" evita flakes y crecimiento
+# del directorio .hypothesis/ en CI (derandomize, sin database, sin deadline).
+# ---------------------------------------------------------------------------
+import hypothesis
+
+hypothesis.settings.register_profile(
+    "ci",
+    database=None,
+    deadline=None,
+    derandomize=True,
+    print_blob=True,
+    suppress_health_check=[hypothesis.HealthCheck.too_slow],
+)
+hypothesis.settings.register_profile("dev", deadline=None)
+hypothesis.settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "dev"))
 
 
 # ---------------------------------------------------------------------------
@@ -164,7 +199,7 @@ def mem_store():
     with patch.object(
         LanceVectorStore, "_try_import_lancedb", return_value=None
     ):
-        store = LanceVectorStore(db_path="/tmp/test_mem", allow_fallback=True)
+        store = LanceVectorStore(db_path="/tmp/test_mem", allow_fallback=True, backend="lancedb")
         yield store
 
 
@@ -174,7 +209,9 @@ def mem_store_no_defaults():
     with patch.object(
         LanceVectorStore, "_try_import_lancedb", return_value=None
     ):
-        store = LanceVectorStore.__new__(LanceVectorStore)
+        # object.__new__ evita el redirect de backend de __new__ (ADR-0104):
+        # este fixture quiere un LanceVectorStore vacio, no un adaptador real.
+        store = object.__new__(LanceVectorStore)
         store._lancedb_available = False
         store._db = None
         store._mem_collections = {}
@@ -202,6 +239,16 @@ def mock_lancedb():
     table.count_rows.return_value = 0
     table.search.return_value.limit.return_value.to_list.return_value = []
     table.to_arrow.return_value.num_rows = 0
+    # Schema minimo realista: las columnas por defecto + las que usan los tests
+    # al insertar metadata plana (evita que `_insert_lancedb` las descarte).
+    table.schema = [
+        SimpleNamespace(name=name)
+        for name in (
+            "id", "vector", "metadata", "created_at", "text", "title",
+            "domain", "tags", "chunk", "agent", "content", "source",
+            "session_id", "trust_tier",
+        )
+    ]
 
     table_list_mock = MagicMock(name="table_list")
     table_list_mock.tables = list(DEFAULT_COLLECTIONS.keys())
@@ -233,7 +280,7 @@ def lancedb_store(mock_lancedb):
         patch("harness.memory_rag.lance_vector_store.Path.mkdir"),
     ]
     with patches[0], patches[1]:
-        store = LanceVectorStore(db_path="/fake/path", allow_fallback=False)
+        store = LanceVectorStore(db_path="/fake/path", allow_fallback=False, backend="lancedb")
         yield store
 
 
@@ -279,5 +326,5 @@ def lancedb_store_with_data(mock_lancedb):
         patch("harness.memory_rag.lance_vector_store.Path.mkdir"),
     ]
     with patches[0], patches[1]:
-        store = LanceVectorStore(db_path="/fake/path", allow_fallback=False)
+        store = LanceVectorStore(db_path="/fake/path", allow_fallback=False, backend="lancedb")
         yield store

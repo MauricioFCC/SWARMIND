@@ -1,4 +1,4 @@
-﻿"""AdaptivePool — Worker pool con auto-escalado por carga del sistema.
+"""AdaptivePool — Worker pool con auto-escalado por carga del sistema.
 
 Ajusta dinamicamente max_workers segun CPU disponible, memoria libre
 y longitud de la cola de tareas pendientes.

@@ -81,8 +81,7 @@ class ProceduralMemory:
         for fpath in sorted(skills_path.iterdir()):
             if fpath.suffix == ".md":
                 name = fpath.stem
-                with open(fpath, encoding="utf-8") as f:
-                    content = f.read()
+                content = Path(fpath).read_text(encoding="utf-8")
                 lines = content.split("\n")
                 description = ""
                 steps = []
@@ -91,11 +90,13 @@ class ProceduralMemory:
                 in_steps = False
                 for line in lines:
                     if line.startswith("**Agent:** @"):
-                        agent = line.split("@")[1].strip()
+                        agent = line.split("@", 1)[1].strip()
                     elif line.startswith("**Descripcion:**"):
-                        description = line.split("**:", 1)[1].strip() if ":" in line else ""
+                        # El marcador real es "**Descripcion:**"; split("**:", 1)
+                        # nunca lo separa (no existe "**:" en la linea) -> IndexError.
+                        description = line[len("**Descripcion:**"):].strip()
                     elif line.startswith("**Tags:**"):
-                        tags_str = line.split("**:", 1)[1].strip() if ":" in line else ""
+                        tags_str = line[len("**Tags:**"):].strip()
                         tags = [t.strip() for t in tags_str.split(",") if t.strip()]
                     elif line.strip().startswith("## Pasos"):
                         in_steps = True
@@ -147,8 +148,7 @@ class ProceduralMemory:
             skill.version = self._skills.get(safe_name, skill).version + 1
 
         filepath = str(Path(self._skills_dir) / f"{safe_name}.md")
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(skill.to_markdown())
+        Path(filepath).write_text(skill.to_markdown(), encoding="utf-8")
 
         self._skills[safe_name] = skill
         logger.info(

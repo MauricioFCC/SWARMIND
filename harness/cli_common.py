@@ -1,4 +1,4 @@
-﻿"""
+"""
 CLI Common — Funcionalidad compartida entre run.py y delegate.py.
 
 Extrae lógica duplicada de ambos entrypoints en un solo lugar,

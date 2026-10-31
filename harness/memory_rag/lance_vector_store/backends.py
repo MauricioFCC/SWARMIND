@@ -14,13 +14,14 @@ import logging
 import re
 import uuid
 from datetime import UTC, datetime
+from itertools import starmap
 from typing import Any
 
 import numpy as np
 
 from ..lance_migration import generate_sample_row, serialize_for_schema
 from ..lance_schemas import DEFAULT_COLLECTIONS
-from .exceptions import CollectionNotFoundError
+from .exceptions import CollectionNotFoundError, VectorStoreError
 from .models import _Collection, _StoredItem
 
 logger = logging.getLogger("harness.memory_rag.lance_vector_store")
@@ -74,25 +75,53 @@ class _LanceDBBackendMixin:
     ) -> list[str]:
         """Inserta vectores en una tabla LanceDB (helper de ``insert``)."""
         tbl = self._db.open_table(collection)  # type: ignore[union-attr]
-        rows: list[dict[str, Any]] = []
+        field_names = {field.name for field in tbl.schema}
+        self._check_vector_dim(tbl, collection, int(vectors.shape[1]))
         ids: list[str] = []
+        rows: list[dict[str, Any]] = []
         for i in range(vectors.shape[0]):
             rid = str(uuid.uuid4())
             ids.append(rid)
-            # Build row with serialized metadata fields for schema compatibility
-            row: dict[str, Any] = {
-                "id": rid,
-                "vector": vectors[i].tolist(),
-                "metadata": json.dumps(metadata[i]),
-                "created_at": now,
-            }
-            for k, v in metadata[i].items():
-                if k == "metadata":
-                    continue
-                row[k] = serialize_for_schema(v)
-            rows.append(row)
+            rows.append(self._lancedb_row(rid, vectors[i], metadata[i], now, field_names))
         tbl.add(rows)
         return ids
+
+    @staticmethod
+    def _check_vector_dim(tbl: Any, collection: str, dim: int) -> None:
+        """Falla con mensaje accionable si el embedding no encaja en la tabla."""
+        try:
+            vector_type = tbl.schema.field("vector").type
+        except (AttributeError, KeyError, TypeError):
+            return
+        expected = getattr(vector_type, "list_size", None)
+        if expected and int(expected) != int(dim):
+            raise VectorStoreError(
+                f"Dimension {dim} != {expected} de la tabla '{collection}'. "
+                "Usa el mismo modelo de embedding o crea la coleccion con "
+                "create_collection(name, dim=...)."
+            )
+
+    @staticmethod
+    def _lancedb_row(
+        rid: str,
+        vector: np.ndarray,
+        meta: dict[str, Any],
+        now: str,
+        field_names: set[str],
+    ) -> dict[str, Any]:
+        """Construye una fila valida para el schema LanceDB de la tabla."""
+        row: dict[str, Any] = {
+            "id": rid,
+            "vector": vector.tolist(),
+            "metadata": json.dumps(meta),
+            "created_at": now,
+        }
+        for key, value in meta.items():
+            # Solo columnas declaradas: el resto vive serializado en `metadata`
+            # (LanceDB rechaza campos fuera del schema).
+            if key != "metadata" and key in field_names:
+                row[key] = serialize_for_schema(value)
+        return row
 
     @staticmethod
     def _is_safe_filter_value(value: Any) -> bool:
@@ -175,9 +204,7 @@ class _LanceDBBackendMixin:
             ) from exc
 
         # Construir clausula WHERE desde los filtros (clave/valor validados)
-        conditions = [
-            self._safe_where_comparison(k, v) for k, v in filters.items()
-        ]
+        conditions = list(starmap(self._safe_where_comparison, filters.items()))
         where_clause = " AND ".join(conditions)
 
         # Leer registros existentes para actualizar metadata JSON

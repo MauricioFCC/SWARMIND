@@ -1,9 +1,404 @@
 # Roadmap y Estado del Proyecto
 
-> Estado actual del sistema Swarmind Harness a 2026-10-12.
+> Estado actual del sistema Swarmind Harness a 2026-10-15.
 > Documento vivo que refleja el progreso, hitos y proximos objetivos.
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
+
+## Estado Actual (2026-10-30k)
+
+### Estado 2026-10-30 (Ciclo 11.66 — self-update runtime: aviso + !update)
+- Instalaciones nuevas avisas cuando origin avanza (rate-limit 24h,
+  offline-safe, 0 tokens); `!update check|apply|audit` en runtime reusa los
+  guards anti-reversion del core (sin duplicar politica).
+- Specs: `self-update-notice.md` (implemented, AC-SU1..SU7).
+
+## Estado Actual (2026-10-30j)
+
+### Estado 2026-10-30 (Ciclo 11.65 — push + propagación verificable)
+- `scripts/publish.py` (push + sync + verify) y
+  `scripts/verify_global_sync.py` (hash SSOT vs global, sin falsos positivos de
+  runtime). Política de exclusión compartida con el sync.
+- Flujo de publicación verificado: global con 0 faltantes / 0 divergentes.
+
+## Estado Actual (2026-10-30i)
+
+### Estado 2026-10-30 (Ciclo 11.64 — cierre de pendientes de implementación)
+- Pendientes de código cerrados: concurrencia de `EvalSuite`, borrado/refuerzo
+  de `CognitionSync`, `stop()` de embeddings, gates M5/M6 de skills.
+- Routing: filtro por lenguaje, skill del agente, verbo primario, negaciones,
+  typos, guiones y acentos; thresholds de `DifficultyRouter` aplicados.
+- Mutación nocturna del core (job `mutation-nightly`).
+- Specs de auditoría y arquitectura cerradas con estado explícito.
+- Único pendiente de producto: ninguno en `xfail`; quedan decisiones P2 de
+  endurecimiento (preview ratchet y Aho-Corasick condicionado a corpus).
+
+## Estado Actual (2026-10-30h)
+
+### Estado 2026-10-30 (Ciclo 11.63 — cierre P2: preview, mutación scoped, PEP 649)
+- Allowlist de reglas Ruff preview (10 códigos) con gate propio; `preview=true`
+  global descartado por activar 138 reglas ajenas en Ruff 0.16.6.
+- Mutación scoped por `git diff` con umbrales por paquete (kernel 90 %,
+  domain 75 %, memory_rag 70 %) y job CI adaptado.
+- Auditoría PEP 649 con baseline justificado (3 usos de `inspect.signature`) y
+  tests de contrato de anotaciones del kernel/domain.
+- Pendientes: mutación nocturna completa y endurecer la allowlist preview
+  (mover códigos del ratchet cuando lleguen a cero).
+
+## Estado Actual (2026-10-30g)
+
+### Estado 2026-10-30 (Ciclo 11.62 — ola P1/P2 + algoritmos O(n²)→O(n))
+- AC-KN5 cerrado: `RequestTracker` (trace_id + timeout tipado) y wiring en
+  `agent_dispatcher` y `run_commands` (start/end/error correlacionados).
+- mypy strict bloqueante en `harness.kernel` y `harness.domain`; global con
+  `-n auto` informativo.
+- Ratchet de Ruff preview (baseline 1 272 hallazgos / 20 reglas) + 54 fixes
+  seguros aplicados; job CI `ruff-ratchet`.
+- Algoritmos: `ts_rank` con Fenwick O(T log m); dedup exacto O(1) en AlphaZoo;
+  gate de complejidad con 8N y benchmark `alpha.ts_rank`.
+- Investigación de frontera documentada (fórmulas + reglas de decisión):
+  `docs/research/frontier-2026-10-30-algorithms.md`.
+- Pendientes P2: allowlist de preview en lint, mutación scoped por `git diff`,
+  auditoría PEP 649, Aho-Corasick si crece el corpus de reglas.
+
+## Estado Actual (2026-10-30f)
+
+### Estado 2026-10-30 (Ciclo 11.61 — kernel + gate de complejidad + algoritmos)
+- Kernel event-driven implementado (`harness/kernel/`) y adoptado por el
+  orchestrator vía `KernelBus` (single-loop FIFO, backpressure tipado, replay).
+- Gate de complejidad N/2N/4N con baseline portable (`check_complexity.py`);
+  job CI bloqueante. 7 benchmarks medidos ≈2.0 (lineales).
+- Algoritmos: índice invertido tool→server en MCPManager y dedupe O(1) en
+  servers_for_task; hotspot O(n·m) eliminado.
+- Arquitectura: contrato F8 `kernel-agnostico` + contratos por paquete.
+- Pendientes: AC-KN5 (run_commands/agent_dispatcher al KernelBus), mypy strict
+  incremental (P1), ruff preview con ratchet (P2), escala 8N en el gate (P2).
+
+## Estado Actual (2026-10-30e)
+
+### Estado 2026-10-30 (Ciclo 11.60 — Validación E2E + prácticas Python 3.14)
+- Flujo end-to-end verificado (smoke, setup, skills, gates, suite).
+- Memoria central: cache 2250 MB -> 110 MB (TTL + reclaim de fragments).
+- asyncio 3.16-safe + scopes pytest-asyncio + perfiles hypothesis ci/dev.
+- Specs: python-314-practices y tdd-mutation-gate.
+- Pendientes: mypy strict incremental (P1), ruff preview con ratchet (P2),
+  auditoría PEP 649 de get_type_hints, mutación nocturna ampliada.
+
+## Estado Actual (2026-10-30d)
+
+### Estado 2026-10-30 (Ciclo 11.57 — Onboarding validado en Docker)
+- Instalación limpia reproducida en `python:3.12-slim` desde el remoto.
+- Core sin torch/CUDA (extras `[gpu]`/`[docs]`); instala en ~15 s.
+- `new_user_smoke.py` + job CI `fresh-install` + Dockerfile.
+- Degradación correcta sin DLL de RuscaDB ni LanceDB (backend memory).
+- Suite Linux: 7137 passed / 162 skipped / 0 failed.
+- Gate F5 corregido (BOM); baseline 70/929.
+
+## Estado Actual (2026-10-30c)
+
+### Estado 2026-10-30 (Ciclo 11.56 — RaBitQ cableado + tuning por carga)
+- `ruscadb_quantize` + `ruscadb_search_bq` importados y usados por
+  `RuscaDBStore.search_binary` (KNN 1-bit + oversample + rescore float32).
+- `OversampleTuner` ajusta el factor con recall medido vs KNN exacto.
+- Migracion de tablas legacy via `ALTER TABLE ADD COLUMN`; indices de
+  gobernanza opt-in.
+- `--list-contracts` para auditar los contratos F8.
+- Limite: sin indice IVF persistente ni `nprobe` (fase 2 upstream).
+- Ruff 0, Vulture 0, gate F1/F2/F4/F6/F7/F8 OK.
+
+## Estado Actual (2026-10-30b)
+
+### Estado 2026-10-30 (Ciclo 11.55 — Cierre de gaps parciales)
+- Gobernanza indexada: columnas `source/trust_tier/session_id/derived_from/
+  write_gate_verdict` (fallback metadata en tablas legacy).
+- Reconciliacion SSGM programable (`reconcile_every`) con tamper/duplicados.
+- Eviccion por calor STM/MTM/LTM + vida media por coleccion.
+- Umbral adaptativo por prompt (vCache) con feedback y persistencia.
+- Contratos declarativos de dependencias (F8, `architecture_contracts.toml`).
+- Batching de inserts (`WriteBatcher`) y lecturas opcionales por actor.
+- Unico gap restante: RaBitQ/IVF-PQ (bloqueado por el C-ABI de RuscaDB;
+  contrato en `docs/specs/ruscadb-ivf-pq.md` §6).
+- Ruff 0, Vulture 0, gate F1/F2/F4/F6/F7/F8 OK.
+
+## Estado Actual (2026-10-30)
+
+- **Siguiente accion concreta (gap upstream #1)**: exponer `ruscadb_quantize` + `ruscadb_search_bq` en el C-ABI de RuscaDB (`docs/specs/ruscadb-ivf-pq.md` §6) para habilitar KNN binario + rescore. Trigger: memoria vectorial > 256 MiB, p95 > 50 ms o `RUSCADB_BQ=1`.
+
+### Estado 2026-10-30 (Ciclo 11.54 — Cierre de gaps del research)
+- Write gate SSGM (`MemoryGuard` inyectable, cuarentena / strict) y refuerzo
+  por uso (`record_access`, `last_accessed`).
+- Cache semantico version-keyed (`dataset_version`, `invalidate_version`) y
+  fail-closed (`verified=True`).
+- Actor de escritura single-writer con cola bounded y `MemoryBackpressureError`.
+- Gate de arquitectura con ratchet de deuda (F7) y baseline congelado.
+- Gaps restantes: RaBitQ/IVF-PQ (bloqueado por FFI de RuscaDB), columnas de
+  gobernanza, eviccion por calor, umbral aprendido, reconciliacion programada.
+- Ruff 0, Vulture 0, gates verdes.
+
+## Estado Actual (2026-10-29)
+
+### Estado 2026-10-29 (Ciclo 11.53 — Puertos/adaptadores y memoria gobernada)
+- **Clean Architecture real**: `LanceVectorStore.__new__` devuelve el adaptador
+  RuscaDB (sin `setattr`); `VectorStorePort`/`TextSearchPort` con conformance en
+  CI y `get_vector_store()` como único punto de construcción.
+- **Retrieval gobernado (OWASP ASI06 / SSGM)**: cuarentena deny-by-default,
+  `min_trust`, decaimiento temporal (`half_life_days`, default 30 d) y
+  anotaciones de confianza en `search`/FTS/hybrid.
+- **Cache semántico persistente** con métricas y purga delegada al store.
+- **Async I/O**: `AsyncRuscaDBStore` completo + `HybridRetriever.aretrieve`.
+- **Gate de arquitectura**: F1/F2/F4 bloqueantes en pre-commit y CI; 2 ciclos
+  reales corregidos; deuda de tamaño (824) declarada advisory.
+- Ruff 0, Vulture 0, 7236 tests recolectados, lotes afectados verdes.
+- Docs: ADR-0104, research frontier 2026-10-29, auditoría 2026-10-29.
+
+## Estado Actual (2026-10-25)
+
+### Estado 2026-10-25 (Ciclo 11.45 — Potencial completo de RuscaDB)
+- RuscaDB: extension del C-ABI (open_opts, create_index, update/delete/get por RecordId, blob CAS, integrity, backup, last_lsn, explain).
+- RuscaDBStore: FTS sobre columna text, indices, RRF hibrido, grafo BFS, blob attach, operacional.
+- Frontier: AdaptiveRetriever (arXiv:2403.14403), GraphRAGRetriever (arXiv:2410.05779 / 2404.16130), SummaryCommunication (arXiv:2607.27942).
+- Comando !rag search (dual-level).
+- Ruff 0, Vulture 0, tests verdes.
+
+## Estado Actual (2026-10-17)
+
+### Estado 2026-10-17 (Ciclo 11.22 — Optimalidad de memoria: feedback + TTL proactivo + paridad)
+
+- **Diagnóstico con evidencia**: 99.7% del almacenamiento de la memoria central
+  eran caches regenerables (`semantic_cache` 138 MB/5201 fragments +
+  `agent_workspace_logs` 48 MB) y las 13 colecciones de **valor** (información
+  que sostiene las decisiones) sumaban ~0.3 MB, casi todas schema-only.
+- **2 correcciones de diseño por IDP** (no reimplementar):
+  - `SemanticCache.clear_expired()` **ya existía y era proactivo** — la brecha
+    era que **nadie lo invocaba** ⇒ fix: barrido probabilístico en `set()` cada
+    `SWEEP_EVERY_N_SETS=100` inserts (no un `purge_expired()` duplicado).
+  - `dispatch()` no puede puntuar éxito; ya existía el hook post-run
+    `record_skill_outcome(skill_name, success)` ⇒ el seam correcto era ese hook.
+- **Entregables (4 items, 15 contratos)**: `feedback_scorer.py`
+  (`score_outcome` → `skill_effectiveness` + `agent_performance`, DI +
+  degradación suave, cableado backward-compatible en `record_skill_outcome`) ·
+  `memory_parity.py` (`audit_parity` → `ParityReport`, umbral `is_imbalanced`,
+  no lanza con path inexistente) · sección **no fatal** `memory_parity` en
+  `verify_swarmind_setup.py` (sigue `SETUP OK`) · `VOLATILE_MAX_BYTES`
+  **1 GiB → 256 MiB**.
+- **TDD + verificación**: RED observado en cada check; kill-check **5 killed /
+  0 survived**; test end-to-end puebla **AMBAS** colecciones de valor;
+  `ruff` 0, archivos tocados 114 passed / 0 failed.
+
+## Estado Actual (2026-10-15)
+
+### Estado 2026-10-15 (Auditoria del acople OpenCode: agentes lanzables, plugin V2, MCP y doctrina global)
+
+- **Acople 1:1 con OpenCode verificado con evidencia runtime** (`opencode debug agents`,
+  `opencode mcp list`, `opencode plugin list`, `opencode.log`) y reparado en 4 puntos:
+  1. **Agentes lanzables** — 22 de 24 agentes no declaraban `mode` y caian al default V2
+     `primary` (fuera del catalogo de subagentes): solo 7 de 24 eran lanzables y
+     **8 skills de 40** enrutaban a agentes inalcanzables (`architect` x2,
+     `product-manager`, `platform-engineer`, `security-engineer`, `evolve-engineer`,
+     `evolve`, `coordinator`). Hoy: 24 agentes en `mode: subagent`, `coordinator` en
+     `all` (primario + lanzable) y `permission.task` del coordinator por ID exacto
+     (antes `builder-*` no matcheaba ningun ID). Runtime: **25 `subagent` + 1 `all`**.
+  2. **Plugin V2** — `compaction-context.js` seguia en la API de plugins V1 y OpenCode lo
+     rechazaba (`PluginModule.LoadError`) en TODOS los proyectos: el hook de compactacion
+     estaba muerto. Portado a `export default { id, setup }` + `ctx.session.hook("compaction")`
+     (sin dependencias npm). Runtime: `swarmind.compaction-context` cargado con su ID.
+  3. **MCP `DEFAULT_ACTIVE` 3/3** — `sequentialthinking` moria con
+     `failed: Request timed out` (npx en frio vs 30 s). SSOT fija
+     `@modelcontextprotocol/server-sequential-thinking@1.0.0` y
+     `mcp_opencode.merge_into_config` garantiza `experimental.mcp_timeout >= 90000`.
+     Runtime: `fetch`/`time`/`sequentialthinking` **connected**.
+  4. **Doctrina AGENTS.md universal** — antes solo existia dentro de SWARMIND.
+     `sync_opencode_global` la copia al global (`~/.config/opencode/AGENTS.md`, inyectada
+     en cada sesion) y `deploy_all.deploy_agents_md` genera un AGENTS.md delgado en la raiz
+     de cada proyecto (marca `SWARMIND:generated`, NUNCA pisa un AGENTS.md ajeno).
+     Como `AGENTS.md` es el estandar compartido por OpenCode, Claude Code y Codex, la
+     doctrina viaja a cualquier harness sin duplicar SSOT.
+  5. **Comandos de OpenCode** — `.opencode/commands/` (`/mcp`, `/dispatch`, `/ver`)
+     sincronizados al global.
+- **Capa modular**: lo especifico de OpenCode (`mode`, plugin API, `opencode.json`) vive
+  cableado a su runtime; lo portable (AGENTS.md, agentes con frontmatter estandar) se
+  exporta por los mismos caminos que ya usan `claude_adapter`/`codex_adapter`.
+- **Contratos TDD**: `test_opencode_runtime_contract.py` (13: agentes lanzables,
+  `SKILL_TO_AGENT` alcanzable, forma V2 del plugin, comandos) + 4 de `mcp_timeout` +
+  6 de `deploy_agents_md`; ruff 0. Detalle completo: `docs/.MEJORAS_SWARMIND.md` 11.12.
+- **Refactor 11.13 (este ciclo)**: capa universal multi-harness reparada
+  (`converter_base` filtra `*.agent.min.md` y descubre `SKILL.md` reales;
+  `_copy_agents`/`_copy_skills` eliminan 4 loops duplicados; índice Claude
+  idempotente), flota del coordinator como contrato SSOT, pins
+  `mcp-server-fetch/time@2026.10.10`, `mcp_timeout: 90000` en template + 11
+  configs, AGENTS.md con números reales. Suite **6745 passed** + gates en verde.
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.13.
+- **Refactor 11.14 (este ciclo)**: acople migrado a **config NATIVA OpenCode V2**
+  (guía oficial `migrate-v1/`): `providers`+`package aisdk`+`settings`,
+  `agents`+`permissions` lista (acciones `shell`/`subagent`), `agents.title.model`
+  (reemplazo de `small_model`), `mcp.timeout.{catalog,execution}`, modelos con
+  `capabilities`/`limit.context`, plugin en `.opencode/plugins/` + limpieza del
+  legado en los 10 espejos. **Fix del error de compactación en 200K**: el
+  `buffer: 2000` absoluto (1% de holgura) se retiró para heredar el default
+  proporcional 10% del límite (2K locales / 20K cloud) — `compaction.model` NO
+  existe en V2 (la sesión compacta con su propio modelo). Features de frontera
+  nuevas: `permissions` globales (push→ask, sudo→deny), `policies` sudo
+  hard-deny, `watcher.ignore` anti-ruido. Checkers duales V2+V1; `formatter`
+  evaluado y rechazado con evidencia (277/325 tests se reescribirían).
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.14.
+- **Frontera 11.15 (este ciclo)**: 2 capacidades del estado del arte 2026
+  ausentes en el harness, verificadas con TDD adversarial mutante.
+  (1) **Ejecución durable con Resume Contract** (`harness/orchestrator/
+  durable_run.py`, arXiv 2608.03836 — LangGraph/CrewAI medidos INCUMPLENDOLO):
+  `DurableRunStore` con transiciones atómicas, claim consume-once
+  **cross-process** (un solo racer gana el efecto), `resume_plan` determinista
+  (PENDING→re-ejecuta, RUNNING→`indeterminate` nunca re-ejecución ciega,
+  COMPLETED→prefix jamás repetido) y respuestas HITL consume-once.
+  (2) **Graduación de evals a regresión** (`harness/evals/regression_tracker.py`,
+  Anthropic "Demystifying evals" 2026): baseline histórica por tarea, alerta
+  nombrando la tarea que cayó >1.0pp, saturación al 100%, historial JSONL
+  append-only. Kill-check con el mutador AST propio: **6/6 mutantes
+  semánticos muertos** (el superviviente inicial expuso `mkdir(parents=False)`
+  → test nuevo). Detalle: `docs/.MEJORAS_SWARMIND.md` 11.15.
+- **Frontera 11.16 (este ciclo)**: **minería alpha de frontera (0 capacidad →
+  paquete `harness/alpha_mining/`)** con los 5 sistemas alpha del estado del
+  arte, verificada con TDD adversarial mutante. (1) **DSL total** (`factor_dsl`:
+  Hubble — el LLM solo emite JSON reconstruido a AST validado, evaluador sin
+  crashes con ceros/NaN/división; AlphaAgent — complejidad `MAX_NODES=32` +
+  Jaccard de genes abstractos; AlphaMCTS — FSA con `abstract_gene` y forbidden
+  top-k). (2) **Evaluador con umbrales NVIDIA** (`factor_eval`: IC dual
+  Pearson+RankIC, `p < 0.05` estricto, score acotado [0,1] con input hostil).
+  (3) **Zoo family-aware** (`alpha_zoo`: JSONL estricto, KB de fallos por modo,
+  `is_similar` pre-eval, top-k con `per_family_cap`). (4) **Loop
+  signal→code→eval + MCTS-UCT con branching real** (`mining_loop`: hermanos
+  compitientes y exploración observable — la cadena lineal era código muerto —,
+  `crossover`/`mutate`/`evolve_pool` por recompensa, determinista sin rng).
+  **Kill-check 2 rondas**: ronda 1 6/14 → 6 fugas reales de spec + 1 corrección
+  de source donde el mutador tenía razón (p-value al canon) → ronda 2
+  **13/16 + 3 equivalentes = 100% mutantes semánticos**; 81 contratos nuevos.
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.16.
+- **Frontera 11.17 (este ciclo)**: **sistemas del milenio →
+  `harness/complex_problems/`** (AlphaProof Nature 2025-11, AlphaEvolve
+  PNAS 2026-09, AlphaProof Nexus arXiv 2605.22763 9/353 Erdős): los 5
+  mecanismos "rompe-límites" de su configuración, con DI completa y sin
+  rng. (1) **Escalera de presupuesto** (`budget`: rungs monotonamente
+  crecientes + cap global 3000 episodios — más compute cuando la dirección
+  ya se afinó, failure-spend acotado). (2) **Verificador formal inyectado
+  + anti-malformalización** (`verifier`: Protocol duck-typed; el statement
+  real debe conservar sus marcadores o verificar NO cuenta). (3) **Elo
+  suma-cero** (`sketch_store`: población compartida de sketches, `top(k)`
+  con empate determinista). (4) **P-UCB** (`p_ucb`: cobertura garantizada
+  antes de explotar, `MappingProxyType` externo). (5) **Ledger monotono**
+  (`progress`: idempotente, rollback siempre error, JSONL append-only con
+  `linea N` en corrupción). (6) **AttackLoop integrador** (`attack`:
+  grant → hook → integridad → verificación → gasto; re-ataque = 0
+  episodios; cap corta antes de `max_attempts`). **Kill-check 2 rondas**:
+  ronda 1 13/17 → 4 fugas de spec en los CONTRATOS (top por rating,
+  exploración fraccional, default `cost_per_attempt` nunca ejercitado,
+  `spent` del re-ataque) → ronda 2 **17/17 + 2/2 = 19/19 (100%)**; 75
+  contratos nuevos (RED: 6 ModuleNotFoundError).
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.17.
+- **Frontera 11.18 (este ciclo)**: **round skills/agentes/MCP** —
+  auditoría determinista de la capa MCP y defensa anti inyección en
+  prosa de skills (OWASP MCP Top-10 2025 + arXiv 2608.29596).
+  (1) `harness/security/mcp_security_scan.py`: parser JSONC real +
+  5 categorías OWASP (shell crudo, pin ausente = rug-pull, secretos en
+  env con masking, http sin TLS, endpoints internos = superficie SSRF);
+  spec corregida contra la config real (argv-list, `environment`,
+  `mcp.servers`). (2) `harness/security/skill_guard.py`: frontmatter
+  obligatorio + 7 patrones de prosa hostil; **dogfood en las 42 skills:
+  0 hostiles + 5 `domain` faltantes de skills preexistentes corregidos**.
+  (3) Skills `mcp-security` + `alpha-mining` (SKILL.min + registry sha256
+  + routing a agentes). (4) Agente **`alpha-miner`** con contrato de
+  flota completo (mode, min variante, permisos del coordinator,
+  delegation policy). Kill-check 5/5 (100%); 34 contratos nuevos
+  (RED: 2 ModuleNotFoundError). Detalle:
+  `docs/.MEJORAS_SWARMIND.md` 11.18.
+- **Frontera 11.19**: **ADR fr-0001 — politica de costos de routeo**
+  (STEER-lite cost-aware, mandato del usuario). `cost_policy.py`:
+  escalera free→small→standard→frontier; escalación por costo
+  INCREMENTAL (umbral $0.05) con escalón intermedio `standard`; tier
+  `free` para complejidad <= 2 + output <= 2000; veto de presupuesto de
+  salida (> 4000 tokens => vetar modelos ultra-caros salvo `force_tier`);
+  voting k-in-1 con el tier de menor input cuando gate >= 70 y
+  confidence < 0.7. **Acoplamiento aditivo 0-regresión**:
+  `CascadeRouter.plan_cost_aware_escalation` +
+  `session_affinity.should_switch_on_cache_health` (umbral 0.60
+  alineado con `TokenUsageTracker.cache_health`). 28 contratos (RED);
+  kill-check 11/11 muertos + 5 equivalentes = 100% efectivo. Detalle:
+  `docs/.MEJORAS_SWARMIND.md` 11.19.
+- **Frontera 11.20**: **memoria colectiva en 1ª instalación** (spec
+  `specs/memory-lifecycle.md`, research anexada: arXiv:2607.21503
+  memoria-ciclo-de-vida + políticas de caches 2026 — qué NO guardar).
+  `memory_bootstrap.py`: `bootstrap_memory` (SSOT
+  `~/Documents/Memory_Proyects` + `.swarmind_config.json` idempotente,
+  override `MEMORY_ROOT`, cross-platform), detección y migración de forks
+  locales (append por mtime, volátiles jamás), `prune_volatile_collections`
+  (cap 1 GB/caché regenerable). Cableado en `setup_swarmind.py` paso 4 +
+  warning de fallback en `memory_config` (bug raíz: config SSOT ausente ⇒
+  fork de 4.7 GB). **Ejecución real: -14.29 GB** (prune 9.59 GB +
+  fork 4.70 GB); INCIDENTE: 13 tablas locales sin `_versions/*.manifest`
+  (pérdida externa) ⇒ recuperación con pylance leyendo fragments ⇒
+  parquet ⇒ fusión al central 13/13 (65 filas de valor, 41 de cognición
+  que se habrían perdido) + archivo de seguridad en `backups/`. 17
+  contratos (RED: ModuleNotFoundError), cobertura 100% del módulo;
+  kill-check 2/2 reales (100%) con no-ops excluidos honestamente.
+  Detalle: `docs/.MEJORAS_SWARMIND.md` 11.20.
+- **Frontera 11.21 (este ciclo)**: **auto-actualización anti-reversión
+  implementada** (`specs/self-update.md` → accepted+implemented). Research
+  anexada: **ADR-0010 anti-rollback** (`max_seen_version` monotónico en el
+  journal + downgrade solo deliberado `allow_downgrade`+`justification` ⇒
+  `downgrade_forced` auditable) y journaling *roll forward* con **prefix
+  property** = el invariante de `merge --ff-only` (InterSystems/SQLite WAL;
+  `branch.*.mergeoptions --ff-only` como defense-in-depth). Módulo
+  `harness/self_update/` en 3 piezas SRP (`core` 451 LC + `journal` 108 +
+  `versions` 33), CLI `scripts/self_update.py` (`--check/--apply/--audit`)
+  y **paso 7 del setup** con degradación suave que nunca bloquea. Gate
+  central: `floor = max(local, max_seen_journal)` y `remote < floor` ⇒
+  bloqueado aunque `remote > local`; `max_seen` **nunca baja**. Solo mutan
+  worktree `updated`/`downgrade_forced` vía ff-only, con intento WAL
+  registrado antes del merge. 20 contratos git reales (bare locales, sin
+  red) + **6 tests fake-git** (runner en memoria: 4.2 s vs 171 s) que
+  cubren todos los guards. **Kill-check en 3 rondas** (ronda 1 reportó
+  100% pero era engañoso: el harness numeraba posiciones en BFS y mutaba
+  en DFS ⇒ mal etiquetado) → ronda 2 expuso **7 gaps reales de aserción**
+  → ronda 3 tras reforzar 6 contratos + añadir 3: **44/44 = 100%**
+  (core 33 + versions 2 + journal 9, 0 supervivientes, 2 equivalentes
+  por construcción documentados). Cobertura **100% del paquete** (273
+  stmts) con los 24 tests rápidos (2.9 s); marker `slow` solo en los 15
+  de integración git. RED: ModuleNotFoundError. Detalle:
+  `docs/.MEJORAS_SWARMIND.md` 11.21. **Gate 11.21:** suite completa
+  **7075 passed, 0 failed** (527s; base 7036 + 39); kill-check **44/44 =
+  100%**; cobertura **100%** del paquete (273 stmts) con los 24 tests
+  rápidos; `ruff` 0 · `vulture` 0.
+- **Gate 11.21:** suite completa **7075 passed, 38 skipped, 16 xfailed,
+  0 failed** (527s; base 7036 + 39 de `test_self_update.py`). Kill-check
+  **44/44 = 100%**. Cobertura **100%** del paquete `harness/self_update/`
+  (273 stmts) con los 24 tests rápidos (2.9s). `ruff` 0 · `vulture` 0.
+- **Propagación 11.21 (fix de drift SSOT):** `_HARNESS_INCLUDE` es lista
+  blanca estática ⇒ el módulo nuevo no viajaba al global (mismo bug del
+  fix precedent `ea092dc0`). Auditoría: `failure_registry` lo importa
+  `evolve_loop/failure_distiller.py` (ya propagado) ⇒ **ImportError real
+  en el global**; `alpha_mining` lo referencian 3 skills. Añadidos
+  `self_update` + `failure_registry` + `alpha_mining` + **2 contratos**
+  (explícito + `test_harness_include_sin_drift_de_dependencias`
+  auto-detectable, RED acusó `['failure_registry']`). Sync 912 archivos,
+  import con provenencia global verificada, `SETUP OK`.
+- **Pendiente (evals de frontera)**: LLM-as-judge con escape "Unknown" +
+  scorecards por corrida (Anthropic 2026); ACP lo cubre `packages/acp` de
+  OpenCode (el harness Python no necesita implementarlo — validar `opencode
+  acp` cuando el binario esté en PATH).
+
+## Estado Actual (2026-10-14)
+
+### Estado 2026-10-14 (Restauracion post-reinstalacion de SO + Python 3.14 + oraculo PBT cross-platform)
+
+- **Python 3.14 acoplado** — `.python-version` = 3.14; `.venv` a 3.14.7 (uv); PATH de usuario apunta a `Python314` + `Scripts` (eliminado el `Python312` stale que caia al stub de Microsoft Store); classifier 3.14 en `pyproject.toml`; CI (`ci`/`mutation`/`security-scan`/`skills-quality`/`release`) alineado a 3.14 sin drift con el pin; `requires-python >=3.12` se mantiene como piso.
+- **Oraculo PBT funcional en Windows** — `SandboxExecutor.run_script(require_project_deps=True)`: cuando el backend docker no puede aportar las deps del proyecto (no-POSIX: el site-packages trae extensiones nativas `.pyd`, p. ej. `hypothesis._native`), el script corre en el interprete host con sandbox nativo (Job Object / subprocess). `pbt_stage` lo activa; +5 tests. Evidencia: `run_pbt_stage(good).passed=True`, `(buggy).passed=False`. Mutation sigue en docker (no requiere deps).
+- **Agentes `.agent.min` ocultos (OpenCode V2)** — 24 artefactos minificados aparecian como agentes duplicados en V2 (`<rol>.agent.min`); `hidden: true` en el frontmatter + inyeccion en `compile_agents.minify_agent` (el harness los sigue leyendo como prompt pre-compilado).
+- **Pre-commit re-activado** — `install_hooks.py` ahora resuelve `core.hooksPath` (`.githooks`); el pre-commit (QA + sync del opencode global) vuelve a ejecutarse de verdad en cada commit.
+- **Entorno restaurado (reinstalacion de SO)** — `uv` 0.13.1 + `uv sync --extra dev`; GPU CUDA (torch 2.13.0+cu126, RTX 4060 via `enable_gpu.py`); Docker daemon; cerebro+motor sincronizados al opencode global.
+- **Flota local alineada a lo INSTALADO (2026-10-14)** — regenerado desde la SSOT `local_models.yaml` (`render_local_models.py`): `llama-swap.yaml`, `.opencode/opencode.json` y `~/.config/opencode/opencode.jsonc` en sync (gate `--check` verde). `fleet_manifest.FLEET` + `.opencode/config/ollama_models.yaml` alineados a los 5 modelos instalados: fast `phi-4-mini-reasoning-q4-k-m`, coding `qwen3-4b-thinking-2507-q4-k-m`, quality `mimo-v2-6-distill-qwen-9b-gguf-iq4-xs`, embedding `qwen3-embedding-0-6b`, deep `ternary-bonsai-2-27b-ptq1-0`. RETIRADOS qwen3.5-4b / phi-4-mini-instruct / qwen2.5-coder-3b / deepseek-r1-distill (no instalados). `test_fleet_config_drift` **5 passed** contra el server real (antes rojo).
+- **Router de targets RE — filosofia REA ("la herramienta correcta")** — `harness/reverse_engineering/target_router.py`: dado un target (ruta/URL) elige el METODO REA + el PROVIDER (hopper|ghidra|ida, override `REA_ANALYSIS_PROVIDER`) + la EVIDENCIA esperada, por tipo detectado con magic bytes/ext/URL (nativa PE/ELF/Mach-O, Go, .NET/CLR, JS/Electron `.asar`, website, captura HAR, SQLite). Guardrail etico HARD (solo targets propios/autorizados) y `unknown` -> rechazo (0 claims sin artefacto; no adivina). 25 tests (deteccion, provider env, adversarial guardrail). Wire con el skill `reverse-engineering` + server MCP `rea`.
+- **Catalogo MCP ampliado (la herramienta correcta por dominio)** — `harness/tools_sandbox/mcp_servers.yaml` **8 → 23 servers** con comandos/tools VERIFICADOS contra cada repo oficial (regla del propio archivo): RE (`rea` con tools afinadas segun la SSOT del skill; `rc_devtools`, `ghidra_mcp`, `radare2`), proposito general (`fetch`, `time`, `git`, `sequentialthinking`, `playwright`, `firecrawl`, `notion`, `kubernetes`) y FRONTERA (`chrome_devtools`, `sentry`, `supabase`, `browserbase`). Catalogo de candidatos por dominio documentado (cloudflare, huggingface, figma, stripe, exa, tavily, aws, datadog, qdrant, dbt...). `target_router` mapea `target -> mcp_servers`.
+- **Cableado skills + agentes + HERRAMIENTAS (siguiente nivel)** — `harness/tools_sandbox/mcp_catalog.py` (tarea -> servers MCP por keyword, sin inventar) + `DispatchPlan.tools` (el dispatch aplica agente + skills + **herramientas**); `harness/tools_sandbox/mcp_opencode.py` traduce la SSOT MCP a `mcp.servers` de OpenCode y el **acople oficial `deploy_all.py --sync-global`** lo registra en el global (23 servers; 3 activos). Wiring e2e probado (`test_harness_wiring_e2e`: skills dual, agentes, SSOT->opencode, router->servers, dispatch con tools). opencode ya expone `fetch`/`time`/`sequentialthinking`.
+- **Organizacion de herramientas + skill `mcp-toolkit`** — cada server en su categoria (`mcp_servers.yaml: categories` + `mcp_catalog.CATEGORIES`, espejo) y cableado skill<->herramienta (`SKILL_TO_TOOLS`/`servers_for_skill`); nueva skill **`mcp-toolkit`** (PEC) que documenta el catalogo por categoria y la regla de seleccion ("la herramienta correcta"). Registro + routing actualizados (`skills_registry.yaml` + `SKILL_TO_AGENT`/`DOMAIN_SKILLS`/`DOMAIN_KEYWORDS`), digests regenerados. Propagado con `deploy_all --sync-global`.
+- **`!mcp` — catalogo de herramientas en el CLI** — `!mcp list` (catalogo por categoria), `!mcp for <tarea>` (herramientas aplicables via `servers_for_task`), `!mcp skill <nombre>` (`servers_for_skill`); +4 tests. Ademas, validacion E2E de imports de los 22 subpaquetes del harness (todos OK) + gates de CI corridas en local (ruff/bandit/safety/compile).
 
 ## Estado Actual (2026-10-12)
 
@@ -195,7 +590,7 @@ Las metricas principales del sistema (tests, cobertura, agentes, skills, modulos
 | **Expansion agentes** | 2026-07-29 | 8 → 22 agentes especializados (100% perfiles) |
 | **32 Decisiones de Arquitectura** | 2026-07-29 | De 28 a 32 decisiones de arquitectura documentadas e implementadas |
 | **Seguridad Paths Portables** | 2026-07-30 | Scanner de secretos + paths portables en CI y pre-commit |
-| **Opción A — SSOT Global** | 2026-07-31 | Cerebro `.opencode/` → `~/.config/opencode/` (sync automático en cada commit) + mirror local en 7 proyectos DEV-SPACE |
+| **Opción A — SSOT Global** | 2026-07-31 | Cerebro `.opencode/` → `~/.config/opencode/` (sync automático en cada commit) + mirror local en 7 proyectos <workspace> |
 | **Oráculos reales PBT/mutation** | 2026-08-11 | `pbt_stage.py` Hypothesis REAL en subprocess (5 invariantes) + `mutation_stage.py` AST aislado + DynamicDAG + WAL (Fase 1 TDD) |
 | **GPU CUDA 12.6** | 2026-08-11 | torch cu126 en RTX 4060 8GB, vector search x10.9 (10k) / x9.2 (100k), embeddings 41us/msg, `enable_gpu.py` portable |
 | **ParallelExecutor** | 2026-08-11 | Fan-out paralelo nativo + voting gobernado (gate score>=70 ∧ confidence<0.7, N=3) — aportación ORCA 2026 |
@@ -222,10 +617,20 @@ Objetivo: 80%    (proximo hito)
 
 | Prioridad | Tarea | Impacto | Detalle | Estado |
 |-----------|-------|---------|---------|--------|
+| ✅ | Router de targets RE (filosofia REA) | RE/Agentes | `harness/reverse_engineering/target_router.py`: metodo+engine+evidencia+guardrail; 25 tests | **HECHO** |
+| ✅ | Catalogo MCP variado + frontera | Tooling | `mcp_servers.yaml` 8→23 servers verificados + candidatos por dominio; suite MCP/RE verde | **HECHO** |
+| ✅ | Cableado skills+agentes+herramientas | Harness | `mcp_catalog` + `DispatchPlan.tools` + `deploy_all --sync-global`→opencode; wiring e2e probado | **HECHO** |
+| ✅ | Skill `mcp-toolkit` + organizacion de tools | Harness/Skills | categorias en la SSOT + `SKILL_TO_TOOLS`; registro+routing+digests; propagado | **HECHO** |
+| ✅ | Alinear flota de modelos a lo instalado | Entorno | SSOT `local_models.yaml` regenerada + `fleet_manifest`/`ollama_models.yaml` alineados; `test_fleet_config_drift` 5 passed | **HECHO** |
+| ✅ | Oraculo PBT funcional en Windows | TDD | `SandboxExecutor.run_script(require_project_deps=True)` → Job Object host; `pbt_stage` activado | **HECHO** |
+| ✅ | Python 3.14 acoplado | Entorno | `.python-version` + PATH de usuario + CI alineado | **HECHO** |
+| ✅ | Pre-commit efectivo | Rigor | `install_hooks.py` resuelve `core.hooksPath` (`.githooks`) | **HECHO** |
+| ✅ | Agentes `.agent.min` ocultos (V2) | Skills/Agentes | `hidden: true` + `compile_agents.minify_agent` | **HECHO** |
 | **Media** | Coverage 80% | Calidad | Atacar archivos con cobertura baja: mcp_executor.py, plugins, evolve_loop | 🔄 Pendiente |
 | **Media** | Async pipeline integration | Rendimiento | TaskOrchestrator async completo, integracion con AsyncAgentBus | 🔄 Pendiente |
 | **Media** | Fix debate tests | Estabilidad | ~20 tests de debate con ERROR por dependencias de orquestador | ⏳ Pendiente |
 | **Media** | Paired eval de skills (Skill Lift) | Skills | Medir Δpp con/sin skill (SkillsBench: 16/84 negativos; self-generated -1.3pp); retiro por outcome N>=100 | 🔄 Pendiente |
+| **Media** | Habilitar `formatter: true` (OpenCode V2) | DX/Rigor | Evaluado 2026-10-15 y RECHAZADO con evidencia: `ruff format --check` reescribiría 277/325 tests + 32 scripts y crashea en algunos dirs (bug de ruff). Habilitar tras establish `ruff format` baseline + fix upstream | ⏳ Pendiente |
 | **Baja** | Mutation gate de skills en pre-commit | Skills | SkillCI-style (typo, negacion, context-prefix) + self-growing -> test permanente | 🔄 Pendiente |
 | **Baja** | Surrogate Verifier aislado por sesion | Gobernanza | Framework distinto emite diagnostico por-assertion (CoEvoSkills 2604.01687) | 🔄 Pendiente |
 | ✅ | Integrar TriageSLM+Telemetry al pipeline | Routing/Tokens | `PipelineRouter` (cascada: SLM -> fallback en complejidad timida -> frontier), TelemetryGate hit-rate 0.80, telemetria en agent_dispatcher (R10) | **HECHO** |
@@ -327,7 +732,7 @@ Objetivo: 80%    (proximo hito)
 - **2026-08-08**: TDD always-on (engine authority + test-first real + anti-gaming, `test_dependency_map.py` TDAD src↔tests, `test_reinforcement.py` Tester→mutation→Critic; 74 tests nuevos; contrato TDD 2026 en builder/guardian/coordinator). Fase 3 ahorro de tokens: `complexity_router.py` (RouteLLM-style, 26 tests, ahorro ~2x con fallback) + `token_usage_tracker.py` (medición por agente, 39 tests, thread-safe). Documentación concisa (progressive disclosure: resumen en notas, detalle en módulos). **4277+ tests**.
 - **2026-08-08**: Fase 1+2 — MCP stateless 2026-07-28 (`connect_stateless` + `server/discover` + catálogos cacheables + headers Mcp-Method/Mcp-Name, 22 tests), OTel GenAI semconv estables (`start_genai_span`, `gen_ai.*`, 15 tests), DeltaChannel durable exec (`delta_channel.py`, 9 tests), Agent Factory on-demand (`agent_factory.py` + `agent_templates.yaml` 8 plantillas + recommender + render Markdown opencode, 29 tests), validador agentskills.io (`skill_frontmatter.py`, 20 tests, 32/32 skills válidos), skills de dominio 2026 (reviewer adversarial + science citas/reproducibilidad + legal vigencia/citas). Fix test-order: TestGenAISemconv con parcheo por `trace_agent.__globals__` (robusto ante `test_lazy_loading`). **4068+ tests**.
 - **2026-08-03**: Memoria central portable (v3.x) en `<Documents>/Memory_Proyects` (MEMORY_ROOT) + backup automático con rotación (`backup_memory.py` + tarea programada) + menú de configuración al instalar (`config_swarmind.py`). TDD: 58 tests nuevos en 5 módulos a 0% cobertura. Optimización de tokens: descripciones de agents/skills -57% (3875→1684 tokens). Deuda técnica: test_agent_builder fechas hardcodeadas corregidas. **3937 tests**.
-- **2026-07-31**: Opción A implementada — SSOT global opencode (`~/.config/opencode/`) con sync automático en cada commit (pre-commit hook → `scripts/sync_opencode_global.py`). Mirror local completo (`.opencode/` 125 archivos + `harness/` 8451 + 31 skills + registry) desplegado en 7 proyectos de DEV-SPACE preservando config propia. Seguridad: scanner de secretos 0 violaciones, bandit 0 hallazgos en producción (MD5 `usedforsecurity=False`, nosec justificado), gates CI endurecidos (bandit/pip-audit bloquean), dependabot + github-actions. Guia: [docs/src/es/guide/opcion-a-ssot-global.md](../guide/opcion-a-ssot-global.md).
+- **2026-07-31**: Opción A implementada — SSOT global opencode (`~/.config/opencode/`) con sync automático en cada commit (pre-commit hook → `scripts/sync_opencode_global.py`). Mirror local completo (`.opencode/` 125 archivos + `harness/` 8451 + 31 skills + registry) desplegado en 7 proyectos de <workspace> preservando config propia. Seguridad: scanner de secretos 0 violaciones, bandit 0 hallazgos en producción (MD5 `usedforsecurity=False`, nosec justificado), gates CI endurecidos (bandit/pip-audit bloquean), dependabot + github-actions. Guia: [docs/src/es/guide/opcion-a-ssot-global.md](../guide/opcion-a-ssot-global.md).
 - **2026-07-30**: Política de paths portables + scanner de secretos/rutas personales (0 violaciones). Limpieza de rutas personales en toda la documentación.
 - **2026-07-29**: Gap Analysis 2026 completo (15 papers implementados). Nuevos modulos: GovernanceGuard (arXiv:2606.22528), NaturalLanguageToolkit (arXiv:2607.03953), MultiUserGovernance (arXiv:2606.21856), OrganizationalLayer (arXiv:2607.25446), Learned Adaptive Memory (arXiv:2607.13591). Expansion de 8 a 20 agentes. 3420 tests, 31 skills, 48 modulos orchestrator, 30 modulos memory/rag.
 - **2026-07-20 (final)**: GPU acceleration (RTX 4060, 6x search, 3.2x embedding). Refactor task_orch 994→830, ctx_window 1029→943. ShapedCache threshold 0.88. Seguridad: path traversal hardening. 2900+ tests, ~60% coverage.
@@ -337,6 +742,23 @@ Objetivo: 80%    (proximo hito)
 - **2026-06**: Lazy loading PEP 562 (72x mas rapido). 6 nuevas tecnicas (WFP, PBT, CEN, BTR, AGR, SVE).
 - **2026-05**: Fundacion del sistema con agentes base, memoria federada, skill router, estandares automaticos.
 
+- **2026-10-22**: MCP interconnect (11.23): circuit breaker + health/retry en MCPManager, puente in-process inter-proyecto (project_bridge), web frontier (exa/tavily), seguridad (security_scan), 26 servers. 7 tests nuevos.
+
+- **2026-10-22**: Integracion Harness2 (11.24): recursive harnessing (Propose-Probe-Compose) en `harness/harness2/` + `RecursiveHarness` en evolve_loop. 9 tests.
+
+- **2026-10-24**: RuscaDB grafo (11.36): edges + last_inserted_id + graph_traverse. Ruff 0.
+
 ---
 
 > *Este roadmap se actualiza tras cada hito significativo. Proximas revisiones: semanal.*
+
+
+## Estado Actual (2026-10-28)
+
+### Estado 2026-10-28 (Ciclo 11.52 — Inventario + research frontier + correccion de gaps)
+
+- **Inventario minucioso**: 616 modulos, 348 tests, 43 skills, 25 agentes. 5 modulos frontier sin cablear identificados.
+- **Research frontier**: memoria de agentes (survey 2026), OWASP ASI06 memory poisoning, context engineering/compaction, hybrid retrieval, Rust FFI.
+- **Correcciones**: import perezoso lancedb; static_embeddings lazy; QueryResultCache cableado; adaptive_search; provenance/trust tagging; F4 ciclos de import (0).
+- **Docs**: audit-implementacion-2026-10-28.md, research/frontier-2026-10-28.md, AGENTS.md 43 skills.
+- **Verificacion**: Ruff 0, Vulture 0, tests ruscadb_store 11 passed, adaptive_retriever 4 passed, domain purity 0, ciclos 0.

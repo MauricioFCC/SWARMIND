@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 import time
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from statistics import mean
@@ -121,54 +122,90 @@ class EvalSuite:
         Los resultados directos se incluyen tal cual. Mide latencia total.
 
         Args:
-            concurrency: Numero de evaluaciones paralelas (reservado para futuro, aun no implementado).
+            concurrency: Numero de evaluaciones paralelas (>1 usa un pool de
+                hilos; el orden de los resultados se preserva).
 
         Returns:
             EvalReport con el resumen completo de la ejecucion.
-
-        Raises:
-            Exception: Re-emite errores de evaluacion individuales con contexto.
         """
-        if concurrency != 1:
-            logger.warning(
-                "[EvalFactory] concurrencia=%d solicitada pero aun no implementada; se ejecuta secuencialmente. "
-                "WHERE: EvalSuite.run() | WHAT: concurrency > 1 sin soporte.",
-                concurrency,
-            )
-
-        collected: list[EvalResult] = []
         start_ts = time.monotonic()
-
-        for idx, entry in enumerate(self.evals):
-            try:
-                if callable(entry):
-                    # Evaluacion lazy: invoca la funcion y extiende resultados
-                    results = entry()
-                    if not isinstance(results, list):
-                        logger.error(
-                            "[EvalFactory] Suite '%s' eval #%d retorno %s en vez de list[EvalResult]. "
-                            "WHERE: EvalSuite.run() | WHAT: tipo inesperado en callable.",
-                            self.name, idx, type(results).__name__,
-                        )
-                        continue
-                    collected.extend(results)
-                elif isinstance(entry, EvalResult):
-                    collected.append(entry)
-                else:
-                    logger.warning(
-                        "[EvalFactory] Suite '%s' elemento #%d ignorado: tipo %s no soportado. "
-                        "WHERE: EvalSuite.run() | WHAT: elemento no es EvalResult ni callable.",
-                        self.name, idx, type(entry).__name__,
-                    )
-            except Exception:
-                logger.exception(
-                    "[EvalFactory] Error ejecutando evaluacion #%d en suite '%s'. "
-                    "WHERE: EvalSuite.run() | WHAT: fallo en evaluacion | WHY: excepcion no controlada.",
-                    idx, self.name,
-                )
-
+        collected = self._collect(concurrency)
         elapsed = time.monotonic() - start_ts
-        return EvalReport.from_results(suite_name=self.name, results=collected, elapsed=elapsed)
+        return EvalReport.from_results(
+            suite_name=self.name, results=collected, elapsed=elapsed
+        )
+
+    def _collect(self, concurrency: int) -> list[EvalResult]:
+        """Recolecta resultados en orden, secuencial o con pool de hilos."""
+        entries = list(self.evals)
+        callables = [entry for entry in entries if callable(entry)]
+        if concurrency <= 1 or not callables:
+            return [
+                result
+                for index, entry in enumerate(entries)
+                for result in self._eval_entry(entry, index)
+            ]
+        workers = min(int(concurrency), len(callables))
+        by_index: dict[int, list[EvalResult]] = {}
+        with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
+            futures = {
+                index: pool.submit(self._eval_entry, entry, index)
+                for index, entry in enumerate(entries)
+                if callable(entry)
+            }
+            for index, future in futures.items():
+                by_index[index] = future.result()
+        return [
+            result
+            for index, entry in enumerate(entries)
+            for result in (
+                by_index[index]
+                if callable(entry)
+                else self._eval_entry(entry, index)
+            )
+        ]
+
+    def _eval_entry(
+        self, entry: EvalResult | Callable[[], list[EvalResult]], index: int
+    ) -> list[EvalResult]:
+        """Evalua una entrada y devuelve sus resultados (vacio si falla)."""
+        try:
+            if callable(entry):
+                return self._invoke(entry, index)
+            if isinstance(entry, EvalResult):
+                return [entry]
+            logger.warning(
+                "[EvalFactory] Suite '%s' elemento #%d ignorado: tipo %s no soportado. "
+                "WHERE: EvalSuite.run() | WHAT: elemento no es EvalResult ni callable.",
+                self.name,
+                index,
+                type(entry).__name__,
+            )
+            return []
+        except Exception:
+            logger.exception(
+                "[EvalFactory] Error ejecutando evaluacion #%d en suite '%s'. "
+                "WHERE: EvalSuite.run() | WHAT: fallo en evaluacion | WHY: excepcion no controlada.",
+                index,
+                self.name,
+            )
+            return []
+
+    def _invoke(
+        self, entry: Callable[[], list[EvalResult]], index: int
+    ) -> list[EvalResult]:
+        """Invoca un callable y valida que devuelva ``list[EvalResult]``."""
+        results = entry()
+        if isinstance(results, list):
+            return results
+        logger.error(
+            "[EvalFactory] Suite '%s' eval #%d retorno %s en vez de list[EvalResult]. "
+            "WHERE: EvalSuite.run() | WHAT: tipo inesperado en callable.",
+            self.name,
+            index,
+            type(results).__name__,
+        )
+        return []
 
     def add_eval(self, eval_entry: EvalResult | Callable[[], list[EvalResult]]) -> None:
         """Agrega una evaluacion a la suite en tiempo de construccion.

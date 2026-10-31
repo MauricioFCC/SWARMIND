@@ -1,4 +1,4 @@
-﻿"""
+"""
 Agent Capsules - Fusion inteligente de agentes (arXiv:2605.00410).
 
 arXiv:2605.00410: Reduce input tokens hasta 51% fusionando llamadas de agentes

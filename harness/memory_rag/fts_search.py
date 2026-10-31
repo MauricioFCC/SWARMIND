@@ -1,4 +1,4 @@
-﻿"""
+"""
 FTS Search — Full-text search sobre memoria (inspirado en SQLite FTS5).
 
 Los agentes de memoria usan SQLite FTS5 para busqueda full-text sobre todas

@@ -138,6 +138,9 @@ harness/evolve_loop/prompt_archive/
 *.hook_status.json
 direct_url.json
 __editable__*
+# Pre-commit hook generado por install_hooks.py (vive donde apunte core.hooksPath).
+.githooks/pre-commit
+.githooks/pre-commit.Swarmind.bak
 
 # artefactos temporales de tests (recreados por test_deploy_all)
 harness/tests/_tmp_bad_skills/
@@ -157,3 +160,27 @@ scripts/deploy_local.json
 # Perfiles de capacidad locales confidenciales (tuning de ESTA maquina) - NUNCA pushear.
 # La plantilla SI se versiona (.opencode/config/ollama_local.example.yaml).
 .opencode/config/ollama_local.yaml
+
+# Journal de auto-actualizacion anti-reversion (spec self-update.md, ciclo 11.21).
+# Registro POR-MAQUINA en <repo>/.swarmind/update_log.jsonl: lo crea el paso 7 del
+# setup o scripts/self_update.py; el audit_log deriva de el la cota max_seen local.
+.swarmind/
+
+# RuscaDB runtime artifacts
+ruscadb.db
+*.wal
+*.manifest.json
+*.lock
+*.cache.json
+
+# Recursion context scratchpad
+ctx/
+
+# Estado local de tests (no versionar)
+harness/tests/test_universal_rules_state.json
+
+# Estado local de tests (no versionar)
+harness/tests/test_opencode_config_sync_state.json
+
+# Runtime local (memoria/estado del harness)
+data/

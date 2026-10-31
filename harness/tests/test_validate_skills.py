@@ -27,7 +27,7 @@ import validate_skills as vs
 # ===========================================================================
 
 
-def _write_skill(root: Path, dirname: str, frontmatter: str, body: str = "# Skill\n") -> Path:
+def _write_skill(root: Path, dirname: str, frontmatter: str, body: str = "# Skill\n\n## Ejemplo\n\nEjemplo concreto.\n") -> Path:
     """Escribe un skill de prueba y retorna la ruta a su SKILL.md."""
     skill_dir = root / dirname
     skill_dir.mkdir(parents=True, exist_ok=True)

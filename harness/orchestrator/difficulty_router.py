@@ -521,13 +521,22 @@ class DifficultyRouter:
     def _select_pipeline(
         self, complexity: ComplexityLevel, features: ComplexityFeatures,
     ) -> PipelineType:
-        """Selecciona el pipeline según complejidad."""
+        """Selecciona el pipeline combinando score y complejidad.
+
+        Los umbrales del constructor tienen prioridad cuando el score es > 0
+        (``deep_threshold`` fuerza DEEP; ``shallow_threshold`` fuerza SHALLOW).
+        En la zona intermedia se conserva el mapeo historico por complejidad.
+        """
+        score = features.score()
+        if score > 0 and score >= self._deep_threshold:
+            return PipelineType.DEEP
+        if score > 0 and score <= self._shallow_threshold:
+            return PipelineType.SHALLOW
         if complexity in (ComplexityLevel.TRIVIAL, ComplexityLevel.SIMPLE):
             return PipelineType.SHALLOW
-        elif complexity in (ComplexityLevel.MODERATE,):
+        if complexity is ComplexityLevel.MODERATE:
             return PipelineType.STANDARD
-        else:
-            return PipelineType.DEEP
+        return PipelineType.DEEP
 
     # ------------------------------------------------------------------
     # Batch classification

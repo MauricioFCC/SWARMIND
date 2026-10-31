@@ -14,6 +14,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -210,6 +211,13 @@ def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
         if not (skill_dir / "references" / ref).exists():
             errors.append(f"{name}: referencia rota references/{ref}")
 
+    # 8a. Seccion de ejemplo obligatoria (spec Agent Skills: toda skill debe
+    # demostrar el patron con un caso concreto). Gate M6 de test_skill_mutants.
+    if "## Ejemplo" not in text:
+        errors.append(
+            f"{name}: falta la seccion '## Ejemplo' (spec Agent Skills: ejemplo concreto)"
+        )
+
     # 8b. References muertas: archivos en references/ que el SKILL.md NUNCA referencia
     # (progressive disclosure: material no enlazado nunca se carga -> warning).
     refs_dir = skill_dir / "references"
@@ -236,6 +244,42 @@ def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
     if has_scripts and "compatibility" not in fm and not quiet:
         print(f"  ⚠  {name}: tiene scripts/ pero sin campo 'compatibility' (spec: requisitos de entorno)")
 
+    return errors
+
+
+def _validate_unique_bodies() -> list[str]:
+    """Gate M5: rechaza skills con cuerpo identico (dedup semantico barato).
+
+    Normaliza el cuerpo (sin frontmatter, espacios colapsados, minusculas) y
+    compara el sha256: dos skills con el mismo contenido y distinto nombre son
+    crowding (la segunda no aporta senal).
+
+    Returns:
+        Lista de errores (vacía si todos los cuerpos son distintos).
+    """
+    seen: dict[str, str] = {}
+    errors: list[str] = []
+    for skill_dir in sorted(_SKILLS_DIR.iterdir()):
+        if not skill_dir.is_dir() or skill_dir.name in _SKIPPED_DIRS:
+            continue
+        path = skill_dir / "SKILL.md"
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        body = re.sub(r"^---.*?---\n", "", text, count=1, flags=re.DOTALL)
+        normalized = re.sub(r"\s+", " ", body).strip().lower()
+        # El nombre propio se neutraliza: una copia con otro nombre conserva el
+        # cuerpo (M5: duplicado semantico).
+        normalized = normalized.replace(skill_dir.name.lower(), "<skill>")
+        digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+        previous = seen.get(digest)
+        if previous is not None:
+            errors.append(
+                f"{skill_dir.name}: cuerpo duplicado de {previous!r} "
+                "(dedup semantico: mismo contenido, distinto nombre)"
+            )
+        else:
+            seen[digest] = skill_dir.name
     return errors
 
 
@@ -280,6 +324,7 @@ def main() -> None:
         errors.extend(_validate_skill(skill_dir, args.quiet))
 
     errors.extend(_validate_registry(args.quiet))
+    errors.extend(_validate_unique_bodies())
 
     print()
     if errors:

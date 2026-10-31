@@ -2,7 +2,7 @@
 Activacion y diagnostico de GPU (CUDA) para Swarmind Harness.
 
 Problema que resuelve:
-  - La dependencia torch de PyPI instala wheels CPU-only en Windows/Linux.
+  - torch es un extra opcional (`.[gpu]`); este script instala el wheel CUDA.
   - El hook de pre-commit ejecuta `uv sync` (lock de PyPI) y vuelve a
     instalar torch CPU en cada commit.
   - Este script reinstala torch con wheels CUDA y verifica la GPU.
@@ -32,7 +32,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-TORCH_VERSION = "torch==2.13.0"
+TORCH_VERSION = "torch==2.15.0"
 CUDA_INDEX = "https://download.pytorch.org/whl/cu126"
 
 #: Topes VRAM del servidor Ollama (RTX 4060 8GB, WDDM).

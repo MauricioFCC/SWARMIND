@@ -162,6 +162,77 @@ def _sync_global(dry_run: bool) -> bool:
     return True
 
 
+def _bootstrap_memory() -> bool:
+    """Bootstrap de memoria colectiva + migración de fork local (ciclo 11.20).
+
+    WHAT: crea la memoria colectiva (data/lancedb + backups +
+    .swarmind_config.json) si es primera instalación, detecta un fork
+    local del proyecto (harness/db/lancedb) y migra sus tablas de valor.
+    WHY: sin .swarmind_config.json el harness cae al fallback legacy y
+    creó un fork de 4.8 GB; la memoria colectiva debe ser SSOT en toda
+    instalación nueva (win/linux/mac).
+    WHERE: paso 4 del setup, tras dependencias y antes de sync global.
+
+    Returns:
+        True si el bootstrap/migración no tuvo errores fatales.
+    """
+    try:
+        from harness.memory_rag.memory_bootstrap import (
+            bootstrap_memory,
+            detect_project_local_memory,
+            migrate_local_to_central,
+        )
+
+        report = bootstrap_memory()
+        logger.info("  Memoria colectiva: %s", report.memory_root)
+        if report.created:
+            logger.info("  ✅ .swarmind_config.json creado (primera instalación)")
+
+        fork = detect_project_local_memory(_ROOT)
+        if fork is not None:
+            logger.info(
+                "  🔀 Fork local detectado (%d tablas) → migrando al central",
+                len(fork.tables),
+            )
+            mig = migrate_local_to_central(fork.db_dir, report.data_dir)
+            logger.info(
+                "     copied=%d appended=%d skipped_volatile=%d skipped_stale=%d",
+                len(mig.copied), len(mig.appended),
+                len(mig.skipped_volatile), len(mig.skipped_stale),
+            )
+        return True
+    except Exception as e:  # noqa: BLE001 — setup no debe abortar por memoria
+        logger.error("  ❌ Error en bootstrap de memoria: %s", e)
+        return False
+
+
+def _self_update() -> None:
+    """Auto-actualización desde remoto anti-reversión (ciclo 11.21).
+
+    WHAT: check remoto + apply ff-only con guards (gate de monotonicidad,
+    journal WAL) y audit_log de reversión.
+    WHY: mandato — toda instalación local sigue al repo remoto
+    (win/linux/mac) sin permitir reversiones; degradación suave.
+    WHERE: paso 7 del setup, tras verificación; NUNCA bloquea el setup.
+    """
+    log_path = _ROOT / ".swarmind" / "update_log.jsonl"
+    try:
+        from harness.self_update import apply_update, audit_log, check_remote
+
+        check = check_remote(_ROOT)
+        result = apply_update(check, repo=_ROOT, log_path=log_path)
+        logger.info(
+            "  Actualización remota: %s — %s", result.action.value, result.detail
+        )
+        if result.changed:
+            logger.info("  ✅ Repo actualizado; reinicia opencode para cargarlo")
+        violaciones = audit_log(log_path)
+        if violaciones:
+            logger.error("  ⚠️  audit_log: %d violación(es) de reversión", len(violaciones))
+    except Exception as e:  # noqa: BLE001 — degradación suave, nunca bloquea
+        logger.warning("  Auto-actualización degradada (no bloquea): %s", e)
+
+
 def _verify() -> bool:
     """Verifica que el sistema funciona (imports + smoke test).
 
@@ -182,6 +253,60 @@ def _verify() -> bool:
         logger.error("  ❌ Error importando harness: %s", e)
         return False
 
+
+def _setup_ruscadb() -> bool:
+    """Intenta compilar/copiar RuscaDB (C-ABI) para habilitar backend ruscadb.
+
+    Busca el repo RuscaDB en ubicaciones conocidas; si cargo esta disponible
+    compila ruscadb-ffi y copia la dll al paquete. Si no, degrada a lancedb/memory.
+    """
+    import shutil as _sh
+    candidates = [
+        _ROOT.parent / "RuscaDB",
+        Path.home() / ".config" / "opencode" / "ruscadb",
+    ]
+    rusca_env = os.environ.get("RUSCADB_ROOT")
+    if rusca_env:
+        candidates.insert(0, Path(rusca_env))
+    rusca_dir = None
+    for c in candidates:
+        if (c / "Cargo.toml").is_file():
+            rusca_dir = c
+            break
+    if rusca_dir is None:
+        logger.info("  RuscaDB no encontrado localmente; backend ruscadb sera opt-in (fallback lancedb/memory).")
+        return True
+    logger.info("  RuscaDB encontrado en %s", rusca_dir)
+    cargo = shutil.which("cargo")
+    if cargo is None:
+        logger.info("  cargo no disponible; usando dll precompilada si existe.")
+    else:
+        logger.info("  Compilando ruscadb-ffi (cargo build)...")
+        try:
+            result = subprocess.run(
+                [cargo, "build", "-p", "ruscadb-ffi"],
+                cwd=rusca_dir, capture_output=True, text=True, check=False,
+                timeout=_LONG_CMD_TIMEOUT_SECONDS,
+            )
+            if result.returncode != 0:
+                logger.warning("  cargo build fallo: %s", result.stderr[-300:])
+            else:
+                logger.info("  ✅ ruscadb-ffi compilado")
+        except Exception as e:  # noqa: BLE001
+            logger.warning("  cargo build error: %s", e)
+    # copiar dll si existe
+    for profile in ("debug", "release"):
+        dll = rusca_dir / "target" / profile / "ruscadb_ffi.dll"
+        if dll.is_file():
+            dst = _ROOT / "harness" / "memory_rag" / "ruscadb_ffi.dll"
+            try:
+                _sh.copyfile(dll, dst)
+                logger.info("  ✅ dll copiada a %s", dst)
+                return True
+            except Exception as e:  # noqa: BLE001
+                logger.warning("  No se pudo copiar dll: %s", e)
+    logger.info("  dll no disponible; backend ruscadb sera opt-in (fallback lancedb/memory).")
+    return True
 
 def main() -> None:
     """CLI principal del setup."""
@@ -220,7 +345,19 @@ def main() -> None:
     else:
         steps_ok = _install_deps(skip_uv=args.skip_uv) and steps_ok
 
-    # 4. Sync global (cerebro + motor)
+    # 4. Memoria colectiva (bootstrap + migración de fork local)
+    if args.dry_run:
+        logger.info("  [simulado] Bootstrap memoria colectiva + migración")
+    else:
+        steps_ok = _bootstrap_memory() and steps_ok
+
+    # 4b. RuscaDB (compilar/copiar dll si esta disponible)
+    if args.dry_run:
+        logger.info("  [simulado] Setup RuscaDB (compilar/copiar dll)")
+    else:
+        steps_ok = _setup_ruscadb() and steps_ok
+
+    # 5. Sync global (cerebro + motor)
     if args.skip_sync:
         logger.info("  [skip] Sync a opencode global")
     elif args.dry_run:
@@ -228,13 +365,19 @@ def main() -> None:
     else:
         steps_ok = _sync_global(dry_run=False) and steps_ok
 
-    # 5. Verificación
+    # 6. Verificación
     if args.dry_run:
         logger.info("  [simulado] Verificar imports + smoke test")
     else:
         steps_ok = _verify() and steps_ok
 
-    # 6. Menú de configuración (memoria central, backup, opciones)
+    # 7. Auto-actualización desde remoto (anti-reversión, degradación suave)
+    if args.dry_run:
+        logger.info("  [simulado] Auto-actualización desde remoto (check + apply)")
+    else:
+        _self_update()  # nunca bloquea el setup (spec self-update.md)
+
+    # 8. Menú de configuración (memoria central, backup, opciones)
     if args.skip_config:
         logger.info("  [skip] Menú de configuración")
     elif args.dry_run:

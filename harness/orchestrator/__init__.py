@@ -28,6 +28,9 @@ _SYMBOL_MAP: dict[str, str] = {
     "voting": "harness.orchestrator.workflow_patterns",
     "PBTTemplate": "harness.orchestrator.pbt_templates",
     "BehavioralTracer": "harness.orchestrator.behavioral_tracer",
+    "DurableRunStore": "harness.orchestrator.durable_run",
+    "ResumePlan": "harness.orchestrator.durable_run",
+    "StepStatus": "harness.orchestrator.durable_run",
     "check_all": "harness.orchestrator.architectural_guardrails",
     # Agent Capsules (arXiv:2605.00410)
     "AgentCapsule": "harness.orchestrator.agent_capsules",

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Configuration, data types and shared utilities for the end-of-iteration pipeline.
 """
 from __future__ import annotations

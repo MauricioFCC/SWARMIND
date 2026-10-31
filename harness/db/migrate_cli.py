@@ -90,7 +90,7 @@ def main() -> None:
 
     # --- stats ---
     if args.stats is not None:
-        db_path = args.stats if args.stats else None
+        db_path = args.stats or None
         stats = migrator.get_stats(db_path)
         logger.info("\n[DB] Estadisticas de BD:")
         logger.info("  Path:   %s", stats.get("path", "N/A"))

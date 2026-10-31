@@ -105,7 +105,7 @@ class CompetenceModel:
         self._posterior: dict[tuple[str, str], list[float]] = {}
         for agent in self._agents:
             for skill in self._skills:
-                self._posterior[(agent, skill)] = [PRIOR_ALPHA, PRIOR_BETA]
+                self._posterior[agent, skill] = [PRIOR_ALPHA, PRIOR_BETA]
         self._updates_since_snapshot = 0
         self._snapshots: list[float] = []
 
@@ -148,7 +148,7 @@ class CompetenceModel:
         self._updates_since_snapshot += 1
         if self._updates_since_snapshot >= self._snapshot_every:
             self._updates_since_snapshot = 0
-            mean = self._posterior[(agent, skill)][0] / sum(self._posterior[(agent, skill)])
+            mean = self._posterior[agent, skill][0] / sum(self._posterior[agent, skill])
             self._snapshots.append(mean)
             logger.debug("competence_model: snapshot %.3f", mean)
 
@@ -197,7 +197,7 @@ class CompetenceModel:
         best_agent = self._agents[0]
         best_score = -1.0e18
         for agent in self._agents:
-            state = self._posterior[(agent, skill)]
+            state = self._posterior[agent, skill]
             sample = self._rng.betavariate(state[0], state[1])
             penalty = cost_weight * costs.get(agent, 0.0)
             score = sample - penalty

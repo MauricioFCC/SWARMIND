@@ -447,3 +447,49 @@ def test_seed_node_modules_solo_si_falta(
     assert da._seed_node_modules(dst) > 0
     assert (dst / "node_modules" / "dep" / "index.js").is_file()
     assert da._seed_node_modules(dst) == 0  # segunda vez: no-op
+
+
+# ===========================================================================
+# deploy_agents_md — doctrina universal en la raiz del proyecto
+# ===========================================================================
+
+
+class TestDeployAgentsMd:
+    """AGENTS.md en la raiz del proyecto (lo leen opencode, Claude Code y Codex)."""
+
+    def test_crea_si_no_existe(self, fake_project: da.Project) -> None:
+        assert da.deploy_agents_md(fake_project, dry_run=False) == "created"
+        text = (fake_project.path / "AGENTS.md").read_text(encoding="utf-8")
+        assert da._AGENTS_MD_MARKER in text
+        assert "SWARMIND" in text
+
+    def test_no_pisa_un_agents_md_ajeno(self, fake_project: da.Project) -> None:
+        """Un AGENTS.md propio del proyecto NUNCA se sobreescribe."""
+        ajeno = "# Doctrina propia del proyecto\n"
+        (fake_project.path / "AGENTS.md").write_text(ajeno, encoding="utf-8")
+
+        assert da.deploy_agents_md(fake_project, dry_run=False) == "kept"
+        assert (fake_project.path / "AGENTS.md").read_text(encoding="utf-8") == ajeno
+
+    def test_refresca_el_generado(self, fake_project: da.Project) -> None:
+        da.deploy_agents_md(fake_project, dry_run=False)
+        target = fake_project.path / "AGENTS.md"
+        target.write_text(target.read_text(encoding="utf-8") + "\nbasura\n", encoding="utf-8")
+
+        assert da.deploy_agents_md(fake_project, dry_run=False) == "refreshed"
+        assert "basura" not in target.read_text(encoding="utf-8")
+
+    def test_es_idempotente(self, fake_project: da.Project) -> None:
+        da.deploy_agents_md(fake_project, dry_run=False)
+        assert da.deploy_agents_md(fake_project, dry_run=False) == "kept"
+
+    def test_dry_run_no_escribe(self, fake_project: da.Project) -> None:
+        assert da.deploy_agents_md(fake_project, dry_run=True) == "created"
+        assert not (fake_project.path / "AGENTS.md").exists()
+
+    def test_deploy_project_lo_invoca(self, fake_root: Path, fake_project: da.Project) -> None:
+        """El deploy de proyecto debe dejar el AGENTS.md en la raiz."""
+        result = da.deploy_project(fake_project, dry_run=False, sync_only=True)
+
+        assert result["agents_md"] in {"created", "kept"}
+        assert (fake_project.path / "AGENTS.md").is_file()

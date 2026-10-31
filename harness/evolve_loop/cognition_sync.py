@@ -1,4 +1,4 @@
-﻿"""
+"""
 Cognition store synchronisation.
 
 Manages the ``asi_cognition_store`` collection — a persistent knowledge base
@@ -213,7 +213,7 @@ class CognitionSync:
 
         # Bump access_count for retrieved lessons
         for lesson in lessons:
-            self._bump_access(lesson.id)
+            self._bump_access(lesson)
 
         return lessons
 
@@ -245,7 +245,7 @@ class CognitionSync:
 
         meta = results[0].get("metadata", {})
         lesson = CognitionLesson.from_dict(meta)
-        self._bump_access(lesson.id)
+        self._bump_access(lesson)
         return lesson
 
     def has_lesson(self, lesson_id: str) -> bool:
@@ -342,32 +342,51 @@ class CognitionSync:
         return sorted(seen)
 
     def delete_lesson(self, lesson_id: str) -> bool:
-        """
-        Remove a lesson by ID.
+        """Elimina una leccion por ID.
 
-        .. note::
-            LanceVectorStore does not yet support single-record deletion;
-            this is a no-op placeholder until that feature is added.
+        Comprueba existencia primero (``has_lesson``) para devolver un booleano
+        fiable y despues delega en ``delete`` del store (puerto
+        ``VectorStorePort``).
+
+        Args:
+            lesson_id: Id de la leccion a eliminar.
 
         Returns:
-            ``True`` if deletion was performed (currently always ``False``).
+            ``True`` si existia y se elimino; ``False`` si no existia o fallo.
         """
-        logger.warning(
-            "Single-record deletion not yet implemented in LanceVectorStore. "
-            "Lesson %s was not removed.",
-            lesson_id,
-        )
-        return False
+        if not self.has_lesson(lesson_id):
+            logger.info("delete_lesson: %s no existe (no-op)", lesson_id)
+            return False
+        try:
+            removed = self.store.delete(_COGNITION_COLLECTION, [lesson_id])
+        except Exception:
+            logger.exception("delete_lesson fallo al borrar id=%s", lesson_id)
+            return False
+        logger.info("Lesson deleted - id=%s removed=%s", lesson_id, removed)
+        return True
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _bump_access(self, lesson_id: str) -> None:
-        """Increment the access counter for a lesson (best-effort)."""
-        # In a full implementation this would update the record in place.
-        # For now we log that the lesson was accessed.
-        logger.debug("Lesson %s accessed.", lesson_id)
+    def _bump_access(self, lesson: CognitionLesson) -> None:
+        """Incrementa ``access_count`` y ``last_accessed`` (best-effort).
+
+        Args:
+            lesson: Leccion recuperada del store.
+        """
+        updates = {
+            "access_count": int(lesson.access_count) + 1,
+            "last_accessed": datetime.now(UTC).isoformat(),
+        }
+        try:
+            self.store.update_records(
+                _COGNITION_COLLECTION, {"id": lesson.id}, updates
+            )
+        except Exception:
+            logger.debug(
+                "No se pudo actualizar access_count de %s", lesson.id, exc_info=True
+            )
 
     @staticmethod
     def _default_embedding(text: str) -> np.ndarray:

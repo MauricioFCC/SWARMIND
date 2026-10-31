@@ -1,4 +1,4 @@
-﻿"""
+"""
 Phase 1: Bug Hunting — scan code for common bugs.
 """
 from __future__ import annotations
@@ -135,8 +135,7 @@ def _scan_missing_docstrings(lines: list[str], filepath: str) -> list[BugFinding
     """Find functions/classes without docstrings using AST."""
     findings: list[BugFinding] = []
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            source = f.read()
+        source = Path(filepath).read_text(encoding="utf-8")
         tree = ast.parse(source)
     except (SyntaxError, Exception):  # noqa: BLE001
         return findings
@@ -163,8 +162,7 @@ def _scan_missing_type_hints(lines: list[str], filepath: str) -> list[BugFinding
     """Find function definitions without type hints using AST."""
     findings: list[BugFinding] = []
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            source = f.read()
+        source = Path(filepath).read_text(encoding="utf-8")
         tree = ast.parse(source)
     except (SyntaxError, Exception):  # noqa: BLE001
         return findings
@@ -197,8 +195,7 @@ def _scan_inconsistent_returns(lines: list[str], filepath: str) -> list[BugFindi
     """Find functions that sometimes return None and sometimes return value."""
     findings: list[BugFinding] = []
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            source = f.read()
+        source = Path(filepath).read_text(encoding="utf-8")
         tree = ast.parse(source)
     except (SyntaxError, Exception):  # noqa: BLE001
         return findings

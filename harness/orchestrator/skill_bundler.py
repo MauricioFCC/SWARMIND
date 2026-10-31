@@ -1,4 +1,4 @@
-﻿"""
+"""
 SkillBundler — Dynamic Agent Composition from Skill Registry.
 
 Implementacion del patron SIGMA (Skill-Incidence Graphs, arXiv:2606.19758):
@@ -101,7 +101,16 @@ def _deduplicate_near_duplicates(names: list[str]) -> list[str]:
 # Skill to Agent Mapping (SIGMA incidence matrix)
 # ---------------------------------------------------------------------------
 
-# Mapa de skills → agente primario que deberia ejecutarlos
+# Mapa de skills → agente primario que deberia ejecutarlos (matriz SIGMA).
+# Cubre TODO el registry (SSOT ``.opencode/skills/skills_registry.yaml``).
+# Coherencia de los agentes especializados (valor = agente real de
+# ``.opencode/agents/*.md``): skill-engineering→evolve-engineer (evoluciona el
+# sistema de skills); reverse-engineering→security-engineer (analisis de
+# artefactos con foco defensivo); codebase-comprehension→architect y
+# architecture-review→architect (comprension y conformance arquitectonica);
+# ads-optimizer→product-manager (optimizacion de campanas/business);
+# mcp-security→security-engineer (auditoria OWASP de la capa MCP);
+# alpha-mining→alpha-miner (agente dedicado de mineria alpha, ciclo 11.18).
 SKILL_TO_AGENT: dict[str, str] = {
     "alpha-research": "scientist",
     "evolve": "evolve",
@@ -137,9 +146,20 @@ SKILL_TO_AGENT: dict[str, str] = {
     "sociology": "scientist",
     "sustainability": "scientist",
     "swarm-release-ops": "builder",
+    "skill-engineering": "evolve-engineer",
+    "reverse-engineering": "security-engineer",
+    "cert-master": "scientist",
+    "codebase-comprehension": "architect",
+    "architecture-review": "architect",
+    "ads-optimizer": "product-manager",
+    "mcp-toolkit": "platform-engineer",
+    "mcp-security": "security-engineer",
+    "alpha-mining": "alpha-miner",
 }
 
-# Mapa de dominios → skills relevantes
+# Mapa de dominios → skills relevantes. Cubre TODO el registry (SSOT) para que
+# ninguna skill quede inalcanzable por keyword. "general" es el fallback de
+# detect_domain (no se dispara por keyword, pero sigue siendo un mapeo valido).
 DOMAIN_SKILLS: dict[str, list[str]] = {
     "web": ["frontend-uiux", "security-audit", "rust-lang"],
     "api": ["architecture", "rust-lang", "security-audit", "data-science"],
@@ -147,9 +167,9 @@ DOMAIN_SKILLS: dict[str, list[str]] = {
     "frontend": ["frontend-uiux", "security-audit"],
     "backend": ["rust-lang", "architecture", "data-science", "security-audit"],
     "mobile": ["frontend-uiux", "security-audit"],
-    "security": ["security-audit", "architecture"],
+    "security": ["security-audit", "architecture", "mcp-security"],
     "architecture": ["architecture", "rust-lang"],
-    "trading": ["quant-trading", "alpha-research", "risk-execution"],
+    "trading": ["quant-trading", "alpha-research", "risk-execution", "alpha-mining"],
     "research": ["alpha-research", "science-doc", "data-science"],
     "legal": ["legal-doc", "science-doc"],
     "health": ["healthtech", "data-science", "security-audit"],
@@ -157,9 +177,33 @@ DOMAIN_SKILLS: dict[str, list[str]] = {
     "devops": ["rust-lang", "security-audit", "devops-infra", "swarm-release-ops"],
     "quality": ["agent-rigor", "atdd-spec", "security-audit"],
     "general": ["architecture", "security-audit", "data-science", "rust-lang"],
+    # Dominios añadidos para alcanzar el resto del registry (sincronizacion).
+    "meta": ["evolve", "skill-engineering"],
+    "academic": ["math-doc", "science-doc"],
+    "finance": ["hedgefund"],
+    "business": ["business-strategy"],
+    "management": ["project-management"],
+    "communication": ["communication"],
+    "design": ["creative-design", "diagram-design"],
+    "psychology": ["psychology"],
+    "education": ["education", "cert-master"],
+    "ethics": ["ethics"],
+    "economics": ["behavioral-economics"],
+    "linguistics": ["linguistics"],
+    "sociology": ["sociology"],
+    "sustainability": ["sustainability"],
+    "science": ["physical-sciences"],
+    "risk-intelligence": ["risk-intelligence"],
+    "ads": ["ads-optimizer"],
+    "orchestration": ["process-over-tools"],
+    "reverse-engineering": ["reverse-engineering"],
+    "codebase-comprehension": ["codebase-comprehension"],
+    "architecture-review": ["architecture-review"],
+    "tooling": ["mcp-toolkit"],
 }
 
-# Palabras clave para deteccion de dominio
+# Palabras clave para deteccion de dominio (por dominio de DOMAIN_SKILLS salvo
+# "general", que es el fallback). Las nuevas derivan de las descriptions del SSOT.
 DOMAIN_KEYWORDS: dict[str, list[str]] = {
     "web": ["pagina web", "sitio web", "website", "http server"],
     "api": ["api", "endpoint", "graphql", "grpc", "microservice"],
@@ -176,6 +220,29 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
     "retail": ["retail", "punto de venta", "pos", "tienda", "inventario", "facturacion"],
     "devops": ["devops", "ci/cd", "deploy", "kubernetes", "docker", "infraestructura"],
     "quality": ["quality gate", "mutation testing", "code review", " QA ", " TDD ", "cobertura"],
+    # Triggers de los dominios sincronizados (derivados de las descriptions).
+    "meta": ["evolve", "evoluciona", "auto-mejora", "auto mejora", "self-improve", "cognition", "meta-aprendizaje", "skill", "frontmatter", "progressive disclosure", "drift", "lifecycle"],
+    "academic": ["matematicas", "math", "latex", "teorema", "theorem", "demostracion", "ecuacion", "equation", "estadistica", "algebra", "calculo"],
+    "finance": ["hedge fund", "fondo", "capital", "mandato", "stop-loss", "asignacion de capital", "institucional", "riesgo-reward"],
+    "business": ["dofa", "swot", "porter", "canvas", "plan de negocio", "modelo de negocio", "posicionamiento", "roi", "kpi", "okr"],
+    "management": ["scrum", "kanban", "planificacion", "seguimiento", "estimaciones", "stakeholders", "gestion de proyecto", "sprint"],
+    "communication": ["escritura ejecutiva", "storytelling", "negociacion", "presentaciones", "liderazgo", "comunicacion persuasiva"],
+    "design": ["design thinking", "ideacion", "prototipado", "branding", "brainstorming", "identidad visual", "diagrama", "flowchart", "mermaid", "drawio", "svg", "swimlane", "timeline", "org chart", "state machine"],
+    "psychology": ["psicologia", "cognitiva", "organizacional", "comportamiento", "motivacion"],
+    "education": ["educativo", "pedagogia", "andragogia", "bloom", "microlearning", "instruccional", "formacion", "ensenanza"],
+    "ethics": ["etica", "alineamiento", "valores", "filosofia", "sesgo", "marcos eticos"],
+    "economics": ["teoria de juegos", "sesgos cognitivos", "heuristicas", "incentivos", "nudges", "economia conductual"],
+    "linguistics": ["linguistica", "semiotica", "pragmatica", "analisis del discurso", "lenguaje natural", "nlp"],
+    "sociology": ["sociologia", "antropologia", "redes sociales", "cultura digital", "grupos sociales"],
+    "sustainability": ["sostenibilidad", "esg", "impacto ambiental", "economia circular", "cambio climatico"],
+    "science": ["fisica", "quimica", "biologia", "metodo cientifico", "ciencias naturales", "diseno experimental"],
+    "risk-intelligence": ["riesgos emergentes", "cro forum", "geopolitico", "climatico", "escenarios de riesgo"],
+    "ads": ["meta ads", "google ads", "campana publicitaria", "publicidad", "conversion", "targeting", "bidding"],
+    "orchestration": ["adopcion de herramienta", "adoptar herramienta", "proceso sobre herramienta", "medicion y escalado", "evaluar herramienta"],
+    "reverse-engineering": ["ingenieria inversa", "reverse engineering", "decompile", "ghidra", "hopper", "asar", "xrefs"],
+    "codebase-comprehension": ["codebase", "onboarding", "repo map", "call graph", "ctags", "hotspots", "blast radius"],
+    "architecture-review": ["conformance", "conformance check", "violaciones de capas", "ciclos de imports", "fitness functions", "archguard", "deuda arquitectonica"],
+    "tooling": ["mcp", "herramienta", "herramientas", "browser", "scrape", "scraping", "catalogo", "tool selection", "integracion de api"],
 }
 
 #: Keywords de testing que agregan seguridad a cualquier dominio.
@@ -185,6 +252,12 @@ _TASK_TEST_KEYWORDS: tuple[str, ...] = ("test", "testing", "tests")
 _TASK_DOC_KEYWORDS: tuple[str, ...] = ("doc", "docs", "documentacion")
 #: Skills de documentacion disparadas por `_TASK_DOC_KEYWORDS`.
 _TASK_DOC_SKILLS: tuple[str, ...] = ("science-doc", "legal-doc")
+
+#: Skills atadas a un lenguaje/framework: solo se cargan si la tarea menciona
+#: el trigger como palabra completa (evita cargar Rust para un endpoint Python).
+_LANGUAGE_SKILL_TRIGGERS: dict[str, tuple[str, ...]] = {
+    "rust-lang": ("rust", "cargo", "crate", "tokio", "borrow"),
+}
 
 
 @dataclass
@@ -399,6 +472,14 @@ class SkillBundler:
             return []
 
         if task:
+            # Filtro por lenguaje/framework: una skill de Rust no aplica a una
+            # tarea Python (falso positivo del mapeo curado por dominio).
+            skills = [
+                skill
+                for skill in skills
+                if skill not in _LANGUAGE_SKILL_TRIGGERS
+                or match_keywords(task, _LANGUAGE_SKILL_TRIGGERS[skill])
+            ]
             if match_keywords(task, _TASK_TEST_KEYWORDS) and "security-audit" not in skills:
                 skills.append("security-audit")
             if match_keywords(task, _TASK_DOC_KEYWORDS):
@@ -407,6 +488,18 @@ class SkillBundler:
                         skills.append(skill)
 
         return _deduplicate_near_duplicates(skills)
+
+    def skill_for_agent(self, agent: str) -> str | None:
+        """Devuelve la skill homonima del agente si existe en el registry.
+
+        Args:
+            agent: Rol del agente elegido (p. ej. ``"evolve"``).
+
+        Returns:
+            Nombre de la skill si el registry la declara; ``None`` si no.
+        """
+        names = {str(skill.get("name", "")) for skill in self._skills}
+        return agent if agent in names else None
 
     def compose(
         self,

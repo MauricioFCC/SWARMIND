@@ -22,6 +22,7 @@ from .constants import (
     DEFAULT_EMBEDDING_DIM,
     DEFAULT_SIMILARITY_THRESHOLD,
     DEFAULT_TTL_SECONDS,
+    SWEEP_EVERY_N_SETS,
 )
 from .core import SemanticCache
 from .models import CacheEntry
@@ -31,6 +32,7 @@ __all__ = [
     "DEFAULT_EMBEDDING_DIM",
     "DEFAULT_SIMILARITY_THRESHOLD",
     "DEFAULT_TTL_SECONDS",
+    "SWEEP_EVERY_N_SETS",
     "CacheEntry",
     "SemanticCache",
 ]

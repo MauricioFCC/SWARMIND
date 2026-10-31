@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import logging
 import random
+import re
+import unicodedata
 import zlib
 from dataclasses import dataclass
 from functools import lru_cache
@@ -36,6 +38,7 @@ from harness.orchestrator.routing_mutation import (
     mutate,
 )
 from harness.orchestrator.skill_bundler import SkillBundler
+from harness.tools_sandbox.mcp_catalog import servers_for_task
 
 logger = logging.getLogger("harness.orchestrator.coordinator_dispatch")
 
@@ -70,6 +73,7 @@ class DispatchPlan:
     Attributes:
         agent: Agente especializado asignado.
         skills: Skills cargadas (<= presupuesto).
+        tools: Servers MCP (herramientas) aplicables a la tarea.
         backend: "local" o "cloud".
         deterministic: True si va por path sin LLM.
         output_contract: Contrato JSON de salida (enfocado).
@@ -82,6 +86,7 @@ class DispatchPlan:
 
     agent: str
     skills: tuple[str, ...] = ()
+    tools: tuple[str, ...] = ()
     backend: str = "local"
     deterministic: bool = False
     output_contract: str = '{"result": "string"}'
@@ -234,7 +239,13 @@ def dispatch(
     agents = active_selector.select(task, skill="general")
     agent = agents[0] if agents else "coordinator"
     domain = _domain_for(lowered)
-    skills = tuple(active_bundler.select_skills(domain, task)[:max_skills])
+    skills = tuple(active_bundler.select_skills(domain, task))
+    # El agente elegido carga su skill homonima (SSOT del registry) antes del
+    # tope de presupuesto: "evolve" debe llevar la skill "evolve".
+    agent_skill = active_bundler.skill_for_agent(agent)
+    if agent_skill:
+        skills = tuple(dict.fromkeys((agent_skill, *skills)))
+    skills = skills[:max_skills]
     if not skills:
         skills = ("general",)
     mutant = _mutate_routing(agent, skills, task)
@@ -246,16 +257,19 @@ def dispatch(
             f"routing mutado (QD): persona={mutant.persona}, "
             f"topo={mutant.topology}, temp={mutant.temperature}"
         )
+    tools = servers_for_task(lowered)
     backend = "local"
     reason = f"agente {agent} + {len(skills)} skills (local-first)"
     if _is_frontier_task(lowered):
         backend = "cloud"
         reason = "tarea frontier-only: cloud justificado (TKN)"
+    if tools:
+        reason = f"{reason}; {len(tools)} herramientas MCP: {', '.join(tools)}"
     if mutation:
         reason = f"{reason}; {mutation}"
     logger.info("dispatch: %s -> %s/%s", task[:60], agent, backend)
     return DispatchPlan(
-        agent=agent, skills=skills, backend=backend,
+        agent=agent, skills=skills, tools=tools, backend=backend,
         deterministic=False,
         output_contract='{"result": "string", "evidence": ["string"]}',
         oracle=oracle_sample, cloud_tokens=0 if backend == "local" else -1,
@@ -263,8 +277,17 @@ def dispatch(
     )
 
 
+def _strip_accents(text: str) -> str:
+    """Elimina diacríticos (``diseña`` -> ``disena``) para matching robusto."""
+    decomposed = unicodedata.normalize("NFKD", text)
+    return "".join(char for char in decomposed if not unicodedata.combining(char))
+
+
 def _is_frontier_task(lowered: str) -> bool:
     """True si la tarea requiere frontier (diseno/arquitectura profunda).
+
+    Normaliza acentos (``diseña`` -> ``disena``) y acepta variantes naturales
+    ("disena una arquitectura escalable") además del literal historico.
 
     Args:
         lowered: Tarea en minusculas.
@@ -272,5 +295,10 @@ def _is_frontier_task(lowered: str) -> bool:
     Returns:
         True para diseno/arquitectura completa.
     """
-    markers = ("arquitectura hexagonal completa", "disena la arquitectura")
-    return any(m in lowered for m in markers)
+    normalized = _strip_accents(lowered)
+    if "arquitectura hexagonal completa" in normalized:
+        return True
+    words = set(re.findall(r"[a-z]+", normalized))
+    return "arquitectura" in words and bool(
+        words & {"disena", "disenar", "diseno", "design", "escalable", "completa"}
+    )

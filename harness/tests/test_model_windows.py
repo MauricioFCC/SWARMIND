@@ -14,9 +14,9 @@ from harness.model_router.model_windows import (
     recommend_num_ctx,
 )
 
-_FAST = "qwen3-5-4b-gguf-ud-q4-k-xl"
-_QUALITY = "phi-4-mini-instruct-q4-k-m"
-_CODING = "qwen2.5-coder-3b-iq4-xs"
+_FAST = "phi-4-mini-reasoning-q4-k-m"
+_QUALITY = "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"
+_CODING = "qwen3-4b-thinking-2507-q4-k-m"
 _EMBEDDING = "qwen3-embedding-0-6b"
 
 
@@ -45,7 +45,7 @@ def test_retired_models_fall_to_default() -> None:
 
 
 def test_recommend_fleet_windows_declared() -> None:
-    """La flota reducida declara su ventana segura: 4 modelos a 8192 (ADR-0101)."""
+    """La flota instalada declara su ventana segura: 4 modelos a 8192 (ADR-0101)."""
     assert recommend_num_ctx(_FAST) == 8192
     assert recommend_num_ctx(_QUALITY) == 8192
     assert recommend_num_ctx(_CODING) == 8192

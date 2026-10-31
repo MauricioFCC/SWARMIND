@@ -14,7 +14,7 @@ from typing import Any
 import numpy as np
 
 from .constants import _COLLECTION, _VALID_MESSAGE_TYPES, _VALID_STATUSES
-from .core import AgentBusError
+from .errors import AgentBusError
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +158,13 @@ class _MessagingMixin:
 
         try:
             self.store.insert(_COLLECTION, vector, [metadata])
+            # Summary-based communication (token-efficient): almacena resumen compacto
+            sc = getattr(self, "summary_comm", None)
+            if sc is not None:
+                try:
+                    sc.store_summary(from_agent, message[:200], {"channel": channel, "to": to_agent, "type": message_type})
+                except Exception:  # noqa: BLE001, S110
+                    pass
             logger.info(
                 "Mensaje %s publicado en %s: %s -> %s [%s]",
                 msg_id[:8], channel, from_agent, to_agent, message_type,

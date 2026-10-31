@@ -27,6 +27,75 @@ logger = logging.getLogger("harness.memory_rag.semantic_cache")
 class _SemanticCacheOpsMixin:
     """Metodos privados de ``SemanticCache`` (backend y utilidades)."""
 
+    def _native_lance(self) -> Any:
+        """Devuelve el ``_db`` de LanceDB si el store lo expone; si no, None.
+
+        El cache no debe asumir un backend concreto (ADR-0098): RuscaDB, el
+        default, no tiene ``_lancedb_available``/``_mem_collections``.
+        """
+        if getattr(self._store, "_lancedb_available", False):
+            return getattr(self._store, "_db", None)
+        return None
+
+    def _persistent_cache(self) -> Any:
+        """Devuelve el store si expone la API de cache persistente, o None."""
+        if callable(getattr(self._store, "semantic_cache_get", None)):
+            return self._store
+        return None
+
+    def _list_cache_entries(self) -> list[dict[str, Any]]:
+        """Lista los metadatos de las entradas del cache (cualquier backend).
+
+        Returns:
+            Lista de dicts de metadata; las entradas persistentes exponen su
+            clave como ``prompt_hash``.
+        """
+        persistent = self._persistent_cache()
+        if persistent is not None and self._native_lance() is None:
+            entries = getattr(persistent, "semantic_cache_entries", None)
+            if not callable(entries):
+                return []
+            return [
+                {
+                    "prompt_hash": str(item.get("id") or ""),
+                    **(item.get("metadata") or {}),
+                }
+                for item in entries()
+                if (item.get("metadata") or {}).get("kind") != "threshold"
+            ]
+        try:
+            db = self._native_lance()
+            if db is not None:
+                rows = (
+                    db.open_table(COLLECTION_SEMANTIC_CACHE)
+                    .search()
+                    .limit(100000)
+                    .to_list()
+                )
+                out: list[dict[str, Any]] = []
+                for row in rows:
+                    meta = row.get("metadata")
+                    if isinstance(meta, str):
+                        try:
+                            meta = json.loads(meta)
+                        except (json.JSONDecodeError, TypeError):
+                            meta = {}
+                    if isinstance(meta, dict):
+                        out.append(meta)
+                return out
+            col = getattr(self._store, "_mem_collections", {}).get(
+                COLLECTION_SEMANTIC_CACHE
+            )
+            if col:
+                return [dict(item.metadata) for item in col.items.values()]
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("semantic_cache: %s", exc)
+        return []
+
+    def _uses_lancedb_scores(self) -> bool:
+        """Indica si los scores del store son distancias L2 (LanceDB)."""
+        return self._native_lance() is not None
+
     def _normalize_similarity(self, raw_score: float) -> float:
         """Normalize raw score to a 0-1 similarity value (1 = identical).
 
@@ -36,7 +105,7 @@ class _SemanticCacheOpsMixin:
         El fallback in-memory usa cosine similarity (1 = identical, -1 = opposite),
         que se usa directamente (clamped a 0-1).
         """
-        if getattr(self._store, '_lancedb_available', False):
+        if self._uses_lancedb_scores():
             # LanceDB: raw_score is L2 distance -> convertir a similitud
             return 1.0 / (1.0 + raw_score)
         # In-memory: raw_score is cosine similarity -> clamp a [0, 1]
@@ -44,8 +113,30 @@ class _SemanticCacheOpsMixin:
 
     @staticmethod
     def _hash_prompt(prompt: str) -> str:
-        """Generar hash deterministico del prompt para busqueda exacta."""
-        return hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+        """Hash SHA-256 estable del prompt (sin version de dataset).
+
+        Args:
+            prompt: Texto a hashear.
+
+        Returns:
+            Hexadecimal SHA-256.
+        """
+        return hashlib.sha256(prompt.encode()).hexdigest()
+
+    def _cache_key(self, prompt: str) -> str:
+        """Clave del cache: version de dataset + prompt.
+
+        Un bump de ``dataset_version`` cambia todas las claves y deja de servir
+        respuestas de la version anterior sin escanear la tabla.
+
+        Args:
+            prompt: Prompt normalizado del agente.
+
+        Returns:
+            SHA-256 hexadecimal de ``<version>\\n<prompt>``.
+        """
+        version = str(getattr(self, "_dataset_version", "") or "")
+        return self._hash_prompt(f"{version}\n{prompt}")
 
     def _search_exact(
         self, prompt_hash: str, agent_role: str
@@ -53,13 +144,18 @@ class _SemanticCacheOpsMixin:
         """
         Buscar por hash exacto.
 
-        Para LanceDB usa filtro ``WHERE`` directamente sobre la columna
-        ``prompt_hash`` (mas eficiente que escanear top_k). Para el
-        fallback in-memory itera sobre los items de la coleccion.
+        Estrategia por backend:
+          - LanceDB: filtro ``WHERE prompt_hash = ...`` (barato).
+          - Store con cache persistente (RuscaDB): ``semantic_cache_get``.
+          - Fallback in-memory: iteracion sobre los items de la coleccion.
         """
+        native = self._persistent_cache()
+        if native is not None:
+            return self._search_exact_persistent(native, prompt_hash, agent_role)
         try:
-            if self._store._lancedb_available and self._store._db is not None:
-                tbl = self._store._db.open_table(COLLECTION_SEMANTIC_CACHE)
+            db = self._native_lance()
+            if db is not None:
+                tbl = db.open_table(COLLECTION_SEMANTIC_CACHE)
                 # Construir WHERE con prompt_hash (+ agent_role si aplica)
                 where_clause = f"prompt_hash = '{prompt_hash}'"
                 if agent_role != "*":
@@ -72,7 +168,9 @@ class _SemanticCacheOpsMixin:
                 )
             else:
                 # Fallback in-memory
-                col = self._store._mem_collections.get(COLLECTION_SEMANTIC_CACHE)
+                col = getattr(self._store, "_mem_collections", {}).get(
+                    COLLECTION_SEMANTIC_CACHE
+                )
                 results = []
                 if col:
                     for item in col.items.values():
@@ -123,8 +221,53 @@ class _SemanticCacheOpsMixin:
             return response, entry
         return None
 
+    def _search_exact_persistent(
+        self, store: Any, prompt_hash: str, agent_role: str
+    ) -> tuple[str, CacheEntry] | None:
+        """Lookup exacto contra la API de cache persistente del store.
+
+        Args:
+            store: Store que expone ``semantic_cache_get``.
+            prompt_hash: Hash del prompt (clave persistente).
+            agent_role: Rol del agente (informativo: la clave es el hash).
+
+        Returns:
+            ``(respuesta, entrada)`` o ``None`` si no hay valor vigente.
+        """
+        try:
+            getter = getattr(store, "semantic_cache_get_meta", None)
+            if callable(getter):
+                stored = getter(prompt_hash)
+                if stored is None:
+                    return None
+                value, extra = stored
+            else:
+                value = store.semantic_cache_get(prompt_hash)
+                extra = {}
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("semantic_cache_get fallo: %s", exc)
+            return None
+        if not isinstance(value, str) or not value:
+            return None
+        stamp = datetime.now(UTC).isoformat()
+        return value, CacheEntry(
+            prompt_hash=prompt_hash,
+            prompt_text="",
+            response=value,
+            agent_role=agent_role,
+            created_at=stamp,
+            last_accessed=stamp,
+            ttl_seconds=self._default_ttl,
+            metadata=dict(extra),
+        )
+
     def _update_hit_count(self, entry: CacheEntry) -> None:
         """Incrementar contador de hits para una entrada."""
+        if self._persistent_cache() is not None and self._native_lance() is None:
+            # El cache persistente (RuscaDB) no expone update parcial por clave;
+            # el hit_count es telemetria, no correccion: se omite sin ruido.
+            logger.debug("hit_count no soportado por el backend persistente")
+            return
         try:
             self._store.update_records(
                 COLLECTION_SEMANTIC_CACHE,
@@ -144,12 +287,22 @@ class _SemanticCacheOpsMixin:
         Para LanceDB usa ``tbl.delete()`` con filtro SQL directo.
         Para el fallback in-memory remueve el item del diccionario.
         """
+        persistent = self._persistent_cache()
+        if persistent is not None and self._native_lance() is None:
+            deleter = getattr(persistent, "semantic_cache_delete", None)
+            if callable(deleter):
+                deleter(prompt_hash)
+            logger.debug("Cache entry deleted (persistent, hash=%s)", prompt_hash[:8])
+            return
         try:
-            if self._store._lancedb_available and self._store._db is not None:
-                tbl = self._store._db.open_table(COLLECTION_SEMANTIC_CACHE)
+            db = self._native_lance()
+            if db is not None:
+                tbl = db.open_table(COLLECTION_SEMANTIC_CACHE)
                 tbl.delete(f"prompt_hash = '{prompt_hash}'")
             else:
-                col = self._store._mem_collections.get(COLLECTION_SEMANTIC_CACHE)
+                col = getattr(self._store, "_mem_collections", {}).get(
+                    COLLECTION_SEMANTIC_CACHE
+                )
                 if col:
                     to_del = [
                         key
@@ -324,8 +477,9 @@ class _SemanticCacheOpsMixin:
             )
         else:
             # Fallback in-memory: recrear
-            if COLLECTION_SEMANTIC_CACHE in self._store._mem_collections:
-                del self._store._mem_collections[COLLECTION_SEMANTIC_CACHE]
+            mem = getattr(self._store, "_mem_collections", {})
+            if COLLECTION_SEMANTIC_CACHE in mem:
+                del mem[COLLECTION_SEMANTIC_CACHE]
             self._store.create_collection(COLLECTION_SEMANTIC_CACHE)
             logger.info("Recreated collection '%s' (in-memory overwrite)", COLLECTION_SEMANTIC_CACHE)
 
@@ -341,8 +495,9 @@ class _SemanticCacheOpsMixin:
             True si se elimino una entrada pendiente, False en caso contrario.
         """
         try:
-            if self._store._lancedb_available and self._store._db is not None:
-                tbl = self._store._db.open_table(COLLECTION_SEMANTIC_CACHE)
+            db = self._native_lance()
+            if db is not None:
+                tbl = db.open_table(COLLECTION_SEMANTIC_CACHE)
                 results = (
                     tbl.search(EMPTY_VECTOR.tolist())
                     .where(f"prompt_hash = '{prompt_hash}'")
@@ -353,7 +508,9 @@ class _SemanticCacheOpsMixin:
                     tbl.delete(f"prompt_hash = '{prompt_hash}'")
                     return True
             else:
-                col = self._store._mem_collections.get(COLLECTION_SEMANTIC_CACHE)
+                col = getattr(self._store, "_mem_collections", {}).get(
+                    COLLECTION_SEMANTIC_CACHE
+                )
                 if col:
                     for key, item in list(col.items.items()):
                         if item.metadata.get("prompt_hash") == prompt_hash and "[PENDING]" in item.metadata.get("response", ""):

@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from harness.qa import QALayer, QAMetadata
+from harness.qa.types import QALayer, QAMetadata
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-"""CodexAdapter — Adaptador para Codex CLI de OpenAI.
+"""CodexAdapter â€” Adaptador para Codex CLI de OpenAI.
 
 Convierte agentes Swarmind (.opencode/agents/) al formato nativo de Codex CLI:
 
@@ -12,7 +12,6 @@ Referencia: github.com/openai/codex
 from __future__ import annotations
 
 import logging
-import shutil
 from pathlib import Path
 
 from harness.orchestrator.multi_harness.converter_base import (
@@ -51,7 +50,6 @@ class CodexAdapter(HarnessConverter):
             ExportResult con el resultado.
         """
         agents: list[Path] = self._get_opencode_agents()
-        errors: list[str] = []
 
         if not agents:
             return ExportResult(success=True, files_exported=0)
@@ -61,15 +59,7 @@ class CodexAdapter(HarnessConverter):
             return ExportResult(success=True, files_exported=len(agents))
 
         target_prompts_dir: Path = self._ensure_target_dir("prompts")
-        count: int = 0
-        for agent_file in agents:
-            dest: Path = target_prompts_dir / agent_file.name
-            try:
-                shutil.copy2(str(agent_file), str(dest))
-                count += 1
-                logger.debug("[Codex] Exportado agente: %s", agent_file.name)
-            except OSError as exc:
-                errors.append(f"Error copiando {agent_file.name}: {exc}")
+        count, errors = self._copy_agents(target_prompts_dir, "Codex")
 
         return ExportResult(
             success=len(errors) == 0,
@@ -88,7 +78,6 @@ class CodexAdapter(HarnessConverter):
             ExportResult con el resultado.
         """
         skills: list[Path] = self._get_opencode_skills()
-        errors: list[str] = []
 
         if not skills:
             return ExportResult(success=True, files_exported=0)
@@ -98,14 +87,7 @@ class CodexAdapter(HarnessConverter):
             return ExportResult(success=True, files_exported=len(skills))
 
         target_skills_dir: Path = self._ensure_target_dir("prompts", "skills")
-        count: int = 0
-        for skill_file in skills:
-            dest: Path = target_skills_dir / skill_file.name
-            try:
-                shutil.copy2(str(skill_file), str(dest))
-                count += 1
-            except OSError as exc:
-                errors.append(f"Error copiando {skill_file.name}: {exc}")
+        count, errors = self._copy_skills(target_skills_dir, "Codex")
 
         return ExportResult(
             success=len(errors) == 0,

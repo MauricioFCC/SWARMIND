@@ -1,4 +1,4 @@
-﻿"""Tests de agent_card — identidad y descubrimiento A2A local (ADR-0058)."""
+"""Tests de agent_card — identidad y descubrimiento A2A local (ADR-0058)."""
 from __future__ import annotations
 
 import json

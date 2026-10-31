@@ -134,7 +134,7 @@ def resolve_role(role_alias: str) -> str | None:
     """
     agents = _get_agents()
     canonical = discovery_resolve_agent(role_alias, agents)
-    return canonical if canonical else None
+    return canonical or None
 
 
 def _parse_mention(task: str) -> tuple[str | None, str]:

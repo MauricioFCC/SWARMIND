@@ -23,13 +23,13 @@ Mutantes:
   M2  link a references/ roto (archivo renombrado) -> validate FAIL
   M3  SKILL.min.md truncado                        -> validate FAIL (digest)
   M4  SKILL.md modificado tras hashear (drift)     -> validate FAIL (digest)
-  M5  skill duplicada sin registry                 -> validate FAIL (sync)
-  M6  seccion '## Ejemplo' eliminada               -> GAP (no hay gate): xfail
+  M5  skill duplicada (mismo cuerpo, otro nombre)   -> validate FAIL (dedup)
+  M6  seccion '## Ejemplo' eliminada               -> validate FAIL (gate)
 
-Los gaps descubiertos se documentan con ``xfail(strict=True)``: fallaran en
-cuanto alguien implemente el gate (XPASS -> failure), forzando actualizar el
-test. Todo aislado con monkeypatch de ``_SKILLS_DIR``/``_REGISTRY`` (el validador
-no acepta un parametro de directorio de skills).
+Los gates M5/M6 se implementaron en el ciclo 11.64 (ya no hay `xfail`): el
+validador exige `## Ejemplo` y rechaza cuerpos duplicados. Todo aislado con
+monkeypatch de ``_SKILLS_DIR``/``_REGISTRY`` (el validador no acepta un
+parametro de directorio de skills).
 """
 
 from __future__ import annotations
@@ -373,17 +373,8 @@ def test_m5_duplicado_fuera_de_registry_validate_rechaza(tmp_path: Path, monkeyp
     assert any("demo-skill-copy" in e and "no en" in e for e in errors), errors
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="GAP: no hay gate de duplicado semantico (mismo contenido, distinto nombre)",
-)
-def test_gap_m5_duplicado_semantico_no_detectado(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """M5-gap: dos skills forkeadas, ambas registradas con digest correcto.
-
-    Ningun gate las marca como duplicadas. Se espera xfail: al implementarse
-    dedup semantico el test pasara (XPASS) y `strict=True` obligara a actualizar
-    la expectativa.
-    """
+def test_m5_duplicado_semantico_detectado(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """M5: dos skills con el mismo cuerpo (distinto nombre) se rechazan."""
     skill_dir, _ = _seed_valid_tree(tmp_path, with_digest=False)
     copy_dir = _fork_skill(skill_dir, tmp_path / "demo-skill-copy", "demo-skill-copy")
     registry = tmp_path / "skills_registry.yaml"
@@ -398,29 +389,18 @@ def test_gap_m5_duplicado_semantico_no_detectado(tmp_path: Path, monkeypatch: py
     )
     _wire(monkeypatch, tmp_path, registry)
 
-    errors = vs._validate_skill(skill_dir, quiet=True)
-    errors += vs._validate_skill(copy_dir, quiet=True)
-    errors += vs._validate_registry(quiet=True)
+    errors = vs._validate_unique_bodies()
 
-    assert any("duplicad" in e.lower() for e in errors), errors
+    assert any("duplicado" in e.lower() for e in errors), errors
 
 
 # ===========================================================================
-# M6 — seccion '## Ejemplo' eliminada (GAP documentado)
+# M6 — seccion '## Ejemplo' obligatoria
 # ===========================================================================
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="GAP: no existe gate que exija la seccion '## Ejemplo' en las skills",
-)
-def test_gap_m6_ejemplo_no_obligatorio(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """M6-gap: eliminar '## Ejemplo' no es rechazado por ningun gate.
-
-    Se usa un registry SIN digest para aislar la pregunta (sin ruido de content
-    drift): la unica causa posible de error seria un gate de ejemplos. Al no
-    existir, la skill sigue "valida" -> xfail documenta el hueco.
-    """
+def test_m6_ejemplo_es_obligatorio(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """M6: eliminar '## Ejemplo' invalida la skill."""
     skill_dir, registry = _seed_valid_tree(tmp_path, with_digest=False)
     _wire(monkeypatch, tmp_path, registry)
     skill_md = skill_dir / "SKILL.md"

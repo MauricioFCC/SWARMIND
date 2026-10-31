@@ -9,7 +9,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](pyproject.toml)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
-[![Tests](https://img.shields.io/badge/tests-5383_passing-brightgreen.svg)](harness/tests/)
+[![Tests](https://img.shields.io/badge/tests-7000%2B%20passing-brightgreen.svg)](harness/tests/)
 [![CI](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml/badge.svg)](https://github.com/MauricioFCC/SWARMIND/actions/workflows/ci.yml)
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -49,7 +49,7 @@ cd SWARMIND
 # 3. Run the test suite
 uv run python -m pytest harness/tests/ -q
 
-# 4. Optional: enable CUDA GPU acceleration (reinstalls the torch CUDA wheel)
+# 4. Optional: CUDA GPU acceleration (installs torch + the CUDA wheel)
 python scripts/enable_gpu.py
 
 # 5. Launch the interactive menu
@@ -58,6 +58,42 @@ launcher.bat   # Windows
 ```
 
 > **Alternative:** `python scripts/setup_swarmind.py` performs the same auto-setup
+
+### Fresh install without the setup script (pip / Docker)
+
+The core install is intentionally light: **no GPU and no LanceDB required**.
+
+```bash
+git clone https://github.com/MauricioFCC/SWARMIND.git
+cd SWARMIND
+python -m pip install .            # numpy, pyyaml, requests, schedule
+python scripts/new_user_smoke.py   # import + memory backend + CLI + degradation
+```
+
+Optional extras:
+
+| Extra | What it adds |
+|---|---|
+| `.[lancedb]` | LanceDB backend (persistent vector store) |
+| `.[gpu]` | PyTorch (CUDA) for `harness/gpu_optimize.py` |
+| `.[docs]` | `firecrawl-anydoc` for PDF/DOCX ingestion |
+| `.[test]` | pytest, hypothesis, pytest-asyncio, ... |
+
+Docker (reproducible fresh-user check, Linux):
+
+```bash
+docker build -t swarmind-harness .
+docker run --rm swarmind-harness
+# with LanceDB:
+docker build --build-arg EXTRAS=lancedb -t swarmind-harness:lancedb .
+# or with compose (non-root UID 1001, ./data mounted):
+docker compose build && docker compose run --rm swarmind
+```
+
+> **Platform note:** the RuscaDB C-ABI ships as a per-platform artifact
+> (`ruscadb_ffi.dll` on Windows). On Linux/macOS without it, `capabilities()`
+> reports `False` and the harness degrades to LanceDB or the in-memory backend;
+> install `.[lancedb]` for persistence.
 > (Windows-oriented, uses copy instead of symlinks). Use `install.sh` / `install.ps1`
 > for idempotent, symlink-based setup on any OS.
 
@@ -99,8 +135,11 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 - **Distributed-systems tooling (ADR-0076)**: `tool_output_filter.py` (rtk wrapper: up to 90% less bash output, opt-in passthrough), `idempotency_guard.py` (effect dedup by key+payload hash, replay cache), `structured_enforcer` strict keys (rejects trojan keys), `llm_grep.TgrepBackend` (Microsoft tgrep, opt-in); principles mandate Python/bash scripts (PowerShell corrupts UTF-8) + Linux-first tools.
 - **Verify-replan + trace replay (ADR-0079)**: `verify_replan_gate.py` (VMAO stop thresholds), `trace_viewer.py` (export trace.jsonl + deterministic replay without LLM), per-agent permissions in `opencode.json`, `agent-rigor` skill (PEC-35: pre-merge gates, anti-greenwashing).
 - **Competition harness (ADR-0080)**: `cp_spec_gate.py` (4-pillar pre-code gate: edges/invariants/complexity/io_constraints; attacks the 44% design+boundary at the gate) + `dual_verify.py` (fast vs brute-force with indexed mismatches).
+- **MCP security scanner (11.18, OWASP MCP Top-10)**: `harness/security/mcp_security_scan.py` — a real JSONC parser (comment blanking with line preservation, trailing commas, `://` intact) plus a deterministic `scan_mcp_config` with 5 categories: raw shell payloads, unpinned package managers (rug-pull/supply-chain), secrets in env (masked: key + length only), plaintext HTTP, and internal endpoints (LLM-SSRF surface) — spec hardened against the real `opencode.json` config (argv-list `command`, `environment`, nested `mcp.servers`).
+- **Skill-prose injection guard (11.18, arXiv 2608.29596)**: `harness/security/skill_guard.py` — strict frontmatter (name/domain/description/version/project_agnostic) + 7 case-insensitive hostile-prose patterns (ignore/disregard prior, role override, system-prompt takeover, hidden directives, exfiltration, remote download-and-exec); dogfooded over all 42 skills: 0 hostile, 5 missing `domain` fixed.
+- **Cost-aware routing policy (11.19, ADR fr-0001)**: `harness/model_router/cost_policy.py` — free→small→standard→frontier ladder, incremental-cost escalation ($0.05 threshold inserts a `standard` hop before a `frontier` jump), `free` tier for complexity ≤ 2 + output ≤ 2000, output-budget veto (> 4000 tokens vetoes ultra-expensive output models unless `force_tier`), and k-in-1 voting gated to the cheapest-input tier. Additive wiring: `CascadeRouter.plan_cost_aware_escalation` + `session_affinity.should_switch_on_cache_health` (0.60 aligned with `TokenUsageTracker.cache_health`).
 - **Local execution real (ADR-0078)**: `LocalExecutor` closes the loop (closed-task allowlist + cloud fallback; trivial = 0 cloud tokens), `pressure()` meter, `prune_then_summarize` pipeline, R1 reasoning discipline in principles.
-- **PEC universal in skills**: all 35 skills carry an expert persona + canonical frontier references per specialty (OWASP for security, HL7 FHIR for healthtech, Rust API Guidelines, RICOUI Brands for UI...) + anti-hedging rule (`scripts/apply_pec.py`, 176 tests) — ADR-0072.
+- **PEC universal in skills**: all 42 skills carry an expert persona + canonical frontier references per specialty (OWASP for security, HL7 FHIR for healthtech, Rust API Guidelines, RICOUI Brands for UI...) + anti-hedging rule (`scripts/apply_pec.py`, 176 tests) — ADR-0072.
 - **Universal principles v3.1.0**: 36 numbered principles with an adherence taxonomy (CHECK vs GUIDE, IFEval/DRFR), post-compaction re-pin rule (RPA), competition-programming fundamentals (CPD) and adversarial TDD/mutants/PBT/pairwise/BVA (TST/PBT) — ADR-0070/0077.
 - **Ollama CODING tier**: local `JackOD-9B-Coder` tier with precedence over QUALITY for code tasks + frontier-only keyword filter (`is_frontier_only`) — ADR-0069.
 - **opencode runs local by default**: `"model": "llamacpp/jackod-9b-coder-iq4-xs"` + `"small_model": "llamacpp/qwen3-5-4b-gguf-ud-q4-k-xl"` in `.opencode/opencode.json`, provider `llamacpp` (llama.cpp / llama-swap on `http://127.0.0.1:11434/v1`, OpenAI-compatible) with 6 registered local models by short name (fast `qwen3-5-4b-gguf-ud-q4-k-xl`, quality `mimo-v2-6-distill-qwen-9b-gguf-iq4-xs`, coding `jackod-9b-coder-iq4-xs`, reasoning `ornith-1-5-9b-gguf-q4-k-m`, embedding `qwen3-embedding-0-6b`, vision `qwen3-vl-4b`).
@@ -110,8 +149,8 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 - **deepseek-harness patterns — plugin lifecycle + session replay**: `harness/plugins/registry.py` extends `PluginBase` with `on_load()`/`on_unload()`/`events` (no-op defaults), `ToolRegistry` accepts an optional `event_bus` (DI) and auto-subscribes plugins to `on_{event}` handlers; `load_all()`/`unload_all()` are idempotent. `harness/observability/session_replay.py` provides `SessionReplay` to replay recorded sessions (Markdown/JSON export) with `SessionNotFoundError`. Demo: `harness/plugins/tools/example_tool.py` (`GreeterTool`).
 
 ### Memory & RAG
-- Central portable memory with LanceDB vector store (`harness/memory_rag/lance_vector_store.py`), semantic cache, SQLite-vec adapter (edge/offline backend), federated search, context window management, and `shapley_flow` optimization.
-- **Hybrid RAG (RRF)** (`harness/memory_rag/hybrid_retriever.py`): `HybridRetriever` fuses dense vector (LanceDB embeddings) and sparse BM25 (SQLite FTS5) rankings with **Reciprocal Rank Fusion** (k=60) — documents present in both rankings rank higher; DI over `FTSSearch` + `LanceVectorStore`.
+- Central portable memory with RuscaDB multi-model store (LanceDB legacy, opt-in) (`harness/memory_rag/lance_vector_store.py`), semantic cache, SQLite-vec adapter (edge/offline backend), federated search, context window management, and `shapley_flow` optimization.
+- **Hybrid RAG (RRF)** (`harness/memory_rag/hybrid_retriever.py`): `HybridRetriever` fuses dense vector (RuscaDB embeddings) and sparse BM25 (SQLite FTS5) rankings with **Reciprocal Rank Fusion** (k=60) — documents present in both rankings rank higher; DI over `FTSSearch` + `LanceVectorStore`.
 - **Corrective RAG (CRAG)** (`harness/memory_rag/corrective_retriever.py`): `CorrectiveRetriever` validates retrieval quality *before* generation (arXiv:2401.15884) — if poor, applies query rewrite or falls back to an alternative source, reporting the `corrective_action` taken (`none`/`rewrite`/`fallback`).
 - `AgentKPITracker`, compression strategies, context assembler, token budget managers, and skill loader.
 
@@ -122,11 +161,11 @@ The difference isn't the model. It's the harness. An agent without a harness is 
 ### GPU Acceleration
 - CUDA 12.6, RTX 4060 8GB, torch 2.13.0+cu126.
 - `harness/gpu_accel.py` + `harness/gpu_optimize.py` with measured speedups: vector search **x10.9 (10k)**, **x9.2 (100k)**, and embeddings at **41µs/msg**.
-- `scripts/enable_gpu.py` reinstalls the torch CUDA wheel after every `uv sync`.
+- `scripts/enable_gpu.py` installs torch with CUDA wheels (`.[gpu]` is the pip equivalent) and verifies the GPU.
 
 ### Developer Experience
 - One-command setup (`scripts/setup_swarmind.py`) and config menu (`config_swarmind.py`).
-- CPU-only PyPI torch wheel replaced by the CUDA wheel through a single script, portable across Linux/Mac/Windows.
+- Torch is an optional extra: `pip install ".[gpu]"` (or `scripts/enable_gpu.py` for the CUDA build); the core install stays CPU-light.
 - Full test suite, ruff-clean code, zero dead code (vulture), and zero architecture debt.
 
 ## Architecture
@@ -216,13 +255,14 @@ memory store. An interactive config menu is available via `config_swarmind.py`.
 
 ### GPU (optional)
 
-The PyPI torch wheel resolved by the lockfile is CPU-only on Windows/Linux. After setting up, activate CUDA with:
+The core install does **not** include torch (the harness never imports it
+eagerly). To use the GPU helpers, install the extra and verify CUDA:
 
 ```bash
 python scripts/enable_gpu.py
 ```
 
-This reinstalls the torch CUDA wheel and verifies it. **Important:** do not run `uv sync` after enabling CUDA, otherwise the CPU wheel is restored and the CUDA binary is lost; re-run `python scripts/enable_gpu.py` after any `uv sync`.
+`enable_gpu.py` installs the CUDA wheel and verifies it. It is safe to run after any `uv sync`, because the core dependencies no longer pin a CPU torch wheel.
 
 ### Portability
 
@@ -254,13 +294,17 @@ Interactive commands (`harness/run_commands/`):
 Central memory is the single source of truth (SSOT):
 
 - Default root: `~/Documents/Memory_Proyects` (override with `MEMORY_ROOT`).
-- Contains `data/lancedb` plus backups.
+- Contains the RuscaDB database (`data/ruscadb.db` by default), the optional
+  LanceDB store (`data/lancedb`) and backups.
 
 Resolution priority in `memory_config.py`:
 
-1. `LANCEDB_PATH` environment variable
-2. `.swarmind_config.json` (`MEMORY_ROOT`)
-3. Legacy `harness/db/lancedb`
+1. `RUSCADB_PATH` / `LANCEDB_PATH` environment variables (per backend)
+2. `.swarmind_config.json` (`memory_root`)
+3. Legacy `harness/db/*` defaults
+
+RuscaDB is the default backend; LanceDB is opt-in (`.[lancedb]`) and used
+automatically on platforms without the RuscaDB C-ABI.
 
 Backups are managed with `scripts/backup_memory.py`:
 
@@ -275,6 +319,7 @@ Duplicated databases were eliminated (7.5 GB reclaimed). The memory layout is po
 
 - **Model routing**: `harness/model_router/complexity_router/` emits small/frontier signals; `route_with_fallback` sends low-confidence requests (confidence < 0.7) to the frontier model.
 - **Cascade routing**: `cascade_router` tries small first and escalates on low confidence (STEER-lite), with per-attempt cost accounting; `session_affinity` keeps the tier sticky per session to avoid prefill re-payments.
+- **Cost-aware policy (ADR fr-0001)**: `cost_policy` plans escalation by incremental cost (a $0.05 threshold inserts a `standard` hop before a `frontier` jump), routes trivial tasks (complexity ≤ 2, output ≤ 2000) to a `free` tier, vetoes ultra-expensive output models when output > 4000 tokens (unless `force_tier`), and gates k-in-1 voting to the cheapest-input tier.
 - **Governed voting**: `ParallelExecutor` fans out to N=3 agents when the gate score is ≥ 70 and confidence < 0.7, with a budget of `MAX_TOKENS_BY_AGENT × 3`; `batch_vote` charges input once for k votes (the `n` parameter) with fallback.
 - **Structured outputs**: `structured_enforcer` validates every machine-readable verdict against a JSON schema with error-feedback retries (30× fewer parse failures).
 - **Token budgets**: budgets are the single source of truth (`token_budgets.yaml`), enforced by `TokenBudgetManager`; `cache_health` flags structural cache-busters (hit < 60% with volume).
@@ -301,7 +346,7 @@ python scripts/enable_gpu.py
 
 Quality is enforced continuously, not at the end:
 
-- **Test suite**: 5383 tests collected (TDD suite), mutation testing mutmut gate ≥70%.
+- **Test suite**: ~7000 tests collected (TDD suite), mutation testing mutmut gate ≥70%.
 - **Lint**: ruff — all checks passed.
 - **Dead code**: vulture — 0 dead code.
 - **Architecture debt (AGR)**: 0 files over 500 lines in non-test code; 32 flat modules refactored into packages with re-exporting `__init__.py`; mixins limited to ≤ 2 bases; SOLID corrected in 9 classes.
@@ -321,7 +366,8 @@ SWARMIND/
 │   │                              # debate_orchestrator, worktable, workflows,
 │   │                              # multi_harness (adapters+cli), parallel_executor.py
 │   ├── model_router/              # complexity_router, multi_provider,
-│   │                              # provider_health, ollama_client, ollama_tiers
+│   │                              # provider_health, ollama_client, ollama_tiers,
+│   │                              # cascade_router, session_affinity, cost_policy
 │   ├── memory_rag/                # lance_vector_store, semantic_cache,
 │   │                              # sqlite_vec_adapter, federated_search,
 │   │                              # agent_kpi_tracker, vector_store_adapter,
@@ -335,7 +381,8 @@ SWARMIND/
 │   │                              # gepa_mutator, nudge_system, evaluator,
 │   │                              # self_improver, procedural_memory, cognition_sync
 │   ├── validation/                # pbt_stage.py, mutation_stage.py (oracles reales)
-│   ├── security/                  # zero_trust.py
+│   ├── security/                  # zero_trust.py, mcp_security_scan.py,
+│   │                              # skill_guard.py (anti-injection)
 │   ├── hooks/                     # hook_manager, hook_registry, builtin_hooks
 │   ├── observability/             # OpenTelemetry, logging, session_replay
 │   ├── qa/                        # detector, generator, orchestrator, predictor
@@ -352,7 +399,7 @@ SWARMIND/
 │   ├── evals/                     # eval_factory
 │   ├── context/                   # token_budget_router, skill_contract
 │   ├── scripts/                   # init, rag_ingest, end_of_iteration, ...
-│   └── tests/                     # 224 test files (5383 tests)
+│   └── tests/                     # ~240 test files (~7000 tests)
 ├── scripts/                       # Repo-level tooling
 │   ├── setup_swarmind.py          # one-command setup (Python 3.12+, uv, uv sync, sync global, central memory)
 │   ├── enable_gpu.py              # reinstall torch CUDA wheel after uv sync
@@ -372,7 +419,7 @@ SWARMIND/
 │   │   └── guide/, technical/, reference/, skills/
 │   ├── src/en/SUMMARY.md
 │   └── .MEJORAS_SWARMIND.md
-├── .opencode/                     # agents (22), skills (35, PEC universal), config — SSOT
+├── .opencode/                     # agents (25), skills (42, PEC universal), config — SSOT
 ├── CHANGELOG.md
 ├── pyproject.toml
 └── README.md
@@ -383,7 +430,7 @@ SWARMIND/
 - [Documentation (ES) — primary language](docs/src/es/) — full docs in Spanish, the main documentation language.
 - [English summary](docs/src/en/SUMMARY.md)
 - [Roadmap](docs/src/es/roadmap/estado.md)
-- [Skills registry + residency tiers](docs/src/es/skills/registry.md) — 35 skills, PEC universal, REFERENCE/SAVED/INSTALLED
+- [Skills registry + residency tiers](docs/src/es/skills/registry.md) — 42 skills, PEC universal, REFERENCE/SAVED/INSTALLED
 - [CHANGELOG](CHANGELOG.md)
 - [Improvements log](docs/.MEJORAS_SWARMIND.md)
 

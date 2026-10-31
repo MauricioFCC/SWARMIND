@@ -1,8 +1,9 @@
-﻿"""
+"""
 Phase 4: Token Report — estimate consumption and efficiency.
 """
 from __future__ import annotations
 
+import pathlib
 import re
 import subprocess
 
@@ -19,8 +20,7 @@ from .config import (
 def _count_tokens_in_file(filepath: str) -> int:
     """Rough token estimation (chars / 4)."""
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            text = f.read()
+        text = pathlib.Path(filepath).read_text(encoding="utf-8")
         return len(text) // 4
     except Exception:  # noqa: BLE001
         return 0

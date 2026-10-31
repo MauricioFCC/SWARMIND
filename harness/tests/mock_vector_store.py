@@ -249,16 +249,26 @@ class MockVectorStore:
             return filtered
         return results
 
-    def delete(self, collection: str, key: str) -> None:
-        """Eliminar item de coleccion.
+    def delete(self, collection: str, key: str | list[str]) -> int:
+        """Elimina items de una coleccion por id (paridad con el puerto).
 
         Args:
             collection: Nombre de la coleccion.
-            key: Identificador del item a eliminar.
+            key: Id o lista de ids a eliminar.
+
+        Returns:
+            Numero de items eliminados (0 si la coleccion/ids no existen).
         """
         col = self._collections.get(collection)
-        if col:
-            col.delete(key)
+        if not col:
+            return 0
+        keys = [key] if isinstance(key, str) else list(key)
+        removed = 0
+        for item_key in keys:
+            if item_key in col.items:
+                col.delete(item_key)
+                removed += 1
+        return removed
 
     def list_tables(self) -> list[str]:
         """Listar colecciones disponibles.

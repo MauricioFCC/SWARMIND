@@ -24,8 +24,8 @@ from typing import Any
 
 import numpy as np
 
+from harness.domain.ports import VectorStorePort
 from harness.memory_rag.fts_search import FTSSearch
-from harness.memory_rag.lance_vector_store import LanceVectorStore
 
 # ---------------------------------------------------------------------------
 # Constantes (MAG)
@@ -70,7 +70,7 @@ class HybridRetriever:
 
     def __init__(
         self,
-        vector_store: LanceVectorStore,
+        vector_store: VectorStorePort,
         fts_search: FTSSearch,
         embed_fn: Callable[[str], np.ndarray],
         collection: str = _DEFAULT_COLLECTION,
@@ -110,6 +110,27 @@ class HybridRetriever:
         fused = self._fuse(dense_results, sparse_results)
         return sorted(fused, key=lambda item: item.score, reverse=True)[:top_k]
 
+    async def aretrieve(self, query: str, top_k: int = 5) -> list[HybridResult]:
+        """Version asincrona de :meth:`retrieve` (Spec ruscadb-async-io).
+
+        Ejecuta retrieval denso + disperso en un hilo del executor para no
+        bloquear el event loop del orchestrator (el C-ABI de RuscaDB es
+        sincrono y single-writer).
+
+        Args:
+            query: Consulta del usuario.
+            top_k: Maximo de resultados fusionados a devolver.
+
+        Returns:
+            Lista de HybridResult ordenada por score RRF descendente.
+
+        Raises:
+            ValueError: Si top_k no es positivo o la query es vacia.
+        """
+        import asyncio
+
+        return await asyncio.to_thread(self.retrieve, query, top_k)
+
     def _dense_retrieve(self, query: str, top_k: int) -> list[dict[str, Any]]:
         """Ejecuta la busqueda vectorial densa.
 
@@ -126,15 +147,17 @@ class HybridRetriever:
         )
 
     def _sparse_retrieve(self, query: str, top_k: int) -> list[dict[str, Any]]:
-        """Ejecuta la busqueda dispersa BM25 (FTS5).
+        """Ejecuta la busqueda dispersa BM25 (FTS5 o RuscaDB MATCH).
 
-        Args:
-            query: Consulta del usuario.
-            top_k: Maximo de resultados.
-
-        Returns:
-            Resultados del FTS con 'id' y 'score'.
+        Si el vector_store expone full_text_search (RuscaDB), se usa MATCH (BM25)
+        nativo de RuscaDB; si no, se usa el fts_search inyectado.
         """
+        vs = getattr(self, "_vector_store", None)
+        if vs is not None and hasattr(vs, "full_text_search"):
+            try:
+                return vs.full_text_search(self._collection, query, top_k=top_k)
+            except Exception:  # noqa: BLE001, S110
+                pass
         return self._fts_search.search(query, top_k=top_k)
 
     @staticmethod

@@ -1,4 +1,4 @@
-﻿"""Prompt Evolver — GEPA-inspired prompt mutation and evaluation.
+"""Prompt Evolver — GEPA-inspired prompt mutation and evaluation.
 
 Creates mutated variants of agent profile prompts, evaluates them against
 a test task, and promotes the winner to replace the original profile.

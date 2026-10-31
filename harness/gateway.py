@@ -1,4 +1,4 @@
-﻿"""
+"""
 Message Gateway — Abstract multi-channel messaging layer.
 
 Supports CLI (stdin/stdout), Slack (optional), and Telegram (optional)

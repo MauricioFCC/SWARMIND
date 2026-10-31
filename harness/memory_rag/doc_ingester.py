@@ -1,4 +1,4 @@
-﻿"""
+"""
 Document chunker and ingester for RAG pipelines.
 Reads .md/.py files, chunks into 20-30 line blocks, auto-tags metadata,
 vectorizes, and inserts into LanceVectorStore rag_chunks collection.

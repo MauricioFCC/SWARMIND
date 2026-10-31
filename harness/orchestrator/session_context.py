@@ -1,4 +1,4 @@
-﻿"""
+"""
 Session Context — Preserves execution state across iterations.
 
 Tracks the current plan, which subtasks are completed, what's pending,

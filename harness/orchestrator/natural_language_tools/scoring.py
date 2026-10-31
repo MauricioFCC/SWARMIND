@@ -131,7 +131,7 @@ class _ScoringMixin:
 
         # Senal 6: Fuzzy match sobre stems (peso 0.15)
         input_stem_text = " ".join(sorted(stems_input))
-        name_stem_text = name_stem if name_stem else name_lower
+        name_stem_text = name_stem or name_lower
         fuzzy_stem = SequenceMatcher(None, name_stem_text, input_stem_text).ratio()
         score += 0.15 * fuzzy_stem
 

@@ -1,4 +1,4 @@
-﻿"""
+"""
 workflow_patterns.py — Patrones de flujo reutilizables para orquestacion de agentes.
 
 4 patrones atomicos simples, intemporales y efectivos:

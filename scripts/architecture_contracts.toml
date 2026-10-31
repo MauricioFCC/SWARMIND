@@ -1,0 +1,41 @@
+# Contratos declarativos de dependencias (patron tach `depends_on`).
+#
+# Cada [[contracts]] declara un modulo y las dependencias internas que NO puede
+# importar (`forbidden`, por prefijo) o, si `allowed` no esta vacio, la
+# allow-list exhaustiva. El checker evalua imports a nivel de modulo (los
+# imports diferidos dentro de funciones no cuentan) y falla con F8.
+#
+# Anadir un contrato aqui es la forma de congelar una regla de arquitectura sin
+# escribir codigo nuevo.
+
+[[contracts]]
+name = "domain-puro"
+module = "harness.domain"
+forbidden = [
+    "harness.memory_rag",
+    "harness.orchestrator",
+    "harness.evolve_loop",
+    "harness.model_router",
+    "harness.run_commands",
+    "harness.qa",
+    "harness.benchmarks",
+    "harness.scripts",
+]
+allowed = []
+
+[[contracts]]
+name = "common-sin-orquestacion"
+module = "harness.common"
+forbidden = [
+    "harness.orchestrator",
+    "harness.run_commands",
+]
+allowed = []
+
+# El kernel es el sustrato determinista: agnostico del dominio. No puede
+# importar NADA de harness (solo stdlib); la composicion concreta vive en
+# harness/orchestrator/agent_bus/kernel_bus.py (adaptador).
+[[contracts]]
+name = "kernel-agnostico"
+module = "harness.kernel"
+allowed = ["harness.kernel"]

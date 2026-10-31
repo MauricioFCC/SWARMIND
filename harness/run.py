@@ -1,4 +1,4 @@
-﻿"""
+"""
 Harness — Multi-Agent Execution Engine (portable base)
 Entry point for the agent orchestration system with LanceDB memory.
 
@@ -37,6 +37,13 @@ from harness.cli_common import (
     get_harness_root,
     get_project_root,
     setup_logging,
+)
+from harness.run_support import (
+    _dispatch_task,
+    _handle_gateway_mode,
+    _parse_args,
+    _resolve_hitl_mode,
+    print_update_notice_if_due,
 )
 
 logger = setup_logging()
@@ -119,10 +126,6 @@ from harness.run_commands import (
 # ``from harness.run import _parse_args`` y los patches de los tests.
 from harness.run_support import (
     _USAGE_LINES,
-    _dispatch_task,
-    _handle_gateway_mode,
-    _parse_args,
-    _resolve_hitl_mode,
     _start_sandbox_if_needed,
 )
 
@@ -446,36 +449,52 @@ def _try_local_execution(
 
 
 def _check_lancedb_or_exit() -> None:
-    """Verifica LanceDB al inicio de main(). Si no está, sale con mensaje claro."""
+    """Verifica que exista al menos un backend de memoria antes de ejecutar.
+
+    LanceDB dejo de ser obligatorio cuando RuscaDB paso a ser el default: si la
+    DLL de RuscaDB esta disponible, el harness puede operar sin LanceDB.
+    """
     global HAS_LANCEDB  # noqa: PLW0602
     if HAS_LANCEDB:
+        return
+    try:
+        from harness.memory_rag.ruscadb import capabilities
+
+        caps = capabilities()
+    except Exception:  # noqa: BLE001 - sin DLL o import roto: no hay backend
+        caps = {}
+    if any(caps.values()):
         return
     import logging as _log
     _log.basicConfig(level=_log.INFO, format="%(message)s")
     _logger = _log.getLogger(__name__)
     _logger.info("=" * 60)
-    _logger.info("  LanceDB REQUERIDO - No se encontro instalado.")
+    _logger.info("  No hay backend de memoria disponible (LanceDB ni RuscaDB).")
     _logger.info("=" * 60)
     _logger.info("")
-    _logger.info("    pip install lancedb")
+    _logger.info('    pip install "Swarmind-harness[lancedb]"')
     _logger.info("    python harness/scripts/init.py")
     _logger.info("")
-    _logger.info("  El sistema NO puede funcionar sin LanceDB.")
+    _logger.info("  Alternativa sin Python extra: compilar la DLL de RuscaDB")
+    _logger.info("  (cargo build -p ruscadb-ffi) y dejarla en harness/memory_rag/.")
+    _logger.info("  Diagnostico: python scripts/new_user_smoke.py")
     _logger.info("=" * 60)
     sys.exit(1)
 
 
 def main() -> None:
     """Main entry point for the Harness."""
-    _check_lancedb_or_exit()
-
     parsed = _parse_args()
 
     if parsed.get("help"):
         _show_usage()
         return
 
+    _check_lancedb_or_exit()
+
     check_first_run(HARNESS_ROOT)
+
+    print_update_notice_if_due(HARNESS_ROOT)
 
     # --- Mode dispatch ---
     if parsed["gateway"]:

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tests para HITLGuard — Human-in-the-Loop approval for destructive actions.
 
 Cubre: check_action en modos hitl/auto_pilot/hitl_sensitive, request_approval
