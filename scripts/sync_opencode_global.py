@@ -117,13 +117,16 @@ _HARNESS_INCLUDE = ["orchestrator", "memory_rag", "tools_sandbox", "model_router
                     "domain",
                     # 11.61: sustrato determinista importado por
                     # orchestrator/agent_bus/kernel_bus.py.
-                    "kernel"]
+                    "kernel",
+                    # 11.66: CLI humano (!update, spec self-update-notice.md).
+                    "run_commands"]
 # Archivos raiz del paquete harness (fix ADR-0042: incluye __init__.py y
 # __main__.py para que el global sea un paquete importable; security_policy.py
 # vive en harness/qa/ y se copia via el directorio qa; scheduler.py paso a ser
 # el paquete harness/scheduler/ y se copia via _HARNESS_INCLUDE).
+# run_commands vive en _HARNESS_INCLUDE (es un paquete CLI, no un archivo).
 _HARNESS_FILES = ["__init__.py", "__main__.py", "common.py", "delegate.py",
-                  "run.py", "run_commands", "reset_state.py",
+                  "run.py", "run_support.py", "reset_state.py",
                   "cli_common.py", "gpu_accel.py", "gpu_optimize.py",
                   "vulture_whitelist.py"]
 
