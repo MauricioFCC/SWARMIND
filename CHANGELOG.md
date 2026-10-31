@@ -17,6 +17,7 @@
 ### Verified
 - `publish.py` ejecutado (push + sync + verify): `GLOBAL SINCRONIZADO`
   (0 faltantes / 0 divergentes), 965 archivos propagados.
+- Suite completa: 7430 passed / 38 skipped / 1 xfailed (ADR heredado) / 0 failed.
 ## [11.64] - 2026-10-30
 
 ### Added
