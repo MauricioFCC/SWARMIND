@@ -146,6 +146,12 @@ def _body_keywords(bodies: list[str], descriptions: list[str]) -> list[list[str]
     return result
 
 
+def _source_sha256(skill_dir: Path) -> str:
+    """sha256 del SKILL.md con fin de linea normalizado a LF (portable CI)."""
+    raw = (skill_dir / "SKILL.md").read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(raw).hexdigest()
+
+
 def _build(
     skill_dir: Path,
     front: dict[str, object],
@@ -191,9 +197,7 @@ def _build(
         "invariants": _invariants(body),
         "failing_test": FAILING_TEST,
         "routing": {"triggers": [_trigger(description)], "body_keywords": keywords},
-        "source_sha256": hashlib.sha256(
-            (skill_dir / "SKILL.md").read_bytes()
-        ).hexdigest(),
+        "source_sha256": _source_sha256(skill_dir),
         "provenance": {
             "generator": GENERATOR,
             "generator_version": GENERATOR_VERSION,

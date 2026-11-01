@@ -69,7 +69,7 @@
       "densidad"
     ]
   },
-  "source_sha256": "1cf2b8bb45e37ba78a0ad92b1f9b2cd6b9289372958b58912859fd5f4a75236e",
+  "source_sha256": "ccc03f2925b81904635ab3361ff1aeb39d65aa83a40234f5e51cb671fcffa68b",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

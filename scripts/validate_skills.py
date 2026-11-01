@@ -130,7 +130,9 @@ def _spec_drift_error(skill_dir: Path) -> str | None:
         return None  # load_skill_contract ya reporta el JSON invalido
     if not declared:
         return None
-    current = hashlib.sha256((skill_dir / "SKILL.md").read_bytes()).hexdigest()
+    current = hashlib.sha256(
+        (skill_dir / "SKILL.md").read_bytes().replace(b"\r\n", b"\n")
+    ).hexdigest()
     if declared == current:
         return None
     return (

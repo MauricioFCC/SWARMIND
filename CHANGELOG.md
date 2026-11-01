@@ -28,6 +28,12 @@
 - Tests nuevos: `test_skill_contracts` (135), `test_skill_contract` (10) y
   validadores de drift en `test_validate_skills`.
 
+### Fixed
+- Digest del contrato (`source_sha256`) normaliza CRLF->LF: el mismo spec vale
+  en checkout Windows y Linux (antes el gate de drift habria fallado en CI).
+- Benchmark `alpha.ts_corr` con panel de 8 columnas (mas trabajo por escala,
+  menos ruido relativo en runners compartidos); baseline regenerado.
+
 ## [11.69] - 2026-11-01
 
 ### Added

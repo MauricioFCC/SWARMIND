@@ -11,6 +11,7 @@ Cubre el validador de skills de SWARMIND que implementa:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -419,6 +420,25 @@ def test_skill_con_spec_desactualizado_error(tmp_path: Path) -> None:
     )
     errors = vs._validate_skill(skill_md.parent, quiet=True)
     assert any("desactualizado" in error for error in errors)
+
+
+def test_skill_con_spec_crlf_no_es_drift(tmp_path: Path) -> None:
+    """El drift se calcula con LF normalizado (mismo hash en Windows y Linux)."""
+    skill_md = _write_skill(tmp_path, "demo-skill", _valid_fm("demo-skill"))
+    normalized = skill_md.read_bytes().replace(b"\r\n", b"\n")
+    spec = {
+        "name": "demo-skill",
+        "contract": {"input": {}, "output": {}},
+        "preconditions": ["a"],
+        "postconditions": ["b"],
+        "failing_test": "SKILL.md",
+        "source_sha256": hashlib.sha256(normalized).hexdigest(),
+    }
+    (skill_md.parent / "SKILL.spec.json").write_text(
+        json.dumps(spec), encoding="utf-8"
+    )
+    errors = vs._validate_skill(skill_md.parent, quiet=True)
+    assert not any("desactualizado" in error for error in errors)
 
 
 def test_skill_sin_source_sha256_no_es_drift(tmp_path: Path) -> None:

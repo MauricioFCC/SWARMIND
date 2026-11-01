@@ -2,47 +2,47 @@
   "benchmarks": {
     "alpha.ts_corr": {
       "expected": "linear",
-      "ratio": 1.935,
+      "ratio": 2.244,
       "threshold": 2.8
     },
     "alpha.ts_rank": {
       "expected": "n_log_n",
-      "ratio": 1.845,
+      "ratio": 2.14,
       "threshold": 3.2
     },
     "bq.oversample_observe": {
       "expected": "linear",
-      "ratio": 1.629,
+      "ratio": 2.005,
       "threshold": 2.8
     },
     "cache.adaptive_observe": {
       "expected": "linear",
-      "ratio": 2.093,
+      "ratio": 2.014,
       "threshold": 2.8
     },
     "kernel.dispatch": {
       "expected": "linear",
-      "ratio": 1.991,
+      "ratio": 1.932,
       "threshold": 2.8
     },
     "kernel.event_log": {
       "expected": "linear",
-      "ratio": 2.005,
+      "ratio": 1.873,
       "threshold": 2.8
     },
     "kernel.mailbox": {
       "expected": "linear",
-      "ratio": 2.007,
+      "ratio": 1.92,
       "threshold": 2.8
     },
     "memory.heat_score": {
       "expected": "linear",
-      "ratio": 1.877,
+      "ratio": 1.982,
       "threshold": 2.8
     },
     "memory.trust_filter": {
       "expected": "linear",
-      "ratio": 2.11,
+      "ratio": 2.049,
       "threshold": 2.8
     }
   },

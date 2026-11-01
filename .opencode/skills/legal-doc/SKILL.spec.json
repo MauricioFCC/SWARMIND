@@ -69,7 +69,7 @@
       "fase"
     ]
   },
-  "source_sha256": "2f6ede6a952b769178c1c517c8d3d0e293de82102601ace5f756344534c57ee3",
+  "source_sha256": "bea91a4f1f43554c148ae2eaa8f991892a4e2c3c74846a9e24f3489beca529c3",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

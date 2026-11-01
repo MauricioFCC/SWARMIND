@@ -59,6 +59,8 @@ validación `O(bytes)` por skill. Antes: 0 contratos verificables; después:
   señal preparada (ver gaps).
 - Los contratos **manuales curados** (hoy `atdd-spec`, sin `provenance.generator`)
   se preservan: el generador no los sobrescribe.
+- El digest de origen normaliza CRLF→LF, así el mismo `source_sha256` vale en
+  checkout Windows y Linux.
 
 ## 4. Gaps declarados
 

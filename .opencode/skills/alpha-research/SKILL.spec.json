@@ -73,7 +73,7 @@
       "muestras"
     ]
   },
-  "source_sha256": "fe3d11e93d5321376a6e6d85209dba98cf7fae0c5d8b77f3ad4db79b897aa7e1",
+  "source_sha256": "9facfd8d659dcb338098c7bd850b8bbb194dd8bc700f285bb3b671723f6b698f",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

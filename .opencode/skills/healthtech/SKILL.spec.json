@@ -75,7 +75,7 @@
       "paciente"
     ]
   },
-  "source_sha256": "60c8dae5fbbf1be4129cd04afc25ee4828b0e882feeb775ecc039a1ee86cc430",
+  "source_sha256": "5cbb44e2f7dfa2b86d9cc1cb4ddeb3c067a94e355e464dc9355c4a412b12f936",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

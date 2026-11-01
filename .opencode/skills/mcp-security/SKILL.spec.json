@@ -71,7 +71,7 @@
       "scan"
     ]
   },
-  "source_sha256": "93c66b1c7d54a2317cb751255d17113d7afe6524bf7606b87898b1420560dbd8",
+  "source_sha256": "e97a47aa3d2408a8179b3aba28a4eaaf4025fc57a0d066dcd33a95a5b6aa2bc7",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

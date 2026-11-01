@@ -74,7 +74,7 @@
       "sandbox"
     ]
   },
-  "source_sha256": "9992609a4e59d53a2086bc6c16b48567e0ca3886184b038cc4bf057b038887bf",
+  "source_sha256": "c044d3e318d3cd1cc0d00ec8f771e630c221c6bf306bd468635d7dda1d7ce3c0",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

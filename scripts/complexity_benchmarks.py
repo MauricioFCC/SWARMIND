@@ -126,10 +126,11 @@ def _bench_ts_corr(n: int) -> None:
     pair = _TS_CORR_PANELS.get(n)
     if pair is None:
         rng = np.random.default_rng(11)
-        panel = rng.normal(0.0, 1.0, size=(n, 2))
-        # NaN en ~5% para activa la mascara de pares completos.
+        # 8 columnas: mas trabajo por escala -> menos ruido relativo en CI.
+        panel = rng.normal(0.0, 1.0, size=(n, 8))
+        # NaN en ~5% para activar la mascara de pares completos.
         panel[rng.random(panel.shape) < 0.05] = np.nan
-        pair = (panel[:, 0:1], panel[:, 1:2])
+        pair = (panel[:, 0:4], panel[:, 4:8])
         _TS_CORR_PANELS[n] = pair
     _ts_corr(pair[0], pair[1], max(2, n // 10))
 

@@ -40,8 +40,9 @@ def _skill_dirs() -> list[Path]:
 
 
 def _source_digest(skill_dir: Path) -> str:
-    """sha256 del SKILL.md (oraculo independiente del generador)."""
-    return hashlib.sha256((skill_dir / "SKILL.md").read_bytes()).hexdigest()
+    """sha256 del SKILL.md con LF normalizado (oraculo independiente, portable)."""
+    raw = (skill_dir / "SKILL.md").read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(raw).hexdigest()
 
 
 def _spec(skill_dir: Path) -> dict[str, object]:
@@ -114,3 +115,13 @@ class TestSpecValidity:
             != _serialize(spec)
         ]
         assert not drift, f"specs no reproducibles: {drift}"
+
+    def test_source_digest_ignora_fin_de_linea(self, tmp_path: Path) -> None:
+        """CRLF y LF producen el mismo source_sha256 (portable Windows/Linux)."""
+        from scripts.generate_skill_specs import _source_sha256
+
+        content = "---\nname: demo\n---\n\n# Demo\n\n## Ejemplo\n\nx\n"
+        (tmp_path / "SKILL.md").write_bytes(content.replace("\n", "\r\n").encode())
+        crlf = _source_sha256(tmp_path)
+        (tmp_path / "SKILL.md").write_bytes(content.encode())
+        assert crlf == _source_sha256(tmp_path)

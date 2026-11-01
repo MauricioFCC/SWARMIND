@@ -70,7 +70,7 @@
       "unwrap"
     ]
   },
-  "source_sha256": "d5f3e831ad14540c1f7f3da7d96b4e557f78a8e3168e0b257c1ed03887f66be4",
+  "source_sha256": "033d157e1b21688213a454ab368b8ee42cf1599374f657f1e42fc13f90c293e4",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",
