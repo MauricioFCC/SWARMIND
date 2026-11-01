@@ -1,0 +1,85 @@
+{
+  "name": "skill-engineering",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario quiere crear, revisar, mejorar o auditar skills o agentes del harness. skill engineering, frontmatter, description pushy, progressive disclosure, routing, evaluacion, lifecycle, drift. Alcance: mejora de skills; para mejora del",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario quiere crear, revisar, mejorar o auditar skills o agentes del harness. skill engineering, frontmatter, description pushy, progressive disclosure, routing, evaluacion, lifecycle, drift",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Frontmatter válido: name y description obligatorios; license,",
+    "description = ÚNICO disparador: qué hace + CUÁNDO usarla + keywords",
+    "Progressive disclosure: SKILL.md <500 líneas / <5k tokens; el",
+    "Cuerpo como contrato: entradas, pasos, criterios de éxito",
+    "Anti instruction-bloat: 2-3 módulos enfocados; si el nombre necesita",
+    "Routing explícito: exponer name+description a un router",
+    "Composición declarada: dependencias/conflictos (depende/conflicta/",
+    "Evaluación paired y determinista: Skill Lift (no-skill vs curated vs",
+    "Lifecycle/governance: versionado semántico, conflict detection,",
+    "Drift: dedup por similitud semántica, fingerprint por componentes,"
+  ],
+  "invariants": [
+    "self-generated), pass@k, tareas negativas; nunca \"se ve mejor\"",
+    "deprecación y rollback; nunca publicar una skill autogenerada sin validar",
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario quiere crear, revisar, mejorar o auditar skills o agentes del harness. skill engineering, frontmatter, description pushy, progressive disclosure, routing, evaluacion, lifecycle, drift"
+    ],
+    "body_keywords": [
+      "scripts",
+      "lift",
+      "validate",
+      "cuándo",
+      "body",
+      "paired",
+      "gepa",
+      "publicar"
+    ]
+  },
+  "source_sha256": "aa7e0ba57a407e842f242192f5228c0b4fe7255d7dc12b1462ed683d58a77919",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

@@ -28,6 +28,9 @@ _SPEC_FILENAME = "SKILL.spec.json"
 _SPEC_VERSION = "1.0.0"
 _MAX_DESCRIPTION_CHARS = 256
 
+#: Raiz del repositorio (para failing_test repo-relativos).
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
 
 @dataclass(frozen=True)
 class SkillContract:
@@ -106,6 +109,21 @@ def load_skill_contract(skill_dir: Path) -> SkillContract | None:
     )
 
 
+def _resolve_failing_test(skill_dir: Path, failing_test: str) -> Path:
+    """Resuelve la ruta del failing_test (skill-relativa o repo-relativa).
+
+    Args:
+        skill_dir: Directorio del skill.
+        failing_test: Ruta declarada (puede incluir ``::nodo``).
+
+    Returns:
+        Ruta absoluta en disco (skill-relativa si existe; si no, repo-relativa).
+    """
+    path_part = failing_test.split("::", 1)[0]
+    candidate = skill_dir / path_part
+    return candidate if candidate.exists() else _REPO_ROOT / path_part
+
+
 def validate_contract(contract: SkillContract | None, skill_dir: Path) -> list[str]:
     """Valida la estructura de un contrato SDD.
 
@@ -131,13 +149,11 @@ def validate_contract(contract: SkillContract | None, skill_dir: Path) -> list[s
         errors.append(f"{skill_dir.name}: spec sin postconditions (obligatorias)")
     if not contract.failing_test:
         errors.append(f"{skill_dir.name}: spec sin failing_test (Ley de Hierro ADR-0047)")
-    else:
-        test_path = skill_dir / contract.failing_test
-        if not test_path.exists():
-            errors.append(
-                f"{skill_dir.name}: failing_test {contract.failing_test!r} no existe "
-                f"(debe fallar inicialmente, luego el skill lo hace pasar)"
-            )
+    elif not _resolve_failing_test(skill_dir, contract.failing_test).exists():
+        errors.append(
+            f"{skill_dir.name}: failing_test {contract.failing_test!r} no existe "
+            f"(debe fallar inicialmente, luego el skill lo hace pasar)"
+        )
     contract_dict = contract.contract
     if "input" not in contract_dict or "output" not in contract_dict:
         errors.append(

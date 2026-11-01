@@ -57,6 +57,15 @@ project_agnostic: true
 - Factores con divisiones por cero o logs de negativos: el evaluador
   devuelve NaN y `decide` los rechaza con `insufficient_data`/`low_ic`.
 
+## Checklist
+
+- [ ] Hipótesis de alpha declarada ANTES de generar candidatos (familia, horizon, razón)
+- [ ] AST válido: `parse_expr` sin error, ≤ `MAX_NODES` y ventanas legales
+- [ ] Gates baratos ejecutados antes de evaluar (complejidad → FSA → dedup)
+- [ ] IC dual (Pearson + RankIC) y `decide` con umbrales NVIDIA, no p == 0.05
+- [ ] Aceptados en `alpha_zoo.top_k` family-aware; rechazos en `record_failure`
+- [ ] Evidencia (IC, turnover, DSR, p-valor deflactado) citada en la respuesta
+
 ## Ejemplo
 
 ```bash

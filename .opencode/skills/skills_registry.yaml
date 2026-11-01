@@ -293,11 +293,18 @@ skills:
     description: "Usar cuando se minan, generan o evaluan factores alpha con el harness (factor, dsl, rankic, ast, mcts, factor zoo, mining loop). Alcance: mineria operativa con harness/alpha_mining; para investigacion de factores ver alpha-research; para el motor de trading ver quant-trading. | UPG*NAM*FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 8e2dc1b6bf17323efbcb8841b844b4583a1cae117a5f221ab4eb0193c64f1f56
+    sha256: 3126b27b77b51f6a3298c593abee3548ff43478b3d614e06e9e316fb0a959517
 
   - name: cert-master
     domain: education
     description: "Usar cuando el usuario quiere convertir material de estudio (PDFs, programas, transcripciones) en apuntes para Obsidian/Notion/Markdown, con quizzes y mapas de contenido. Alcance: notas de estudio, examenes, certificaciones, oposiciones; educacion. | UPG.NAM.FRS"
     version: 1.0.0
     project_agnostic: true
-    sha256: 4e2c77b8bfaf4f002d6bb4014f3a7c755e9afb7b516bb12e3be2b321981f0574
+    sha256: 6c772f56d62413f9c5ee32f074a7f7898490cfef00951378f245b09f72ca912e
+
+  - name: frontier-engineering
+    domain: meta
+    description: "Usar cuando el usuario pida ciclo frontera: cargar skills/agentes + tarea explícita, investigación web SOTA/papers, arquitecturas y algoritmos O(n²)→O(n), fórmulas, spec/SDD, TDD adversarial mutante y docs. Alcance: ciclo completo; para gates pre-merge ver agent-rigor. | UPG·NAM·FRS"
+    version: 1.0.0
+    project_agnostic: true
+    sha256: 09fc40f97b2d197b1afbe3fe19b060a2898e8a624b3d760eeb4658a49f564fac

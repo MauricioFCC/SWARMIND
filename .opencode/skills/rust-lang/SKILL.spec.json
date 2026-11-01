@@ -1,0 +1,79 @@
+{
+  "name": "rust-lang",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes. Alcance: Rust y sistemas seguros; para arquitectura de sistemas ver architecture",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Ownership/borrowing resuelto sin unsafe innecesario",
+    "Errores con Result (sin panic en libreria)",
+    "Concurrencia segura (Send/Sync, sin data races)",
+    "clippy/fmt sin warnings",
+    "Tests unitarios e integracion",
+    "FFI con Python acotado y seguro"
+  ],
+  "invariants": [
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes"
+    ],
+    "body_keywords": [
+      "unsafe",
+      "errores",
+      "borrow",
+      "checker",
+      "mutex",
+      "result",
+      "auditoria",
+      "unwrap"
+    ]
+  },
+  "source_sha256": "d5f3e831ad14540c1f7f3da7d96b4e557f78a8e3168e0b257c1ed03887f66be4",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

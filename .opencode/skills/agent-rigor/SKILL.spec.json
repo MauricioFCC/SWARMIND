@@ -1,0 +1,82 @@
+{
+  "name": "agent-rigor",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario exige disciplina de ingeniería pre-merge. gates deterministas, anti-atajos, tests decorativos, verificación con evidencia, mutation score. Alcance: proceso de verificación; para mejora continua ver evolve",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario exige disciplina de ingeniería pre-merge. gates deterministas, anti-atajos, tests decorativos, verificación con evidencia, mutation score",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Gate T1 determinista ejecutado con evidencia (lint + tests)",
+    "Mutation score >= 70% para merge (>=85% nightly)",
+    "Tests no decorativos: cubren ramas, no solo lineas",
+    "0 except silenciosos; errores con WHAT+WHY+WHERE",
+    "Cada fix trae su test de regresion (el mutante que lo hubiera matado)",
+    "Evidencia cruda citada en la respuesta (VER)"
+  ],
+  "invariants": [
+    "Ningún merge con check rojo; si el check falla, se corrige y re-ejecuta (VER)",
+    "Prohibido parchear el test para \"pintar verde\" (anti-patrón): el test es el contrato",
+    "Coverage es piso, no techo: line+branch con --cov-branch; mutation score ≥70% para merge",
+    "Cada fix trae su test de regresión (el mutante que lo hubiera matado)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario exige disciplina de ingeniería pre-merge. gates deterministas, anti-atajos, tests decorativos, verificación con evidencia, mutation score"
+    ],
+    "body_keywords": [
+      "branch",
+      "rigor",
+      "lint",
+      "hubiera",
+      "matado",
+      "passed",
+      "trae",
+      "verde"
+    ]
+  },
+  "source_sha256": "60c9b35ce80cefa59f7d3ccb3c7024a9dd8744381690f701ba17ef96afa3a318",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

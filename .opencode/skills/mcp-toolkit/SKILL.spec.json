@@ -1,0 +1,83 @@
+{
+  "name": "mcp-toolkit",
+  "version": "1.0.0",
+  "description": "Usar cuando hay que elegir o cablear herramientas MCP para una tarea (browser, scraping, db, kubernetes, reverse engineering, observabilidad, data, devops). Alcance: seleccion de herramientas MCP del harness; para comprension de codigo ver",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando hay que elegir o cablear herramientas MCP para una tarea (browser, scraping, db, kubernetes, reverse engineering, observabilidad, data, devops)",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Categoria/target de la tarea identificada",
+    "servers_for_task devuelve la herramienta correcta (no inventa)",
+    "Credenciales por entorno, no en el archivo",
+    "deploy_all --sync-global deja la config de opencode en sync",
+    "Evidencia de la herramienta (salida real), no afirmacion (VER)"
+  ],
+  "invariants": [
+    "Identifica el TARGET/dominio de la tarea (keyword: browser, scrape, sql, k8s, reverse…)",
+    "harness.tools_sandbox.mcp_catalog.servers_for_task(task) devuelve los servers aplicables (nunca inventa: todo nombre existe en la SSOT)",
+    "El harness los expone en DispatchPlan.tools (agente + skills + herramientas juntos)",
+    "opencode los usa via mcp.servers (registrados por deploy_all.py --sync-global)",
+    "Solo servers VERIFICADOS (comando + tools contra el repo oficial); los candidatos se documentan aparte",
+    "Credenciales por entorno ({env:VAR}); nunca hardcodear API keys"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando hay que elegir o cablear herramientas MCP para una tarea (browser, scraping, db, kubernetes, reverse engineering, observabilidad, data, devops)"
+    ],
+    "body_keywords": [
+      "servers",
+      "herramienta",
+      "task",
+      "tools",
+      "candidato",
+      "categoria",
+      "credenciales",
+      "sandbox"
+    ]
+  },
+  "source_sha256": "9992609a4e59d53a2086bc6c16b48567e0ca3886184b038cc4bf057b038887bf",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

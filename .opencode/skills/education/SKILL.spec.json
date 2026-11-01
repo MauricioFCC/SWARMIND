@@ -1,0 +1,79 @@
+{
+  "name": "education",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario diseña material educativo o formacion. diseno instruccional, pedagogia, andragogia, Bloom, microlearning, evaluacion educativa. Alcance: diseno instruccional y evaluacion; para comunicacion ver communication",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario diseña material educativo o formacion. diseno instruccional, pedagogia, andragogia, Bloom, microlearning, evaluacion educativa",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Objetivos de aprendizaje medibles (taxonomia de Bloom)",
+    "Evaluacion diagnostica, formativa y sumativa",
+    "Secuencia alineada (Backward Design/ADDIE)",
+    "Microlearning + spaced repetition para retencion",
+    "Niveles de Kirkpatrick definidos para impacto"
+  ],
+  "invariants": [
+    "Objetivo medible por unidad (verbos de Bloom; nunca vagos): nivel cognitivo → verbo → evidencia",
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario diseña material educativo o formacion. diseno instruccional, pedagogia, andragogia, Bloom, microlearning, evaluacion educativa"
+    ],
+    "body_keywords": [
+      "aprendizaje",
+      "addie",
+      "formativa",
+      "kirkpatrick",
+      "sumativa",
+      "diagnostica",
+      "backward",
+      "objetivos"
+    ]
+  },
+  "source_sha256": "d378fbcca045021b7189978c993da73a907ee0a331daeb9ce84e36d9e32853f4",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

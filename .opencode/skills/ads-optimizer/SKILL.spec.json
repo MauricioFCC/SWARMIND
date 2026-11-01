@@ -1,0 +1,79 @@
+{
+  "name": "ads-optimizer",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario quiere optimizar campanas publicas digitales. Meta Ads, Google Ads, BOAD, ShapleyFlow, MetaClaw, RL bidding, ROI publicitario, conversion, targeting. Alcance: optimizacion de campanas digitales; para estrategia de negocio ver",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario quiere optimizar campanas publicas digitales. Meta Ads, Google Ads, BOAD, ShapleyFlow, MetaClaw, RL bidding, ROI publicitario, conversion, targeting",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Estructura campaign/adset/ad definida (BOAD) con objetivo y presupuesto",
+    "Creativos clasificados (CLIP/ViT) antes de escalar",
+    "Atribucion multi-touch (Shapley/Markov), no solo last-click",
+    "Bids con limite de CPA/ROAS y salvaguarda de presupuesto",
+    "Compliance verificado contra estandares de la plataforma",
+    "account-safety revisado (riesgo de ban) antes de publicar"
+  ],
+  "invariants": [
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario quiere optimizar campanas publicas digitales. Meta Ads, Google Ads, BOAD, ShapleyFlow, MetaClaw, RL bidding, ROI publicitario, conversion, targeting"
+    ],
+    "body_keywords": [
+      "builder",
+      "campaign",
+      "creative",
+      "clip",
+      "budget",
+      "scientist",
+      "presupuesto",
+      "account"
+    ]
+  },
+  "source_sha256": "277e7220d0a529dd61e20eb239362acc6f0a5c9b54115494cc01bbf85fca2354",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

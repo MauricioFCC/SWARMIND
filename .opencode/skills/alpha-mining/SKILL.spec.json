@@ -1,0 +1,80 @@
+{
+  "name": "alpha-mining",
+  "version": "1.0.0",
+  "description": "Usar cuando se minan, generan o evaluan factores alpha con el harness (factor, dsl, rankic, ast, mcts, factor zoo, mining loop). Alcance: mineria operativa con harness/alpha_mining; para investigacion de factores ver alpha-research; para trading ver",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando se minan, generan o evaluan factores alpha con el harness (factor, dsl, rankic, ast, mcts, factor zoo, mining loop)",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Hipótesis de alpha declarada ANTES de generar candidatos (familia, horizon, razón)",
+    "AST válido: parse_expr sin error, ≤ MAX_NODES y ventanas legales",
+    "Gates baratos ejecutados antes de evaluar (complejidad → FSA → dedup)",
+    "IC dual (Pearson + RankIC) y decide con umbrales NVIDIA, no p == 0.05",
+    "Aceptados en alpha_zoo.top_k family-aware; rechazos en record_failure",
+    "Evidencia (IC, turnover, DSR, p-valor deflactado) citada en la respuesta"
+  ],
+  "invariants": [
+    "## Flujo operativo (SIEMPRE en este orden)",
+    "ceros/negativos/división por cero — nunca excepción)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando se minan, generan o evaluan factores alpha con el harness (factor, dsl, rankic, ast, mcts, factor zoo, mining loop)"
+    ],
+    "body_keywords": [
+      "nvidia",
+      "umbrales",
+      "evaluador",
+      "family",
+      "razón",
+      "acotado",
+      "gates",
+      "candidatos"
+    ]
+  },
+  "source_sha256": "5f43099294d10fa535e9acfe5f4e317d52a7630ed3f0b90cb84191697995103d",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

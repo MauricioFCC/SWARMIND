@@ -1,0 +1,84 @@
+{
+  "name": "science-doc",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario analiza papers o documentacion cientifica. papers academicos, tesis, informes tecnicos, revisiones sistematicas, investigacion. Alcance: analisis de papers y revisiones; para matematicas ver math-doc",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario analiza papers o documentacion cientifica. papers academicos, tesis, informes tecnicos, revisiones sistematicas, investigacion",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Estructura IMRaD y metodologia evaluadas",
+    "Sesgos y limitaciones identificados",
+    "Cada cita validada contra la fuente (DOI)",
+    "Reproducibilidad clasificada (REPRODUCIBLE/PARCIAL/NO)",
+    "Contradicciones marcadas explicitamente",
+    "PRISMA/PICO en revisiones sistematicas"
+  ],
+  "invariants": [
+    "IMRaD: Identificar Introduction, Methods, Results, Discussion en papers",
+    "Secciones: Extraer título, autores, afiliaciones, abstract, keywords, referencias",
+    "Abstract: Clasificar tipo (estructurado, narrativo, gráfico) y extraer objetivo/métodos/resultados",
+    "Contribución: Identificar contribución principal, novedad y alcance",
+    "Limitaciones: Detectar secciones de limitaciones y trabajo futuro",
+    "Diseño experimental: Identificar tipo (RCT, cohorte, caso-control, cruzado, series)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario analiza papers o documentacion cientifica. papers academicos, tesis, informes tecnicos, revisiones sistematicas, investigacion"
+    ],
+    "body_keywords": [
+      "identificar",
+      "contradicciones",
+      "prisma",
+      "estudios",
+      "tamaño",
+      "keywords",
+      "cita",
+      "extraer"
+    ]
+  },
+  "source_sha256": "c80fd3275b1b05049c24ede4c6dd1264643920e8379f678314adb3977b94b6ab",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

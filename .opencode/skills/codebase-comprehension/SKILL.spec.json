@@ -1,0 +1,82 @@
+{
+  "name": "codebase-comprehension",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario quiere entender un codebase ajeno o mapear su arquitectura. onboarding, repo map, donde esta X, blast radius, call-graph, ctags, Serena, hotspots. Alcance: comprension y navegacion de codigo; para conformidad arquitectonica ver",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario quiere entender un codebase ajeno o mapear su arquitectura. onboarding, repo map, donde esta X, blast radius, call-graph, ctags, Serena, hotspots",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Repo map generado con ctags/get_symbols_overview dentro del presupuesto (<1.5k tokens)",
+    "Cada símbolo clave localizado con find_symbol (no grep a ciegas)",
+    "Blast radius derivado con find_referencing_symbols transitivo",
+    "El overview separa hechos CITADOS de hipótesis INFERIDAS",
+    "Hotspots calculados con churn git ≥90 días",
+    "0 dependencias inventadas; toda arista trazable a un comando/tool"
+  ],
+  "invariants": [
+    "Hecho vs inferencia: nunca mezclar; sin símbolo/comando que lo pruebe, es INFERIDO",
+    "No inventar dependencias: toda arista del grafo viene de find_referencing_symbols o ctags",
+    "Presupuesto de tokens: repo map <1.5k tokens; retrieval simbólico ahorra 85-95% vs grep recursivo",
+    "Solo lectura: esta skill comprende/navega; no modifica código sin un plan de cambio aparte"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario quiere entender un codebase ajeno o mapear su arquitectura. onboarding, repo map, donde esta X, blast radius, call-graph, ctags, Serena, hotspots"
+    ],
+    "body_keywords": [
+      "find",
+      "symbols",
+      "overview",
+      "referencing",
+      "símbolo",
+      "grep",
+      "hecho",
+      "inferido"
+    ]
+  },
+  "source_sha256": "2472c036764f91ecef26bf2c02f71640a6829f4bfac592d404f98ef73ea6a616",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

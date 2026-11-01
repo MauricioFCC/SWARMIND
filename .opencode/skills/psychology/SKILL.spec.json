@@ -1,0 +1,79 @@
+{
+  "name": "psychology",
+  "version": "1.0.0",
+  "description": "Usar cuando el problema involucra comportamiento o psicologia. psicologia cognitiva, organizacional, del aprendizaje, positiva, sistemas multi-agente. Alcance: individuo, equipo y aprendizaje; para decisiones economicas e incentivos ver",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el problema involucra comportamiento o psicologia. psicologia cognitiva, organizacional, del aprendizaje, positiva, sistemas multi-agente",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Rama psicologica adecuada al problema",
+    "Efecto con tamano y estudio citado",
+    "Sesgos identificados y mitigados",
+    "Intervencion disenada con feedback y refuerzo",
+    "Evaluacion pre/post de la intervencion"
+  ],
+  "invariants": [
+    "ANTI-HEDGING: Efecto con tamano y estudio citado; nunca psicologia pop sin evidencia",
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el problema involucra comportamiento o psicologia. psicologia cognitiva, organizacional, del aprendizaje, positiva, sistemas multi-agente"
+    ],
+    "body_keywords": [
+      "psyc",
+      "sesgos",
+      "conflictos",
+      "agentes",
+      "carga",
+      "flow",
+      "mentales",
+      "refuerzo"
+    ]
+  },
+  "source_sha256": "1c4869f470e32914912e9e6b93e2eafe7726e9e5c54e0f5b2cacea9445bf618a",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

@@ -45,11 +45,43 @@ nunca afirma, verifica**. Al completar cualquier cambio:
 5. **Checks de código**: tras tocar `harness/`, ejecuta los tests del módulo
    afectado (p. ej. `pytest harness/tests/test_<modulo>.py -q`) + ruff.
 
+## Ciclo Frontera (petición explícita)
+
+Cuando el usuario pida algo como:
+
+> "Carga skills, agentes, **<tarea explícita>**. Investigación web frontera,
+> estado del arte; papers, artículos, técnicas, arquitecturas óptimas,
+> algoritmos, complejidad O(n²)→O(n), fórmulas; spec (mejorar/reimplementar si
+> aplica), SDD, TDD adversarial mutante, actualiza Docs."
+
+…se ejecuta el ciclo completo, no una respuesta superficial. Atajo en OpenCode:
+`/frontera <tarea explícita>`. Procedimiento canónico: skill
+`frontier-engineering` (`.opencode/skills/frontier-engineering/SKILL.md`).
+
+Fases (en orden, sin saltar gates):
+
+1. **Load** — manifest de skills/agentes/specs/memoria; IDP: si existe, mejorar
+   y reimplementar solo con mejora medible (`Δquality > 0 ∧ Δcost < 0`).
+2. **Research SOTA** — web + papers; paper trail en
+   `docs/research/frontier-<fecha>-<tema>.md` con URLs leídas o `[UNVERIFIED]`;
+   ≥3 hipótesis comparadas.
+3. **Design** — arquitectura + trade-offs + fórmulas y complejidad `O(·)`
+   antes→después.
+4. **Spec/SDD** — spec nueva o diff con rationale; ACs testeables.
+5. **TDD adversarial mutante** — oráculo congelado, rojo→verde, PBT, mutantes;
+   el `O(n²)→O(n)` se **mide** (gate N/2N/4N + test de equivalencia).
+6. **Docs** — CHANGELOG + roadmap + MEJORAS + ADR; commit convencional en
+   español y `python scripts/publish.py`.
+
+Cierre obligatorio: gates verdes con evidencia real (pytest, ruff, vulture,
+arquitectura+ratchet, complejidad, ruff-ratchet, preview, pep649, skills) y
+declaración honesta de lo no aplicado y por qué.
+
 ## Cómo trabajar aquí
 
 1. **Investigar antes de ejecutar** (RSF/FRS): lee el código existente, revisa
    `git log`, verifica que no esté implementado (IDP).
-2. **Skills**: los skills viven en `.opencode/skills/` (43 skills, formato spec
+2. **Skills**: los skills viven en `.opencode/skills/` (44 skills, formato spec
    Agent Skills de la Linux Foundation). Cada skill tiene `SKILL.md` +
    `SKILL.min.md` + frontmatter (name/domain/description/version/
    project_agnostic). Valida con `python scripts/validate_skills.py --strict`.

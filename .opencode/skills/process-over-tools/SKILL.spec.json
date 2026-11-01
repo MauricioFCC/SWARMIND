@@ -1,0 +1,80 @@
+{
+  "name": "process-over-tools",
+  "version": "1.0.0",
+  "description": "Usar cuando se evalúa adoptar herramienta, modelo o agente en el proyecto: define objetivo, responsable, datos, medición y escalado, y enrútalo al harness. Alcance: adopcion de tools en el harness; para mejora del sistema ver evolve",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando se evalúa adoptar herramienta, modelo o agente en el proyecto: define objetivo, responsable, datos, medición y escalado, y enrútalo al harness",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "5 preguntas respondidas y documentadas (problema/responsable/datos/medicion/escalado)",
+    "Gap demostrable vs componente existente del harness (IDP)",
+    "Fan-out N=3 + votacion gobernada gate>=70 para tareas ambiguas",
+    "Memoria SSOT (Memory_Proyects), sin DBs paralelas",
+    "Oraculos PBT/mutation + AgentKPITracker + token_budgets.yaml",
+    "Mesa de trabajo + ADR actualizados (FRS)",
+    "Evidencia mostrada: tests + lint verdes (VER)"
+  ],
+  "invariants": [
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando se evalúa adoptar herramienta, modelo o agente en el proyecto: define objetivo, responsable, datos, medición y escalado, y enrútalo al harness"
+    ],
+    "body_keywords": [
+      "preguntas",
+      "medicion",
+      "orca",
+      "memoria",
+      "oraculos",
+      "caso",
+      "proceso",
+      "ssot"
+    ]
+  },
+  "source_sha256": "efc6579c202ac53fbb315069d2210fe9d377153ea966b722ea1d4b25115cb9ee",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

@@ -1,3 +1,91 @@
+## [11.70] - 2026-11-01
+
+### Added
+- Contratos SDD (ADR-0048) para **44/44 skills**: `SKILL.spec.json` derivado
+  del `SKILL.md` (checklist -> postcondiciones, reglas/constraints ->
+  invariantes, tf-idf del cuerpo -> `routing.body_keywords`).
+- `scripts/generate_skill_specs.py` (`--write`/`--check`): generador
+  determinista con `source_sha256` para detectar drift cuerpo<->contrato.
+- `harness/tests/test_skill_contracts.py`: cobertura, validez, digest,
+  reproducibilidad byte-a-byte y keywords body-aware por skill.
+- Spec SDD `docs/specs/skill-contracts-sdd.md` (AC-SC1..AC-SC7 + gaps) y
+  research `docs/research/frontier-2026-11-01-skills.md` (Agent Skills spec,
+  SkillRouter 37-44 pts, EMNLP 2026).
+- Checklist real en `alpha-mining` y `cert-master` (eran las 2 skills sin
+  criterios de cierre); ahora 44/44 tienen postcondiciones derivables.
+
+### Changed
+- `validate_skills --strict`: detecta `SKILL.spec.json` desactualizado
+  (`source_sha256` != `SKILL.md`) y resuelve `failing_test` repo-relativo.
+- `validate_skills.py` inserta la raiz del repo en `sys.path` antes de importar
+  `harness` (evitaba resolver una copia instalada desactualizada).
+- `fn_ts_corr`/`_corr_from_ends` con docstrings compactas (deuda F5 del ratchet
+  vuelve a 929).
+
+### Verified
+- `generate_skill_specs --check`: 44 specs, 0 cambios.
+- `validate_skills --strict`: 44 skills validos (digests y contratos al dia).
+- Tests nuevos: `test_skill_contracts` (135), `test_skill_contract` (10) y
+  validadores de drift en `test_validate_skills`.
+
+## [11.69] - 2026-11-01
+
+### Added
+- Skill `frontier-engineering` (meta): ciclo frontera completo (load →
+  research SOTA → design → spec/SDD → TDD adversarial mutante → docs) con
+  disparador canónico del usuario, 6 fases, reglas duras y ejemplo real.
+  Registrada en `skills_registry.yaml` con digest sha256 (44 skills).
+- Comando `/frontera <tarea>`: atajo que carga la skill y enumera las fases y
+  el cierre obligatorio (gates + docs + `publish.py`).
+- Sección "Ciclo Frontera (petición explícita)" en `AGENTS.md` (hook de
+  sesión) con la plantilla canónica y las fases.
+- Spec SDD `docs/specs/frontier-cycle.md` con AC-FC1..AC-FC6 y los gaps
+  declarados frente al meta-prompt (coverage, mutantes, TLA+/Alloy, ToT,
+  STRIDE, manifest).
+- Test de contrato `harness/tests/test_frontier_cycle_contract.py` (9 tests):
+  falla si desaparece la skill, el comando, la sección de `AGENTS.md` o una
+  fase del ciclo.
+
+### Changed
+- `skill_bundler`: `SKILL_TO_AGENT["frontier-engineering"] = "coordinator"`,
+  alta en `DOMAIN_SKILLS["meta"]` y triggers nuevos (`ciclo frontera`,
+  `frontera`, `estado del arte`, `sota`, `paper trail`).
+- `project_config.yaml`: `SKILLS.total` 43 → 44 y `frontier-engineering` en
+  `skill_list`; `test_skill_overlap.EXPECTED_SKILLS` 43 → 44.
+
+### Verified
+- `validate_skills --strict` OK (44 skills, digests al día).
+- Contratos: `test_frontier_cycle_contract`, `test_opencode_config_sync`,
+  `test_skill_router_registry_sync`, `test_skill_overlap` en verde.
+
+## [11.68] - 2026-11-01
+
+### Added
+- Correlación rolling O(n·W) → O(n): `rolling_rank.ts_corr` con prefix sums
+  0-padded (pares completos NaN-safe; Scan de Blelloch). Equivalencia con la
+  referencia ingenua O(n·W): 11 tests (`test_ts_corr_prefix.py`, incluidos
+  ventanas extremas, series constantes y mascaras cruzadas).
+- Benchmark `alpha.ts_corr` en el gate de complejidad (ventana ∝ n, 5 % NaN):
+  ratio medido 1.94 (linear OK; la versión por ventanas dispararía ~4).
+- Investigación de frontera RuscaDB: upstream 2026-11-01 (3VL SPEC-0182,
+  prepared nativo SPEC-0184, KNN USING SPEC-0181, RCOL1 SPEC-0110) documentado
+  con decisión EDV (rebuild de DLL antes de cablear) en
+  `docs/research/frontier-2026-11-01-ruscadb.md`.
+
+### Changed
+- `factor_dsl._ts_corr` delega en `rolling_rank.ts_corr` (factor_dsl queda en
+  530 líneas, por debajo del cap 500 de deudalegacy F3 sólida).
+- `_update_records_lancedb` (71→30 líneas): helpers
+  `_open_update_table`/`_read_existing_records`/`_validated_record_id`/
+  `_update_single_record`; comportamiento idéntico (anti-inyección CWE-943
+  intacta); F5 baja sin tocar el ratchet.
+- Oracle adversarial del test `_naive_ts_corr` corregido (referencia por
+  columna; antes mezclaba columnas y ocultaba discrepancias).
+
+### Verified
+- Gates: ruff=0, vulture=0, arquitectura+ratchet=0, complejidad=0 (9
+  benchmarks), ruff-ratchet=0, preview=0, pep649=0, skills OK.
+
 ## [11.67] - 2026-10-31
 
 ### Added

@@ -1,0 +1,78 @@
+{
+  "name": "hedgefund",
+  "version": "1.0.0",
+  "description": "Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, riesgo institucional. Alcance: doctrina y estrategia; para motores ver quant-trading, para ejecucion ver risk-execution. Cuando NO usar",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, riesgo institucional",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Tesis con tesis, anti-tesis, catalyst y sizing",
+    "Mandato unico por documento con limites de riesgo explicitos",
+    "Hipotesis falseable (H0/H1) antes de invertir recursos",
+    "Validacion out-of-sample y datos que respalden la decision",
+    "Stop-loss / limite de drawdown definido por posicion"
+  ],
+  "invariants": [
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, riesgo institucional"
+    ],
+    "body_keywords": [
+      "tesis",
+      "falseable",
+      "catalyst",
+      "posicion",
+      "drawdown",
+      "límite",
+      "sizing",
+      "limite"
+    ]
+  },
+  "source_sha256": "72dadc3ea991c9a9a32ea695babfaadf3638f2e1845f72da2bc7a841d69e282d",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

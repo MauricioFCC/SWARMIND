@@ -155,6 +155,7 @@ SKILL_TO_AGENT: dict[str, str] = {
     "mcp-toolkit": "platform-engineer",
     "mcp-security": "security-engineer",
     "alpha-mining": "alpha-miner",
+    "frontier-engineering": "coordinator",
 }
 
 # Mapa de dominios → skills relevantes. Cubre TODO el registry (SSOT) para que
@@ -178,7 +179,7 @@ DOMAIN_SKILLS: dict[str, list[str]] = {
     "quality": ["agent-rigor", "atdd-spec", "security-audit"],
     "general": ["architecture", "security-audit", "data-science", "rust-lang"],
     # Dominios añadidos para alcanzar el resto del registry (sincronizacion).
-    "meta": ["evolve", "skill-engineering"],
+    "meta": ["evolve", "skill-engineering", "frontier-engineering"],
     "academic": ["math-doc", "science-doc"],
     "finance": ["hedgefund"],
     "business": ["business-strategy"],
@@ -221,7 +222,7 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
     "devops": ["devops", "ci/cd", "deploy", "kubernetes", "docker", "infraestructura"],
     "quality": ["quality gate", "mutation testing", "code review", " QA ", " TDD ", "cobertura"],
     # Triggers de los dominios sincronizados (derivados de las descriptions).
-    "meta": ["evolve", "evoluciona", "auto-mejora", "auto mejora", "self-improve", "cognition", "meta-aprendizaje", "skill", "frontmatter", "progressive disclosure", "drift", "lifecycle"],
+    "meta": ["evolve", "evoluciona", "auto-mejora", "auto mejora", "self-improve", "cognition", "meta-aprendizaje", "skill", "frontmatter", "progressive disclosure", "drift", "lifecycle", "ciclo frontera", "frontera", "estado del arte", "sota", "paper trail"],
     "academic": ["matematicas", "math", "latex", "teorema", "theorem", "demostracion", "ecuacion", "equation", "estadistica", "algebra", "calculo"],
     "finance": ["hedge fund", "fondo", "capital", "mandato", "stop-loss", "asignacion de capital", "institucional", "riesgo-reward"],
     "business": ["dofa", "swot", "porter", "canvas", "plan de negocio", "modelo de negocio", "posicionamiento", "roi", "kpi", "okr"],

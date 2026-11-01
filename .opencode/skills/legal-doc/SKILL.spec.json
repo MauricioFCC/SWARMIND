@@ -1,0 +1,78 @@
+{
+  "name": "legal-doc",
+  "version": "1.0.0",
+  "description": "Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia. Alcance: analisis juridico y normativo; para documentacion cientifica ver science-doc",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Ámbito de aplicación: a quién/situaciones aplica la norma",
+    "Excepciones: qué excluye expresamente la norma",
+    "Jurisprudencia que la interpreta: sentencias que la aplican o la desarrollan",
+    "Vigencia: estado actual anclado a fuente primaria + fecha de consulta"
+  ],
+  "invariants": [
+    "ANTI-HEDGING: Cita norma + sentencia con radicado; nunca doctrina sin fuente oficial",
+    "Cita no verificada → marcar APÓCRIFA-REVISAR; nunca presentarla como válida"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia"
+    ],
+    "body_keywords": [
+      "norma",
+      "vigencia",
+      "corte",
+      "procesal",
+      "citas",
+      "jurisdicción",
+      "jurídico",
+      "fase"
+    ]
+  },
+  "source_sha256": "2f6ede6a952b769178c1c517c8d3d0e293de82102601ace5f756344534c57ee3",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

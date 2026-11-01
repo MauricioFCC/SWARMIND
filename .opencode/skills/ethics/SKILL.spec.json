@@ -1,0 +1,79 @@
+{
+  "name": "ethics",
+  "version": "1.0.0",
+  "description": "Usar cuando la decision involucra etica de IA o valores. alineamiento, marcos eticos, agentes autonomos, decisiones automaticas, filosofia de la mente, sesgo etico. Alcance: etica de IA y alineamiento; para riesgos emergentes ver risk-intelligence",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando la decision involucra etica de IA o valores. alineamiento, marcos eticos, agentes autonomos, decisiones automaticas, filosofia de la mente, sesgo etico",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Arbol de decision etica aplicado (legal/etico/transparente/sesgos/privacidad)",
+    "Marco normativo citado (NIST AI RMF/ISO 42001)",
+    "Sesgos evaluados y mitigados (fairness metrics)",
+    "Transparencia y auditabilidad de la decision",
+    "Impacto y reversibilidad evaluados"
+  ],
+  "invariants": [
+    "ANTI-HEDGING: Veredicto etico accionable con criterio normativo citado; nunca 'depende'",
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando la decision involucra etica de IA o valores. alineamiento, marcos eticos, agentes autonomos, decisiones automaticas, filosofia de la mente, sesgo etico"
+    ],
+    "body_keywords": [
+      "ethics",
+      "privacidad",
+      "sesgos",
+      "nist",
+      "fairness",
+      "marco",
+      "arbol",
+      "cuidado"
+    ]
+  },
+  "source_sha256": "693110ca1d89ef9db2d6d1e727bb9701d928b0900240337c8ef5cd1e8d6ce2fa",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

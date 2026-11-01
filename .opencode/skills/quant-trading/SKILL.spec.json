@@ -1,0 +1,86 @@
+{
+  "name": "quant-trading",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data. Alcance: implementacion del motor sobre CQE; para validacion de factores ver alpha-research. Cuando NO",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Usar tipos del motor cuantitativo (Trade, Quote, Order, Signal) no tipos genéricos",
+    "Benchmarks: cargo bench en módulo relevante antes de merge",
+    "Memory: cargo miri para UB, valgrind para leaks en hot path",
+    "Fuzz: cargo fuzz en parsing de market data",
+    "Tests: cargo test --features=strict antes de commit",
+    "SIMD: verificar autovectorización con cargo asm",
+    "Python bindings: maturin build --release si hay cambios en API",
+    "NUEVO: RL-based false positive suppression para Rust static analysis (arXiv:2605.04000)"
+  ],
+  "invariants": [
+    "NUNCA usar unwrap() en hot path de trading → usar expect(\"context\") o Result",
+    "NUNCA loguear API keys, tokens o secretos",
+    "Position sizing: siempre validar contra risk_management::BetSizing::kelly()",
+    "Slippage: siempre incluir slippage::SlippageModel::estimate() en backtests",
+    "Overfitting: WalkForwardOptimizer::min_ratio(0.8) mínimo",
+    "Drawdown: stop automático si portfolio_risk::measures::drawdown() > max_dd"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario implementa estrategias cuantitativas. trading, quant, baja latencia, alpha, motores cuantitativos, backtesting, market data"
+    ],
+    "body_keywords": [
+      "cargo",
+      "slippage",
+      "kelly",
+      "fees",
+      "walk",
+      "domain",
+      "forward",
+      "backtest"
+    ]
+  },
+  "source_sha256": "bcaafb3ec2dadf30691765dec7daaadd1150389ee858b8c271a78366609d3b15",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

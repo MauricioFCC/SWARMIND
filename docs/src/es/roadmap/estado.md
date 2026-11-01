@@ -5,6 +5,35 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-01c)
+
+### Estado 2026-11-01 (Ciclo 11.70 — Contratos SDD de skills)
+- 44/44 skills con `SKILL.spec.json` derivado (ADR-0048) + `routing.body_keywords`
+  tf-idf y `source_sha256` anti-drift.
+- `scripts/generate_skill_specs.py` (`--write`/`--check`) y gate
+  `test_skill_contracts.py` (cobertura, validez, digest, reproducibilidad).
+- `validate_skills --strict` detecta contratos desactualizados.
+- Research: Agent Skills spec + SkillRouter (37-44 pts description-only).
+
+## Estado Actual (2026-11-01b)
+
+### Estado 2026-11-01 (Ciclo 11.69 — Ciclo Frontera de uso constante)
+- Skill `frontier-engineering` + comando `/frontera` + sección en `AGENTS.md`:
+  la petición explícita de frontera dispara el ciclo completo sin reescribir
+  el meta-prompt.
+- Spec SDD `docs/specs/frontier-cycle.md` (AC-FC1..6 + gaps declarados) y
+  contrato ejecutable `test_frontier_cycle_contract.py`.
+- Routing sincronizado (44 skills) y `validate_skills --strict` en verde.
+
+## Estado Actual (2026-11-01a)
+
+### Estado 2026-11-01 (Ciclo 11.68 — RuscaDB upstream + O(n·W)→O(n) corr)
+- Upstream RuscaDB 2026-11-01 leído y documentado (SPEC-0182/0184/0181/0110);
+  rebuild de DLL marcado como condición para cablear la API nueva.
+- `_ts_corr` O(n·W)→O(n) prefix sums + benchmark de gate (9 benchmarks).
+- `_update_records_lancedb` refactor estructural (F5 baja).
+- Pendiente: rebuild DLL upstream → contrato KNN USING + prepared nativo.
+
 ## Estado Actual (2026-10-31a)
 
 ### Estado 2026-10-31 (Ciclo 11.67 — routing frugal gratis>barata)

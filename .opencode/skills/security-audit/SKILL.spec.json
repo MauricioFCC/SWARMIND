@@ -1,0 +1,79 @@
+{
+  "name": "security-audit",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario audita seguridad o cumple estandares. OWASP, STRIDE, SOC2, ISO27001, SAST, DAST, threat modeling, SBOM, pentesting. Alcance: auditoria AppSec/DevSecOps; para infraestructura ver devops-infra",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario audita seguridad o cumple estandares. OWASP, STRIDE, SOC2, ISO27001, SAST, DAST, threat modeling, SBOM, pentesting",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Hallazgo con CWE/CVE, severidad (CVSS) y remediacion",
+    "SAST + DAST ejecutados sobre el alcance",
+    "Dependencias y SBOM revisados por CVEs",
+    "Threat model STRIDE por componente",
+    "Secrets scanning y 0 hardcode",
+    "Gating en CI bajo umbral de severidad"
+  ],
+  "invariants": [
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario audita seguridad o cumple estandares. OWASP, STRIDE, SOC2, ISO27001, SAST, DAST, threat modeling, SBOM, pentesting"
+    ],
+    "body_keywords": [
+      "security",
+      "cvss",
+      "scanning",
+      "vulnerabilidades",
+      "dependencias",
+      "revisar",
+      "regresion",
+      "autenticacion"
+    ]
+  },
+  "source_sha256": "7267d049676c42cefa15f0cdc4aeaf6a76bd946efdada127d7e3579ffd9f4455",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

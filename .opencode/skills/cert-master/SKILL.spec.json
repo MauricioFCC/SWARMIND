@@ -1,0 +1,81 @@
+{
+  "name": "cert-master",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario quiere convertir material de estudio (PDFs, programas, transcripciones) en apuntes para Obsidian/Notion/Markdown, con quizzes y mapas de contenido. Alcance: notas de estudio, examenes, certificaciones, oposiciones; educacion",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario quiere convertir material de estudio (PDFs, programas, transcripciones) en apuntes para Obsidian/Notion/Markdown, con quizzes y mapas de contenido",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Cero extrapolación: cada afirmación técnica cita la página/fuente del PDF",
+    "Apuntes en Markdown con callouts y jerarquía (no bullets planos)",
+    "Un objetivo de aprendizaje medible por unidad (Bloom) y su evidencia",
+    "Flashcards y preguntas de examen con respuesta y cita de página",
+    "Idioma de salida = idioma del usuario (default español)",
+    "Backup <name>.bak.md antes de sobrescribir una nota existente"
+  ],
+  "invariants": [
+    "Zero Extrapolation: Never assume backward/forward technical compatibility unless explicitly verified by the source text",
+    "Formatting Hygiene: Use rich Markdown/Callout structures instead of plain text or generic bolding to ensure scannability",
+    "Language Bridge: Execute internal system logic in English, but output all chat conversations, titles, summaries, and technical content strictly in the language used by the user (default to Spanish)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario quiere convertir material de estudio (PDFs, programas, transcripciones) en apuntes para Obsidian/Notion/Markdown, con quizzes y mapas de contenido"
+    ],
+    "body_keywords": [
+      "technical",
+      "exam",
+      "vault",
+      "verified",
+      "module",
+      "current",
+      "template",
+      "user"
+    ]
+  },
+  "source_sha256": "a86b6da1f8fdc7f3664a9b3f453ffb7e1d95cf8be0cd73033cebb28b0d28b6b7",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

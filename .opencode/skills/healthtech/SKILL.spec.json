@@ -1,0 +1,84 @@
+{
+  "name": "healthtech",
+  "version": "1.0.0",
+  "description": "Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos. Alcance: salud digital y sistemas clinicos; para seguridad general ver security-audit",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "PHI/PII cifrados en reposo y en transito",
+    "Audit trail en cada operacion sobre datos clinicos",
+    "Consentimiento explicito y retencion definida",
+    "Interoperabilidad HL7 FHIR R4 / DICOM",
+    "Control de acceso por rol (physician/admin)",
+    "Tests de seguridad health-specific (OWASP)"
+  ],
+  "invariants": [
+    "HIPAA: Todo healthtech debe cumplir HIPAA (US) o GDPR-Salud (EU)",
+    "Audit Trail: Toda operación sobre datos de pacientes debe ser auditada",
+    "Consentimiento: El paciente debe haber dado consentimiento explícito para cualquier uso de datos",
+    "Retención: Los datos clínicos se retienen mínimo 5 años (según jurisdicción)",
+    "Base de datos: PostgreSQL con encryptación de columna para PHI/PII",
+    "API: REST/HL7 FHIR R4 como estándar primario"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el dominio es salud digital o sistemas clinicos. salud digital, HIPAA, sistemas clinicos, interoperabilidad, cumplimiento regulatorio, datos clinicos"
+    ],
+    "body_keywords": [
+      "fhir",
+      "patient",
+      "consentimiento",
+      "acceso",
+      "trail",
+      "health",
+      "dicom",
+      "paciente"
+    ]
+  },
+  "source_sha256": "60c8dae5fbbf1be4129cd04afc25ee4828b0e882feeb775ecc039a1ee86cc430",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

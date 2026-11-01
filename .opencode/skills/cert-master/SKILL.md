@@ -218,6 +218,15 @@ When provided with an existing note draft or file path, suspend standard executi
   - Vanderbilt CFT (Bloom) � https://cft.vanderbilt.edu/guides-sub-pages/he-blooms-taxonomy
 - **ANTI-HEDGING**: Un objetivo de aprendizaje medible por unidad; evalua con evidencia de aprendizaje.
 
+## Checklist
+
+- [ ] Cero extrapolación: cada afirmación técnica cita la página/fuente del PDF
+- [ ] Apuntes en Markdown con callouts y jerarquía (no bullets planos)
+- [ ] Un objetivo de aprendizaje medible por unidad (Bloom) y su evidencia
+- [ ] Flashcards y preguntas de examen con respuesta y cita de página
+- [ ] Idioma de salida = idioma del usuario (default español)
+- [ ] Backup `<name>.bak.md` antes de sobrescribir una nota existente
+
 ## Ejemplo
 
 Sube un PDF de 120 paginas y genera `notes.md` con mapa de temas, 30 flashcards y 10 preguntas de examen; cada respuesta cita la pagina fuente.

@@ -1,0 +1,82 @@
+{
+  "name": "frontend-uiux",
+  "version": "1.2.0",
+  "description": "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. Alcance: UI/UX y design systems; para diagramas visuales ver diagram-design",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "TypeScript strict mode, sin any, sin @ts-ignore",
+    "ESLint + Prettier pasan (incluye jsx-a11y)",
+    "Estados cubiertos: loading, empty, error, success, disabled",
+    "Mobile-first responsive: 3 viewports probados",
+    "Bundle impact < 50KB por componente nuevo (gzip)",
+    "axe-playwright 0 violaciones; WCAG 2.2 AA audit 0 critical",
+    "Test unitario por componente (>=90%) + PBT 0 counterexamples",
+    "Lighthouse >=90; LCP < 2.5s; INP < 200ms; CLS < 0.1",
+    "DocStrings ES-UTF8: Args/Returns/Raises en funcion publica"
+  ],
+  "invariants": [
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend"
+    ],
+    "body_keywords": [
+      "tier",
+      "core",
+      "responsive",
+      "wiserui",
+      "advanced",
+      "system",
+      "violaciones",
+      "accesibilidad"
+    ]
+  },
+  "source_sha256": "1fc558b830adab55989d5edebc4c90e54b3496760a44eef5c64bcae09dd0dff7",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

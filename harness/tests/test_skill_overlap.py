@@ -45,8 +45,9 @@ from harness.orchestrator.keyword_match import normalize
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 REGISTRY_PATH = _PROJECT_ROOT / ".opencode" / "skills" / "skills_registry.yaml"
 
-#: N de skills esperado en el registry (ronda 2; +2 comprension/arquitectura).
-EXPECTED_SKILLS = 43
+#: N de skills esperado en el registry (ronda 2; +2 comprension/arquitectura;
+#: +1 frontier-engineering: ciclo frontera de uso constante).
+EXPECTED_SKILLS = 44
 
 #: Score de solape >= a este valor = "pico" que DEBE ser accionable.
 PEAK_THRESHOLD = 0.8

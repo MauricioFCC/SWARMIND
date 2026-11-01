@@ -1,0 +1,80 @@
+{
+  "name": "architecture",
+  "version": "1.0.0",
+  "description": "Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones. Alcance: diseno y decisiones de arquitectura; para infraestructura y despliegue ver",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Dependencias sin ciclos; capas respetadas (domain no importa infra)",
+    "Decision mayor documentada en un ADR",
+    "Fitness function que protege la caracteristica clave",
+    "Interfaces publicas con type hints",
+    "Modulos < 500 lineas y funciones < 60 lineas",
+    "Cobertura de tests en la capa core"
+  ],
+  "invariants": [
+    "ANTI-HEDGING: Recomienda UNA arquitectura con tradeoffs; nunca un menu de opciones sin veredicto",
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones"
+    ],
+    "body_keywords": [
+      "arch",
+      "arquitectonico",
+      "capa",
+      "lineas",
+      "modulos",
+      "interfaces",
+      "block",
+      "domain"
+    ]
+  },
+  "source_sha256": "abe7ca3653e702c66b71278c87d366907820d75c2ab64c4216224f6fb02f57bd",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

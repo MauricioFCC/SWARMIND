@@ -15,19 +15,28 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import re
 import sys
 from pathlib import Path
 
 from hash_skills_registry import compute_skill_digest
 
+#: Raiz del repo en sys.path (el script corre con sys.path[0]=scripts; sin esto
+#: ``harness`` puede resolverse a una copia instalada desactualizada).
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(1, str(_ROOT))
+
 from harness.common import estimate_tokens
-from harness.context.skill_contract import load_skill_contract, validate_contract
+from harness.context.skill_contract import (
+    load_skill_contract,
+    validate_contract,
+)
 
 # ---------------------------------------------------------------------------
 # Constantes (MAG)
 # ---------------------------------------------------------------------------
-_ROOT = Path(__file__).resolve().parent.parent
 _SKILLS_DIR = _ROOT / ".opencode" / "skills"
 _REGISTRY = _SKILLS_DIR / "skills_registry.yaml"
 
@@ -102,6 +111,36 @@ def _registry_digests() -> dict[str, str]:
     return digests
 
 
+def _spec_drift_error(skill_dir: Path) -> str | None:
+    """Error si ``SKILL.spec.json`` no corresponde al ``SKILL.md`` vigente.
+
+    Args:
+        skill_dir: Directorio del skill.
+
+    Returns:
+        Mensaje de error (WHAT+WHY+WHERE) o ``None`` si no hay drift o no hay
+        ``source_sha256`` declarado (spec legacy/manual).
+    """
+    spec_path = skill_dir / "SKILL.spec.json"
+    if not spec_path.is_file():
+        return None
+    try:
+        declared = json.loads(spec_path.read_text(encoding="utf-8")).get("source_sha256")
+    except json.JSONDecodeError:
+        return None  # load_skill_contract ya reporta el JSON invalido
+    if not declared:
+        return None
+    current = hashlib.sha256((skill_dir / "SKILL.md").read_bytes()).hexdigest()
+    if declared == current:
+        return None
+    return (
+        f"{skill_dir.name}: SKILL.spec.json desactualizado "
+        f"(WHAT=source_sha256 != SKILL.md WHY=contrato SDD drift "
+        f"WHERE=_spec_drift_error; regenerar con "
+        f"scripts/generate_skill_specs.py --write)"
+    )
+
+
 def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
     """Valida un skill completo.
 
@@ -174,6 +213,9 @@ def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
     spec = load_skill_contract(skill_dir)
     if spec is not None:
         errors.extend(validate_contract(spec, skill_dir))
+        drift = _spec_drift_error(skill_dir)
+        if drift:
+            errors.append(drift)
     elif not quiet:
         print(
             f"  ⚠  {name}: sin SKILL.spec.json (ADR-0048 SDD: migrar a "
