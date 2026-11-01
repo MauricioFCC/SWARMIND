@@ -1,3 +1,32 @@
+## [11.67] - 2026-10-31
+
+### Added
+- Tier frugal de funcion de OpenCode (free-first, N9 spec `model-free-edits.md`):
+  - `harness/model_router/edit_runtime.py`: escalera de modelos SSOT settables
+    (env `SWARMIND_EDITS_MODEL` > yaml `.opencode/config/model_runtime.yaml` >
+    constantes) con **gratis primero** (beam-free: `opencode-go/beam-free`,
+    `opencode/beam-free`) y después la de pago más barata
+    (`opencode-go/deepseek-v4.1-flash`).
+  - Coordinador `dispatch`: `DispatchPlan.model` se rellena con el primer id
+    valido de la escalera para tareas con `ComplexityRouter.decide() ==
+    "small"` (sin razonamiento profundo); tareas frontier/cerradas quedan sin
+    modelo frugal. Aceivable con env `SWARMIND_FRUGAL_ROUTING=0`.
+  - Agente `beam-patcher` (subagente fijo a beam-free, edits-only, deny
+    web/shell/subagent) + comando `/patch-free` en runtime del TUI.
+  - 30 tests (`test_model_runtime.py`, `test_coordinator_frugal.py`).
+
+### Changed
+- SSOT instalacion runtime: `coordinator_policy.yaml` (delegation.agents),
+  `project_config.yaml` (agent_count/agent_list) y `opencode.json`
+  (subagent allow list) sincronizados con el nuevo agente (26 agentes).
+
+### Verified
+- 7482 passed / 38 skipped / 1 xfailed / 0 failed; ruff/vulture/arquitectura/
+  complejidad/ratchet/preview/pep649/skills en verde.
+- Privacidad pre-push: auditoría de hallazgos `USUARIO|Memory_Proyects|MauricioFCC`
+  en archivos tracked: 0 rutas personales; solo referencias públicas
+  pre-existentes (badges/owner/SSOT), sin secretos inline (`{env:VAR}`).
+
 ## [11.66] - 2026-10-30
 
 ### Added

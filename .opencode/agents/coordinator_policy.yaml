@@ -33,11 +33,13 @@ delegation:
   profundidad_cap: 2
 
   # Agentes y disparadores automáticos (auto-detección por dominio).
-  # SSOT de los 24 agentes reales de `.opencode/agents/*.md` (los 4 núcleo
-  # —builder/scientist/guardian/evolve— más los 20 especializados). Un agente
+  # SSOT de los 25 agentes reales (incluye beam-patcher) de `.opencode/agents/*.md` (los 4 núcleo
+  # —builder/scientist/guardian/evolve— más los 20 especializados + beam-patcher (frugal)). Un agente
   # sin entrada aquí queda fuera de la auto-detección del coordinador.
   agents:
-    builder: [implement, implementa, code, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, db, trading, design-system, accesibilidad, responsive, a11y]
+    beam-patcher: [edit, renames, renombra, arregla, ajusta, patch, tweak, comentario, docstring, micro-edicion]
+    builder: [
+    implement, implementa, code, api, endpoint, rust, go, python, web, mobile, frontend, ui, component, db, trading, design-system, accesibilidad, responsive, a11y]
     scientist: [research, paper, architecture, design, pattern, algorithm, ml, ai, hci, ux, ui-research, generative-ui]
     guardian: [test, security, audit, risk, doc, quality, review, validate, frontend-quality, visual-regression, a11y-audit]
     evolve: [evolve, improve, optimize, skill, cognition, learn]

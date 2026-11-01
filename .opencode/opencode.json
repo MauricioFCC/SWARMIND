@@ -11,6 +11,11 @@
       "permissions": [
         {
           "action": "subagent",
+          "resource": "beam-patcher",
+          "effect": "allow"
+        },
+        {
+          "action": "subagent",
           "resource": "*",
           "effect": "ask"
         },

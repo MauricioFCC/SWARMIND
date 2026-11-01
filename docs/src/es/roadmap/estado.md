@@ -5,6 +5,16 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-10-31a)
+
+### Estado 2026-10-31 (Ciclo 11.67 — routing frugal gratis>barata)
+- Coordinador delega tareas "small" (sin razonamiento profundo) a la escalera
+  frugal settabte settable: gratis (beam-free) primero, de pago barato
+  después; `SWARMIND_EDITS_MODEL`/`SWARMIND_FRUGAL_ROUTING` manda.
+- beam-patcher + `/patch-free` propagados al global via sync (cerebro).
+- Pendiente P2: bajar cy debug la `frugal_ladder.paid` si el catálogo agrega
+  más tier públicos y auditar el `fallback_model` si cambia el default TUI.
+
 ## Estado Actual (2026-10-30k)
 
 ### Estado 2026-10-30 (Ciclo 11.66 — self-update runtime: aviso + !update)

@@ -77,7 +77,7 @@ HARNESS:
     - telemetry_events
     - session_kpis
     - agent_interactions
-  agent_count: 25
+  agent_count: 26
   skill_count: 42
   model_routing: "hybrid (local Ollama + cloud API)"
   hitl_enabled: true
@@ -92,8 +92,9 @@ HARNESS:
 
 # ── Agent Ecosystem ───────────────────────────────────────────────────────────
 AGENTS:
-  total: 25
+  total: 26
   agent_list:
+    - beam-patcher
     - alpha-miner
     - architect
     - backend-engineer

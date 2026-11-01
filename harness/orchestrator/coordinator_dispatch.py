@@ -25,6 +25,9 @@ import zlib
 from dataclasses import dataclass
 from functools import lru_cache
 
+from harness.model_router.edit_runtime import (
+    frugal_dispatch_model,
+)
 from harness.model_router.local_executor import is_closed_task
 from harness.orchestrator import feature_flags
 from harness.orchestrator.agent_selector import AgentSelector
@@ -44,6 +47,9 @@ logger = logging.getLogger("harness.orchestrator.coordinator_dispatch")
 
 #: Skills maximas por defecto (presupuesto).
 DEFAULT_MAX_SKILLS = 3
+
+#: Modelo unset en el plan: ni frugal ni override explicito.
+FRUGAL_MODEL_UNSET = ""
 
 #: Feature flag del routing mutado (QD). Off por defecto (trunk-based, ADR-0083).
 _MUTATION_FLAG = "routing-mutation"
@@ -81,7 +87,10 @@ class DispatchPlan:
         cloud_tokens: Estimado (0 si deterministico/local).
         reason: Motivo legible.
         mutated: True si el routing fue mutado por Quality-Diversity.
+        mutated: True si el routing fue mutado por Quality-Diversity.
         mutation: Detalle legible de la mutacion aplicada.
+        model: Modelo OpenCode del tier frugal para tareas small
+            (:data:`FRUGAL_MODEL_UNSET` cuando no aplica).
     """
 
     agent: str
@@ -95,6 +104,7 @@ class DispatchPlan:
     reason: str = ""
     mutated: bool = False
     mutation: str = ""
+    model: str = FRUGAL_MODEL_UNSET
 
 
 def _domain_for(task: str) -> str:
@@ -267,6 +277,9 @@ def dispatch(
         reason = f"{reason}; {len(tools)} herramientas MCP: {', '.join(tools)}"
     if mutation:
         reason = f"{reason}; {mutation}"
+    plan_model = frugal_dispatch_model(task, is_deep_task=_is_deep_task(task))
+    if plan_model:
+        reason = f"{reason}; modelo frugal ({plan_model})"
     logger.info("dispatch: %s -> %s/%s", task[:60], agent, backend)
     return DispatchPlan(
         agent=agent, skills=skills, tools=tools, backend=backend,
@@ -274,7 +287,29 @@ def dispatch(
         output_contract='{"result": "string", "evidence": ["string"]}',
         oracle=oracle_sample, cloud_tokens=0 if backend == "local" else -1,
         reason=reason, mutated=mutant is not None, mutation=mutation,
+        model=plan_model,
     )
+
+
+def _is_deep_task(task: str) -> bool:
+    """True si ComplexityRouter clasifica la tarea como frontier (profunda).
+
+    Tareas small (sin señales de razonamiento) son candidatas al tier frugal;
+    una tarea sin señales clasificables se considera **no profunda** (frugal).
+
+    Args:
+        task: Descripción de la tarea.
+
+    Returns:
+        True solo si el router emite ``ROUTE_FRONTIER``.
+    """
+    from harness.model_router.complexity_router import ComplexityRouter
+    from harness.model_router.complexity_router.constants import ROUTE_FRONTIER
+
+    try:
+        return ComplexityRouter().decide(task).route == ROUTE_FRONTIER
+    except ValueError:
+        return False
 
 
 def _strip_accents(text: str) -> str:
