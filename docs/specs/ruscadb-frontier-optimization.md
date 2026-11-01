@@ -174,3 +174,6 @@ Lista de specs a generar:
 - Fase A: 2 semanas.
 - Fase B: 4 semanas.
 - Fase C: 2 meses.
+
+> **UPDATE upstream 2026-11-01** (HEAD `0984bb9`): 3VL (SPEC-0182), prepared statements nativos (SPEC-0184), `KNN USING AUTO|QUANTIZED|FILTERED|EXACT` (SPEC-0181), columnar `RCOL1` (SPEC-0110) disponibles en el motor. El binario FFI del harness (2026-10-29) NO los exporta aún: tras rebuild (`scripts/setup_swarmind.py`) cerrar contrato con `test_ruscadb_store.py`/`test_ruscadb.py`. Detalles y fórmulas en `docs/research/frontier-2026-11-01-ruscadb.md`.
+

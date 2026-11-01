@@ -96,6 +96,9 @@ def _bench_oversample_observe(n: int) -> None:
 #: Paneles reutilizados por el benchmark de TS_RANK (construcción fuera del reloj).
 _TS_RANK_PANELS: dict[int, Any] = {}
 
+#: Paneles reutilizados por el benchmark de TS_CORR (idem).
+_TS_CORR_PANELS: dict[int, tuple[Any, Any]] = {}
+
 
 def _bench_ts_rank(n: int) -> None:
     """Rank rolling con ventana proporcional a n (Fenwick: O(n log n)).
@@ -114,6 +117,23 @@ def _bench_ts_rank(n: int) -> None:
     _ts_rank(panel, max(2, n // 10))
 
 
+def _bench_ts_corr(n: int) -> None:
+    """Correlacion rolling O(n) via prefix sums (ventana ∝ n: O(n·W) falla)."""
+    import numpy as np
+
+    from harness.alpha_mining.factor_dsl import _ts_corr
+
+    pair = _TS_CORR_PANELS.get(n)
+    if pair is None:
+        rng = np.random.default_rng(11)
+        panel = rng.normal(0.0, 1.0, size=(n, 2))
+        # NaN en ~5% para activa la mascara de pares completos.
+        panel[rng.random(panel.shape) < 0.05] = np.nan
+        pair = (panel[:, 0:1], panel[:, 1:2])
+        _TS_CORR_PANELS[n] = pair
+    _ts_corr(pair[0], pair[1], max(2, n // 10))
+
+
 #: Nombre -> (funcion, clase esperada de complejidad).
 BENCHMARKS: Mapping[str, tuple[Callable[[int], Any], str]] = {
     "kernel.mailbox": (_bench_mailbox, "linear"),
@@ -124,6 +144,7 @@ BENCHMARKS: Mapping[str, tuple[Callable[[int], Any], str]] = {
     "cache.adaptive_observe": (_bench_adaptive_observe, "linear"),
     "bq.oversample_observe": (_bench_oversample_observe, "linear"),
     "alpha.ts_rank": (_bench_ts_rank, "n_log_n"),
+    "alpha.ts_corr": (_bench_ts_corr, "linear"),
 }
 
 

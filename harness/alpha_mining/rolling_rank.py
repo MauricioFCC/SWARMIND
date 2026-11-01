@@ -20,7 +20,10 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
-__all__ = ["Fenwick", "ts_rank"]
+#: Epsilon numerica (espejo de factor_dsl.EPS) para varianza ~ 0.
+_EPS = 1e-12
+
+__all__ = ["Fenwick", "ts_corr", "ts_rank"]
 
 
 class Fenwick:
@@ -78,6 +81,89 @@ def _rank_column(series: NDArray[np.float64], window: int) -> NDArray[np.float64
         below = tree.prefix(rank - 1)
         equal = tree.prefix(rank) - below
         out[t] = (below + (equal - 1) / 2.0) / (in_window - 1)
+    return out
+
+
+def ts_corr(a: Any, b: Any, window: int) -> NDArray[np.float64]:
+    """Correlacion Pearson rolling O(n) por pares completos (prefix sums).
+
+    ``corr = (n*Sab - Sa*Sb) / (sqrt(n*Saa-Sa^2) * sqrt(n*Sbb-Sb^2))`` con
+    sumas S[t]-S[t-W] 0-padded (Scan de Blelloch); O(n*W) -> O(n).
+
+    Args:
+        a: Panel (T, N) de valores (puede contener NaN).
+        b: Panel (T, N) de valores (puede contener NaN).
+        window: Tamano de la ventana rolling (<= 1 o > T -> todo NaN).
+
+    Returns:
+        Panel (T, N) con la correlacion en [-1, 1]; NaN donde < 2 pares
+        completos o varianza ~ 0.
+
+    Raises:
+        ValueError: Si la shape de ``a`` y ``b`` no coinciden.
+    """
+    left = np.asarray(a, dtype=float)
+    right = np.asarray(b, dtype=float)
+    if left.shape != right.shape:
+        raise ValueError(
+            "ts_corr | WHAT=shape_mismatch | "
+            f"WHY=a_b_deben_misma_forma | WHERE=ts_corr | "
+            f"a={left.shape} b={right.shape}"
+        )
+    if window <= 1 or left.shape[0] < window:
+        return np.full(left.shape, np.nan)
+    return _corr_from_ends(left.shape, window, _prefix_ends(left, right))
+
+
+def _prefix_ends(
+    left: NDArray[np.float64], right: NDArray[np.float64]
+) -> dict[str, NDArray[np.float64]]:
+    """Prefix sums 0-padded para a/b/ab/aa/bb y contador de pares.
+
+    Args:
+        left: Panel (T, N) de la serie a (con NaN).
+        right: Panel (T, N) de la serie b (con NaN).
+
+    Returns:
+        Dict ``{aa, ab, a, b, bb, n}`` con arrays (T+1, N) 0-alineados.
+    """
+    mask = np.isfinite(left) & np.isfinite(right)
+    m = mask.astype(float)
+    pair_a = np.where(mask, left, 0.0)
+    pair_b = np.where(mask, right, 0.0)
+    zeros = np.zeros((1, left.shape[1]))
+    return {
+        "aa": np.concatenate((zeros, np.cumsum(pair_a * pair_a, axis=0))),
+        "ab": np.concatenate((zeros, np.cumsum(pair_a * pair_b, axis=0))),
+        "a": np.concatenate((zeros, np.cumsum(pair_a, axis=0))),
+        "b": np.concatenate((zeros, np.cumsum(pair_b, axis=0))),
+        "bb": np.concatenate((zeros, np.cumsum(pair_b * pair_b, axis=0))),
+        "n": np.concatenate((zeros, np.cumsum(m, axis=0))),
+    }
+
+
+def _corr_from_ends(
+    shape: tuple[int, ...],
+    window: int,
+    ends: dict[str, NDArray[np.float64]],
+) -> NDArray[np.float64]:
+    """Pearson por ventana desde los ends 0-padded (NaN si invalida)."""
+    out = np.full(shape, np.nan)
+    now = slice(window, None)          # indices T >= window (0-pad ECC)
+    past = slice(0, -window)           # indices t - window
+    n = ends["n"][now] - ends["n"][past]
+    sum_a = ends["a"][now] - ends["a"][past]
+    sum_b = ends["b"][now] - ends["b"][past]
+    sum_ab = ends["ab"][now] - ends["ab"][past]
+    sum_aa = ends["aa"][now] - ends["aa"][past]
+    sum_bb = ends["bb"][now] - ends["bb"][past]
+    cov = sum_ab * n - sum_a * sum_b
+    var_a = sum_aa * n - sum_a * sum_a
+    var_b = sum_bb * n - sum_b * sum_b
+    denom = np.sqrt(np.maximum(var_a, 0.0) * np.maximum(var_b, 0.0))
+    corr = cov / np.where(denom > 0.0, denom, 1.0)
+    valid = (n >= 2) & (denom > 0.0)
+    out[window - 1 :] = np.where(valid, corr, np.nan)
     return out
 
 

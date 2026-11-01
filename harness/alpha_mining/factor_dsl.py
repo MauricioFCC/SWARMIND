@@ -34,6 +34,7 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from .rolling_rank import ts_corr as _ts_corr
 from .rolling_rank import ts_rank as _ts_rank
 
 #: Maximo de nodos de un AST (AlphaAgent: complexity control).
@@ -527,31 +528,3 @@ def _scale(x: NDArray[np.float64]) -> NDArray[np.float64]:
     totals = np.sum(np.abs(x), axis=1, keepdims=True)
     safe = np.where(np.abs(totals) < EPS, 1.0, totals)
     return np.where(np.abs(totals) < EPS, np.nan, x / safe)
-
-
-def _ts_corr(
-    a: NDArray[np.float64], b: NDArray[np.float64], window: int
-) -> NDArray[np.float64]:
-    """Pearson rolling por pares completos (NaN excluido; <2 muestras -> NaN)."""
-    out = np.full(a.shape, np.nan)
-    if a.shape[0] < window:
-        return out
-    wins_a = np.lib.stride_tricks.sliding_window_view(a, window, axis=0)
-    wins_b = np.lib.stride_tricks.sliding_window_view(b, window, axis=0)
-    mask = np.isfinite(wins_a) & np.isfinite(wins_b)
-    count = mask.sum(axis=-1)
-    a_masked = np.where(mask, wins_a, 0.0)
-    b_masked = np.where(mask, wins_b, 0.0)
-    safe_count = np.maximum(count, 1)
-    sum_a = a_masked.sum(axis=-1)
-    sum_b = b_masked.sum(axis=-1)
-    sum_ab = (a_masked * b_masked).sum(axis=-1)
-    sum_aa = (a_masked * a_masked).sum(axis=-1)
-    sum_bb = (b_masked * b_masked).sum(axis=-1)
-    cov = sum_ab - sum_a * sum_b / safe_count
-    var_a = sum_aa - sum_a * sum_a / safe_count
-    var_b = sum_bb - sum_b * sum_b / safe_count
-    denom = np.sqrt(np.maximum(var_a, 0.0) * np.maximum(var_b, 0.0))
-    valid = (count >= 2) & (var_a > EPS) & (var_b > EPS)
-    out[window - 1 :] = np.where(valid, cov / np.where(valid, denom, 1.0), np.nan)
-    return out
