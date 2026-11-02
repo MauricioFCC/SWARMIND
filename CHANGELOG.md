@@ -1,3 +1,16 @@
+## [11.71] - 2026-11-01
+
+### Fixed
+- Guardrail `COST-001` ya no avisa "No se definio presupuesto" en cada turno:
+  resuelve `defaults.base_budget` de `.opencode/config/token_budgets.yaml`
+  (SSOT) y reporta INFO con el presupuesto del proyecto. El WARN solo aparece
+  si no hay budget explicito **ni** default configurado.
+- `COST-002` compara cada metrica con su eje: `max_tokens` contra
+  `token_usage` y `max_cost_usd` contra `cost` (antes un limite de tokens se
+  comparaba contra el coste en USD). Sin budget explicito usa el default.
+- Tests nuevos `harness/tests/test_cost_guardrail.py` (7): default del SSOT,
+  WARN sin SSOT, prioridad del budget explicito y separacion de unidades.
+
 ## [11.70] - 2026-11-01
 
 ### Added
