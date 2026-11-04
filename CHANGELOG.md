@@ -1,3 +1,15 @@
+## [11.72] - 2026-11-04
+
+### Added
+- `scripts/install.py`: instalador del entorno de desarrollo equivalente a
+  `install.ps1`/`install.sh` pero ejecutable como `python scripts/install.py`,
+  para PCs Windows donde la ExecutionPolicy bloquea los `.ps1`. Cubre los 6
+  pasos (Python >= 3.12, uv, `uv sync --extra dev`, symlinks con fallback a
+  copia, git hooks y verificación) e incluye `--dry-run`.
+- `harness/tests/test_install_py_scripts.py`: contrato del instalador (existe,
+  sin invocar PowerShell, `--dry-run` en 0, 6 pasos y `--help` descubrible).
+- README: `python scripts/install.py` como comando recomendado multiplataforma.
+
 ## [11.71] - 2026-11-01
 
 ### Fixed

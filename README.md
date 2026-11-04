@@ -44,7 +44,8 @@ cd SWARMIND
 # 2. One-command cross-platform setup (verifies Python 3.12+, installs uv, uv sync,
 #    symlinks config to opencode global, installs hooks, verifies import)
 ./scripts/install.sh        # Linux / macOS
-#  .\scripts\install.ps1     # Windows (PowerShell, symlink fallback to copy)
+python scripts/install.py   # Windows / Linux / macOS (sin PowerShell)
+#  .\scripts\install.ps1     # Windows (alternativa; requiere ExecutionPolicy)
 
 # 3. Run the test suite
 uv run python -m pytest harness/tests/ -q
@@ -235,7 +236,8 @@ without Developer Mode):
 git clone https://github.com/MauricioFCC/SWARMIND.git
 cd SWARMIND
 ./scripts/install.sh        # Linux / macOS
-#  .\scripts\install.ps1     # Windows (PowerShell)
+python scripts/install.py   # Windows / Linux / macOS (sin PowerShell)
+#  .\scripts\install.ps1     # Windows (alternativa; requiere ExecutionPolicy)
 ```
 
 The installer verifies Python 3.12+, installs [uv](https://github.com/astral-sh/uv)
