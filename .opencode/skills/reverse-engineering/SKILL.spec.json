@@ -1,6 +1,6 @@
 {
   "name": "reverse-engineering",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Usar cuando el usuario analiza binarios o software sin codigo fuente. reverse engineering, decompile, binary, ghidra, hopper, ida, .asar, electron, xrefs, .NET, Go/Rust, SQLite, REA. Alcance: solo targets propios/autorizados; para auditoria de seguridad",
   "contract": {
     "input": {
@@ -45,13 +45,17 @@
   ],
   "postconditions": [
     "rea doctor --json OK y proveedor declarado (REA_ANALYSIS_PROVIDER)",
-    "Tipo de target verificado (magic/extensión), no asumido",
-    "Hallazgos respaldados por xrefs/decompile (no inferencias sueltas)",
+    "Tipo de target verificado con triage (magic/SHA-256), no asumido",
+    "Brief con pregunta y done_when; plan con estados",
+    "Hallazgos respaldados por evidencia ev_... existente en el ledger",
+    "Unknowns abiertos con probes; resueltos con resolución + evidencia",
+    "Actualizaciones con based_on_revision vigente",
+    "Modo declarado (clean-room/deep) y operaciones denegadas con remediación",
+    "handoff escrito antes de cerrar el turno",
     "Evidencia exportada (evidence-export) y versionada con la conclusión",
     "rea compare ejecutado si hay baseline/parche",
     "Reconstrucción validada contra evidencia (round-trip o test)",
-    "Licencias de Hopper/IDA/JEB respetadas (no redistribuir decompilados)",
-    "Datos sensibles (PII/secretos) enmascarados en logs y reportes"
+    "Licencias de Hopper/IDA/JEB respetadas (no redistribuir decompilados)"
   ],
   "invariants": [
     "Solo targets propios o con autorización explícita por escrito. Sin autorización → detener",
@@ -71,12 +75,12 @@
       "trace",
       "nativo",
       "tools",
+      "anything",
       "doctor",
-      "analyze",
-      "inspect"
+      "proj"
     ]
   },
-  "source_sha256": "f966f1a78b82868dd4a1627a382b4dad3e0431f934f1873e89693248ae46cd9c",
+  "source_sha256": "5a012ae2690d25bbf44bef0acd4f95341e6e3566c4cd6c035a914915b4740c69",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

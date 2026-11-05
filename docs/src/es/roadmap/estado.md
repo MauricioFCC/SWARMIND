@@ -5,6 +5,15 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-05a)
+
+### Estado 2026-11-05 (Ciclo 11.73 — RE con evidencia)
+- `harness/reverse_engineering`: evidencia canónica, ledger anti-manipulación,
+  investigación revisionada y triaje por bytes; clean-room/deep y puente a
+  `craft-anything-cli`.
+- Skill `reverse-engineering` v1.1.0 + agente `security-engineer` + `/re`.
+- Spec y research nuevos; 31 tests + 2 mutantes muertos.
+
 ## Estado Actual (2026-11-01c)
 
 ### Estado 2026-11-01 (Ciclo 11.70 — Contratos SDD de skills)

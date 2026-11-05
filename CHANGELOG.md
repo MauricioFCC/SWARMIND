@@ -1,3 +1,39 @@
+## [11.73] - 2026-11-05
+
+### Added
+- Paquete `harness/reverse_engineering/` con el protocolo de evidencia de
+  `craft-anything` (storytold/craft-anything), sin portar sus 301 herramientas:
+  - `canonical.py`: JSON canónico RFC 8785 (claves UTF-16, escapes mínimos) +
+    `sha256_hex`/`stable_id`.
+  - `evidence.py`: `Evidence` con id `ev_<sha256>` del contenido (dedupe
+    idempotente, anti-manipulación) y `EvidenceLedger` JSONL verificable.
+  - `investigation.py` + `rendering.py`: brief, plan, hipótesis, hallazgos,
+    unknowns y handoff con revisión optimista y renders Markdown; un hallazgo
+    exige evidencia existente y un unknown resuelto exige resolución + prueba.
+  - `triage.py`: identificación por magic bytes (ELF/PE/.NET/Mach-O/APK/JAR/
+    ZIP/WASM/pyc/SQLite/texto), SHA-256 en streaming e inventario ZIP/TAR sin
+    extraer; reutiliza `target_router` (IDP) para la ruta REA.
+  - `policy.py`: clean-room vs deep con allow/deny por prefijo y rechazo con
+    remediación (`--deep`).
+  - `bridge.py`: puente opcional a `craft-anything-cli` (301 herramientas) que
+    valida política, ejecuta con timeout y envuelve el resultado en evidencia.
+  - `cli.py`: `python -m harness.reverse_engineering` (triage/brief/plan/
+    finding/hypothesis/unknown/resolve/show/policy/bridge).
+- Skill `reverse-engineering` v1.1.0 con el protocolo; agente
+  `security-engineer` con la sección de investigación y triggers/capacidades;
+  comando `/re` como atajo.
+- Spec `docs/specs/reverse-engineering-craft-anything.md` (RE-AC1..11 + gaps) y
+  research `docs/research/frontier-2026-11-05-craft-anything.md`.
+- `harness/tests/test_reverse_engineering.py` (31 tests): canonical, evidencia,
+  ledger manipulado, revisión obsoleta, unknown sin prueba, persistencia,
+  triaje por formato, política clean-room/deep, puente y CLI end-to-end.
+
+### Verified
+- Mutantes: quitar la validación de evidencia y desactivar el chequeo de
+  revisión hace fallar los tests correspondientes (2/2 muertos).
+- Gates: ruff, vulture, arquitectura+ratchet, complejidad, ruff-ratchet,
+  preview y pep649 en verde; `validate_skills --strict` OK.
+
 ## [11.72] - 2026-11-04
 
 ### Added
