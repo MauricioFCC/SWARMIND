@@ -1,3 +1,30 @@
+## [11.74] - 2026-11-05
+
+### Added
+- `scripts/propagation.py`: motor de propagación **content-addressed** con
+  manifiesto (ruta -> sha256/tamaño/mtime), fast path por tamaño+mtime,
+  escritura atómica (temporal + `os.replace`), copias en paralelo
+  (`ThreadPoolExecutor`), exclusiones por patrón y rechazo de symlinks/rutas
+  que escapan del destino.
+- Tests `harness/tests/test_propagation.py` (8): copia inicial, idempotencia
+  (0 escrituras en la segunda pasada), actualización por contenido, dry-run,
+  ausencia de temporales, `sync_file`, symlinks y manifiesto corrupto.
+
+### Changed
+- `scripts/sync_opencode_global.py` usa el motor incremental para cerebro y
+  motor: solo escribe lo que cambió (el segundo sync reporta **0 archivos
+  cambiados**); MCP ya no cuenta como cambio si el JSON está sincronizado.
+- `scripts/deploy_all.py`: por defecto propaga **solo** a `~/.config/opencode`;
+  el mirror por proyecto queda como opt-in (`--projects`), alineado con la
+  eliminación de copias redundantes en los proyectos.
+- `AGENTS.md`: conteos al día (44 skills, 26 agentes, ~7.7k tests) y nota de
+  que la propagación es solo al global.
+
+### Verified
+- Segundo `sync_opencode_global.py`: `Total: 0 archivos cambiados`.
+- `verify_global_sync.py`: 0 faltantes / 0 divergentes; `AGENTS.md` repo == global.
+- Tests de propagación y de deploy (52) en verde.
+
 ## [11.73] - 2026-11-05
 
 ### Added

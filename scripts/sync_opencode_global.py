@@ -14,7 +14,9 @@ Esto elimina la duplicación de harness/skills/agentes entre proyectos
 (el ahorro de disco depende del tamaño de cada proyecto).
 
 Modos de sincronización (--mode):
-  - copy (default): shutil.copytree/copy2. Funciona siempre, portable.
+  - copy (default): motor incremental `scripts/propagation.py` (manifiesto
+    sha256 + fast path por tamano/mtime + escritura atomica + copias en
+    paralelo). Solo escribe lo que cambio.
   - symlink: os.symlink. Refleja cambios al instante, ahorra disco.
     Requiere Developer Mode en Windows o permisos de admin.
 
@@ -130,6 +132,13 @@ _HARNESS_FILES = ["__init__.py", "__main__.py", "common.py", "delegate.py",
                   "cli_common.py", "gpu_accel.py", "gpu_optimize.py",
                   "vulture_whitelist.py"]
 
+# ---------------------------------------------------------------------------
+# Motor de propagación (scripts/propagation.py): manifiesto + atómico + paralelo
+# ---------------------------------------------------------------------------
+if str(_HERE) not in sys.path:
+    sys.path.insert(1, str(_HERE))
+
+from propagation import manifest_for, sync_file, sync_tree
 
 # ---------------------------------------------------------------------------
 # Sync
@@ -210,20 +219,15 @@ def _sync_dir(src: Path, dst: Path, dry_run: bool = False, mode: str = "copy") -
             _create_symlink(src, dst, dry_run=False)
         return sum(1 for _ in src.rglob("*") if _.is_file()) if src.is_dir() else 0
 
-    # Modo copy: copia merge-preservadora
+    # Modo copy: propagación incremental con manifiesto (solo escribe cambios).
     dst.mkdir(parents=True, exist_ok=True)
-    count = 0
-    for item in src.iterdir():
-        target = dst / item.name
-        if item.is_dir():
-            if not dry_run:
-                shutil.copytree(item, target, dirs_exist_ok=True)
-            count += sum(1 for _ in item.rglob("*") if _.is_file())
-        else:
-            if not dry_run:
-                shutil.copy2(item, target)
-            count += 1
-    return count
+    stats = sync_tree(
+        src,
+        dst,
+        manifest_path=manifest_for(_GLOBAL, f"brain_{dst.name}"),
+        dry_run=dry_run,
+    )
+    return stats.copied + stats.updated
 
 
 def _find_orphans(src: Path, dst: Path) -> list[Path]:
@@ -288,6 +292,13 @@ _IGNORED_DIR_NAMES = frozenset(
 _IGNORED_SUFFIXES = (".pyc", ".so", ".pyd", ".lance")
 _IGNORED_FILE_NAMES = frozenset({".DS_Store"})
 
+#: Patrones para el motor de propagación (mismo criterio que ``_ignore_for_harness``).
+_HARNESS_EXCLUDES: tuple[str, ...] = (
+    tuple(_IGNORED_DIR_NAMES)
+    + tuple(f"*{suffix}" for suffix in _IGNORED_SUFFIXES)
+    + tuple(_IGNORED_FILE_NAMES)
+)
+
 
 def _ignore_for_harness(_directory: str, names: list[str]) -> set[str]:
     """Filtro de ``copytree`` para el motor (caches y datos runtime)."""
@@ -319,25 +330,24 @@ def _sync_harness_to_global(dry_run: bool = False) -> int:
     dst.mkdir(parents=True, exist_ok=True)
     count = 0
 
-    # Copiar directorios de mÃ³dulos
+    # Copiar directorios de módulos (incremental: manifiesto + solo cambios)
     for subdir in _HARNESS_INCLUDE:
         src = _SRC_HARNESS / subdir
         if not src.is_dir():
             continue
-        target = dst / subdir
-        if not dry_run:
-            # Excluye datos runtime gigantes (LanceDB ~6GB, iteration_reports):
-            # el global solo necesita db/schema, no los datos (ADR-0038).
-            shutil.copytree(src, target, dirs_exist_ok=True,
-                            ignore=_ignore_for_harness)
-        count += sum(1 for _ in src.rglob("*.py") if _.is_file())
+        dir_stats = sync_tree(
+            src,
+            dst / subdir,
+            excludes=_HARNESS_EXCLUDES,
+            manifest_path=manifest_for(_GLOBAL, f"harness_{subdir}"),
+            dry_run=dry_run,
+        )
+        count += dir_stats.copied + dir_stats.updated
 
-    # Copiar archivos raÃ­z de harness
+    # Copiar archivos raíz de harness (atómico y solo si cambian)
     for fname in _HARNESS_FILES:
         src = _SRC_HARNESS / fname
-        if src.is_file():
-            if not dry_run:
-                shutil.copy2(src, dst / fname)
+        if sync_file(src, dst / fname, dry_run=dry_run):
             count += 1
 
     return count
@@ -365,7 +375,7 @@ def _ensure_memory_central(dry_run: bool = False) -> dict:
     return result
 
 
-def _sync_mcp_config(dry_run: bool = False) -> int:
+def _sync_mcp_config(dry_run: bool = False) -> tuple[int, int]:
     """Registra los servers MCP de la SSOT en la config GLOBAL de opencode.
 
     Traduce `harness/tools_sandbox/mcp_servers.yaml` a `mcp.servers` de OpenCode
@@ -376,20 +386,23 @@ def _sync_mcp_config(dry_run: bool = False) -> int:
         dry_run: Si True, solo simula.
 
     Returns:
-        Numero de servers MCP registrados (0 si no hay SSOT).
+        ``(servers_registrados, cambiado)``; el segundo es 0 si el JSON ya
+        estaba sincronizado (idempotencia real, sin reescrituras).
     """
     from harness.tools_sandbox.mcp_opencode import load_servers, sync_config_file
 
     servers = load_servers(_SRC_MCP_YAML)
     if not servers:
         logger.warning("  \u26a0\ufe0f  SSOT MCP sin servers: %s", _SRC_MCP_YAML)
-        return 0
+        return 0, 0
     # El render de modelos escribe opencode.jsonc; respetar ese si existe.
     target = _GLOBAL / "opencode.jsonc"
     if not target.exists() and (_GLOBAL / "opencode.json").exists():
         target = _GLOBAL / "opencode.json"
+    before = target.read_bytes() if target.is_file() else b""
     sync_config_file(target, servers, dry_run=dry_run)
-    return len(servers)
+    after = target.read_bytes() if target.is_file() else b""
+    return len(servers), int(before != after)
 
 
 def _sync_agents_md(dry_run: bool = False) -> int:
@@ -410,9 +423,7 @@ def _sync_agents_md(dry_run: bool = False) -> int:
         logger.warning("  ⚠️  AGENTS.md fuente no existe: %s", _SRC_AGENTS_MD)
         return 0
     dst = _GLOBAL / "AGENTS.md"
-    if not dry_run:
-        shutil.copy2(_SRC_AGENTS_MD, dst)
-    return 1
+    return 1 if sync_file(_SRC_AGENTS_MD, dst, dry_run=dry_run) else 0
 
 
 def sync_global(dry_run: bool = False, quiet: bool = False,
@@ -462,11 +473,10 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
         # skills_registry.yaml (referencia desde skills/)
         registry_src = _SRC_OPENCODE / _REGISTRY_FILE
         if registry_src.is_file():
-            if not dry_run:
-                registry_dst = _GLOBAL / "skills" / "skills_registry.yaml"
-                registry_dst.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(registry_src, registry_dst)
-            stats["skills_registry"] = 1
+            registry_dst = _GLOBAL / "skills" / "skills_registry.yaml"
+            registry_dst.parent.mkdir(parents=True, exist_ok=True)
+            changed = int(sync_file(registry_src, registry_dst, dry_run=dry_run))
+            stats["skills_registry"] = changed
             if not quiet:
                 logger.info("  âœ… skills_registry.yaml %s", "(simulado)" if dry_run else "actualizado")
 
@@ -479,10 +489,13 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
                         "(simulado)" if dry_run else f"-> {_GLOBAL / 'AGENTS.md'}")
 
     if do_cerebro:
-        mcp_count = _sync_mcp_config(dry_run=dry_run)
-        stats["mcp_servers"] = mcp_count
+        mcp_count, mcp_changed = _sync_mcp_config(dry_run=dry_run)
+        stats["mcp_servers"] = mcp_changed
         if not quiet:
-            logger.info("  \u2705 %-10s %d servers -> opencode", "mcp", mcp_count)
+            logger.info(
+                "  \u2705 %-10s %d servers (%d cambios) -> opencode",
+                "mcp", mcp_count, mcp_changed,
+            )
 
     if do_motor:
         count = _sync_harness_to_global(dry_run=dry_run)
@@ -497,7 +510,7 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
     total = sum(stats.values())
     if not quiet:
         logger.info("")
-        logger.info("  ðŸ“Š Total: %d archivos sincronizados al global", total)
+        logger.info("  ðŸ“Š Total: %d archivos cambiados en el global", total)
         logger.info("")
         logger.info("  â„¹ï¸  Reinicia opencode para que tome los cambios (config se carga al inicio).")
         logger.info("=" * 60)

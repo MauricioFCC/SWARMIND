@@ -5,6 +5,15 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-05b)
+
+### Estado 2026-11-05 (Ciclo 11.74 — Propagación solo-global)
+- Motor `propagation.py` content-addressed (manifiesto sha256, fast path,
+  atómico, paralelo) usado por `sync_opencode_global.py`.
+- `deploy_all.py` propaga solo al global por defecto; mirror por proyecto
+  opt-in (`--projects`).
+- AGENTS.md con conteos reales y regla de propagación; verificación global 0/0.
+
 ## Estado Actual (2026-11-05a)
 
 ### Estado 2026-11-05 (Ciclo 11.73 — RE con evidencia)

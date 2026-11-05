@@ -2,12 +2,17 @@
 Deploy & Sync — Opción A (SSOT global) + mirror local por proyecto.
 Estándar v2.5 (2026-08): OPENCODE GLOBAL = FUENTE DE VERDAD.
 
+> 2026-11: el mirror por proyecto esta DEPRECADO. Por defecto este script
+> propaga SOLO al global (~/.config/opencode); --projects reactiva el mirror
+> legacy para un proyecto concreto.
+
+
 El CEREBRO (agents/, skills/, core/) y el MOTOR (harness/) viven como
 fuente de verdad en ``~/.config/opencode/`` (config global de opencode).
 SWARMIND los sincroniza AUTOMÁTICAMENTE en cada commit (pre-commit hook →
 ``scripts/sync_opencode_global.py``).
 
-CADA PROYECTO conserva solo:
+Con --projects (legacy), cada proyecto conserva solo:
   - .opencode/          : mirror del cerebro (agents, skills, core, config)
   - skills/             : todas las skills (descubiertas dinamicamente) + registry completo
   - config propia       : project_config, routing_rules, token_budgets, .env.example
@@ -19,7 +24,7 @@ duplicacion en proyectos grandes.
 Si un script de un proyecto necesita harness, importa desde el global
 (symlink o PYTHONPATH), no copia local.
 
-Este script despliega/limpia el mirror de todos los proyectos del
+Con --projects, este script despliega/limpia el mirror de los proyectos del
 directorio raiz configurado: actualiza cerebro, elimina skills obsoletas,
 deja skills_registry.yaml completo (skills descubiertas dinamicamente) y
 preserva la configuración propia (project_config, routing_rules,
@@ -1134,17 +1139,26 @@ def main() -> None:
     """CLI principal del deploy."""
     import argparse
     parser = argparse.ArgumentParser(
-        description="Deploy & Sync (Opción A: SSOT global + mirror local)")
+        description="Deploy & Sync (SSOT global; los proyectos ya NO reciben copias)")
     parser.add_argument("--dry-run", action="store_true", help="Solo simular (no escribe)")
-    parser.add_argument("--project", "-p", type=str, help="Solo un proyecto (alias o nombre)")
+    parser.add_argument("--project", "-p", type=str, help="Solo un proyecto (alias o nombre; implica --projects)")
+    parser.add_argument("--projects", action="store_true",
+                        help="Espeja .opencode en proyectos (legacy; por defecto solo global)")
     parser.add_argument("--sync-only", action="store_true", help="Solo sync, no regenerar README")
     parser.add_argument("--force-mirror", action="store_true",
                         help="Ignora la politica y aplica mirror a todos (escape hatch)")
     parser.add_argument("--sync-global", action="store_true",
-                        help="Solo sincronizar el global opencode (no tocar proyectos)")
+                        help="Solo sincronizar el global opencode (comportamiento por defecto)")
     parser.add_argument("--sync-harness-global", action="store_true",
                         help="Solo sync harness -> opencode global (una copia SSOT, v2.5)")
     args = parser.parse_args()
+
+    # (2026-11) El cerebro/motor vive UNA vez en ~/.config/opencode; los
+    # proyectos ya no guardan copias redundantes. El mirror es opt-in.
+    if not args.projects and not args.project and not args.sync_harness_global:
+        from sync_opencode_global import sync_global
+        sync_global(dry_run=args.dry_run)
+        return
 
     # ── Solo sync global ──
     if args.sync_global:
