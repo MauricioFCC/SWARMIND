@@ -53,25 +53,51 @@ def _handle_rag_ingest(store, cmd: str) -> None:
         _rc.logger.error("[RAG] \u274c Error: %s", e)
 
 
+def _parse_rag_query(raw: str) -> tuple[str, str, bool]:
+    """Separa consulta, ``--mode`` y ``--rerank`` de ``!rag search``."""
+    tokens = raw.split()
+    mode = ""
+    if "--mode" in tokens:
+        index = tokens.index("--mode")
+        mode = tokens[index + 1] if index + 1 < len(tokens) else ""
+        del tokens[index : index + 2]
+    rerank = "--rerank" in tokens
+    query = " ".join(token for token in tokens if not token.startswith("--")).strip()
+    return query, mode, rerank
+
+
 def _handle_rag_search(store, cmd: str) -> None:
-    """Handle ``!rag search <consulta>`` — recuperacion dual-level (GraphRAG).
-
-    Combina BM25 (nivel local) y expansion por grafo (nivel global) sobre
-    RuscaDB; si la coleccion no tiene aristas, degrada a busqueda FTS.
-    """
-    from harness.memory_rag.graph_rag_retriever import GraphRAGRetriever
-
-    query = cmd[len("!rag search") :].strip()
+    """Handle ``!rag search ...`` con GraphRAG, FTS avanzado y rerank."""
+    query, mode, rerank = _parse_rag_query(cmd[len("!rag search") :].strip())
     if not query:
-        _rc.logger.info("[RAG] Uso: !rag search <consulta>")
+        _rc.logger.info("[RAG] Uso: !rag search <consulta> [--mode exact|fuzzy] [--rerank]")
         return
     collections = store.list_collections()
     collection = "rag_chunks" if "rag_chunks" in collections else "memory"
     if collection not in collections:
         _rc.logger.info("[RAG] No hay colecciones con contenido. Ejecuta '!rag ingest'.")
         return
-    retriever = GraphRAGRetriever(store, collection=collection, depth=2)
-    results = retriever.retrieve(query, top_k=5)
+    results = _rag_candidates(store, collection, query, mode)
+    if rerank and results and callable(getattr(store, "rerank", None)):
+        results = store.rerank(collection, query, results, top_k=5)
+    _log_rag_hits(query, collection, results)
+
+
+def _rag_candidates(store, collection: str, query: str, mode: str) -> list[dict]:
+    """Candidatos por FTS avanzado (con ``--mode``) o GraphRAG dual-level."""
+    if mode and callable(getattr(store, "fts_search_mode", None)):
+        return store.fts_search_mode(collection, query, mode=mode, top_k=5)
+    if mode:
+        _rc.logger.info("[RAG] Store sin FTS por modo; uso GraphRAG")
+    from harness.memory_rag.graph_rag_retriever import GraphRAGRetriever
+
+    return GraphRAGRetriever(store, collection=collection, depth=2).retrieve(
+        query, top_k=5
+    )
+
+
+def _log_rag_hits(query: str, collection: str, results: list[dict]) -> None:
+    """Imprime los resultados de ``!rag search`` (o el aviso de vacío)."""
     if not results:
         _rc.logger.info("[RAG] Sin resultados para: %s", query)
         return

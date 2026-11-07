@@ -79,6 +79,34 @@ def test_search_binary_is_deterministic(store):
     assert runs[0] == runs[1] == runs[2]
 
 
+def test_search_filtered_respeta_allowed_ids(store):
+    """El KNN filtrado solo devuelve ids permitidos (ACORN)."""
+    query = store._data[4]
+    exact = store.search("vec", query, top_k=6)
+    allowed = [item["id"] for item in exact[:3]]
+    filtered = store.search_filtered("vec", query, allowed, top_k=3)
+    assert filtered
+    assert {item["id"] for item in filtered} <= set(allowed)
+
+
+def test_search_quantized_recupera_el_vecino(store):
+    """El KNN cuantizado devuelve el vector exacto como primer hit."""
+    query = store._data[7]
+    hits = store.search_quantized("vec", query, top_k=3)
+    assert hits and hits[0]["distance"] == pytest.approx(0.0, abs=1e-4)
+
+
+def test_search_adaptive_selecciona_estrategia(store):
+    """adaptive respeta exact/binary/filtered sin elegir a ciegas."""
+    query = store._data[1]
+    assert store.search_adaptive("vec", query, 3, strategy="exact") == store.search(
+        "vec", query, 3
+    )
+    allowed = [item["id"] for item in store.search("vec", query, 3)]
+    chosen = store.search_adaptive("vec", query, 3, allowed_ids=allowed)
+    assert {item["id"] for item in chosen} <= set(allowed)
+
+
 def test_search_binary_falls_back_without_capability(store, monkeypatch):
     """Sin el simbolo degrada al KNN exacto con warning."""
     monkeypatch.setitem(store._caps, "ruscadb_search_bq", False)

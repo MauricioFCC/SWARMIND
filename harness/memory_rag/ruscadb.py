@@ -288,6 +288,20 @@ def _bind_extended(library: ctypes.CDLL) -> None:
          c_size_t, c_size_t, c_char_p, c_size_t],
         c_int,
     )
+    _bind_optional(
+        library,
+        "ruscadb_search_quantized",
+        [c_void_p, c_char_p, ctypes.POINTER(ctypes.c_float), c_size_t,
+         c_size_t, c_char_p, c_size_t],
+        c_int,
+    )
+    _bind_optional(
+        library,
+        "ruscadb_search_filtered",
+        [c_void_p, c_char_p, ctypes.POINTER(ctypes.c_float), c_size_t,
+         c_size_t, c_char_p, c_char_p, c_size_t],
+        c_int,
+    )
 
 
 def _lib() -> ctypes.CDLL:
@@ -601,6 +615,56 @@ def search_bq(
         oversample,
     )
     return _parse_bq_hits(text, _json)
+
+
+def search_quantized(
+    handle, table: str, query, top_k: int = 10
+) -> list[dict[str, object]]:
+    """KNN cuantizado RaBitQ + rerank; devuelve ``[{id, distance}]``."""
+    import json as _json
+
+    import numpy as np
+
+    _require("ruscadb_search_quantized")
+    vector = np.ascontiguousarray(np.asarray(query, dtype=np.float32).reshape(-1))
+    for size in (65536, 1 << 20, 1 << 22):
+        buffer = ctypes.create_string_buffer(size)
+        rc = _lib().ruscadb_search_quantized(
+            handle, table.encode("utf-8"),
+            vector.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            c_size_t(vector.size), c_size_t(int(top_k)), buffer, c_size_t(size),
+        )
+        if rc == RC_OK:
+            return _parse_bq_hits(buffer.value.decode("utf-8", errors="replace"), _json)
+        if rc != RC_BUFFER_TOO_SMALL:
+            _check(rc)
+    raise RuscadbError(RC_BUFFER_TOO_SMALL, "ruscadb_search_quantized: buffer insuficiente")
+
+
+def search_filtered(
+    handle, table: str, query, allowed_ids: list[str], top_k: int = 10
+) -> list[dict[str, object]]:
+    """KNN filtrado ACORN restringido a ``RecordId``; devuelve hits."""
+    import json as _json
+
+    import numpy as np
+
+    _require("ruscadb_search_filtered")
+    vector = np.ascontiguousarray(np.asarray(query, dtype=np.float32).reshape(-1))
+    allowed = _json.dumps([str(item) for item in allowed_ids])
+    for size in (65536, 1 << 20, 1 << 22):
+        buffer = ctypes.create_string_buffer(size)
+        rc = _lib().ruscadb_search_filtered(
+            handle, table.encode("utf-8"),
+            vector.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            c_size_t(vector.size), c_size_t(int(top_k)),
+            allowed.encode("utf-8"), buffer, c_size_t(size),
+        )
+        if rc == RC_OK:
+            return _parse_bq_hits(buffer.value.decode("utf-8", errors="replace"), _json)
+        if rc != RC_BUFFER_TOO_SMALL:
+            _check(rc)
+    raise RuscadbError(RC_BUFFER_TOO_SMALL, "ruscadb_search_filtered: buffer insuficiente")
 
 
 def _parse_bq_hits(text: str, json_module) -> list[dict[str, object]]:
@@ -1089,6 +1153,9 @@ __all__ = [
     "open_with_options",
     "put_blob",
     "read_page",
+    "search_bq",
+    "search_filtered",
+    "search_quantized",
     "update_record",
     "write_page",
 ]

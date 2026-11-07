@@ -23,10 +23,12 @@ from harness.run_commands import (
     _COMMAND_TABLE,
     _handle_db_backup,
     _handle_db_capabilities,
+    _handle_db_explain,
     _handle_db_gc,
     _handle_db_health,
     _handle_db_reconcile,
     _handle_db_stats,
+    _handle_db_time_travel,
 )
 
 
@@ -36,6 +38,28 @@ class FakeStore:
     def __init__(self) -> None:
         self.backups: list[str] = []
         self.gc_calls = 0
+        self.blobs: list[tuple[str, str, bytes]] = []
+        self.fts_calls: list[tuple[str, str]] = []
+        self.rerank_calls = 0
+
+    def fts_search_mode(self, collection: str, query: str, mode: str = "exact", top_k: int = 10):
+        self.fts_calls.append((query, mode))
+        return [{"text": "hit", "score": 1.0}]
+
+    def rerank(self, collection: str, query: str, candidates: list[dict], top_k: int = 5):
+        self.rerank_calls += 1
+        return candidates[:top_k]
+
+    def explain(self, sql: str) -> list[str]:
+        return ["SCAN table memory"]
+
+    def execute_at(self, sql: str, snapshot_tx_id: int = 0) -> list[dict]:
+        return [{"id": "x", "snapshot": snapshot_tx_id}]
+
+
+    def attach_blob(self, collection: str, logical_id: str, data: bytes) -> str:
+        self.blobs.append((collection, logical_id, data))
+        return "blob-hash"
 
     def list_collections(self) -> list[str]:
         return ["memory", "rag_chunks"]
@@ -96,6 +120,30 @@ class TestCapabilities:
             assert symbol in caps
 
 
+class TestBlobIngest:
+    """El binario original se adjunta como blob sin inflar la base."""
+
+    def test_attach_source_blob(self, tmp_path: Any) -> None:
+        """Adjunta el archivo y devuelve el hash."""
+        from harness.memory_rag.doc_ingester import attach_source_blob
+
+        source = tmp_path / "doc.pdf"
+        source.write_bytes(b"%PDF-1.7 demo")
+        store = FakeStore()
+        assert attach_source_blob(store, "rag_chunks", "rec-1", source) == "blob-hash"
+        assert store.blobs == [("rag_chunks", "rec-1", b"%PDF-1.7 demo")]
+
+    def test_omite_blob_grande(self, tmp_path: Any) -> None:
+        """Por encima del límite no se adjunta (anti-inflado)."""
+        from harness.memory_rag.doc_ingester import attach_source_blob
+
+        source = tmp_path / "big.bin"
+        source.write_bytes(b"x" * 32)
+        store = FakeStore()
+        assert attach_source_blob(store, "rag_chunks", "rec-1", source, max_bytes=8) is None
+        assert store.blobs == []
+
+
 class TestDbCommands:
     """Comandos que exponen las capacidades al operador."""
 
@@ -140,5 +188,24 @@ class TestDbCommands:
         """Los comandos nuevos están registrados en el despacho canónico."""
         prefixes = {prefix for prefix, _, _ in _COMMAND_TABLE}
         for command in ("!db capabilities", "!db health", "!db backup", "!db gc",
-                        "!db reconcile"):
+                        "!db reconcile", "!db explain", "!db time-travel"):
             assert command in prefixes
+
+    def test_explain_y_time_travel(self, caplog: pytest.LogCaptureFixture) -> None:
+        """`!db explain` imprime el plan y `!db time-travel` cuenta filas."""
+        caplog.set_level("INFO", logger="harness.run_commands")
+        _handle_db_explain(FakeStore(), "!db explain SELECT * FROM memory")
+        _handle_db_time_travel(FakeStore(), "!db time-travel 7 SELECT * FROM memory")
+        assert "SCAN table memory" in caplog.text
+        assert "Snapshot 7: 1 filas" in caplog.text
+
+    def test_rag_search_mode_y_rerank(self, caplog: pytest.LogCaptureFixture) -> None:
+        """`!rag search --mode fuzzy --rerank` usa FTS y reranker del store."""
+        from harness.run_commands.handlers_other import _handle_rag_search
+
+        caplog.set_level("INFO", logger="harness.run_commands")
+        store = FakeStore()
+        _handle_rag_search(store, "!rag search hola --mode fuzzy --rerank")
+        assert store.fts_calls == [("hola", "fuzzy")]
+        assert store.rerank_calls == 1
+

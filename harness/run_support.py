@@ -68,6 +68,8 @@ _USAGE_LINES: tuple[str, ...] = (
     "  !db health                  Integridad, LSN, cache y grafo",
     "  !db backup <ruta>           Backup online de RuscaDB",
     "  !db gc                      Recolectar blobs no referenciados",
+    "  !db explain <sql>           Plan del planner (sin ejecutar)",
+    "  !db time-travel <tx> <sql>  Consultar un snapshot historico",
     "  !db reconcile               Reconciliar colecciones",
     "  !db rollback <backup>       Restaurar desde backup",
     "  !iteration end              Pipeline fin de iteracion",

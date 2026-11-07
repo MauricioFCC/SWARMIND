@@ -713,11 +713,26 @@ servers:
     enabled: false
     install_hint: 'Registrado en memoria por harness.tools_sandbox.mcp_project_bridge.register_project_bridge()'
 
+  - name: ruscadb
+    transport: stdio
+    command: ruscadb
+    args: ["mcp", "--db", "/path/to/app.db"]
+    description: "RuscaDB MCP: SQL/RQL, FTS, grafo y blobs sobre una base embebida"
+    tools:
+      - query
+      - tables
+      - integrity_check
+      - insert
+      - update
+      - delete
+    enabled: false
+    install_hint: "Compila/instala ruscadb-cli y ajusta --db; requiere Deep/autorización para writes"
+
 categories:
   reverse-engineering: [rea, rc_devtools, ghidra_mcp, radare2]
   browser: [playwright, chrome_devtools]
   web: [fetch, firecrawl]
-  data: [postgres, supabase]
+  data: [postgres, supabase, ruscadb]
   vcs: [github, git]
   devops: [kubernetes]
   observability: [sentry]

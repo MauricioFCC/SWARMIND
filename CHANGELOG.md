@@ -1,3 +1,30 @@
+## [11.78] - 2026-11-06
+
+### Added
+- `ruscadb_ffi` reconstruida: exporta `ruscadb_search_quantized` y
+  `ruscadb_search_filtered` (KNN USING). Bindings ctypes con reintento de
+  buffer y métodos `search_quantized`/`search_filtered` en el store.
+- `search_adaptive(collection, query, strategy="exact|binary|quantized|filtered")`
+  para elegir con datos, no por intuición.
+- `scripts/bench_ruscadb_search.py`: recall@k y p50/p95 por estrategia
+  (exact/binary o1/o4/quantized/filtered). Medición sintética: binary_o1 0.68,
+  binary_o4/quantized/filtered 1.00 de recall@5.
+- Ingesta multimodal: el binario original (PDF/imagen, ≤8 MiB) se adjunta como
+  blob al primer chunk (`attach_source_blob`), con `gc_blobs` disponible.
+- API async para `search_quantized`/`search_filtered`/`search_adaptive`.
+- UX: `!db explain <sql>`, `!db time-travel <tx> <sql>`, y
+  `!rag search ... --mode exact|fuzzy --rerank`.
+- Entrada MCP `ruscadb` (deshabilitada) en `mcp_servers.yaml`, categoría `data`.
+
+### Not applied
+- **Prepared nativo**: el crate `ruscadb` tiene `prepare/execute_prepared`, pero
+  `ruscadb-ffi` **no exporta** esos símbolos todavía; `!db capabilities` lo
+  reporta. Se documenta la recomendación en el repo RuscaDB.
+
+### Verified
+- `test_binary_search` (15) con filtered/quantized/adaptive y nueva DLL.
+- `test_async_ruscadb` (7), `test_ruscadb_utilization` (13) y suite completa.
+
 ## [11.77] - 2026-11-06
 
 ### Added

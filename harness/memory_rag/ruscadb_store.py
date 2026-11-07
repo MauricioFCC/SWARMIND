@@ -53,6 +53,8 @@ from .ruscadb import (
     list_tables,
     put_blob,
     search_bq,
+    search_filtered,
+    search_quantized,
     update_record,
 )
 from .ruscadb import (
@@ -1245,6 +1247,81 @@ class RuscaDBStore:
         if self._should_calibrate(calibrate):
             self._calibrate_oversample(collection, query, top_k, items)
         return self._apply_trust_and_recency(items, top_k, **options)
+
+    def search_quantized(
+        self, collection: str, query_vector: Any, top_k: int = 10
+    ) -> list[dict[str, Any]]:
+        """KNN cuantizado (RaBitQ en dos etapas) con fallback binario/exacto.
+
+        Aprovecha ``ruscadb_search_quantized`` (SPEC-0181) cuando la DLL lo
+        exporta; si no, usa el KNN binario y, en último caso, el exacto.
+        """
+        if not self._caps.get("ruscadb_search_quantized"):
+            return self.search_binary(collection, query_vector, top_k=top_k)
+        query = np.asarray(query_vector, dtype=np.float32).reshape(-1)
+        try:
+            hits = search_quantized(self._handle, collection, query, top_k=int(top_k))
+        except RuscadbError as exc:
+            logger.warning("search_quantized fallo: %s; fallback binario", exc)
+            return self.search_binary(collection, query_vector, top_k=top_k)
+        return self._binary_items(collection, hits, factor=1)
+
+    def search_filtered(
+        self,
+        collection: str,
+        query_vector: Any,
+        allowed_ids: list[str],
+        top_k: int = 10,
+    ) -> list[dict[str, Any]]:
+        """KNN filtrado (ACORN) restringido a ``allowed_ids`` (RecordId).
+
+        Si la DLL no exporta el símbolo, degrada al KNN exacto y filtra en
+        Python por id; nunca devuelve registros fuera del conjunto permitido.
+        """
+        allowed = {str(item) for item in allowed_ids}
+        if not allowed:
+            return []
+        if not self._caps.get("ruscadb_search_filtered"):
+            exact = self.search(collection, query_vector, top_k=max(top_k, len(allowed)))
+            return [item for item in exact if str(item.get("id")) in allowed][:top_k]
+        query = np.asarray(query_vector, dtype=np.float32).reshape(-1)
+        rids = [self._find_rid(collection, logical) or logical for logical in allowed]
+        try:
+            hits = search_filtered(
+                self._handle, collection, query, rids, top_k=int(top_k)
+            )
+        except RuscadbError as exc:
+            logger.warning("search_filtered fallo: %s; fallback exacto", exc)
+            exact = self.search(collection, query_vector, top_k=max(top_k, len(allowed)))
+            return [item for item in exact if str(item.get("id")) in allowed][:top_k]
+        return self._binary_items(collection, hits, factor=1)
+
+    def search_adaptive(
+        self,
+        collection: str,
+        query_vector: Any,
+        top_k: int = 10,
+        *,
+        strategy: str = "exact",
+        allowed_ids: list[str] | None = None,
+        oversample: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Selecciona la estrategia de búsqueda por política explícita.
+
+        ``strategy``: ``exact``, ``binary``, ``quantized`` o ``filtered``.
+        ``filtered`` exige ``allowed_ids``; el caller decide con el benchmark
+        ``scripts/bench_ruscadb_search.py`` (recall/latencia) qué estrategia usar.
+        """
+        selected = "filtered" if allowed_ids else strategy
+        if selected == "filtered":
+            return self.search_filtered(collection, query_vector, allowed_ids or [], top_k)
+        if selected == "binary":
+            return self.search_binary(
+                collection, query_vector, top_k=top_k, oversample=oversample
+            )
+        if selected == "quantized":
+            return self.search_quantized(collection, query_vector, top_k=top_k)
+        return self.search(collection, query_vector, top_k=top_k)
 
     def _binary_query(
         self,

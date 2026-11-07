@@ -97,3 +97,29 @@ def _handle_db_gc(store: Any) -> None:
 def _handle_db_reconcile(store: Any) -> None:
     """Handle ``!db reconcile``: reconcilia colecciones con el motor."""
     _rc.logger.info("[DB] Reconciliación: %s", _call(store, "reconcile", {}))
+
+
+def _handle_db_explain(store: Any, cmd: str) -> None:
+    """Handle ``!db explain <sql>``: plan del planner sin ejecutar."""
+    sql = cmd[len("!db explain") :].strip()
+    if not sql:
+        _rc.logger.info("[DB] Uso: !db explain <sql>")
+        return
+    plan = _call1(store, "explain", sql, [])
+    for line in plan or ["(sin plan)"]:
+        _rc.logger.info("  %s", line)
+
+
+def _handle_db_time_travel(store: Any, cmd: str) -> None:
+    """Handle ``!db time-travel <tx_id> <sql>``: consulta en un snapshot."""
+    parts = cmd.split(maxsplit=3)
+    if len(parts) < 4:
+        _rc.logger.info("[DB] Uso: !db time-travel <tx_id> <sql>")
+        return
+    try:
+        snapshot = int(parts[2])
+        rows = store.execute_at(parts[3], snapshot)
+    except (ValueError, OSError, RuntimeError, KeyError) as exc:
+        _rc.logger.info("[DB] Time-travel falló: %s", exc)
+        return
+    _rc.logger.info("[DB] Snapshot %s: %s filas", snapshot, len(rows))

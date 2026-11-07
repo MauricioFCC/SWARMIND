@@ -100,6 +100,7 @@ from harness.run_commands import (
     _create_store,
     _handle_db_backup,
     _handle_db_capabilities,
+    _handle_db_explain,
     _handle_db_gc,
     _handle_db_health,
     _handle_db_list_imports,
@@ -107,6 +108,7 @@ from harness.run_commands import (
     _handle_db_reconcile,
     _handle_db_rollback,
     _handle_db_stats,
+    _handle_db_time_travel,
     _handle_evolve_mutate,
     _handle_hooks_install,
     _handle_hooks_status,
@@ -176,6 +178,10 @@ def _handle_command(cmd: str) -> None:
         _handle_db_health(store)
     elif cmd.startswith("!db backup"):
         _handle_db_backup(store, cmd)
+    elif cmd.startswith("!db explain"):
+        _handle_db_explain(store, cmd)
+    elif cmd.startswith("!db time-travel"):
+        _handle_db_time_travel(store, cmd)
     elif cmd.startswith("!db gc"):
         _handle_db_gc(store)
     elif cmd.startswith("!db reconcile"):

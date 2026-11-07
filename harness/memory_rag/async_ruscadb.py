@@ -133,6 +133,42 @@ class AsyncRuscaDBStore:
             **kwargs,
         )
 
+    async def search_quantized(
+        self, collection: str, query_vector: Any, top_k: int = 10
+    ) -> list[dict[str, Any]]:
+        """KNN cuantizado asincrono (RaBitQ dos etapas)."""
+        return await self._read(
+            self._store.search_quantized, collection, query_vector, top_k=top_k
+        )
+
+    async def search_filtered(
+        self,
+        collection: str,
+        query_vector: Any,
+        allowed_ids: list[str],
+        top_k: int = 10,
+    ) -> list[dict[str, Any]]:
+        """KNN filtrado asincrono (ACORN) restringido a ids permitidos."""
+        return await self._read(
+            self._store.search_filtered,
+            collection,
+            query_vector,
+            allowed_ids,
+            top_k=top_k,
+        )
+
+    async def search_adaptive(
+        self,
+        collection: str,
+        query_vector: Any,
+        top_k: int = 10,
+        **kwargs: Any,
+    ) -> list[dict[str, Any]]:
+        """Busqueda adaptativa asincrona (estrategia explicita del caller)."""
+        return await self._read(
+            self._store.search_adaptive, collection, query_vector, top_k=top_k, **kwargs
+        )
+
     async def hybrid_search(
         self,
         collection: str,

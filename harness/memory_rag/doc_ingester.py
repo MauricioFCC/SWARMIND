@@ -305,6 +305,42 @@ class DocumentChunker:
         return fallback_embedding(text)
 
 
+#: Tamaño máximo del binario original que se adjunta como blob (8 MiB).
+_BLOB_MAX_BYTES = 8 * 1024 * 1024
+
+
+def attach_source_blob(
+    store: Any,
+    collection: str,
+    record_id: str,
+    source: Path,
+    max_bytes: int = _BLOB_MAX_BYTES,
+) -> str | None:
+    """Adjunta el binario original (PDF/imagen) al registro como blob.
+
+    Args:
+        store: Store con ``attach_blob`` (RuscaDB); si no lo tiene, no-op.
+        collection: Colección del registro.
+        record_id: Id lógico insertado.
+        source: Archivo original.
+        max_bytes: Límite para no inflar la base; por encima se omite.
+
+    Returns:
+        Hash del blob o ``None`` si no aplica/se omite.
+    """
+    attach = getattr(store, "attach_blob", None)
+    if not callable(attach) or not record_id:
+        return None
+    try:
+        if source.stat().st_size > max_bytes:
+            logger.info("Blob omitido (> %d bytes): %s", max_bytes, source.name)
+            return None
+        return str(attach(collection, record_id, source.read_bytes()))
+    except OSError as exc:
+        logger.warning("No se pudo adjuntar blob %s: %s", source, exc)
+        return None
+
+
 def _ensure_lancedb() -> None:
     """Verify LanceDB is available before ingesting documents."""
     try:
@@ -370,7 +406,9 @@ def ingest_directory(
                 if vectors.size == 0:
                     continue
 
-                store.insert("rag_chunks", vectors, metadata_list)
+                ids = store.insert("rag_chunks", vectors, metadata_list)
+                if ids and fpath.suffix.lower() in DOC_EXTENSIONS:
+                    attach_source_blob(store, "rag_chunks", ids[0], fpath)
                 stats["chunks_inserted"] += len(chunks)
 
             except Exception as exc:  # noqa: BLE001
@@ -490,7 +528,9 @@ def ingest_project_directory(
             if vectors.size == 0:
                 continue
 
-            store.insert("rag_chunks", vectors, metadata_list)
+            ids = store.insert("rag_chunks", vectors, metadata_list)
+            if ids and fpath.suffix.lower() in DOC_EXTENSIONS:
+                attach_source_blob(store, "rag_chunks", ids[0], fpath)
             stats["chunks_inserted"] += len(chunks)
 
             if show_progress:

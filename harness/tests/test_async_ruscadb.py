@@ -130,3 +130,24 @@ def test_hybrid_retriever_aretrieve(tmp_path):
         assert results[0].doc_id
     finally:
         store.close()
+
+
+def test_async_quantized_filtered_adaptive(async_store):
+    """Las tres estrategias nuevas también tienen API async."""
+
+    async def scenario():
+        vectors = np.eye(4, dtype=np.float32)
+        ids = await async_store.insert(
+            "mem", vectors, [{"i": i} for i in range(4)],
+            texts=[f"v{i}" for i in range(4)],
+        )
+        quantized = await async_store.search_quantized("mem", vectors[2], top_k=2)
+        filtered = await async_store.search_filtered("mem", vectors[2], ids, top_k=2)
+        adaptive = await async_store.search_adaptive(
+            "mem", vectors[2], top_k=2, allowed_ids=ids
+        )
+        return quantized, filtered, adaptive, ids
+
+    quantized, filtered, adaptive, ids = asyncio.run(scenario())
+    assert quantized and filtered and adaptive
+    assert {item["id"] for item in filtered} <= set(ids)

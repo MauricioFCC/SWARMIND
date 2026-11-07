@@ -78,10 +78,12 @@ from .handlers_other import (
 from .handlers_ruscadb import (
     _handle_db_backup,
     _handle_db_capabilities,
+    _handle_db_explain,
     _handle_db_gc,
     _handle_db_health,
     _handle_db_reconcile,
     _handle_db_stats,
+    _handle_db_time_travel,
 )
 
 logger = logging.getLogger("harness.run_commands")
@@ -102,6 +104,8 @@ _COMMAND_TABLE: tuple[tuple[str, str, str], ...] = (
     ("!db health", "_handle_db_health", "store"),
     ("!db backup", "_handle_db_backup", "store_cmd"),
     ("!db gc", "_handle_db_gc", "store"),
+    ("!db explain", "_handle_db_explain", "store_cmd"),
+    ("!db time-travel", "_handle_db_time_travel", "store_cmd"),
     ("!db reconcile", "_handle_db_reconcile", "store"),
     ("!db migrate", "_handle_db_migrate", "store_cmd"),
     ("!db list-imports", "_handle_db_list_imports", "none"),
@@ -269,6 +273,7 @@ __all__ = [
     "_get_pkg_attr",
     "_handle_db_backup",
     "_handle_db_capabilities",
+    "_handle_db_explain",
     "_handle_db_gc",
     "_handle_db_health",
     "_handle_db_list_imports",
@@ -276,6 +281,7 @@ __all__ = [
     "_handle_db_reconcile",
     "_handle_db_rollback",
     "_handle_db_stats",
+    "_handle_db_time_travel",
     "_handle_evolve_mutate",
     "_handle_hooks_install",
     "_handle_hooks_status",

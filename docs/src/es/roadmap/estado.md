@@ -5,6 +5,15 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-06d)
+
+### Estado 2026-11-06 (Ciclo 11.78 — RuscaDB KNN USING y aprovechamiento)
+- DLL reconstruida; KNN filtrado/cuantizado cableado con bindings y fallback.
+- `search_adaptive` + benchmark recall/latencia; blobs multimodales en ingesta;
+  API async; `!db explain/time-travel`, `!rag --mode/--rerank`; MCP `ruscadb`.
+- Prepared nativo bloqueado: `ruscadb-ffi` no exporta `prepare`/`execute_prepared`
+  (documentado para upstream).
+
 ## Estado Actual (2026-11-06c)
 
 ### Estado 2026-11-06 (Ciclo 11.77 — RuscaDB aprovechado de verdad)
