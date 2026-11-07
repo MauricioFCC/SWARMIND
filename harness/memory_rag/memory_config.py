@@ -117,6 +117,7 @@ def _memory_root_from_config() -> str | None:
 
 class MemoryBackend(str, Enum):
     LANCEDB = "lancedb"          # LanceDB (default, recomendado)
+    RUSCADB = "ruscadb"          # RuscaDB (multi-modelo + vector, Rust)
     MEMORY = "memory"            # In-memory (sin persistencia, tests)
 
 
@@ -144,10 +145,11 @@ class MemoryConfig:
         kpi_collections: Conjunto de colecciones KPI activas.
         auto_create_collections: Crear colecciones automáticamente al iniciar.
     """
-    backend: MemoryBackend = MemoryBackend.LANCEDB
+    backend: MemoryBackend = MemoryBackend.RUSCADB
 
     # Rutas
     lancedb_path: str = ""
+    ruscadb_path: str = ""
 
     # Embeddings
     embedding_dim: int = 384
@@ -182,6 +184,14 @@ class MemoryConfig:
             else:
                 base = Path(__file__).resolve().parent.parent  # harness/
                 self.lancedb_path = str(base / "db" / "lancedb")
+                logger.warning(
+                    "WHAT: usando memoria local legacy (harness/db/lancedb). "
+                    "WHY: no se encontró .swarmind_config.json con memory_root "
+                    "válido (primera instalación sin bootstrap). "
+                    "WHERE: memory_config.__post_init__; "
+                    "FIX: ejecuta `python scripts/setup_swarmind.py` o "
+                    "`bootstrap_memory()` para crear la memoria colectiva."
+                )
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -204,8 +214,9 @@ class MemoryConfig:
     def from_env(cls) -> MemoryConfig:
         """Carga configuración desde variables de entorno."""
         return cls(
-            backend=MemoryBackend(os.environ.get("MEMORY_BACKEND", "lancedb")),
+            backend=MemoryBackend(os.environ.get("MEMORY_BACKEND", "ruscadb")),
             lancedb_path=os.environ.get(_LANCEDB_PATH_ENV, ""),
+            ruscadb_path=os.environ.get("RUSCADB_PATH", ""),
             embedding_dim=int(os.environ.get("EMBEDDING_DIM", "384")),
             allow_fallback=os.environ.get("MEMORY_FALLBACK", "false").lower() == "true",
             telemetry_level=TelemetryLevel(

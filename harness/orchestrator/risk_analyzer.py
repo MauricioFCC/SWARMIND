@@ -101,8 +101,9 @@ class RiskAnalyzer:
             results = [r for r in results if r.domain == domain]
         if min_level:
             levels = list(RiskLevel)
-            min_idx = levels.index(min_level)
-            results = [r for r in results if levels.index(r.level) >= min_idx]
+            ranks = {level: index for index, level in enumerate(levels)}
+            min_idx = ranks[min_level]
+            results = [r for r in results if ranks[r.level] >= min_idx]
         return results
 
     def add_risk(self, risk: Risk) -> None:

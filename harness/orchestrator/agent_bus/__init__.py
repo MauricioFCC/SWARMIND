@@ -1,16 +1,15 @@
 """Agent Message Bus — "Slack para Agentes".
 
-Antes: harness/orchestrator/agent_bus.py (715 lineas).
-Ahora: paquete ``harness/orchestrator/agent_bus/``:
+Estructura del paquete ``harness/orchestrator/agent_bus/``:
 
 - ``constants.py``: constantes de coleccion y validacion.
-- ``core.py``: clase ``AgentBus`` + errores (AgentBusError, InvalidMessageError).
+- ``errors.py``: ``AgentBusError`` / ``InvalidMessageError`` (sin dependencias).
 - ``core.py``: clase ``AgentBus`` (estado + payload + helpers).
 - ``messaging.py``: mixin ``_MessagingMixin`` (post/batch/async).
 - ``reading.py``: mixin ``_ReadingMixin`` (poll/thread/history).
-- ``status.py``: mixin ``_StatusMixin`` (estados + circuit breaker).
-- ``utils.py``: mixin ``_UtilsMixin`` (listados + validaciones).
 - ``async_bus.py``: clase ``AsyncAgentBus`` (asyncio.Queue PaCoRe).
+- ``kernel_bus.py``: ``KernelBus`` determinista sobre ``harness.kernel``
+  (single-loop FIFO + event log replayable).
 
 Este ``__init__.py`` re-exporta TODOS los simbolos publicos (y las
 constantes internas usadas por tests) del modulo original para
@@ -31,6 +30,7 @@ from .constants import (
     _VALID_STATUSES,
 )
 from .core import AgentBus, AgentBusError, InvalidMessageError
+from .kernel_bus import KernelBus, KernelBusError
 
 __all__ = [
     "_COLLECTION",
@@ -41,4 +41,6 @@ __all__ = [
     "AgentBusError",
     "AsyncAgentBus",
     "InvalidMessageError",
+    "KernelBus",
+    "KernelBusError",
 ]

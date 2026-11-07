@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tests para harness/delegate.py — entry point de delegación multi-agente.
 
 Cubre: inicialización, detección de roles, parsing de @menciones,

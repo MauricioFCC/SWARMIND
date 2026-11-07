@@ -1,171 +1,131 @@
-"""
-Tests de propagacion — verifican que los 4 proyectos tengan configuracion correcta.
+"""Tests del motor de propagación incremental (scripts/propagation.py).
 
-Cubre:
-- routing_rules.yaml sin agentes fantasma
-- Archivos clave presentes
-- Agentes y skills correctos
+WHAT: manifiesto (fast path), content-addressing (solo escribe cambios),
+atomicidad (sin temporales), exclusiones y no seguimiento de symlinks.
 
-Seguridad (ADR-0035): las rutas de proyectos externos se resuelven por
-variables de entorno (QUANTAPP_ROOT, HEALTHAPP_ROOT, ...) con fallback portable a
-``Path.home()``. Nunca se hardcodean rutas absolutas ni nombres de usuario.
+WHY: la propagación anterior copiaba todo el árbol en cada commit; este motor
+debe ser idempotente, barato en la segunda pasada y seguro ante fallos.
+
+WHERE: harness/tests — árboles temporales, sin tocar el global real.
 """
 
 from __future__ import annotations
 
+import json
 import os
+import sys
 from pathlib import Path
 
 import pytest
 
+_SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
+sys.path.insert(1, str(_SCRIPTS))
 
-def _project_root(env_var: str, *parts: str) -> Path:
-    """Resuelve la raíz de un proyecto externo sin exponer rutas personales.
-
-    Args:
-        env_var: variable de entorno con la ruta (ej. QUANTAPP_ROOT).
-        *parts: subdirectorios relativos al home (fallback portable).
-
-    Returns:
-        Path a la raíz del proyecto.
-    """
-    env_value = os.environ.get(env_var)
-    if env_value:
-        return Path(env_value)
-    return Path.home().joinpath(*parts)
+import propagation as prop
 
 
-# ---------------------------------------------------------------------------
-# Config (fixtures genericos: los nombres reales viven fuera del repo,
-# configurables via env vars <PROYECTO>_ROOT)
-# ---------------------------------------------------------------------------
-
-PROJECTS: dict[str, Path] = {
-    "QuantApp": _project_root("QUANTAPP_ROOT", "Documents", "projects", "quant-app"),
-    "HealthApp": _project_root("HEALTHAPP_ROOT", "Documents", "projects", "health-app"),
-    "TradeBot": _project_root("TRADEBOT_ROOT", "Documents", "projects", "trade-bot"),
-    "RetailApp": _project_root("RETAILAPP_ROOT", "Documents", "projects", "retail-app"),
-}
-
-# Agentes fantasma que NO deben aparecer en routing_rules.yaml
-PHANTOM_AGENTS = [
-    "quant-developer", "quant-scientist", "risk-manager",
-    "trading-operations", "enterprise-architect", "ai-engineer",
-    "software-engineer", "frontend-engineer", "data-architect",
-    "devops-sre", "security-engineer", "mobile-engineer",
-    "documentation-specialist", "project-manager", "requirements-analyst",
-    "quality-gate",
-]
-
-# Archivos clave que DEBEN estar presentes en harness/
-KEY_FILES = [
-    "orchestrator/write_ahead_log.py",
-    "gpu_accel.py",
-    "gpu_optimize.py",
-    "orchestrator/agent_capsules.py",
-    "orchestrator/context_scoped.py",
-    "orchestrator/worktable.py",
-    "orchestrator/skill_bundler.py",
-    "orchestrator/token_optimizer.py",
-]
-
-# Skills esperados por proyecto
-EXPECTED_SKILLS: dict[str, list[str]] = {
-    "QuantApp": ["alpha-research", "evolve", "hedgefund", "math-doc", "quant-trading", "risk-execution", "science-doc"],
-    "HealthApp": ["evolve", "healthtech", "hedgefund", "legal-doc", "science-doc"],
-    "TradeBot": ["alpha-research", "evolve", "hedgefund", "math-doc", "quant-trading", "risk-execution", "science-doc"],
-    "RetailApp": ["evolve", "hedgefund", "legal-doc", "pos-retail"],
-}
+def _tree(root: Path) -> Path:
+    """Crea un árbol fuente con dos archivos y un bytecode."""
+    (root / "sub").mkdir(parents=True)
+    (root / "a.txt").write_text("uno", encoding="utf-8")
+    (root / "sub" / "b.txt").write_text("dos", encoding="utf-8")
+    (root / "sub" / "__pycache__").mkdir()
+    (root / "sub" / "__pycache__" / "b.pyc").write_bytes(b"bytecode")
+    return root
 
 
-# ===========================================================================
-# Tests
-# ===========================================================================
+def test_copia_inicial_y_manifiesto(tmp_path: Path) -> None:
+    """La primera pasada copia todo lo no excluido y escribe el manifiesto."""
+    src = _tree(tmp_path / "src")
+    dst = tmp_path / "dst"
+    manifest = prop.manifest_for(dst, "tree")
+    stats = prop.sync_tree(src, dst, excludes=("__pycache__", "*.pyc"), manifest_path=manifest)
+    assert stats.copied == 2
+    assert (dst / "a.txt").read_text(encoding="utf-8") == "uno"
+    assert not (dst / "sub" / "__pycache__").exists()
+    data = json.loads(manifest.read_text(encoding="utf-8"))
+    assert set(data["files"]) == {"a.txt", "sub/b.txt"}
 
 
-@pytest.mark.skip(reason="Requiere proyectos externos desplegados en el workspace")
-class TestRoutingRules:
-    """routing_rules.yaml no debe contener agentes fantasma."""
-
-    @pytest.mark.parametrize("name", list(PROJECTS.keys()))
-    def test_no_phantom_agents(self, name: str) -> None:
-        """Ningun proyecto debe referenciar agentes que no existen."""
-        routing = PROJECTS[name] / ".opencode" / "config" / "routing_rules.yaml"
-        assert routing.exists(), f"routing_rules.yaml not found in {name}"
-        content = routing.read_text(encoding="utf-8")
-        
-        found = [a for a in PHANTOM_AGENTS if a in content]
-        assert not found, f"{name} contiene agentes fantasma: {found}"
-
-    @pytest.mark.parametrize("name", list(PROJECTS.keys()))
-    def test_has_real_agents(self, name: str) -> None:
-        """Debe contener los agentes reales del sistema."""
-        routing = PROJECTS[name] / ".opencode" / "config" / "routing_rules.yaml"
-        content = routing.read_text(encoding="utf-8")
-        assert "coordinator" in content
-        assert "builder" in content
-        assert "scientist" in content
-        assert "guardian" in content
-        assert "evolve" in content
+def test_segunda_pasada_no_escribe(tmp_path: Path) -> None:
+    """Con el manifiesto, la segunda pasada es fast path: 0 escrituras."""
+    src = _tree(tmp_path / "src")
+    dst = tmp_path / "dst"
+    manifest = prop.manifest_for(dst, "tree")
+    prop.sync_tree(src, dst, manifest_path=manifest)
+    stats = prop.sync_tree(src, dst, manifest_path=manifest)
+    assert stats.copied == 0
+    assert stats.updated == 0
+    assert stats.unchanged == 3
 
 
-@pytest.mark.skip(reason="Requiere proyectos externos desplegados en el workspace")
-class TestKeyFiles:
-    """Archivos clave del sistema deben estar presentes."""
-
-    @pytest.mark.parametrize("name", list(PROJECTS.keys()))
-    def test_key_files_present(self, name: str) -> None:
-        """Todos los archivos clave deben existir en cada proyecto."""
-        missing = []
-        for f in KEY_FILES:
-            full_path = PROJECTS[name] / "harness" / f
-            if not full_path.exists():
-                missing.append(f)
-        assert not missing, f"{name} faltan: {missing}"
-
-
-@pytest.mark.skip(reason="Requiere proyectos externos desplegados en el workspace")
-class TestAgentFiles:
-    """Agentes correctamente desplegados."""
-
-    @pytest.mark.parametrize("name", list(PROJECTS.keys()))
-    def test_agent_count(self, name: str) -> None:
-        """Deben haber 8 agentes desplegados."""
-        agents_dir = PROJECTS[name] / ".opencode" / "agents"
-        md_files = list(agents_dir.glob("*.md"))
-        assert len(md_files) >= 8, f"{name} tiene solo {len(md_files)} agentes"
-
-    @pytest.mark.parametrize("name", list(PROJECTS.keys()))
-    def test_core_agents_exist(self, name: str) -> None:
-        """Los 5 agentes principales deben existir."""
-        agents_dir = PROJECTS[name] / ".opencode" / "agents"
-        core = ["coordinator", "builder", "scientist", "guardian", "evolve"]
-        existing = [f.stem for f in agents_dir.glob("*.md")]
-        missing = [a for a in core if a not in existing]
-        assert not missing, f"{name} faltan agentes: {missing}"
+def test_cambio_de_contenido_actualiza(tmp_path: Path) -> None:
+    """Un cambio real se copia y se contabiliza como updated."""
+    src = _tree(tmp_path / "src")
+    dst = tmp_path / "dst"
+    manifest = prop.manifest_for(dst, "tree")
+    prop.sync_tree(src, dst, manifest_path=manifest)
+    target = src / "a.txt"
+    target.write_text("OTRO", encoding="utf-8")
+    os.utime(target, (target.stat().st_atime, target.stat().st_mtime + 5))
+    stats = prop.sync_tree(src, dst, manifest_path=manifest)
+    assert stats.updated == 1
+    assert (dst / "a.txt").read_text(encoding="utf-8") == "OTRO"
 
 
-@pytest.mark.skip(reason="Requiere proyectos externos desplegados en el workspace")
-class TestSkills:
-    """Skills correctamente desplegados por proyecto."""
-
-    @pytest.mark.parametrize("name", list(PROJECTS.keys()))
-    def test_skills_deployed(self, name: str) -> None:
-        """Skills esperados deben estar presentes."""
-        skills_dir = PROJECTS[name] / ".opencode" / "skills"
-        deployed = {d.name for d in skills_dir.iterdir() if d.is_dir()}
-        expected = set(EXPECTED_SKILLS.get(name, []))
-        missing = expected - deployed
-        assert not missing, f"{name} faltan skills: {missing}"
+def test_dry_run_no_escribe(tmp_path: Path) -> None:
+    """--dry-run planifica pero no crea el destino."""
+    src = _tree(tmp_path / "src")
+    dst = tmp_path / "dst"
+    stats = prop.sync_tree(src, dst, dry_run=True)
+    assert stats.scanned == 3
+    assert not dst.exists()
 
 
-@pytest.mark.skip(reason="Requiere proyectos externos desplegados en el workspace")
-class TestTestFiles:
-    """Tests correctamente desplegados."""
+def test_sin_temporales_tras_copiar(tmp_path: Path) -> None:
+    """La copia atómica no deja ficheros .tmp en el destino."""
+    src = _tree(tmp_path / "src")
+    dst = tmp_path / "dst"
+    prop.sync_tree(src, dst)
+    assert not list(dst.rglob("*.tmp-*"))
 
-    @pytest.mark.parametrize("name", list(PROJECTS.keys()))
-    def test_test_files_count(self, name: str) -> None:
-        """Cada proyecto debe tener al menos 40 archivos de test."""
-        tests_dir = PROJECTS[name] / "harness" / "tests"
-        test_files = list(tests_dir.glob("test_*.py"))
-        assert len(test_files) >= 40, f"{name} tiene solo {len(test_files)} tests"
+
+def test_sync_file_idempotente(tmp_path: Path) -> None:
+    """sync_file no escribe si el contenido ya es idéntico."""
+    source = tmp_path / "a.txt"
+    target = tmp_path / "b.txt"
+    source.write_text("igual", encoding="utf-8")
+    target.write_text("igual", encoding="utf-8")
+    assert prop.sync_file(source, target) is False
+    source.write_text("distinto", encoding="utf-8")
+    assert prop.sync_file(source, target) is True
+    assert target.read_text(encoding="utf-8") == "distinto"
+
+
+def test_symlink_no_se_sigue(tmp_path: Path) -> None:
+    """Un symlink dentro del árbol no se propaga (anti escape)."""
+    src = tmp_path / "src"
+    src.mkdir()
+    outside = tmp_path / "secreto.txt"
+    outside.write_text("fuera", encoding="utf-8")
+    try:
+        (src / "link.txt").symlink_to(outside)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks no disponibles en este sistema")
+    dst = tmp_path / "dst"
+    prop.sync_tree(src, dst)
+    assert not (dst / "link.txt").exists()
+
+
+def test_manifiesto_corrupto_se_ignora(tmp_path: Path) -> None:
+    """Un manifiesto ilegible no rompe el sync (se trata como vacío)."""
+    manifest = tmp_path / "m.json"
+    manifest.write_text("{no json", encoding="utf-8")
+    assert prop.load_manifest(manifest) == {}
+
+
+def test_excludes_por_nombre_y_ruta(tmp_path: Path) -> None:
+    """Los patrones excluyen por nombre de parte o por ruta POSIX."""
+    assert prop.is_excluded("a/__pycache__/x.pyc", ("__pycache__",))
+    assert prop.is_excluded("db/datos.lance", ("db/*.lance",))
+    assert not prop.is_excluded("db/esquema.sql", ("db/*.lance",))

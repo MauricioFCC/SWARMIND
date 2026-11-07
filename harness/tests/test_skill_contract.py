@@ -108,6 +108,20 @@ def test_validate_contract_failing_test_missing(tmp_path: Path) -> None:
     assert any("failing_test" in error for error in errors)
 
 
+def test_validate_contract_repo_relative_failing_test(tmp_path: Path) -> None:
+    """failing_test repo-relativo (``harness/tests/...::nodo``) se resuelve en ROOT."""
+    skill_dir = tmp_path / "demo-skill"
+    skill_dir.mkdir()
+    contract = SkillContract(
+        name="demo-skill",
+        contract={"input": {}, "output": {}},
+        preconditions=("x",),
+        postconditions=("y",),
+        failing_test="harness/tests/test_skill_contract.py::test_validate_contract_ok_no_errors",
+    )
+    assert validate_contract(contract, skill_dir) == []
+
+
 def test_validate_contract_missing_preconditions(tmp_path: Path) -> None:
     """Sin preconditions -> error."""
     skill_dir = tmp_path / "demo-skill"

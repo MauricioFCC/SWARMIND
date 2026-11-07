@@ -3,8 +3,15 @@ Guardrail check functions — extracted from guardrails.py for file size complia
 Each function is a standalone check that returns a GuardrailResult.
 """
 import re
+from pathlib import Path
 
 from .guardrails_base import GuardrailResult, GuardrailSeverity
+
+#: SSOT de presupuestos del proyecto (defaults.base_budget).
+_CONFIG_PATH = (
+    Path(__file__).resolve().parents[2] / ".opencode" / "config" / "token_budgets.yaml"
+)
+_BASE_BUDGET_RE = re.compile(r"^\s*base_budget:\s*(\d+)\s*$", re.MULTILINE)
 
 # =============================================================================
 # ARCHITECTURE CHECKS
@@ -287,15 +294,37 @@ def check_discovery_infra(context: dict) -> GuardrailResult:
 # COST GUARDRAILS — Budget & Token Usage
 # =============================================================================
 
+def _default_token_budget() -> int | None:
+    """Lee ``defaults.base_budget`` de ``token_budgets.yaml`` (SSOT del proyecto).
+
+    Returns:
+        Presupuesto por defecto en tokens, o ``None`` si el fichero no existe o
+        no declara ``base_budget`` (en ese caso el guardrail avisa como antes).
+    """
+    try:
+        text = _CONFIG_PATH.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    match = _BASE_BUDGET_RE.search(text)
+    return int(match.group(1)) if match else None
+
+
 def check_cost_budget(context: dict) -> GuardrailResult:
-    """Verifica que la solicitud tenga un presupuesto de tokens/costo definido."""
+    """Verifica que la solicitud tenga presupuesto (explicito o default del SSOT)."""
     budget = context.get("cost_budget") or context.get("token_budget")
     if budget is None:
+        default = _default_token_budget()
+        if default is None:
+            return GuardrailResult(
+                passed=False, severity=GuardrailSeverity.WARN,
+                message="Sin presupuesto explicito y sin defaults.base_budget en token_budgets.yaml",
+                suggestion="Define cost_budget/token_budget o agrega defaults.base_budget",
+                rule_id="COST-001"
+            )
         return GuardrailResult(
-            passed=False, severity=GuardrailSeverity.WARN,
-            message="No se definio presupuesto de costo/tokens",
-            suggestion="Define cost_budget o token_budget en el contexto de la solicitud. "
-                       "Ej: {'cost_budget': {'max_cost_usd': 0.50, 'currency': 'USD'}}",
+            passed=True, severity=GuardrailSeverity.INFO,
+            message=f"Presupuesto por defecto del proyecto: {default} tokens "
+                    "(token_budgets.yaml defaults.base_budget)",
             rule_id="COST-001"
         )
     if isinstance(budget, dict):
@@ -324,49 +353,32 @@ def check_cost_usage(output: str, context: dict) -> GuardrailResult:
     """Verifica que el uso de costo/tokens no exceda el presupuesto definido."""
     budget = context.get("cost_budget") or context.get("token_budget")
     if budget is None:
-        return GuardrailResult(
-            passed=True, severity=GuardrailSeverity.INFO,
-            message="✅ Sin presupuesto definido, saltando verificacion de uso", rule_id="COST-002"
-        )
-    max_budget = None
-    if isinstance(budget, dict):
-        max_budget = budget.get("max_cost_usd") or budget.get("max_tokens")
-    else:
-        max_budget = float(budget)
-
-    total_cost = None
-    token_usage = None
-    cost_patterns = [
-        r'(?:total_)?cost[\s_:=]+\$?([0-9]+\.?[0-9]*)',
-        r'(?:total_)?cost[\s_:=]+([0-9]+\.?[0-9]*)\s*(?:USD|usd|\$)',
-    ]
-    for pattern in cost_patterns:
-        match = re.search(pattern, output, re.IGNORECASE)
-        if match:
-            total_cost = float(match.group(1))
-            break
-
-    token_pattern = r'(?:token_usage|total_tokens|tokens_used)[\s_:=]+([0-9]+)'
-    token_match = re.search(token_pattern, output, re.IGNORECASE)
-    if token_match:
-        token_usage = int(token_match.group(1))
-
+        default = _default_token_budget()
+        if default is None:
+            return GuardrailResult(
+                passed=True, severity=GuardrailSeverity.INFO,
+                message="Sin presupuesto explicito ni default; no se verifica uso",
+                rule_id="COST-002"
+            )
+        budget = default
+    max_cost, max_tokens = _budget_limits(budget)
+    total_cost, token_usage = _usage_metrics(output)
     if total_cost is None and token_usage is None:
         return GuardrailResult(
             passed=True, severity=GuardrailSeverity.INFO,
-            message="✅ No se detectaron metricas de costo/uso en el output", rule_id="COST-002"
+            message="No se detectaron metricas de costo/uso en el output", rule_id="COST-002"
         )
-    if total_cost is not None and max_budget is not None and total_cost > max_budget:
+    if total_cost is not None and max_cost is not None and total_cost > max_cost:
         return GuardrailResult(
             passed=False, severity=GuardrailSeverity.WARN,
-            message=f"Costo total (${total_cost:.4f}) excede presupuesto (${max_budget:.4f})",
+            message=f"Costo total (${total_cost:.4f}) excede presupuesto (${max_cost:.4f})",
             suggestion="Revisa el consumo del modelo o reduce la longitud de las respuestas",
             rule_id="COST-002"
         )
-    if token_usage is not None and max_budget is not None and token_usage > max_budget:
+    if token_usage is not None and max_tokens is not None and token_usage > max_tokens:
         return GuardrailResult(
             passed=False, severity=GuardrailSeverity.WARN,
-            message=f"Token usage ({token_usage}) excede presupuesto ({int(max_budget)})",
+            message=f"Token usage ({token_usage}) excede presupuesto ({int(max_tokens)})",
             suggestion="Reduce el contexto o usa un modelo mas eficiente",
             rule_id="COST-002"
         )
@@ -377,8 +389,57 @@ def check_cost_usage(output: str, context: dict) -> GuardrailResult:
         detail_parts.append(f"tokens={token_usage}")
     return GuardrailResult(
         passed=True, severity=GuardrailSeverity.INFO,
-        message=f"✅ Uso dentro de presupuesto: {', '.join(detail_parts)}", rule_id="COST-002"
+        message=f"Uso dentro de presupuesto: {', '.join(detail_parts)}", rule_id="COST-002"
     )
+
+
+def _budget_limits(budget: object) -> tuple[float | None, float | None]:
+    """Separa el presupuesto en (limite_costo_usd, limite_tokens).
+
+    Args:
+        budget: ``dict`` con max_cost_usd/max_tokens o numero (tokens).
+
+    Returns:
+        Par ``(max_cost, max_tokens)``; ``None`` en el eje no limitado. Evita
+        comparar USD contra tokens cuando solo hay uno de los dos limites.
+    """
+    if isinstance(budget, dict):
+        max_cost = budget.get("max_cost_usd")
+        max_tokens = budget.get("max_tokens")
+        return (
+            float(max_cost) if max_cost is not None else None,
+            float(max_tokens) if max_tokens is not None else None,
+        )
+    if isinstance(budget, (int, float)) and budget > 0:
+        return None, float(budget)
+    return None, None
+
+
+def _usage_metrics(output: str) -> tuple[float | None, int | None]:
+    """Extrae (costo_usd, tokens) del output de un agente (regex tolerante).
+
+    Args:
+        output: Texto de salida del agente.
+
+    Returns:
+        Par ``(total_cost, token_usage)``; ``None`` si no aparece la metrica.
+    """
+    total_cost = None
+    token_usage = None
+    cost_patterns = [
+        r"(?:total_)?cost[\s_:=]+\$?([0-9]+\.?[0-9]*)",
+        r"(?:total_)?cost[\s_:=]+([0-9]+\.?[0-9]*)\s*(?:USD|usd|\$)",
+    ]
+    for pattern in cost_patterns:
+        match = re.search(pattern, output, re.IGNORECASE)
+        if match:
+            total_cost = float(match.group(1))
+            break
+    token_pattern = r"(?:token_usage|total_tokens|tokens_used)[\s_:=]+([0-9]+)"
+    token_match = re.search(token_pattern, output, re.IGNORECASE)
+    if token_match:
+        token_usage = int(token_match.group(1))
+    return total_cost, token_usage
 
 
 # =============================================================================

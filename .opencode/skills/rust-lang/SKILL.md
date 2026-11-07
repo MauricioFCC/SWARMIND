@@ -1,9 +1,6 @@
 ---
-
-
-
-
 name: rust-lang
+domain: systems
 description: "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes. Alcance: Rust y sistemas seguros; para arquitectura de sistemas ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Requiere toolchain Rust (cargo/rustc)'
@@ -115,3 +112,12 @@ fn main() -> std::io::Result<()> {
 - [Patrones Rust, organigrama y errores](references/patrones-y-errores.md) — principios, roles, ownership/async/error handling y errores del compilador.
 - [Performance y FFI](references/performance-y-ffi.md) — pirámide de performance, tips de optimización, FFI con Python (PyO3) y reglas de ABI.
 - [Crates y comandos](references/crates-y-comandos.md) — crates recomendados y referencia completa de comandos.
+
+## Ejemplo
+
+```rust
+let mut v = vec![1, 2, 3];
+let first = &v[0];
+v.push(4); // no compila: `first` sigue prestando v
+```
+Solucion: clonar el valor o reordenar para liberar el prestamo.

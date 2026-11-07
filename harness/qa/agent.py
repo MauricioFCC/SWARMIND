@@ -1,4 +1,4 @@
-﻿"""L4 — AutonomousTestAgent: Ejecucion autonoma de tests con MCP.
+"""L4 — AutonomousTestAgent: Ejecucion autonoma de tests con MCP.
 
 Agente autonomo que ejecuta y supervisa tests usando el protocolo MCP
 (Model Context Protocol). Capaz de:
@@ -33,7 +33,7 @@ from enum import Enum, auto
 from typing import Any
 from uuid import uuid4
 
-from harness.qa import QALayer, QAMetadata
+from harness.qa.types import QALayer, QAMetadata
 
 logger = logging.getLogger(__name__)
 

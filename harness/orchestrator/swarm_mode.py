@@ -1,4 +1,4 @@
-﻿"""
+"""
 SwarmMode — Ejecucion paralela de agentes en flota (inspirado en CodeWhale fleet).
 
 Permite lanzar multiples agentes en paralelo para tareas complejas.

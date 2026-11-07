@@ -1,0 +1,79 @@
+{
+  "name": "project-management",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario gestiona proyectos o metodologias. Scrum, Kanban, planificacion, seguimiento, riesgos, estimaciones, stakeholders. Alcance: gestion y metodologias de proyecto; para estrategia ver business-strategy",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario gestiona proyectos o metodologias. Scrum, Kanban, planificacion, seguimiento, riesgos, estimaciones, stakeholders",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Objetivo y alcance con WBS",
+    "Hitos medibles y fechas",
+    "Riesgos top-3 con mitigacion",
+    "Estimacion por evidencia (no optimista)",
+    "Cadencia de seguimiento y reporting",
+    "Plan de comunicacion a stakeholders"
+  ],
+  "invariants": [
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario gestiona proyectos o metodologias. Scrum, Kanban, planificacion, seguimiento, riesgos, estimaciones, stakeholders"
+    ],
+    "body_keywords": [
+      "estimacion",
+      "plan",
+      "hitos",
+      "mitigacion",
+      "cadencia",
+      "reporting",
+      "comunicacion",
+      "medibles"
+    ]
+  },
+  "source_sha256": "b4aed2c49cdc46681628d4338d527024449ec586b7aaa93f6dfa4110db18e529",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

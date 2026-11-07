@@ -1,4 +1,4 @@
-﻿"""
+"""
 AgentBenchmark — Evaluacion de agentes con metricas estandarizadas.
 
 Implementa:

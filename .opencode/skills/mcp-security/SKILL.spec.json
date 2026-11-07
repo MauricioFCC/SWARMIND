@@ -1,0 +1,80 @@
+{
+  "name": "mcp-security",
+  "version": "1.0.0",
+  "description": "Usar cuando se auditan, endurecen o instalan servidores MCP (mcp, owasp, supply-chain, rug-pull, ssrf, least-privilege, secrets). Alcance: seguridad de la capa MCP; para auditoria general ver security-audit; para elegir herramientas ver mcp-toolkit",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando se auditan, endurecen o instalan servidores MCP (mcp, owasp, supply-chain, rug-pull, ssrf, least-privilege, secrets)",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Versión fijada (no latest, no sin versión)",
+    "Comando especializado (no shell crudo) o aislamiento justificado",
+    "0 secretos literales en env/environment",
+    "Transporte TLS si es remoto; interno documentado con dueño",
+    "Permisos mínimos (least-privilege): el server solo ve lo que necesita",
+    "scan_mcp_config en verde (0 high) antes de commitear"
+  ],
+  "invariants": [
+    "## Protocolo de auditoría (siempre en este orden)",
+    "la sesión o credential refs del harness (masking siempre)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando se auditan, endurecen o instalan servidores MCP (mcp, owasp, supply-chain, rug-pull, ssrf, least-privilege, secrets)"
+    ],
+    "body_keywords": [
+      "config",
+      "versión",
+      "dueño",
+      "superficie",
+      "high",
+      "command",
+      "scan",
+      "auditoría"
+    ]
+  },
+  "source_sha256": "e97a47aa3d2408a8179b3aba28a4eaaf4025fc57a0d066dcd33a95a5b6aa2bc7",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

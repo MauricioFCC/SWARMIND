@@ -1,0 +1,86 @@
+{
+  "name": "risk-execution",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica. Alcance: implementacion tactica; para doctrina institucional ver hedgefund",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Position sizing validado contra Kelly Criterion",
+    "VaR/CVaR calculado con EVT (colas pesadas)",
+    "Stress test: 2008, COVID, flash crash en portfolio",
+    "Slippage model incluido en todas las simulaciones",
+    "TCA post-trade para todas las órdenes ejecutadas",
+    "Drawdown limit hardcoded (no configurable en prod)",
+    "Circuit breakers: max position, max leverage, max correlation",
+    "Rust hot path: sin allocations en loop de trading, pre-alloc buffers"
+  ],
+  "invariants": [
+    "portfolio_risk::insurance::PortfolioInsurance siempre activo (tail hedge)",
+    "risk_guards::circuit_breaker(portfolio_dd > 0.20) → liquidación automática",
+    "compliance::RiskControls::validate(order, portfolio) → pre-trade check",
+    "margin::MarginCalculator::maintenance() → monitoreo en tiempo real",
+    "NUEVO: Mean Field Control para crowding risk en mercados concentrados",
+    "NUEVO: PIKAN para portfolio optimization con regularizacion fisica"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario gestiona riesgo o ejecucion algoritmica. position sizing, market making, TCA, riesgo institucional, ejecucion algoritmica"
+    ],
+    "body_keywords": [
+      "portfolio",
+      "kelly",
+      "cvar",
+      "risk",
+      "drawdown",
+      "execute",
+      "rust",
+      "compute"
+    ]
+  },
+  "source_sha256": "3fc7572c1ec2231c25c52ae52285dbac93af8e3554822a054aa1646718bfa2f0",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

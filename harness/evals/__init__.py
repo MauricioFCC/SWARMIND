@@ -48,14 +48,24 @@ from harness.evals.eval_factory import (
     run_all,
     run_layer,
 )
+from harness.evals.regression_tracker import (
+    MAX_DROP_PP,
+    MIN_REGRESSION_PASS_RATE,
+    RegressionReport,
+    RegressionTracker,
+)
 
 logger = logging.getLogger(__name__)
 
 __all__ = [
+    "MAX_DROP_PP",
+    "MIN_REGRESSION_PASS_RATE",
     "EvalDiff",
     "EvalReport",
     "EvalResult",
     "EvalSuite",
+    "RegressionReport",
+    "RegressionTracker",
     "compare_reports",
     "eval_agent_completion",
     "eval_agent_tool_usage",

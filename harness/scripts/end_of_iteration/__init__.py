@@ -1,4 +1,4 @@
-﻿"""
+"""
 end_of_iteration — Pipeline de fin de iteracion.
 
 Package que reemplaza el monolito original, dividiendo la funcionalidad en

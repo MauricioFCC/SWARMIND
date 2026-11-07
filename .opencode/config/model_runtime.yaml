@@ -1,0 +1,36 @@
+# .opencode/config/model_runtime.yaml — SSOT del tier frugal de edits (v1.1)
+# ============================================================================
+# MODEL RUNTIME — SSOT del escalado frugal por costo (spec model-free-edits.md)
+# ============================================================================
+# Escalera de prioridad (N9): PRIMERO los gratuitos del catalogo, DESPUES los
+# de pago ordenados por `input_price` mas bajo. `free_models` es la lista de
+# ids verificadamente gratuitos en models.dev (agua rasa: costo 0).
+#
+# Precedencia del resolver (N5):
+#   1. env  SWARMIND_EDITS_MODEL   (id del tier frugal, tier top)
+#   2. env  SWARMIND_FRUGAL_ROUTING (1/0, apaga/enciende el routing)
+#   3. yaml  .opencode/config/model_runtime.yaml (este archivo)
+#   4. constant  harness/model_router/edit_constants.py
+#
+# N6 (mirror): `.opencode/agents/beam-patcher.md` fija el default del TUI;
+# si cambias `edits_model` aqui, actualiza el frontmatter del agente para
+# mantener el mirror test verde.
+
+defaults:
+  edits_model: "opencode-go/beam-free"     # tier frugal (gratis, opencode-go)
+  fallback_model: "opencode-go/deepseek-v4.1-flash"  # la barata de pago
+  agent_id: "beam-patcher"
+  command_id: "patch-free"
+  # Routing frugal del coordinador (N9): tareas con
+  # ComplexityRouter.decide() == "small" (sin razonamiento profundo) delegan
+  # con el primer id valido de esta escalera.
+  frugal_routing_enabled: true
+
+# Escalera por costo (N9): gratis primero, de pago despues (por orden creciente
+# del precio de entrada reportado en models.dev de esta sesion).
+frugal_ladder:
+  free:
+    - "opencode-go/beam-free"
+    - "opencode/beam-free"
+  paid:                                  # baratas primero (ascending cost)
+    - "opencode-go/deepseek-v4.1-flash"

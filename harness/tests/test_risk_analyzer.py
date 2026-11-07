@@ -174,3 +174,15 @@ class TestRiskAnalyzer:
         assert summary["by_level"]["medium"] == 1
         assert summary["by_level"]["high"] == 4
         assert summary["by_level"]["critical"] == 2
+
+
+class TestRiskLevelRanking:
+    """El filtro por nivel usa un mapa de rangos (sin list.index por item)."""
+
+    def test_min_level_filters_consistently(self):
+        analyzer = RiskAnalyzer()
+        filtered = analyzer.get_risks(min_level=RiskLevel.HIGH)
+        assert filtered
+        allowed = {RiskLevel.HIGH, RiskLevel.CRITICAL}
+        assert all(risk.level in allowed for risk in filtered)
+

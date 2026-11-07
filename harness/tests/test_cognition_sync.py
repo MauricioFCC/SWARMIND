@@ -266,10 +266,65 @@ class TestCognitionSyncGetAllTags:
 class TestCognitionSyncDelete:
     """Tests para delete_lesson."""
 
-    def test_delete_lesson_returns_false(self, sync):
-        """Test delete_lesson retorna False (placeholder no implementado)."""
-        result = sync.delete_lesson("any-id")
-        assert result is False
+    def test_delete_existing_lesson_returns_true(self, sync):
+        """Una leccion existente se elimina y deja de existir."""
+        lesson = sync.add_lesson("Titulo", "Contenido", "ml")
+
+        assert sync.delete_lesson(lesson.id) is True
+        assert sync.has_lesson(lesson.id) is False
+
+    def test_delete_missing_lesson_returns_false(self, sync):
+        """Un id inexistente no borra nada y devuelve False."""
+        assert sync.delete_lesson("no-existe") is False
+
+    def test_delete_is_idempotent(self, sync):
+        """El segundo delete del mismo id devuelve False."""
+        lesson = sync.add_lesson("Titulo", "Contenido", "ml")
+        assert sync.delete_lesson(lesson.id) is True
+        assert sync.delete_lesson(lesson.id) is False
+
+    def test_store_failure_is_reported_not_raised(self, sync, monkeypatch):
+        """Un fallo del store devuelve False (no propaga la excepcion)."""
+        lesson = sync.add_lesson("Titulo", "Contenido", "ml")
+
+        def _boom(*_args, **_kwargs):
+            raise RuntimeError("store caido")
+
+        monkeypatch.setattr(sync.store, "delete", _boom)
+        assert sync.delete_lesson(lesson.id) is False
+
+
+class TestAccessCounter:
+    """``_bump_access`` persiste access_count y last_accessed."""
+
+    def test_get_lesson_by_id_increments_access_count(self, sync, mock_store):
+        """Recuperar una leccion incrementa su contador en el store."""
+        lesson = sync.add_lesson("Titulo", "Contenido", "ml")
+
+        sync.get_lesson_by_id(lesson.id)
+
+        stored = mock_store.search(
+            "asi_cognition_store", np.zeros(384, dtype=np.float32), top_k=10
+        )
+        meta = next(
+            result["metadata"]
+            for result in stored
+            if result["metadata"].get("id") == lesson.id
+        )
+        assert meta["access_count"] == 1
+        assert meta["last_accessed"]
+
+    def test_update_failure_does_not_break_retrieval(self, sync, monkeypatch):
+        """Si el store no soporta update, la lectura sigue funcionando."""
+        lesson = sync.add_lesson("Titulo", "Contenido", "ml")
+        monkeypatch.setattr(
+            sync.store, "update_records", lambda *_a, **_k: (_ for _ in ()).throw(RuntimeError)
+        )
+
+        recovered = sync.get_lesson_by_id(lesson.id)
+
+        assert recovered is not None
+        assert recovered.id == lesson.id
 
 
 class TestCognitionSyncEmbedding:

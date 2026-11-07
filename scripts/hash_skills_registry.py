@@ -103,8 +103,7 @@ def _write_text_preserving(path: Path, text: str) -> None:
         path: Ruta del archivo.
         text: Contenido exacto a escribir.
     """
-    with open(path, "w", encoding="utf-8", newline="") as handle:
-        handle.write(text)
+    Path(path).write_text(text, encoding="utf-8", newline="")
 
 
 def _registry_skill_names(text: str) -> list[str]:

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tests para OptimizationPipeline — Pipeline completo de optimización de tokens.
 
 Cubre: inicialización, cada etapa del pipeline con early stopping,

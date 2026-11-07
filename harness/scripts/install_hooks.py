@@ -30,7 +30,39 @@ _HERE = Path(__file__).resolve().parent            # harness/scripts/
 _HARNESS_ROOT = _HERE.parent                        # harness/
 _PROJECT_ROOT = _HARNESS_ROOT.parent                # project root (where .git lives)
 
-_HOOKS_DIR = _PROJECT_ROOT / ".git" / "hooks"
+def _resolve_hooks_dir(hooks_path_override: str | None = None) -> Path:
+    """Resuelve el directorio de hooks EFECTIVO de git.
+
+    Git ignora ``.git/hooks`` por completo cuando ``core.hooksPath`` esta
+    definido; ``install.ps1``/``install.sh`` lo fijan a ``.githooks`` (para el
+    pre-push que protege los ADR). Sin esto, el pre-commit se escribia en
+    ``.git/hooks`` y git NUNCA lo ejecutaba (hook inerte).
+
+    Args:
+        hooks_path_override: Fuerza el valor de ``core.hooksPath`` (tests);
+            ``None`` lo lee con ``git config``.
+
+    Returns:
+        Ruta absoluta del directorio de hooks efectivo.
+    """
+    rel = hooks_path_override
+    if rel is None:
+        try:
+            result = subprocess.run(
+                ["git", "config", "--get", "core.hooksPath"],
+                capture_output=True, text=True, timeout=10,
+                cwd=str(_PROJECT_ROOT), check=False,
+            )
+            rel = result.stdout.strip()
+        except (OSError, subprocess.SubprocessError):
+            rel = ""
+    if rel:
+        candidate = Path(rel)
+        return candidate if candidate.is_absolute() else (_PROJECT_ROOT / candidate)
+    return _PROJECT_ROOT / ".git" / "hooks"
+
+
+_HOOKS_DIR = _resolve_hooks_dir()
 _HOOK_PATH = _HOOKS_DIR / "pre-commit"
 _BACKUP_PATH = _HOOKS_DIR / "pre-commit.Swarmind.bak"
 _STATUS_PATH = _HARNESS_ROOT / "db" / ".hook_status.json"
@@ -259,8 +291,7 @@ def install_hook() -> bool:
 
     # ── Write the new self-contained hook ──────────────────────────
     try:
-        with open(_HOOK_PATH, "w", encoding="utf-8", newline="\n") as f:
-            f.write(_LOCAL_HOOK_TEMPLATE)
+        Path(_HOOK_PATH).write_text(_LOCAL_HOOK_TEMPLATE, encoding="utf-8", newline="\n")
         if sys.platform != "win32":
             st = os.stat(_HOOK_PATH)
             os.chmod(_HOOK_PATH, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
@@ -321,7 +352,8 @@ def _get_last_run_info() -> str | None:
     # 2. Fallback: git reflog for hook file changes
     try:
         result = subprocess.run(
-            ["git", "log", "--oneline", "-1", "--format=%ci", "--", ".git/hooks/pre-commit"],
+            ["git", "log", "--oneline", "-1", "--format=%ci", "--",
+             os.path.relpath(_HOOK_PATH, _PROJECT_ROOT)],
             capture_output=True, text=True, timeout=10, cwd=str(_PROJECT_ROOT), check=False,
         )
         if result.returncode == 0 and result.stdout.strip():

@@ -15,10 +15,10 @@ from harness.model_router.gpu_guard import (
     should_degrade,
 )
 
-#: Flota reducida 2026-10-08 (vram_mb del manifiesto, KV a 8192).
-CODER = "qwen2.5-coder-3b-iq4-xs"  # 3300MB
-FAST = "qwen3-5-4b-gguf-ud-q4-k-xl"  # 4600MB
-PHI = "phi-4-mini-instruct-q4-k-m"  # 5700MB
+#: Flota instalada 2026-10-14 (vram_mb del manifiesto, KV a 8192).
+CODER = "phi-4-mini-reasoning-q4-k-m"  # 2600MB (chico / degradacion)
+FAST = "qwen3-4b-thinking-2507-q4-k-m"  # 2600MB
+PHI = "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs"  # 6400MB (grande)
 _TEXT_MODELS = (FAST, PHI, CODER)
 
 

@@ -1,4 +1,4 @@
-﻿"""
+"""
 SecurityGuard - Defensa contra inyeccion de prompt y boundaries de confianza.
 
 Implementa controles de seguridad criticos para sistemas multi-agente:

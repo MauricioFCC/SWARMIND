@@ -1,4 +1,4 @@
-﻿"""
+"""
 Harness — Multi-Agent Execution Engine (portable base)
 Entry point for the agent orchestration system with LanceDB memory.
 
@@ -24,7 +24,6 @@ Helpers de CLI extraidos a run_support.py (regla AGR: archivos < 500 lineas).
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 from typing import Any
 
 # Importar funcionalidad compartida (DRY con delegate.py)
@@ -37,6 +36,13 @@ from harness.cli_common import (
     get_harness_root,
     get_project_root,
     setup_logging,
+)
+from harness.run_support import (
+    _dispatch_task,
+    _handle_gateway_mode,
+    _parse_args,
+    _resolve_hitl_mode,
+    print_update_notice_if_due,
 )
 
 logger = setup_logging()
@@ -66,7 +72,6 @@ from harness.memory_rag.doc_ingester import (
     DocumentChunker,
     ingest_directory,
 )
-from harness.memory_rag.lance_vector_store import LanceVectorStore
 from harness.orchestrator.hitl_guard import HITLGuard
 from harness.orchestrator.task_manager import TaskManager
 
@@ -92,10 +97,18 @@ except ImportError:
 from harness.run_commands import (
     _apply_model_routing,
     _check_hitl,
+    _create_store,
+    _handle_db_backup,
+    _handle_db_capabilities,
+    _handle_db_explain,
+    _handle_db_gc,
+    _handle_db_health,
     _handle_db_list_imports,
     _handle_db_migrate,
+    _handle_db_reconcile,
     _handle_db_rollback,
     _handle_db_stats,
+    _handle_db_time_travel,
     _handle_evolve_mutate,
     _handle_hooks_install,
     _handle_hooks_status,
@@ -119,10 +132,6 @@ from harness.run_commands import (
 # ``from harness.run import _parse_args`` y los patches de los tests.
 from harness.run_support import (
     _USAGE_LINES,
-    _dispatch_task,
-    _handle_gateway_mode,
-    _parse_args,
-    _resolve_hitl_mode,
     _start_sandbox_if_needed,
 )
 
@@ -140,7 +149,7 @@ def _handle_daemon_mode() -> None:
     from harness.orchestrator.scheduler import Scheduler
 
     logger.info("[Harness] Daemon mode - iniciando scheduler en background...")
-    store = LanceVectorStore()
+    store = _create_store()
     scheduler = Scheduler(vector_store=store)
     scheduler.run_scheduler()
     logger.info("[Harness] Scheduler corriendo. Presiona Ctrl+C para detener.")
@@ -154,7 +163,7 @@ def _handle_daemon_mode() -> None:
 
 def _handle_command(cmd: str) -> None:
     """Dispatch a !command to its handler."""
-    store = LanceVectorStore()
+    store = _create_store()
     if cmd.startswith("!evolve mutate"):
         _handle_evolve_mutate(store, cmd)
     elif cmd.startswith("!schedule add"):
@@ -163,6 +172,20 @@ def _handle_command(cmd: str) -> None:
         _handle_schedule_list(store)
     elif cmd.startswith("!db migrate"):
         _handle_db_migrate(store, cmd)
+    elif cmd.startswith("!db capabilities"):
+        _handle_db_capabilities()
+    elif cmd.startswith("!db health"):
+        _handle_db_health(store)
+    elif cmd.startswith("!db backup"):
+        _handle_db_backup(store, cmd)
+    elif cmd.startswith("!db explain"):
+        _handle_db_explain(store, cmd)
+    elif cmd.startswith("!db time-travel"):
+        _handle_db_time_travel(store, cmd)
+    elif cmd.startswith("!db gc"):
+        _handle_db_gc(store)
+    elif cmd.startswith("!db reconcile"):
+        _handle_db_reconcile(store)
     elif cmd.startswith("!db list-imports"):
         _handle_db_list_imports()
     elif cmd.startswith("!db stats"):
@@ -446,36 +469,52 @@ def _try_local_execution(
 
 
 def _check_lancedb_or_exit() -> None:
-    """Verifica LanceDB al inicio de main(). Si no está, sale con mensaje claro."""
+    """Verifica que exista al menos un backend de memoria antes de ejecutar.
+
+    LanceDB dejo de ser obligatorio cuando RuscaDB paso a ser el default: si la
+    DLL de RuscaDB esta disponible, el harness puede operar sin LanceDB.
+    """
     global HAS_LANCEDB  # noqa: PLW0602
     if HAS_LANCEDB:
+        return
+    try:
+        from harness.memory_rag.ruscadb import capabilities
+
+        caps = capabilities()
+    except Exception:  # noqa: BLE001 - sin DLL o import roto: no hay backend
+        caps = {}
+    if any(caps.values()):
         return
     import logging as _log
     _log.basicConfig(level=_log.INFO, format="%(message)s")
     _logger = _log.getLogger(__name__)
     _logger.info("=" * 60)
-    _logger.info("  LanceDB REQUERIDO - No se encontro instalado.")
+    _logger.info("  No hay backend de memoria disponible (LanceDB ni RuscaDB).")
     _logger.info("=" * 60)
     _logger.info("")
-    _logger.info("    pip install lancedb")
+    _logger.info('    pip install "Swarmind-harness[lancedb]"')
     _logger.info("    python harness/scripts/init.py")
     _logger.info("")
-    _logger.info("  El sistema NO puede funcionar sin LanceDB.")
+    _logger.info("  Alternativa sin Python extra: compilar la DLL de RuscaDB")
+    _logger.info("  (cargo build -p ruscadb-ffi) y dejarla en harness/memory_rag/.")
+    _logger.info("  Diagnostico: python scripts/new_user_smoke.py")
     _logger.info("=" * 60)
     sys.exit(1)
 
 
 def main() -> None:
     """Main entry point for the Harness."""
-    _check_lancedb_or_exit()
-
     parsed = _parse_args()
 
     if parsed.get("help"):
         _show_usage()
         return
 
+    _check_lancedb_or_exit()
+
     check_first_run(HARNESS_ROOT)
+
+    print_update_notice_if_due(HARNESS_ROOT)
 
     # --- Mode dispatch ---
     if parsed["gateway"]:
@@ -502,9 +541,8 @@ def main() -> None:
         sys.exit(1)
 
     logger.info("[Harness] Inicializando...")
-    store = LanceVectorStore()
-    if not (Path(HARNESS_ROOT) / "db" / "lancedb").exists():
-        logger.warning("harness/db/lancedb/ no existe. Los datos se perderan al reiniciar.")
+    store = _create_store()
+    logger.info("[Harness] Backend de memoria: %s", type(store).__name__)
 
     # Orchestrate
     from harness.orchestrator.task_orchestrator import TaskOrchestrator

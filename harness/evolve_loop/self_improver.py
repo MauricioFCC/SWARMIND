@@ -11,6 +11,7 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import Any
 
 from harness.evolve_loop.cognition_sync import CognitionLesson, CognitionSync
 from harness.evolve_loop.evaluator import CASEEvaluator, FullEvaluation
@@ -75,20 +76,57 @@ class SelfImprover:
         self,
         evaluator: CASEEvaluator | None = None,
         cognition: CognitionSync | None = None,
+        recursive_harness: Any = None,
     ) -> None:
         """
         Args:
             evaluator: A ``CASEEvaluator`` instance.  Defaults to a new one.
             cognition: A ``CognitionSync`` instance.  Defaults to a new one.
+            recursive_harness: Optional ``RecursiveHarness`` (Harness2) for
+                task-level recursive harnessing. Lazy-created on demand.
         """
         self.evaluator = evaluator or CASEEvaluator()
         self.cognition = cognition or CognitionSync()
+        self.recursive_harness = recursive_harness
 
         # Internal state
         self._rounds: dict[str, list[ImprovementRound]] = {}
         self._current_snapshots: dict[str, str] = {}  # skill -> snapshot_id
         self._best_scores: dict[str, float] = {}
         self._promoted: dict[str, bool] = {}
+
+    def run_recursive_round(
+        self,
+        skill_name: str,
+        base_harness: Any,
+        executor: Any,
+        *,
+        proposer_fn: Any = None,
+        mode: str = "parallel",
+        k: int = 1,
+        base_dir: Any = None,
+    ) -> Any:
+        """Ejecuta una ronda de recursive harnessing (Harness2) y adopta el resultado.
+
+        Cablea ``RecursiveHarness`` al flujo de self-improvement. Si no hay
+        ``recursive_harness`` inyectado, se crea uno con ``proposer_fn``.
+        """
+        if self.recursive_harness is None:
+            if proposer_fn is None:
+                raise ValueError("proposer_fn requerido para crear RecursiveHarness")
+            from harness.evolve_loop.recursive_harness import RecursiveHarness
+            self.recursive_harness = RecursiveHarness(base_dir or ".", proposer_fn)
+        from harness.harness2 import HarnessTree
+        tree = base_harness if isinstance(base_harness, HarnessTree) else HarnessTree.from_dict(base_harness or {})
+        result = self.recursive_harness.run(
+            task_id=skill_name, base_harness=tree, executor=executor, mode=mode, k=k,
+        )
+        # adopt best final if available
+        if result.finals:
+            self.recursive_harness.adopt(
+                f"{skill_name}-{result.finals[0]}", tree, lesson=f"recursive round {mode}",
+            )
+        return result
 
     # ------------------------------------------------------------------
     # Public API

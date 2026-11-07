@@ -1,4 +1,4 @@
-﻿"""
+"""
 embedding_service.py — Servicio de embeddings con batching inteligente.
 
 Cuando N agentes hacen RAG queries simultaneamente, en lugar de
@@ -168,6 +168,19 @@ class BatchedEmbeddingService:
         stats["model_available"] = self._model_available
         stats["model"] = self._model_name
         return stats
+
+    def stop(self) -> None:
+        """Detiene el loop de batching y cancela los futuros pendientes.
+
+        El ``_batch_loop`` sale en la siguiente iteracion (como maximo tras
+        ``2 * batch_window``); los requests en vuelo se cancelan para que no
+        queden esperando una respuesta que ya no llegara.
+        """
+        self._running = False
+        for future in self._pending.values():
+            if not future.done():
+                future.cancel()
+        self._pending.clear()
 
     # ------------------------------------------------------------------
     # Internal: Async batching

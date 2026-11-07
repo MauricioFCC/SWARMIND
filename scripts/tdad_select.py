@@ -308,8 +308,7 @@ def select_tests(
         candidates: set[Path | None] = {direct_test_for(file_path, tests_dir)}
         module = module_name_for(file_path, harness_dir)
         if module is not None:
-            for dep in transitive_dependents(module, dependents):
-                candidates.add(tests_dir / f"{_TEST_PREFIX}{dep.split('.')[-1]}{_PY_EXT}")
+            candidates.update(tests_dir / f"{_TEST_PREFIX}{dep.split('.')[-1]}{_PY_EXT}" for dep in transitive_dependents(module, dependents))
         found = {path for path in candidates if path is not None and path.exists()}
         if found:
             selected |= found

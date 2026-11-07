@@ -11,6 +11,8 @@ Cubre el validador de skills de SWARMIND que implementa:
 
 from __future__ import annotations
 
+import hashlib
+import json
 import sys
 from pathlib import Path
 
@@ -27,7 +29,7 @@ import validate_skills as vs
 # ===========================================================================
 
 
-def _write_skill(root: Path, dirname: str, frontmatter: str, body: str = "# Skill\n") -> Path:
+def _write_skill(root: Path, dirname: str, frontmatter: str, body: str = "# Skill\n\n## Ejemplo\n\nEjemplo concreto.\n") -> Path:
     """Escribe un skill de prueba y retorna la ruta a su SKILL.md."""
     skill_dir = root / dirname
     skill_dir.mkdir(parents=True, exist_ok=True)
@@ -400,3 +402,57 @@ def test_main_strict_errores_exit_1(capsys: pytest.CaptureFixture[str], monkeypa
         vs.main()
 
     assert exc.value.code == 1
+
+
+def test_skill_con_spec_desactualizado_error(tmp_path: Path) -> None:
+    """Spec con ``source_sha256`` de otro SKILL.md -> error de drift."""
+    skill_md = _write_skill(tmp_path, "demo-skill", _valid_fm("demo-skill"))
+    spec = {
+        "name": "demo-skill",
+        "contract": {"input": {}, "output": {}},
+        "preconditions": ["a"],
+        "postconditions": ["b"],
+        "failing_test": "SKILL.md",
+        "source_sha256": "0" * 64,
+    }
+    (skill_md.parent / "SKILL.spec.json").write_text(
+        json.dumps(spec), encoding="utf-8"
+    )
+    errors = vs._validate_skill(skill_md.parent, quiet=True)
+    assert any("desactualizado" in error for error in errors)
+
+
+def test_skill_con_spec_crlf_no_es_drift(tmp_path: Path) -> None:
+    """El drift se calcula con LF normalizado (mismo hash en Windows y Linux)."""
+    skill_md = _write_skill(tmp_path, "demo-skill", _valid_fm("demo-skill"))
+    normalized = skill_md.read_bytes().replace(b"\r\n", b"\n")
+    spec = {
+        "name": "demo-skill",
+        "contract": {"input": {}, "output": {}},
+        "preconditions": ["a"],
+        "postconditions": ["b"],
+        "failing_test": "SKILL.md",
+        "source_sha256": hashlib.sha256(normalized).hexdigest(),
+    }
+    (skill_md.parent / "SKILL.spec.json").write_text(
+        json.dumps(spec), encoding="utf-8"
+    )
+    errors = vs._validate_skill(skill_md.parent, quiet=True)
+    assert not any("desactualizado" in error for error in errors)
+
+
+def test_skill_sin_source_sha256_no_es_drift(tmp_path: Path) -> None:
+    """Spec manual sin ``source_sha256`` no se marca como drift."""
+    skill_md = _write_skill(tmp_path, "demo-skill", _valid_fm("demo-skill"))
+    spec = {
+        "name": "demo-skill",
+        "contract": {"input": {}, "output": {}},
+        "preconditions": ["a"],
+        "postconditions": ["b"],
+        "failing_test": "SKILL.md",
+    }
+    (skill_md.parent / "SKILL.spec.json").write_text(
+        json.dumps(spec), encoding="utf-8"
+    )
+    errors = vs._validate_skill(skill_md.parent, quiet=True)
+    assert not any("desactualizado" in error for error in errors)

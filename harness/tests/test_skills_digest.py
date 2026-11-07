@@ -55,7 +55,8 @@ def _make_skill(root: Path, name: str, *, with_scripts: bool = True) -> Path:
     skill_dir = root / name
     skill_dir.mkdir(parents=True, exist_ok=True)
     (skill_dir / "SKILL.md").write_text(
-        f"---\n{_frontmatter(name)}---\n# {name}\n", encoding="utf-8"
+        f"---\n{_frontmatter(name)}---\n# {name}\n\n## Ejemplo\n\nEjemplo concreto.\n",
+        encoding="utf-8",
     )
     (skill_dir / "SKILL.min.md").write_text(
         f"---\nname: {name}\ndescription: Usar cuando se pruebe el test.\n---\n",

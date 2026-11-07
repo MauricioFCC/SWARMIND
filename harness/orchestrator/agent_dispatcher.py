@@ -1,4 +1,4 @@
-﻿"""
+"""
 Agent Dispatcher — Skill-aware task routing.
 
 Finds relevant procedural skills for a task description and includes them
@@ -11,6 +11,8 @@ import functools
 import logging
 import os
 import re
+import uuid
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +24,7 @@ from harness.context.skill_inherit import (
     parse_inherit,
     resolve_inherit,
 )
+from harness.evolve_loop.feedback_scorer import score_outcome
 from harness.evolve_loop.library_drift import LibraryDriftManager
 from harness.evolve_loop.skill_generator import REGISTRY_PATH, SkillGenerator
 from harness.memory_rag.lance_vector_store import (
@@ -29,6 +32,7 @@ from harness.memory_rag.lance_vector_store import (
     LanceVectorStore,
 )
 from harness.observability.token_telemetry import TokenTelemetry
+from harness.orchestrator.agent_bus.kernel_bus import KernelBus
 from harness.orchestrator.hidden_body import (
     _body_keyword_score,
     combine_hidden_body_score,
@@ -330,6 +334,7 @@ class AgentDispatcher:
         *,
         telemetry: TokenTelemetry | None = None,
         drift_manager: LibraryDriftManager | None = None,
+        bus: KernelBus | None = None,
     ) -> None:
         """Inicializa la instancia de la clase.
 
@@ -340,10 +345,13 @@ class AgentDispatcher:
             drift_manager: Gestor de retiro por outcome (Library Drift). Si es
                 ``None`` (default) el dispatcher no acumula utilidad de skills:
                 backward-compatible.
+            bus: KernelBus opcional para publicar ``agent.dispatch`` con
+                ``trace_id`` correlacionado (AC-KN5). ``None`` = sin eventos.
         """
         self._vector_store = vector_store
         self._telemetry = telemetry
         self._drift_manager = drift_manager
+        self._bus = bus
         self._stats: dict[str, Any] = {
             "total_dispatches": 0,
             "skill_matches": 0,
@@ -427,13 +435,20 @@ class AgentDispatcher:
         logger.debug("No skill found for: %s", task_description[:80])
         return None
 
-    def dispatch(self, agent_role: str, task_description: str) -> dict[str, Any]:
+    def dispatch(
+        self,
+        agent_role: str,
+        task_description: str,
+        *,
+        trace_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Dispatch a task to an agent, optionally including skill context.
 
         Args:
             agent_role: The target agent (e.g. "software-engineer").
             task_description: What needs to be done.
+            trace_id: Correlación req/resp (AC-KN5); si se omite se genera.
 
         Returns:
             Dict with:
@@ -442,8 +457,10 @@ class AgentDispatcher:
               - ``used_skill``: Whether a skill was injected.
               - ``skill_context``: The skill .md content (or empty str).
               - ``reasoning_mode``: "from_scratch" or "guided_by_skill".
+              - ``trace_id``: Correlación del despacho (para logs/event store).
         """
         self._stats["total_dispatches"] += 1
+        trace = trace_id or uuid.uuid4().hex
 
         skill = self.find_skill_for_task(task_description)
 
@@ -453,6 +470,7 @@ class AgentDispatcher:
             "used_skill": False,
             "skill_context": "",
             "reasoning_mode": "from_scratch",
+            "trace_id": trace,
         }
 
         if skill is not None and skill.get("similarity", 0) >= SIMILARITY_THRESHOLD:
@@ -477,30 +495,63 @@ class AgentDispatcher:
             )
 
         self._record_dispatch_telemetry(task_description, result["skill_context"])
+        self._emit_dispatch(trace, result)
         return result
+
+    def _emit_dispatch(self, trace: str, result: Mapping[str, Any]) -> None:
+        """Publica ``agent.dispatch`` con el ``trace_id`` correlacionado."""
+        if self._bus is None:
+            return
+        self._bus.publish(
+            "agent.dispatch",
+            {
+                "agent": result["agent"],
+                "used_skill": result["used_skill"],
+                "skill_name": result.get("skill_name", ""),
+                "reasoning_mode": result["reasoning_mode"],
+            },
+            trace_id=trace,
+            source="agent_dispatcher",
+        )
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def record_skill_outcome(self, skill_name: str, *, success: bool) -> None:
+    def record_skill_outcome(
+        self, skill_name: str, *, success: bool, agent_role: str | None = None,
+        state_snapshot: dict | None = None,
+    ) -> None:
         """Registra el outcome real de una skill usada en un dispatch.
 
-        WHAT: delega en ``LibraryDriftManager.record_outcome`` para acumular
-        evidencia de utilidad (recuperacion + helpful/hurt). WHY: el outcome de
-        una skill se conoce DESPUES de que el agente termina (no en
-        ``dispatch``), asi que el caller que ejecuta la tarea y conoce el
-        resultado invoca este metodo para cerrar el ciclo (Library Drift).
-        WHERE: caller de ``AgentDispatcher`` tras evaluar el resultado; no-op si
-        no se inyecto ``drift_manager`` (backward-compatible).
+        WHAT: (1) delega en ``LibraryDriftManager.record_outcome`` para
+        evidencia de utilidad (recuperacion + helpful/hurt); (2) escribe la
+        efectividad en las colecciones de valor ``skill_effectiveness`` y
+        ``agent_performance`` via ``feedback_scorer`` (Item 1,
+        docs/specs/memory-optimality.md). WHY: el outcome se conoce DESPUES
+        de que el agente termina (no en ``dispatch``), asi que el caller que
+        ejecuta la tarea invoca este metodo para cerrar el ciclo. WHERE:
+        caller de ``AgentDispatcher`` tras evaluar el resultado; ambas
+        acciones son best-effort y backward-compatible (no-op si faltan
+        ``drift_manager``/``_vector_store``).
 
         Args:
             skill_name: Nombre del skill inyectado en el dispatch.
             success: ``True`` si la trayectoria guiada por el skill fue correcta.
+            agent_role: Rol del agente que ejecuto (opcional; si se provee
+                tambien se escribe ``agent_performance``).
         """
-        if self._drift_manager is None:
-            return
-        self._drift_manager.record_outcome(skill_name, success=success, used=True)
+        if self._drift_manager is not None:
+            self._drift_manager.record_outcome(skill_name, success=success, used=True)
+        # Feedback en colecciones de valor (best-effort; jamas lanza).
+        try:
+            score_outcome(
+                self._vector_store, skill_name,
+                success=success, agent_role=agent_role,
+                state_snapshot=state_snapshot,
+            )
+        except Exception:  # noqa: BLE001, S110
+            pass
 
     def _record_dispatch_telemetry(self, task_description: str, skill_context: str) -> None:
         """Registra el uso de tokens del dispatch (FR-2, best-effort).

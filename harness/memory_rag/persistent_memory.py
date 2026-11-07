@@ -1,4 +1,4 @@
-﻿"""
+"""
 PersistentMemory - Memoria cross-session tipo Engram para Swarmind.
 
 Inspirado en Engram (ASDT): persiste el contexto entre sesiones de trabajo

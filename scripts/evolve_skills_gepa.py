@@ -199,8 +199,7 @@ def _count_actions(text: str) -> int:
     """
     lines: set[int] = set()
     for regex in (_CHECKLIST_RE, _COMMAND_RE, _IMPERATIVE_RE):
-        for match in regex.finditer(text):
-            lines.add(text.count("\n", 0, match.start()))
+        lines.update(text.count("\n", 0, match.start()) for match in regex.finditer(text))
     return len(lines)
 
 

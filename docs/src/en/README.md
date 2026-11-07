@@ -1,98 +1,35 @@
-# Swarmind — Evolutive Multi-Agent System
+# Swarmind — Multi-Agent Harness (English summary)
 
 ![Swarmind](/assets/logo.svg)
 
-**Swarmind** is a multi-agent system for orchestration, execution, and continuous self-improvement with 35 contextual skills, multi-level orchestration, GPU acceleration, and token economics.
+**Swarmind** is a Python harness for coordinating AI coding agents (OpenCode,
+Claude Code, Codex) with governed fan-out, model routing, portable memory,
+token economics and evidence-driven validation.
 
-## Current Status (August 2026)
+> The Spanish documentation is the primary source. This English book is a
+> navigation summary; the full README lives at the repository root.
 
-| Metric | Value |
-|--------|-------|
-| Tests | 4722 collected (TDD suite) · 75.70% coverage · mutation testing ≥70% |
-| Coverage | 75.70% |
-| Agents | 23 specialized (100% profiles) |
-| Skills | 35 contextual (100% SKILL.md + SKILL.min.md) |
-| Orchestrator Modules | 19 packages / 142 modules |
-| Memory/RAG Modules | 14 packages / 109 modules |
-| Hook Modules | 4 (security_validator, permission_checker, audit_logger, metrics) |
-| Security Modules | Zero Trust (TokenManager, PolicyEngine, verify_agent_identity) |
-| Multi-Harness Modules | 5 adapters (opencode, claude, codex, cursor, gemini) |
-| GPU | RTX 4060 8GB, CUDA 12.6, torch 2.13.0+cu126 (search x10.9, embeddings 41us/msg) |
-| Architecture debt (AGR) | 0 files >500 lines in non-test code (32 modules refactored to packages) |
-| Token savings | -51% capsules, -40% structured output, -38% cache-shape |
-| Vector stores | LanceDB (central) + SQLite-vec (edge) + federated search |
-| Observability | OpenTelemetry (traces, metrics, OTLP export) |
-| Parallel orchestration | ParallelExecutor native fan-out + governed voting |
-| Commits | 304 |
-| Lint / dead code | ruff 0 errors, vulture 0 dead code |
+## At a glance
 
-Per-module coverage, milestones, and roadmap are documented in [Project Status](../es/roadmap/estado.md).
+| | |
+|---|---|
+| Agents | **26** specialist subagents + coordinator |
+| Skills | **49** with contracts, `SKILL.min.md` and registry digests |
+| Tests | **7.7k+** in the local TDD suite |
+| Engine | Python 3.12+, hexagonal packages by domain |
+| Memory | LanceDB (optional) + SQLite-vec + federated search |
+| License | MIT |
 
-## Quick Start
+## Start here
 
-Delegate a task to an agent with `@`:
+- [Repository README](https://github.com/MauricioFCC/SWARMIND/blob/main/README.md)
+- [Documentation hub](https://github.com/MauricioFCC/SWARMIND/blob/main/docs/README.md)
+- [Spanish documentation (primary)](https://github.com/MauricioFCC/SWARMIND/blob/main/docs/src/es/README.md)
+- [Roadmap and current state](https://github.com/MauricioFCC/SWARMIND/blob/main/docs/src/es/roadmap/estado.md)
+- [Agents index](https://github.com/MauricioFCC/SWARMIND/blob/main/docs/src/es/agents/INDEX.md)
+- [Skills index](https://github.com/MauricioFCC/SWARMIND/blob/main/docs/src/es/skills/INDEX.md)
 
-```bash
-python harness/run.py "@builder: implementa una API REST en Rust con endpoints /users CRUD"
-```
+## Scope and limits
 
-Or without `@` for automatic detection:
-
-```bash
-python harness/run.py "investiga papers sobre transformers 2026"
-```
-
-System commands: `!health`, `!metrics`, `!skill list`, `!session`, `!reset`, `!help`.
-
-Full tutorial in [How to Use Swarmind](../es/guide/como-usar.md).
-
-## What's New in August 2026
-
-The new modules (Multi-Harness Adapter Layer, Hook System, Zero Trust, Federated Vector Search, SQLite-vec Backend, Async TaskOrchestrator) and the **15 papers 2026 implemented** are documented in detail in [Agents & Skills](../es/guide/agentes-y-skills.md#novedades-julio-2026).
-
-## Documentation
-
-- [Philosophy](../es/guide/filosofia.md) — Design principles
-- [How to Use](../es/guide/como-usar.md) — Usage tutorial
-- [Agents & Skills (complete)](../es/guide/agentes-y-skills.md) — SSOT of agents, skills, modules
-- [Swiss Watch Architecture](../es/architecture/swiss-watch.md) — Coordination pattern
-- [Dynamic Scaling](../es/architecture/dynamic-scaling.md) — Planning strategies
-- [Frontier Techniques](../es/architecture/composicion.md) — 2026 techniques by agent/skill
-- [Technical Manual](../es/technical/manual-tecnico.md) — Complete harness technical documentation
-- [Testing Guide](../es/development/testing-guide.md) — How to write and run tests
-- [Glossary](../es/reference/glosario.md) — Terms and abbreviations
-- [Roadmap](../es/roadmap/estado.md) — Project status and next steps
-- [Development](../es/development/modificar.md) — How to modify and contribute
-- [Harness Comparison 2026](../es/reference/comparativa-harness-2026.md) — vs ECC, DeerFlow, CowAgent, CodeWhale
-
-## Architecture
-
-```
-Swarmind/
-├── .opencode/        ← SSOT (agents, skills, config)
-├── harness/          ← Execution engine (orchestrator, memory, hooks, security, tests)
-├── docs/src/         ← mdbook documentation
-└── pyproject.toml
-```
-
-![Architecture Diagram](/assets/diagrams/architecture.svg)
-
-For detailed structure, see [Agents & Skills — File System](../es/guide/agentes-y-skills.md#sistema-de-archivos).
-
-## Benchmark Projects 2026
-
-Swarmind competes with **ECC** (235k stars), **DeerFlow** (78.1k), **CowAgent** (46.2k) and **CodeWhale** (40.2k). The full capability comparison table is in [Harness Comparison 2026](../es/reference/comparativa-harness-2026.md).
-
-**Key differentiators:** GPU Acceleration (search x10.9), Token Economics (-51%), Full Governance, Zero Trust, Deterministic Hook System, Multi-Harness (5 runtimes), 4722 tests.
-
-### August 2026 changes
-
-- Full refactor: **32 modules >500 lines into packages** (architecture debt AGR = 0), SOLID corrected in 9 classes.
-- **ParallelExecutor**: native parallel fan-out (ThreadPoolExecutor `max_workers=3`) + governed voting.
-- **CUDA 12.6 GPU** enabled (torch 2.13.0+cu126): search x10.9, embeddings 41us/msg.
-- **Central portable memory SSOT** (`Memory_Proyects` via `MEMORY_ROOT`), 7.5 GB reclaimed, automatic backup.
-- **Local Ollama delegation (2026 frontier fleet)**: fast `Qwen3.5-4B UD-Q4_K_XL`, quality `MiMo-V2.6-Distill-Qwen-9B IQ4_XS`, coding `JackOD-9B-Coder IQ4_XS`, reasoning `Ornith-1.5-9B Q4_K_M`, embedding `qwen3-embedding:0.6b`, vision `qwen3-vl:4b`; SSOT in `harness/model_router/fleet_manifest.py`, 16K server window (`OLLAMA_CONTEXT_LENGTH=8192`), verification-based escalation (`escalation_policy.py`) — 0 cloud tokens (TKN), automatic cloud fallback.
-- **anydoc integration** (`harness/memory_rag/doc_converter.py` + `doc_ingester.py`): binaries → Markdown → RAG with **21 extensions** (pdf/docx/pptx/xlsx/odt/epub/rtf/csv…), lazy `AnyDocConverter` (firecrawl-anydoc>=0.1.9), `DocumentConversionError(path, reason)` without swallowing errors; ingest via `rag_ingest.py --include-docs` or `!rag ingest --docs`.
-- **deepseek-harness patterns**: plugin lifecycle (`PluginBase` with `on_load`/`on_unload`/`events`, `ToolRegistry` with injected `event_bus` + automatic `on_{event}` subscription, idempotent `load_all`/`unload_all`) + session replay (`SessionReplay` markdown/json export, `SessionNotFoundError`) — 59 new tests (30 plugin + 29 replay), registry 94%, session_replay 100%.
-- **Frontier RAG architectures (5 evaluated)**: **Hybrid RRF** (`hybrid_retriever.py` — dense vector + sparse BM25 fusion via Reciprocal Rank Fusion k=60) and **Corrective CRAG** (`corrective_retriever.py` — pre-generation quality validation with query rewrite/fallback, arXiv:2401.15884) IMPLEMENTED; **GraphRAG** (knowledge_graph + TokenBudgetRouter PageRank) and **Agentic RAG** (multi-agent orchestrator) COVERED; **Multimodal** PARTIAL via anydoc. 22 new tests.
-- Public documentation updated and cleaned up.
+Swarmind is not an OS sandbox: agents run with your permissions. Legal, medical
+and safety-critical outputs are drafts that require human review.

@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -120,6 +121,10 @@ SANDBOX_WORKDIR = "/work"
 SANDBOX_SITE_PACKAGES = "/opt/sandbox-site"
 #: Interprete Python disponible en la imagen docker por defecto.
 PYTHON_IN_CONTAINER = "python"
+#: Imagen docker por defecto (slim, sin dependencias del proyecto).
+DEFAULT_IMAGE = "python:3.12-slim"
+#: Tag `python:<major>.<minor>[-sufijo]` del que se puede inferir el ABI.
+_IMAGE_TAG = re.compile(r"^python:(\d+)\.(\d+)(?:[-@][\w.\-:]+)?$")
 
 #: Flags de endurecimiento aplicados SIEMPRE al `docker run`.
 DOCKER_HARDENING: tuple[str, ...] = (
@@ -399,6 +404,47 @@ def _host_site_packages() -> Path | None:
     return path if path.is_dir() else None
 
 
+def _image_python_version(image: str) -> tuple[int, int] | None:
+    """Infiere el interprete `major.minor` de una imagen docker tipo ``python``.
+
+    Args:
+        image: Referencia de imagen (``python:3.14-slim``, ``python@sha256:...``).
+
+    Returns:
+        Version ``(major, minor)`` del interprete de la imagen, o ``None`` si el
+        tag no la declara (imagen custom, digest, ``python:slim``).
+    """
+    if not isinstance(image, str):
+        return None
+    match = _IMAGE_TAG.fullmatch(image.strip())
+    if match is None:
+        return None
+    return int(match.group(1)), int(match.group(2))
+
+
+def _docker_supplies_project_deps(image: str) -> bool:
+    """Indica si el backend docker puede aportar las dependencias del proyecto.
+
+    El site-packages del host se monta en el contenedor, pero eso SOLO es valido
+    si el interprete del contenedor comparte ABI con el del host: en Windows el
+    site-packages trae extensiones ``.pyd`` y en cualquier SO una extension
+    compilada (``hypothesis._native``) esta atada a ``major.minor``. Montar un
+    site-packages 3.14 en ``python:3.12-slim`` deja el import roto y hace fallar
+    todos los oraculos PBT con "3 bugs" espurios.
+
+    Args:
+        image: Imagen docker que se usaria para el script.
+
+    Returns:
+        True si el montaje es viable (POSIX, site-packages presente y el tag de
+        la imagen coincide con el interprete del host); False en otro caso.
+    """
+    if os.name != "posix" or _host_site_packages() is None:
+        return False
+    image_version = _image_python_version(image)
+    return image_version is not None and image_version == sys.version_info[:2]
+
+
 def _ensure_docker_readable(workdir: Path, script: Path) -> None:
     """Relaja permisos del mount docker para el usuario sin privilegios.
 
@@ -445,7 +491,7 @@ class SandboxExecutor:
         image: Imagen docker para el backend docker (default python slim).
     """
 
-    def __init__(self, image: str = "python:3.12-slim") -> None:
+    def __init__(self, image: str = DEFAULT_IMAGE) -> None:
         """Detecta el backend disponible al construir.
 
         Args:
@@ -488,6 +534,7 @@ class SandboxExecutor:
         timeout_s: float = DEFAULT_TIMEOUT_S,
         env: dict[str, str] | None = None,
         image: str | None = None,
+        require_project_deps: bool = False,
     ) -> SandboxResult:
         """Ejecuta un script Python (codigo no confiable) de forma aislada.
 
@@ -500,6 +547,12 @@ class SandboxExecutor:
             timeout_s: Timeout en segundos (> 0).
             env: Variables inyectadas en runtime (nunca al contexto).
             image: Imagen docker a usar (default: la del constructor).
+            require_project_deps: Si True, el script necesita las dependencias
+                del proyecto (p. ej. `hypothesis`). Si el backend docker no
+                puede aportarlas (no-POSIX: el site-packages trae extensiones
+                nativas incompatibles con Linux), el script corre en el
+                interprete host bajo el sandbox nativo (Job Object/subprocess)
+                para no romper los oraculos reales.
 
         Returns:
             SandboxResult (timeout -> returncode 124; nunca lanza excepcion
@@ -511,12 +564,28 @@ class SandboxExecutor:
         script = Path(script_path)
         self._validate_request([str(script)], timeout_s)
         parent = script.parent
-        if self._backend == BACKEND_DOCKER:
+        target_image = image or self._image
+        docker_viable = self._backend == BACKEND_DOCKER and not (
+            require_project_deps and not _docker_supplies_project_deps(target_image)
+        )
+        if docker_viable:
             _ensure_docker_readable(parent, script)
             cmd = [PYTHON_IN_CONTAINER, f"{SANDBOX_WORKDIR}/{script.name}"]
             return self._execute(
-                cmd, timeout_s, env or {}, parent, image or self._image
+                cmd, timeout_s, env or {}, parent, target_image
             )
+        if require_project_deps and self._backend == BACKEND_DOCKER:
+            logger.warning(
+                "sandbox_executor: docker no puede aportar deps del proyecto "
+                "en %s con imagen %s (ABI distinto o site-packages ausente); "
+                "ejecuto en el interprete host con sandbox nativo. WHY: los "
+                "oraculos reales (hypothesis) necesitan las deps del proyecto. "
+                "WHERE: SandboxExecutor.run_script",
+                os.name,
+                target_image,
+            )
+            cmd = [sys.executable, str(script)]
+            return self._run_host(cmd, timeout_s, env or {}, parent)
         cmd = [sys.executable, str(script)]
         return self._execute(cmd, timeout_s, env or {}, parent)
 
@@ -570,6 +639,33 @@ class SandboxExecutor:
             return self._run_windows_jobobject(cmd, timeout_s, env, workdir)
         if self._backend == BACKEND_BWRAP:
             return self._run_bwrap(cmd, timeout_s, env, workdir)
+        return self._run_subprocess(cmd, timeout_s, env, workdir)
+
+    def _run_host(
+        self,
+        cmd: list[str],
+        timeout_s: float,
+        env: dict[str, str],
+        workdir: Path | None,
+    ) -> SandboxResult:
+        """Ejecuta en el interprete host con el sandbox nativo del SO.
+
+        Se usa cuando el backend activo es docker pero NO puede aportar las
+        dependencias del proyecto (no-POSIX): el codigo corre con el python del
+        venv (que SI tiene las deps) bajo el aislamiento nativo del sistema
+        (Job Object en Windows, subprocess con allowlist en el resto).
+
+        Args:
+            cmd: Comando con el interprete host (``sys.executable``).
+            timeout_s: Timeout en segundos.
+            env: Variables inyectadas en runtime.
+            workdir: Directorio de trabajo del hijo (opcional).
+
+        Returns:
+            SandboxResult del sandbox nativo.
+        """
+        if os.name == "nt" and _load_kernel32() is not None:
+            return self._run_windows_jobobject(cmd, timeout_s, env, workdir)
         return self._run_subprocess(cmd, timeout_s, env, workdir)
 
     def _run_windows_jobobject(

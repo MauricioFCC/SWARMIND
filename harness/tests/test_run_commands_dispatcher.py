@@ -147,3 +147,47 @@ class TestCommandTable:
     def test_prefixes_unique(self) -> None:
         prefixes = [p for p, _, _ in _COMMAND_TABLE]
         assert len(prefixes) == len(set(prefixes))
+
+class TestCommandTrace:
+    """AC-KN5: eventos de ciclo de vida con trace_id correlacionado."""
+
+    class _Bus:
+        """Bus mínimo que registra publicaciones."""
+
+        def __init__(self) -> None:
+            self.events: list[tuple[str, dict, str, str]] = []
+
+        def publish(self, kind, payload=None, *, trace_id="", source="", drain=True):
+            self.events.append((kind, dict(payload or {}), trace_id, source))
+
+    def test_success_emits_start_and_end(self, monkeypatch) -> None:
+        """Un comando válido publica start y end con el mismo trace."""
+        import harness.run_commands as rc
+
+        monkeypatch.setattr(rc, "_resolve_and_run", lambda *a, **k: 42)
+        bus = self._Bus()
+        assert run_command("!db stats", bus=bus, trace_id="t-ok") == 42
+        kinds = [event[0] for event in bus.events]
+        assert kinds == ["command.start", "command.end"]
+        assert {event[2] for event in bus.events} == {"t-ok"}
+
+    def test_error_emits_start_and_error(self, monkeypatch) -> None:
+        """Un handler que falla publica command.error con el mismo trace."""
+        import harness.run_commands as rc
+
+        def _boom(*_args, **_kwargs):
+            raise RuntimeError("falla simulada")
+
+        monkeypatch.setattr(rc, "_resolve_and_run", _boom)
+        bus = self._Bus()
+        with pytest.raises(RuntimeError):
+            run_command("!db stats", bus=bus, trace_id="t-err")
+        kinds = [event[0] for event in bus.events]
+        assert kinds == ["command.start", "command.error"]
+        assert bus.events[1][1]["error"] == "RuntimeError: falla simulada"
+
+    def test_without_bus_is_noop(self) -> None:
+        """Sin bus no hay eventos ni efectos laterales."""
+        with patch("harness.run_commands._handle_hooks_status") as mock_fn:
+            run_command("!hooks status")
+        mock_fn.assert_called_once_with()

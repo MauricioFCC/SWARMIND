@@ -280,13 +280,23 @@ class AgentSelector:
         return ActivationLevel.MINIMAL
 
     def _score_agents(self, message: str) -> dict[str, float]:
-        """Puntua relevancia de cada agente (0.0 - 1.0) por frontera de palabra."""
+        """Puntua relevancia de cada agente (0.0 - 1.0) por frontera de palabra.
+
+        El **verbo primario** (primera palabra del mensaje) recibe un bonus:
+        "implementa una api y audita la seguridad" debe preferir builder (el
+        verbo de accion) sobre guardian, aunque guardian tenga menos keywords y
+        su score normalizado sea mayor.
+        """
+        first_word = message.strip().lower().split()[0] if message.strip() else ""
         scores: dict[str, float] = {}
         for agent, keywords in AGENT_KEYWORDS.items():
             score = score_keywords(message, keywords)
             # Normalizar
             max_possible = len(keywords)
-            scores[agent] = min(score / max(1, max_possible) * 2, 1.0)
+            normalized = min(score / max(1, max_possible) * 2, 1.0)
+            if first_word and first_word in keywords:
+                normalized = min(normalized + 0.5, 1.0)
+            scores[agent] = normalized
         return scores
 
     def _select_by_level(self, scores: dict[str, float], level: ActivationLevel) -> list[str]:

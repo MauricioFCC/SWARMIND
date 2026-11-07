@@ -1,4 +1,13 @@
+from .async_ruscadb import (
+    AsyncRuscaDBStore,
+    MemoryBackpressureError,
+    WriteActor,
+    WriteBatcher,
+)
+from .binary_tuning import OversampleTuner
+from .cache_threshold import AdaptiveThreshold
 from .context_window_manager import ContextSection, ContextWindow, ContextWindowManager
+from .memory_heat import HeatPolicy, HeatReport, apply_heat_policy
 from .optimization_pipeline import (
     OptimizationPipeline,
     OptimizationResult,
@@ -19,6 +28,7 @@ from .token_budget import (
     TokenBudget,
     TokenPool,
 )
+from .vector_store_factory import get_vector_store
 
 __all__ = [
     "COLLECTION_SEMANTIC_CACHE",
@@ -26,6 +36,8 @@ __all__ = [
     "PRIORITY_HIGH",
     "PRIORITY_LOW",
     "PRIORITY_NORMAL",
+    "AdaptiveThreshold",
+    "AsyncRuscaDBStore",
     "BudgetManager",
     "CacheEntry",
     "CacheSection",
@@ -33,11 +45,15 @@ __all__ = [
     "ContextWindow",
     # Context Window Manager
     "ContextWindowManager",
+    "HeatPolicy",
+    "HeatReport",
     # Skill Loader
     "LazySkillLoader",
+    "MemoryBackpressureError",
     # Optimization Pipeline
     "OptimizationPipeline",
     "OptimizationResult",
+    "OversampleTuner",
     # Prompt Cache Builder
     "PromptCacheBuilder",
     # Existing
@@ -52,8 +68,12 @@ __all__ = [
     # Token Budget
     "TokenBudget",
     "TokenPool",
+    "WriteActor",
+    "WriteBatcher",
+    "apply_heat_policy",
     "create_loader",
     "create_pipeline",
     "create_shapley_flow",
+    "get_vector_store",
     "minify_all_skills",
 ]

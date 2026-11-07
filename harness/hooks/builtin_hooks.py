@@ -109,7 +109,7 @@ def audit_logger_hook(ctx: HookExecutionContext) -> dict:
         "timestamp": datetime.now(UTC).isoformat(),
         "tool": ctx.tool_name,
         "hook_type": ctx.hook_type.name,
-        "file_path": ctx.file_path if ctx.file_path else None,
+        "file_path": ctx.file_path or None,
         "status": "completed",
     }
 

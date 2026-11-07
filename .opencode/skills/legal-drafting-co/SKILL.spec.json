@@ -1,0 +1,83 @@
+{
+  "name": "legal-drafting-co",
+  "version": "1.0.0",
+  "description": "Usar cuando se redacta un escrito judicial en Colombia. demanda, contestación, recurso, tutela, poder, memorial, concepto. estructura por jurisdicción, requisitos del CGP/CPACA/CPP, técnica de redacción. Alcance: redacción de escritos; para análisis ver",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando se redacta un escrito judicial en Colombia. demanda, contestación, recurso, tutela, poder, memorial, concepto. estructura por jurisdicción, requisitos del CGP/CPACA/CPP, técnica de redacción",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Tipo de escrito y jurisdicción identificados",
+    "Requisitos formales completos (CGP/CPACA/CPP)",
+    "Hechos, pretensiones y fundamentos separados",
+    "Pruebas y anexos enumerados",
+    "Poder y firmas",
+    "Revisión adversarial (contraparte)",
+    "Citas verificadas o marcadas APÓCRIFA-REVISAR"
+  ],
+  "invariants": [
+    "Ninguna cita entra sin verificación; lo dudoso se marca APÓCRIFA-REVISAR",
+    "Hechos, pretensiones y fundamentos van separados y numerados",
+    "El escrito es un borrador para revisión y firma de abogado habilitado",
+    "No se inventan hechos, radicados ni normas; los datos del caso son reservados"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando se redacta un escrito judicial en Colombia. demanda, contestación, recurso, tutela, poder, memorial, concepto. estructura por jurisdicción, requisitos del CGP/CPACA/CPP, técnica de redacción"
+    ],
+    "body_keywords": [
+      "hechos",
+      "anexos",
+      "pretensiones",
+      "basedoc",
+      "secretariasenado",
+      "senado",
+      "formales",
+      "apócrifa"
+    ]
+  },
+  "source_sha256": "2dabbc4ff09e4df6db1cb99d1ddfb04e3baff3fff4048f6831602b25246cc1f0",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

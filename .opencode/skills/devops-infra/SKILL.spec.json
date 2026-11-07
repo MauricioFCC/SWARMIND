@@ -1,0 +1,81 @@
+{
+  "name": "devops-infra",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario opera infraestructura o CI/CD. Docker, Kubernetes, Terraform, CI/CD, monitoreo, observabilidad, plataforma, despliegue. Alcance: infraestructura y CI/CD generico; para releases del repo SWARMIND ver swarm-release-ops",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario opera infraestructura o CI/CD. Docker, Kubernetes, Terraform, CI/CD, monitoreo, observabilidad, plataforma, despliegue",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "IaC versionada y plan revisado antes de apply",
+    "Pipeline CI/CD con gates de test y seguridad",
+    "Observabilidad (metricas/logs/trazas OTel) configurada",
+    "Secrets via gestor (nunca hardcode)",
+    "Rollback plan y health checks definidos",
+    "SLOs y error budget declarados"
+  ],
+  "invariants": [
+    "ANTI-HEDGING: Receta exacta (manifiesto/comando) + rollback; nunca 'considera configurar'",
+    "[ ] Secrets via gestor (nunca hardcode)",
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario opera infraestructura o CI/CD. Docker, Kubernetes, Terraform, CI/CD, monitoreo, observabilidad, plataforma, despliegue"
+    ],
+    "body_keywords": [
+      "infra",
+      "rollback",
+      "devops",
+      "secrets",
+      "contenedores",
+      "dockerize",
+      "otel",
+      "slos"
+    ]
+  },
+  "source_sha256": "a3430a6d3689e92870ff78eb8234e25ea7f119b5298d404eb185cb157255e4f5",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

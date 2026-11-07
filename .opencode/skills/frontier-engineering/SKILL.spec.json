@@ -1,0 +1,86 @@
+{
+  "name": "frontier-engineering",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario pida ciclo frontera: cargar skills/agentes + tarea explícita, investigación web SOTA/papers, arquitecturas y algoritmos O(n²)→O(n), fórmulas, spec/SDD, TDD adversarial mutante y docs. Alcance: ciclo completo; para gates pre-merge",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario pida ciclo frontera: cargar skills/agentes + tarea explícita, investigación web SOTA/papers, arquitecturas y algoritmos O(n²)→O(n), fórmulas, spec/SDD, TDD adversarial mutante y docs",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Tarea explícita confirmada y acotada",
+    "Activ os cargados listados; no duplicado (IDP)",
+    "Investigación con URLs verificadas y ≥3 hipótesis comparadas",
+    "Complejidad antes→después justificada y medida",
+    "Spec nueva o diff con rationale",
+    "TDD adversarial + mutantes + gates verdes",
+    "Docs (CHANGELOG/roadmap/MEJORAS/ADR) y publish.py",
+    "Sin datos privados ni rutas personales en el diff"
+  ],
+  "invariants": [
+    "Tarea explícita primero: no inventar alcance; si falta, preguntar una vez",
+    "RSF/FRS: investigar antes de codificar; sin source no hay claim",
+    "Medir, no afirmar (VER): todo O(n²)→O(n) lleva gate N/2N/4N + test de",
+    "Oráculo primero: si el test de equivalencia falla, auditar el oráculo",
+    "Specs: si existe, mejorarla y reimplementar solo con mejora medible",
+    "Alcance honesto: técnicas no aplicables se documentan con motivo"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario pida ciclo frontera: cargar skills/agentes + tarea explícita, investigación web SOTA/papers, arquitecturas y algoritmos O(n²)→O(n), fórmulas, spec/SDD, TDD adversarial mutante y docs"
+    ],
+    "body_keywords": [
+      "publish",
+      "research",
+      "diff",
+      "oráculo",
+      "frontier",
+      "mutantes",
+      "complejidad",
+      "changelog"
+    ]
+  },
+  "source_sha256": "0debaa95a6035f15b58dc73a7d53406d0201c0816a243cc2fcfc0951174f151c",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

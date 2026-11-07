@@ -63,30 +63,18 @@ def engine() -> DelegationEngine:
 class TestFalsosPositivosYDesempate:
     """Una tarea con triggers de varios agentes no debe elegir al azar."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "WHAT: 'implementa una api y audita la seguridad' rankea guardian "
-            "primero. WHY: el score se normaliza por len(keywords), asi que el "
-            "agente con menos keywords gana empates (guardian 30 vs builder 35). "
-        ),
-    )
     def test_ambiguedad_verbo_primario_deberia_ganar(self, selector: AgentSelector) -> None:
         """El verbo primario ('implementa') deberia rankear builder primero."""
         agents = selector.select("implementa una api y audita la seguridad")
         assert agents[0] == "builder"
 
-    def test_artefacto_normalizacion_premia_menos_keywords(
+    def test_artefacto_verbo_primario_desempata(
         self, selector: AgentSelector
     ) -> None:
-        """Documenta el mecanismo del falso positivo (FALLO conocido).
-
-        Con 2 matches cada uno, guardian puntua 0.222 y builder 0.148: el score
-        no compara evidencia sino longitud de la lista de keywords.
-        """
+        """El bonus del verbo primario hace que builder gane el empate."""
         scores = selector._score_agents("implementa una api y audita la seguridad")
         assert len(AGENT_KEYWORDS["guardian"]) < len(AGENT_KEYWORDS["builder"])
-        assert scores["guardian"] > scores["builder"]
+        assert scores["builder"] > scores["guardian"]
 
     def test_desempate_determinista_misma_entrada(self, selector: AgentSelector) -> None:
         """Misma entrada => mismo orden (dict ordenado + sort estable)."""
@@ -101,26 +89,14 @@ class TestFalsosPositivosYDesempate:
 class TestFalsosNegativos:
     """Tareas que deberian matchear un agente y no lo hacen."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="WHAT: 'endpoint REST' no enruta a builder. WHY: 'endpoint' no esta en builder_words.",
-    )
     def test_auto_route_endpoint_rest_deberia_ser_builder(self, engine: DelegationEngine) -> None:
         """'implementa un endpoint REST' deberia enrutar a builder."""
         assert engine.auto_route("implementa un endpoint REST") == "builder"
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="WHAT: 'micro-servicio' no enruta a builder. WHY: el patron usa 'microservicio' sin guion.",
-    )
     def test_auto_route_microservicio_con_guion(self, engine: DelegationEngine) -> None:
         """Un guion en 'micro-servicio' rompe el match literal."""
         assert engine.auto_route("desarrollar micro-servicio") == "builder"
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="WHAT: typo 'segurida' no enruta a guardian. WHY: match por substring sin tolerancia a errores.",
-    )
     def test_auto_route_typo_seguridad(self, engine: DelegationEngine) -> None:
         """Un typo en 'seguridad' hace perder el agente correcto."""
         assert engine.auto_route("necesito revisar la segurida") == "guardian"
@@ -182,27 +158,16 @@ class TestUmbralYScore:
         assert router._classify_complexity(0.45, feats) == ComplexityLevel.COMPLEX
         assert router._classify_complexity(0.70, feats) == ComplexityLevel.VERY_COMPLEX
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "WHAT: deep_threshold=0.05 no manda 'implementar' (score 0.20) a DEEP. "
-            "WHY: route() usa constantes de modulo e ignora los thresholds del constructor."
-        ),
-    )
     def test_thresholds_del_constructor_deberian_respetarse(self) -> None:
         """Con deep_threshold=0.05, score 0.20 deberia dar pipeline DEEP."""
         strict = DifficultyRouter(shallow_threshold=0.05, deep_threshold=0.05)
         assert strict.route("implementar algo").pipeline == PipelineType.DEEP
 
-    def test_thresholds_del_constructor_son_ignorados(self) -> None:
-        """Documenta el parametro muerto: thresholds opuestos => mismo pipeline.
-
-        FALLO conocido: shallow_threshold/deep_threshold se guardan pero nunca
-        se leen en la clasificacion.
-        """
+    def test_thresholds_del_constructor_cambian_el_pipeline(self) -> None:
+        """Thresholds altos vs bajos producen pipelines distintos (no son muertos)."""
         estricto = DifficultyRouter(shallow_threshold=0.9, deep_threshold=0.95)
         relajado = DifficultyRouter(shallow_threshold=0.05, deep_threshold=0.05)
-        assert estricto.route("implementar algo").pipeline == relajado.route(
+        assert estricto.route("implementar algo").pipeline != relajado.route(
             "implementar algo"
         ).pipeline
 
@@ -282,13 +247,6 @@ class TestCompetenciaYCalibracion:
 class TestInyeccionDeTriggers:
     """Texto hostil o negaciones no deben forzar un agente."""
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "WHAT: 'no toques el test de seguridad' activa guardian. "
-            "WHY: el matcher es puro keyword; la negacion se ignora."
-        ),
-    )
     def test_negacion_no_deberia_activar_guardian(self, engine: DelegationEngine) -> None:
         """Una instruccion negada no deberia enrutar al agente negado."""
         assert engine.auto_route("por favor no toques el test de seguridad") != "guardian"
@@ -333,24 +291,10 @@ class TestDeterminismo:
         second = dispatch("implementa endpoint con pytest")
         assert first == second
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "WHAT: 'diseña la arquitectura' no va a cloud. "
-            "WHY: el marcador frontier es literal 'disena la arquitectura' (sin enie)."
-        ),
-    )
     def test_frontier_sensible_a_acentos(self) -> None:
         """El marcador frontier deberia tolerar la enie de 'diseña'."""
         assert dispatch("diseña la arquitectura").backend == "cloud"
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "WHAT: 'disena una arquitectura escalable' no va a cloud. "
-            "WHY: solo matchea el literal exacto 'disena la arquitectura'."
-        ),
-    )
     def test_frontier_no_cubre_variantes(self) -> None:
         """Una variante natural de diseno de arquitectura deberia ir a cloud."""
         assert dispatch("disena una arquitectura escalable").backend == "cloud"

@@ -1,4 +1,4 @@
-"""ClaudeAdapter — Adaptador para Claude Code por Anthropic.
+"""ClaudeAdapter â€” Adaptador para Claude Code por Anthropic.
 
 Convierte agentes Swarmind (.opencode/agents/) al formato nativo de Claude Code:
 
@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import json
 import logging
-import shutil
 from pathlib import Path
 
 from harness.orchestrator.multi_harness.converter_base import (
@@ -55,7 +54,6 @@ class ClaudeAdapter(HarnessConverter):
             ExportResult con el resultado de la exportacion.
         """
         agents: list[Path] = self._get_opencode_agents()
-        errors: list[str] = []
         warnings: list[str] = []
 
         if not agents:
@@ -69,36 +67,30 @@ class ClaudeAdapter(HarnessConverter):
         # Crear directorio destino
         target_agents_dir: Path = self._ensure_target_dir("agents")
 
-        # Generar AGENTS.md (indice de agentes)
+        # Generar AGENTS.md (indice de agentes). Contenido determinista:
+        # sin fecha/hora para que el export sea idempotente (N ejecuciones
+        # producen el mismo resultado, como promete converter_base).
         agents_md_lines: list[str] = [
-            "# AGENTES DISPONIBLES — Exportados desde Swarmind\n",
+            "# AGENTES DISPONIBLES â€” Exportados desde Swarmind\n",
             "",
             "> Generado automaticamente por Multi-Harness Adapter Layer.",
             "> Fuente: .opencode/agents/",
             "",
         ]
 
-        count: int = 0
         for agent_file in agents:
-            dest: Path = target_agents_dir / agent_file.name
-            try:
-                shutil.copy2(str(agent_file), str(dest))
-                count += 1
-                # Extraer nombre del agente (primer heading del archivo)
-                content: str = agent_file.read_text(encoding="utf-8")
-                agent_name: str = agent_file.stem.replace("-", " ").title()
-                for line in content.splitlines():
-                    if line.startswith("# "):
-                        agent_name = line.lstrip("# ").strip()
-                        break
-                agents_md_lines.append(f"- **{agent_name}**: `{dest.name}`")
-                logger.debug("[Claude] Exportado agente: %s", agent_file.name)
-            except OSError as exc:
-                errors.append(f"Error copiando {agent_file.name}: {exc}")
-                logger.error("[Claude] Error exportando %s: %s", agent_file.name, exc)
+            content: str = agent_file.read_text(encoding="utf-8")
+            agent_name: str = agent_file.stem.replace("-", " ").title()
+            for line in content.splitlines():
+                if line.startswith("# "):
+                    agent_name = line.lstrip("# ").strip()
+                    break
+            agents_md_lines.append(f"- **{agent_name}**: `{agent_file.name}`")
+
+        count, errors = self._copy_agents(target_agents_dir, "Claude")
 
         agents_md_lines.append("")
-        agents_md_lines.append(f"---\n*Total: {count} agentes exportados el {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M')}*")
+        agents_md_lines.append(f"---\n*Total: {count} agentes exportados.*")
 
         # Escribir AGENTS.md
         agents_md_path: Path = self._target_path("AGENTS.md")
@@ -135,15 +127,7 @@ class ClaudeAdapter(HarnessConverter):
             return ExportResult(success=True, files_exported=len(skills))
 
         target_skills_dir: Path = self._ensure_target_dir("skills")
-        count: int = 0
-        for skill_file in skills:
-            dest: Path = target_skills_dir / skill_file.name
-            try:
-                shutil.copy2(str(skill_file), str(dest))
-                count += 1
-                logger.debug("[Claude] Exportado skill: %s", skill_file.name)
-            except OSError as exc:
-                errors.append(f"Error copiando {skill_file.name}: {exc}")
+        count, errors = self._copy_skills(target_skills_dir, "Claude")
 
         return ExportResult(
             success=len(errors) == 0,

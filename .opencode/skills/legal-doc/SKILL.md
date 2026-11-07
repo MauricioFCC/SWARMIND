@@ -8,7 +8,7 @@ domain: legal
 description: "Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia. Alcance: analisis juridico y normativo; para documentacion cientifica ver science-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
+version: 1.1.0
 project_agnostic: true
 ---
 
@@ -25,6 +25,21 @@ project_agnostic: true
 ## Activación y Keywords de dominio
 
 Se activa automáticamente cuando el `router` detecta keywords del dominio legal (`derecho`, `jurisprudencia`, `precedente`, `demanda`, `tutela`, `norma`, `contrato`, `litigio`...). Lista completa por jurisdicción y norma en `references/fuentes-y-especialidades.md`.
+
+## Router legal (skills especializadas, 2026-11)
+
+Una tarea jurídica activa **una** skill primaria; el resto se cita como apoyo:
+
+| Tarea | Primaria | Apoyo |
+|---|---|---|
+| Analizar sentencia/ley/concepto | `legal-doc` | `legal-jurisprudence-co` |
+| Integridad de PDF/documento | `legal-forensics` | `legal-evidence-audit` |
+| Auditar pruebas del caso | `legal-evidence-audit` | `legal-forensics` |
+| Términos/competencia/recursos | `legal-procedure-co` | `legal-doc` |
+| Redactar demanda/recurso/tutela | `legal-drafting-co` | `legal-procedure-co` |
+| Línea jurisprudencial/precedente | `legal-jurisprudence-co` | `legal-doc` |
+
+Regla: gana la skill más específica; las conclusiones jurídicas requieren **revisión humana** y citas verificadas (o `APÓCRIFA-REVISAR`).
 
 ## Metodología: RTF+C + Role Stacking (8 roles integrados)
 
@@ -112,3 +127,7 @@ estado_verificacion: VERIFICADA   # si falla el cotejo -> APÓCRIFA-REVISAR
 - [Fuentes, especialidades y arquitectura](references/fuentes-y-especialidades.md) — fuentes N1/N2, especialidades por jurisdicción, keywords y las 6 capas de análisis.
 - [NLP jurídico, argument mining y enterprise](references/nlp-juridico-2026.md) — SaulLM/LexBERT, extracción de argumentos, discurso y framework enterprise (LuMay AI).
 - [Verificación de citas](references/verificacion-citas.md) — contexto regulatorio, LegalGraphRAG, vigencia, diagnostic checklists y multi-jurisdicción.
+
+## Ejemplo
+
+Para una clausula de no competencia en Colombia: cita la norma (CST art. 44), la jurisprudencia (CSJ SL) y distingue validez temporal/espacial antes de emitir el concepto.

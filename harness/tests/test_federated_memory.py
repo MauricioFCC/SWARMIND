@@ -675,8 +675,7 @@ class TestSync:
     def test_sync_error_reading_file(self, store: FederatedMemoryStore, federated_dir: Path) -> None:
         """sync debe manejar errores de lectura de archivos."""
         bad_file = federated_dir / "knowledge_bad.json"
-        with open(bad_file, "w", encoding="utf-8") as f:
-            f.write("{invalid json")
+        Path(bad_file).write_text("{invalid json", encoding="utf-8")
 
         imported = store.sync()  # No debe lanzar excepción
         assert imported >= 0
@@ -800,8 +799,7 @@ class TestDiscoverFederatedProjects:
         fed_dir = tmp_path / ".opencode" / "federated"
         fed_dir.mkdir(parents=True, exist_ok=True)
         bad_file = fed_dir / "knowledge_bad.json"
-        with open(bad_file, "w", encoding="utf-8") as f:
-            f.write("{invalid}")
+        Path(bad_file).write_text("{invalid}", encoding="utf-8")
 
         projects = discover_federated_projects(base_dir=str(tmp_path))
         assert projects == []
@@ -922,8 +920,7 @@ class TestEdgeCases:
     def test_load_local_corrupt_file(self, federated_dir: Path) -> None:
         """_load_local debe manejar archivos corruptos."""
         filepath = federated_dir / "knowledge_test_project.json"
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write("{corrupt}")
+        Path(filepath).write_text("{corrupt}", encoding="utf-8")
 
         store = FederatedMemoryStore(
             project_name="test_project",

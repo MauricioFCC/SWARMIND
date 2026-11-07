@@ -1,4 +1,4 @@
-﻿"""MultiHarnessCLI — Interfaz de linea de comandos para Multi-Harness.
+"""MultiHarnessCLI — Interfaz de linea de comandos para Multi-Harness.
 
 Provee los comandos !harness para exportar, detectar, validar y monitorear
 la compatibilidad multi-runtime de Swarmind.

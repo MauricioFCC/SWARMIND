@@ -92,7 +92,7 @@
 
 > **NUEVO (2026-07-31):** desde la [Opción A — SSOT Global
 > OpenCode](../guide/opcion-a-ssot-global.md), **todos** los proyectos de
-> DEV-SPACE reciben las **35 skills activas** (potencia total) vía
+> <workspace> reciben las **35 skills activas** (potencia total) vía
 > `scripts/deploy_all.py` + `skills_registry.yaml`. El mirror local ya no se
 > limita por tipo. La matriz siguiente queda como referencia del enrutamiento
 > recomendado por dominio (histórico).

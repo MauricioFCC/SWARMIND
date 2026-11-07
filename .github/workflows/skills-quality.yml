@@ -1,0 +1,113 @@
+# =============================================================================
+# Skills Quality — panel de salud del harness (HARNESS HEALTH, no-bloqueante)
+# =============================================================================
+#
+# WHAT: activa los medidores de frontera (Token Telemetry, Library Drift,
+#   Consistency, Skill Lift) corriendo `scripts/harness_health.py`, que agrega
+#   un unico veredicto y publica el panel en el Step Summary + como artefacto.
+# WHY: los medidores existian cableados pero SIN trafico ni reporte; sin
+#   ejecucion programada la telemetria no se convierte en decision.
+# WHERE: complementa `ci.yml` (T1/T2/T3). No sustituye ningun gate.
+#
+# POLITICA DE BLOQUEO (documentada):
+#   - NON-BLOCKING por defecto: el paso usa `continue-on-error: true`, de modo
+#     que el job queda verde aunque el veredicto sea "unhealthy" (exit 1). El
+#     panel se publica igual para observabilidad.
+#   - Para volverlo BLOQUEANTE: elimina `continue-on-error: true` del paso
+#     "Panel de salud" y agrega "harness-health" como required check en la
+#     branch protection. Entonces un "unhealthy" (exit 1) bloquea el merge.
+#
+# Exit codes de `scripts/harness_health.py`:
+#   0 = healthy/degraded (degraded = falla 1 gate, no bloquea por si solo)
+#   1 = unhealthy (fallan >=2 gates o hay skills daninas)
+#   2 = error de argumentos/entrada
+#
+# 0 LLM / 0 red: runners deterministas (catalogo demo). Ver docstring del CLI.
+# =============================================================================
+
+name: Skills Quality
+
+on:
+  # Periodico: panel de salud diario (03:00 UTC, tras la regresion de ci.yml).
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "harness/observability/**"
+      - "harness/evals/**"
+      - "harness/evolve_loop/**"
+      - "scripts/harness_health.py"
+      - ".github/workflows/skills-quality.yml"
+
+# Agrupacion por branch/PR: cancelar runs antiguos del mismo contexto.
+concurrency:
+  group: skills-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+# Permisos minimos (doctrina SEG: least privilege).
+permissions:
+  contents: read
+
+jobs:
+  harness-health:
+    name: harness-health
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Cache uv
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Instalar dependencias
+        run: uv sync --group test
+
+      - name: Panel de salud (JSON + Markdown)
+        id: health
+        # NON-BLOCKING: ver "POLITICA DE BLOQUEO" en el encabezado del workflow.
+        continue-on-error: true
+        run: |
+          set +e
+          uv run python scripts/harness_health.py \
+            --json --output harness-health.json > harness-health.stdout.json
+          health_code=$?
+          uv run python scripts/harness_health.py --markdown > harness-health.md
+          echo "exit_code=$health_code" >> "$GITHUB_OUTPUT"
+          cat harness-health.md >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo ""
+            echo "---"
+            echo "exit_code de scripts/harness_health.py: **$health_code** "
+            echo "(0 healthy/degraded; 1 unhealthy). Panel **no-bloqueante**."
+          } >> "$GITHUB_STEP_SUMMARY"
+          # Siempre exit 0 a nivel de shell: el veredicto se reporta, no bloquea.
+          exit 0
+
+      - name: Publicar resumen del veredicto
+        if: always()
+        run: |
+          echo "veredicto exit_code=${{ steps.health.outputs.exit_code }}"
+
+      - name: Subir reporte de salud
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: harness-health
+          path: |
+            harness-health.json
+            harness-health.md
+          if-no-files-found: warn

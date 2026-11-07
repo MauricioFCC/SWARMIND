@@ -1,0 +1,15 @@
+{
+  "entries": [
+    {
+      "key": "scripts/check_architecture.py::_signature_mismatches::signature",
+      "kind": "signature",
+      "rationale": "F6 compara parametros puerto->adaptador; solo lee nombres/defaults, nunca evalua anotaciones. PEP 649 resuelve via annotationlib sin cambiar el resultado."
+    },
+    {
+      "key": "scripts/gen_docs_api.py::_render_function::signature",
+      "kind": "signature",
+      "rationale": "Documentacion de API: imprime la firma, no evalua tipos ni efectos laterales; compatible con anotaciones diferidas de PEP 649."
+    }
+  ],
+  "version": 1
+}

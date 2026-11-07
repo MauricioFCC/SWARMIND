@@ -104,9 +104,18 @@ def _read_config(path: Path = CONFIG_PATH) -> dict[str, Any]:
 
 
 def _provider_block(config: Mapping[str, Any]) -> Mapping[str, Any]:
-    """Devuelve el bloque `provider` (vacio si falta o no es mapping)."""
-    block = config.get("provider")
-    return block if isinstance(block, Mapping) else {}
+    """Devuelve el bloque de providers (V2 ``providers``, fallback V1
+    ``provider``; vacio si falta o no es mapping).
+
+    El checker es tolerante a ambas formas (V2 nativa con fallback V1) para
+    validar configs en cualquier punto de la transicion; el contrato de FORMA
+    nativa vive en ``test_opencode_v2_config_contract.py``.
+    """
+    for key in ("providers", "provider"):
+        block = config.get(key)
+        if isinstance(block, Mapping):
+            return block
+    return {}
 
 
 def _provider_ids(config: Mapping[str, Any]) -> set[str]:
@@ -127,12 +136,30 @@ def _declared_models(config: Mapping[str, Any], provider: str = EXPECTED_PROVIDE
 
 
 def _provider_base_url(config: Mapping[str, Any], provider: str = EXPECTED_PROVIDER) -> str | None:
-    """`provider.<provider>.options.baseURL` si es string, si no None."""
-    options = _provider_entry(config, provider).get("options")
-    if not isinstance(options, Mapping):
-        return None
-    url = options.get("baseURL")
-    return url if isinstance(url, str) else None
+    """`providers.<p>.settings.baseURL` (V2) con fallback `options` (V1)."""
+    entry = _provider_entry(config, provider)
+    for key in ("settings", "options"):
+        options = entry.get(key)
+        if isinstance(options, Mapping) and isinstance(options.get("baseURL"), str):
+            return str(options["baseURL"])
+    return None
+
+
+def _small_model_ref(config: Mapping[str, Any]) -> Any:
+    """Referencia del modelo pequeno: V2 ``agents.title.model`` o V1
+    ``small_model`` top-level."""
+    title = ((config.get("agents") or {}).get("title")) or {}
+    ref = title.get("model") if isinstance(title, Mapping) else None
+    return ref or config.get("small_model")
+
+
+def _agent_entries(config: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Entradas de agentes: V2 ``agents`` con fallback V1 ``agent``."""
+    for key in ("agents", "agent"):
+        entries = config.get(key)
+        if isinstance(entries, Mapping):
+            return entries
+    return {}
 
 
 def _model_prefix(model_ref: Any) -> str | None:
@@ -168,15 +195,16 @@ def check_json_schema(config: Mapping[str, Any]) -> list[str]:
 
 
 def check_model_prefix(config: Mapping[str, Any]) -> list[str]:
-    """Verifica que el prefijo de `model`/`small_model` exista en `provider`.
+    """Verifica que el prefijo de `model`/modelo small exista en providers.
 
     Politica LOCAL TRIVIAL: `model` (default del runtime) puede ser el oraculo
     cloud (provider externo de opencode, no de la SSOT) -> se permite para la
-    clave `model`; `small_model` SIEMPRE debe ser local (`llamacpp`).
+    clave `model`; el modelo small SIEMPRE debe ser local (`llamacpp`).
     """
     violations: list[str] = []
-    for key in ("model", "small_model"):
-        prefix = _model_prefix(config.get(key))
+    refs = {"model": config.get("model"), "small_model": _small_model_ref(config)}
+    for key, ref in refs.items():
+        prefix = _model_prefix(ref)
         if prefix is None:
             violations.append(
                 f"WHAT: {key} no tiene forma provider/modelo. "
@@ -188,7 +216,7 @@ def check_model_prefix(config: Mapping[str, Any]) -> list[str]:
         elif prefix not in _provider_ids(config):
             violations.append(
                 f"WHAT: {key} usa provider '{prefix}' inexistente. "
-                f"WHY: el prefijo debe coincidir con una clave de 'provider'. "
+                f"WHY: el prefijo debe coincidir con una clave de 'providers'. "
                 f"WHERE: {CONFIG_PATH.name}:{key}."
             )
     return violations
@@ -200,9 +228,9 @@ def check_base_url(config: Mapping[str, Any]) -> list[str]:
     if url is None:
         return [
             (
-                f"WHAT: provider.{EXPECTED_PROVIDER}.options.baseURL ausente o no es string. "
+                f"WHAT: providers.{EXPECTED_PROVIDER}.settings.baseURL ausente o no es string. "
                 f"WHY: sin endpoint OpenAI-compatible no hay backend local. "
-                f"WHERE: {CONFIG_PATH.name}:provider.{EXPECTED_PROVIDER}.options.baseURL."
+                f"WHERE: {CONFIG_PATH.name}:providers.{EXPECTED_PROVIDER}.settings.baseURL."
             )
         ]
     parts = urlsplit(url)
@@ -299,26 +327,27 @@ def check_no_stale_base_url(raw_text: str) -> list[str]:
 
 
 def check_default_model_is_declared(config: Mapping[str, Any]) -> list[str]:
-    """Verifica `model`/`small_model` con la politica LOCAL TRIVIAL.
+    """Verifica `model`/modelo small con la politica LOCAL TRIVIAL.
 
     ``model`` (default del runtime) puede ser el oraculo cloud (provider
-    externo de opencode, no registrado en la SSOT); ``small_model`` SIEMPRE
+    externo de opencode, no registrado en la SSOT); el modelo small SIEMPRE
     debe ser un modelo local declarado.
     """
     declared = _declared_models(config)
     violations: list[str] = []
-    for key in ("model", "small_model"):
-        prefix = _model_prefix(config.get(key))
+    refs = {"model": config.get("model"), "small_model": _small_model_ref(config)}
+    for key, ref in refs.items():
+        prefix = _model_prefix(ref)
         if prefix == EXPECTED_CLOUD_PROVIDER and key == "model":
             continue
         if prefix != EXPECTED_PROVIDER:
             violations.append(
-                f"WHAT: {key}={config.get(key)!r} no usa provider '{EXPECTED_PROVIDER}'. "
+                f"WHAT: {key}={ref!r} no usa provider '{EXPECTED_PROVIDER}'. "
                 f"WHY: el default debe ser local. WHERE: {CONFIG_PATH.name}:{key}."
             )
-        elif _model_name(config.get(key)) not in declared:
+        elif _model_name(ref) not in declared:
             violations.append(
-                f"WHAT: {key}={config.get(key)!r} no declarado en provider.{EXPECTED_PROVIDER}.models. "
+                f"WHAT: {key}={ref!r} no declarado en providers.{EXPECTED_PROVIDER}.models. "
                 f"WHY: opencode no puede cargar un modelo no registrado. "
                 f"WHERE: {CONFIG_PATH.name}:{key}."
             )
@@ -348,7 +377,35 @@ def check_local_config(config: Mapping[str, Any], raw_text: str = "") -> list[st
 
 
 def _valid_config() -> dict[str, Any]:
-    """Config baseline VALIDA en memoria (espejo del estado final esperado)."""
+    """Config baseline VALIDA en memoria (forma NATIVA V2, espejo del disco)."""
+    models: dict[str, Any] = {
+        name: {
+            "name": name,
+            "capabilities": {"tools": True, "input": ["text"], "output": ["text"]},
+            "limit": {"context": 8192},
+        }
+        for name in sorted(EXPECTED_MODELS)
+    }
+    return {
+        "$schema": EXPECTED_SCHEMA,
+        "model": EXPECTED_DEFAULT_MODEL,
+        "agents": {
+            "title": {"model": EXPECTED_SMALL_MODEL},
+            "builder": {"mode": "subagent", "model": EXPECTED_DEFAULT_MODEL},
+        },
+        "providers": {
+            EXPECTED_PROVIDER: {
+                "package": "aisdk:@ai-sdk/openai-compatible",
+                "name": "llama.cpp (llama-swap)",
+                "settings": {"baseURL": EXPECTED_BASE_URL},
+                "models": models,
+            }
+        },
+    }
+
+
+def _valid_config_v1() -> dict[str, Any]:
+    """Baseline en forma V1 (legado): el checker debe seguirla aceptando."""
     models: dict[str, Any] = {name: {"name": name, "tools": True} for name in sorted(EXPECTED_MODELS)}
     return {
         "$schema": EXPECTED_SCHEMA,
@@ -379,10 +436,10 @@ def test_config_is_valid_json() -> None:
 
 
 def test_model_prefix_matches_provider() -> None:
-    """El prefijo de `model`/`small_model` existe como provider (o oraculo)."""
+    """El prefijo de `model`/modelo small existe como provider (o oraculo)."""
     config = _read_config()
 
-    prefixes = {_model_prefix(config.get("model")), _model_prefix(config.get("small_model"))}
+    prefixes = {_model_prefix(config.get("model")), _model_prefix(_small_model_ref(config))}
 
     assert check_model_prefix(config) == []
     assert prefixes <= (_provider_ids(config) | {EXPECTED_CLOUD_PROVIDER})
@@ -428,7 +485,7 @@ def test_agent_models_are_declared_local() -> None:
     modelo DEBE estar declarado en la flota.
     """
     config = _read_config()
-    agents = config.get("agent", {})
+    agents = _agent_entries(config)
     assert agents, "debe declararse al menos un agente"
     declared = _declared_models(config)
     for name, spec in agents.items():
@@ -458,14 +515,14 @@ def test_no_stale_ollama_provider() -> None:
 
 
 def test_default_model_is_declared() -> None:
-    """`model` es el oraculo cloud; `small_model` es provider `llamacpp` declarado."""
+    """`model` es el oraculo cloud; el small es provider `llamacpp` declarado."""
     config = _read_config()
 
     assert check_default_model_is_declared(config) == []
     declared = _declared_models(config)
     assert _model_prefix(config.get("model")) == EXPECTED_CLOUD_PROVIDER
-    assert _model_name(config.get("small_model")) in declared
-    assert _model_prefix(config.get("small_model")) == EXPECTED_PROVIDER
+    assert _model_name(_small_model_ref(config)) in declared
+    assert _model_prefix(_small_model_ref(config)) == EXPECTED_PROVIDER
 
 
 def test_read_config_missing_file_raises(tmp_path: Path) -> None:
@@ -491,8 +548,14 @@ class TestCheckerRejectsMutations:
     """
 
     def test_valid_baseline_passes(self) -> None:
-        """El baseline valido produce cero violaciones (control positivo)."""
+        """El baseline valido (V2 nativo) produce cero violaciones."""
         config = _valid_config()
+
+        assert check_local_config(config, raw_text=json.dumps(config)) == []
+
+    def test_valid_baseline_v1_still_accepted(self) -> None:
+        """Compatibilidad V1: una config en forma legada sigue validando."""
+        config = _valid_config_v1()
 
         assert check_local_config(config, raw_text=json.dumps(config)) == []
 
@@ -507,7 +570,7 @@ class TestCheckerRejectsMutations:
     def test_rejects_missing_port_11434(self) -> None:
         """(b) baseURL sin puerto 11434 es rechazada."""
         config = _valid_config()
-        config["provider"][EXPECTED_PROVIDER]["options"]["baseURL"] = "http://127.0.0.1:9999/v1"
+        config["providers"][EXPECTED_PROVIDER]["settings"]["baseURL"] = "http://127.0.0.1:9999/v1"
 
         assert check_base_url(config)
         assert check_local_config(config)
@@ -524,9 +587,9 @@ class TestCheckerRejectsMutations:
     def test_rejects_stale_ollama_provider(self) -> None:
         """(d) Provider `ollama` residual es rechazado."""
         config = _valid_config()
-        config["provider"]["ollama"] = {
-            "npm": "@ai-sdk/openai-compatible",
-            "options": {"baseURL": f"{STALE_BASE_URL_MARKER}/v1"},
+        config["providers"]["ollama"] = {
+            "package": "aisdk:@ai-sdk/openai-compatible",
+            "settings": {"baseURL": f"{STALE_BASE_URL_MARKER}/v1"},
         }
 
         assert check_no_stale_ollama_provider(config)

@@ -1,4 +1,4 @@
-﻿"""L5 — QAOrchestrator: Orquestacion de calidad extremo a extremo.
+"""L5 — QAOrchestrator: Orquestacion de calidad extremo a extremo.
 
 Capa superior del pipeline QA 5-capas que coordina la ejecucion
 completa del ciclo de calidad swarmind:
@@ -34,11 +34,11 @@ from enum import Enum, auto
 from typing import Any
 from uuid import uuid4
 
-from harness.qa import QAContext, QALayer, QAMetadata
 from harness.qa.agent import AgentResult, AutonomousTestAgent
 from harness.qa.detector import AnomalyReport, VisualAnomalyDetector
 from harness.qa.generator import TestCaseGenerator, TestSuite
 from harness.qa.predictor import FailurePredictor, RiskScore
+from harness.qa.types import QAContext, QALayer, QAMetadata
 
 logger = logging.getLogger(__name__)
 

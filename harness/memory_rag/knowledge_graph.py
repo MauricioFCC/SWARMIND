@@ -1,4 +1,4 @@
-﻿"""
+"""
 Knowledge Graph — Grafo de conocimiento local-first para Swarmind.
 
 Implementa un grafo de conocimiento local-first (similar a LanceDB) que conecta:

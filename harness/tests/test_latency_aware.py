@@ -139,3 +139,13 @@ class TestParallelPairs:
     def test_empty(self):
         cp = CriticalPath()
         assert cp.parallelizable_pairs([]) == []
+
+
+class TestStableOrderingPerformance:
+    """Regresion del O(n^2) en el orden estable de nodos listos."""
+
+    def test_parallel_roots_keep_original_order(self):
+        tasks = [_st(f"t{i}") for i in range(30)]
+        ordered = CriticalPath().optimize(tasks)
+        assert [task.id for task in ordered] == [f"t{i}" for i in range(30)]
+

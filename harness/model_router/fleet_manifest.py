@@ -13,12 +13,13 @@ WHERE: `model_windows.recommend_num_ctx` (ventana), `vram_guard.footprint_mb`
 (presupuesto), `local_executor` (options.num_ctx). El YAML de config sigue
 siendo el cableado de runtime y los tests verifican que coincida.
 
-Flota 2026-10-08 (RTX 4060 8GB, backend llama.cpp / llama-swap en
-127.0.0.1:11434). Flota REDUCIDA a 4 modelos servidos por nombre corto +
-alias (llama-swap expone ambos): coding `qwen2.5-coder-3b-iq4-xs`, quality
-`phi-4-mini-instruct-q4-k-m`, fast `qwen3-5-4b-gguf-ud-q4-k-xl` y embedding
-`qwen3-embedding-0-6b`. Se RETIRAN jackod-9b, mimo-9b, ornith-9b y
-qwen3-vl-4b (ya no caben/utilizan en 8GB con el escritorio WDDM).
+Flota INSTALADA 2026-10-14 (RTX 4060 8GB, backend llama.cpp / llama-swap en
+127.0.0.1:11434), alineada a la SSOT `local_models.yaml`: fast
+`phi-4-mini-reasoning-q4-k-m`, coding `qwen3-4b-thinking-2507-q4-k-m`, quality
+`mimo-v2-6-distill-qwen-9b-gguf-iq4-xs`, embedding `qwen3-embedding-0-6b` y
+deep `ternary-bonsai-2-27b-ptq1-0` (llama-swap expone nombre corto + alias).
+Se RETIRARON qwen3.5-4b, phi-4-mini-instruct, qwen2.5-coder-3b y
+deepseek-r1-distill (no estan instalados en disco).
 
 `num_ctx`: llama-server sirve los modelos a 32768 tokens, pero el harness
 DECLARA 8192 porque el techo anti-TDR del `GpuBudget` (`gpu_guard.SAFE_CTX_MAX`)
@@ -59,46 +60,47 @@ class FleetModel:
     matches: tuple[str, ...]
 
 
-#: Flota canonica 2026-10-08 (4 modelos). `num_ctx` DECLARADO a 8192 para
-#: toda la flota: el servidor los corre a 32768 pero el techo anti-TDR del
-#: harness sigue en `gpu_guard.SAFE_CTX_MAX=8192` (BSOD 0x116 del 2026-10-01).
-#: `vram_mb` es el pico MEDIDO con KV a 8192. `keep_alive="0"` en TODOS:
-#: sin residencia no hay solape de modelos en 8GB. `id` = nombre corto que
-#: sirve llama-swap; `matches` cubre el nombre corto + el alias largo.
+#: Flota INSTALADA 2026-10-14 (5 modelos), alineada a `local_models.yaml` (SSOT).
+#: `num_ctx` DECLARADO a 8192 para toda la flota: el servidor los corre a mas
+#: (12288-65536) pero el techo anti-TDR del harness sigue en
+#: `gpu_guard.SAFE_CTX_MAX=8192` (BSOD 0x116 del 2026-10-01). `vram_mb` es la
+#: huella estimada de GPU con KV a 8192 (espejo de `local_models.FALLBACK_VRAM_MB`).
+#: `keep_alive="0"` en TODOS: sin residencia no hay solape en 8GB. `id` = nombre
+#: corto que sirve llama-swap; `matches` cubre el nombre corto + el alias largo.
 FLEET: tuple[FleetModel, ...] = (
     FleetModel(
-        id="qwen3-5-4b-gguf-ud-q4-k-xl",
-        tier="fast", num_ctx=8192, vram_mb=4600, keep_alive="0",
+        id="phi-4-mini-reasoning-q4-k-m",
+        tier="fast", num_ctx=8192, vram_mb=2600, keep_alive="0",
         matches=(
-            "qwen3-5-4b-gguf-ud-q4-k-xl",
+            "phi-4-mini-reasoning-q4-k-m",
             # alias largo servido por llama-swap (guiones/puntos normalizados)
-            "hf.co/unsloth/qwen3.5-4b-gguf:ud-q4_k_xl",
-            "unsloth/qwen3.5-4b", "qwen3.5-4b", "ud-q4_k_xl", "ud-q4-k-xl",
+            "microsoft_phi-4-mini-reasoning-q4_k_m",
+            "microsoft_phi-4-mini-reasoning", "phi-4-mini-reasoning",
         ),
     ),
     FleetModel(
-        id="phi-4-mini-instruct-q4-k-m",
-        tier="quality", num_ctx=8192, vram_mb=5700, keep_alive="0",
+        id="qwen3-4b-thinking-2507-q4-k-m",
+        tier="coding", num_ctx=8192, vram_mb=2600, keep_alive="0",
         matches=(
-            "phi-4-mini-instruct-q4-k-m",
+            "qwen3-4b-thinking-2507-q4-k-m",
             # alias largo servido por llama-swap
-            "microsoft_phi-4-mini-instruct-q4_k_m",
-            "microsoft_phi-4-mini", "phi-4-mini",
+            "qwen3-4b-thinking-2507-q4_k_m",
+            "qwen3-4b-thinking",
         ),
     ),
     FleetModel(
-        id="qwen2.5-coder-3b-iq4-xs",
-        tier="coding", num_ctx=8192, vram_mb=3300, keep_alive="0",
+        id="mimo-v2-6-distill-qwen-9b-gguf-iq4-xs",
+        tier="quality", num_ctx=8192, vram_mb=6400, keep_alive="0",
         matches=(
-            "qwen2.5-coder-3b-iq4-xs",
+            "mimo-v2-6-distill-qwen-9b-gguf-iq4-xs",
             # alias largo servido por llama-swap
-            "qwen2.5-coder-3b-instruct-iq4_xs",
-            "qwen2.5-coder-3b",
+            "mimo-v2.6-distill-qwen-9b-iq4_xs",
+            "mimo-v2-6-distill",
         ),
     ),
     FleetModel(
         id="qwen3-embedding-0-6b",
-        tier="embedding", num_ctx=8192, vram_mb=2100, keep_alive="0",
+        tier="embedding", num_ctx=8192, vram_mb=3800, keep_alive="0",
         matches=(
             "qwen3-embedding-0-6b",
             # alias largo servido por llama-swap
@@ -107,19 +109,20 @@ FLEET: tuple[FleetModel, ...] = (
         ),
     ),
     FleetModel(
-        id="deepseek-r1-distill-qwen-7b-q2-k",
-        tier="deep", num_ctx=8192, vram_mb=4400, keep_alive="0",
+        id="ternary-bonsai-2-27b-ptq1-0",
+        tier="deep", num_ctx=8192, vram_mb=5700, keep_alive="0",
         matches=(
-            "deepseek-r1-distill-qwen-7b-q2-k",
+            "ternary-bonsai-2-27b-ptq1-0",
             # alias largo servido por llama-swap
-            "deepseek-r1-distill-qwen-7b-q2_k",
+            "ternary-bonsai-2-27b-ptq1_0",
+            "ternary-bonsai",
         ),
     ),
 )
 
 
 #: Tiers declarados en el cableado de runtime (`.opencode/config/ollama_models.yaml`).
-#: La flota reducida 2026-10-08 tiene exactamente estos 4 tiers.
+#: La flota instalada 2026-10-14 tiene exactamente estos 4 tiers (deep no es tier).
 YAML_TIERS: tuple[str, ...] = (
     "fast", "quality", "coding", "embedding",
 )

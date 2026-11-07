@@ -249,7 +249,7 @@ class LanceScheduler(BaseScheduler, JobStore):
 
         if minute == "*" and hour == "*" and day_of_week == "*":
             sched.every(1).minutes.do(self._execute_job, job_name=job.name)
-        elif minute == "0" and hour != "*" and day_of_week == "*" or minute == "0" and hour != "*" and day_of_week != "*":
+        elif (minute == "0" and hour != "*" and day_of_week == "*") or (minute == "0" and hour != "*" and day_of_week != "*"):
             sched.every().day.at(f"{hour}:00").do(
                 self._execute_job, job_name=job.name,
             )

@@ -1,4 +1,4 @@
-﻿"""
+"""
 Governance Agent — Framework de supervision para decisiones autonomicas.
 
 Implementa el marco de gobernanza para agentes autonomos:

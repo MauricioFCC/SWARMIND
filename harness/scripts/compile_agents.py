@@ -16,6 +16,11 @@ Omite:
   - Ejemplos largos (>3 lineas de codigo)
   - Parrafos de prosa sin estructura
 
+Nota: el frontmatter del ``.agent.min.md`` se marca con ``hidden: true`` para
+que OpenCode NO liste la variante minificada como agente propio (deriva el ID
+del nombre de archivo: ``<role>.agent.min.md`` -> ``<role>.agent.min``). El
+harness sigue leyendo este archivo como prompt pre-compilado del ``.md``.
+
 Modo de uso:
     python harness/scripts/compile_agents.py
     python harness/scripts/compile_agents.py --role quality-gate  # solo uno
@@ -136,6 +141,11 @@ def minify_agent(md_content: str) -> str:
             if not in_frontmatter:
                 in_frontmatter = True
                 minified.append("---")
+                # OpenCode V2 carga TODO `*.md` bajo agents/ y deriva el ID del
+                # nombre de archivo: `<role>.agent.min.md` -> `<role>.agent.min`.
+                # Sin `hidden: true`, el `.min.md` aparece como agente duplicado
+                # (55 agentes en vez de 31). WHERE: compile_agents.minify_agent.
+                minified.append("hidden: true")
                 continue
             else:
                 in_frontmatter = False

@@ -1,0 +1,83 @@
+{
+  "name": "legal-forensics",
+  "version": "1.0.0",
+  "description": "Usar cuando se preserva, verifica o analiza documentación jurídica como evidencia. cadena de custodia, hash SHA-256, metadatos, OCR forense, PDF escaneado, integridad documental. Alcance: forense documental; para análisis jurídico ver legal-doc; para",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando se preserva, verifica o analiza documentación jurídica como evidencia. cadena de custodia, hash SHA-256, metadatos, OCR forense, PDF escaneado, integridad documental",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Original intacto y hasheado (SHA-256 registrado)",
+    "Copia de trabajo separada y de solo lectura",
+    "OCR con nivel de confianza y revisión humana de zonas dudosas",
+    "Metadatos y estructura verificados (páginas, fuentes, firmas)",
+    "Bitácora de custodia completa (quién/cuándo/qué/herramienta)",
+    "Hash de entrada == hash de referencia; hash de salida registrado",
+    "Limitaciones declaradas (OCR parcial, escaneo de baja calidad, etc.)"
+  ],
+  "invariants": [
+    "Nunca se edita el original: toda operación va sobre una copia de trabajo",
+    "Sin SHA-256 + bitácora de custodia no se afirma integridad documental",
+    "El OCR de baja confianza se marca y se revisa a mano antes de citarlo",
+    "El material con datos personales es reservado y no se publica"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando se preserva, verifica o analiza documentación jurídica como evidencia. cadena de custodia, hash SHA-256, metadatos, OCR forense, PDF escaneado, integridad documental"
+    ],
+    "body_keywords": [
+      "original",
+      "bitácora",
+      "copia",
+      "nist",
+      "preservación",
+      "páginas",
+      "confianza",
+      "expediente"
+    ]
+  },
+  "source_sha256": "a726a62a402ed67bb18271f1eddda776170771b1e9136d950b590160d4f447de",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

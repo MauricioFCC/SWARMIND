@@ -14,19 +14,29 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import re
 import sys
 from pathlib import Path
 
 from hash_skills_registry import compute_skill_digest
 
+#: Raiz del repo en sys.path (el script corre con sys.path[0]=scripts; sin esto
+#: ``harness`` puede resolverse a una copia instalada desactualizada).
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(1, str(_ROOT))
+
 from harness.common import estimate_tokens
-from harness.context.skill_contract import load_skill_contract, validate_contract
+from harness.context.skill_contract import (
+    load_skill_contract,
+    validate_contract,
+)
 
 # ---------------------------------------------------------------------------
 # Constantes (MAG)
 # ---------------------------------------------------------------------------
-_ROOT = Path(__file__).resolve().parent.parent
 _SKILLS_DIR = _ROOT / ".opencode" / "skills"
 _REGISTRY = _SKILLS_DIR / "skills_registry.yaml"
 
@@ -101,6 +111,38 @@ def _registry_digests() -> dict[str, str]:
     return digests
 
 
+def _spec_drift_error(skill_dir: Path) -> str | None:
+    """Error si ``SKILL.spec.json`` no corresponde al ``SKILL.md`` vigente.
+
+    Args:
+        skill_dir: Directorio del skill.
+
+    Returns:
+        Mensaje de error (WHAT+WHY+WHERE) o ``None`` si no hay drift o no hay
+        ``source_sha256`` declarado (spec legacy/manual).
+    """
+    spec_path = skill_dir / "SKILL.spec.json"
+    if not spec_path.is_file():
+        return None
+    try:
+        declared = json.loads(spec_path.read_text(encoding="utf-8")).get("source_sha256")
+    except json.JSONDecodeError:
+        return None  # load_skill_contract ya reporta el JSON invalido
+    if not declared:
+        return None
+    current = hashlib.sha256(
+        (skill_dir / "SKILL.md").read_bytes().replace(b"\r\n", b"\n")
+    ).hexdigest()
+    if declared == current:
+        return None
+    return (
+        f"{skill_dir.name}: SKILL.spec.json desactualizado "
+        f"(WHAT=source_sha256 != SKILL.md WHY=contrato SDD drift "
+        f"WHERE=_spec_drift_error; regenerar con "
+        f"scripts/generate_skill_specs.py --write)"
+    )
+
+
 def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
     """Valida un skill completo.
 
@@ -173,6 +215,9 @@ def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
     spec = load_skill_contract(skill_dir)
     if spec is not None:
         errors.extend(validate_contract(spec, skill_dir))
+        drift = _spec_drift_error(skill_dir)
+        if drift:
+            errors.append(drift)
     elif not quiet:
         print(
             f"  ⚠  {name}: sin SKILL.spec.json (ADR-0048 SDD: migrar a "
@@ -210,6 +255,13 @@ def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
         if not (skill_dir / "references" / ref).exists():
             errors.append(f"{name}: referencia rota references/{ref}")
 
+    # 8a. Seccion de ejemplo obligatoria (spec Agent Skills: toda skill debe
+    # demostrar el patron con un caso concreto). Gate M6 de test_skill_mutants.
+    if "## Ejemplo" not in text:
+        errors.append(
+            f"{name}: falta la seccion '## Ejemplo' (spec Agent Skills: ejemplo concreto)"
+        )
+
     # 8b. References muertas: archivos en references/ que el SKILL.md NUNCA referencia
     # (progressive disclosure: material no enlazado nunca se carga -> warning).
     refs_dir = skill_dir / "references"
@@ -236,6 +288,42 @@ def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
     if has_scripts and "compatibility" not in fm and not quiet:
         print(f"  ⚠  {name}: tiene scripts/ pero sin campo 'compatibility' (spec: requisitos de entorno)")
 
+    return errors
+
+
+def _validate_unique_bodies() -> list[str]:
+    """Gate M5: rechaza skills con cuerpo identico (dedup semantico barato).
+
+    Normaliza el cuerpo (sin frontmatter, espacios colapsados, minusculas) y
+    compara el sha256: dos skills con el mismo contenido y distinto nombre son
+    crowding (la segunda no aporta senal).
+
+    Returns:
+        Lista de errores (vacía si todos los cuerpos son distintos).
+    """
+    seen: dict[str, str] = {}
+    errors: list[str] = []
+    for skill_dir in sorted(_SKILLS_DIR.iterdir()):
+        if not skill_dir.is_dir() or skill_dir.name in _SKIPPED_DIRS:
+            continue
+        path = skill_dir / "SKILL.md"
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        body = re.sub(r"^---.*?---\n", "", text, count=1, flags=re.DOTALL)
+        normalized = re.sub(r"\s+", " ", body).strip().lower()
+        # El nombre propio se neutraliza: una copia con otro nombre conserva el
+        # cuerpo (M5: duplicado semantico).
+        normalized = normalized.replace(skill_dir.name.lower(), "<skill>")
+        digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+        previous = seen.get(digest)
+        if previous is not None:
+            errors.append(
+                f"{skill_dir.name}: cuerpo duplicado de {previous!r} "
+                "(dedup semantico: mismo contenido, distinto nombre)"
+            )
+        else:
+            seen[digest] = skill_dir.name
     return errors
 
 
@@ -280,6 +368,7 @@ def main() -> None:
         errors.extend(_validate_skill(skill_dir, args.quiet))
 
     errors.extend(_validate_registry(args.quiet))
+    errors.extend(_validate_unique_bodies())
 
     print()
     if errors:

@@ -1,4 +1,4 @@
-﻿# pragma: allowlist secret
+# pragma: allowlist secret
 """Tests de inicialización para LanceVectorStore.
 
 Extraído de test_lance_vector_store.py — pruebas de __init__, _init_storage(),
@@ -13,7 +13,22 @@ import pytest
 
 from harness.memory_rag.lance_schemas import DEFAULT_COLLECTIONS
 from harness.memory_rag.lance_vector_store import LanceVectorStore
-from harness.memory_rag.memory_config import MemoryConfig
+from harness.memory_rag.memory_config import MemoryConfig, reset_memory_config
+
+
+@pytest.fixture(autouse=True)
+def _force_lancedb_backend(monkeypatch):
+    """Fija el backend LanceDB solo durante este modulo (sin contaminar el resto).
+
+    Antes se hacia con ``os.environ`` a nivel de modulo: al importar durante la
+    coleccion, ``VECTOR_BACKEND=lancedb`` quedaba activo para TODA la suite y
+    rompia tests de otros modulos (que esperan el default ``ruscadb``).
+    """
+    monkeypatch.setenv("VECTOR_BACKEND", "lancedb")
+    monkeypatch.setenv("RUSCADB_PATH", "")
+    reset_memory_config()
+    yield
+    reset_memory_config()
 
 # ===========================================================================
 # TESTS — Inicialización y storage
@@ -26,7 +41,7 @@ class TestInitAndStorage:
     def test_init_memory_fallback(self):
         """__init__ con allow_fallback=True y LanceDB ausente crea store en memoria."""
         with patch.object(LanceVectorStore, "_try_import_lancedb", return_value=None):
-            store = LanceVectorStore(db_path="/tmp/mem", allow_fallback=True)
+            store = LanceVectorStore(db_path="/tmp/mem", allow_fallback=True, backend="lancedb")
         assert store._lancedb_available is False
         assert store._db is None
         assert len(store._mem_collections) == len(DEFAULT_COLLECTIONS)

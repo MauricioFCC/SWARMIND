@@ -14,6 +14,47 @@ def _handle_hooks_status() -> None:
     show_status()
 
 
+# ── MCP tools (catalogo: la herramienta correcta) ───────────────────
+
+def _handle_mcp_list() -> None:
+    """Handle ``!mcp list`` — lista el catalogo MCP por categoria."""
+    from harness.tools_sandbox.mcp_catalog import CATEGORIES, catalog_servers
+
+    total = len(catalog_servers())
+    _rc.logger.info(f"[Harness] Catalogo MCP ({total} servers):")
+    for category, servers in CATEGORIES.items():
+        _rc.logger.info(f"  {category}: {', '.join(servers)}")
+
+
+def _handle_mcp_for(cmd: str) -> None:
+    """Handle ``!mcp for <tarea>`` — herramientas MCP aplicables a una tarea."""
+    from harness.tools_sandbox.mcp_catalog import servers_for_task
+
+    task = cmd[len("!mcp for"):].strip()
+    if not task:
+        _rc.logger.info("[Harness] Uso: !mcp for <tarea>")
+        return
+    tools = servers_for_task(task)
+    _rc.logger.info(
+        f"[Harness] Herramientas para '{task}': {', '.join(tools) or '(ninguna)'}"
+    )
+
+
+def _handle_mcp_skill(cmd: str) -> None:
+    """Handle ``!mcp skill <nombre>`` — herramientas que aprovecha una skill."""
+    from harness.tools_sandbox.mcp_catalog import servers_for_skill
+
+    skill = cmd[len("!mcp skill"):].strip()
+    if not skill:
+        _rc.logger.info("[Harness] Uso: !mcp skill <nombre>")
+        return
+    tools = servers_for_skill(skill)
+    _rc.logger.info(
+        f"[Harness] Herramientas de la skill '{skill}': "
+        f"{', '.join(tools) or '(ninguna)'}"
+    )
+
+
 # ── Evolve ──────────────────────────────────────────────────────────
 
 def _handle_evolve_mutate(store, cmd: str) -> None:

@@ -1,0 +1,82 @@
+{
+  "name": "alpha-research",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario busca investigar o validar factores de alpha. alpha, factores, ML, feature engineering, validacion estadistica, backtesting. Alcance: investigacion (falsacion, walk-forward); para motor de datos ver quant-trading",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario busca investigar o validar factores de alpha. alpha, factores, ML, feature engineering, validacion estadistica, backtesting",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Hipótesis nula definida ANTES de computar cualquier estadístico",
+    "Walk-forward con 5 folds purgados (CV temporal)",
+    "Sharpe ratio bootstrap con 10,000 muestras",
+    "DSR (Deflated Sharpe Ratio) ajustado por múltiples tests",
+    "Out-of-sample mínimo 30% del periodo total",
+    "Costos de transacción incluidos (slippage::SlippageModel)",
+    "Benchmark: buy & hold + igual-ponderado + risk-parity",
+    "Feature importance: SHAP values + permutation importance",
+    "Código en Rust para hot path, Python para prototipado"
+  ],
+  "invariants": [
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario busca investigar o validar factores de alpha. alpha, factores, ML, feature engineering, validacion estadistica, backtesting"
+    ],
+    "body_keywords": [
+      "sharpe",
+      "folds",
+      "snooping",
+      "factor",
+      "sample",
+      "ajustado",
+      "bootstrap",
+      "muestras"
+    ]
+  },
+  "source_sha256": "9facfd8d659dcb338098c7bd850b8bbb194dd8bc700f285bb3b671723f6b698f",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

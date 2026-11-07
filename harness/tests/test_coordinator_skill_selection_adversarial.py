@@ -28,7 +28,7 @@ from harness.orchestrator.agent_dispatcher import (
     AgentDispatcher,
 )
 from harness.orchestrator.coordinator_dispatch import dispatch
-from harness.orchestrator.skill_bundler import DOMAIN_SKILLS, SkillBundler
+from harness.orchestrator.skill_bundler import SkillBundler
 
 # ---------------------------------------------------------------------------
 # Constantes de la sonda (MAG: sin literales repetidos)
@@ -96,19 +96,11 @@ class TestFalsosPositivos:
         skills = SkillBundler().select_skills("devops", _TASK_DOCKER)
         assert "legal-doc" not in skills
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="FALLO: dominio api incluye rust-lang fijo -> tarea Python carga Rust",
-    )
     def test_api_python_no_deberia_cargar_rust(self) -> None:
         """Un endpoint REST en Python no debe cargar el skill de Rust."""
         skills = SkillBundler().select_skills("api", "endpoint REST en Python")
         assert "rust-lang" not in skills
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="FALLO: coordinator hereda el orden fijo del dominio (rust-lang entra)",
-    )
     def test_coordinator_flask_no_deberia_cargar_rust(self) -> None:
         """El plan del coordinator para Flask no debe declarar rust-lang."""
         assert "rust-lang" not in dispatch(_TASK_FLASK).skills
@@ -140,10 +132,6 @@ class TestFalsosNegativos:
         """El dispatcher encuentra rust-lang ante una frase natural (match por tokens)."""
         assert AgentDispatcher().find_skill_for_task("necesito programar en rust") is not None
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="FALLO: el coordinator no carga evolve al elegir el agente evolve",
-    )
     def test_coordinator_evolve_deberia_cargar_skill_evolve(self) -> None:
         """Si el agente elegido es 'evolve', su skill debe estar en el plan."""
         plan = dispatch("quiero mejorar mis skills del sistema")
@@ -366,6 +354,6 @@ class TestInyeccion:
         assert len(dispatch(_TASK_DOCKER, max_skills=3).skills) <= 3
 
     def test_compose_no_topa_y_crece(self) -> None:
-        """compose (sin tope) expande el bundle por encima del presupuesto del coordinator."""
+        """compose (sin tope) reparte skills entre agentes por encima del presupuesto."""
         total = sum(len(c.bundled_skills) for c in SkillBundler().compose(_TASK_DOCKER))
-        assert total > len(DOMAIN_SKILLS["general"])
+        assert total > 3  # presupuesto del coordinator (DEFAULT_MAX_SKILLS)

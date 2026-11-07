@@ -107,19 +107,19 @@ class _SignalMixin:
             score += SCORE_SHORT_TASK
 
         # Señal de razonamiento (cap 50)
-        if signals.get(SIGNAL_KEYWORD_REASONING, False):
+        if signals.get(SIGNAL_KEYWORD_REASONING):
             score += SCORE_KEYWORD_REASONING
 
         # Señal de dominio complejo
-        if signals.get(SIGNAL_DOMAIN_COMPLEX, False):
+        if signals.get(SIGNAL_DOMAIN_COMPLEX):
             score += SCORE_COMPLEX_DOMAIN
 
         # Señal de término simple (penaliza)
-        if signals.get(SIGNAL_SIMPLE_TASK_TERM, False):
+        if signals.get(SIGNAL_SIMPLE_TASK_TERM):
             score += SCORE_SIMPLE_TERM
 
         # Múltiples instrucciones (leva un poco)
-        if signals.get(SIGNAL_MULTI_INSTRUCTION, False):
+        if signals.get(SIGNAL_MULTI_INSTRUCTION):
             score += SCORE_MULTI_INSTRUCTION
 
         # Clamp a 0..100

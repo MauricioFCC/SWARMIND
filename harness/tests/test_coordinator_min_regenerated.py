@@ -115,11 +115,21 @@ class TestCoordinatorMinRegenerated:
         )
 
     def test_min_frontmatter_matches_source(self) -> None:
-        """(b) El frontmatter del .min.md coincide con el del .md fuente."""
-        # Arrange / Act / Assert
-        assert _parse_frontmatter(_read(COORDINATOR_MIN)) == _parse_frontmatter(
-            _read(COORDINATOR_MD)
-        ), "el frontmatter del .min.md diverge del .md fuente"
+        """(b) El frontmatter del .min.md = el del .md fuente + `hidden: true`.
+
+        El marcador `hidden` es exclusivo de OpenCode (oculta la variante
+        minificada para que no aparezca como agente duplicado); el resto del
+        frontmatter debe seguir coincidiendo con el .md fuente.
+        """
+        # Arrange
+        source_fm = dict(_parse_frontmatter(_read(COORDINATOR_MD)))
+        expected = {**source_fm, "hidden": True}
+
+        # Act / Assert
+        assert _parse_frontmatter(_read(COORDINATOR_MIN)) == expected, (
+            "el frontmatter del .min.md debe ser el del .md fuente + "
+            "`hidden: true` (marcador OpenCode-only; ver compile_agents.minify_agent)"
+        )
 
     def test_min_has_no_stale_doctrine(self) -> None:
         """(b) El .min.md no conserva doctrina pre-WS-B (secciones obsoletas)."""

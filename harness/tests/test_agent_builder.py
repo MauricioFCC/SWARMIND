@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tests para agent_builder — AgentBuilder, AgentPruner, run_agent_evolution.
 """
 from __future__ import annotations

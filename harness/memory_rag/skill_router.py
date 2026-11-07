@@ -1,4 +1,4 @@
-﻿"""
+"""
 skill_router.py â€” Router semantico de skills via LanceDB.
 
 Selecciona SOLO los skills relevantes para una tarea usando similitud
@@ -7,39 +7,179 @@ vectorial en LanceDB. Reduce tokens de contexto 60-80% vs cargar todos.
 Uso:
     router = SkillRouter(store)
     skills = router.route("implementa API REST en Rust")
-    # â†’ ["quant-trading"] (no carga los 10 skills)
+    # â†’ ["quant-trading"] (no carga todos los skills)
     context = router.build_context(skills)
+
+SSOT: el registry de skills se DERIVA de ``.opencode/skills/skills_registry.yaml``
+(nombres + dominios). Las keywords de matching son configuracion de tuning en
+este modulo (precisas donde un test fija el comportamiento; derivadas del
+trigger de la ``description`` en el resto). NO se duplica el registry.
 """
 
 from __future__ import annotations
 
 import logging
+import re
+from pathlib import Path
 from typing import Any
 
 import numpy as np
+import yaml
 
 from harness.common import fallback_embedding
+from harness.orchestrator.keyword_match import normalize
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Skill metadata matrix: nombre, dominio, keywords de activacion
+# Carga del registry desde el SSOT (lazy + cache)
 # ---------------------------------------------------------------------------
-# Cada skill tiene keywords asociadas para matching semantico.
-# A menor cantidad de skills cargados, menor gasto de tokens.
 
-SKILL_REGISTRY: list[dict[str, Any]] = [
-    {"name": "alpha-research",     "domain": "quantitative", "keywords": "factor research ml machine learning feature engineering statistical validation alpha backtest"},
-    {"name": "evolve",             "domain": "meta",         "keywords": "self-improvement evolution loop cognition auto-mejora continua"},
-    {"name": "healthtech",         "domain": "healthtech",   "keywords": "health healthcare clinical hipaa ehr interoperabilidad paciente health-record medico clinicas historia clinical historial"},
-    {"name": "hedgefund",          "domain": "financial",    "keywords": "hedge fund institutional risk reward capital allocation portfolio"},
-    {"name": "legal-doc",          "domain": "legal",        "keywords": "legal contract compliance law jurisprudence documento juridico"},
-    {"name": "math-doc",           "domain": "academic",     "keywords": "math latex theorem proof equation estadistica algebra calculo"},
-    {"name": "pos-retail",         "domain": "retail",       "keywords": "pos retail punto venta inventory stock checkout payment"},
-    {"name": "quant-trading",      "domain": "quantitative", "keywords": "trading strategy quantitative quant alpha execution broker"},
-    {"name": "risk-execution",     "domain": "quantitative", "keywords": "risk management position sizing market making tca execution"},
-    {"name": "science-doc",        "domain": "academic",     "keywords": "science paper research thesis systematic review peer review"},
+#: Ruta por defecto al registry curado de skills (SSOT del repo).
+_DEFAULT_REGISTRY_PATH = (
+    Path(__file__).resolve().parent.parent.parent
+    / ".opencode" / "skills" / "skills_registry.yaml"
+)
+
+#: Entradas curadas de respaldo (nombre, dominio, keywords) para cuando el
+#: registry no esta disponible. Conservan el comportamiento historico del
+#: router; el registry real las reemplaza cuando existe.
+_CURATED_ENTRIES: tuple[tuple[str, str, str], ...] = (
+    ("alpha-research", "quantitative", "factor research ml machine learning feature engineering statistical validation alpha backtest"),
+    ("evolve", "meta", "self-improvement evolution loop cognition auto-mejora continua"),
+    ("healthtech", "healthtech", "health healthcare clinical hipaa ehr interoperabilidad paciente health-record medico clinicas historia clinical historial"),
+    ("hedgefund", "financial", "hedge fund institutional risk reward capital allocation portfolio"),
+    ("legal-doc", "legal", "legal contract compliance law jurisprudence documento juridico"),
+    ("math-doc", "academic", "math latex theorem proof equation estadistica algebra calculo"),
+    ("pos-retail", "retail", "pos retail punto venta inventory stock checkout payment"),
+    ("quant-trading", "quantitative", "trading strategy quantitative quant alpha execution broker"),
+    ("risk-execution", "quantitative", "risk management position sizing market making tca execution"),
+    ("science-doc", "academic", "science paper research thesis systematic review peer review"),
+)
+
+#: Keywords curadas por nombre de skill (matching preciso fijado por tests).
+#: Las skills sin entrada aqui derivan sus keywords del trigger del SSOT.
+_CURATED_KEYWORDS: dict[str, str] = {
+    name: keywords for name, _domain, keywords in _CURATED_ENTRIES
+}
+
+#: Registry de respaldo ya materializado (deriva de ``_CURATED_ENTRIES``).
+_FALLBACK_REGISTRY: list[dict[str, Any]] = [
+    {"name": name, "domain": domain, "keywords": keywords}
+    for name, domain, keywords in _CURATED_ENTRIES
 ]
+
+#: Stopwords (funcionales + plantilla de descripcion) excluidas al derivar.
+_KEYWORD_STOPWORDS: frozenset[str] = frozenset({
+    "usar", "cuando", "el", "la", "los", "las", "un", "una", "unos", "unas",
+    "de", "del", "en", "y", "o", "u", "a", "al", "para", "por", "con", "sin",
+    "que", "se", "su", "sus", "es", "son", "como", "mas", "este", "esta",
+    "estos", "estas", "usuario", "busca", "quiere", "necesita", "pide",
+    "opera", "dominio", "trabaja", "analiza", "gestiona", "disena", "construye",
+    "implementa", "evalua", "nuevo", "nueva", "alcance", "involucra", "problema",
+    "the", "of", "to", "and", "or", "for", "ver",
+})
+
+#: Longitud minima de un token derivado (evita colisiones por substring).
+_KEYWORD_MIN_LEN = 4
+
+#: Cache ``ruta -> registry`` para no leer/reparsear el YAML en cada uso.
+_REGISTRY_CACHE: dict[str, list[dict[str, Any]]] = {}
+
+
+def _derive_keywords(description: str) -> str:
+    """Deriva keywords de matching desde la ``description`` del SSOT.
+
+    WHAT: toma el segmento de triggers (posterior a la primera oracion de prosa
+    y anterior a ``Alcance:``), lo normaliza y deduplica. WHY: evita duplicar
+    el registry a mano; el trigger pushy ya concentra las palabras clave. NO
+    incluye el nombre ni el dominio para no colisionar por substring (p. ej.
+    "rust-lang" no debe disparar "rust" de forma generica). WHERE:
+    ``_read_registry`` para skills sin keywords curadas.
+
+    Args:
+        description: Description pushy del registry.
+
+    Returns:
+        Keywords separadas por espacio (puede ser ``""`` si no hay triggers).
+    """
+    head = (description or "").split("Alcance:")[0]
+    # WHAT: se descarta la primera oracion (prosa "Usar cuando...") cuando el
+    # trigger ocupa la segunda; si no hay segunda (description en una oracion),
+    # se usa el texto completo para no dejar las keywords vacias.
+    parts = re.split(r"\.\s", head, maxsplit=1)
+    trigger = parts[1] if len(parts) > 1 and parts[1].strip() else parts[0]
+    tokens: list[str] = []
+    for raw in normalize(trigger).split():
+        token = raw.strip(".,;:")
+        if len(token) >= _KEYWORD_MIN_LEN and token not in _KEYWORD_STOPWORDS:
+            tokens.append(token)
+    return " ".join(dict.fromkeys(tokens))
+
+
+def _read_registry(path: Path) -> list[dict[str, Any]]:
+    """Lee y normaliza el registry YAML a entradas del router.
+
+    Args:
+        path: Ruta al ``skills_registry.yaml``.
+
+    Returns:
+        Lista de ``{name, domain, keywords}``; fallback curado si el archivo no
+        existe, no parsea o no declara skills.
+    """
+    if not path.exists():
+        logger.warning(
+            "skill_router: registry no encontrado en %s; usando fallback curado",
+            path,
+        )
+        return list(_FALLBACK_REGISTRY)
+    try:
+        with open(path, encoding="utf-8") as handle:
+            data = yaml.safe_load(handle)
+    except (OSError, yaml.YAMLError) as exc:
+        logger.warning(
+            "skill_router: no se pudo leer %s (%s); usando fallback curado",
+            path,
+            exc,
+        )
+        return list(_FALLBACK_REGISTRY)
+
+    raw = data.get("skills", []) if isinstance(data, dict) else []
+    entries: list[dict[str, Any]] = []
+    for item in raw:
+        if not isinstance(item, dict) or not item.get("name"):
+            continue
+        name = str(item["name"])
+        domain = str(item.get("domain", "general"))
+        keywords = _CURATED_KEYWORDS.get(name) or _derive_keywords(
+            str(item.get("description", ""))
+        )
+        entries.append({"name": name, "domain": domain, "keywords": keywords})
+    return entries or list(_FALLBACK_REGISTRY)
+
+
+def load_skill_registry(registry_path: str | Path | None = None) -> list[dict[str, Any]]:
+    """Carga (con cache) el registry de skills desde el SSOT YAML.
+
+    Args:
+        registry_path: Ruta alternativa al registry; por defecto el SSOT del
+            repo (``.opencode/skills/skills_registry.yaml``).
+
+    Returns:
+        Lista de entradas ``{name, domain, keywords}`` (misma instancia cacheada
+        por ruta).
+    """
+    path = Path(registry_path) if registry_path is not None else _DEFAULT_REGISTRY_PATH
+    key = str(path)
+    cached = _REGISTRY_CACHE.get(key)
+    if cached is None:
+        cached = _read_registry(path)
+        _REGISTRY_CACHE[key] = cached
+    return cached
+
+
+#: Registry de skills del router, derivado del SSOT (compat: antes constante).
+SKILL_REGISTRY: list[dict[str, Any]] = load_skill_registry()
 
 # Skills siempre activos (minimo contexto)
 ALWAYS_ACTIVE = {"evolve"}

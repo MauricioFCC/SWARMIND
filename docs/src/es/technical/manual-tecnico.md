@@ -30,7 +30,7 @@ Swarmind Harness es un **orquestador multi-agente** con arquitectura **Plan-and-
 
 ```
                     ┌─────────────────────────────────────┐
-                    │           USUARIO (prompt)           │
+                    │           USER (prompt)           │
                     └──────────────┬──────────────────────┘
                                    │
                     ┌──────────────▼──────────────────────┐

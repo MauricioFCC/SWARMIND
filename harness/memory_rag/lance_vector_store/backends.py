@@ -14,13 +14,14 @@ import logging
 import re
 import uuid
 from datetime import UTC, datetime
+from itertools import starmap
 from typing import Any
 
 import numpy as np
 
 from ..lance_migration import generate_sample_row, serialize_for_schema
 from ..lance_schemas import DEFAULT_COLLECTIONS
-from .exceptions import CollectionNotFoundError
+from .exceptions import CollectionNotFoundError, VectorStoreError
 from .models import _Collection, _StoredItem
 
 logger = logging.getLogger("harness.memory_rag.lance_vector_store")
@@ -74,25 +75,53 @@ class _LanceDBBackendMixin:
     ) -> list[str]:
         """Inserta vectores en una tabla LanceDB (helper de ``insert``)."""
         tbl = self._db.open_table(collection)  # type: ignore[union-attr]
-        rows: list[dict[str, Any]] = []
+        field_names = {field.name for field in tbl.schema}
+        self._check_vector_dim(tbl, collection, int(vectors.shape[1]))
         ids: list[str] = []
+        rows: list[dict[str, Any]] = []
         for i in range(vectors.shape[0]):
             rid = str(uuid.uuid4())
             ids.append(rid)
-            # Build row with serialized metadata fields for schema compatibility
-            row: dict[str, Any] = {
-                "id": rid,
-                "vector": vectors[i].tolist(),
-                "metadata": json.dumps(metadata[i]),
-                "created_at": now,
-            }
-            for k, v in metadata[i].items():
-                if k == "metadata":
-                    continue
-                row[k] = serialize_for_schema(v)
-            rows.append(row)
+            rows.append(self._lancedb_row(rid, vectors[i], metadata[i], now, field_names))
         tbl.add(rows)
         return ids
+
+    @staticmethod
+    def _check_vector_dim(tbl: Any, collection: str, dim: int) -> None:
+        """Falla con mensaje accionable si el embedding no encaja en la tabla."""
+        try:
+            vector_type = tbl.schema.field("vector").type
+        except (AttributeError, KeyError, TypeError):
+            return
+        expected = getattr(vector_type, "list_size", None)
+        if expected and int(expected) != int(dim):
+            raise VectorStoreError(
+                f"Dimension {dim} != {expected} de la tabla '{collection}'. "
+                "Usa el mismo modelo de embedding o crea la coleccion con "
+                "create_collection(name, dim=...)."
+            )
+
+    @staticmethod
+    def _lancedb_row(
+        rid: str,
+        vector: np.ndarray,
+        meta: dict[str, Any],
+        now: str,
+        field_names: set[str],
+    ) -> dict[str, Any]:
+        """Construye una fila valida para el schema LanceDB de la tabla."""
+        row: dict[str, Any] = {
+            "id": rid,
+            "vector": vector.tolist(),
+            "metadata": json.dumps(meta),
+            "created_at": now,
+        }
+        for key, value in meta.items():
+            # Solo columnas declaradas: el resto vive serializado en `metadata`
+            # (LanceDB rechaza campos fuera del schema).
+            if key != "metadata" and key in field_names:
+                row[key] = serialize_for_schema(value)
+        return row
 
     @staticmethod
     def _is_safe_filter_value(value: Any) -> bool:
@@ -166,73 +195,94 @@ class _LanceDBBackendMixin:
         filters: dict[str, Any],
         updates: dict[str, Any],
     ) -> int:
-        """Actualiza registros en LanceDB (helper de ``update_records``)."""
+        """Actualiza registros en LanceDB (helper de ``update_records``).
+
+        Estratégia read-then-update: filtra con WHERE seguro, refresca el
+        metadata JSON de cada registro (top-level + payload) saltando ids no
+        seguros. Complejidad: O(k) updates para k resultados del filtro.
+        """
+        tbl = self._open_update_table(collection)
+        where_clause = " AND ".join(
+            list(starmap(self._safe_where_comparison, filters.items()))
+        )
+        existing = self._read_existing_records(tbl, where_clause)
+        for record in existing:
+            record_id = self._validated_record_id(record, collection)
+            if record_id is None:
+                continue
+            self._update_single_record(tbl, record, record_id, updates, collection)
+        return len(existing)
+
+    def _open_update_table(self, collection: str) -> Any:
+        """Abre la tabla de destino o llena ``CollectionNotFoundError``."""
         try:
-            tbl = self._db.open_table(collection)
+            return self._db.open_table(collection)
         except Exception as exc:
             raise CollectionNotFoundError(
                 f"Collection '{collection}' not found in LanceDB: {exc}"
             ) from exc
 
-        # Construir clausula WHERE desde los filtros (clave/valor validados)
-        conditions = [
-            self._safe_where_comparison(k, v) for k, v in filters.items()
-        ]
-        where_clause = " AND ".join(conditions)
-
-        # Leer registros existentes para actualizar metadata JSON
+    def _read_existing_records(
+        self, tbl: Any, where_clause: str
+    ) -> list[dict[str, Any]]:
+        """Lee los registros que cumplen el WHERE (lista vacía si falla)."""
         try:
-            existing = tbl.search().where(where_clause).to_list()
-        except Exception:  # noqa: BLE001
-            existing = []
+            records = tbl.search().where(where_clause).to_list()
+        except Exception as exc:  # noqa: BLE001 - degradar a 0 updates
+            logger.warning(
+                "_read_existing_records: fallo WHERE (%s); degrada a lista vacía", exc
+            )
+            return []
+        return records if isinstance(records, list) else []
 
-        for record in existing:
-            record_id = record.get("id")
-            if not record_id:
-                continue
-            # El id leido de la tabla tambien se interpola: validarlo evita
-            # que un id manipulado inyecte predicates en el UPDATE (CWE-943).
-            if not self._is_safe_filter_value(record_id):
-                logger.warning(
-                    "update_records LanceDB: id no seguro omitido en '%s' "
-                    "(WHAT=id con comillas/backslash WHY=anti-inyeccion "
-                    "WHERE=_update_records_lancedb)",
-                    collection,
-                )
-                continue
+    def _validated_record_id(self, record: dict[str, Any], collection: str) -> str | None:
+        """Id validado del registro (anti-inyección CWE-943) o ``None``."""
+        record_id = record.get("id")
+        if record_id and self._is_safe_filter_value(record_id):
+            return str(record_id)
+        if record_id:
+            logger.warning(
+                "update_records LanceDB: id no seguro omitido en '%s' "
+                "(WHAT=id con comillas/backslash WHY=anti-inyección "
+                "WHERE=_update_records_lancedb)",
+                collection,
+            )
+        return None
 
-            # Actualizar metadata JSON si existe
-            meta_raw = record.get("metadata", "{}")
-            if isinstance(meta_raw, str):
-                try:
-                    meta = json.loads(meta_raw)
-                except (json.JSONDecodeError, TypeError):
-                    meta = {}
-            elif isinstance(meta_raw, dict):
-                meta = meta_raw
-            else:
-                meta = {}
-
-            meta.update(updates)
-
-            # Actualizar: top-level + metadata JSON
-            update_values = {
-                "metadata": json.dumps(meta),
-                **updates,
-            }
-
-            # Limpiar solo 'vector' del top-level (metadata debe actualizarse)
-            update_values.pop("vector", None)
-
+    def _merged_meta(self, record: dict[str, Any], updates: dict[str, Any]) -> str:
+        """Metadata JSON fusionada con los updates (casos str/dict/otro)."""
+        meta_raw = record.get("metadata", "{}")
+        if isinstance(meta_raw, dict):
+            meta = meta_raw
+        elif isinstance(meta_raw, str):
             try:
-                tbl.update(where=f"id = '{record_id}'", values=update_values)
-            except Exception as exc:  # noqa: BLE001
-                logger.warning(
-                    "Failed to update record %s in '%s': %s",
-                    record_id, collection, exc,
-                )
+                meta = json.loads(meta_raw)
+            except (json.JSONDecodeError, TypeError):
+                meta = {}
+        else:
+            meta = {}
+        meta.update(updates)
+        return json.dumps(meta)
 
-        return len(existing)
+    def _update_single_record(
+        self,
+        tbl: Any,
+        record: dict[str, Any],
+        record_id: str,
+        updates: dict[str, Any],
+        collection: str,
+    ) -> None:
+        """Refresca top-level + metadata JSON de UN registro (fail-soft)."""
+        update_values = {"metadata": self._merged_meta(record, updates), **updates}
+        # Limpiar solo 'vector' del top-level (metadata debe actualizarse)
+        update_values.pop("vector", None)
+        try:
+            tbl.update(where=f"id = '{record_id}'", values=update_values)
+        except Exception as exc:  # noqa: BLE001 - un registro no detiene el lote
+            logger.warning(
+                "Failed to update record %s in '%s': %s",
+                record_id, collection, exc,
+            )
 
     def _search_lancedb(
         self,

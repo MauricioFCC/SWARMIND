@@ -1,0 +1,83 @@
+{
+  "name": "legal-procedure-co",
+  "version": "1.0.0",
+  "description": "Usar cuando se verifica el debido proceso en Colombia. competencia, términos, notificaciones, recursos, caducidad, prescripción, nulidades, CGP, CPACA, CPP, Ley 906. Alcance: procedimiento colombiano; para redacción de escritos ver legal-drafting-co; para",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando se verifica el debido proceso en Colombia. competencia, términos, notificaciones, recursos, caducidad, prescripción, nulidades, CGP, CPACA, CPP, Ley 906",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Competencia verificada (materia/cuantía/territorio/fuero)",
+    "Términos contados con calendario y norma",
+    "Notificación válida y fecha cierta",
+    "Recursos procedentes identificados con término",
+    "Caducidad/prescripción verificada con dies a quo",
+    "Nulidades evaluadas y saneamiento",
+    "Fuente normativa citada y vigente"
+  ],
+  "invariants": [
+    "Los términos se cuentan con la norma y el calendario aplicable, nunca de memoria",
+    "Sin fecha cierta de notificación no se afirma ejecutoria ni caducidad",
+    "La caducidad (acción) no se confunde con la prescripción (derecho)",
+    "Toda conclusión procesal se somete a revisión humana antes de actuar"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando se verifica el debido proceso en Colombia. competencia, términos, notificaciones, recursos, caducidad, prescripción, nulidades, CGP, CPACA, CPP, Ley 906"
+    ],
+    "body_keywords": [
+      "notificación",
+      "calendario",
+      "término",
+      "basedoc",
+      "secretariasenado",
+      "senado",
+      "contar",
+      "hábiles"
+    ]
+  },
+  "source_sha256": "46ff0f1c304d89d143835de9cd9adff4aaa9f84837650c236d0179700fd140f5",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

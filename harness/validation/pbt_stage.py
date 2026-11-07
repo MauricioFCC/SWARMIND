@@ -296,7 +296,9 @@ def _run_hypothesis_in_subprocess(
         script_path = Path(tmp_dir) / "pbt_check.py"
         script_path.write_text(script, encoding="utf-8")
         try:
-            result = SandboxExecutor().run_script(script_path, timeout_s=timeout)
+            result = SandboxExecutor().run_script(
+                script_path, timeout_s=timeout, require_project_deps=True
+            )
         except Exception as e:  # noqa: BLE001
             return False, f"{type(e).__name__}: {e}"
 
@@ -404,15 +406,24 @@ def run_pbt_stage(
     bugs_found = 0
 
     for hyp in hypotheses[:max_examples]:
+        name_match = re.search(r"def (test_\w+)", hyp)
+        name = name_match.group(1) if name_match else "unknown"
         passed, error = _run_hypothesis_in_subprocess(
             func_source, hyp, timeout_per_example
         )
         if not passed:
             bugs_found += 1
-        name_match = re.search(r"def (test_\w+)", hyp)
+            # ERR: un fallo de infraestructura (import roto, ABI, timeout) debe
+            # quedar visible; antes solo se contaba como bug sin causa.
+            logger.warning(
+                "PBT hypothesis fallo (agent=%s, %s): %s",
+                agent_name,
+                name,
+                str(error)[:200],
+            )
         execution_details.append(
             {
-                "hypothesis_name": name_match.group(1) if name_match else "unknown",
+                "hypothesis_name": name,
                 "hypothesis": hyp[:80] + ("..." if len(hyp) > 80 else ""),
                 "passed": passed,
                 "error": error,

@@ -1,0 +1,79 @@
+{
+  "name": "communication",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario necesita comunicacion profesional o persuasiva. escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural, liderazgo. Alcance: comunicacion profesional y persuasiva; para material educativo ver",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario necesita comunicacion profesional o persuasiva. escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural, liderazgo",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "BLUF: conclusion en la primera linea",
+    "Audiencia y tono definidos",
+    "Datos citados y visualizacion adecuada",
+    "Llamado a la accion explicito",
+    "Mensaje adaptado al canal (email/deck/charla)"
+  ],
+  "invariants": [
+    "ANTI-HEDGING: BLUF (bottom line up front): la conclusion en la primera linea, siempre",
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario necesita comunicacion profesional o persuasiva. escritura ejecutiva, presentaciones, storytelling, negociacion, comunicacion intercultural, liderazgo"
+    ],
+    "body_keywords": [
+      "comm",
+      "email",
+      "bluf",
+      "mensaje",
+      "conclusion",
+      "audiencia",
+      "communication",
+      "redaccion"
+    ]
+  },
+  "source_sha256": "bfb8721ab68db4056c1abdf10d93c64086d7385cd47a4195a1f2b9d344835aef",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

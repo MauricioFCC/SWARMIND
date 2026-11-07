@@ -1,35 +1,24 @@
-"""skill_lift.py — CLI de Paired Evaluation / Skill Lift (dry-run).
+"""skill_lift.py — CLI de Paired Evaluation / Skill Lift (runner REAL determinista).
 
-WHAT: corre :class:`harness.evals.skill_lift.SkillLiftEvaluator` con un runner
-DUMMY determinista para demostrar el flujo y el reporte por veredicto. Mide el
-delta de pass rate (Δpp) con/sin skill sobre las mismas tareas (SkillsBench,
+WHAT: corre :class:`harness.evals.skill_lift.SkillLiftEvaluator` con el runner
+REAL :class:`harness.evals.skill_lift_runner.SkillLiftRunner` sobre el catalogo
+de tareas :class:`harness.evals.skill_lift_tasks.SkillLiftCatalog`. Mide el delta
+de pass rate (Δpp) con/sin skill sobre las MISMAS tareas (SkillsBench,
 arXiv:2602.12670) y clasifica cada skill como useful/neutral/harmful.
 
-WHY: el evaluador NO ejecuta LLM; el verifier real se inyecta como runner. Este
-script no depende de LLM alguno: usa un dummy reproducible para que el flujo
-sea verificable en CI y sirva de plantilla.
+WHY: el evaluador NO ejecuta LLM; el runner por defecto es DETERMINISTA (carga el
+SKILL.md real del repo, produce la reference de la tarea y corre su verifier puro).
+Asi el lift es reproducible en CI (0 LLM, 0 red). En produccion se inyecta un
+solver LLM con la misma firma (``solver(prompt, contexto) -> salida``).
 
-WHERE: utilidad operativa sobre ``harness/evals/skill_lift.py``. NO aplica
-retiro de skills (eso es Library Drift); solo MIDE y clasifica.
-
-Como inyectar el runner REAL:
-    Sustituye ``dummy_runner`` por un callable con la firma
-    ``(task_id: str, skill: str | None) -> bool`` que corra la tarea con/sin la
-    skill y devuelva el pass/fail de un verifier DETERMINISTA. Por ejemplo:
-
-        def real_runner(task_id: str, skill: str | None) -> bool:
-            contexto = cargar_contexto(task_id, skill)   # skill=None => sin skill
-            return verificar(task_id, contexto)          # bool determinista
-
-        evaluator = SkillLiftEvaluator(runner=real_runner)
-
-    ``skill=None`` es la condicion de ablacion (sin skill activa). Mantener el
-    runner puro/determinista para que el lift sea reproducible.
+WHERE: utilidad operativa sobre ``harness/evals/``. NO aplica retiro de skills
+(eso es Library Drift); solo MIDE y clasifica.
 
 Uso:
-    uv run python scripts/skill_lift.py --skills pdf-forms,data-cleaning
-    uv run python scripts/skill_lift.py --skills a,b --tasks t1,t2,t3 --trials 5
-    uv run python scripts/skill_lift.py --dry-run
+    uv run python scripts/skill_lift.py
+    uv run python scripts/skill_lift.py --skill atdd-spec,agent-rigor
+    uv run python scripts/skill_lift.py --skill atdd-spec --tasks atdd-spec-cycle --trials 3
+    uv run python scripts/skill_lift.py --json
 
 Exit codes: 0 = OK; 1 = error de argumentos/entrada.
 """
@@ -37,6 +26,7 @@ Exit codes: 0 = OK; 1 = error de argumentos/entrada.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
@@ -48,54 +38,18 @@ if str(_ROOT) not in sys.path:
 
 from harness.evals.skill_lift import (
     DEFAULT_TRIALS,
+    LiftResult,
     SkillLiftEvaluator,
 )
+from harness.evals.skill_lift_runner import SkillLiftRunner
+from harness.evals.skill_lift_tasks import SkillLiftCatalog
 
 logger = logging.getLogger("swarmind.skill_lift")
 
-#: Skills de ejemplo para el dry-run.
-_DEMO_SKILLS: tuple[str, ...] = ("useful-demo", "neutral-demo", "harmful-demo")
-#: Tareas de ejemplo para el dry-run (2 tareas => ablacion = 0.5).
-_DEMO_TASKS: tuple[str, ...] = ("task-1", "task-2")
 #: Separador de listas en la CLI.
 _LIST_SEP = ","
 _EXIT_OK = 0
 _EXIT_ERROR = 1
-
-
-def _ablation_passes(task_id: str) -> bool:
-    """Patron base de la condicion sin skill (la ablacion es compartida).
-
-    Args:
-        task_id: Identificador de la tarea.
-
-    Returns:
-        True solo para ``task-1`` (=> pass rate de ablacion = 0.5).
-    """
-    return task_id == "task-1"
-
-
-def dummy_runner(task_id: str, skill: str | None) -> bool:
-    """Runner DUMMY determinista para el dry-run (0 LLM, 0 red).
-
-    La condicion de ablacion (``skill is None``) es la MISMA para todas las
-    skills (mismas tareas). Sobre esa base el dummy demuestra las tres
-    clasificaciones: ``useful-demo`` pasa siempre con skill (lift positivo),
-    ``harmful-demo`` falla siempre con skill (lift negativo) y
-    ``neutral-demo`` reproduce la ablacion (lift nulo).
-
-    Args:
-        task_id: Identificador de la tarea.
-        skill: Skill activa o ``None`` para la ablacion.
-
-    Returns:
-        True si la tarea pasa en esa condicion, False en caso contrario.
-    """
-    if skill == "useful-demo":
-        return True
-    if skill == "harmful-demo":
-        return False
-    return _ablation_passes(task_id)
 
 
 def _parse_csv(raw: str) -> list[str]:
@@ -114,20 +68,20 @@ def _build_parser() -> argparse.ArgumentParser:
     """Construye el parser de argumentos de la CLI.
 
     Returns:
-        Parser configurado con las opciones de skills, tareas, trials y dry-run.
+        Parser con las opciones de skills, tareas, trials y salida JSON.
     """
     parser = argparse.ArgumentParser(
-        description="Paired Evaluation / Skill Lift (dry-run por defecto).",
+        description="Paired Evaluation / Skill Lift con runner real determinista.",
     )
     parser.add_argument(
-        "--skills",
-        default=_LIST_SEP.join(_DEMO_SKILLS),
-        help="Skills a evaluar separadas por coma (default: demo).",
+        "--skill",
+        default="",
+        help="Skills a evaluar separadas por coma (default: todas las del catalogo).",
     )
     parser.add_argument(
         "--tasks",
-        default=_LIST_SEP.join(_DEMO_TASKS),
-        help="Tareas separadas por coma (default: demo).",
+        default="",
+        help="Tareas separadas por coma (default: las tareas de cada skill).",
     )
     parser.add_argument(
         "--trials",
@@ -136,11 +90,28 @@ def _build_parser() -> argparse.ArgumentParser:
         help=f"Corridas por tarea y condicion (default: {DEFAULT_TRIALS}).",
     )
     parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Usa el runner dummy (default: siempre dry-run en este CLI).",
+        "--json", action="store_true", help="Salida machine-readable (JSON)."
     )
     return parser
+
+
+def _result_payload(result: LiftResult) -> dict[str, object]:
+    """Serializa un LiftResult a un dict JSON-safe.
+
+    Args:
+        result: Resultado de lift a serializar.
+
+    Returns:
+        Diccionario plano con las metricas y el veredicto.
+    """
+    return {
+        "skill": result.skill,
+        "trials": result.trials,
+        "pass_with": result.pass_with,
+        "pass_without": result.pass_without,
+        "delta_pp": result.delta_pp,
+        "verdict": result.verdict,
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -155,32 +126,54 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     args = _build_parser().parse_args(argv)
 
-    skills = _parse_csv(args.skills)
-    tasks = _parse_csv(args.tasks)
-    if not skills or not tasks:
+    catalog = SkillLiftCatalog()
+    skills = _parse_csv(args.skill) or catalog.skills()
+    if not skills:
         logger.error(
-            "WHAT: --skills y --tasks deben tener elementos | WHERE: main() "
-            "| WHY: sin skills o sin tareas no hay ablacion."
+            "WHAT: sin skills a evaluar | WHERE: main() | WHY: el catalogo esta vacio."
         )
         return _EXIT_ERROR
     if args.trials < 1:
         logger.error(
-            "WHAT: --trials debe ser >= 1, recibio %d | WHERE: main()",
-            args.trials,
+            "WHAT: --trials debe ser >= 1, recibio %d | WHERE: main()", args.trials
         )
         return _EXIT_ERROR
 
-    evaluator = SkillLiftEvaluator(runner=dummy_runner)
-    results = evaluator.evaluate_all(skills, tasks, trials=args.trials)
+    explicit_tasks = _parse_csv(args.tasks)
+    evaluator = SkillLiftEvaluator(runner=SkillLiftRunner(catalog=catalog))
+
+    results: list[LiftResult] = []
+    for skill in skills:
+        tasks = explicit_tasks or [task.id for task in catalog.tasks_for_skill(skill)]
+        if not tasks:
+            logger.warning(
+                "WHAT: skill sin tareas en el catalogo, se omite | WHERE: main() "
+                "| skill=%s",
+                skill,
+            )
+            continue
+        results.append(evaluator.evaluate(skill, tasks, trials=args.trials))
+
     summary = evaluator.report(results)
+
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "results": [_result_payload(result) for result in results],
+                    "summary": summary,
+                },
+                ensure_ascii=False,
+            )
+        )
+        return _EXIT_OK
 
     for result in results:
         logger.info(
-            "%-16s delta=%+7.2fpp verdict=%-8s (%s)",
+            "%-32s delta=%+7.2fpp verdict=%-8s",
             result.skill,
             result.delta_pp,
             result.verdict,
-            result.notes,
         )
     logger.info(
         "Resumen: useful=%d neutral=%d harmful=%d mean_delta=%.2fpp",
@@ -188,10 +181,6 @@ def main(argv: list[str] | None = None) -> int:
         summary["neutral"],
         summary["harmful"],
         summary["mean_delta_pp"],
-    )
-    logger.info(
-        "Nota: runner DUMMY. Inyecta el runner real (task_id, skill|None) -> bool "
-        "para medir lift con verifier determinista (ver docstring del modulo)."
     )
     return _EXIT_OK
 

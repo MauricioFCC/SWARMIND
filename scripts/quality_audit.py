@@ -1,5 +1,6 @@
 """Auditoria de memoria y principios de calidad para Swarmind."""
 import os
+import pathlib
 import re
 import subprocess
 
@@ -67,8 +68,7 @@ for mod in new_modules:
     if not os.path.exists(mod):
         print(f"  [SKIP] {mod} no existe")
         continue
-    with open(mod, "r", encoding="utf-8", errors="ignore") as fh:
-        content = fh.read()
+    content = pathlib.Path(mod).read_text(encoding="utf-8", errors="ignore")
 
     funcs = re.findall(r"^    def (\w+)\(", content, re.MULTILINE)
     pub_funcs = [f for f in funcs if not f.startswith("_")]
@@ -99,8 +99,7 @@ for root, dirs, files in os.walk("harness"):
         if "context_injector" in f.lower() or "context_scoped" in f.lower():
             fpath = os.path.join(root, f)
             rel = os.path.relpath(fpath).replace("\\", "/")
-            with open(fpath, "r", encoding="utf-8", errors="ignore") as fh:
-                content = fh.read()
+            content = pathlib.Path(fpath).read_text(encoding="utf-8", errors="ignore")
             principles = ["CleanCode", "DRY", "KISS", "SSOT", "<900LC"]
             found = [p for p in principles if p in content]
             print(f"  [FOUND] {rel}")
@@ -119,8 +118,7 @@ if not ci_found:
 print("\n5. ADR-0001 - PRINCIPIOS DOCUMENTADOS")
 adr_path = "docs/src/adr/adr0001-mejoras.md"
 if os.path.exists(adr_path):
-    with open(adr_path, "r", encoding="utf-8") as fh:
-        content = fh.read()
+    content = pathlib.Path(adr_path).read_text(encoding="utf-8")
     checks = {
         "ContextInjector": "ContextInjector" in content,
         "Estandares": "estandares" in content or "estándares" in content,

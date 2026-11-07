@@ -1,4 +1,4 @@
-﻿"""IDEAdapter — Fachada de compatibilidad multi-harness.
+"""IDEAdapter — Fachada de compatibilidad multi-harness.
 
 Refactorizado para delegar en Multi-Harness Adapter Layer manteniendo
 compatibilidad hacia atras. Todos los metodos originales se conservan.

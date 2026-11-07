@@ -47,6 +47,8 @@ class MCPClient(_ConnectionMixin, _ToolsMixin):
         self._server_url: str | None = None
         self._connected: bool = False
         self._stateless: bool = False
+        self._transport: str = "http"
+        self._stdio_proc: Any | None = None
         self._default_timeout = default_timeout
         self._tools_cache: list[MCPTool] = []
         self._cache_ts: float = 0.0

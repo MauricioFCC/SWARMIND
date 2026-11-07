@@ -7,8 +7,9 @@
 
 Harness Python de orquestación multi-agente (opencode, Claude Code, Codex)
 con: orchestrator con fan-out paralelo + votación gobernada, model routing
-small/frontier con fallback, memoria central portable (LanceDB + SQLite-vec),
-token economics, validación PBT/mutation real, y aceleración GPU CUDA.
+small/frontier con fallback, memoria central portable (RuscaDB por defecto;
+LanceDB opcional), token economics, validación PBT/mutation real, y
+aceleración GPU CUDA.
 
 ## Reglas universales (siempre activas)
 
@@ -44,20 +45,54 @@ nunca afirma, verifica**. Al completar cualquier cambio:
 5. **Checks de código**: tras tocar `harness/`, ejecuta los tests del módulo
    afectado (p. ej. `pytest harness/tests/test_<modulo>.py -q`) + ruff.
 
+## Ciclo Frontera (petición explícita)
+
+Cuando el usuario pida algo como:
+
+> "Carga skills, agentes, **<tarea explícita>**. Investigación web frontera,
+> estado del arte; papers, artículos, técnicas, arquitecturas óptimas,
+> algoritmos, complejidad O(n²)→O(n), fórmulas; spec (mejorar/reimplementar si
+> aplica), SDD, TDD adversarial mutante, actualiza Docs."
+
+…se ejecuta el ciclo completo, no una respuesta superficial. Atajo en OpenCode:
+`/frontera <tarea explícita>`. Procedimiento canónico: skill
+`frontier-engineering` (`.opencode/skills/frontier-engineering/SKILL.md`).
+
+Fases (en orden, sin saltar gates):
+
+1. **Load** — manifest de skills/agentes/specs/memoria; IDP: si existe, mejorar
+   y reimplementar solo con mejora medible (`Δquality > 0 ∧ Δcost < 0`).
+2. **Research SOTA** — web + papers; paper trail en
+   `docs/research/frontier-<fecha>-<tema>.md` con URLs leídas o `[UNVERIFIED]`;
+   ≥3 hipótesis comparadas.
+3. **Design** — arquitectura + trade-offs + fórmulas y complejidad `O(·)`
+   antes→después.
+4. **Spec/SDD** — spec nueva o diff con rationale; ACs testeables.
+5. **TDD adversarial mutante** — oráculo congelado, rojo→verde, PBT, mutantes;
+   el `O(n²)→O(n)` se **mide** (gate N/2N/4N + test de equivalencia).
+6. **Docs** — CHANGELOG + roadmap + MEJORAS + ADR; commit convencional en
+   español y `python scripts/publish.py`.
+
+Cierre obligatorio: gates verdes con evidencia real (pytest, ruff, vulture,
+arquitectura+ratchet, complejidad, ruff-ratchet, preview, pep649, skills) y
+declaración honesta de lo no aplicado y por qué.
+
 ## Cómo trabajar aquí
 
 1. **Investigar antes de ejecutar** (RSF/FRS): lee el código existente, revisa
    `git log`, verifica que no esté implementado (IDP).
-2. **Skills**: los skills viven en `.opencode/skills/` (33 skills, formato spec
+2. **Skills**: los skills viven en `.opencode/skills/` (49 skills, formato spec
    Agent Skills de la Linux Foundation). Cada skill tiene `SKILL.md` +
    `SKILL.min.md` + frontmatter (name/domain/description/version/
    project_agnostic). Valida con `python scripts/validate_skills.py --strict`.
+   Propagación: `python scripts/publish.py` sincroniza **solo** el global
+   (`~/.config/opencode`); los proyectos ya no guardan copias del cerebro.
 3. **ADRs**: las decisiones de arquitectura se documentan en
    `docs/src/es/adr/` (internos, NO se pushean al remoto).
 4. **Docs oficiales**: README.md (inglés, público), docs/src/es/ (español,
    primario), CHANGELOG.md, docs/.MEJORAS_SWARMIND.md. Los ADR NO se mencionan
    en la documentación pública.
-5. **Tests**: pytest en `harness/tests/` (4414 passing). TDD siempre-on.
+5. **Tests**: pytest en `harness/tests/` (~7.7k passing, 0 failed; Windows local 7686 passed). TDD siempre-on.
    Ruff 0 errores, vulture 0 dead code, deuda AGR 0.
 6. **Commits**: conventional commit en español (`feat(scope): mensaje`).
 7. **Push**: los ADR (docs/src/es/adr/) se versionan localmente pero NO se
@@ -67,6 +102,7 @@ nunca afirma, verifica**. Al completar cualquier cambio:
 
 - Roadmap: `docs/src/es/roadmap/estado.md`
 - Mejoras log: `docs/.MEJORAS_SWARMIND.md`
-- Agentes: `.opencode/agents/` (22 agentes)
+- Agentes: `.opencode/agents/` (26 agentes, `mode` declarado; flota del
+  coordinator sincronizada por contrato en `test_opencode_runtime_contract.py`)
 - Registry de skills: `.opencode/skills/skills_registry.yaml`
 - Principios completos: `.opencode/core/base_principles.md`

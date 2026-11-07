@@ -275,7 +275,7 @@ class _MARSSchedulingMixin(_MARSStateMixin):
             updated_q = current_q + self._learning_rate * (
                 reward + self._discount_factor * max_future_q - current_q
             )
-            self._q_table[(agent_id, task_id)] = updated_q
+            self._q_table[agent_id, task_id] = updated_q
 
             # Limpiar tarea de ejecucion (conservando la spec para el drain)
             del self._running_tasks[task_id]

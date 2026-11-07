@@ -22,6 +22,13 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from harness.model_router.cost_policy import (
+    COST_ESCALATION_THRESHOLD_USD,
+    COST_PRICE_TABLE,
+    estimated_cost_usd,
+    should_escalate_via_standard,
+)
+
 logger = logging.getLogger("harness.model_router.cascade_router")
 
 # ---------------------------------------------------------------------------
@@ -164,6 +171,50 @@ class CascadeRouter:
         """Ejecuta un unico tier (escape hatch o ruta directa)."""
         attempt = self._execute_attempt(task, execute_fn, tier, escalated=escalated)
         return self._build_result(tier, (attempt,))
+
+    def plan_cost_aware_escalation(
+        self,
+        input_tokens: int,
+        output_tokens: int,
+        first_tier: str = "small",
+        threshold: float = COST_ESCALATION_THRESHOLD_USD,
+    ) -> tuple[str, ...]:
+        """Plan de escalera consciente de costo (ADR fr-0001, mejora 1).
+
+        WHAT: devuelve la escalera de tiers a intentar para la tarea:
+        ``small -> frontier`` si el salto a frontier cuesta menos que
+        ``threshold``; ``small -> standard -> frontier`` si el salto es
+        caro (STEER-lite cost-aware: un escalon intermedio eficiente
+        amortiza el salto).
+        WHY: el cascade base escala directo a frontier (~10-40x mas caro)
+        sin evaluar si el salto se justifica para el presupuesto.
+        WHERE: orquestador que planifica ANTES de ``run`` (no cambia el
+        comportamiento de la cascada existente; es aditivo).
+
+        Args:
+            input_tokens: Tokens de entrada estimados de la tarea.
+            output_tokens: Tokens de salida estimados de la tarea.
+            first_tier: Tier inicial de la escalera (default ``small``).
+            threshold: Umbral USD de escalada cara.
+
+        Returns:
+            Tupla ordenada de tiers a intentar.
+
+        Raises:
+            ValueError: Si ``first_tier`` no esta en la tabla de precios.
+        """
+        if first_tier not in COST_PRICE_TABLE:
+            raise ValueError(
+                f"WHAT: tier inicial desconocido '{first_tier}'. "
+                f"WHY: debe estar en {sorted(COST_PRICE_TABLE)}. "
+                "WHERE: CascadeRouter.plan_cost_aware_escalation"
+            )
+        frontier_cost = estimated_cost_usd(
+            "frontier", input_tokens, output_tokens, COST_PRICE_TABLE
+        )
+        if should_escalate_via_standard(0.0, frontier_cost, threshold):
+            return (first_tier, "standard", "frontier")
+        return (first_tier, "frontier")
 
     def _execute_attempt(
         self,

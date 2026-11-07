@@ -1,0 +1,83 @@
+{
+  "name": "architecture-review",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario revisa conformidad de arquitectura o deuda arquitectonica. conformance, violaciones de capas, ciclos de imports, drift, fitness functions, tach, ArchGuard, hotspots. Alcance: revision de arquitectura; para DISENAR arquitectura nueva",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario revisa conformidad de arquitectura o deuda arquitectonica. conformance, violaciones de capas, ciclos de imports, drift, fitness functions, tach, ArchGuard, hotspots",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Baseline localizado (ADR/diseño) o declarado como \"sin baseline\"",
+    "tach check ejecutado (import walls) con su salida citada",
+    "Ciclos de imports verificados (ast) antes de afirmarlos",
+    "Layer violations listadas con archivo:línea",
+    "Hotspots calculados (churn × complejidad)",
+    "Cada hallazgo con severidad + evidencia; 0 BLOCK sin prueba",
+    "Fitness function recomendada para CI"
+  ],
+  "invariants": [
+    "Cada hallazgo con evidencia: archivo:línea + el comando que lo produjo; sin esto no es hallazgo",
+    "Severidad explícita: bloqueante (🔴) solo con evidencia reproducible; el resto es sugerencia (🟡)",
+    "No bloquear sin evidencia: la duda se registra como observación, nunca como BLOCK",
+    "Revisar, no diseñar: esta skill audita lo implementado; el diseño nuevo es de architecture"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario revisa conformidad de arquitectura o deuda arquitectonica. conformance, violaciones de capas, ciclos de imports, drift, fitness functions, tach, ArchGuard, hotspots"
+    ],
+    "body_keywords": [
+      "import",
+      "walls",
+      "layer",
+      "violations",
+      "archivo",
+      "check",
+      "churn",
+      "diseño"
+    ]
+  },
+  "source_sha256": "210cc35a74710e09a79eb3b4d7248cb20c6dc8afcea940a48bc54a0a61312838",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

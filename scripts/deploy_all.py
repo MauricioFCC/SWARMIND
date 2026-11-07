@@ -2,12 +2,17 @@
 Deploy & Sync — Opción A (SSOT global) + mirror local por proyecto.
 Estándar v2.5 (2026-08): OPENCODE GLOBAL = FUENTE DE VERDAD.
 
+> 2026-11: el mirror por proyecto esta DEPRECADO. Por defecto este script
+> propaga SOLO al global (~/.config/opencode); --projects reactiva el mirror
+> legacy para un proyecto concreto.
+
+
 El CEREBRO (agents/, skills/, core/) y el MOTOR (harness/) viven como
 fuente de verdad en ``~/.config/opencode/`` (config global de opencode).
 SWARMIND los sincroniza AUTOMÁTICAMENTE en cada commit (pre-commit hook →
 ``scripts/sync_opencode_global.py``).
 
-CADA PROYECTO conserva solo:
+Con --projects (legacy), cada proyecto conserva solo:
   - .opencode/          : mirror del cerebro (agents, skills, core, config)
   - skills/             : todas las skills (descubiertas dinamicamente) + registry completo
   - config propia       : project_config, routing_rules, token_budgets, .env.example
@@ -19,7 +24,7 @@ duplicacion en proyectos grandes.
 Si un script de un proyecto necesita harness, importa desde el global
 (symlink o PYTHONPATH), no copia local.
 
-Este script despliega/limpia el mirror de todos los proyectos del
+Con --projects, este script despliega/limpia el mirror de los proyectos del
 directorio raiz configurado: actualiza cerebro, elimina skills obsoletas,
 deja skills_registry.yaml completo (skills descubiertas dinamicamente) y
 preserva la configuración propia (project_config, routing_rules,
@@ -236,6 +241,36 @@ def _violates_context_guard(path: Path) -> bool:
     except OSError:
         return False
     return any(pattern.search(text) for pattern in _FORBIDDEN_CONTEXT_PATTERNS)
+
+
+#: Dir de plugin en el layout V1 (singular). V2 descubre ``plugins/``.
+_LEGACY_PLUGIN_DIR = "plugin"
+
+
+def _remove_legacy_opencode_paths(dst_opencode: Path, dry_run: bool) -> int:
+    """Elimina rutas legadas V1 del destino que la fuente ya no trae.
+
+    ``_sync_tree`` es no destructivo (no borra entradas ausentes en origen), asi
+    que tras migrar de layout (``plugin/`` -> ``plugins/``) los espejos
+    conservarian el dir singular y OpenCode cargaria el plugin DOS veces
+    (hook de compactacion duplicado).
+
+    Args:
+        dst_opencode: ``.opencode/`` del proyecto destino.
+        dry_run: Si True, solo reporta sin eliminar.
+
+    Returns:
+        Numero de entradas legadas eliminadas (o que se eliminarian).
+    """
+    legacy = dst_opencode / _LEGACY_PLUGIN_DIR
+    if not legacy.exists():
+        return 0
+    if dry_run:
+        logger.info("  🧹 (simulado) eliminaria dir legado: %s", legacy)
+        return 1
+    shutil.rmtree(legacy)
+    logger.info("  🧹 eliminado dir legado V1: %s (layout nativo: plugins/)", legacy)
+    return 1
 
 # ---------------------------------------------------------------------------
 # Config (rutas portables, ADR-0035)
@@ -894,6 +929,82 @@ def _seed_node_modules(dst_opencode: Path, dry_run: bool = False) -> int:
     return count
 
 
+#: Marca que deja SWARMIND en el AGENTS.md que genera para un proyecto. Permite
+#: refrescarlo en deploys futuros sin pisar un AGENTS.md ajeno.
+_AGENTS_MD_MARKER = "<!-- SWARMIND:generated -->"
+
+#: AGENTS.md que se genera en proyectos sin doctrina propia. Es deliberadamente
+#: corto: la doctrina completa vive en el AGENTS.md GLOBAL de opencode
+#: (~/.config/opencode/AGENTS.md) y OpenCode la combina con este (doc oficial de
+#: Instructions: global + proyectos se suman, no se pisan). Duplicar la doctrina
+#: aqui violaria SSOT y el tamano de contexto de los modelos locales 9B.
+_AGENTS_MD_TEMPLATE = """{marker}
+# Proyecto acoplado al harness SWARMIND
+
+Doctrina completa (reglas universales RSF/ERR/CMT/TKN/AGR/VER, workflow de
+verificacion y convenciones de commits): vive en el **AGENTS.md global** de
+opencode (`~/.config/opencode/AGENTS.md`) y OpenCode la combina con este
+archivo. No duplicarla aqui (SSOT + budget de contexto).
+
+Este proyecto tiene el cerebro SWARMIND desplegado en `.opencode/`:
+
+- **agentes**: `.opencode/agents/` (todos en modo `subagent`/`all` para el
+  fan-out del coordinator; el `coordinator` es `all`).
+- **skills**: `.opencode/skills/` (+ `skills_registry.yaml`).
+- **principios N1**: `.opencode/core/base_principles.min.md` (inyectados via
+  `instructions` de `.opencode/opencode.json`).
+- **comandos del harness**: `!mcp list` / `!mcp for <tarea>` / `!mem` (CLI del
+  harness, no comandos de opencode).
+
+Verificacion obligatoria (VER): ante cualquier cambio, ejecuta el check
+(tests/lint/build) y cita el output real; nunca cierres con el check rojo.
+"""
+
+
+def deploy_agents_md(project: Project, dry_run: bool = False) -> str:
+    """Garantiza un ``AGENTS.md`` en la raiz del proyecto (estandar universal).
+
+    OpenCode carga el ``AGENTS.md`` de la raiz del proyecto hacia arriba; Claude
+    Code y Codex usan el mismo archivo, asi que la doctrina del harness viaja a
+    cualquier IDE/harness sin reescribir nada (acople universal). Reglas:
+
+    - No existe  -> lo genera (puntero a la doctrina global, sin duplicarla).
+    - Existe y lleva la marca SWARMIND -> lo refresca (idempotente).
+    - Existe ajeno -> NO se toca; solo se informa (nunca pisar doctrina propia).
+
+    Args:
+        project: Proyecto destino.
+        dry_run: Si True, solo simula.
+
+    Returns:
+        ``created``/``refreshed``/``kept``/``skipped`` segun lo que aplico.
+    """
+    target = project.path / "AGENTS.md"
+    generated = _AGENTS_MD_TEMPLATE.format(marker=_AGENTS_MD_MARKER)
+
+    if target.exists():
+        current = target.read_text(encoding="utf-8", errors="replace")
+        if _AGENTS_MD_MARKER not in current:
+            logger.info(
+                "  ⏭️  AGENTS.md propio conservado (no es de SWARMIND): %s",
+                target,
+            )
+            return "kept"
+        if current == generated:
+            return "kept"
+        action = "refreshed"
+    else:
+        action = "created"
+
+    if dry_run:
+        logger.info("  📝 AGENTS.md %s (simulado): %s", action, target)
+        return action
+
+    target.write_text(generated, encoding="utf-8")
+    logger.info("  ✅ AGENTS.md %s: %s", action, target)
+    return action
+
+
 def deploy_project(
     project: Project,
     dry_run: bool = False,
@@ -945,6 +1056,7 @@ def deploy_project(
         exclude=hidden, blocked=blocked,
     )
     opencode_count += _seed_node_modules(project.path / ".opencode", dry_run)
+    opencode_count += _remove_legacy_opencode_paths(project.path / ".opencode", dry_run)
     logger.info("  ✅ .opencode/: %d archivos %s", opencode_count, "(simulado)" if dry_run else "")
 
     # 3. Motor (harness/): NO se copia a proyectos (estándar v2.5).
@@ -962,6 +1074,10 @@ def deploy_project(
     if not dry_run:
         _restore_config(project, saved_files, saved_dirs)
 
+    # 5.5 Doctrina: AGENTS.md en la raiz del proyecto (estandar universal:
+    #     lo leen opencode, Claude Code y Codex; nunca pisa uno ajeno).
+    agents_md_action = deploy_agents_md(project, dry_run)
+
     # 6. README
     if not sync_only:
         logger.info("📄 README.md — generando...")
@@ -977,6 +1093,7 @@ def deploy_project(
         "opencode_files": opencode_count,
         "harness_files": harness_count,
         "skills_deployed": skills_count,
+        "agents_md": agents_md_action,
         "status": status,
     }
 
@@ -1022,17 +1139,26 @@ def main() -> None:
     """CLI principal del deploy."""
     import argparse
     parser = argparse.ArgumentParser(
-        description="Deploy & Sync (Opción A: SSOT global + mirror local)")
+        description="Deploy & Sync (SSOT global; los proyectos ya NO reciben copias)")
     parser.add_argument("--dry-run", action="store_true", help="Solo simular (no escribe)")
-    parser.add_argument("--project", "-p", type=str, help="Solo un proyecto (alias o nombre)")
+    parser.add_argument("--project", "-p", type=str, help="Solo un proyecto (alias o nombre; implica --projects)")
+    parser.add_argument("--projects", action="store_true",
+                        help="Espeja .opencode en proyectos (legacy; por defecto solo global)")
     parser.add_argument("--sync-only", action="store_true", help="Solo sync, no regenerar README")
     parser.add_argument("--force-mirror", action="store_true",
                         help="Ignora la politica y aplica mirror a todos (escape hatch)")
     parser.add_argument("--sync-global", action="store_true",
-                        help="Solo sincronizar el global opencode (no tocar proyectos)")
+                        help="Solo sincronizar el global opencode (comportamiento por defecto)")
     parser.add_argument("--sync-harness-global", action="store_true",
                         help="Solo sync harness -> opencode global (una copia SSOT, v2.5)")
     args = parser.parse_args()
+
+    # (2026-11) El cerebro/motor vive UNA vez en ~/.config/opencode; los
+    # proyectos ya no guardan copias redundantes. El mirror es opt-in.
+    if not args.projects and not args.project and not args.sync_harness_global:
+        from sync_opencode_global import sync_global
+        sync_global(dry_run=args.dry_run)
+        return
 
     # ── Solo sync global ──
     if args.sync_global:

@@ -4,12 +4,13 @@
 
 
 name: guardian
+mode: subagent
 version: 1.0.0
 license: MIT
 compatibility: 'Python 3.12+; SWARMIND harness'
 domain: quality
-triggers: [test, testing, security, audit, risk, documentation, docs, monitor, monitoring, quality, review, check, validate, hardening, lint, format, coverage, ci, pipeline, compliance, alert, logging, observability]
-capabilities: [quality_gates, security_review, risk_assessment, documentation, monitoring, code_review, compliance, mutation_testing, adversarial_testing, property_based_testing]
+triggers: [test, testing, security, audit, risk, documentation, docs, monitor, monitoring, quality, review, check, validate, hardening, lint, format, coverage, ci, pipeline, compliance, alert, logging, observability, material probatorio, prueba judicial, evidencia legal, debido proceso probatorio]
+capabilities: [quality_gates, security_review, risk_assessment, documentation, monitoring, code_review, compliance, mutation_testing, adversarial_testing, property_based_testing, legal_evidence_audit]
 aliases: [guardian, qa, sec, risk, docs, ops]
 description: "Usar cuando se validan calidad, seguridad, tests, riesgo o documentación (test, security, audit, quality, review, coverage, compliance). Alcance: gates y verificación; para escribir tests ver test-writer; para pentesting ver security-engineer. | UPG·NAM·FRS (reglas en base_principles.md)"
 quality_metrics:
@@ -181,6 +182,14 @@ El guardian DEBE verificar que todo codigo frontend cumpla:
 - **Observability**: Logging (structured), Metrics, Tracing (OpenTelemetry)
 - **Incident Response**: Runbooks, Escalation, Post-mortems
 - **Scheduling**: Cron jobs, Market schedules, Batch processing
+
+## Auditoría probatoria legal (skill legal-evidence-audit)
+
+Cuando se audita un expediente: inventario con folios → matriz prueba/hecho/
+fuente → carga de la prueba → licitud, pertinencia y conducencia. Sin inventario
+no hay valoración; toda conclusión cita folio y fuente, marca `[OMITIDA]` lo que
+falta y `[VERIFICAR]` lo ilícito o dudoso. **Revisión humana obligatoria**: el
+agente no sustituye al juez ni al abogado.
 
 ## Anti-patrones
 - Aprobar código sin docstring o con `except: pass` sin logger (DOC/ERR).

@@ -37,8 +37,7 @@ pytestmark = pytest.mark.skipif(
 
 def _write_lf(path: Path, content: str) -> None:
     """Escribe con salto LF explicito (Windows traduce `\\n` a CRLF por defecto)."""
-    with open(path, "w", encoding="utf-8", newline="\n") as handle:
-        handle.write(content)
+    Path(path).write_text(content, encoding="utf-8", newline="\n")
 
 
 def _patch_to(repo: Path, rel: str, *, current: str, target: str) -> str:

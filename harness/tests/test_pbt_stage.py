@@ -14,10 +14,12 @@ principal ni juzga con un LLM; ejecuta la libreria Hypothesis real.
 """
 from __future__ import annotations
 
+import logging
 import time
 
 import pytest
 
+from harness.validation import pbt_stage
 from harness.validation.pbt_stage import (
     _build_script_with_present_tests,
     _extract_docstring_invariants,
@@ -200,6 +202,27 @@ class TestRunPbtStage:
         """Source vacio lanza ValueError accionable."""
         with pytest.raises(ValueError, match="func_source"):
             run_pbt_stage(EMPTY_SOURCE, "empty-agent")
+
+    def test_fallo_de_hypothesis_se_registra_en_log(
+        self, monkeypatch, caplog
+    ) -> None:
+        """Un error de infraestructura se loguea, no solo se cuenta como bug.
+
+        WHY: un fallo de import del sandbox (p. ej. ABI distinto) se reportaba
+        como "3 bugs" sin causa visible en el log de CI.
+        """
+        monkeypatch.setattr(
+            pbt_stage,
+            "_run_hypothesis_in_subprocess",
+            lambda *args, **kwargs: (
+                False,
+                "ModuleNotFoundError: No module named 'hypothesis._native'",
+            ),
+        )
+        with caplog.at_level(logging.WARNING, logger="harness.validation.pbt_stage"):
+            report = run_pbt_stage(GOOD_SUM_SOURCE, "infra-agent", max_examples=1)
+        assert report["bugs_found"] >= 1
+        assert "hypothesis._native" in caplog.text
 
     def test_invalid_source_skips_gracefully(self) -> None:
         """Source con sintaxis invalida: reporte con 0 hypotheses, sin crash."""

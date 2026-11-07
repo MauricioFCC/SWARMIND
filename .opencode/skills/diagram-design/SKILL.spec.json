@@ -1,0 +1,84 @@
+{
+  "name": "diagram-design",
+  "version": "1.1.0",
+  "description": "Usar cuando el usuario pide un diagrama visual editorial. arquitectura, flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar, org chart, mermaid, drawio, SVG, diagrama. Alcance: diagramas visuales editoriales; para arquitectura ver",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario pide un diagrama visual editorial. arquitectura, flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar, org chart, mermaid, drawio, SVG, diagrama",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Tipo visual (de los 27) y patron semantico elegidos",
+    "Presupuesto de complejidad respetado (<=9 nodos, <=12 flechas)",
+    "Conectores ortogonales, sin diagonales ni cruces sin bridge",
+    "Accesible: role=img, aria-labelledby, title, IDs prefijados",
+    "Style guide confirmado (no defaults en proyecto con marca)",
+    "Salida: HTML autocontenido con SVG inline"
+  ],
+  "invariants": [
+    "Rounded right-angle (orthogonal) connectors mandatory (quarter-arc r=8, min r=6)",
+    "Label-to-connector margin 6–10px, always — label never sits *on* its arrow",
+    "No overlapping connectors (bridge/hop; parallel arrows ≥12px apart)",
+    "Shared edge → fan attach points (≥12px, formula L * k / (N+1))",
+    "No connector behind a non-endpoint box (dashed-transit exception only)",
+    "Label mask must not overlap a node drawn after it"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario pide un diagrama visual editorial. arquitectura, flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar, org chart, mermaid, drawio, SVG, diagrama"
+    ],
+    "body_keywords": [
+      "guide",
+      "references",
+      "primitive",
+      "style",
+      "node",
+      "accent",
+      "selection",
+      "semantic"
+    ]
+  },
+  "source_sha256": "6b4bf0e219f372429a738edfe60f86a5ccd38cc2797db4bbafbeb31a95844d7b",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

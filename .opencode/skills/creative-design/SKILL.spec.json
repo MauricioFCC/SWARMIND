@@ -1,0 +1,79 @@
+{
+  "name": "creative-design",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario busca ideacion o diseno creativo. design thinking, ideacion, prototipado, branding, identidad visual, UX, brainstorming. Alcance: ideacion y diseno creativo; para UI/design systems ver frontend-uiux",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario busca ideacion o diseno creativo. design thinking, ideacion, prototipado, branding, identidad visual, UX, brainstorming",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Brief que traduce negocio en objetivo visual",
+    "Maximo 2-3 conceptos con rationale",
+    "Identidad escalable (tokens/variantes)",
+    "Prototipo testeable con usuario",
+    "Iteracion segun feedback"
+  ],
+  "invariants": [
+    "ANTI-HEDGING: Un concepto fuerte con rationale (maximo 2 variantes), nunca brainstorm sin curaduria",
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario busca ideacion o diseno creativo. design thinking, ideacion, prototipado, branding, identidad visual, UX, brainstorming"
+    ],
+    "body_keywords": [
+      "brand",
+      "variantes",
+      "concepto",
+      "rationale",
+      "awwwards",
+      "brainstorm",
+      "curaduria",
+      "escalable"
+    ]
+  },
+  "source_sha256": "421bf4152cb48efe8b21d6f598e3200e253304f428e3509c12e38f1f547f6aa9",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

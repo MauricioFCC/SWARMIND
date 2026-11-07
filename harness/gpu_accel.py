@@ -1,4 +1,4 @@
-﻿"""
+"""
 GPU Acceleration Module — Swarmind Harness
 
 Provee aceleracion GPU para operaciones del sistema multi-agente.
@@ -75,8 +75,7 @@ def force_cpu() -> None:
 
 def force_gpu() -> None:
     """Forzar uso de GPU si esta disponible."""
-    global HAVE_CUDA, DEVICE
-    global _HARDWARE_CUDA  # noqa: PLW0602
+    global HAVE_CUDA, DEVICE, _HARDWARE_CUDA  # noqa: PLW0602
     if _HARDWARE_CUDA:
         HAVE_CUDA = True
         DEVICE = "cuda:0"
@@ -135,7 +134,18 @@ def get_device_info() -> dict[str, Any]:
         Dict con: available, device, device_name, memory_gb,
         cuda_version (si aplica) y torch_version.
     """
-    import torch as _torch
+    try:
+        import torch as _torch
+    except ImportError:
+        # GPU opcional: `pip install ".[gpu]"`. Sin torch se reporta el estado
+        # degradado en vez de romper health-checks/diagnosticos.
+        return {
+            "available": False,
+            "device": "cpu",
+            "device_name": "CPU (torch no instalado)",
+            "memory_gb": 0.0,
+            "torch_version": None,
+        }
 
     info: dict[str, Any] = {
         "available": HAVE_CUDA,

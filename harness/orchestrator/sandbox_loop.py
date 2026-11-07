@@ -1,4 +1,4 @@
-﻿"""
+"""
 
 Sandbox Loop Autonomo — Quality Gate - Sandbox Loop
 

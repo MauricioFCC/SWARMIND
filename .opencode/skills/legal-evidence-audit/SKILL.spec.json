@@ -1,0 +1,83 @@
+{
+  "name": "legal-evidence-audit",
+  "version": "1.0.0",
+  "description": "Usar cuando se audita el material probatorio de un caso. inventario probatorio, pruebas omitidas, contradicciones, carga de la prueba, valoración, completitud, debido proceso probatorio. Alcance: auditoría de evidencia; para cadena de custodia ver",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando se audita el material probatorio de un caso. inventario probatorio, pruebas omitidas, contradicciones, carga de la prueba, valoración, completitud, debido proceso probatorio",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Inventario completo con folios y soporte",
+    "Pruebas de la contraparte identificadas",
+    "Pruebas omitidas o ilegibles documentadas",
+    "Matriz de contradicciones registrada",
+    "Carga de la prueba asignada por hecho",
+    "Licitud, pertinencia y conducencia evaluadas",
+    "Conclusiones con evidencia y revisión humana"
+  ],
+  "invariants": [
+    "Sin inventario no hay valoración: primero se listan todas las pruebas",
+    "Toda conclusión cita folio, prueba y fuente; lo que falta se marca [OMITIDA]",
+    "Las pruebas adversas se documentan, nunca se omiten",
+    "La licitud dudosa se marca [VERIFICAR] antes de usar la prueba"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando se audita el material probatorio de un caso. inventario probatorio, pruebas omitidas, contradicciones, carga de la prueba, valoración, completitud, debido proceso probatorio"
+    ],
+    "body_keywords": [
+      "licitud",
+      "hecho",
+      "conducencia",
+      "folio",
+      "folios",
+      "omitida",
+      "pertinencia",
+      "expediente"
+    ]
+  },
+  "source_sha256": "a498e5e384a3347a288361cb5fd3a4e0e3941529c227e4202452d2c199a50052",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

@@ -86,3 +86,7 @@ if daily_risk.cvar_99 > PORTFOLIO_CVAR_LIMIT {
 - [Modelos de riesgo (APIs CQE)](references/modelos-riesgo.md) — módulos Rust `risk_management`/`portfolio_risk`, EVT, pipeline de optimización.
 - [Ejecución algorítmica y TCA](references/ejecucion-algoritmica.md) — módulo `execution`, market making Avellaneda-Stoikov, análisis de costes.
 - [Frontier 2026 — ejecución y riesgo](references/frontier-2026.md) — actor-critic mean-field, PIKAN, tabla 2026.
+
+## Ejemplo
+
+Con capital 100k y riesgo 1 % por trade: position size = (100k x 0.01) / (entry - stop); si el slippage medido supera 10 bps, reduce el tamano a la mitad.

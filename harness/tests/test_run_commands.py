@@ -166,18 +166,19 @@ class TestDbCommands:
         _handle_db_list_imports()
 
     def test_db_stats(self, mock_store, patch_migrator):
-        """!db stats debe mostrar estadisticas de BD activa."""
-        mock_migrator = MagicMock()
-        mock_migrator.get_stats.return_value = {
-            "path": "/db", "total_chunks": 100, "size_human": "10MB",
-            "last_modified": "2026-01-01", "collections": [
-                {"name": "docs", "count": 50},
-                {"name": "code", "count": -1, "error": "corrupt"},
-            ],
-        }
-        patch_migrator.return_value = mock_migrator
+        """!db stats usa el store RuscaDB activo (no el migrador legado)."""
+        mock_store.list_collections.return_value = ["docs", "code"]
+        mock_store.get_collection_stats.side_effect = [
+            {"item_count": 50},
+            {"item_count": 10},
+        ]
+        mock_store.current_lsn.return_value = 42
+        mock_store.query_cache_stats.return_value = {"hits": 3, "misses": 1}
         from harness.run_commands import _handle_db_stats
         _handle_db_stats(mock_store)
+        assert mock_store.get_collection_stats.call_count == 2
+        mock_store.current_lsn.assert_called_once()
+        patch_migrator.assert_not_called()
 
     def test_db_rollback_ok(self, patch_migrator):
         """!db rollback con ruta valida debe restaurar."""
@@ -423,6 +424,38 @@ class TestHooksCommands:
             from harness.run_commands import _handle_hooks_status
             _handle_hooks_status()
         mock_fn.assert_called_once()
+
+
+class TestMcpCommands:
+    """Tests para comandos !mcp: list, for, skill (catalogo de herramientas)."""
+
+    def test_mcp_list_dispatches(self):
+        """!mcp list despacha al handler _handle_mcp_list."""
+        with patch("harness.run_commands._handle_mcp_list") as mock_fn:
+            from harness.run_commands import run_command
+            run_command("!mcp list")
+        mock_fn.assert_called_once()
+
+    def test_mcp_for_passes_task(self):
+        """!mcp for <tarea> despacha el handler con la tarea."""
+        with patch("harness.run_commands._handle_mcp_for") as mock_fn:
+            from harness.run_commands import run_command
+            run_command("!mcp for haz scraping de la web")
+        mock_fn.assert_called_once()
+        assert "scraping" in mock_fn.call_args[0][0]
+
+    def test_mcp_skill_passes_skill(self):
+        """!mcp skill <nombre> despacha el handler con la skill."""
+        with patch("harness.run_commands._handle_mcp_skill") as mock_fn:
+            from harness.run_commands import run_command
+            run_command("!mcp skill reverse-engineering")
+        mock_fn.assert_called_once()
+        assert "reverse-engineering" in mock_fn.call_args[0][0]
+
+    def test_mcp_for_real_handler_resolves_tools(self):
+        """El handler real resuelve herramientas del catalogo (sin lanzar)."""
+        from harness.run_commands import _handle_mcp_for
+        _handle_mcp_for("!mcp for haz ingenieria inversa del binario")
 
 
 # ===================================================================

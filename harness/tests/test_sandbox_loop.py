@@ -1,4 +1,4 @@
-﻿"""
+"""
 Tests para SandboxLoop — bucle autonomo de calidad para codigo generado.
 
 Cubre: execute_cycle (exito/fallo/circuit breaker/exception),

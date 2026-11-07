@@ -72,7 +72,7 @@ def dedupe_keep_last(
         event
         for index, event in enumerate(events)
         if last_index[
-            (str(event.get("role", "")), str(event.get("content", "")))
+            str(event.get("role", "")), str(event.get("content", ""))
         ]
         == index
     ]

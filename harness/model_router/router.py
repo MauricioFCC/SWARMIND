@@ -1,4 +1,4 @@
-﻿"""
+"""
 ModelRouter — Enrutamiento optimizado por complejidad semántica (ADR-0041 H7).
 
 Implementación mejorada que reemplaza al ModelRouter heredado (28KB -> 10.8KB).

@@ -1,0 +1,82 @@
+{
+  "name": "swarm-release-ops",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. Alcance: releases y CI/CD del repo SWARMIND; para infra generica ver devops-infra",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "CI T1 verde (lint, tests, seguridad) antes de merge",
+    "Lockfile auditado (no el sistema) y sin CVEs HIGH",
+    "Branch protection y auto-merge configurados",
+    "Tests portables Windows/Linux",
+    "Version/changelog actualizados",
+    "Rollback documentado"
+  ],
+  "invariants": [
+    "ANTI-HEDGING: Pipeline con gates explicitos y rollback probado; nunca push directo a main",
+    "Runner: ubuntu-latest (24.04). Nunca asumir Windows en CI",
+    "Nunca backslashes literales en asserts de paths: usar os.sep o Path",
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos"
+    ],
+    "body_keywords": [
+      "lockfile",
+      "release",
+      "historico",
+      "verde",
+      "audita",
+      "pytest",
+      "blocked",
+      "pyproject"
+    ]
+  },
+  "source_sha256": "ca1df9a31d1aac8b7cabf2879e1ea62c2216ac8eefe1ff3134a638aef5685a8b",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

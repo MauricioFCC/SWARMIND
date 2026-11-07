@@ -113,3 +113,7 @@ Pedido: DRAFT → APPROVED → PICKING → SHIPPED → DELIVERED
 - POS dependiente 100% de conexion.
 - Saltarse la validacion fiscal.
 - Estados de venta/pago sin trazabilidad.
+
+## Ejemplo
+
+Cierre de caja: cuadra ventas en efectivo/tarjeta, descuenta devoluciones, aplica redondeo y emite factura con IVA; si el arqueo difiere > 1 %, bloquea el cierre y abre incidencia.

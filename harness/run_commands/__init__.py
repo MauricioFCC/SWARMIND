@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import sys
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -46,6 +47,9 @@ from .handlers_extra import (
     _get_files_to_watch,
     _handle_evolve_mutate,
     _handle_hooks_status,
+    _handle_mcp_for,
+    _handle_mcp_list,
+    _handle_mcp_skill,
     _handle_schedule_add,
     _handle_schedule_list,
     _handle_watch_mode,
@@ -64,11 +68,22 @@ from .handlers_other import (
     _handle_db_list_imports,
     _handle_db_migrate,
     _handle_db_rollback,
-    _handle_db_stats,
     _handle_hooks_install,
     _handle_hooks_uninstall,
     _handle_rag_ingest,
+    _handle_rag_search,
     _handle_rag_stats,
+    _handle_update,
+)
+from .handlers_ruscadb import (
+    _handle_db_backup,
+    _handle_db_capabilities,
+    _handle_db_explain,
+    _handle_db_gc,
+    _handle_db_health,
+    _handle_db_reconcile,
+    _handle_db_stats,
+    _handle_db_time_travel,
 )
 
 logger = logging.getLogger("harness.run_commands")
@@ -81,9 +96,17 @@ logger = logging.getLogger("harness.run_commands")
 #         "cmd"       -> h(cmd)       | "none"  -> h()
 #         "root"      -> h(cmd, harness_root)
 _COMMAND_TABLE: tuple[tuple[str, str, str], ...] = (
+    ("!update", "_handle_update", "root"),
     ("!evolve mutate", "_handle_evolve_mutate", "store_cmd"),
     ("!schedule add", "_handle_schedule_add", "store_cmd"),
     ("!schedule list", "_handle_schedule_list", "store"),
+    ("!db capabilities", "_handle_db_capabilities", "none"),
+    ("!db health", "_handle_db_health", "store"),
+    ("!db backup", "_handle_db_backup", "store_cmd"),
+    ("!db gc", "_handle_db_gc", "store"),
+    ("!db explain", "_handle_db_explain", "store_cmd"),
+    ("!db time-travel", "_handle_db_time_travel", "store_cmd"),
+    ("!db reconcile", "_handle_db_reconcile", "store"),
     ("!db migrate", "_handle_db_migrate", "store_cmd"),
     ("!db list-imports", "_handle_db_list_imports", "none"),
     ("!db stats", "_handle_db_stats", "store"),
@@ -97,7 +120,11 @@ _COMMAND_TABLE: tuple[tuple[str, str, str], ...] = (
     ("!hooks install", "_handle_hooks_install", "none"),
     ("!hooks uninstall", "_handle_hooks_uninstall", "none"),
     ("!hooks status", "_handle_hooks_status", "none"),
+    ("!mcp list", "_handle_mcp_list", "none"),
+    ("!mcp for", "_handle_mcp_for", "cmd"),
+    ("!mcp skill", "_handle_mcp_skill", "cmd"),
     ("!rag ingest", "_handle_rag_ingest", "store_cmd"),
+    ("!rag search", "_handle_rag_search", "store_cmd"),
     ("!rag stats", "_handle_rag_stats", "store"),
 )
 
@@ -123,22 +150,25 @@ def _get_pkg_attr(attr_name: str, fallback_fn: Any) -> Any:
 def _create_store() -> Any:
     """Crea perezosamente el vector store para handlers que lo requieren.
 
+    Delega en la factory de puertos (``vector_store_factory``), que resuelve
+    el backend efectivo (RuscaDB por defecto) y valida ``VectorStorePort``.
+
     Returns:
-        Instancia de LanceVectorStore.
+        Adaptador de memoria que cumple ``VectorStorePort``.
 
     Raises:
         RuntimeError: si el backend no esta disponible
             (WHAT fallo import / WHY store requerido / WHERE modulo).
     """
     try:
-        from harness.db.vector_store import LanceVectorStore
+        from harness.memory_rag.vector_store_factory import get_vector_store
     except ImportError as exc:
         raise RuntimeError(
             f"RuntimeError: no se pudo crear el vector store ({exc}). WHY: "
-            "el comando requiere LanceVectorStore y su backend no esta "
+            "el comando requiere un vector store y su backend no esta "
             "disponible. WHERE: run_commands._create_store."
         ) from exc
-    return LanceVectorStore()
+    return get_vector_store()
 
 
 def run_command(
@@ -154,8 +184,9 @@ def run_command(
     Args:
         cmd: Comando completo (p. ej. ``"!iteration end --quick"``).
         harness_root: Raiz del harness (requerido por comandos de iteracion).
-        **kwargs: Reservado; solo se consume ``store`` para inyectar el
-            vector store y evitar su creacion perezosa.
+        **kwargs: ``store`` inyecta el vector store; ``bus`` (opcional) publica
+            ``command.start/end/error`` con ``trace_id`` correlacionado;
+            ``trace_id`` fija la correlacion (si se omite se genera).
 
     Returns:
         Lo que retorne el handler (normalmente None).
@@ -164,6 +195,28 @@ def run_command(
         ValueError: si el comando no esta en la tabla canonica
             (WHAT desconocido / WHY sin handler asociado / WHERE tabla).
     """
+    bus = kwargs.pop("bus", None)
+    trace_id = kwargs.pop("trace_id", None) or uuid.uuid4().hex
+    _emit_command(bus, "command.start", cmd, trace_id)
+    try:
+        result = _resolve_and_run(cmd, harness_root, kwargs)
+    except Exception as exc:
+        _emit_command(
+            bus,
+            "command.error",
+            cmd,
+            trace_id,
+            error=f"{type(exc).__name__}: {exc}",
+        )
+        raise
+    _emit_command(bus, "command.end", cmd, trace_id)
+    return result
+
+
+def _resolve_and_run(
+    cmd: str, harness_root: Path | None, kwargs: dict[str, Any]
+) -> Any:
+    """Resuelve el handler del comando y lo ejecuta (tabla canonica)."""
     cmd_clean = cmd.strip().lower()
     for prefix, handler_name, signature in _COMMAND_TABLE:
         if not cmd_clean.startswith(prefix):
@@ -186,6 +239,23 @@ def run_command(
     )
 
 
+def _emit_command(
+    bus: Any,
+    kind: str,
+    cmd: str,
+    trace_id: str,
+    *,
+    error: str = "",
+) -> None:
+    """Publica un evento de ciclo de vida del comando (no-op sin bus)."""
+    if bus is None:
+        return
+    payload: dict[str, Any] = {"cmd": cmd}
+    if error:
+        payload["error"] = error
+    bus.publish(kind, payload, trace_id=trace_id, source="run_commands")
+
+
 __all__ = [
     "_BOLD",
     "_CYAN",
@@ -201,10 +271,17 @@ __all__ = [
     "_err",
     "_get_files_to_watch",
     "_get_pkg_attr",
+    "_handle_db_backup",
+    "_handle_db_capabilities",
+    "_handle_db_explain",
+    "_handle_db_gc",
+    "_handle_db_health",
     "_handle_db_list_imports",
     "_handle_db_migrate",
+    "_handle_db_reconcile",
     "_handle_db_rollback",
     "_handle_db_stats",
+    "_handle_db_time_travel",
     "_handle_evolve_mutate",
     "_handle_hooks_install",
     "_handle_hooks_status",
@@ -215,10 +292,15 @@ __all__ = [
     "_handle_iteration_history",
     "_handle_iteration_quick",
     "_handle_iteration_report",
+    "_handle_mcp_for",
+    "_handle_mcp_list",
+    "_handle_mcp_skill",
     "_handle_rag_ingest",
+    "_handle_rag_search",
     "_handle_rag_stats",
     "_handle_schedule_add",
     "_handle_schedule_list",
+    "_handle_update",
     "_handle_watch_mode",
     "_ok",
     "_parse_iteration_flags",

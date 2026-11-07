@@ -185,3 +185,24 @@ class TestResult:
         assert result.source_entries == 3
         assert result.removed == result.source_entries - len(result.entries)
         assert result.compacted >= 0
+
+
+class TestConsolidateDirPerformance:
+    """Regresion del O(n^2) al nombrar archivos sin key."""
+
+    def test_entries_without_key_get_unique_files(self, tmp_path):
+        """Entradas sin key usan su posicion (no list.index) como nombre."""
+        source = tmp_path / "sesiones"
+        dest = tmp_path / "conocimiento"
+        source.mkdir()
+        entries = [
+            {"content": f"idea distinta numero {i} sobre tema {i}", "age_days": 1}
+            for i in range(25)
+        ]
+        (source / "s.json").write_text(json.dumps(entries), encoding="utf-8")
+        consolidator = DreamingConsolidator(similarity_threshold=0.99)
+        result = consolidator.consolidate_dir(str(source), str(dest))
+        files = sorted(dest.glob("*.json"))
+        assert len(files) == len(result.entries)
+        assert len({f.name for f in files}) == len(files)
+

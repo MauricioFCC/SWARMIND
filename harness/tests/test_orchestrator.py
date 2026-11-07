@@ -22,7 +22,7 @@ class TestTaskOrchestrator:
         with patch.object(
             LanceVectorStore, "_try_import_lancedb", return_value=None
         ):
-            store = LanceVectorStore(db_path="/tmp/test_mem", allow_fallback=True)
+            store = LanceVectorStore(db_path="/tmp/test_mem", allow_fallback=True, backend="lancedb")
         self.orch = TaskOrchestrator(vector_store=store)
 
     @pytest.mark.asyncio

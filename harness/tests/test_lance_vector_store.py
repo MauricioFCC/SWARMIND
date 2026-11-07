@@ -1,4 +1,4 @@
-﻿# pragma: allowlist secret
+# pragma: allowlist secret
 """Tests exhaustivos para LanceVectorStore con branch coverage >80%.
 
 Los tests se han organizado en varios archivos para mejor mantenibilidad:
@@ -34,7 +34,7 @@ from harness.memory_rag.lance_vector_store import (
     LanceVectorStore,
     VectorStoreError,
 )
-from harness.memory_rag.memory_config import MemoryConfig
+from harness.memory_rag.memory_config import MemoryBackend, MemoryConfig
 
 # ===========================================================================
 # TESTS — Errores y hardening
@@ -48,7 +48,7 @@ class TestErrorHandling:
         """El mensaje de ImportError es claro y descriptivo."""
         with patch.object(LanceVectorStore, "_try_import_lancedb", return_value=None):  # noqa: SIM117
             with pytest.raises(ImportError) as excinfo:
-                LanceVectorStore(db_path="/tmp/x", allow_fallback=False)
+                LanceVectorStore(db_path="/tmp/x", allow_fallback=False, backend="lancedb")
         msg = str(excinfo.value)
         assert "LanceDB no esta instalado" in msg
         assert "pip install lancedb" in msg
@@ -67,18 +67,18 @@ class TestErrorHandling:
             patch("harness.memory_rag.lance_vector_store.Path.mkdir"),
         ]
         with patches[0], patches[1], pytest.raises(RuntimeError) as excinfo:
-            LanceVectorStore(db_path="/custom/path", allow_fallback=False)
+            LanceVectorStore(db_path="/custom/path", allow_fallback=False, backend="lancedb")
         msg = str(excinfo.value)
         assert "/custom/path" in msg
         assert "access denied" in msg
 
     def test_insert_lancedb_open_fails_propagates(self, lancedb_store, mock_lancedb):
-        """Si open_table falla en insert, la excepción se propaga."""
+        """Si LanceDB falla al crear/abrir la tabla, el error se propaga."""
         mock_lancedb["db_conn"].open_table.side_effect = RuntimeError(
             "table missing"
         )
         vec = np.ones((1, 384), dtype=np.float32)
-        with pytest.raises(RuntimeError) as excinfo:
+        with pytest.raises(VectorStoreError) as excinfo:
             lancedb_store.insert("missing_table", vec, [{"k": "v"}])
         assert "table missing" in str(excinfo.value)
 
@@ -107,6 +107,7 @@ class TestErrorHandling:
     def test_from_config_with_config(self):
         """from_config con MemoryConfig explícito."""
         cfg = MemoryConfig(
+            backend=MemoryBackend.LANCEDB,
             lancedb_path="/custom/lancedb",
             allow_fallback=True,
         )

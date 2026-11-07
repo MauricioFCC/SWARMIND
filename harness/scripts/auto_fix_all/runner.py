@@ -33,8 +33,7 @@ def fix_file(filepath: Path, dry_run: bool = False) -> dict[str, int]:
     }
 
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            original_content = f.read()
+        original_content = Path(filepath).read_text(encoding="utf-8")
     except Exception as e:  # noqa: BLE001
         logger.warning(f"  [SKIP] {filepath.name}: {e}")
         return stats
@@ -66,8 +65,7 @@ def fix_file(filepath: Path, dry_run: bool = False) -> dict[str, int]:
             logger.info(f"  [DRY-RUN] {rel_path}: print={pcount} hints={tcount} docstrings={dcount} todos={tocount}")
         else:
             try:
-                with open(filepath, "w", encoding="utf-8") as f:
-                    f.write(content)
+                Path(filepath).write_text(content, encoding="utf-8")
                 logger.info(f"  [FIXED] {rel_path}: print={pcount} hints={tcount} docstrings={dcount} todos={tocount}")
             except Exception as e:  # noqa: BLE001
                 logger.warning(f"  [ERROR] {rel_path}: {e}")

@@ -1,0 +1,83 @@
+{
+  "name": "math-doc",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario necesita analisis matematico o formulas. papers matematicos, LaTeX, demostraciones, estadistica, algebra, calculo, modelado matematico. Alcance: analisis matematico y formulas; para papers cientificos ver science-doc",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario necesita analisis matematico o formulas. papers matematicos, LaTeX, demostraciones, estadistica, algebra, calculo, modelado matematico",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Notacion LaTeX preservada y unificada",
+    "Demostracion con hipotesis -> pasos -> conclusion",
+    "Saltos logicos detectados y justificados",
+    "Significancia corregida por multiples comparaciones",
+    "Reproducibilidad de resultados evaluada"
+  ],
+  "invariants": [
+    "LaTeX: Detectar y preservar ecuaciones en formato $...$, $$...$$, \\\\(...\\\\), \\\\[...\\\\]",
+    "Notación: Unificar notación matemática (ej. sin → \\sin, <= → ≤)",
+    "Símbolos: Mapa de símbolos comunes (letras griegas, operadores, flechas)",
+    "Estructura: Identificar teoremas, lemas, corolarios, definiciones, ejemplos",
+    "Estructura lógica: Verificar que una demostración tenga: hipótesis → pasos → conclusión",
+    "Saltos lógicos: Detectar pasos no justificados en cadenas de implicaciones"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario necesita analisis matematico o formulas. papers matematicos, LaTeX, demostraciones, estadistica, algebra, calculo, modelado matematico"
+    ],
+    "body_keywords": [
+      "notación",
+      "ecuaciones",
+      "matemática",
+      "math",
+      "demostracion",
+      "justificados",
+      "notacion",
+      "saltos"
+    ]
+  },
+  "source_sha256": "02107d5e515868214d9e9749a5c5568fe3dec17259be4b123c826187310f65e2",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

@@ -2,9 +2,15 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 import harness.run_commands as _rc
+from harness.self_update import (
+    Action,
+    apply_update,
+    audit_log,
+    check_remote,
+    fmt_version,
+)
 
 
 def _handle_rag_ingest(store, cmd: str) -> None:
@@ -45,6 +51,60 @@ def _handle_rag_ingest(store, cmd: str) -> None:
             _rc.logger.warning("[RAG] \u26a0\ufe0f %d errores", stats["errors"])
     except Exception as e:  # noqa: BLE001
         _rc.logger.error("[RAG] \u274c Error: %s", e)
+
+
+def _parse_rag_query(raw: str) -> tuple[str, str, bool]:
+    """Separa consulta, ``--mode`` y ``--rerank`` de ``!rag search``."""
+    tokens = raw.split()
+    mode = ""
+    if "--mode" in tokens:
+        index = tokens.index("--mode")
+        mode = tokens[index + 1] if index + 1 < len(tokens) else ""
+        del tokens[index : index + 2]
+    rerank = "--rerank" in tokens
+    query = " ".join(token for token in tokens if not token.startswith("--")).strip()
+    return query, mode, rerank
+
+
+def _handle_rag_search(store, cmd: str) -> None:
+    """Handle ``!rag search ...`` con GraphRAG, FTS avanzado y rerank."""
+    query, mode, rerank = _parse_rag_query(cmd[len("!rag search") :].strip())
+    if not query:
+        _rc.logger.info("[RAG] Uso: !rag search <consulta> [--mode exact|fuzzy] [--rerank]")
+        return
+    collections = store.list_collections()
+    collection = "rag_chunks" if "rag_chunks" in collections else "memory"
+    if collection not in collections:
+        _rc.logger.info("[RAG] No hay colecciones con contenido. Ejecuta '!rag ingest'.")
+        return
+    results = _rag_candidates(store, collection, query, mode)
+    if rerank and results and callable(getattr(store, "rerank", None)):
+        results = store.rerank(collection, query, results, top_k=5)
+    _log_rag_hits(query, collection, results)
+
+
+def _rag_candidates(store, collection: str, query: str, mode: str) -> list[dict]:
+    """Candidatos por FTS avanzado (con ``--mode``) o GraphRAG dual-level."""
+    if mode and callable(getattr(store, "fts_search_mode", None)):
+        return store.fts_search_mode(collection, query, mode=mode, top_k=5)
+    if mode:
+        _rc.logger.info("[RAG] Store sin FTS por modo; uso GraphRAG")
+    from harness.memory_rag.graph_rag_retriever import GraphRAGRetriever
+
+    return GraphRAGRetriever(store, collection=collection, depth=2).retrieve(
+        query, top_k=5
+    )
+
+
+def _log_rag_hits(query: str, collection: str, results: list[dict]) -> None:
+    """Imprime los resultados de ``!rag search`` (o el aviso de vacío)."""
+    if not results:
+        _rc.logger.info("[RAG] Sin resultados para: %s", query)
+        return
+    _rc.logger.info("[RAG] %d resultados en '%s':", len(results), collection)
+    for rank, item in enumerate(results, start=1):
+        text = (item.get("text") or "").replace("\n", " ")[:160]
+        _rc.logger.info("  %d. [%.4f] %s", rank, item.get("score", 0.0), text)
 
 
 def _handle_rag_stats(store) -> None:
@@ -115,25 +175,6 @@ def _handle_db_list_imports() -> None:
         _rc.logger.info("[DB] No se detectaron bases de datos en import/")
 
 
-def _handle_db_stats(store: Any) -> None:
-    """Handle ``!db stats``."""
-    from harness.db.migrate_db import DBMigrator
-    migrator = DBMigrator()
-    stats = migrator.get_stats()
-    _rc.logger.info("\n[DB] Estadisticas de BD activa:")
-    _rc.logger.info("  Path:   {}".format(stats.get("path", "N/A")))
-    _rc.logger.info("  Chunks: {}".format(stats["total_chunks"]))
-    _rc.logger.info("  Tamano: {}".format(stats.get("size_human", "N/A")))
-    _rc.logger.info("  Ultima mod: {}".format(stats.get("last_modified", "N/A")))
-    _rc.logger.info("  Colecciones:")
-    for coll in stats["collections"]:
-        count = coll["count"]
-        if count >= 0:
-            _rc.logger.info("  * {}: {} registros".format(coll["name"], count))
-        else:
-            _rc.logger.info("  * {}: ERROR {}".format(coll["name"], coll.get("error", "")))
-
-
 def _handle_db_rollback(cmd: str) -> None:
     """Handle ``!db rollback <backup_path>``."""
     from harness.db.migrate_db import DBMigrator
@@ -188,9 +229,86 @@ __all__ = [
     "_handle_db_list_imports",
     "_handle_db_migrate",
     "_handle_db_rollback",
-    "_handle_db_stats",
     "_handle_hooks_install",
     "_handle_hooks_uninstall",
     "_handle_rag_ingest",
     "_handle_rag_stats",
 ]
+
+# ---------------------------------------------------------------------------
+# !update (self-update desde runtime; spec self-update-notice.md)
+# ---------------------------------------------------------------------------
+
+
+def _handle_update(cmd: str, harness_root: Path | None) -> None:
+    """``!update check|apply|audit``: auto-actualizacion con guards.
+
+    Rutea a las funciones puras de ``harness.self_update`` usando el journal
+    default del repo (``.swarmind/update_log.jsonl``). El ``apply`` respeta los
+    guards anti-reversion (ff-only, dirty worktree, max_seen); el downgrade
+    forzado requiere ``--allow-downgrade`` y ``--justification=...``.
+    """
+    repo = Path(harness_root or Path.cwd()).resolve()
+    log_path = repo / ".swarmind" / "update_log.jsonl"
+    accion, allow_downgrade, justification = _parse_update_args(cmd)
+    check = check_remote(repo) if accion in {"check", "apply"} else None
+    if accion == "check":
+        _log_update_check(check)
+        return
+    if accion == "audit":
+        violations = audit_log(log_path)
+        _rc.logger.info(
+            "!update audit | violaciones=%d %s",
+            len(violations),
+            violations[:5],
+        )
+        return
+    _apply_update_with_guards(repo, log_path, check, allow_downgrade, justification)
+
+
+def _parse_update_args(cmd: str) -> tuple[str, bool, str]:
+    """Parsea ``!update``: accion (default check), flag y justification."""
+    tokens = cmd.split()[1:]
+    accion = next((t for t in tokens if t in {"check", "apply", "audit"}), "check")
+    allow = "--allow-downgrade" in tokens
+    justification = ""
+    for token in tokens:
+        if token.startswith("--justification="):
+            justification = token.split("=", 1)[1].strip()
+    return accion, allow, justification
+
+
+def _log_update_check(check) -> None:
+    """Log del estado frente al remoto (sin mutar nada)."""
+    remote_v = check.remote_version
+    _rc.logger.info(
+        "!update | estado=%s behind=%d ahead=%d local=%s remote=%s",
+        check.state.value,
+        check.behind,
+        check.ahead,
+        fmt_version(check.local_version),
+        fmt_version(remote_v) if remote_v is not None else "?",
+    )
+
+
+def _apply_update_with_guards(
+    repo: Path, log_path: Path, check, allow: bool, justification: str
+) -> None:
+    """Aplica con los guards anti-reversion y reporta el resultado."""
+    result = apply_update(
+        check,
+        repo=repo,
+        log_path=log_path,
+        allow_downgrade=allow,
+        downgrade_justification=justification,
+    )
+    _rc.logger.info(
+        "!update | accion=%s changed=%s detail=%s from=%s to=%s",
+        result.action.value,
+        result.changed,
+        result.detail,
+        fmt_version(result.from_version),
+        fmt_version(result.to_version),
+    )
+    if result.action is Action.FAILED:
+        _rc.logger.error("!update | apply fallo: %s", result.detail)

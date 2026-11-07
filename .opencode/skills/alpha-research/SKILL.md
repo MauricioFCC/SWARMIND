@@ -60,3 +60,7 @@ project_agnostic: true
 - [Factor Zoo y ML avanzado](references/factor-zoo-y-ml.md) — catálogo de factores, pipeline de neutralización, modelos ML.
 - [Validación y construcción de portafolio](references/validacion-y-portafolio.md) — CV purgado, DSR, NCO, APIs CQE.
 - [Frontier 2026 — alpha discovery](references/frontier-2026.md) — AlphaCFG, PIKAN, tabla de modelos 2026.
+
+## Ejemplo
+
+Antes de aceptar `ts_mean(volume, 30)`: define la hipotesis, corre 5 folds walk-forward y exige RankIC fuera de muestra > 0.02 con t-stat > 2; si falla, se falsa.

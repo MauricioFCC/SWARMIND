@@ -1,0 +1,78 @@
+{
+  "name": "sustainability",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario trabaja sostenibilidad o ESG. ESG, impacto ambiental, economia circular, cambio climatico, reportes sostenibilidad. Alcance: ESG e impacto ambiental; para estrategia de negocio ver business-strategy",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario trabaja sostenibilidad o ESG. ESG, impacto ambiental, economia circular, cambio climatico, reportes sostenibilidad",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Metrica con unidad, baseline y fuente",
+    "Alcance de emisiones (1/2/3) definido",
+    "Framework de reporte (GRI/SASB/TCFD) declarado",
+    "Datos verificables y trazables",
+    "Plan de reduccion con metas"
+  ],
+  "invariants": [
+    "## Anti-patrones (prohibidos)"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario trabaja sostenibilidad o ESG. ESG, impacto ambiental, economia circular, cambio climatico, reportes sostenibilidad"
+    ],
+    "body_keywords": [
+      "tcfd",
+      "baseline",
+      "carbono",
+      "emisiones",
+      "greenwashing",
+      "huella",
+      "sasb",
+      "carbon"
+    ]
+  },
+  "source_sha256": "4a159de4c52231ac7f8dfcbdf6f552f393fc4036fbce34c9ba12abc06ad00fcd",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}
