@@ -1,3 +1,36 @@
+## [11.85] - 2026-11-07
+
+### Changed
+- **`harness/kernel` vuelve al umbral 0.90 (meta alcanzada)**: la ronda de
+  asserts de `test_kernel.py` subió el mutation score de **62.6 % → 90.8 %**
+  (257/283 mutantes evaluables). `scripts/mutation_baseline.json` queda en
+  0.90 (ratchet: solo sube con `--update-baseline`).
+
+### Added
+- `harness/tests/test_kernel.py`: **18 tests** que cubren los huecos que
+  dejaban sobrevivir mutantes: defaults documentados (`fail_fast=False`,
+  `capacity=256`, `EventLog(10_000)`, `trace_id/source=""`), acumulación de
+  contadores (`errors`/`unregistered`/`by_kind`/`rejected` con ≥2 eventos),
+  contrato completo de `MessageEnvelope.as_dict`, `clear()`, validaciones de
+  `register`/constructor con `match=`, propagación `source`/`trace_id` en
+  `submit` y snapshot de `stats`.
+
+### Fixed
+- **Hermeticidad ante corridas repetidas en el mismo proceso** (mutmut:
+  fase `stats` → fase `clean tests`; `pytest-repeat`):
+  - `TestReadSkillMd` (`test_agent_dispatcher.py`): fixture autouse que limpia
+    el `lru_cache` de `_read_skill_md` (sin él, la segunda corrida leía el
+    valor cacheado y `read_text` no se llamaba).
+  - `test_acceso_a_simbolo_carga_modulo_bajo_demanda`
+    (`test_lazy_loading.py`): invalida el símbolo cacheado en los globals de
+    `harness` (PEP 562) para que `__getattr__` ejecute la carga bajo demanda.
+  Ambos eran los bloqueos exactos de la medición de `memory_rag`.
+
+### Evidence
+- WSL: `mutation_scope --all-core --run` → `harness/kernel: score=0.9081`
+  (antes 0.6263), exit 0. Sobrevivientes: 26 (antes 105).
+- `pytest -q` completo: **7818 passed, 13 skipped, 1 xfailed**.
+
 ## [11.84] - 2026-11-07
 
 ### Security

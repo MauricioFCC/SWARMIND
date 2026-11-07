@@ -56,6 +56,13 @@ class TestLazyLoading:
 
         import harness
 
+        # En un proceso que ya corrio la suite el simbolo puede quedar en los
+        # globals de `harness` (PEP 562 cachea en __dict__ y no pasa por
+        # __getattr__); se invalida para que la carga bajo demanda sea
+        # observable tambien en la segunda corrida (mutmut stats -> clean,
+        # pytest-repeat).
+        harness.__dict__.pop("TaskManager", None)
+
         # Acceder a TaskManager debe cargar task_manager pero NO agent_bus
         _ = harness.TaskManager
         assert "harness.orchestrator.task_manager" in sys.modules

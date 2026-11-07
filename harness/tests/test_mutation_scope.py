@@ -28,18 +28,18 @@ class TestPackageMapping:
     @pytest.mark.parametrize(
         ("package", "expected"),
         [
-            ("harness/kernel", 0.60),
+            ("harness/kernel", 0.90),
             ("harness/domain", 0.75),
             ("harness/memory_rag", 0.70),
             ("harness", 0.40),
         ],
     )
     def test_thresholds_by_package(self, package, expected):
-        """Kernel parte de su baseline medido; el default es 40 %.
+        """Kernel exige su meta (90 %, alcanzada); el default es 40 %.
 
-        El 90 % de kernel es la **meta** del spec (MU-02); el umbral efectivo
-        es un ratchet calibrado con la primera medicion real (62.6 % el
-        2026-11-07) para no tener el gate permanentemente en rojo.
+        El umbral de kernel se calibró con la primera medición real (62.6 %)
+        y volvió a la meta del spec cuando la ronda de asserts de
+        ``test_kernel.py`` lo llevó a 90.8 %.
         """
         assert scope_mod.threshold_for(package) == pytest.approx(expected)
 
@@ -249,7 +249,7 @@ class TestScores:
         assert scope_mod.score_from_stats(stats) is None
 
     def test_evaluate_uses_package_threshold(self):
-        """Kernel al 55 % falla (umbral 60 %); memory_rag al 85 % pasa."""
+        """Kernel al 55 % falla (umbral 90 %); memory_rag al 85 % pasa."""
         scope = {
             "harness/kernel": {"sources": ["a"], "tests": []},
             "harness/memory_rag": {"sources": ["b"], "tests": []},
@@ -257,16 +257,16 @@ class TestScores:
         failures = scope_mod.evaluate(
             scope, {"harness/kernel": 0.55, "harness/memory_rag": 0.85}
         )
-        assert failures == ["harness/kernel: mutation score 55.0% < 60%"]
+        assert failures == ["harness/kernel: mutation score 55.0% < 90%"]
 
     def test_evaluate_uses_baseline_when_higher(self):
         """El baseline calibrado manda si supera el umbral del paquete (ratchet)."""
         scope = {"harness/kernel": {"sources": ["a"], "tests": []}}
-        baseline = {"harness/kernel": 0.62}
+        baseline = {"harness/kernel": 0.95}
 
-        assert scope_mod.evaluate(scope, {"harness/kernel": 0.62}, baseline) == []
-        failures = scope_mod.evaluate(scope, {"harness/kernel": 0.61}, baseline)
-        assert failures == ["harness/kernel: mutation score 61.0% < 62%"]
+        assert scope_mod.evaluate(scope, {"harness/kernel": 0.95}, baseline) == []
+        failures = scope_mod.evaluate(scope, {"harness/kernel": 0.94}, baseline)
+        assert failures == ["harness/kernel: mutation score 94.0% < 95%"]
 
     def test_update_baseline_only_raises(self, tmp_path):
         """El baseline nunca baja: una regresión no lo recalibra hacia abajo."""

@@ -294,8 +294,19 @@ class TestReadSkillMd:
     """Tests para _read_skill_md.
 
     NOTA: _read_skill_md tiene @lru_cache, por lo que cada test usa
-    un path diferente para evitar contaminacion entre tests.
+    un path diferente para evitar contaminacion entre tests. Ademas se limpia
+    la cache en un fixture autouse: un runner que ejecute la suite mas de una
+    vez en el MISMO proceso (mutmut: stats -> clean tests, pytest-repeat)
+    reutiliza el modulo importado y el segundo arranque encontraria el valor
+    cacheado (``read_text`` no se llamaria).
     """
+
+    @pytest.fixture(autouse=True)
+    def _clear_read_skill_md_cache(self):
+        """Vacia el lru_cache de ``_read_skill_md`` alrededor de cada test."""
+        AgentDispatcher._read_skill_md.cache_clear()
+        yield
+        AgentDispatcher._read_skill_md.cache_clear()
 
     def _setup_path_mocks(self, path_str: str):
         """Helper: crea mocks para Path con control sobre exists/read_text."""

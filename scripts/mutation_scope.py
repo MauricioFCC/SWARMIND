@@ -38,13 +38,13 @@ _PROTOCOL_DECL = re.compile(r"@runtime_checkable|\(\s*Protocol\s*\)")
 
 #: Umbral de mutation score por paquete (core alto, adapters bajo).
 #:
-#: ``harness/kernel`` está en **0.60** (baseline calibrado): la primera
-#: medición real del gate (2026-11-07, WSL) dio 62.6 % sobre 286 mutantes.
-#: El 90 % sigue siendo la meta del spec (MU-02) y se alcanza subiendo este
-#: valor (o el baseline) a medida que los tests maduran. Ver
-#: ``scripts/mutation_baseline.json`` (ratchet: solo sube).
+#: ``harness/kernel``: **0.90** (meta alcanzada el 2026-11-07). Historia de la
+#: calibración: la primera medición real fue 62.6 % (umbral transitorio 0.60);
+#: tras la ronda de asserts de ``test_kernel.py`` subió a **90.8 %**, así que
+#: el umbral vuelve a la meta del spec (MU-02). El ratchet de
+#: ``scripts/mutation_baseline.json`` solo sube (``--update-baseline``).
 MUTATION_THRESHOLDS: dict[str, float] = {
-    "harness/kernel": 0.60,
+    "harness/kernel": 0.90,
     "harness/domain": 0.75,
     "harness/memory_rag": 0.70,
 }
