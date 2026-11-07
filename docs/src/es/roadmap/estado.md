@@ -5,6 +5,13 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-07c)
+
+### Estado 2026-11-07 (Ciclo 11.84 — deps, docs y medición por paquete)
+- `uv.lock`: authlib 1.9.5, filelock 3.32.7, joserfc 1.8.0 (cierra alertas
+  Trivy/CodeQL de dependencias).
+- `mutation_scope --packages` para calibrar umbrales sin depender del diff.
+- Docs frontier 11.75/11.76 commiteados y archivo CRLF normalizado.
 ## Estado Actual (2026-11-07b)
 
 ### Estado 2026-11-07 (Ciclo 11.83 — mutación medible)

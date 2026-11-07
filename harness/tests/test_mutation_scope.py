@@ -301,6 +301,30 @@ class TestAllCore:
             name.startswith(("harness/kernel/", "harness/domain/")) for name in files
         )
 
+    def test_packages_argument_builds_scope(self, tmp_path):
+        """`--packages <dir>` permite medir un paquete concreto (calibración)."""
+        tests_root = tmp_path / "harness" / "tests"
+        tests_root.mkdir(parents=True)
+        (tests_root / "test_x.py").write_text(
+            "from harness.memory_rag.store import S\n", encoding="utf-8"
+        )
+        root = tmp_path
+        (root / "harness" / "memory_rag").mkdir(parents=True)
+        (root / "harness" / "memory_rag" / "store.py").write_text(
+            "def put(v):\n    return v\n", encoding="utf-8"
+        )
+        (root / "harness" / "memory_rag" / "__init__.py").write_text("", encoding="utf-8")
+
+        files = scope_mod.files_for_packages(("harness/memory_rag",), root=root)
+        scope = scope_mod.build_scope(files, tests_root, root=root)
+
+        assert files == [
+            "harness/memory_rag/__init__.py",
+            "harness/memory_rag/store.py",
+        ]
+        assert list(scope) == ["harness/memory_rag"]
+        assert scope["harness/memory_rag"]["tests"] == ["harness/tests/test_x.py"]
+
     def test_missing_package_is_ignored(self, tmp_path):
         """Un paquete inexistente devuelve lista vacía (no rompe)."""
         assert scope_mod.files_for_packages(("harness/nope",), root=tmp_path) == []
