@@ -149,3 +149,39 @@ class TestStats:
         stats = kg.get_stats()
         assert stats["types"].get("skill") == 1
         assert stats["types"].get("agent") == 1
+
+
+class TestSeedFromSkills:
+    """seed_from_skills: mapa skill -> agente primario (28 skills, 5 agentes)."""
+
+    def test_crea_una_conexion_por_skill(self, kg: KnowledgeGraph) -> None:
+        """Devuelve el numero de skills y crea sus aristas y nodos."""
+        assert kg.seed_from_skills(Path(".opencode/skills")) == 28
+        stats = kg.get_stats()
+        assert stats["edges"] == 28
+        # 28 skills + 5 agentes distintos (scientist/builder/guardian/coordinator/evolve)
+        assert stats["nodes"] == 33
+
+    @pytest.mark.parametrize(
+        ("agente", "esperados"),
+        [
+            ("scientist", 14),
+            ("builder", 7),
+            ("guardian", 3),
+            ("coordinator", 2),
+            ("evolve", 2),
+        ],
+    )
+    def test_rol_asignado_por_skill(
+        self, kg: KnowledgeGraph, agente: str, esperados: int
+    ) -> None:
+        """Cada skill cae en su agente primario (cualquier cambio se nota)."""
+        kg.seed_from_skills(Path("."))
+        vecinos = kg.query(f"agent:{agente}", relation="uses")
+        assert len(vecinos) == esperados
+
+    def test_seed_es_idempotente_en_conteo(self, kg: KnowledgeGraph) -> None:
+        """El mapa fijo produce siempre el mismo numero de conexiones."""
+        primera = kg.seed_from_skills(Path("."))
+        segunda = kg.seed_from_skills(Path("."))
+        assert primera == segunda == 28

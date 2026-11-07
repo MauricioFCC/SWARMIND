@@ -157,7 +157,8 @@ class PromptEvolver:
                 after_section.append(line)
 
         if output_found:
-            return before_section + output_section + after_section
+            # antes devolvia before+output+after == orden original (mutante B inutil)
+            return output_section + before_section + after_section
         return list(lines)
 
     @staticmethod
@@ -317,7 +318,9 @@ class PromptEvolver:
         logger.info("Promoted %s -> %s", winner_path, original_path)
 
         # Log to LanceDB
-        self._log_promotion(agent_name, winner_path, original_path, backup_path)
+        # `winner` es Path: _log_promotion llama a read_text() y con el str
+        # original la promocion fallaba siempre que había vector store.
+        self._log_promotion(agent_name, winner, original_path, backup_path)
 
         return True
 
@@ -328,13 +331,21 @@ class PromptEvolver:
         original_path: Path,
         backup_path: Path,
     ) -> None:
-        """Record the promotion event in LanceDB."""
+        """Record the promotion event in LanceDB.
+
+        Args:
+            agent: Nombre del agente promovido.
+            winner_path: Ruta del mutante ganador (``Path``).
+            original_path: Ruta del perfil original (ya sobrescrito).
+            backup_path: Respaldo del original previo a la promoción; de ahí
+                salen los ``tokens_before`` (el original ya no existe en disco).
+        """
         if self._vector_store is None:
             logger.info("No vector store; promotion event not logged to LanceDB.")
             return
 
-        # Estimate token counts
-        original_tokens = len(original_path.read_text(encoding="utf-8")) * 0.75
+        # Estimate token counts (antes = respaldo, despues = ganador ya aplicado)
+        original_tokens = len(backup_path.read_text(encoding="utf-8")) * 0.75
         winner_tokens = len(winner_path.read_text(encoding="utf-8")) * 0.75
 
         mutation_type = winner_path.stem.split("_mutant_")[-1] if "_mutant_" in winner_path.stem else "unknown"
