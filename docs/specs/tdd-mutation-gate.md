@@ -9,7 +9,7 @@
 | # | Decisión | Fundamento |
 |---|---|---|
 | MU-01 | Mutación **scoped a los archivos tocados por el PR** (`git diff base...HEAD`); una corrida por paquete afectado | mutmut maintainer en contra del gate CI directo (issue #95); costo lineal |
-| MU-02 | Umbral por **paquete**, no global: kernel **90 %** (alcanzado: 90.8 % el 2026-11-07), domain **75 %**, memory_rag **70 %**, resto **40 %** | los últimos puntos son mutantes equivalentes; Stryker `break: 70`; core más exigente que adapters. La primera medición real de kernel fue 62.6 %, así que el umbral se calibró a un baseline transitorio (0.60 + ratchet 0.62) y volvió a la meta cuando la ronda de asserts de `test_kernel.py` llevó el score a 90.8 % |
+| MU-02 | Umbral por **paquete**, no global: kernel **90 %** (alcanzado: 90.8 % el 2026-11-07), domain **75 %**, memory_rag **baseline 48 %** (meta 70 %), resto **40 %** | los últimos puntos son mutantes equivalentes; Stryker `break: 70`; core más exigente que adapters. La primera medición real de kernel fue 62.6 %, así que el umbral se calibró a un baseline transitorio (0.60 + ratchet 0.62) y volvió a la meta cuando la ronda de asserts de `test_kernel.py` llevó el score a 90.8 %; memory_rag se midió por primera vez el 2026-11-07 en **48.4 %** (25 704 mutantes), por lo que su umbral pasó de 70 % a un baseline de 48 % y sube con `--update-baseline` |
 | MU-03 | Cobertura sigue como **piso separado** (≥ 80 % core); nunca sustituye mutación (un test sin asserts da 100 % coverage y 0 % mutation) | evidencia CircleCI |
 | MU-04 | Config generada en `[mutmut]` (`source_paths`, `only_mutate`, `pytest_add_cli_args_test_selection`) desde el diff | mutmut 3.8.1: esas claves son las de 3.x (`--paths-to-mutate` es 2.x) |
 | MU-05 | **Windows: WSL/CI obligatorio** (`--run` devuelve 2 con instrucciones); `--dry-run`/`--write-config` sí funcionan | mutmut usa `os.fork` (POSIX-only) |
@@ -55,6 +55,13 @@ CI: el job `mutation` usa
   crash de recolección o 0.0 %). Tras la ronda de asserts guiada por
   `mutmut results` + `mutmut show`: **257 muertos / 26 sobrevivientes /
   90.8 %** → el umbral vuelve a 0.90 y `--update-baseline` fija el ratchet.
+- **Primera medición de `harness/memory_rag`** (`--packages
+  harness/memory_rag`, 149 fuentes): **25 704 mutantes** → 7 948 muertos /
+  8 445 sobrevivientes / 9 269 sin tests = **48.4 %**. Mayores bolsas de
+  sobrevivientes: `semantic_cache.core` (469), `semantic_cache.ops` (409),
+  `agent_kpi_tracker.recording` (331), `knowledge_graph` (314),
+  `agent_kpi_tracker.reporting` (309). Umbral calibrado a baseline **48 %**
+  (meta 70 % pendiente).
 - Verificación adversarial de tools: el cleanup RUF100 falló el gate (F5 +1)
   y la suite expuso el daño → revertido (lección en `python-314-practices.md` §2).
 

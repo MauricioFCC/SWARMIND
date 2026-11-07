@@ -1,3 +1,25 @@
+## [11.86] - 2026-11-07
+
+### Changed
+- `MUTATION_THRESHOLDS["harness/memory_rag"]`: **0.70 → 0.48** (baseline de
+  la primera medición real: **48.4 %** sobre 25 704 mutantes) y
+  `scripts/mutation_baseline.json` incorpora `harness/memory_rag: 0.48`
+  (ratchet, solo sube con `--update-baseline`). El 70 % del spec (MU-02)
+  queda documentado como meta pendiente: subirlo exige rondas de tests
+  dirigidas a los mayores bolsas de sobrevivientes.
+
+### Added
+- **Primera medición de `harness/memory_rag`** con
+  `mutation_scope --packages harness/memory_rag` (149 fuentes, 110 tests
+  seleccionados): 7 948 muertos / 8 445 sobrevivientes / 9 269 sin tests =
+  **48.4 %**. Mayores bolsas: `semantic_cache.core` (469),
+  `semantic_cache.ops` (409), `agent_kpi_tracker.recording` (331),
+  `knowledge_graph` (314), `agent_kpi_tracker.reporting` (309).
+
+### Evidence
+- WSL (mutmut 3.8.1, mismo comando que CI): `mutmut run` exit 0 y
+  `mutants/mutmut-cicd-stats.json` con 25 704 mutantes.
+
 ## [11.85] - 2026-11-07
 
 ### Changed
