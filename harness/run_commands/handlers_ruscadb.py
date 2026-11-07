@@ -13,6 +13,9 @@ from typing import Any
 import harness.run_commands as _rc
 from harness.memory_rag.ruscadb_capabilities import probe, recommendations
 
+#: Errores esperables de un store heterogéneo (no se captura BaseException).
+_ERRORS = (OSError, RuntimeError, ValueError, KeyError, TypeError, AttributeError)
+
 
 def _call(store: Any, name: str, default: Any = None) -> Any:
     """Invoca ``store.name()`` si existe; devuelve ``default`` si no."""
@@ -21,7 +24,7 @@ def _call(store: Any, name: str, default: Any = None) -> Any:
         return default
     try:
         return method()
-    except Exception as exc:  # el comando reporta, no rompe
+    except _ERRORS as exc:  # el comando reporta, no rompe
         return f"error: {type(exc).__name__}: {exc}"
 
 
@@ -32,7 +35,7 @@ def _call1(store: Any, name: str, arg: Any, default: Any = None) -> Any:
         return default
     try:
         return method(arg)
-    except Exception as exc:
+    except _ERRORS as exc:
         return f"error: {type(exc).__name__}: {exc}"
 
 
@@ -80,7 +83,7 @@ def _handle_db_backup(store: Any, cmd: str) -> None:
     destination = parts[2].strip()
     try:
         written = store.backup(destination)
-    except Exception as exc:
+    except _ERRORS as exc:
         _rc.logger.info("[DB] Backup falló: %s", exc)
         return
     _rc.logger.info("[DB] Backup creado en %s (%s bytes)", destination, written)
