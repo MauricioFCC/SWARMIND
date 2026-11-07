@@ -119,6 +119,22 @@ class TestConfig:
         assert "pytest_add_cli_args_test_selection =" in text
         assert "harness/tests/test_loop.py" in text
 
+    def test_render_config_copies_repo_root_deps(self):
+        """Copia ``scripts/`` y ``.opencode/``: los tests los leen de ``mutants/``.
+
+        WHY: mutmut solo copiaba ``source_paths`` (``harness/``); los tests
+        seleccionados importan ``scripts`` (``test_mutation_scope``,
+        ``test_distill_failures_cli``) y leen la SSOT ``.opencode/``
+        (``test_multi_harness_export_contract``) -> la recoleccion fallaba con
+        ``ModuleNotFoundError``/``FileNotFoundError`` y abortaba ``mutmut run``.
+        """
+        text = scope_mod.render_config(
+            ["harness/kernel/loop.py"], ["harness/tests/test_loop.py"]
+        )
+        assert "also_copy =" in text
+        assert "scripts/" in text
+        assert ".opencode/" in text
+
     def test_write_config_roundtrip(self, tmp_path):
         """El archivo escrito contiene las fuentes del scope."""
         target = tmp_path / "setup.cfg"

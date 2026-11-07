@@ -1,3 +1,23 @@
+## [11.82] - 2026-11-07
+
+### Fixed
+- Job `mutation`/`mutation-nightly` (CI): mutmut solo copiaba `source_paths`
+  (`harness/`) a `mutants/`, y los tests seleccionados importan `scripts`
+  (`test_mutation_scope`, `test_distill_failures_cli`) y leen la SSOT
+  `.opencode/` (`test_multi_harness_export_contract`). La recoleccion abortaba
+  con `ModuleNotFoundError: No module named 'scripts'` / `FileNotFoundError:
+  mutants/scripts/check_architecture.py` y el job salia rojo. La config
+  generada por `scripts/mutation_scope.py` añade ahora `also_copy` con
+  `scripts/` y `.opencode/`.
+- Workflow `Docs`: GitHub Pages estaba deshabilitado (`GET /pages` → 404) y
+  `configure-pages` corre con `enablement: false`, así que el job fallaba en
+  `Setup Pages` en cada push a `main`. Pages se habilitó con
+  `build_type=workflow` (https://mauriciofcc.github.io/SWARMIND/).
+
+### Tests
+- `test_mutation_scope`: la config generada debe incluir `also_copy` con
+  `scripts/` y `.opencode/`.
+
 ## [11.81] - 2026-11-06
 
 ### Fixed
