@@ -169,7 +169,8 @@ class TestThresholdYScore:
     def test_threshold_lancedb_borde(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """El camino LanceDB aplica el mismo borde inclusivo 0.70."""
         monkeypatch.setattr(
-            "harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",
+            SkillGenerator,
+            "find_in_registry",
             lambda _query: None,
         )
         dispatcher = AgentDispatcher(vector_store=_empty_vector_store())
@@ -183,7 +184,8 @@ class TestThresholdYScore:
     def test_threshold_lancedb_debajo_descarta(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """El camino LanceDB descarta por debajo de 0.70."""
         monkeypatch.setattr(
-            "harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",
+            SkillGenerator,
+            "find_in_registry",
             lambda _query: None,
         )
         dispatcher = AgentDispatcher(vector_store=_empty_vector_store())
@@ -240,7 +242,8 @@ class TestInheritNoAfectaSeleccion:
         )
         entry: dict[str, Any] = {"name": "broken", "path": str(skill_md)}
         monkeypatch.setattr(
-            "harness.orchestrator.agent_dispatcher.SkillGenerator.find_in_registry",
+            SkillGenerator,
+            "find_in_registry",
             lambda _query: dict(entry),
         )
         result = AgentDispatcher().find_skill_for_task("tarea")

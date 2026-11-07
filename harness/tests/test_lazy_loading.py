@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib
 import sys
+from types import ModuleType
 
 import pytest
 
@@ -15,12 +16,28 @@ def _revierte_purga():
     los modulos reimportados despues son OTRA instancia y los tests que
     ligaron la original (imports de collection) leen estado rancio
     (misma enfermedad que tumbaba local_executor/watchmode en suite).
+
+    Ademas se reapuntan los submodulos a su paquete: al reimportar un paquete
+    purgado se crea un objeto NUEVO sin los atributos de submodulo, y los
+    tests que parchean por ruta ("harness.orchestrator.agent_dispatcher.X")
+    acaban haciendo getattr sobre ese objeto nuevo y fallando (mutmut corre
+    stats y clean en el mismo proceso -> MUT-MU-11).
     """
     antes = dict(sys.modules)
     yield
-    for mod in [m for m in sys.modules if m not in antes]:
+    # Solo se revierten modulos de harness: purgar paquetes de terceros que se
+    # importaron durante el test provoca re-imports imposibles (p. ej.
+    # lancedb panica en env_logger al segundo init), y no aportan frescura.
+    for mod in [m for m in sys.modules if m not in antes and m.startswith("harness.")]:
         del sys.modules[mod]
     sys.modules.update(antes)
+    for nombre, modulo in list(sys.modules.items()):
+        if "." not in nombre:
+            continue
+        padre_nombre, hijo = nombre.rsplit(".", 1)
+        padre = sys.modules.get(padre_nombre)
+        if isinstance(padre, ModuleType) and not hasattr(padre, hijo):
+            setattr(padre, hijo, modulo)
 
 
 class TestLazyLoading:
@@ -74,6 +91,9 @@ class TestLazyLoading:
     def test_acceso_secundario_usa_cache(self):
         """Segundo acceso a simbolo debe ser directo (sin __getattr__)."""
         import harness
+        # Invalida la cache de globals (PEP 562): en un proceso que ya corrio
+        # la suite el simbolo puede venir cacheado y el modulo no se importaria.
+        harness.__dict__.pop("AgentBus", None)
         # Primer acceso: carga el modulo
         _ = harness.AgentBus
         # Segundo acceso: debe usar cache (globals), no __getattr__
