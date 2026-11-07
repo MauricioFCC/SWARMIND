@@ -1,3 +1,31 @@
+## [11.77] - 2026-11-06
+
+### Added
+- `harness/memory_rag/ruscadb_capabilities.py`: `probe()` con 22 features y
+  los símbolos del C-ABI que requiere cada una; reporta faltantes y recomienda
+  rebuild de `ruscadb-ffi`.
+- Comandos `!db` nativos de RuscaDB: `capabilities` (DLL vs features),
+  `health` (integridad, LSN, cache, búsqueda binaria, grafo), `backup <ruta>`,
+  `gc`, `reconcile`; `!db stats` ahora usa el store activo (no el migrador
+  LanceDB).
+- `harness/tests/test_ruscadb_utilization.py` (9): probe completo/antiguo,
+  handlers y tabla canónica.
+
+### Changed
+- `harness/run.py` usa la factory de memoria (`_create_store`) en modo tarea,
+  daemon y `!db`: RuscaDB es el backend por defecto; antes forzaba
+  `LanceVectorStore()` y desperdiciaba RuscaDB.
+- `ruscadb._CAPABILITY_NAMES` reporta `prepare`, `execute_prepared`,
+  `search_quantized` y `search_filtered` (SPEC-0184/0181).
+- Documentación: `docs/specs/ruscadb-utilization-audit.md` (matriz
+  capacidad→uso→acción) y comandos en la guía de uso.
+
+### Verified
+- Matriz de utilización: integridad/backup/LSN/cache/grafo ahora visibles;
+  búsqueda binaria, blobs, async, FTS avanzado y rerank quedan como roadmap
+  explícito (no se finge uso).
+- Tests de RuscaDB/CLI: 227 passed; ruff y arquitectura+ratchet verdes.
+
 ## [11.76] - 2026-11-06
 
 ### Added

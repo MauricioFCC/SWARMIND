@@ -166,18 +166,19 @@ class TestDbCommands:
         _handle_db_list_imports()
 
     def test_db_stats(self, mock_store, patch_migrator):
-        """!db stats debe mostrar estadisticas de BD activa."""
-        mock_migrator = MagicMock()
-        mock_migrator.get_stats.return_value = {
-            "path": "/db", "total_chunks": 100, "size_human": "10MB",
-            "last_modified": "2026-01-01", "collections": [
-                {"name": "docs", "count": 50},
-                {"name": "code", "count": -1, "error": "corrupt"},
-            ],
-        }
-        patch_migrator.return_value = mock_migrator
+        """!db stats usa el store RuscaDB activo (no el migrador legado)."""
+        mock_store.list_collections.return_value = ["docs", "code"]
+        mock_store.get_collection_stats.side_effect = [
+            {"item_count": 50},
+            {"item_count": 10},
+        ]
+        mock_store.current_lsn.return_value = 42
+        mock_store.query_cache_stats.return_value = {"hits": 3, "misses": 1}
         from harness.run_commands import _handle_db_stats
         _handle_db_stats(mock_store)
+        assert mock_store.get_collection_stats.call_count == 2
+        mock_store.current_lsn.assert_called_once()
+        patch_migrator.assert_not_called()
 
     def test_db_rollback_ok(self, patch_migrator):
         """!db rollback con ruta valida debe restaurar."""

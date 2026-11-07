@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 import harness.run_commands as _rc
 from harness.self_update import (
@@ -150,25 +149,6 @@ def _handle_db_list_imports() -> None:
         _rc.logger.info("[DB] No se detectaron bases de datos en import/")
 
 
-def _handle_db_stats(store: Any) -> None:
-    """Handle ``!db stats``."""
-    from harness.db.migrate_db import DBMigrator
-    migrator = DBMigrator()
-    stats = migrator.get_stats()
-    _rc.logger.info("\n[DB] Estadisticas de BD activa:")
-    _rc.logger.info("  Path:   {}".format(stats.get("path", "N/A")))
-    _rc.logger.info("  Chunks: {}".format(stats["total_chunks"]))
-    _rc.logger.info("  Tamano: {}".format(stats.get("size_human", "N/A")))
-    _rc.logger.info("  Ultima mod: {}".format(stats.get("last_modified", "N/A")))
-    _rc.logger.info("  Colecciones:")
-    for coll in stats["collections"]:
-        count = coll["count"]
-        if count >= 0:
-            _rc.logger.info("  * {}: {} registros".format(coll["name"], count))
-        else:
-            _rc.logger.info("  * {}: ERROR {}".format(coll["name"], coll.get("error", "")))
-
-
 def _handle_db_rollback(cmd: str) -> None:
     """Handle ``!db rollback <backup_path>``."""
     from harness.db.migrate_db import DBMigrator
@@ -223,7 +203,6 @@ __all__ = [
     "_handle_db_list_imports",
     "_handle_db_migrate",
     "_handle_db_rollback",
-    "_handle_db_stats",
     "_handle_hooks_install",
     "_handle_hooks_uninstall",
     "_handle_rag_ingest",

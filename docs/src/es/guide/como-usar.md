@@ -68,10 +68,17 @@ El sistema aplica **Swiss Watch**: todos los agentes relevantes arrancan simulta
 |---------|-------------|
 | `!health` | Estado del sistema: agentes activos, skills cargados, sesion actual |
 | `!metrics` | Metricas de rendimiento: tokens consumidos, latencia, hits de cache |
-| `!skill list` | Lista todos los skills disponibles (33 skills en 12 dominios) |
+| `!skill list` | Lista todos los skills disponibles (49 skills en 12 dominios) |
 | `!session` | Muestra el estado de la sesion actual y subtareas pendientes |
 | `!reset` | Reinicia el contexto de la sesion actual |
 | `!help` | Muestra esta guia rapida de comandos |
+| `!db capabilities` | Qué expone la DLL de RuscaDB y qué símbolos faltan |
+| `!db health` | Integridad, LSN, cache de consultas, búsqueda binaria y grafo |
+| `!db stats` | Colecciones y métricas del store RuscaDB activo |
+| `!db backup <ruta>` | Backup online del motor |
+| `!db gc` | Recolecta blobs no referenciados |
+| `!db reconcile` | Reconcilia colecciones con el motor |
+| `!rag ingest` / `!rag search` / `!rag stats` | Ingesta, búsqueda híbrida y estado del RAG |
 
 Ejemplo:
 

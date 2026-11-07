@@ -46,7 +46,7 @@ def patch_harness_imports():
 
 @pytest.fixture
 def mock_store():
-    """Mock de LanceVectorStore."""
+    """Mock del store de memoria (factory)."""
     return MagicMock()
 
 
@@ -238,9 +238,9 @@ class TestHandleDaemonMode:
     """Tests para _handle_daemon_mode — modo daemon."""
 
     def test_daemon_inicia_scheduler(self):
-        """Debe crear LanceVectorStore y Scheduler, luego esperar Ctrl+C."""
+        """Debe crear el store de memoria y Scheduler, luego esperar Ctrl+C."""
         mock_sched = MagicMock()
-        with patch("harness.run.LanceVectorStore"), \
+        with patch("harness.run._create_store"), \
              patch("harness.orchestrator.scheduler.Scheduler",
                    return_value=mock_sched), \
              patch("time.sleep", side_effect=KeyboardInterrupt):
@@ -261,8 +261,8 @@ class TestHandleCommand:
 
     @pytest.fixture(autouse=True)
     def patch_store(self):
-        """Parchea LanceVectorStore para todos los tests de handle_command."""
-        with patch("harness.run.LanceVectorStore", return_value=MagicMock()):
+        """Parchea la factory de memoria para todos los tests de handle_command."""
+        with patch("harness.run._create_store", return_value=MagicMock()):
             yield
 
     def test_evolve_mutate(self):
@@ -312,6 +312,41 @@ class TestHandleCommand:
         with patch("harness.run._handle_db_rollback") as mock_fn:
             from harness.run import _handle_command
             _handle_command("!db rollback /path/backup")
+        mock_fn.assert_called_once()
+
+    def test_db_capabilities(self):
+        """Debe llamar _handle_db_capabilities para !db capabilities."""
+        with patch("harness.run._handle_db_capabilities") as mock_fn:
+            from harness.run import _handle_command
+            _handle_command("!db capabilities")
+        mock_fn.assert_called_once()
+
+    def test_db_health(self):
+        """Debe llamar _handle_db_health para !db health."""
+        with patch("harness.run._handle_db_health") as mock_fn:
+            from harness.run import _handle_command
+            _handle_command("!db health")
+        mock_fn.assert_called_once()
+
+    def test_db_backup(self):
+        """Debe llamar _handle_db_backup para !db backup."""
+        with patch("harness.run._handle_db_backup") as mock_fn:
+            from harness.run import _handle_command
+            _handle_command("!db backup /tmp/backup")
+        mock_fn.assert_called_once()
+
+    def test_db_gc(self):
+        """Debe llamar _handle_db_gc para !db gc."""
+        with patch("harness.run._handle_db_gc") as mock_fn:
+            from harness.run import _handle_command
+            _handle_command("!db gc")
+        mock_fn.assert_called_once()
+
+    def test_db_reconcile(self):
+        """Debe llamar _handle_db_reconcile para !db reconcile."""
+        with patch("harness.run._handle_db_reconcile") as mock_fn:
+            from harness.run import _handle_command
+            _handle_command("!db reconcile")
         mock_fn.assert_called_once()
 
     def test_iteration_end(self):
@@ -509,7 +544,7 @@ class TestMain:
     def patch_main_deps(self):
         """Parchea dependencias pesadas de main()."""
         with patch("harness.run.check_first_run"), \
-             patch("harness.run.LanceVectorStore"), \
+             patch("harness.run._create_store"), \
              patch("harness.orchestrator.task_orchestrator.TaskOrchestrator"), \
              patch("harness.run.HITLGuard"), \
              patch("harness.run._try_local_execution", return_value=None), \
@@ -603,7 +638,7 @@ class TestMain:
                                  "task": "@builder: crear API", "command": None}), \
              patch("harness.orchestrator.task_orchestrator.TaskOrchestrator",
                    return_value=mock_orch), \
-             patch("harness.run.LanceVectorStore", return_value=mock_store), \
+             patch("harness.run._create_store", return_value=mock_store), \
              patch("harness.run._dispatch_task", return_value="builder"), \
              patch("harness.run._apply_model_routing", return_value="local"), \
              patch("harness.run._check_hitl", return_value=True), \
@@ -636,7 +671,7 @@ class TestMain:
                                  "task": "tarea sensible", "command": None}), \
              patch("harness.orchestrator.task_orchestrator.TaskOrchestrator",
                    return_value=mock_orch), \
-             patch("harness.run.LanceVectorStore", return_value=mock_store), \
+             patch("harness.run._create_store", return_value=mock_store), \
              patch("harness.run._dispatch_task", return_value="builder"), \
              patch("harness.run._apply_model_routing", return_value="cloud"), \
              patch("harness.run._check_hitl", return_value=False):

@@ -24,7 +24,6 @@ Helpers de CLI extraidos a run_support.py (regla AGR: archivos < 500 lineas).
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 from typing import Any
 
 # Importar funcionalidad compartida (DRY con delegate.py)
@@ -73,7 +72,6 @@ from harness.memory_rag.doc_ingester import (
     DocumentChunker,
     ingest_directory,
 )
-from harness.memory_rag.lance_vector_store import LanceVectorStore
 from harness.orchestrator.hitl_guard import HITLGuard
 from harness.orchestrator.task_manager import TaskManager
 
@@ -99,8 +97,14 @@ except ImportError:
 from harness.run_commands import (
     _apply_model_routing,
     _check_hitl,
+    _create_store,
+    _handle_db_backup,
+    _handle_db_capabilities,
+    _handle_db_gc,
+    _handle_db_health,
     _handle_db_list_imports,
     _handle_db_migrate,
+    _handle_db_reconcile,
     _handle_db_rollback,
     _handle_db_stats,
     _handle_evolve_mutate,
@@ -143,7 +147,7 @@ def _handle_daemon_mode() -> None:
     from harness.orchestrator.scheduler import Scheduler
 
     logger.info("[Harness] Daemon mode - iniciando scheduler en background...")
-    store = LanceVectorStore()
+    store = _create_store()
     scheduler = Scheduler(vector_store=store)
     scheduler.run_scheduler()
     logger.info("[Harness] Scheduler corriendo. Presiona Ctrl+C para detener.")
@@ -157,7 +161,7 @@ def _handle_daemon_mode() -> None:
 
 def _handle_command(cmd: str) -> None:
     """Dispatch a !command to its handler."""
-    store = LanceVectorStore()
+    store = _create_store()
     if cmd.startswith("!evolve mutate"):
         _handle_evolve_mutate(store, cmd)
     elif cmd.startswith("!schedule add"):
@@ -166,6 +170,16 @@ def _handle_command(cmd: str) -> None:
         _handle_schedule_list(store)
     elif cmd.startswith("!db migrate"):
         _handle_db_migrate(store, cmd)
+    elif cmd.startswith("!db capabilities"):
+        _handle_db_capabilities()
+    elif cmd.startswith("!db health"):
+        _handle_db_health(store)
+    elif cmd.startswith("!db backup"):
+        _handle_db_backup(store, cmd)
+    elif cmd.startswith("!db gc"):
+        _handle_db_gc(store)
+    elif cmd.startswith("!db reconcile"):
+        _handle_db_reconcile(store)
     elif cmd.startswith("!db list-imports"):
         _handle_db_list_imports()
     elif cmd.startswith("!db stats"):
@@ -521,9 +535,8 @@ def main() -> None:
         sys.exit(1)
 
     logger.info("[Harness] Inicializando...")
-    store = LanceVectorStore()
-    if not (Path(HARNESS_ROOT) / "db" / "lancedb").exists():
-        logger.warning("harness/db/lancedb/ no existe. Los datos se perderan al reiniciar.")
+    store = _create_store()
+    logger.info("[Harness] Backend de memoria: %s", type(store).__name__)
 
     # Orchestrate
     from harness.orchestrator.task_orchestrator import TaskOrchestrator

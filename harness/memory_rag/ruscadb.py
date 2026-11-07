@@ -64,6 +64,10 @@ _CAPABILITY_NAMES: tuple[str, ...] = (
     "ruscadb_alter_table",
     "ruscadb_quantize",
     "ruscadb_search_bq",
+    "ruscadb_prepare",
+    "ruscadb_execute_prepared",
+    "ruscadb_search_quantized",
+    "ruscadb_search_filtered",
 )
 
 

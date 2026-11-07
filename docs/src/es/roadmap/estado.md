@@ -5,6 +5,15 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-06c)
+
+### Estado 2026-11-06 (Ciclo 11.77 — RuscaDB aprovechado de verdad)
+- CLI usa la factory (RuscaDB por defecto), no `LanceVectorStore` hardcodeado.
+- `!db capabilities/health/stats/backup/gc/reconcile` exponen integridad, LSN,
+  cache, búsqueda binaria y grafo; `!db stats` es del store real.
+- `probe()` reporta faltantes del C-ABI (prepared/KNN USING) y recomienda rebuild.
+- Roadmap: búsqueda binaria adaptativa, blobs, time-travel, MCP y async.
+
 ## Estado Actual (2026-11-06b)
 
 ### Estado 2026-11-06 (Ciclo 11.76 — Repo image y docs mantenibles)
