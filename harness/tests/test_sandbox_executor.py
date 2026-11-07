@@ -353,22 +353,64 @@ class TestBackendDetection:
 
 class TestProjectDepsFallback:
     """Scripts que requieren deps del proyecto no se rompen cuando docker no
-    puede aportarlas (no-POSIX: el site-packages trae extensiones nativas)."""
+    puede aportarlas (no-POSIX o ABI distinto: site-packages con extensiones
+    compiladas)."""
+
+    #: Instanciado al importar: `pathlib` mira `os.name` y los tests lo parchean.
+    _SITE_PACKAGES = Path("site-packages")
 
     def test_docker_cannot_supply_deps_on_nt(self, monkeypatch) -> None:
         """En Windows el backend docker NO puede aportar las deps del proyecto."""
         monkeypatch.setattr(sandbox_executor.os, "name", "nt")
-        assert sandbox_executor._docker_supplies_project_deps() is False
+        assert sandbox_executor._docker_supplies_project_deps("python:3.14-slim") is False
 
-    def test_docker_supplies_deps_on_posix_with_site_packages(
+    def test_docker_supplies_deps_on_posix_with_matching_image(
         self, monkeypatch
     ) -> None:
-        """En POSIX con site-packages presente, docker SI aporta las deps."""
+        """En POSIX, site-packages e interprete de la imagen con el mismo ABI."""
         monkeypatch.setattr(sandbox_executor.os, "name", "posix")
         monkeypatch.setattr(
-            sandbox_executor, "_host_site_packages", lambda: Path("/tmp/sp")
+            sandbox_executor, "_host_site_packages", lambda: self._SITE_PACKAGES
         )
-        assert sandbox_executor._docker_supplies_project_deps() is True
+        major, minor = sys.version_info[:2]
+        image = f"python:{major}.{minor}-slim"
+        assert sandbox_executor._docker_supplies_project_deps(image) is True
+
+    def test_docker_cannot_supply_deps_when_image_abi_differs(
+        self, monkeypatch
+    ) -> None:
+        """Un site-packages del host no sirve en un interprete de otra version.
+
+        WHY: `hypothesis._native` es una extension compilada por ABI; montar el
+        site-packages del host (p. ej. 3.14) en `python:3.12-slim` deja el
+        import roto y todos los oraculos PBT fallan.
+        """
+        monkeypatch.setattr(sandbox_executor.os, "name", "posix")
+        monkeypatch.setattr(
+            sandbox_executor, "_host_site_packages", lambda: self._SITE_PACKAGES
+        )
+        assert (
+            sandbox_executor._docker_supplies_project_deps("python:2.7-slim") is False
+        )
+
+    @pytest.mark.parametrize(
+        "image",
+        [
+            "python:slim",
+            "python@sha256:" + "a" * 64,
+            "custom:latest",
+            "",
+        ],
+    )
+    def test_docker_cannot_supply_deps_with_unknown_tag(
+        self, monkeypatch, image: str
+    ) -> None:
+        """Sin tag `major.minor` no se puede garantizar el ABI: no es viable."""
+        monkeypatch.setattr(sandbox_executor.os, "name", "posix")
+        monkeypatch.setattr(
+            sandbox_executor, "_host_site_packages", lambda: self._SITE_PACKAGES
+        )
+        assert sandbox_executor._docker_supplies_project_deps(image) is False
 
     def test_require_deps_falls_back_to_host_when_docker_cannot(
         self, monkeypatch, tmp_path
@@ -376,7 +418,7 @@ class TestProjectDepsFallback:
         """require_project_deps + docker sin deps -> interprete host (no docker)."""
         _force_backend(monkeypatch, "docker")
         monkeypatch.setattr(
-            sandbox_executor, "_docker_supplies_project_deps", lambda: False
+            sandbox_executor, "_docker_supplies_project_deps", lambda image: False
         )
         captured = _capture_run(monkeypatch)
         host_calls: list[list[str]] = []
@@ -396,13 +438,36 @@ class TestProjectDepsFallback:
         assert host_calls and host_calls[0][0] == sys.executable
         assert captured == {}, "docker no debe invocarse cuando no aporta las deps"
 
+    def test_require_deps_falls_back_when_image_abi_differs(
+        self, monkeypatch, tmp_path
+    ) -> None:
+        """Con imagen de otro ABI, require_project_deps usa el interprete host."""
+        _force_backend(monkeypatch, "docker")
+        captured = _capture_run(monkeypatch)
+        host_calls: list[list[str]] = []
+
+        def fake_run_host(self, cmd, timeout_s, env, workdir):
+            host_calls.append(list(cmd))
+            return SandboxResult("", "", 0, backend="subprocess")
+
+        monkeypatch.setattr(SandboxExecutor, "_run_host", fake_run_host)
+        script = tmp_path / "pbt_check.py"
+        script.write_text("print('x')", encoding="utf-8")
+        ex = SandboxExecutor(image="python:2.7-slim")
+        assert ex.backend == "docker"
+
+        ex.run_script(script, require_project_deps=True)
+
+        assert host_calls and host_calls[0][0] == sys.executable
+        assert captured == {}, "docker no debe invocarse con un ABI incompatible"
+
     def test_require_deps_uses_docker_when_available(
         self, monkeypatch, tmp_path
     ) -> None:
         """Con deps disponibles, require_project_deps sigue usando docker."""
         _force_backend(monkeypatch, "docker")
         monkeypatch.setattr(
-            sandbox_executor, "_docker_supplies_project_deps", lambda: True
+            sandbox_executor, "_docker_supplies_project_deps", lambda image: True
         )
         captured = _capture_run(monkeypatch)
         script = tmp_path / "pbt_check.py"
@@ -416,7 +481,7 @@ class TestProjectDepsFallback:
         """Mutation (sin require_project_deps) mantiene docker como aislamiento."""
         _force_backend(monkeypatch, "docker")
         monkeypatch.setattr(
-            sandbox_executor, "_docker_supplies_project_deps", lambda: False
+            sandbox_executor, "_docker_supplies_project_deps", lambda image: False
         )
         captured = _capture_run(monkeypatch)
         script = tmp_path / "mutant_check.py"

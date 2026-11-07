@@ -1,3 +1,28 @@
+## [11.80] - 2026-11-06
+
+### Fixed
+- CI `test` fallaba en `test_pbt_stage::test_good_function_passes` (3 "bugs"
+  espurios): `SandboxExecutor.run_script(require_project_deps=True)` montaba el
+  site-packages del host (Python 3.14) dentro de `python:3.12-slim`. Las
+  extensiones compiladas por ABI (`hypothesis._native`) no se pueden importar
+  entre versiones distintas. Evidencia reproducible:
+  `docker run --rm -v <sp314>:/opt/sandbox-site:ro -e PYTHONPATH=/opt/sandbox-site
+  python:3.12-slim python -c "import hypothesis"` ->
+  `ModuleNotFoundError: No module named 'hypothesis._native'`; con
+  `python:3.14-slim` importa (6.167.1).
+- Ahora docker solo se usa con deps del proyecto si el tag de la imagen declara
+  el mismo `major.minor` que el interprete host (`_docker_supplies_project_deps`);
+  en otro caso se ejecuta en el interprete host con el sandbox nativo.
+
+### Added
+- `logger.warning` con la causa de cada hypothesis fallida (antes un fallo de
+  infraestructura se veia como "N bugs" sin motivo en el log de CI).
+
+### Tests
+- `test_sandbox_executor`: 4 casos nuevos (ABI distinto, tag sin version,
+  fallback por ABI) y actualizacion de los existentes.
+- `test_pbt_stage`: el fallo de una hypothesis queda registrado en el log.
+
 ## [11.79] - 2026-11-06
 
 ### Fixed

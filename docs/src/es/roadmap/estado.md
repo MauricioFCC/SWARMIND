@@ -5,6 +5,15 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-06f)
+
+### Estado 2026-11-06 (Ciclo 11.80 — sandbox PBT y ABI)
+- `_docker_supplies_project_deps(image)` exige que el tag de la imagen declare
+  el mismo `major.minor` que el host; si no, `require_project_deps` corre en el
+  interprete host (sandbox nativo). Evita "bugs" espurios por
+  `hypothesis._native` importado entre versiones.
+- Cada hypothesis fallida se loguea con su causa.
+
 ## Estado Actual (2026-11-06e)
 
 ### Estado 2026-11-06 (Ciclo 11.79 — CI verde y RQL endurecido)
