@@ -5,6 +5,13 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-07b)
+
+### Estado 2026-11-07 (Ciclo 11.83 — mutación medible)
+- `mutation_scope`: excluye protocolos/`__init__`, selecciona tests por paquete
+  y stem, limpia stats previos, omite paquetes solo-interfaz.
+- Baseline ratcheted: kernel 0.60 (config) + 0.62 (baseline medido); meta 90 %
+  en la spec. Evidencia WSL: 286 mutantes, 62.6 %.
 ## Estado Actual (2026-11-07a)
 
 ### Estado 2026-11-07 (Ciclo 11.82 — mutation y Pages)
