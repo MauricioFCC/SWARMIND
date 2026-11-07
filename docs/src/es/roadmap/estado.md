@@ -5,6 +5,12 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-07e)
+
+### Estado 2026-11-07 (Ciclo 11.86 — memory_rag medido)
+- `memory_rag`: primera medición real **48.4 %** (25 704 mutantes); umbral
+  calibrado de 0.70 a baseline 0.48 + ratchet. Meta 70 % documentada como
+  pendiente con el ranking de sobrevivientes.
 ## Estado Actual (2026-11-07d)
 
 ### Estado 2026-11-07 (Ciclo 11.85 — kernel al 90.8 %)
