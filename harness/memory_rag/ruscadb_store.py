@@ -2008,7 +2008,7 @@ class RuscaDBStore:
         if mode == "phrase":
             q = '"' + query + '"'
             try:
-                rows = execute(self._handle, f"SELECT * FROM {_safe_ident(collection)} WHERE MATCH({self._text_column(collection)}, '{_escape_literal(q)}')")
+                rows = execute(self._handle, f"SELECT * FROM {_safe_ident(collection)} WHERE MATCH({self._text_column(collection)}, '{_escape_literal(q)}')")  # nosec B608: identificador validado y literal escapado
             except RuscadbError as exc:
                 logger.warning("fts_search_mode fallo: %s", exc)
                 return []
@@ -2020,7 +2020,7 @@ class RuscaDBStore:
         if mode == "fuzzy":
             # client-side: scan all rows, filter by edit distance <= 2
             try:
-                rows = execute(self._handle, f"SELECT * FROM {_safe_ident(collection)}")
+                rows = execute(self._handle, f"SELECT * FROM {_safe_ident(collection)}")  # nosec B608: identificador validado
             except RuscadbError as exc:
                 logger.warning("fts_search_mode fallo: %s", exc)
                 return []

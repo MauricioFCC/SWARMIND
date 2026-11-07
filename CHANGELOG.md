@@ -1,3 +1,22 @@
+## [11.79] - 2026-11-06
+
+### Fixed
+- CI `test`/`coverage`/`mutation` fallaban con `ModuleNotFoundError: hypothesis`:
+  `uv sync --group test` no instalaba lo que importa `harness/tests/conftest.py`.
+  Se añaden `hypothesis` y `pytest-asyncio` al grupo `test` (PEP 735) y se
+  refresca `uv.lock`.
+- CI `security` (Bandit B608): los builders de RQL interpolaban colección,
+  columna, agregado y función de ventana sin validar. Ahora usan allowlists
+  (`timeseries_helpers`, `rql_helpers`) y `# nosec B608` justificado donde el
+  identificador ya estaba validado (`fts_search_mode`).
+- Codecov: input obsoleto `file:` -> `files:` en `.github/workflows/ci.yml`.
+- `test_mcp_registry_wiring` esperaba 26 servers; el registry declara 27 con
+  `ruscadb`.
+
+### Added
+- `harness/tests/test_rql_helpers_safety.py` (19 casos) cubre inyección en
+  colección, agregado, ventana y orden.
+
 ## [11.78] - 2026-11-06
 
 ### Added

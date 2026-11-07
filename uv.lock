@@ -1881,7 +1881,9 @@ dev = [
     { name = "pytest-asyncio" },
 ]
 test = [
+    { name = "hypothesis" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "pytest-split" },
@@ -1927,7 +1929,9 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=1.4.0" },
 ]
 test = [
+    { name = "hypothesis", specifier = ">=6.167.1" },
     { name = "pytest", specifier = ">=8" },
+    { name = "pytest-asyncio", specifier = ">=1.4.0" },
     { name = "pytest-cov", specifier = ">=5" },
     { name = "pytest-mock", specifier = ">=3" },
     { name = "pytest-split", specifier = ">=0.9" },

@@ -664,7 +664,7 @@ jobs:
         if: always()
         uses: codecov/codecov-action@v7
         with:
-          file: ./coverage.xml
+          files: ./coverage.xml
           fail_ci_if_error: false
           flags: t2-pr
 
@@ -723,7 +723,7 @@ jobs:
         if: always()
         uses: codecov/codecov-action@v7
         with:
-          file: ./coverage.xml
+          files: ./coverage.xml
           fail_ci_if_error: false
           flags: t3-regression
 

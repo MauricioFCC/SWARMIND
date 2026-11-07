@@ -5,6 +5,14 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-06e)
+
+### Estado 2026-11-06 (Ciclo 11.79 — CI verde y RQL endurecido)
+- `hypothesis`/`pytest-asyncio` en el grupo `test`; `test`/`coverage`/`mutation`
+  dejan de fallar por el import de `conftest`.
+- Bandit B608: allowlists en builders RQL y `nosec` justificado en el FTS ya
+  validado. Codecov usa `files:`.
+
 ## Estado Actual (2026-11-06d)
 
 ### Estado 2026-11-06 (Ciclo 11.78 — RuscaDB KNN USING y aprovechamiento)

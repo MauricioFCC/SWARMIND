@@ -106,9 +106,9 @@ class TestRegistryLoads:
             assert name in manager._servers, f"falta server '{name}'"
 
     def test_load_returns_all_servers(self, manager: MCPManager) -> None:
-        """El registry cableado completo declara exactamente 26 servers."""
-        assert len(manager._servers) == 26, (
-            f"esperados 23 servers, hay {len(manager._servers)}: "
+        """El registry cableado completo declara exactamente 27 servers."""
+        assert len(manager._servers) == 27, (
+            f"esperados 27 servers, hay {len(manager._servers)}: "
             f"{sorted(manager._servers)}"
         )
 
