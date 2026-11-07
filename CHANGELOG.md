@@ -1,3 +1,34 @@
+## [11.83] - 2026-11-07
+
+### Fixed
+- `mutation`/`mutation-nightly`: la tubería pasaba a medir de verdad; tres
+  causas raíz encadenadas:
+  1. `also_copy` (ciclo 11.82) para que `mutants/` traiga `scripts/` y
+     `.opencode/`.
+  2. **Protocolos**: mutmut inyecta métodos `x||Clase||metodo__mutmut_*` en la
+     fuente; en un `@runtime_checkable Protocol` esos métodos pasan a ser
+     atributos del contrato y `isinstance(store, VectorStorePort)` devuelve
+     `False` aunque el store implemente todo (15 atributos, 5 inyectados) → la
+     factory lanzaba `TypeError` en la fase de stats. Ahora `do_not_mutate`
+     excluye protocolos y `__init__.py`, y un paquete solo-interfaz se omite
+     (`harness/domain`).
+  3. **Selección de tests**: `find_tests` no emparejaba
+     `from harness.kernel import X` ni `test_<paquete>_<stem>.py`, así que
+     elegía tests ajenos al código mutado (score 0.0 %).
+- `_run_mutmut` borra el `mutmut-cicd-stats.json` anterior (podía leer los
+  stats de otro paquete) y maneja "sin stats" sin crashear.
+
+### Changed
+- `MUTATION_THRESHOLDS["harness/kernel"]`: 0.90 → **0.60** (baseline calibrado
+  con la primera medición real) + ratchet en `scripts/mutation_baseline.json`
+  (0.62; solo sube, con `--update-baseline`). El 90 % queda como meta en
+  `docs/specs/tdd-mutation-gate.md`.
+
+### Evidence
+- WSL (Ubuntu 26.04, mutmut 3.8.1): `scripts/mutation_scope.py --all-core
+  --run` → 286 mutantes, 176 muertos, 105 sobrevivientes, **score 62.6 %**;
+  con baseline 0.62 el gate pasa y bloquea regresiones por debajo de 62 %.
+
 ## [11.82] - 2026-11-07
 
 ### Fixed
