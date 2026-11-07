@@ -86,9 +86,11 @@ def check_workflow(path: Path) -> list[str]:
         if not isinstance(job, dict):
             findings.append(f"{path.name}:{job_name}: el job no es un mapping")
             continue
-        for key in job:
-            if key not in ALLOWED_JOB_KEYS:
-                findings.append(f"{path.name}:{job_name}: clave de job invalida {key!r}")
+        findings.extend(
+            f"{path.name}:{job_name}: clave de job invalida {key!r}"
+            for key in job
+            if key not in ALLOWED_JOB_KEYS
+        )
         steps = job.get("steps")
         if not isinstance(steps, list):
             continue
@@ -96,11 +98,11 @@ def check_workflow(path: Path) -> list[str]:
             if not isinstance(step, dict):
                 findings.append(f"{path.name}:{job_name}: paso {index} no es un mapping")
                 continue
-            for key in step:
-                if key not in ALLOWED_STEP_KEYS:
-                    findings.append(
-                        f"{path.name}:{job_name}: paso {index} clave invalida {key!r}"
-                    )
+            findings.extend(
+                f"{path.name}:{job_name}: paso {index} clave invalida {key!r}"
+                for key in step
+                if key not in ALLOWED_STEP_KEYS
+            )
     return findings
 
 
