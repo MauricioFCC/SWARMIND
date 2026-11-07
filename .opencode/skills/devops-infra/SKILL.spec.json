@@ -63,8 +63,8 @@
     ],
     "body_keywords": [
       "infra",
-      "devops",
       "rollback",
+      "devops",
       "secrets",
       "contenedores",
       "dockerize",

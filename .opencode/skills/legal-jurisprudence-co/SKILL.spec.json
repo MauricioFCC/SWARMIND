@@ -1,0 +1,83 @@
+{
+  "name": "legal-jurisprudence-co",
+  "version": "1.0.0",
+  "description": "Usar cuando se analiza jurisprudencia colombiana. línea jurisprudencial, precedente, ratio decidendi, obiter dicta, relatoría, SUIN, Corte Suprema, Consejo de Estado, Corte Constitucional, radicado. Alcance: jurisprudencia; para análisis sustantivo ver",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando se analiza jurisprudencia colombiana. línea jurisprudencial, precedente, ratio decidendi, obiter dicta, relatoría, SUIN, Corte Suprema, Consejo de Estado, Corte Constitucional, radicado",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "Pregunta jurídica definida",
+    "Fuentes oficiales consultadas (relatoría/SUIN)",
+    "Fichas con radicado, fecha y M.P",
+    "Línea jurisprudencial trazada con hitos",
+    "Ratio y obiter separados",
+    "Aplicación al caso justificada",
+    "Citas verificadas o APÓCRIFA-REVISAR"
+  ],
+  "invariants": [
+    "Sin radicado, fecha y M.P. verificados no hay ficha jurisprudencial",
+    "La ratio decidendi se separa del obiter dicta antes de aplicar el precedente",
+    "Se declara si el precedente es vinculante, persuasivo o inexistente",
+    "Las citas no verificadas se marcan APÓCRIFA-REVISAR y no se usan"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando se analiza jurisprudencia colombiana. línea jurisprudencial, precedente, ratio decidendi, obiter dicta, relatoría, SUIN, Corte Suprema, Consejo de Estado, Corte Constitucional, radicado"
+    ],
+    "body_keywords": [
+      "vinculante",
+      "giro",
+      "juriscol",
+      "persuasivo",
+      "fecha",
+      "ficha",
+      "apócrifa",
+      "fichas"
+    ]
+  },
+  "source_sha256": "9ee76dac3829649f17948303b29b01f28e9302132187f4f5a2f5dca9c6aac153",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

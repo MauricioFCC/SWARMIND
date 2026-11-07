@@ -1,6 +1,6 @@
 {
   "name": "legal-doc",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia. Alcance: analisis juridico y normativo; para documentacion cientifica ver science-doc",
   "contract": {
     "input": {
@@ -61,15 +61,15 @@
     "body_keywords": [
       "norma",
       "vigencia",
-      "corte",
-      "procesal",
       "citas",
-      "jurisdicción",
+      "procesal",
+      "fase",
       "jurídico",
-      "fase"
+      "primaria",
+      "corte"
     ]
   },
-  "source_sha256": "bea91a4f1f43554c148ae2eaa8f991892a4e2c3c74846a9e24f3489beca529c3",
+  "source_sha256": "afa82df7e324f3bb62e9fcf8755b63f02d69b50aeac917d31949be2152165ef8",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

@@ -66,11 +66,11 @@
       "branch",
       "rigor",
       "lint",
+      "gate",
       "hubiera",
       "matado",
       "passed",
-      "trae",
-      "verde"
+      "trae"
     ]
   },
   "source_sha256": "60c9b35ce80cefa59f7d3ccb3c7024a9dd8744381690f701ba17ef96afa3a318",

@@ -64,9 +64,9 @@
       "catalyst",
       "posicion",
       "drawdown",
-      "límite",
       "sizing",
-      "limite"
+      "limite",
+      "block"
     ]
   },
   "source_sha256": "72dadc3ea991c9a9a32ea695babfaadf3638f2e1845f72da2bc7a841d69e282d",

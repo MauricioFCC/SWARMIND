@@ -64,14 +64,14 @@
       "Usar cuando el usuario revisa conformidad de arquitectura o deuda arquitectonica. conformance, violaciones de capas, ciclos de imports, drift, fitness functions, tach, ArchGuard, hotspots"
     ],
     "body_keywords": [
-      "walls",
       "import",
-      "archivo",
+      "walls",
       "layer",
-      "línea",
       "violations",
+      "archivo",
+      "check",
       "churn",
-      "check"
+      "diseño"
     ]
   },
   "source_sha256": "210cc35a74710e09a79eb3b4d7248cb20c6dc8afcea940a48bc54a0a61312838",

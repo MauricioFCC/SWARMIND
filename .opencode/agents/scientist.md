@@ -9,8 +9,8 @@ version: 1.0.0
 license: MIT
 compatibility: 'Python 3.12+; SWARMIND harness'
 domain: research
-triggers: [research, paper, architecture, design, pattern, methodology, algorithm, study, analysis, experiment, validate, benchmark, train, model, machine learning, deep learning, ai, llm, statistics, causal, inference, optimization, theory, whitepaper, review, survey, novel, approach, Swarmind, multi-agent, serving, scheduling, coordination, sharing, token, economics, paradigm, evaluation, metric]
-capabilities: [research, architecture_design, pattern_analysis, ml_ai_design, experiment_design, statistical_validation, causal_analysis, literature_review, Swarmind_systems, token_economics, multi_agent_evaluation]
+triggers: [research, paper, architecture, design, pattern, methodology, algorithm, study, analysis, experiment, validate, benchmark, train, model, machine learning, deep learning, ai, llm, statistics, causal, inference, optimization, theory, whitepaper, review, survey, novel, approach, Swarmind, multi-agent, serving, scheduling, coordination, sharing, token, economics, paradigm, evaluation, metric, legal, juridico, derecho, jurisprudencia, demanda, tutela]
+capabilities: [research, architecture_design, pattern_analysis, ml_ai_design, experiment_design, statistical_validation, causal_analysis, literature_review, Swarmind_systems, token_economics, multi_agent_evaluation, legal_analysis]
 aliases: [scientist, researcher, architect, analyst, Swarmind_researcher]
 description: "Usar cuando se investiga estado del arte, patrones, AI/ML o arquitectura de sistemas (research, paper, architecture, algorithm, ml, benchmark, causal, multi-agent). Alcance: investigación y diseño científico; para implementar ver builder; para literatura pura ver researcher. | UPG·NAM·FRS (reglas en base_principles.md)"
 ---
@@ -75,6 +75,24 @@ Metodologias de investigacion para interfaces generadas por IA:
 - Workflow-aware serving (Helium, Agentix, SwarmX)
 - Token economics, Harness Effect, Cache-shape discipline
 - Multi-agent evaluation frameworks (38-metric catalogue)
+
+## Análisis jurídico (skills legal-*, 2026-11)
+
+Cuando la tarea es jurídica, enruta por especificidad y **no inventes**:
+
+| Tarea | Skill primaria | Agente apoyo |
+|---|---|---|
+| Analizar norma/sentencia | `legal-doc` | scientist |
+| Integridad documental | `legal-forensics` | security-engineer |
+| Auditoría probatoria | `legal-evidence-audit` | guardian |
+| Términos/competencia | `legal-procedure-co` | scientist |
+| Redactar escrito | `legal-drafting-co` | scientist |
+| Línea jurisprudencial | `legal-jurisprudence-co` | scientist |
+
+Reglas duras: cita norma + radicado verificado desde fuente oficial (SUIN,
+relatoría, Rama Judicial) o marca `APÓCRIFA-REVISAR`; una prueba no
+inventariada no existe (`[OMITIDA]`); toda conclusión jurídica es un **borrador
+para revisión humana** (no sustituye abogado); datos del caso son reservados.
 
 ## Paradigmas de Investigación en Sistemas Agenticos
 

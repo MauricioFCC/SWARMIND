@@ -5,6 +5,15 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-06a)
+
+### Estado 2026-11-06 (Ciclo 11.75 — Skills jurídicas y forenses)
+- 5 skills core implementadas (forense, evidencia, procedimiento, redacción,
+  jurisprudencia) con revisión humana obligatoria y canon oficial.
+- Routing legal sin ambigüedad (`legal-doc` + especializadas); agentes
+  scientist/guardian/security-engineer actualizados.
+- `legal-risk` y `legal-ethics` diferidas por solape con risk-*/ethics.
+
 ## Estado Actual (2026-11-05b)
 
 ### Estado 2026-11-05 (Ciclo 11.74 — Propagación solo-global)

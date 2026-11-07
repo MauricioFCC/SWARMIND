@@ -1,3 +1,33 @@
+## [11.75] - 2026-11-06
+
+### Added
+- 5 skills jurídicas/forenses (propuesta 2026-11-06), con PEC, canon oficial,
+  workflow, checklist, anti-patrones, ejemplo y límite de revisión humana:
+  - `legal-forensics` (integridad documental y cadena de custodia).
+  - `legal-evidence-audit` (inventario, contradicciones, carga de la prueba).
+  - `legal-procedure-co` (competencia, términos, notificaciones, recursos,
+    caducidad/prescripción, nulidades: CGP/CPACA/CPP).
+  - `legal-drafting-co` (escritos por jurisdicción; CGP art. 82, CPACA art. 161).
+  - `legal-jurisprudence-co` (línea, ratio/obiter, precedente; relatoría/SUIN).
+- `harness/tests/test_legal_skills.py` (11): contrato, PEC, ejemplo, revisión
+  humana obligatoria, registry/digest, conteo 49 y routing a agentes reales.
+
+### Changed
+- `legal-doc` v1.1.0: router legal (primaria/apoyo) para evitar ambigüedad.
+- `skill_bundler`: `SKILL_TO_AGENT` y `DOMAIN_SKILLS["legal"]` cubren las 5;
+  `DOMAIN_KEYWORDS["legal"]` añade términos procesales/probatorios.
+- Agentes: `scientist` (análisis jurídico y revisión humana), `guardian`
+  (auditoría probatoria) y `security-engineer` (forense documental) con
+  triggers/capacidades y secciones operativas.
+- `project_config` y registry: 49 skills con digests; specs regenerados.
+- `AGENTS.md`: 49 skills.
+
+### Desviaciones respecto de la propuesta
+- No se crean `legal-risk` ni `legal-ethics`: se solapan con `risk-*`/`ethics`
+  y no aportan capacidad nueva (IDP); documentado en el §10 de la propuesta.
+- No hay checks de contenido jurídico: la verificación de citas exige fuente
+  oficial + revisión humana (declarado como gap).
+
 ## [11.74] - 2026-11-05
 
 ### Added

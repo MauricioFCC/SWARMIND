@@ -66,9 +66,9 @@
       "dueño",
       "superficie",
       "high",
-      "auditoría",
       "command",
-      "scan"
+      "scan",
+      "auditoría"
     ]
   },
   "source_sha256": "e97a47aa3d2408a8179b3aba28a4eaaf4025fc57a0d066dcd33a95a5b6aa2bc7",

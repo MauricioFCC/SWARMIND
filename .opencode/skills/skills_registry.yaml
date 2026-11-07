@@ -33,7 +33,7 @@ skills:
     description: "Usar cuando el dominio es juridico o legal. jurisprudencia, normas, demandas, conceptos, derecho comparado, fuentes oficiales, Colombia. Alcance: analisis juridico y normativo; para documentacion cientifica ver science-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
     version: 1.0.0
     project_agnostic: true
-    sha256: 9e09c898d22e975b8ae70a1e109e38f02aad0ae9e3100a77bb9fc2d0b9acf5ea
+    sha256: 02c96b9b5b23bf69c7b49095ac7822a3395921cacf6428f177ffac1ff4e459f1
 
   - name: math-doc
     domain: academic
@@ -308,3 +308,38 @@ skills:
     version: 1.0.0
     project_agnostic: true
     sha256: 09fc40f97b2d197b1afbe3fe19b060a2898e8a624b3d760eeb4658a49f564fac
+
+  - name: legal-forensics
+    domain: legal
+    description: "Usar cuando se preserva, verifica o analiza documentación jurídica como evidencia. cadena de custodia, hash SHA-256, metadatos, OCR forense, PDF escaneado, integridad documental. Alcance: forense documental; para análisis jurídico ver legal-doc; para auditoría probatoria ver legal-evidence-audit."
+    version: 1.0.0
+    project_agnostic: true
+    sha256: 227776fd73f6d34e0b72f1e9f556a43ebd2c9a7b20e1d332fdbf49d56405ffae
+
+  - name: legal-evidence-audit
+    domain: legal
+    description: "Usar cuando se audita el material probatorio de un caso. inventario probatorio, pruebas omitidas, contradicciones, carga de la prueba, valoración, completitud, debido proceso probatorio. Alcance: auditoría de evidencia; para cadena de custodia ver legal-forensics; para análisis jurídico ver legal-doc."
+    version: 1.0.0
+    project_agnostic: true
+    sha256: 1c8a73881b80d67ceaec9dcc7f83a1135e0b49118f14e022bcfb68a34b2ca65a
+
+  - name: legal-procedure-co
+    domain: legal
+    description: "Usar cuando se verifica el debido proceso en Colombia. competencia, términos, notificaciones, recursos, caducidad, prescripción, nulidades, CGP, CPACA, CPP, Ley 906. Alcance: procedimiento colombiano; para redacción de escritos ver legal-drafting-co; para análisis sustantivo ver legal-doc."
+    version: 1.0.0
+    project_agnostic: true
+    sha256: 2ca19ffa0c0327a1e9c2928c4c039d94dbd7c036223139ca7d5f9af90919b022
+
+  - name: legal-drafting-co
+    domain: legal
+    description: "Usar cuando se redacta un escrito judicial en Colombia. demanda, contestación, recurso, tutela, poder, memorial, concepto. estructura por jurisdicción, requisitos del CGP/CPACA/CPP, técnica de redacción. Alcance: redacción de escritos; para análisis ver legal-doc; para procedimiento ver legal-procedure-co."
+    version: 1.0.0
+    project_agnostic: true
+    sha256: f278dcd5ad7de5561712f099264a22eb0177959e4fe6bfbc47b1007666583829
+
+  - name: legal-jurisprudence-co
+    domain: legal
+    description: "Usar cuando se analiza jurisprudencia colombiana. línea jurisprudencial, precedente, ratio decidendi, obiter dicta, relatoría, SUIN, Corte Suprema, Consejo de Estado, Corte Constitucional, radicado. Alcance: jurisprudencia; para análisis sustantivo ver legal-doc; para procedimiento ver legal-procedure-co."
+    version: 1.0.0
+    project_agnostic: true
+    sha256: 0564b84fcfb144638f0efd28da156f592068940539ccba062098cfceb0cdee25

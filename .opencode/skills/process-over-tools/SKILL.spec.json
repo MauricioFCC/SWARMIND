@@ -64,11 +64,11 @@
       "preguntas",
       "medicion",
       "orca",
-      "memoria",
       "oraculos",
-      "caso",
-      "proceso",
-      "ssot"
+      "memoria",
+      "ssot",
+      "mesa",
+      "proyects"
     ]
   },
   "source_sha256": "efc6579c202ac53fbb315069d2210fe9d377153ea966b722ea1d4b25115cb9ee",

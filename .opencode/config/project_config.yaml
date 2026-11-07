@@ -218,7 +218,7 @@ AGENTS:
     - token-budget-auditor
 
 SKILLS:
-  total: 44
+  total: 49
   skill_list:
     - ads-optimizer
     - agent-rigor
@@ -244,6 +244,11 @@ SKILLS:
     - healthtech
     - hedgefund
     - legal-doc
+    - legal-forensics
+    - legal-evidence-audit
+    - legal-procedure-co
+    - legal-drafting-co
+    - legal-jurisprudence-co
     - linguistics
     - math-doc
     - mcp-security
@@ -288,6 +293,11 @@ SKILLS:
     - healthtech
     - hedgefund
     - legal-doc
+    - legal-forensics
+    - legal-evidence-audit
+    - legal-procedure-co
+    - legal-drafting-co
+    - legal-jurisprudence-co
     - linguistics
     - math-doc
     - physical-sciences
