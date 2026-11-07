@@ -5,6 +5,14 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-07f)
+
+### Estado 2026-11-07 (Ciclo 11.87 — gaps de cobertura)
+- `prompt_evolver` 20 %→100 %, `recursive_harness` 50 %→94 %, tests nuevos
+  para `text_heuristics`, `knowledge_graph.seed_from_skills`,
+  `semantic_cache` y `nudge_system` (+66 tests).
+- 3 bugs reales corregidos (promoción rota, mutante B inútil, keywords
+  muertas en el compressor).
 ## Estado Actual (2026-11-07e)
 
 ### Estado 2026-11-07 (Ciclo 11.86 — memory_rag medido)
@@ -774,9 +782,9 @@ Objetivo: 80%    (proximo hito)
 | ✅ | Python 3.14 acoplado | Entorno | `.python-version` + PATH de usuario + CI alineado | **HECHO** |
 | ✅ | Pre-commit efectivo | Rigor | `install_hooks.py` resuelve `core.hooksPath` (`.githooks`) | **HECHO** |
 | ✅ | Agentes `.agent.min` ocultos (V2) | Skills/Agentes | `hidden: true` + `compile_agents.minify_agent` | **HECHO** |
-| **Media** | Coverage 80% | Calidad | Atacar archivos con cobertura baja: mcp_executor.py, plugins, evolve_loop | 🔄 Pendiente |
+| **Media** | Coverage 80% | Calidad | Medido 2026-11-07: mcp_executor **96 %**, plugins **96-100 %** (objetivos cumplidos); evolve_loop: `prompt_evolver` 20→**100 %**, `recursive_harness` 50→**94 %**, `nudge_system` 52→(tests +17), **queda `skill_generator` 46 %** | 🔄 Pendiente (3/4 cerrados) |
 | **Media** | Async pipeline integration | Rendimiento | TaskOrchestrator async completo, integracion con AsyncAgentBus | 🔄 Pendiente |
-| **Media** | Fix debate tests | Estabilidad | ~20 tests de debate con ERROR por dependencias de orquestador | ⏳ Pendiente |
+| **Media** | Fix debate tests | Estabilidad | ~20 tests de debate con ERROR por dependencias de orquestador → verificado 2026-11-07: `test_debate` + `test_debate_async` + `test_mars_debate_feedback_drain` = **111 passed** | ✅ **HECHO** |
 | **Media** | Paired eval de skills (Skill Lift) | Skills | Medir Δpp con/sin skill (SkillsBench: 16/84 negativos; self-generated -1.3pp); retiro por outcome N>=100 | 🔄 Pendiente |
 | **Media** | Habilitar `formatter: true` (OpenCode V2) | DX/Rigor | Evaluado 2026-10-15 y RECHAZADO con evidencia: `ruff format --check` reescribiría 277/325 tests + 32 scripts y crashea en algunos dirs (bug de ruff). Habilitar tras establish `ruff format` baseline + fix upstream | ⏳ Pendiente |
 | **Baja** | Mutation gate de skills en pre-commit | Skills | SkillCI-style (typo, negacion, context-prefix) + self-growing -> test permanente | 🔄 Pendiente |

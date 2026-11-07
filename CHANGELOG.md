@@ -1,3 +1,42 @@
+## [11.87] - 2026-11-07
+
+### Fixed
+Tres defectos de producción destapados por los tests nuevos:
+
+1. **`PromptEvolver.promote_winner` crasheaba con vector store**:
+   `_log_promotion` recibía el `winner_path` como `str` y lo trataba como
+   `Path` (`read_text()`) → `AttributeError` en toda promoción registrada en
+   LanceDB. Además `tokens_before` se leía del original **ya sobrescrito**
+   (siempre igual que `tokens_after`); ahora sale del respaldo.
+2. **El mutante B de `prompt_evolver` no mutaba nada**: `_mutate_reorder`
+   devolvía `before + output + after`, que es exactamente el orden original.
+   Ahora pone la sección de salida al principio (como promete su docstring).
+3. **`_has_preserved_keywords` ignoraba `TODO`/`FIXME`/`HACK`/`NOTE`**:
+   comparaba la lista (con mayúsculas) contra el texto ya pasado a
+   minusculas → nunca coincidía y el compressor no preservaba esas líneas.
+   Ahora es case-insensitive.
+
+### Added
+Tests que cubren huecos medidos (sin tests antes, cobertura 20-52 %):
+
+- `test_prompt_evolver.py` (15): mutantes A/B/C, fórmula de score, promoción,
+  respaldo y registro en el store → `prompt_evolver.py` **20 % → 100 %**.
+- `test_recursive_harness.py` (8): despacho sequential/parallel, presupuesto
+  de `run_bounded`, score por defecto → **50 % → 94 %**.
+- `test_text_heuristics.py` (36): `_has_verb` parametrizado por verbo,
+  normalización de mayúsculas y palabras clave preservadas (archivo sin tests).
+- `test_knowledge_graph.py` (+4): `seed_from_skills` (28 skills, reparto
+  14/7/3/2/2 por agente).
+- `test_semantic_cache_extended.py` (+5): rol por defecto `*`, filtrado de
+  rol y `total_requests` acumulativo.
+- `test_nudge_system.py` (+17): recolección/evaluación/persistencia y
+  tolerancia a fallos de cada fase.
+
+### Evidence
+- Cobertura total: **85.36 % → 85.71 %** (módulos objetivo 20 %, 46 %, 50 %).
+- Gates: ruff 0, ruff-ratchet 0, vulture 0, arquitectura 0 (F5 ratchet),
+  complejidad 0, pep649 0, skills 0, workflows 0, docs 0.
+
 ## [11.86] - 2026-11-07
 
 ### Changed

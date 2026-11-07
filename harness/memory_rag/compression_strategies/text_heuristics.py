@@ -27,7 +27,10 @@ class _TextHeuristicsMixin:
         """
         lower = text.lower()
         for keyword in PRESERVED_KEYWORDS:
-            if keyword in lower:
+            # La lista mezcla mayusculas ("TODO","FIXME") y minusculas
+            # ("deprecated"); comparar sin normalizar dejaba muertas las
+            # mayusculas, que eran justo las de codigo.
+            if keyword.lower() in lower:
                 return True
         return False
 

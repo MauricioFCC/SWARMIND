@@ -568,3 +568,43 @@ class TestSemanticCacheAutoSweep:
         semantic_cache.set("prompt vivo", "respuesta")
         semantic_cache.clear_expired()
         assert semantic_cache.clear_expired() == 0
+
+
+class TestSemanticCacheContratosFaltantes:
+    """Contratos de get()/set() que no estaban cubiertos (mutantes sobrevivientes).
+
+    - ``agent_role`` por defecto es el comodín ``"*"`` (sirve cualquier rol).
+    - El rol distinto se filtra (ambos caminos: hash exacto y similitud).
+    - ``total_requests`` se **acumula** (no se reasigna a 1).
+    """
+
+    def test_get_por_defecto_usa_comodin(self):
+        cache = SemanticCache()
+        cache.set("p-rol", "respuesta", agent_role="scientist")
+        # get() con agent_role="*" (default) debe servir cualquier rol
+        assert cache.get("p-rol") == "respuesta"
+
+    def test_get_filtra_rol_distinto(self):
+        cache = SemanticCache()
+        cache.set("p-rol2", "r2", agent_role="scientist")
+        assert cache.get("p-rol2", agent_role="guardian") is None
+        assert cache.get("p-rol2", agent_role="scientist") == "r2"
+
+    def test_set_por_defecto_guarda_comodin(self):
+        cache = SemanticCache()
+        cache.set("p-defecto", "r-defecto")  # agent_role="*" por defecto
+        assert cache.get("p-defecto", agent_role="cualquiera") == "r-defecto"
+
+    def test_total_requests_acumula(self):
+        cache = SemanticCache()
+        cache.set("p-stats", "r-stats")
+        for _ in range(3):
+            cache.get("p-stats")
+        assert cache.get_stats()["total_requests"] == 3
+
+    def test_get_stats_copia_no_aliasa(self):
+        """get_stats() devuelve copia: mutarla no toca el estado real."""
+        cache = SemanticCache()
+        stats = cache.get_stats()
+        stats["total_requests"] = 999
+        assert cache.get_stats()["total_requests"] == 0
