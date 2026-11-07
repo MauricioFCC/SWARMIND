@@ -5,6 +5,14 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-07d)
+
+### Estado 2026-11-07 (Ciclo 11.85 — kernel al 90.8 %)
+- 18 tests nuevos en `test_kernel.py` guiados por los sobrevivientes:
+  score 62.6 % → **90.8 %**; umbral de kernel restaurado a 0.90.
+- Tests herméticos para runners que repiten la suite en el mismo proceso
+  (`lru_cache` de `_read_skill_md`, símbolo PEP 562 de `harness`), lo que
+  desbloqueó la medición de `memory_rag`.
 ## Estado Actual (2026-11-07c)
 
 ### Estado 2026-11-07 (Ciclo 11.84 — deps, docs y medición por paquete)

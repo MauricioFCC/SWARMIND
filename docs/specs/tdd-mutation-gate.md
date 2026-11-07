@@ -9,7 +9,7 @@
 | # | Decisión | Fundamento |
 |---|---|---|
 | MU-01 | Mutación **scoped a los archivos tocados por el PR** (`git diff base...HEAD`); una corrida por paquete afectado | mutmut maintainer en contra del gate CI directo (issue #95); costo lineal |
-| MU-02 | Umbral por **paquete**, no global: kernel **baseline 60 %** (ratchet 62 %, meta 90 %), domain **75 %**, memory_rag **70 %**, resto **40 %** | los últimos puntos son mutantes equivalentes; Stryker `break: 70`; core más exigente que adapters. El 90 % de kernel era la meta original: la primera medición real (2026-11-07, WSL) dio **62.6 %**, así que el umbral se calibró al baseline y sube con `scripts/mutation_baseline.json` (`--update-baseline`) |
+| MU-02 | Umbral por **paquete**, no global: kernel **90 %** (alcanzado: 90.8 % el 2026-11-07), domain **75 %**, memory_rag **70 %**, resto **40 %** | los últimos puntos son mutantes equivalentes; Stryker `break: 70`; core más exigente que adapters. La primera medición real de kernel fue 62.6 %, así que el umbral se calibró a un baseline transitorio (0.60 + ratchet 0.62) y volvió a la meta cuando la ronda de asserts de `test_kernel.py` llevó el score a 90.8 % |
 | MU-03 | Cobertura sigue como **piso separado** (≥ 80 % core); nunca sustituye mutación (un test sin asserts da 100 % coverage y 0 % mutation) | evidencia CircleCI |
 | MU-04 | Config generada en `[mutmut]` (`source_paths`, `only_mutate`, `pytest_add_cli_args_test_selection`) desde el diff | mutmut 3.8.1: esas claves son las de 3.x (`--paths-to-mutate` es 2.x) |
 | MU-05 | **Windows: WSL/CI obligatorio** (`--run` devuelve 2 con instrucciones); `--dry-run`/`--write-config` sí funcionan | mutmut usa `os.fork` (POSIX-only) |
@@ -18,6 +18,7 @@
 | MU-08 | `@runtime_checkable Protocol` y `__init__.py` → `do_not_mutate`; un paquete sin lógica se **omite** | mutmut inyecta métodos `__mutmut_*` en la fuente; en un Protocol esos métodos pasan a ser atributos del contrato y `isinstance(store, VectorStorePort)` da `False` aunque el store implemente todo (15 atributos, 5 inyectados) → `TypeError` en stats. Los `__init__.py` solo re-exportan y sus mutantes no tienen tests |
 | MU-09 | Selección de tests = homónimo + módulo + **paquete** + **stem del nombre** | `from harness.kernel import X` no contiene el literal `harness.kernel.mailbox`; sin esto se elegían tests ajenos y el score salía 0.0 % |
 | MU-10 | Baseline de ratchet por paquete (`scripts/mutation_baseline.json`), solo sube con `--update-baseline` | el umbral de config es el suelo: el gate falla si `score < max(config, baseline)` |
+| MU-11 | Los tests seleccionados deben ser **herméticos ante repeticiones en el mismo proceso** (`lru_cache`, `sys.modules`, símbolos PEP 562) | mutmut ejecuta `stats` y luego `clean tests` con `pytest.main()` en un mismo proceso: sin hermeticidad el segundo arranque falla y el score sale 0.0 % |
 
 ## 2. Implementación (`scripts/mutation_scope.py`)
 
@@ -49,9 +50,11 @@ CI: el job `mutation` usa
   fórmula del score, umbral por paquete, baseline (carga/subida), omisión de
   paquetes sin lógica, `also_copy` y `--check-stats`.
 - **Evidencia de medición real** (WSL Ubuntu 26.04, mutmut 3.8.1,
-  2026-11-07): `scripts/mutation_scope.py --all-core --run` → 286 mutantes,
-  **176 muertos / 105 sobrevivientes / 62.6 %** en `harness/kernel`
-  (antes: crash de recolección o 0.0 %). Con baseline 0.62 el gate pasa.
+  2026-11-07): primera corrida `--all-core --run` → 286 mutantes,
+  **176 muertos / 105 sobrevivientes / 62.6 %** en `harness/kernel` (antes:
+  crash de recolección o 0.0 %). Tras la ronda de asserts guiada por
+  `mutmut results` + `mutmut show`: **257 muertos / 26 sobrevivientes /
+  90.8 %** → el umbral vuelve a 0.90 y `--update-baseline` fija el ratchet.
 - Verificación adversarial de tools: el cleanup RUF100 falló el gate (F5 +1)
   y la suite expuso el daño → revertido (lección en `python-314-practices.md` §2).
 
