@@ -1,3 +1,18 @@
+## [11.81] - 2026-11-06
+
+### Fixed
+- `.github/workflows/release.yml`: `path: dist/` estaba a nivel de paso en vez
+  de bajo `with:` (L61). GitHub rechazaba el archivo en cada push con
+  `Invalid workflow file: Unexpected value 'path'` y creaba un run fallido sin
+  jobs ni check-runs (invisible para los required checks).
+
+### Added
+- `scripts/check_workflows.py`: gate determinista que valida las claves de job
+  y de paso de todos los workflows contra el esquema de GitHub Actions.
+- `harness/tests/test_workflow_files.py` (4 tests): corre el gate en CI, incluye
+  la regresión del bug de `release.yml` y un archivo no UTF-8 que se reporta en
+  vez de lanzar.
+
 ## [11.80] - 2026-11-06
 
 ### Fixed

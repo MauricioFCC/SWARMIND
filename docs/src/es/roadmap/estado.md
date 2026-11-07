@@ -5,6 +5,11 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-06g)
+
+### Estado 2026-11-06 (Ciclo 11.81 — workflows y release)
+- `release.yml` corregido (clave `path` fuera de `with:`) y gate
+  `check_workflows` con 4 tests corriendo en CI.
 ## Estado Actual (2026-11-06f)
 
 ### Estado 2026-11-06 (Ciclo 11.80 — sandbox PBT y ABI)
