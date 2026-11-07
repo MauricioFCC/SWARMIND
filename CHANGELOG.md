@@ -1,3 +1,25 @@
+## [11.84] - 2026-11-07
+
+### Security
+- Dependencias transitivas con CVE (alertas Trivy/CodeQL) actualizadas en
+  `uv.lock`: `authlib` 1.7.2 → **1.9.5** (CVE-2026-116672 HIGH),
+  `filelock` 3.32.2 → **3.32.7** (3 × MEDIUM), `joserfc` 1.7.4 → **1.8.0**
+  (CVE-2026-119283 HIGH y CVE-2026-119284 MEDIUM). Origen: las tres entran
+  por `safety` (dev) y `torch` (gpu), no por el runtime.
+
+### Added
+- `scripts/mutation_scope.py --packages <dir...>`: mide paquetes concretos
+  sin depender del diff (p. ej. `--packages harness/memory_rag`), que es como
+  se calibran sus umbrales. Errores accionables si la ruta no tiene `.py`.
+
+### Docs
+- Añade los documentos frontier de los ciclos 11.75/11.76
+  (`frontier-2026-11-05-baseline-architecture`,
+  `frontier-2026-11-06-xtask-ratchets`, specs `baseline-*`) que estaban sin
+  commitear.
+- `harness/tests/test_run_commands_dispatcher.py` normalizado a LF (tenía una
+  línea CRLF que lo marcaba como modificado en cada checkout).
+
 ## [11.83] - 2026-11-07
 
 ### Fixed

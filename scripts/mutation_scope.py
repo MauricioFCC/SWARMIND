@@ -503,6 +503,13 @@ def main(argv: list[str] | None = None) -> int:
         help="muta todos los .py de kernel+domain (nocturna, sin diff)",
     )
     parser.add_argument("--max-children", type=int, default=2, help="workers de mutmut")
+    parser.add_argument(
+        "--packages",
+        nargs="+",
+        default=[],
+        metavar="PKG",
+        help="mide paquetes concretos sin diff (p. ej. harness/memory_rag)",
+    )
     parser.add_argument("--json", action="store_true", help="salida JSON del scope")
     parser.add_argument(
         "--update-baseline",
@@ -531,11 +538,19 @@ def main(argv: list[str] | None = None) -> int:
         return 1 if failures else 0
 
     try:
-        files = (
-            files_for_packages()
-            if args.all_core
-            else changed_files(args.base, args.head)
-        )
+        if args.all_core:
+            files = files_for_packages()
+        elif args.packages:
+            files = files_for_packages(tuple(args.packages))
+            if not files:
+                print(
+                    "mutation_scope | WHAT=paquetes_sin_py | WHY=ruta_invalida | "
+                    f"WHERE=main | packages={args.packages}",
+                    file=sys.stderr,
+                )
+                return 2
+        else:
+            files = changed_files(args.base, args.head)
     except RuntimeError as exc:
         print(str(exc), file=sys.stderr)
         return 2
