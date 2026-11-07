@@ -5,6 +5,12 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-07a)
+
+### Estado 2026-11-07 (Ciclo 11.82 — mutation y Pages)
+- Config de mutmut con `also_copy` (scripts/, .opencode/) para que la copia
+  `mutants/` sea recolectable por pytest.
+- GitHub Pages habilitado con build por Actions (workflow `Docs`).
 ## Estado Actual (2026-11-06g)
 
 ### Estado 2026-11-06 (Ciclo 11.81 — workflows y release)

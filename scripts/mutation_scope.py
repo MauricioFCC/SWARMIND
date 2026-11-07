@@ -237,7 +237,17 @@ def render_config(sources: list[str], tests: list[str]) -> str:
     Returns:
         Texto de configuración (sin cabecera).
     """
-    lines = ["[mutmut]", "source_paths =", "    harness/", "only_mutate ="]
+    lines = [
+        "[mutmut]",
+        "source_paths =",
+        "    harness/",
+        # La copia ``mutants/`` solo trae ``source_paths``; los tests
+        # seleccionados importan ``scripts`` y leen la SSOT ``.opencode/``.
+        "also_copy =",
+        "    scripts/",
+        "    .opencode/",
+        "only_mutate =",
+    ]
     lines.extend(f"    {source}" for source in sources)
     lines.append("pytest_add_cli_args_test_selection =")
     lines.extend(f"    {test}" for test in tests)
