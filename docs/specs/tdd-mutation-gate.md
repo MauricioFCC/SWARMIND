@@ -61,7 +61,9 @@ CI: el job `mutation` usa
   sobrevivientes: `semantic_cache.core` (469), `semantic_cache.ops` (409),
   `agent_kpi_tracker.recording` (331), `knowledge_graph` (314),
   `agent_kpi_tracker.reporting` (309). Umbral calibrado a baseline **48 %**
-  (meta 70 % pendiente).
+  (meta 70 % pendiente). **Ronda 1** (tests guiados por `mutmut show`):
+  8 067 muertos / 8 327 sobrevivientes = **49.08 %** → baseline ratchetea a
+  **0.49**.
 - Verificación adversarial de tools: el cleanup RUF100 falló el gate (F5 +1)
   y la suite expuso el daño → revertido (lección en `python-314-practices.md` §2).
 
