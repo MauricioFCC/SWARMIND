@@ -1,3 +1,34 @@
+## [11.76] - 2026-11-06
+
+### Added
+- `scripts/check_docs_links.py`: gate de enlaces internos (README, hubs,
+  SUMMARY, CONTRIBUTING/SECURITY), con resolución de rutas mdbook `/assets/...`
+  y detección de fences de código. Sin dependencias.
+- `scripts/gen_docs_index.py`: genera `docs/src/es/agents/INDEX.md` y
+  `docs/src/es/skills/INDEX.md` desde `.opencode/agents` y el registry
+  (`--write`/`--check`), eliminando catálogos manuales.
+- `docs/README.md`: hub Diátaxis (tutorial/how-to/reference/explanation) con
+  enlaces a ES/EN, roadmap, specs y research.
+- `docs/research/frontier-2026-11-06-repo-image.md` y
+  `docs/specs/repo-image-docs-2026-11-06.md` (RI-AC1..7, gaps).
+- `harness/tests/test_docs_image.py` (10): links, índices sin drift, README
+  corto/veraz, hub Diátaxis y SUMMARY sin catálogos manuales.
+- CI: paso "Docs (enlaces + índices)" en el job `lint`.
+
+### Changed
+- `README.md` 441 → 167 líneas: qué/por qué/para quién, quickstart sin
+  PowerShell, arquitectura Mermaid, mapa del repo, documentación Diátaxis,
+  evidencia, límites y licencia; conteos reales (49 skills, 26 agentes, 7.7k).
+- `docs/src/es/README.md` y `docs/src/en/README.md`: intro y estado reales;
+  fuera tablas obsoletas y datos de hardware personales.
+- `docs/src/es/SUMMARY.md`: sin listas manuales de 20 agentes/34 skills; apunta
+  a los índices generados. `docs/src/en/SUMMARY.md` mínimo (solo resumen EN).
+
+### Verified
+- `check_docs_links`: 0 rotos en 8 archivos de fachada.
+- `gen_docs_index --check`: 2 índices, 0 cambios.
+- Tests de docs: 10 passed; suite completa y gates en verde.
+
 ## [11.75] - 2026-11-06
 
 ### Added

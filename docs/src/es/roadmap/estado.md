@@ -5,6 +5,14 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-06b)
+
+### Estado 2026-11-06 (Ciclo 11.76 — Repo image y docs mantenibles)
+- README corto y veraz (49 skills, 26 agentes, 7.7k tests) con Mermaid y mapa
+  Diátaxis; hubs ES/EN actualizados.
+- Índices de agentes/skills generados desde la SSOT (`gen_docs_index --check`).
+- Gate de enlaces internos y chequeo de índices en CI; 10 tests de fachada.
+
 ## Estado Actual (2026-11-06a)
 
 ### Estado 2026-11-06 (Ciclo 11.75 — Skills jurídicas y forenses)
