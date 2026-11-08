@@ -5,6 +5,12 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-08a)
+
+### Estado 2026-11-08 (Ciclo 11.89 — deuda de cobertura cerrada)
+- `skill_generator` 46→**98 %** (38 tests), `nudge_system` 52→**99 %**,
+  `prompt_evolver` 20→**100 %**, `recursive_harness` 50→**94 %**; total
+  **86.03 %** → fila "Coverage 80%" cerrada.
 ## Estado Actual (2026-11-07g)
 
 ### Estado 2026-11-07 (Ciclo 11.88 — ronda 1 de mutación en memory_rag)
@@ -788,7 +794,7 @@ Objetivo: 80%    (proximo hito)
 | ✅ | Python 3.14 acoplado | Entorno | `.python-version` + PATH de usuario + CI alineado | **HECHO** |
 | ✅ | Pre-commit efectivo | Rigor | `install_hooks.py` resuelve `core.hooksPath` (`.githooks`) | **HECHO** |
 | ✅ | Agentes `.agent.min` ocultos (V2) | Skills/Agentes | `hidden: true` + `compile_agents.minify_agent` | **HECHO** |
-| **Media** | Coverage 80% | Calidad | Medido 2026-11-07: mcp_executor **96 %**, plugins **96-100 %** (objetivos cumplidos); evolve_loop: `prompt_evolver` 20→**100 %**, `recursive_harness` 50→**94 %**, `nudge_system` 52→(tests +17), **queda `skill_generator` 46 %** | 🔄 Pendiente (3/4 cerrados) |
+| ✅ | Coverage 80% | Calidad | **Cerrada 2026-11-08 con medicion**: `mcp_executor` 96 %, `plugins` 96-100 %, `prompt_evolver` 20→**100 %**, `recursive_harness` 50→**94 %**, `nudge_system` 52→**99 %**, `skill_generator` 46→**98 %**; total **86.03 %** | ✅ **HECHO** |
 | **Media** | Async pipeline integration | Rendimiento | TaskOrchestrator async completo, integracion con AsyncAgentBus | 🔄 Pendiente |
 | **Media** | Fix debate tests | Estabilidad | ~20 tests de debate con ERROR por dependencias de orquestador → verificado 2026-11-07: `test_debate` + `test_debate_async` + `test_mars_debate_feedback_drain` = **111 passed** | ✅ **HECHO** |
 | **Media** | Paired eval de skills (Skill Lift) | Skills | Medir Δpp con/sin skill (SkillsBench: 16/84 negativos; self-generated -1.3pp); retiro por outcome N>=100 | 🔄 Pendiente |
