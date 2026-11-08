@@ -1,3 +1,25 @@
+## [11.89] - 2026-11-08
+
+### Added
+- `harness/tests/test_skill_generator.py` (38 tests): heurística de
+  generación (>=5 tool calls + success + steps), escritura del `.md`,
+  registro YAML (sin duplicados y con YAML corrupto recuperado), indexado en
+  LanceDB (y su tolerancia a fallos), `_infer_domain`, `_make_slug`,
+  `_build_md_content`, `_query_tokens`, `_score_skill`, `find_in_registry` y
+  `_resolve_skill_path`.
+
+### Changed
+- **Deuda "Coverage 80%" cerrada (4/4)**: `skill_generator` **46 % → 98 %**,
+  `nudge_system` **52 % → 99 %**, `prompt_evolver` **20 % → 100 %**,
+  `recursive_harness` **50 % → 94 %**. Además `mcp_executor` 96 % y
+  `plugins` 96-100 % ya estaban cumplidos.
+- Cobertura total del harness: **85.36 % → 86.03 %**.
+
+### Evidence
+- Suite completa: **7969 passed, 13 skipped, 1 xfailed, 0 failed**.
+- Gates: ruff 0, ruff-ratchet 0, vulture 0, arquitectura 0, complejidad 0,
+  pep649 0, skills 0, workflows 0, docs-links 0, docs-index 0.
+
 ## [11.88] - 2026-11-07
 
 ### Changed
