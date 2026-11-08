@@ -1,3 +1,19 @@
+## [11.88] - 2026-11-07
+
+### Changed
+- **Ratchet de `memory_rag` sube 0.48 → 0.49**: primera ronda de tests sobre
+  los mayores bolsas de sobrevivientes (`semantic_cache` rol/comodín/contadores,
+  `knowledge_graph.seed_from_skills`, `_has_verb`) mató **120 mutantes**:
+  `killed` 7.947 → **8.067**, score **48.35 % → 49.08 %** (25.705 mutantes,
+  112 tests seleccionados). El umbral sigue calibrado a 0.48 (suelo) y el
+  baseline ratchetea a 0.49 con `--update-baseline`.
+
+### Evidence
+- WSL (`--packages harness/memory_rag --run --max-children 4`, mutmut 3.8.1):
+  `mutation_scope_exit=0` con `mutants/mutmut-cicd-stats.json` completo.
+- Ranking de la próxima ronda: `semantic_cache.core` y `.ops` siguen a la
+  cabeza (878 sobrevivientes entre ambos), luego `agent_kpi_tracker` (640).
+
 ## [11.87] - 2026-11-07
 
 ### Fixed
