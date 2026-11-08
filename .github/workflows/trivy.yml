@@ -6,6 +6,9 @@ on:
     branches: [main]
   schedule:
     - cron: "0 6 * * *"  # diario
+  # Escaneo manual: permite re-evaluar las alertas de dependencias tras
+  # actualizar uv.lock sin esperar al cron (o para validar antes de un release).
+  workflow_dispatch:
 
 jobs:
   trivy:
