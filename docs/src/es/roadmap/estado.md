@@ -5,6 +5,15 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-08b)
+
+### Estado 2026-11-08 (Ciclo 11.90 — pre-commit, filelock y F5)
+- Pre-commit corregido (raíz por `git rev-parse`) y ampliado: arquitectura,
+  `validate_skills --strict` y tests de skills (~7 s) → cierra la deuda
+  "Mutation gate de skills en pre-commit".
+- `filelock>=4.2.9` por override de uv → CVE-2026-112936/38/39 cerrados.
+- Refactor F5: 9 funciones >30 líneas en `skill_generator`/`prompt_evolver`
+  (F5 global 929 → 920) e imports hermanos robustos en `scripts/`.
 ## Estado Actual (2026-11-08a)
 
 ### Estado 2026-11-08 (Ciclo 11.89 — deuda de cobertura cerrada)
@@ -799,7 +808,7 @@ Objetivo: 80%    (proximo hito)
 | **Media** | Fix debate tests | Estabilidad | ~20 tests de debate con ERROR por dependencias de orquestador → verificado 2026-11-07: `test_debate` + `test_debate_async` + `test_mars_debate_feedback_drain` = **111 passed** | ✅ **HECHO** |
 | **Media** | Paired eval de skills (Skill Lift) | Skills | Medir Δpp con/sin skill (SkillsBench: 16/84 negativos; self-generated -1.3pp); retiro por outcome N>=100 | 🔄 Pendiente |
 | **Media** | Habilitar `formatter: true` (OpenCode V2) | DX/Rigor | Evaluado 2026-10-15 y RECHAZADO con evidencia: `ruff format --check` reescribiría 277/325 tests + 32 scripts y crashea en algunos dirs (bug de ruff). Habilitar tras establish `ruff format` baseline + fix upstream | ⏳ Pendiente |
-| **Baja** | Mutation gate de skills en pre-commit | Skills | SkillCI-style (typo, negacion, context-prefix) + self-growing -> test permanente | 🔄 Pendiente |
+| ✅ | Mutation gate de skills en pre-commit | Skills | Pre-commit valida `validate_skills --strict` + `pytest test_skill_*.py` (oraculos de mutacion/solapamiento, ~7 s), con raiz resuelta por `git rev-parse` | ✅ **HECHO** |
 | **Baja** | Surrogate Verifier aislado por sesion | Gobernanza | Framework distinto emite diagnostico por-assertion (CoEvoSkills 2604.01687) | 🔄 Pendiente |
 | ✅ | Integrar TriageSLM+Telemetry al pipeline | Routing/Tokens | `PipelineRouter` (cascada: SLM -> fallback en complejidad timida -> frontier), TelemetryGate hit-rate 0.80, telemetria en agent_dispatcher (R10) | **HECHO** |
 | ✅ | Progressive disclosure restantes | Skills | atdd-spec 133→85, process-over-tools 139→88, frontend-uiux 174→113, diagram-design 198→120 (+references/) | **HECHO** |

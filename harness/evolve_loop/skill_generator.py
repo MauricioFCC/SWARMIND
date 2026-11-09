@@ -109,12 +109,7 @@ class SkillGenerator:
     # ------------------------------------------------------------------
 
     def generate_skill(
-        self,
-        agent: str,
-        task_description: str,
-        tool_call_count: int,
-        success: bool,
-        steps: list[str],
+        self, agent: str, task_description: str, tool_call_count: int, success: bool, steps: list[str]
     ) -> dict[str, Any] | None:
         """
         Generate a skill if the heuristic is met.
@@ -129,37 +124,57 @@ class SkillGenerator:
         Returns:
             A dict with skill metadata if a skill was generated, or ``None``.
         """
-        if not (tool_call_count >= 5 and success):
-            logger.debug(
-                "Skill not generated: tool_calls=%d success=%s (need >=5 and True)",
-                tool_call_count,
-                success,
-            )
+        if not self._meets_heuristic(tool_call_count, success):
             return None
 
         if not steps:
             logger.warning("Skill not generated: no steps provided.")
             return None
 
-        # --- Infer domain from agent ---
         domain = self._infer_domain(agent)
-
-        # --- Generate slug ---
         slug = self._make_slug(task_description, agent)
+        md_path = self._write_skill_file(slug, domain, agent, task_description, steps)
+        return self._finish_generation(
+            slug, domain, agent, task_description, steps, md_path
+        )
 
-        # --- 1. Write .md file ---
+    @staticmethod
+    def _meets_heuristic(tool_call_count: int, success: bool) -> bool:
+        """True si la tarea merece generar un skill (>=5 llamadas y exitosa)."""
+        meets = tool_call_count >= 5 and success
+        if not meets:
+            logger.debug(
+                "Skill not generated: tool_calls=%d success=%s (need >=5 and True)",
+                tool_call_count,
+                success,
+            )
+        return meets
+
+    def _write_skill_file(
+        self, slug: str, domain: str, agent: str, task_description: str, steps: list[str]
+    ) -> Path:
+        """Escribe el ``.md`` del skill en ``AUTO_SKILLS_DIR`` y devuelve su ruta."""
         md_path = AUTO_SKILLS_DIR / f"{slug}.md"
         md_content = self._build_md_content(slug, domain, agent, task_description, steps)
         Path(str(md_path)).write_text(md_content, encoding="utf-8")
         logger.info("Skill .md written: %s", md_path)
+        return md_path
 
-        # --- 2. Register in YAML registry ---
-        registry_entry = self._register_in_yaml(slug, str(md_path), domain, agent, task_description)
-
-        # --- 3. Index in LanceDB ---
+    def _finish_generation(
+        self,
+        slug: str,
+        domain: str,
+        agent: str,
+        task_description: str,
+        steps: list[str],
+        md_path: Path,
+    ) -> dict[str, Any]:
+        """Registra en YAML, indexa en LanceDB si hay store y devuelve la entrada."""
+        entry = self._register_in_yaml(
+            slug, str(md_path), domain, agent, task_description
+        )
         if self._vector_store is not None:
             self._index_in_lancedb(slug, domain, agent, task_description, steps)
-
         logger.info(
             "Skill generated: slug=%s domain=%s agent=@%s steps=%d",
             slug,
@@ -167,7 +182,7 @@ class SkillGenerator:
             agent,
             len(steps),
         )
-        return registry_entry
+        return entry
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -231,6 +246,21 @@ class SkillGenerator:
         lines.append(f"*Generado automaticamente por SkillGenerator en {datetime.now(UTC).isoformat()}*")
         return "\n".join(lines)
 
+    @staticmethod
+    def _load_registry() -> dict[str, Any]:
+        """Carga ``skills_registry.yaml`` o devuelve uno vacío si es ilegible."""
+        if not REGISTRY_PATH.exists():
+            return {"skills": []}
+        try:
+            with open(str(REGISTRY_PATH), "r", encoding="utf-8") as handle:
+                loaded = yaml.safe_load(handle) or {}
+        except Exception:  # noqa: BLE001
+            loaded = {}
+        registry = loaded if isinstance(loaded, dict) else {"skills": []}
+        if "skills" not in registry:
+            registry["skills"] = []
+        return registry
+
     def _register_in_yaml(
         self, slug: str, md_path: str, domain: str, agent: str, trigger: str
     ) -> dict[str, Any]:
@@ -244,27 +274,46 @@ class SkillGenerator:
             "trigger": trigger[:200],  # cap length
         }
 
-        registry: dict[str, list[dict[str, Any]]] = {"skills": []}
-        if REGISTRY_PATH.exists():
-            try:
-                with open(str(REGISTRY_PATH), "r", encoding="utf-8") as f:
-                    loaded = yaml.safe_load(f) or {}
-                registry = loaded if isinstance(loaded, dict) else {"skills": []}
-            except Exception:  # noqa: BLE001
-                registry = {"skills": []}
-
-        if "skills" not in registry:
-            registry["skills"] = []
-
+        registry = self._load_registry()
         # Avoid duplicates by name
         registry["skills"] = [s for s in registry["skills"] if s.get("name") != slug]
         registry["skills"].append(entry)
 
-        with open(str(REGISTRY_PATH), "w", encoding="utf-8") as f:
-            yaml.dump(registry, f, default_flow_style=False, allow_unicode=True)
+        with open(str(REGISTRY_PATH), "w", encoding="utf-8") as handle:
+            yaml.dump(registry, handle, default_flow_style=False, allow_unicode=True)
 
         logger.info("Skill registered in YAML registry: %s", slug)
         return entry
+
+    @staticmethod
+    def _build_embedding(text: str) -> Any:
+        """Vector determinista 384-d normalizado a partir del texto."""
+        import numpy as np
+
+        dim = 384
+        vec = np.zeros(dim, dtype=np.float32)
+        for i, ch in enumerate(text.encode("utf-8", errors="replace")):
+            idx = (i * 7 + ch) % dim
+            vec[idx] += 1.0
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            vec /= norm
+        return vec
+
+    @staticmethod
+    def _skill_metadata(
+        slug: str, domain: str, agent: str, trigger: str, steps: list[str]
+    ) -> dict[str, Any]:
+        """Metadatos indexados del skill (trigger truncado a 200)."""
+        steps_text = "\n".join(f"{i+1}. {s}" for i, s in enumerate(steps))
+        return {
+            "name": slug,
+            "domain": domain,
+            "agent": agent,
+            "trigger": trigger[:200],
+            "steps_text": steps_text,
+            "created_at": datetime.now(UTC).isoformat(),
+        }
 
     def _index_in_lancedb(
         self,
@@ -279,30 +328,9 @@ class SkillGenerator:
             logger.warning("No vector store available; skipping LanceDB index.")
             return
 
-        import numpy as np
-
-        steps_text = "\n".join(f"{i+1}. {s}" for i, s in enumerate(steps))
-        now = datetime.now(UTC).isoformat()
-
-        metadata: dict[str, Any] = {
-            "name": slug,
-            "domain": domain,
-            "agent": agent,
-            "trigger": trigger[:200],
-            "steps_text": steps_text,
-            "created_at": now,
-        }
-
-        # Build a simple embedding vector from the text
-        text_for_vec = f"{slug} {domain} {trigger} {steps_text}"
-        _dim = 384
-        vec = np.zeros(_dim, dtype=np.float32)
-        for i, ch in enumerate(text_for_vec.encode("utf-8", errors="replace")):
-            idx = (i * 7 + ch) % _dim
-            vec[idx] += 1.0
-        norm = np.linalg.norm(vec)
-        if norm > 0:
-            vec /= norm
+        metadata = self._skill_metadata(slug, domain, agent, trigger, steps)
+        embedding_text = f"{slug} {domain} {trigger} {metadata['steps_text']}"
+        vec = self._build_embedding(embedding_text)
 
         try:
             self._vector_store.insert(
@@ -310,7 +338,11 @@ class SkillGenerator:
                 vec.reshape(1, -1),
                 [metadata],
             )
-            logger.info("Skill indexed in LanceDB collection '%s': %s", COLLECTION_PROCEDURAL_SKILLS, slug)
+            logger.info(
+                "Skill indexed in LanceDB collection '%s': %s",
+                COLLECTION_PROCEDURAL_SKILLS,
+                slug,
+            )
         except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to index skill in LanceDB: %s", exc)
 
@@ -351,6 +383,38 @@ class SkillGenerator:
         return score
 
     @staticmethod
+    def _read_registry_file() -> dict[str, Any] | None:
+        """Lee el YAML del registry; ``None`` si no existe o no es ilegible."""
+        if not REGISTRY_PATH.exists():
+            return None
+        try:
+            with open(str(REGISTRY_PATH), "r", encoding="utf-8") as handle:
+                loaded = yaml.safe_load(handle) or {}
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("No se pudo leer el registry de skills: %s", exc)
+            return None
+        if not isinstance(loaded, dict):
+            logger.warning("Registry de skills con forma inesperada (no mapping)")
+            return None
+        return loaded
+
+    @staticmethod
+    def _best_match(
+        skills: list[dict[str, Any]], tokens: tuple[str, ...]
+    ) -> dict[str, Any] | None:
+        """Mejor skill por score, con minimo ``_MIN_MATCH_SCORE`` y desempate por orden."""
+        best: dict[str, Any] | None = None
+        best_score = 0.0
+        for skill in skills:
+            score = SkillGenerator._score_skill(tokens, skill)
+            if score > best_score:
+                best_score = score
+                best = skill
+        if best_score < _MIN_MATCH_SCORE:
+            return None
+        return best
+
+    @staticmethod
     def find_in_registry(query: str) -> dict[str, Any] | None:
         """Busca en el registry YAML la skill que mejor matchea los tokens de *query*.
 
@@ -367,30 +431,14 @@ class SkillGenerator:
             La skill con mayor score (>= ``_MIN_MATCH_SCORE``), o ``None`` si no
             hay match.
         """
-        if not REGISTRY_PATH.exists():
+        registry = SkillGenerator._read_registry_file()
+        if registry is None:
             return None
-
-        try:
-            with open(str(REGISTRY_PATH), "r", encoding="utf-8") as f:
-                registry = yaml.safe_load(f) or {}
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("No se pudo leer el registry de skills: %s", exc)
-            return None
-
         tokens = SkillGenerator._query_tokens(query)
         if not tokens:
             return None
-
-        skills: list[dict[str, Any]] = registry.get("skills", [])
-        best: dict[str, Any] | None = None
-        best_score = 0.0
-        for skill in skills:
-            score = SkillGenerator._score_skill(tokens, skill)
-            if score > best_score:
-                best_score = score
-                best = skill
-
-        if best_score < _MIN_MATCH_SCORE:
+        best = SkillGenerator._best_match(registry.get("skills", []), tokens)
+        if best is None:
             return None
         result = dict(best)
         if not result.get("path"):

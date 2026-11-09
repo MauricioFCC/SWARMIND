@@ -74,13 +74,25 @@ _STATUS_PATH = _HARNESS_ROOT / "db" / ".hook_status.json"
 _LOCAL_HOOK_TEMPLATE = r'''#!/bin/sh
 # PRE-COMMIT HOOK -- Auto-generado por Swarmind Harness (portable, ADR-0035)
 # 1) QA rapido (pipeline end_of_iteration --pre-commit --quick)
-# 2) Sync global opencode (Opción A: SSOT en ~/.config/opencode) -- best effort
-# 3) Backup memoria central (si MEMORY_ROOT existe y backup habilitado) -- best effort
+# 2) Fitness functions de arquitectura (F1/F2/F4 + ratchet de deuda F3/F5)
+# 3) Skills: validacion estricta + tests rapidos (oraculos/solapamiento)
+# 4) Sync global opencode (Opcion A: SSOT en ~/.config/opencode) -- best effort
+# 5) Backup memoria central (si MEMORY_ROOT existe y backup habilitado) -- best effort
 # Usa uv si esta disponible; fallback a python3 / python.
-_HOOK_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
+#
+# RAIZ: `git rev-parse --show-toplevel`. El `../..` anterior subia DOS niveles
+# desde `.githooks/` y caia FUERA del repo: todos los `if [ -f ]` silenciaban
+# los checks y el hook solo imprimia "[pre-commit] OK" sin validar nada
+# (verificado 2026-11-08 con sonda).
+_HOOK_DIR="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "$_HOOK_DIR" ]; then
+    _HOOK_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+fi
 _PIPELINE="$_HOOK_DIR/harness/scripts/end_of_iteration.py"
 _SYNC="$_HOOK_DIR/scripts/sync_opencode_global.py"
 _BACKUP="$_HOOK_DIR/scripts/backup_memory.py"
+_ARCH="$_HOOK_DIR/scripts/check_architecture.py"
+_SKILLS="$_HOOK_DIR/scripts/validate_skills.py"
 
 _run_python() {
     if command -v uv >/dev/null 2>&1; then
@@ -96,6 +108,39 @@ if [ -f "$_PIPELINE" ]; then
     _run_python "$_PIPELINE" --pre-commit --quick
     _rc=$?
     if [ "$_rc" -ne 0 ]; then
+        exit "$_rc"
+    fi
+fi
+
+# Fitness functions de arquitectura: bloquea ciclos de import y violaciones de
+# capa (F1/F2/F4) y la deuda legacy (ratchet F3/F5). Solo AST, barato.
+if [ -f "$_ARCH" ]; then
+    _run_python "$_ARCH" --gate --ratchet
+    _rc=$?
+    if [ "$_rc" -ne 0 ]; then
+        echo "[pre-commit] BLOCK: violaciones arquitectonicas (ver arriba)"
+        exit "$_rc"
+    fi
+fi
+
+# Skills: validacion estricta (frontmatter, SKILL.min.md, registry, referencias)
+if [ -f "$_SKILLS" ]; then
+    _run_python "$_SKILLS" --strict --quiet
+    _rc=$?
+    if [ "$_rc" -ne 0 ]; then
+        echo "[pre-commit] BLOCK: skills invalidos (ver arriba)"
+        exit "$_rc"
+    fi
+fi
+
+# Tests rapidos de skills: oraculos de mutacion, solapamiento, frontmatter y
+# registry (~7s). Roadmap: mutation gate de skills en pre-commit.
+_SKILL_TESTS="$(ls "$_HOOK_DIR"/harness/tests/test_skill_*.py 2>/dev/null)"
+if [ -n "$_SKILL_TESTS" ]; then
+    _run_python -m pytest -q $_SKILL_TESTS
+    _rc=$?
+    if [ "$_rc" -ne 0 ]; then
+        echo "[pre-commit] BLOCK: tests de skills fallan (ver arriba)"
         exit "$_rc"
     fi
 fi

@@ -83,32 +83,28 @@ class PromptEvolver:
             raise FileNotFoundError(f"Agent profile not found: {profile_path}")
 
         original_lines = profile_path.read_text(encoding="utf-8").splitlines(keepends=True)
-        agent_name = profile_path.stem  # e.g. "software-engineer"
-
-        mutants: list[tuple[str, str]] = []
-
-        # --- Mutant A: Shorten (70% of content, remove redundant examples) ---
-        lines_a = self._mutate_shorten(original_lines)
-        path_a = self._write_mutant(agent_name, "A", lines_a)
-        mutants.append(("A", path_a))
-
-        # --- Mutant B: Reorder (move "output" section to the beginning) ---
-        lines_b = self._mutate_reorder(original_lines)
-        path_b = self._write_mutant(agent_name, "B", lines_b)
-        mutants.append(("B", path_b))
-
-        # --- Mutant C: Specialize (append concrete domain case) ---
-        lines_c = self._mutate_specialize(original_lines, agent_name)
-        path_c = self._write_mutant(agent_name, "C", lines_c)
-        mutants.append(("C", path_c))
-
-        paths = [p for _, p in mutants]
+        agent_name = profile_path.stem  # p. ej. "software-engineer"
+        variants = self._mutate_variants(original_lines, agent_name)
         logger.info(
             "Mutated %s -> %s",
             agent_name,
-            ", ".join(paths),
+            ", ".join(path for _, path in variants),
         )
-        return paths
+        return [path for _, path in variants]
+
+    def _mutate_variants(
+        self, original_lines: list[str], agent_name: str
+    ) -> list[tuple[str, str]]:
+        """Genera las tres variantes (A shorten, B reorder, C specialize) con su ruta."""
+        contenidos = {
+            "A": self._mutate_shorten(original_lines),
+            "B": self._mutate_reorder(original_lines),
+            "C": self._mutate_specialize(original_lines, agent_name),
+        }
+        return [
+            (clave, self._write_mutant(agent_name, clave, lineas))
+            for clave, lineas in contenidos.items()
+        ]
 
     @staticmethod
     def _mutate_shorten(lines: list[str]) -> list[str]:
@@ -186,12 +182,13 @@ class PromptEvolver:
     # Step 2: Evaluate
     # ------------------------------------------------------------------
 
-    def evaluate_mutants(
-        self,
-        original: str,
-        mutants: list[str],
-        test_task: str,
-    ) -> dict[str, Any]:
+    @staticmethod
+    def _score_result(result: dict[str, Any]) -> float:
+        """score = 100*success - tokens/1000 - time/10."""
+        bonus = 100.0 if result.get("success") else 0.0
+        return bonus - result.get("tokens", 0) / 1000.0 - result.get("time", 0) / 10.0
+
+    def evaluate_mutants(self, original: str, mutants: list[str], test_task: str) -> dict[str, Any]:
         """
         Evaluate each mutant against a test task.
 
@@ -208,38 +205,29 @@ class PromptEvolver:
         Returns:
             Dict mapping variant label -> {tokens, success, time, score}.
         """
-        original_content = Path(original).read_text(encoding="utf-8")
         scores: dict[str, Any] = {}
+        originales = [("original", Path(original).read_text(encoding="utf-8"))]
+        mutantes = [
+            (Path(item).stem, Path(item).read_text(encoding="utf-8")) for item in mutants
+        ]
+        for etiqueta, contenido in originales + mutantes:
+            resultado = self._evaluate_single(etiqueta, contenido, test_task)
+            resultado["score"] = self._score_result(resultado)
+            scores[etiqueta] = resultado
 
-        # Evaluate original
-        orig_result = self._evaluate_single("original", original_content, test_task)
-        scores["original"] = orig_result
-
-        # Evaluate each mutant
-        for m_path in mutants:
-            label = Path(m_path).stem  # e.g. "software-engineer_mutant_A"
-            content = Path(m_path).read_text(encoding="utf-8")
-            result = self._evaluate_single(label, content, test_task)
-            scores[label] = result
-
-        # Compute relative scores (lower tokens = better, success = +100)
-        for label, result in scores.items():
-            token_penalty = result.get("tokens", 0) / 1000.0
-            success_bonus = 100.0 if result.get("success") else 0.0
-            time_penalty = result.get("time", 0) / 10.0
-            result["score"] = success_bonus - token_penalty - time_penalty
-
-        logger.info(
-            "Evaluation complete: %d variants scored", len(scores)
-        )
+        logger.info("Evaluation complete: %d variants scored", len(scores))
         return scores
 
     @staticmethod
-    def _evaluate_single(
-        label: str,
-        content: str,
-        test_task: str,
-    ) -> dict[str, Any]:
+    def _keyword_success(content: str, test_task: str) -> bool:
+        """True si el contenido menciona al menos el 30 % de las palabras de la tarea."""
+        keywords = test_task.lower().split()
+        lower = content.lower()
+        matches = sum(1 for k in keywords if k in lower)
+        return matches / max(len(keywords), 1) > 0.3
+
+    @staticmethod
+    def _evaluate_single(label: str, content: str, test_task: str) -> dict[str, Any]:
         """
         Run a single evaluation of a prompt variant.
 
@@ -248,28 +236,15 @@ class PromptEvolver:
         content heuristics.
         """
         start = time.time()
-
-        # Token estimate: ~0.75 tokens per char
         tokens_estimate = int(len(content) * 0.75)
-
-        # Simulate: check if content mentions the test_task keywords
-        keywords = test_task.lower().split()
-        content_lower = content.lower()
-        keyword_matches = sum(1 for k in keywords if k in content_lower)
-        success_ratio = keyword_matches / max(len(keywords), 1)
-        success = success_ratio > 0.3  # at least 30% keyword match
-
+        success = PromptEvolver._keyword_success(content, test_task)
         elapsed = time.time() - start
 
         logger.debug(
             "Evaluated %s: tokens=%d success=%s time=%.3fs",
             label, tokens_estimate, success, elapsed,
         )
-        return {
-            "tokens": tokens_estimate,
-            "success": success,
-            "time": elapsed,
-        }
+        return {"tokens": tokens_estimate, "success": success, "time": elapsed}
 
     # ------------------------------------------------------------------
     # Step 3: Promote / Archive
@@ -296,61 +271,36 @@ class PromptEvolver:
         if not winner.exists():
             logger.error("Winner file not found: %s", winner_path)
             return False
+        preparado = self._prepare_promotion(winner)
+        if preparado is None:
+            return False
+        original_path, backup_path, agent_name = preparado
+        original_path.write_text(winner.read_text(encoding="utf-8"), encoding="utf-8")
+        logger.info("Promoted %s -> %s", winner_path, original_path)
+        self._log_promotion(agent_name, winner, backup_path)
+        return True
 
-        # Determine original profile: strip '_mutant_X' suffix
-        stem = winner.stem  # e.g. "software-engineer_mutant_A"
+    def _prepare_promotion(self, winner: Path) -> tuple[Path, Path, str] | None:
+        """Valida el perfil original y crea el respaldo (None si falta alguno)."""
+        stem = winner.stem  # p. ej. "software-engineer_mutant_A"
         agent_name = stem.rsplit("_mutant_", 1)[0] if "_mutant_" in stem else stem
         original_path = AGENTS_DIR / f"{agent_name}.md"
-
         if not original_path.exists():
             logger.error("Original profile not found: %s", original_path)
-            return False
-
-        # Backup original
+            return None
         backup_name = f"{agent_name}_backup_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.md"
         backup_path = PROMPT_ARCHIVE_DIR / backup_name
         shutil.copy2(str(original_path), str(backup_path))
         logger.info("Backup saved: %s", backup_path)
+        return original_path, backup_path, agent_name
 
-        # Overwrite original with winner
-        winner_content = winner.read_text(encoding="utf-8")
-        original_path.write_text(winner_content, encoding="utf-8")
-        logger.info("Promoted %s -> %s", winner_path, original_path)
-
-        # Log to LanceDB
-        # `winner` es Path: _log_promotion llama a read_text() y con el str
-        # original la promocion fallaba siempre que había vector store.
-        self._log_promotion(agent_name, winner, original_path, backup_path)
-
-        return True
-
-    def _log_promotion(
-        self,
-        agent: str,
-        winner_path: Path,
-        original_path: Path,
-        backup_path: Path,
-    ) -> None:
-        """Record the promotion event in LanceDB.
-
-        Args:
-            agent: Nombre del agente promovido.
-            winner_path: Ruta del mutante ganador (``Path``).
-            original_path: Ruta del perfil original (ya sobrescrito).
-            backup_path: Respaldo del original previo a la promoción; de ahí
-                salen los ``tokens_before`` (el original ya no existe en disco).
-        """
-        if self._vector_store is None:
-            logger.info("No vector store; promotion event not logged to LanceDB.")
-            return
-
-        # Estimate token counts (antes = respaldo, despues = ganador ya aplicado)
+    @staticmethod
+    def _promotion_metadata(agent: str, winner_path: Path, backup_path: Path) -> dict[str, Any]:
+        """Metadatos del evento (antes = respaldo, despues = ganador aplicado)."""
+        mutation_type = winner_path.stem.split("_mutant_")[-1] if "_mutant_" in winner_path.stem else "unknown"
         original_tokens = len(backup_path.read_text(encoding="utf-8")) * 0.75
         winner_tokens = len(winner_path.read_text(encoding="utf-8")) * 0.75
-
-        mutation_type = winner_path.stem.split("_mutant_")[-1] if "_mutant_" in winner_path.stem else "unknown"
-
-        metadata: dict[str, Any] = {
+        return {
             "agent": agent,
             "mutation_type": mutation_type,
             "test_task": "auto-evolution",
@@ -361,22 +311,43 @@ class PromptEvolver:
             "timestamp": datetime.now(UTC).isoformat(),
         }
 
+    @staticmethod
+    def _promotion_vector(text: str) -> Any:
+        """Vector determinista 384-d normalizado a partir del texto."""
         vec = np.zeros(EMBEDDING_DIM, dtype=np.float32)
-        text_for_vec = f"{agent} {mutation_type} prompt evolution"
-        for i, ch in enumerate(text_for_vec.encode("utf-8", errors="replace")):
-            idx = (i * 7 + ch) % 384
+        for i, ch in enumerate(text.encode("utf-8", errors="replace")):
+            idx = (i * 7 + ch) % EMBEDDING_DIM
             vec[idx] += 1.0
         norm = np.linalg.norm(vec)
         if norm > 0:
             vec /= norm
+        return vec
 
+    def _log_promotion(
+        self,
+        agent: str,
+        winner_path: Path,
+        backup_path: Path,
+    ) -> None:
+        """Record the promotion event in LanceDB.
+
+        Args:
+            agent: Nombre del agente promovido.
+            winner_path: Ruta del mutante ganador (``Path``).
+            backup_path: Respaldo del original previo a la promoción; de ahí
+                salen los ``tokens_before`` (el original ya no existe en disco).
+        """
+        if self._vector_store is None:
+            logger.info("No vector store; promotion event not logged to LanceDB.")
+            return
+
+        metadata = self._promotion_metadata(agent, winner_path, backup_path)
+        vec = self._promotion_vector(f"{agent} {metadata['mutation_type']} prompt evolution")
         try:
             self._vector_store.insert(
-                COLLECTION_PROMPT_EVOLUTION_LOG,
-                vec.reshape(1, -1),
-                [metadata],
+                COLLECTION_PROMPT_EVOLUTION_LOG, vec.reshape(1, -1), [metadata]
             )
-            logger.info("Promotion logged in LanceDB: %s %s", agent, mutation_type)
+            logger.info("Promotion logged in LanceDB: %s %s", agent, metadata["mutation_type"])
         except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to log promotion in LanceDB: %s", exc)
 
