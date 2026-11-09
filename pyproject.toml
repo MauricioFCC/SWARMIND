@@ -74,6 +74,13 @@ test = [
     "pytest-split>=0.9",
 ]
 
+[tool.uv]
+# `safety<4` declara `filelock<4`, pero filelock 3.32.7 arrastra los CVEs
+# CVE-2026-112936/38/39 (el fix esta en 4.x). La API de filelock 4 es
+# compatible con el uso que hacen safety y torch, asi que se fuerza la
+# version corregida y se cierran las alertas de Trivy sin romper el audit.
+override-dependencies = ["filelock>=4.2.9"]
+
 [dependency-groups]
 # Compatibilidad con `uv sync --group <name>` en CI (PEP 735).
 # `test` debe bastar para correr la suite: conftest importa hypothesis y
