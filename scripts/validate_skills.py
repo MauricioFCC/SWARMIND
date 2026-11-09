@@ -20,7 +20,10 @@ import re
 import sys
 from pathlib import Path
 
-from hash_skills_registry import compute_skill_digest
+try:
+    from .hash_skills_registry import compute_skill_digest
+except ImportError:  # ejecucion directa: sys.path[0] es scripts/
+    from hash_skills_registry import compute_skill_digest
 
 #: Raiz del repo en sys.path (el script corre con sys.path[0]=scripts; sin esto
 #: ``harness`` puede resolverse a una copia instalada desactualizada).

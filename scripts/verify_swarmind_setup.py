@@ -346,7 +346,10 @@ def _fix_memory() -> bool:
     Returns:
         True si la memoria central quedo OK.
     """
-    from setup_memory_central import ensure_memory_structure
+    try:
+        from .setup_memory_central import ensure_memory_structure
+    except ImportError:  # ejecucion directa: sys.path[0] es scripts/
+        from setup_memory_central import ensure_memory_structure
 
     ensure_memory_structure()
     result = check_memory_central()

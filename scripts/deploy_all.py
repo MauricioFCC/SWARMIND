@@ -1156,13 +1156,19 @@ def main() -> None:
     # (2026-11) El cerebro/motor vive UNA vez en ~/.config/opencode; los
     # proyectos ya no guardan copias redundantes. El mirror es opt-in.
     if not args.projects and not args.project and not args.sync_harness_global:
-        from sync_opencode_global import sync_global
+        try:
+            from .sync_opencode_global import sync_global
+        except ImportError:  # ejecucion directa: sys.path[0] es scripts/
+            from sync_opencode_global import sync_global
         sync_global(dry_run=args.dry_run)
         return
 
     # ── Solo sync global ──
     if args.sync_global:
-        from sync_opencode_global import sync_global
+        try:
+            from .sync_opencode_global import sync_global
+        except ImportError:  # ejecucion directa: sys.path[0] es scripts/
+            from sync_opencode_global import sync_global
         sync_global(dry_run=args.dry_run)
         return
 
