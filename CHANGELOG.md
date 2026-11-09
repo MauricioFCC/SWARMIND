@@ -1,3 +1,29 @@
+## [11.90] - 2026-11-08
+
+### Fixed
+1. **El pre-commit no validaba nada**: la plantilla de `install_hooks.py`
+   resolvía la raíz con `$(dirname $0)/../..`, que desde `.githooks/` cae
+   **fuera** del repo → todos los `if [ -f ]` fallaban en silencio y el hook
+   solo imprimía `[pre-commit] OK`. Ahora usa `git rev-parse --show-toplevel`
+   (fallback de un nivel) y ejecuta además **arquitectura (ratchet)**,
+   **skills** (`validate_skills --strict`) y **tests de skills** (oráculos de
+   mutación/solapamiento, ~7 s). Evidencia: sonda con el hook real
+   (`HOOK_DIR` fuera del repo, 5/5 rutas MISSING) y run final de **15.2 s,
+   exit 0** con todos los gates visibles.
+2. **Imports hermanos frágiles en `scripts/`**: `validate_skills` (rompía su
+   import en aislamiento: `test_skill_frontmatter` fallaba solo), `deploy_all`
+   (×2) y `verify_swarmind_setup` → import relativo con fallback a la
+   ejecución directa.
+3. **CVE-2026-112936/38/39 (filelock)**: `safety<4` exigía `filelock<4` y
+   bloqueaba el fix. Se fuerza `filelock>=4.2.9` con
+   `[tool.uv] override-dependencies` (CI intacto; `safety check` reproducido
+   localmente con **exit 0**).
+
+### Changed
+- **Refactor F5**: 9 funciones >30 líneas partidas en `skill_generator`
+  (4 → 0) y `prompt_evolver` (5 → 0) → F5 global **929 → 920** y deuda
+  advisory 1000 → 990; 53 tests de esos módulos en verde.
+
 ## [11.89] - 2026-11-08
 
 ### Added
