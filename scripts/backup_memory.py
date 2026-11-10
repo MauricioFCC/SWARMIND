@@ -21,9 +21,12 @@ MECANISMO AUTOMÁTICO:
 
 SEGURIDAD:
   - Nunca borra la db de producción.
-  - Los backups viven en <MEMORY_ROOT>/backups/lancedb_<timestamp>.
+  - RuscaDB es el backend nativo: los backups viven en
+    <MEMORY_ROOT>/backups/ruscadb_<timestamp>/ruscadb/ (db + wal + manifest +
+    blobs). Con instalaciones legadas que aun tienen LanceDB se respalda
+    tambien <MEMORY_ROOT>/backups/lancedb_<timestamp>/lancedb/.
   - Rotación automática: conserva solo los `backup_keep` más recientes.
-  - Backup = colecciones NO volatiles (excluye `semantic_cache` y
+  - LanceDB (legado) = colecciones NO volatiles (excluye `semantic_cache` y
     `agent_workspace_logs`: cache/logs regenerables que sumaban ~9.8 GB).
 
 Uso:
@@ -61,7 +64,17 @@ _MEMORY_ROOT = Path(os.environ.get(
 ))
 _CONFIG_FILE = _MEMORY_ROOT / ".swarmind_config.json"
 _DB_DIR = _MEMORY_ROOT / "data" / "lancedb"
+_RUSCA_DB = _MEMORY_ROOT / "data" / "ruscadb.db"
 _BACKUP_ROOT = _MEMORY_ROOT / "backups"
+
+#: Archivos/artefactos que componen el RuscaDB central (SSOT de la memoria).
+_RUSCA_ARTIFACTS: tuple[str, ...] = (
+    "ruscadb.db",
+    "ruscadb.wal",
+    "ruscadb.manifest.json",
+    "ruscadb.manifest.json.bak",
+    "ruscadb.blobs",
+)
 
 #: Colecciones VOLATILES excluidas del backup (cache/logs regenerables).
 #: Dominan el tamano (semantic_cache ~5 GB + agent_workspace_logs ~4.6 GB) y no
@@ -99,17 +112,81 @@ def _load_config() -> dict:
     return dict(_DEFAULTS)
 
 
+def _ruscadb_present() -> bool:
+    """True si el RuscaDB central existe y tiene contenido.
+
+    Returns:
+        True cuando ``data/ruscadb.db`` existe con tamano > 0.
+    """
+    return _RUSCA_DB.is_file() and _RUSCA_DB.stat().st_size > 0
+
+
+def _copy_ruscadb(dest: Path) -> int:
+    """Copia los artefactos del RuscaDB central a ``dest``.
+
+    Args:
+        dest: Directorio destino (``<backup>/ruscadb``).
+
+    Returns:
+        Numero de artefactos copiados.
+    """
+    if not _ruscadb_present():
+        return 0
+    dest.mkdir(parents=True, exist_ok=True)
+    copiados = 0
+    for nombre in _RUSCA_ARTIFACTS:
+        origen = _RUSCA_DB.parent / nombre
+        if not origen.exists():
+            continue
+        if origen.is_dir():
+            shutil.copytree(origen, dest / nombre, dirs_exist_ok=True)
+        else:
+            shutil.copy2(origen, dest / nombre)
+        copiados += 1
+    return copiados
+
+
 def _count_lance_collections(db_dir: Path) -> int:
     if not db_dir.is_dir():
         return 0
     return sum(1 for d in db_dir.iterdir() if d.is_dir() and d.name.endswith(".lance"))
 
 
+def _backup_timestamp(path: Path) -> datetime:
+    """Extrae el timestamp de un backup (``<prefijo>_YYYYMMDD_HHMMSS``).
+
+    Args:
+        path: Directorio de backup.
+
+    Returns:
+        Fecha/hora UTC del backup; ``mtime`` como fallback defendible.
+    """
+    try:
+        ts_str = path.name.split("_", 1)[1]
+        return datetime.strptime(ts_str, "%Y%m%d_%H%M%S").replace(tzinfo=UTC)
+    except (IndexError, ValueError):
+        return datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
+
+
 def _list_backups() -> list[Path]:
+    """Lista backups (``ruscadb_*`` y ``lancedb_*``) del mas nuevo al mas viejo.
+
+    Ordena por el timestamp del nombre, no alfabeticamente: con prefijos mixtos
+    el orden alfabetico pondria todo ``ruscadb_*`` antes de ``lancedb_*`` y la
+    rotacion borraria backups recientes.
+
+    Returns:
+        Directorios de backup ordenados descendentemente por fecha.
+    """
     if not _BACKUP_ROOT.is_dir():
         return []
     return sorted(
-        (d for d in _BACKUP_ROOT.iterdir() if d.is_dir() and d.name.startswith("lancedb_")),
+        (
+            d
+            for d in _BACKUP_ROOT.iterdir()
+            if d.is_dir() and d.name.startswith(("lancedb_", "ruscadb_"))
+        ),
+        key=_backup_timestamp,
         reverse=True,
     )
 
@@ -119,13 +196,7 @@ def _last_backup_age_hours() -> float | None:
     backups = _list_backups()
     if not backups:
         return None
-    # El timestamp esta en el nombre: lancedb_YYYYMMDD_HHMMSS
-    try:
-        ts_str = backups[0].name.replace("lancedb_", "")
-        ts = datetime.strptime(ts_str, "%Y%m%d_%H%M%S").replace(tzinfo=UTC)
-        return (datetime.now(UTC) - ts).total_seconds() / 3600
-    except ValueError:
-        return None
+    return (datetime.now(UTC) - _backup_timestamp(backups[0])).total_seconds() / 3600
 
 
 def _rotate(keep: int, dry_run: bool = False) -> int:
@@ -153,6 +224,11 @@ def _rotate(keep: int, dry_run: bool = False) -> int:
 def _do_backup(force: bool = False, dry_run: bool = False) -> bool:
     """Ejecuta el backup respetando la config (intervalo + rotación).
 
+    WHAT: respalda el RuscaDB nativo (fuente de verdad de la memoria general) y,
+    si existe, la LanceDB legada. WHY: sin RuscaDB en el backup, la memoria
+    general quedaria sin respaldo restaurable. WHERE: pre-commit + tarea
+    programada.
+
     Args:
         force: Si True, ignora el intervalo.
         dry_run: Si True, solo simula.
@@ -165,8 +241,13 @@ def _do_backup(force: bool = False, dry_run: bool = False) -> bool:
         logger.info("  ⏸️  Backup desactivado en config (backup_enabled=false).")
         return False
 
-    if _count_lance_collections(_DB_DIR) == 0:
-        logger.warning("  ⚠️  No hay db que respaldar (data/lancedb vacía o inexistente).")
+    hay_rusca = _ruscadb_present()
+    lance_cols = _count_lance_collections(_DB_DIR)
+    if not hay_rusca and lance_cols == 0:
+        logger.warning(
+            "  ⚠️  No hay db que respaldar (data/ruscadb.db vacía e "
+            "data/lancedb sin colecciones)."
+        )
         return False
 
     # Respetar intervalo (si no es force)
@@ -186,17 +267,26 @@ def _do_backup(force: bool = False, dry_run: bool = False) -> bool:
             )
             return False
 
-    # Crear backup (excluyendo colecciones volatiles: cache/logs regenerables)
+    # Crear backup: directorio unico con subcarpetas por backend presente.
     ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-    backup_dir = _BACKUP_ROOT / f"lancedb_{ts}"
+    prefijo = "ruscadb" if hay_rusca else "lancedb"
+    backup_dir = _BACKUP_ROOT / f"{prefijo}_{ts}"
     if not dry_run:
         backup_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(
-            _DB_DIR, backup_dir / "lancedb", dirs_exist_ok=True,
-            ignore=shutil.ignore_patterns(*_BACKUP_IGNORE_PATTERNS),
-        )
+        if hay_rusca:
+            copiados = _copy_ruscadb(backup_dir / "ruscadb")
+            logger.info("      RuscaDB: %d artefacto(s) copiado(s).", copiados)
+        if lance_cols:
+            shutil.copytree(
+                _DB_DIR, backup_dir / "lancedb", dirs_exist_ok=True,
+                ignore=shutil.ignore_patterns(*_BACKUP_IGNORE_PATTERNS),
+            )
     logger.info("  🛡️  Backup creado: %s %s", backup_dir, "(simulado)" if dry_run else "")
-    logger.info("      Excluidas (volatiles): %s", ", ".join(sorted(_BACKUP_EXCLUDE_COLLECTIONS)))
+    if lance_cols:
+        logger.info(
+            "      Excluidas de LanceDB (volatiles): %s",
+            ", ".join(sorted(_BACKUP_EXCLUDE_COLLECTIONS)),
+        )
 
     # Rotación
     keep = config.get("backup_keep", 5)
@@ -205,20 +295,48 @@ def _do_backup(force: bool = False, dry_run: bool = False) -> bool:
 
 
 def _restore(backup_dir: Path, dry_run: bool = False) -> bool:
-    """Restaura una db desde un backup."""
-    src = backup_dir / "lancedb"
-    if not src.is_dir() or _count_lance_collections(src) == 0:
-        logger.error("  ❌ Backup inválido (sin colecciones): %s", backup_dir)
+    """Restaura la memoria desde un backup (RuscaDB nativo y/o LanceDB legado).
+
+    Args:
+        backup_dir: Directorio de backup (contiene ``ruscadb/`` y/o ``lancedb/``).
+        dry_run: Si True, solo simula.
+
+    Returns:
+        True si se restauró al menos un backend.
+    """
+    src_rusca = backup_dir / "ruscadb"
+    src_lance = backup_dir / "lancedb"
+    hay_rusca = src_rusca.is_dir() and (src_rusca / "ruscadb.db").is_file()
+    hay_lance = src_lance.is_dir() and _count_lance_collections(src_lance) > 0
+    if not hay_rusca and not hay_lance:
+        logger.error("  ❌ Backup inválido (sin RuscaDB ni colecciones LanceDB): %s", backup_dir)
         return False
+
     # Backup de la actual antes de restaurar (seguridad)
-    if not dry_run and _count_lance_collections(_DB_DIR) > 0:
-        _do_backup(force=True, dry_run=False)
     if not dry_run:
-        _DB_DIR.mkdir(parents=True, exist_ok=True)
-        for d in src.iterdir():
-            if d.is_dir() and d.name.endswith(".lance"):
-                shutil.copytree(d, _DB_DIR / d.name, dirs_exist_ok=True)
-    logger.info("  ♻️  Restaurada db desde %s %s", backup_dir, "(simulado)" if dry_run else "")
+        _do_backup(force=True, dry_run=False)
+
+    if not dry_run:
+        if hay_rusca:
+            _RUSCA_DB.parent.mkdir(parents=True, exist_ok=True)
+            for nombre in _RUSCA_ARTIFACTS:
+                origen = src_rusca / nombre
+                if not origen.exists():
+                    continue
+                destino = _RUSCA_DB.parent / nombre
+                if origen.is_dir():
+                    shutil.copytree(origen, destino, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(origen, destino)
+        if hay_lance:
+            _DB_DIR.mkdir(parents=True, exist_ok=True)
+            for d in src_lance.iterdir():
+                if d.is_dir() and d.name.endswith(".lance"):
+                    shutil.copytree(d, _DB_DIR / d.name, dirs_exist_ok=True)
+    logger.info(
+        "  ♻️  Restaurada memoria desde %s (ruscadb=%s, lancedb=%s) %s",
+        backup_dir, hay_rusca, hay_lance, "(simulado)" if dry_run else "",
+    )
     return True
 
 
@@ -347,8 +465,13 @@ def main() -> None:
         if not backups:
             logger.info("  (sin backups)")
         for b in backups:
+            partes: list[str] = []
+            if (b / "ruscadb" / "ruscadb.db").is_file():
+                partes.append("RuscaDB")
             cols = _count_lance_collections(b / "lancedb")
-            logger.info("  📦 %-30s (%d colecciones)", b.name, cols)
+            if cols:
+                partes.append(f"LanceDB {cols} colecciones")
+            logger.info("  📦 %-30s (%s)", b.name, " + ".join(partes) or "vacío")
         return
 
     if args.restore:

@@ -46,6 +46,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import shutil
@@ -66,6 +67,23 @@ _MEMORY_ROOT = Path(os.environ.get(
 # 99_Hermes_Brain/ (bridge/dreaming/sentinela) NO se recrean; tampoco las
 # planned-but-unused (syntheses/personal/projects/inbox/exports).
 _MEMORY_DIRS = ["data", "data/lancedb", "backups"]
+
+#: Colecciones de valor canonicas de la memoria general (RuscaDB).
+_CANONICAL_COLLECTIONS: tuple[str, ...] = (
+    "agent_interactions",
+    "agent_performance",
+    "asi_cognition_store",
+    "hitl_approval_log",
+    "iteration_reports",
+    "procedural_skills",
+    "prompt_evolution_log",
+    "rag_chunks",
+    "scheduler_log",
+    "session_kpis",
+    "skill_effectiveness",
+    "tasks_board",
+    "telemetry_events",
+)
 
 # Directorios que NO corresponden en una carpeta de memoria pura
 # (el motor y el cerebro viven en opencode global / repo Swarmind).
@@ -151,14 +169,90 @@ def _restore_db(backup_dir: Path, dry_run: bool = False) -> bool:
     return True
 
 
+def _ensure_config(root: Path, rusca_db: Path) -> bool:
+    """Asegura ``.swarmind_config.json`` con RuscaDB como backend (no destructivo).
+
+    Solo rellena claves ausentes: nunca pisa una configuracion existente del
+    usuario (p. ej. un ``memory_root`` ya fijado).
+
+    Args:
+        root: Raiz de la memoria central.
+        rusca_db: Ruta del RuscaDB central.
+
+    Returns:
+        True si el archivo se creo o modifico.
+    """
+    config = root / ".swarmind_config.json"
+    data: dict = {}
+    if config.is_file():
+        try:
+            data = json.loads(config.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            data = {}
+    completos = {
+        "memory_root": str(root),
+        "ruscadb_path": str(rusca_db).replace("\\", "/"),
+        "vector_backend": "ruscadb",
+    }
+    changed = False
+    for clave, valor in completos.items():
+        if not data.get(clave):
+            data[clave] = valor
+            changed = True
+    if changed:
+        config.write_text(
+            json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+    return changed
+
+
+def _ensure_ruscadb(root: Path, dry_run: bool = False) -> dict:
+    """Inicializa el RuscaDB central con las colecciones canonicas.
+
+    WHAT: backend nativo unico para la memoria general (LanceDB queda como
+    legado). WHY: un clon/instalacion nueva debe tener memoria nativa lista sin
+    pasos manuales. WHERE: bootstrap del setup + health-check.
+
+    Args:
+        root: Raiz de la memoria central.
+        dry_run: Si True, solo reporta sin escribir.
+
+    Returns:
+        Dict con ``path``, ``collections`` y ``ok``.
+    """
+    rusca_db = root / "data" / "ruscadb.db"
+    if dry_run:
+        return {"path": rusca_db, "collections": 0, "ok": rusca_db.is_file()}
+    try:
+        from harness.memory_rag.ruscadb_store import RuscaDBStore
+
+        store = RuscaDBStore(db_path=str(rusca_db))
+        try:
+            existentes = set(store.list_collections())
+            for nombre in _CANONICAL_COLLECTIONS:
+                if nombre not in existentes:
+                    store.create_collection(nombre)
+            total = len(store.list_collections())
+        finally:
+            store.close()
+        return {"path": rusca_db, "collections": total, "ok": True}
+    except Exception as exc:  # noqa: BLE001 - PC sin binario nativo degrada
+        logger.warning(
+            "  ⚠️  RuscaDB no disponible (%s): se usa LanceDB legado/fallback.",
+            exc,
+        )
+        return {"path": rusca_db, "collections": 0, "ok": False}
+
+
 def ensure_memory_structure(memory_root: Path | None = None,
                             dry_run: bool = False) -> dict:
     """Verifica/crea la memoria central completa (idempotente, no destructivo).
 
-    Crea SOLO la estructura de directorios (con ``.gitkeep``) si falta:
-    nunca borra ni sobreescribe contenido existente (preserva db LanceDB).
-    Funcion publica reutilizable por ``sync_opencode_global.py`` y por el
-    health-check del setup (ADR-0042: la memoria debe crearse automaticamente).
+    Crea la estructura de directorios (con ``.gitkeep``) si falta, inicializa
+    RuscaDB como backend nativo y asegura la config; nunca borra ni sobreescribe
+    contenido existente (preserva la db LanceDB legada). Funcion publica
+    reutilizable por ``sync_opencode_global.py`` y por el health-check del setup
+    (ADR-0042: la memoria debe crearse automaticamente).
 
     Args:
         memory_root: Raiz de la memoria (default: ``$MEMORY_ROOT`` o
@@ -167,7 +261,8 @@ def ensure_memory_structure(memory_root: Path | None = None,
 
     Returns:
         Dict con ``root`` (Path), ``created`` (int dirs nuevos),
-        ``existing`` (int dirs ya presentes) y ``dry_run`` (bool).
+        ``existing`` (int dirs ya presentes), ``dry_run`` (bool),
+        ``ruscadb`` (dict del backend nativo) y ``config_updated`` (bool).
 
     Raises:
         OSError: Si falla la creacion de algun directorio.
@@ -184,8 +279,16 @@ def ensure_memory_structure(memory_root: Path | None = None,
             path.mkdir(parents=True, exist_ok=True)
             (path / ".gitkeep").write_text("", encoding="utf-8")
         created += 1
-    return {"root": root, "created": created,
-            "existing": existing, "dry_run": dry_run}
+    rusca = _ensure_ruscadb(root, dry_run=dry_run)
+    config_updated = False if dry_run else _ensure_config(root, rusca["path"])
+    return {
+        "root": root,
+        "created": created,
+        "existing": existing,
+        "dry_run": dry_run,
+        "ruscadb": rusca,
+        "config_updated": config_updated,
+    }
 
 
 def _build_structure(dry_run: bool) -> None:
@@ -262,7 +365,22 @@ def _verify(dry_run: bool) -> bool:
                 logger.info("  ❌ %-20s (NO existe)", rel)
     db = _MEMORY_ROOT / "data" / "lancedb"
     cols = _count_lance_collections(db)
-    logger.info("  🗄️  DB LanceDB: %d colecciones", cols)
+    logger.info("  🗄️  DB LanceDB (legado): %d colecciones", cols)
+    rusca_db = _MEMORY_ROOT / "data" / "ruscadb.db"
+    if rusca_db.is_file():
+        try:
+            from harness.memory_rag.ruscadb_store import RuscaDBStore
+
+            store = RuscaDBStore(db_path=str(rusca_db), readonly=True)
+            try:
+                logger.info(
+                    "  🗄️  DB RuscaDB (nativa): %d colecciones",
+                    len(store.list_collections()),
+                )
+            finally:
+                store.close()
+        except Exception as exc:  # noqa: BLE001 - reporte defensivo
+            logger.warning("  ⚠️  RuscaDB no legible: %s", exc)
     return ok
 
 

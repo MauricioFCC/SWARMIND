@@ -5,6 +5,22 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-10)
+
+### Estado 2026-11-10 (Ciclo 11.91 — memoria general solo RuscaDB + binario versionado)
+- **RuscaDB es la única memoria general**: 16 colecciones en
+  `Memory_Proyects/data/ruscadb.db`; LanceDB archivada en
+  `backups/lancedb_pre_rusca_20261110_193534` (no borrada) y `data/lancedb`
+  reducida a `.gitkeep`.
+- **Binario versionado** (`ruscadb_ffi.dll` + `.sha256`): un clon limpio arranca
+  con backend nativo; `pin_ruscadb_binary.py` re-fija el checksum tras
+  recompilar.
+- Health-check con RuscaDB primario (readonly) y LanceDB como legado;
+  bootstrap crea las colecciones canónicas y `vector_backend: ruscadb`.
+- Backup/restore cubren RuscaDB (db + wal + manifest + blobs).
+- Bug FTS5 (`row_factory`) corregido con 2 tests de regresión.
+- Evidencia: 485 tests de memoria, ruff/vulture/arquitectura en 0.
+
 ## Estado Actual (2026-11-08b)
 
 ### Estado 2026-11-08 (Ciclo 11.90 — pre-commit, filelock y F5)

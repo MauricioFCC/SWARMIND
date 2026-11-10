@@ -1,3 +1,55 @@
+## [11.91] - 2026-11-10
+
+### Fixed
+1. **FTS5 devolvía 0 hits en silencio**: `FTSSearchEngine` abría SQLite sin
+   `row_factory = sqlite3.Row`, así que `_search_fts` reventaba con
+   `tuple indices must be integers or slices, not str` y el `except` la
+   degradaba a lista vacía sin rastro. +2 tests de regresión con SQLite FTS5
+   real (`harness/tests/test_fts_search.py`, 49 passed).
+2. **`backup_memory.py` no respaldaba la memoria general**: abortaba si
+   `data/lancedb` no tenía colecciones, dejando el RuscaDB sin backup. Ahora
+   respalda `ruscadb.db` + `wal` + `manifest` + `blobs` en
+   `backups/ruscadb_<ts>/ruscadb/`, admite restauración de ese layout y ordena
+   la rotación por timestamp del nombre (no alfabéticamente: con prefijos
+   mixtos `ruscadb_*`/`lancedb_*` borraba backups recientes).
+
+### Added
+- **Binario RuscaDB versionado**: `harness/memory_rag/ruscadb_ffi.dll`
+  (2.8 MB) + `ruscadb_ffi.dll.sha256`
+  (`4bd2972b…f97274c`). Un clon limpio ya no cae a LanceDB: el motor nativo
+  está en el repo. `.gitignore` con excepción explícita, `.gitattributes`
+  `binary`, `scripts/pin_ruscadb_binary.py` (verifica/regenera) y contrato
+  en `harness/tests/test_ruscadb_binary.py` (5 passed).
+- **Migración LanceDB → RuscaDB**: `scripts/migrate_lance_to_rusca.py`
+  incorpora `--skip-volatile` (excluye caché regenerable) y
+  `--archive-lance` (archiva `data/lancedb` en `backups/` y deja `.gitkeep`,
+  no borra).
+- **Bootstrap con RuscaDB**: `ensure_memory_structure` crea las 16
+  colecciones canónicas del backend nativo y asegura
+  `vector_backend: ruscadb` en `.swarmind_config.json` **sin pisar** claves
+  existentes del usuario.
+- **Health-check RuscaDB primario**: `verify_swarmind_setup.py` valida
+  RuscaDB primero (apertura readonly), deja LanceDB como legado tolerado y
+  reporta filas por colección de valor en lugar de bytes.
+
+### Changed
+- Memoria central del equipo migrada a **RuscaDB único** (`16 colecciones`,
+  `iteration_reports`=1); LanceDB archivada en
+  `backups/lancedb_pre_rusca_20261110_193534` y `data/lancedb` reducida a
+  `.gitkeep`.
+- Tests nuevos: `test_backup_memory.py` (7) y ampliación de
+  `test_setup_verification.py` (+5: RuscaDB primario, legado, corrupción y
+  config no destructiva).
+
+### Evidence
+- Suite de memoria: **485 passed** (`-k "fts or memory or ruscadb or
+  knowledge_graph or parity or doc_ingest or backup_memory or
+  setup_verification"`).
+- `pin_ruscadb_binary.py` → `OK: ruscadb_ffi.dll (2795520 bytes) sha256=4bd2972b…`.
+- `verify_swarmind_setup.py` → **exit 0**: `16 colecciones RuscaDB`,
+  `1 con datos / 13 vacías`; `check_architecture.py --gate --ratchet` exit 0;
+  `vulture` exit 0; `ruff` → All checks passed.
+
 ## [11.90] - 2026-11-08
 
 ### Fixed
