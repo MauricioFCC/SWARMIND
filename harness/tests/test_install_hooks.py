@@ -9,7 +9,8 @@ Regresion 2 (checks silenciados): la plantilla resolvia la raiz con
 ``$(dirname $0)/../..``, que desde ``.githooks/`` cae FUERA del repo, asi que
 todos los ``if [ -f ]`` fallaban en silencio y el hook solo imprimia
 "[pre-commit] OK" sin validar nada. La raiz se resuelve ahora con
-``git rev-parse --show-toplevel`` y el hook valida arquitectura y skills.
+``git rev-parse --show-toplevel`` y el hook valida la politica unica
+(``scripts/xtask.py``: trinquetes, arquitectura y skills).
 """
 from __future__ import annotations
 
@@ -56,7 +57,9 @@ class TestPlantillaDelHook:
         assert '"$(dirname -- "$0")/.."' in _LOCAL_HOOK_TEMPLATE
 
     def test_incluye_los_gates(self) -> None:
-        """El hook valida arquitectura (ratchet) y skills (script + tests)."""
+        """El hook ejecuta la politica unica (xtask) y conserva el fallback."""
+        assert "xtask.py" in _LOCAL_HOOK_TEMPLATE
+        assert "gate --fast" in _LOCAL_HOOK_TEMPLATE
         assert "--gate --ratchet" in _LOCAL_HOOK_TEMPLATE
         assert "validate_skills.py" in _LOCAL_HOOK_TEMPLATE
         assert "test_skill_*.py" in _LOCAL_HOOK_TEMPLATE
@@ -64,7 +67,7 @@ class TestPlantillaDelHook:
     def test_los_gates_bloquean(self) -> None:
         """Cada gate sale con ``exit`` ante un fallo (no sigue en silencio)."""
         template = _LOCAL_HOOK_TEMPLATE
-        for bloque in ("violaciones arquitectonicas", "skills invalidos", "tests de skills fallan"):
+        for bloque in ("politica xtask en rojo", "tests de skills fallan"):
             assert bloque in template
             inicio = template.index(bloque)
             assert "exit" in template[inicio : inicio + 200]

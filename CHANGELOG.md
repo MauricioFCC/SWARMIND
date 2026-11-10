@@ -1,3 +1,42 @@
+## [11.93] - 2026-11-10
+
+### Added
+- **`scripts/xtask.py`: política única de calidad, seguridad y buenas
+  prácticas** (SSOT ejecutable, datos en `POLICY`). 14 gates con tabla
+  PASS/FAIL/SKIP, `--fast` (pre-commit <2 min), `--only/--skip`, `--json` y
+  exit 0/1/2: `ruff`, `ruff-preview`, `ruff-ratchet`, `arquitectura`,
+  `complejidad`, `pep649`, `docs-links`, `docs-index`, `workflows`, `skills`,
+  `vulture`, `security` y `tests`.
+- **Cableado real**: el pre-commit (`install_hooks.py`) ejecuta
+  `xtask gate --fast` (con fallback a arquitectura + skills) y el job `lint`
+  de CI ejecuta `xtask check --skip tests`; se acaban los comandos sueltos.
+- 22 tests (`test_xtask.py`): política válida, selección por modo/`--fast`/
+  `--only`/`--skip`, clasificación PASS/FAIL/SKIP, timeout = FAIL y contrato
+  de exit codes.
+
+### Fixed
+- **Falsos positivos del scanner de seguridad** (`security_policy.py`): el gate
+  de `xtask check` destapó 11 hallazgos, todos falsos positivos → se
+  corrigieron en el scanner, no silenciándolos: `sk-` dentro de
+  “ri**sk-**management”/“xta**sk-**and” ya no es clave OpenAI (lookbehind);
+  placeholders `<user>`/`u`/`user` no son rutas personales; `$HOME` en `.sh`
+  es expansión legítima; un `.env` no trackeado no se escanea. +6 tests.
+- **Falsos positivos del trinquete Ruff**: `check_ruff_ratchet.py` restringe
+  `--select PERF,FURB,RUF`, y en ese contexto `RUF100`/`RUF105` marcan como
+  “no habilitado” todo `# noqa` de otra regla (438+ falsos positivos). Se
+  ignoran explícitamente en el trinquete; el lint principal sigue validando
+  las supresiones reales. Baseline regenerado sin esa entrada.
+- **Versión alineada con el ciclo** (`11.93.0`): antes `0.1.0` dejaba inerte
+  el gate anti-downgrade de `self_update`; `test_version_alignment.py` exige
+  coincidencia con el primer encabezado del CHANGELOG y prohíbe volver a `0.x`.
+
+### Evidence
+- `python scripts/xtask.py gate --fast` → 10 gates en verde (exit 0).
+- `python scripts/xtask.py check --skip tests` → 13 gates en verde.
+- `pytest test_xtask.py test_install_hooks.py test_version_alignment.py` →
+  **32 passed**; `ruff check harness scripts` → **All checks passed**;
+  `check_ruff_ratchet.py --gate` → exit 0.
+
 ## [11.92] - 2026-11-10
 
 ### Added
@@ -19,6 +58,13 @@
 - `run_support._render_notice` usa el sello cuando no hay `.git`;
   `handlers_other._handle_update` enruta a `check_install`/`apply_install`
   solo si existe sello (no altera la ruta del clon).
+
+### Fixed
+- **Gate anti-downgrade inerte por versión placeholder**: `pyproject.toml`
+  declaraba `version = "0.1.0"` mientras el ciclo iba por 11.91, así que
+  `_downgrade_blocked` comparaba `0.1.0` contra `0.1.0`. Ahora la versión es
+  `11.92.0` y un test (`test_version_alignment.py`) exige que coincida con el
+  primer encabezado del CHANGELOG y que no vuelva a un `0.x`.
 
 ### Evidence
 - `pytest test_self_update*.py test_run_commands_update.py` → **79 passed**.

@@ -7,6 +7,16 @@
 
 ## Estado Actual (2026-11-10)
 
+### Estado 2026-11-10 (Ciclo 11.93 — xtask: deuda 0 por política)
+- `scripts/xtask.py` es la **SSOT ejecutable** de calidad/seguridad/buenas
+  prácticas: 14 gates con `check|gate|ratchet`, `--fast`, `--only/--skip`,
+  `--json` y exit 0/1/2. La política son datos (`POLICY`), no comandos sueltos.
+- Pre-commit → `xtask gate --fast`; CI `lint` → `xtask check --skip tests`.
+- Trinquete Ruff corregido: `RUF100`/`RUF105` ya no cuentan falsos positivos
+  bajo `--select` restringido; baseline regenerado.
+- `pyproject.toml` alineado a `11.93.0` con test anti-placeholder.
+- Evidencia: `gate --fast` 10/10, `check --skip tests` 13/13, 22 tests nuevos.
+
 ### Estado 2026-11-10 (Ciclo 11.92 — auto-update de la instalación global)
 - La copia que carga opencode (`~/.config/opencode`, sin `.git`) ya puede
   comprobar y aplicar updates: sello `.swarmind/install.json` +

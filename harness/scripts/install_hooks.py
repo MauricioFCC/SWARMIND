@@ -93,6 +93,7 @@ _SYNC="$_HOOK_DIR/scripts/sync_opencode_global.py"
 _BACKUP="$_HOOK_DIR/scripts/backup_memory.py"
 _ARCH="$_HOOK_DIR/scripts/check_architecture.py"
 _SKILLS="$_HOOK_DIR/scripts/validate_skills.py"
+_XTASK="$_HOOK_DIR/scripts/xtask.py"
 
 _run_python() {
     if command -v uv >/dev/null 2>&1; then
@@ -112,24 +113,23 @@ if [ -f "$_PIPELINE" ]; then
     fi
 fi
 
-# Fitness functions de arquitectura: bloquea ciclos de import y violaciones de
-# capa (F1/F2/F4) y la deuda legacy (ratchet F3/F5). Solo AST, barato.
-if [ -f "$_ARCH" ]; then
-    _run_python "$_ARCH" --gate --ratchet
+# Politica unica de calidad (scripts/xtask.py): ruff, trinquetes (preview,
+# ruff-ratchet, arquitectura, complejidad, PEP 649), docs, workflows y skills.
+# La deuda tecnica es 0 POR POLITICA: si un conteo sube, el commit se bloquea.
+if [ -f "$_XTASK" ]; then
+    _run_python "$_XTASK" gate --fast
     _rc=$?
     if [ "$_rc" -ne 0 ]; then
-        echo "[pre-commit] BLOCK: violaciones arquitectonicas (ver arriba)"
+        echo "[pre-commit] BLOCK: politica xtask en rojo (ver tabla arriba)"
         exit "$_rc"
     fi
-fi
-
-# Skills: validacion estricta (frontmatter, SKILL.min.md, registry, referencias)
-if [ -f "$_SKILLS" ]; then
-    _run_python "$_SKILLS" --strict --quiet
-    _rc=$?
-    if [ "$_rc" -ne 0 ]; then
-        echo "[pre-commit] BLOCK: skills invalidos (ver arriba)"
-        exit "$_rc"
+else
+    # Fallback para instalaciones sin xtask: al menos arquitectura y skills.
+    if [ -f "$_ARCH" ]; then
+        _run_python "$_ARCH" --gate --ratchet || exit $?
+    fi
+    if [ -f "$_SKILLS" ]; then
+        _run_python "$_SKILLS" --strict --quiet || exit $?
     fi
 fi
 

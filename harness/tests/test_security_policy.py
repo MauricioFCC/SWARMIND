@@ -203,3 +203,42 @@ class TestApiPublica:
         _write(tmp_path, ".venv/lib/bad.py", 'Path(r"$HOME\\x")\n')
         findings = scanner.scan()
         assert findings == []
+
+
+class TestFalsosPositivos:
+    """Regresiones medidas el 2026-11-10 (11 falsos positivos en el repo)."""
+
+    def test_risk_management_url_no_es_openai_key(self, scanner, tmp_path):
+        """``sk-`` dentro de "risk-management" no es una clave de OpenAI."""
+        _write(tmp_path, "docs/a.md",
+               "https://www.nist.gov/itl/ai-risk-management-framework\n")
+        assert scanner.scan() == []
+
+    def test_url_con_xtask_no_es_openai_key(self, scanner, tmp_path):
+        """``sk-`` dentro de "xtask-and" no es una clave de OpenAI."""
+        _write(tmp_path, "docs/b.md",
+               "https://x/running-rust-tasks-with-xtask-and-xtaskops-a2193e67dc25\n")
+        assert scanner.scan() == []
+
+    def test_placeholders_no_son_rutas_personales(self, scanner, tmp_path):
+        """``<user>``, ``u`` y ``user`` son plantillas, no datos de la maquina."""
+        _write(tmp_path, "docs/c.md",
+               "C:\\Users\\<user>, /Users/<user>, /home/<user>, /home/u/llama\n")
+        assert scanner.scan() == []
+
+    def test_home_en_shell_no_es_home_literal_py(self, scanner, tmp_path):
+        """``$HOME`` en un .sh es expansion legitima del shell."""
+        _write(tmp_path, "scripts/i.sh",
+               'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"\n')
+        assert scanner.scan() == []
+
+    def test_env_local_ignorado_no_se_escanea(self, scanner, tmp_path):
+        """Un ``.env`` no trackeado vive solo en la maquina: no es deuda."""
+        _write(tmp_path, ".env", "RUSCADB_PATH=C:\\Users\\USUARIO\\x.db\n")
+        assert scanner.scan() == []
+
+    def test_clave_real_si_se_detecta(self, scanner, tmp_path):
+        """El lookbehind no debe dejar pasar una clave real precedida por '='."""
+        _write(tmp_path, "scripts/k.py",
+               'key = "sk-abcdefghijklmnopqrstuvwxyz012345"\n')
+        assert any(f.rule == "SECRETO" for f in scanner.scan())
