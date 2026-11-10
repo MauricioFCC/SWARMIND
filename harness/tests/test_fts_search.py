@@ -432,3 +432,50 @@ class TestEdgeCases:
         """FTSSearchEngine debe ser alias de FTSSearch."""
         from harness.memory_rag.fts_search import FTSSearchEngine
         assert FTSSearchEngine is FTSSearch
+
+
+class TestFTS5Real:
+    """Regresion: la busqueda FTS5 REAL debe devolver hits (no 0 en silencio).
+
+    Antes la conexion sqlite3 no fijaba ``row_factory``, asi que
+    ``_search_fts`` accedia a ``row["content"]`` sobre una TUPLA y el
+    ``except`` lo silenciaba devolviendo ``[]``: el indice guardaba los
+    documentos pero la busqueda nunca encontraba nada.
+    """
+
+    def test_search_fts5_real_devuelve_hits(self, tmp_path: Path) -> None:
+        """Indexa y busca con SQLite FTS5 real; exige hit + metadata + dominio."""
+        fts = FTSSearch(db_path=tmp_path / "fts_real.db")
+        try:
+            assert fts._fts_available, "FTS5 debe estar disponible en este build"
+            indexados = fts.index_batch(
+                [
+                    ("doc1", "El orquestador hace fan-out y vota", {"src": "a"}, "general"),
+                    ("doc2", "La memoria procedural guarda skills reutilizables", {"src": "b"}, "skills"),
+                ]
+            )
+            assert indexados == 2
+
+            hits = fts.search("memoria procedural skills")
+            assert len(hits) == 1, f"esperaba 1 hit, obtuve {hits}"
+            assert hits[0]["id"] == "doc2"
+            assert hits[0]["domain"] == "skills"
+            assert hits[0]["metadata"] == {"src": "b"}
+            assert "memoria" in hits[0]["snippet"].lower()
+        finally:
+            fts.close()
+
+    def test_search_fts5_filtra_por_dominio(self, tmp_path: Path) -> None:
+        """El filtro de dominio acota los hits sin romper la query."""
+        fts = FTSSearch(db_path=tmp_path / "fts_real_filter.db")
+        try:
+            fts.index_batch(
+                [
+                    ("doc1", "memoria central vectorial", {}, "general"),
+                    ("doc2", "memoria procedural skills", {}, "skills"),
+                ]
+            )
+            hits = fts.search("memoria", domain_filter="skills")
+            assert [h["id"] for h in hits] == ["doc2"]
+        finally:
+            fts.close()
