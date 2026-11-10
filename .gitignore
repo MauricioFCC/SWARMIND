@@ -79,6 +79,12 @@ desktop.ini
 *.so
 *.dylib
 
+# Excepcion: RuscaDB PRECOMPILADA y versionada. Un clon limpio del repo debe
+# arrancar con memoria nativa sin tener el repo Rust ni cargo instalados.
+# Si se recompila el motor, actualiza el checksum con:
+#   python scripts/pin_ruscadb_binary.py
+!harness/memory_rag/ruscadb_ffi.dll
+
 # Logs
 *.log
 outputs/
