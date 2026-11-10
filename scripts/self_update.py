@@ -7,8 +7,13 @@ Uso:
   python scripts/self_update.py --audit   # verifica monotonicidad del journal
   --allow-downgrade --justification "..." # downgrade deliberado y auditable
 
+Instalacion global de opencode (copia sin ``.git``): si ``--repo`` apunta a un
+directorio con ``.swarmind/install.json``, ``--check/--apply`` usan el sello y
+``git ls-remote`` + clone/sync en vez de fetch/merge.
+
 Exit: 0 = ok/degradado; 1 = violaciones de audit o ff fallido; 2 = error fatal.
-Spec: specs/self-update.md (ciclo 11.21 SDD). Cross-platform sin shells.
+Spec: specs/self-update.md (ciclo 11.21 SDD; extension 11.92). Cross-platform
+sin shells.
 """
 from __future__ import annotations
 
@@ -64,8 +69,25 @@ def _cmd_audit(log_path: Path) -> int:
 
 
 def _cmd_check(args: argparse.Namespace) -> int:
-    """Informe de estado frente al remoto (sin mutar nada)."""
-    check = check_remote(Path(args.repo), remote=args.remote, branch=args.branch)
+    """Informe de estado frente al remoto (sin mutar nada).
+
+    Si el destino no es un clon git (instalacion global de opencode), usa el
+    sello ``.swarmind/install.json`` y ``git ls-remote`` en vez de ``fetch``.
+    """
+    repo = Path(args.repo)
+    if not (repo / ".git").exists():
+        from harness.self_update import check_install
+
+        check = check_install(repo)
+        print(
+            f"modo=install estado={check.state.value} "
+            f"local={check.local_commit[:7] or '?'} "
+            f"remote={check.remote_commit[:7] or '?'} branch={check.branch or '?'}"
+        )
+        if check.detail:
+            print(f"detalle={check.detail}")
+        return 0
+    check = check_remote(repo, remote=args.remote, branch=args.branch)
     remoto = fmt_version(check.remote_version) if check.remote_version else "?"
     print(
         f"estado={check.state.value} behind={check.behind} ahead={check.ahead} "
@@ -79,6 +101,12 @@ def _cmd_check(args: argparse.Namespace) -> int:
 def _cmd_apply(args: argparse.Namespace, log_path: Path) -> int:
     """Aplica con guards anti-reversion; exit 1 solo si el ff falla."""
     repo = Path(args.repo)
+    if not (repo / ".git").exists():
+        from harness.self_update import apply_install
+
+        result = apply_install(repo)
+        print(f"modo=install accion={result.action} changed={result.changed} detail={result.detail}")
+        return 1 if result.action == "failed" else 0
     check = check_remote(repo, remote=args.remote, branch=args.branch)
     result = apply_update(
         check,

@@ -7,6 +7,16 @@
 
 ## Estado Actual (2026-11-10)
 
+### Estado 2026-11-10 (Ciclo 11.92 — auto-update de la instalación global)
+- La copia que carga opencode (`~/.config/opencode`, sin `.git`) ya puede
+  comprobar y aplicar updates: sello `.swarmind/install.json` +
+  `git ls-remote` + `clone --depth 1` + sync oficial + re-sello.
+- `!update` / `self_update.py --check|--apply` enrutan a `install.py` cuando
+  hay sello; aviso de arranque con cooldown de 24 h.
+- Evidencia E2E: `up_to_date` exit 0 contra GitHub y `updated 34c42b3 → afa643d`
+  con sync real; 79 tests de self-update en verde.
+- Límite: aplica la rama sellada; cambiar de canal exige re-sellar.
+
 ### Estado 2026-11-10 (Ciclo 11.91 — memoria general solo RuscaDB + binario versionado)
 - **RuscaDB es la única memoria general**: 16 colecciones en
   `Memory_Proyects/data/ruscadb.db`; LanceDB archivada en

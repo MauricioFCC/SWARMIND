@@ -1,3 +1,32 @@
+## [11.92] - 2026-11-10
+
+### Added
+- **Auto-update de la instalación global de opencode**
+  (`harness/self_update/install.py`): la copia que carga opencode no tiene
+  `.git` ni `pyproject.toml`, así que el motor ff-only no podía ni comprobarla
+  (`--check` → exit 2, "sin fuente de version"). Ahora:
+  `sync_opencode_global.py` sella `<global>/.swarmind/install.json`
+  (`source`, `branch`, `commit`, `version`, `synced_at`); `check_install`
+  compara contra el remoto con `git ls-remote` (sin clonar); `apply_install`
+  clona la rama sellada en un temporal, ejecuta el sync oficial con
+  `OPENCODE_GLOBAL_DIR`, re-sella y limpia.
+- `install_notice` con cooldown de 24 h para el aviso de arranque; `!update`
+  y `self_update.py --check/--apply` detectan la copia instalada.
+- 18 tests nuevos (`test_self_update_install.py`) y spec ampliada
+  (`docs/specs/self-update.md` §8).
+
+### Changed
+- `run_support._render_notice` usa el sello cuando no hay `.git`;
+  `handlers_other._handle_update` enruta a `check_install`/`apply_install`
+  solo si existe sello (no altera la ruta del clon).
+
+### Evidence
+- `pytest test_self_update*.py test_run_commands_update.py` → **79 passed**.
+- E2E real: `--check` sobre sello temporal → `modo=install
+  estado=up_to_date`, **exit 0**; `apply_install` con sello atrasado →
+  `accion=updated 34c42b3 → afa643d`, sync real (49 skills + harness + agents),
+  estado final `up_to_date`.
+
 ## [11.91] - 2026-11-10
 
 ### Fixed

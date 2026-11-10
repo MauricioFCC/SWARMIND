@@ -240,15 +240,28 @@ def print_update_notice_if_due(node=None) -> bool:
 
 
 def _render_notice(node) -> str | None:
-    """Construye el texto del aviso (``None`` = no toca avisar)."""
-    from pathlib import Path
+    """Construye el texto del aviso (``None`` = no toca avisar).
 
-    from harness.self_update.notice import UpdateNotice, update_notice
+    En un clon git usa ``update_notice`` (fetch + ff-only). En la instalacion
+    global de opencode (copia sin ``.git``) usa ``install_notice`` con el sello
+    ``.swarmind/install.json`` y ``git ls-remote``.
+    """
+    from pathlib import Path
 
     repo = node or get_harness_root()
     if not repo:
         return None
-    notice: UpdateNotice | None = update_notice(Path(repo))
+    raiz = Path(repo)
+    if not (raiz / ".git").exists():
+        from harness.self_update.install import install_notice, read_stamp
+
+        if read_stamp(raiz) is not None:
+            mensaje = install_notice(raiz)
+            return f"[update] {mensaje}" if mensaje else None
+
+    from harness.self_update.notice import UpdateNotice, update_notice
+
+    notice: UpdateNotice | None = update_notice(raiz)
     if notice is None or notice.kind == "current":
         return None
     return f"[update] {notice.message}"

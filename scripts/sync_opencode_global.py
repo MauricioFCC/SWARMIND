@@ -426,6 +426,37 @@ def _sync_agents_md(dry_run: bool = False) -> int:
     return 1 if sync_file(_SRC_AGENTS_MD, dst, dry_run=dry_run) else 0
 
 
+def _write_install_stamp(dry_run: bool = False, quiet: bool = False) -> None:
+    """Sella el global con origen/rama/commit para el auto-update.
+
+    WHAT: escribe ``<global>/.swarmind/install.json`` desde el clon fuente para
+    que la copia instalada (sin ``.git``) pueda compararse con el remoto.
+    WHY: sin sello, ``self_update.py`` contra el global muere con
+    "sin fuente de version". WHERE: fin de un sync real (copy o symlink).
+
+    Args:
+        dry_run: Si True, no escribe (solo informa).
+        quiet: Si True, sin log.
+    """
+    if dry_run:
+        return
+    try:
+        from harness.self_update.install import stamp_from_repo, write_stamp
+
+        stamp = stamp_from_repo(_ROOT)
+        if stamp is None:
+            if not quiet:
+                logger.info("  ⚠️  Sin origin/commit: no se sella el global")
+            return
+        write_stamp(_GLOBAL, stamp)
+        if not quiet:
+            logger.info(
+                "  ✅ %-10s %s (%s)", "install", stamp.commit[:7], stamp.branch
+            )
+    except Exception as exc:  # noqa: BLE001 - el sync no debe romperse por el sello
+        logger.warning("  ⚠️  No se pudo sellar el global: %s", exc)
+
+
 def sync_global(dry_run: bool = False, quiet: bool = False,
                 cerebro: bool = False, motor: bool = False,
                 mode: str = "copy", force: bool = False) -> dict:
@@ -501,11 +532,13 @@ def sync_global(dry_run: bool = False, quiet: bool = False,
         count = _sync_harness_to_global(dry_run=dry_run)
         stats["harness"] = count
         if not quiet:
-            logger.info("  âœ… %-10s %d archivos %s", "harness", count, "(simulado)" if dry_run else "")
+            logger.info("  ✅ %-10s %d archivos %s", "harness", count, "(simulado)" if dry_run else "")
 
         # Memoria central: crear automaticamente si falta (ADR-0042, Causa 1)
         memory_stats = _ensure_memory_central(dry_run=dry_run)
         stats["memory_dirs_created"] = memory_stats["created"]
+
+    _write_install_stamp(dry_run=dry_run, quiet=quiet)
 
     total = sum(stats.values())
     if not quiet:
