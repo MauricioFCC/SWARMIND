@@ -427,60 +427,25 @@ class TestSeedPublico:
 # ---------------------------------------------------------------------------
 
 
-class TestUsageLoop:
-    def test_record_usage_escribe_jsonl(self, tmp_path: Path) -> None:
-        """Cada consulta deja una línea auditable en el JSONL de uso."""
-        catalog = KnowledgeCatalog(
-            store=FakeStore(), graph=KnowledgeGraph(),
-            index_path=tmp_path / "cat.index.json",
-        )
-        catalog.index([_entry()])
+class TestConsultaAutomatica:
+    def test_deriva_indice_y_grafo_del_store(self, tmp_path: Path) -> None:
+        """Sin rutas explícitas, el catálogo usa ``<data>/`` del store."""
+        store = FakeStore()
+        store.db_path = str(tmp_path / "data" / "ruscadb.db")  # type: ignore[attr-defined]
 
-        record = catalog.record_usage(
-            "graph rag", ["paper:arxiv-2404.16130"], outcome="useful", note="aplicado"
-        )
+        catalog = KnowledgeCatalog(store)
 
-        assert record is not None
-        ruta = tmp_path / "knowledge_catalog_usage.jsonl"
-        lineas = ruta.read_text(encoding="utf-8").strip().splitlines()
-        assert len(lineas) == 1
-        assert '"outcome": "useful"' in lineas[0]
+        assert catalog.index_path == tmp_path / "data" / "knowledge_catalog.index.json"
+        assert catalog.graph_path == tmp_path / "data" / "knowledge_catalog_graph.json"
 
-    def test_usage_stats_agrega_y_lista_gaps(self, tmp_path: Path) -> None:
-        """``usage_stats`` cuenta resultados, top de ids y gaps abiertos."""
-        catalog = KnowledgeCatalog(
-            store=FakeStore(), graph=KnowledgeGraph(),
-            index_path=tmp_path / "cat.index.json",
-        )
-        catalog.record_usage("graph rag", ["paper:a"], outcome="useful")
-        catalog.record_usage("falta algo", [], outcome="missing", note="sin fuente")
+    def test_recarga_indice_persistido(self, tmp_path: Path) -> None:
+        """Un catálogo nuevo sobre el mismo store recupera el índice en disco."""
+        store = FakeStore()
+        store.db_path = str(tmp_path / "data" / "ruscadb.db")  # type: ignore[attr-defined]
+        primero = KnowledgeCatalog(store)
+        primero.index([_entry()])
 
-        stats = catalog.usage_stats()
+        segundo = KnowledgeCatalog(store)
 
-        assert stats["total"] == 2
-        assert stats["by_outcome"] == {"missing": 1, "useful": 1}
-        assert stats["top_ids"][0]["catalog_id"] == "paper:a"
-        assert stats["gaps"][0]["query"] == "falta algo"
-
-    def test_uso_en_memoria_no_escribe(self) -> None:
-        """Sin ``index_path`` el feedback es no-op (no hay memoria central)."""
-        catalog = KnowledgeCatalog(store=FakeStore(), graph=KnowledgeGraph())
-
-        assert catalog.record_usage("x", ["paper:a"]) is None
-        assert catalog.usage_stats()["total"] == 0
-
-    def test_outcome_invalido_rechazado(self) -> None:
-        """Solo se admiten useful/stale/missing."""
-        from harness.memory_rag.knowledge_catalog_usage import UsageRecord
-
-        with pytest.raises(ValueError, match="outcome"):
-            UsageRecord(query="x", outcome="fantasma")
-
-    def test_read_usage_tolera_linea_corrupta(self, tmp_path: Path) -> None:
-        """Una línea corrupta no rompe el historial."""
-        from harness.memory_rag.knowledge_catalog_usage import read_usage
-
-        ruta = tmp_path / "uso.jsonl"
-        ruta.write_text('{"query":"ok","outcome":"useful"}\nno-json\n', encoding="utf-8")
-
-        assert len(read_usage(ruta)) == 1
+        assert segundo.stats()["total"] == 1
+        assert segundo.graph.get_stats().get("nodes", 0) > 0

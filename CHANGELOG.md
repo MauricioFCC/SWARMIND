@@ -29,6 +29,10 @@
   usaba `in_edges(neighbor)` en vez de las aristas entrantes del nodo.
   Ahora devuelve los predecesores correctos; se añade `neighbors()` para
   consultar vecinos salientes/entrantes sin duplicar lógica.
+- **Consulta automática desde la copia global**: `KnowledgeCatalog(store)` no
+  derivaba el índice/grafo del `db_path` del store, así que la copia instalada
+  veía `total=0`. Ahora usa `<data>/knowledge_catalog*.json` por defecto; el
+  global consulta las 57 entradas y el grafo sin rutas explícitas.
 
 ### Evidence
 - `pytest test_knowledge_catalog.py test_knowledge_graph.py` → **53 passed**.

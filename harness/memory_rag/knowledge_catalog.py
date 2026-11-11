@@ -90,16 +90,16 @@ class CatalogStore(Protocol):
     - ``get_collection_stats(name)`` → ``{"count": int, ...}``.
     """
 
-    def insert(self, *args: Any) -> list[str]:
+    def insert(self, *_args: Any) -> list[str]:
         """Inserta filas y devuelve sus ids."""
 
-    def delete(self, *args: Any) -> int:
+    def delete(self, *_args: Any) -> int:
         """Borra filas por id."""
 
-    def hybrid_search(self, *args: Any) -> list[dict[str, Any]]:
+    def hybrid_search(self, *_args: Any) -> list[dict[str, Any]]:
         """Búsqueda densa + BM25 fusionada con RRF."""
 
-    def get_collection_stats(self, *args: Any) -> dict[str, Any]:
+    def get_collection_stats(self, *_args: Any) -> dict[str, Any]:
         """Estadísticas de la colección."""
 
 
@@ -128,13 +128,24 @@ class KnowledgeCatalog:
         """Inicializa catálogo, grafo e índice persistente (si hay rutas)."""
         self.store = store
         self.collection = collection
-        self.graph = graph if graph is not None else KnowledgeGraph(graph_path)
-        self.index_path = index_path
-        self.graph_path = graph_path
+        base = self._default_base(store)
+        self.index_path = index_path if index_path is not None else (
+            base / "knowledge_catalog.index.json" if base is not None else None
+        )
+        self.graph_path = graph_path if graph_path is not None else (
+            base / "knowledge_catalog_graph.json" if base is not None else None
+        )
+        self.graph = graph if graph is not None else KnowledgeGraph(self.graph_path)
         self._embed = embedding
         self._index: dict[str, dict[str, Any]] = {}
         self._row_to_cid: dict[str, str] = {}
         self._load_index()
+
+    @staticmethod
+    def _default_base(store: CatalogStore) -> Path | None:
+        """Deriva ``<data>/`` del ``db_path`` del store (memoria central)."""
+        db_path = getattr(store, "db_path", None)
+        return Path(str(db_path)).parent if db_path else None
 
     # ------------------------------------------------------------------
     # Índice y persistencia
