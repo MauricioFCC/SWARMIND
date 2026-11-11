@@ -81,8 +81,8 @@ bloque = catalog.context_block("optimizar retrieval multi-hop", top_k=3)
 
 ## Seeds
 
-- `docs/knowledge/catalog.seed.json` — papers, surveys y vocabularios
-  (13 fuentes verificadas).
+- `docs/knowledge/catalog.seed.json` — papers, surveys, vocabularios y técnicas
+  de ingeniería (17 fuentes verificadas, incluye Go simplicity).
 - `docs/knowledge/catalog.repos.seed.json` — 20 repositorios públicos
   verificados con `git ls-remote`.
 - `$MEMORY_ROOT/data/knowledge/local_sources.seed.json` — conocimiento

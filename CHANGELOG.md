@@ -35,13 +35,15 @@
   global consulta las 57 entradas y el grafo sin rutas explícitas.
 
 ### Evidence
-- `pytest test_knowledge_catalog.py test_knowledge_graph.py` → **53 passed**.
-- Ingesta real en la memoria central: **57 entradas** (8 papers, 4 artículos,
-  21 repos, 15 técnicas, 9 arquitecturas), **247 nodos / 352 aristas**; segunda
-  ingesta de los 3 seeds → `skipped` 13/20/24 (idempotente).
+- `pytest test_knowledge_catalog.py test_knowledge_catalog_usage.py test_knowledge_graph.py`
+  → **56 passed**.
+- Ingesta real en la memoria central: **61 entradas** (8 papers, 4 artículos,
+  21 repos, 19 técnicas, 9 arquitecturas), **264 nodos / 377 aristas**; segunda
+  ingesta de los 3 seeds → `skipped` (idempotente).
 - `search "graph rag multi-hop"` → 3 papers con `sources = graph + hybrid`.
-- Ciclo de vida: `feedback ... --outcome useful` escribe el JSONL; `gaps` → `[]`;
-  `stats` reporta `usage.total = 1`.
+- Ciclo de vida: `feedback useful` escribe el JSONL; un `missing` posterior se
+  cierra con un `useful` de la misma query (el gap de Go quedó resuelto tras
+  ingerir 4 fuentes); `gaps` → `[]`; `stats` reporta `usage.total = 4`.
 - `knowledge_catalog.py verify` (3 seeds) → **exit 0**.
 
 ## [11.93] - 2026-11-10

@@ -174,3 +174,16 @@ class TestUsageLoop:
         assert len(read_usage(ruta)) == 1
 
 
+
+
+class TestCierreDeGaps:
+    def test_gap_se_cierra_con_feedback_posterior(self, tmp_path: Path) -> None:
+        """Un ``missing`` posteriormente resuelto deja de aparecer en gaps."""
+        catalog = KnowledgeCatalog(
+            store=FakeStore(), graph=KnowledgeGraph(),
+            index_path=tmp_path / "cat.index.json",
+        )
+        catalog.record_usage("falta go", [], outcome="missing", note="sin fuente")
+        catalog.record_usage("falta go", ["technique:go-proverbs"], outcome="useful")
+
+        assert catalog.usage_stats()["gaps"] == []

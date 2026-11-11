@@ -6,10 +6,29 @@
       "title": "From Local to Global: A Graph RAG Approach to Query-Focused Summarization",
       "url": "https://arxiv.org/abs/2404.16130",
       "summary": "GraphRAG construye un grafo de entidades y comunidades con resumenes para responder preguntas globales sobre un corpus.",
-      "authors": ["Darren Edge", "Ha Trinh", "Newman Cheng", "Joshua Bradley", "Alex Chao", "Apurva Mody", "Steven Truitt", "Dasha Metropolitansky", "Robert Osazuwa Ness", "Jonathan Larson"],
+      "authors": [
+        "Darren Edge",
+        "Ha Trinh",
+        "Newman Cheng",
+        "Joshua Bradley",
+        "Alex Chao",
+        "Apurva Mody",
+        "Steven Truitt",
+        "Dasha Metropolitansky",
+        "Robert Osazuwa Ness",
+        "Jonathan Larson"
+      ],
       "year": 2024,
-      "tags": ["graph-rag", "retrieval", "query-focused-summarization"],
-      "concepts": ["knowledge-graph", "community-summarization", "global-sensemaking"],
+      "tags": [
+        "graph-rag",
+        "retrieval",
+        "query-focused-summarization"
+      ],
+      "concepts": [
+        "knowledge-graph",
+        "community-summarization",
+        "global-sensemaking"
+      ],
       "status": "evaluated",
       "source": "arxiv",
       "retrieved_at": "2026-11-11"
@@ -19,15 +38,32 @@
       "title": "LightRAG: Simple and Fast Retrieval-Augmented Generation",
       "url": "https://arxiv.org/abs/2410.05779",
       "summary": "Dual-level retrieval (local/global) con grafo y vectores, actualizacion incremental y bajo costo por consulta.",
-      "authors": ["Zirui Guo", "Lianghao Xia", "Yanhua Yu", "Tu Ao", "Chao Huang"],
+      "authors": [
+        "Zirui Guo",
+        "Lianghao Xia",
+        "Yanhua Yu",
+        "Tu Ao",
+        "Chao Huang"
+      ],
       "year": 2024,
-      "tags": ["graph-rag", "dual-level-retrieval", "incremental-update"],
-      "concepts": ["knowledge-graph", "vector-retrieval", "incremental-indexing"],
+      "tags": [
+        "graph-rag",
+        "dual-level-retrieval",
+        "incremental-update"
+      ],
+      "concepts": [
+        "knowledge-graph",
+        "vector-retrieval",
+        "incremental-indexing"
+      ],
       "status": "evaluated",
       "source": "arxiv",
       "retrieved_at": "2026-11-11",
       "links": [
-        {"relation": "cites", "target": "paper:arxiv-2404.16130"}
+        {
+          "relation": "cites",
+          "target": "paper:arxiv-2404.16130"
+        }
       ]
     },
     {
@@ -35,10 +71,24 @@
       "title": "HippoRAG: Neurobiologically Inspired Long-Term Memory for Large Language Models",
       "url": "https://arxiv.org/abs/2405.14831",
       "summary": "KG + Personalized PageRank para multi-hop: comparable a retrieval iterativo siendo 10-30x mas barato.",
-      "authors": ["Bernal Jimenez Gutierrez", "Yiheng Shu", "Yu Gu", "Michihiro Yasunaga", "Yu Su"],
+      "authors": [
+        "Bernal Jimenez Gutierrez",
+        "Yiheng Shu",
+        "Yu Gu",
+        "Michihiro Yasunaga",
+        "Yu Su"
+      ],
       "year": 2024,
-      "tags": ["graph-rag", "multi-hop", "personalized-pagerank"],
-      "concepts": ["knowledge-graph", "pagerank", "long-term-memory"],
+      "tags": [
+        "graph-rag",
+        "multi-hop",
+        "personalized-pagerank"
+      ],
+      "concepts": [
+        "knowledge-graph",
+        "pagerank",
+        "long-term-memory"
+      ],
       "status": "evaluated",
       "source": "arxiv",
       "retrieved_at": "2026-11-11"
@@ -48,10 +98,27 @@
       "title": "A Survey of Graph Retrieval-Augmented Generation for Customized Large Language Models",
       "url": "https://arxiv.org/abs/2501.13958",
       "summary": "Taxonomia de GraphRAG: indexado, recuperacion y generacion; mapa de variantes y benchmarks.",
-      "authors": ["Qinggang Zhang", "Shengyuan Chen", "Yuanchen Bei", "Zheng Yuan", "Huachi Zhou", "Zijin Hong", "Junnan Dong", "Hao Chen", "Yi Chang", "Xiao Huang"],
+      "authors": [
+        "Qinggang Zhang",
+        "Shengyuan Chen",
+        "Yuanchen Bei",
+        "Zheng Yuan",
+        "Huachi Zhou",
+        "Zijin Hong",
+        "Junnan Dong",
+        "Hao Chen",
+        "Yi Chang",
+        "Xiao Huang"
+      ],
       "year": 2025,
-      "tags": ["graph-rag", "survey"],
-      "concepts": ["knowledge-graph", "taxonomy"],
+      "tags": [
+        "graph-rag",
+        "survey"
+      ],
+      "concepts": [
+        "knowledge-graph",
+        "taxonomy"
+      ],
       "status": "evaluated",
       "source": "arxiv",
       "retrieved_at": "2026-11-11"
@@ -61,15 +128,34 @@
       "title": "GraphRAG-Bench: Challenging Domain-Specific Reasoning for Evaluating Graph Retrieval-Augmented Generation",
       "url": "https://arxiv.org/abs/2506.02404",
       "summary": "Benchmark por etapas (construccion del grafo, retrieval, generacion) sobre 16 disciplinas.",
-      "authors": ["Yilin Xiao", "Junnan Dong", "Chuang Zhou", "Su Dong", "Qian-wen Zhang", "Di Yin", "Xing Sun", "Xiao Huang"],
+      "authors": [
+        "Yilin Xiao",
+        "Junnan Dong",
+        "Chuang Zhou",
+        "Su Dong",
+        "Qian-wen Zhang",
+        "Di Yin",
+        "Xing Sun",
+        "Xiao Huang"
+      ],
       "year": 2025,
-      "tags": ["graph-rag", "benchmark", "evaluation"],
-      "concepts": ["evaluation", "reasoning"],
+      "tags": [
+        "graph-rag",
+        "benchmark",
+        "evaluation"
+      ],
+      "concepts": [
+        "evaluation",
+        "reasoning"
+      ],
       "status": "evaluated",
       "source": "arxiv",
       "retrieved_at": "2026-11-11",
       "links": [
-        {"relation": "evaluates", "target": "paper:arxiv-2404.16130"}
+        {
+          "relation": "evaluates",
+          "target": "paper:arxiv-2404.16130"
+        }
       ]
     },
     {
@@ -77,15 +163,33 @@
       "title": "When to use Graphs in RAG: A Comprehensive Analysis for Graph Retrieval-Augmented Generation",
       "url": "https://arxiv.org/abs/2506.05690",
       "summary": "GraphRAG no domina siempre a RAG vanilla; identifica condiciones donde el grafo aporta de verdad.",
-      "authors": ["Zhishang Xiang", "Chuanjie Wu", "Qinggang Zhang", "Shengyuan Chen", "Zijin Hong", "Xiao Huang", "Jinsong Su"],
+      "authors": [
+        "Zhishang Xiang",
+        "Chuanjie Wu",
+        "Qinggang Zhang",
+        "Shengyuan Chen",
+        "Zijin Hong",
+        "Xiao Huang",
+        "Jinsong Su"
+      ],
       "year": 2025,
-      "tags": ["graph-rag", "benchmark", "design-guidelines"],
-      "concepts": ["evaluation", "retrieval"],
+      "tags": [
+        "graph-rag",
+        "benchmark",
+        "design-guidelines"
+      ],
+      "concepts": [
+        "evaluation",
+        "retrieval"
+      ],
       "status": "adopted",
       "source": "arxiv",
       "retrieved_at": "2026-11-11",
       "links": [
-        {"relation": "evaluates", "target": "paper:arxiv-2404.16130"}
+        {
+          "relation": "evaluates",
+          "target": "paper:arxiv-2404.16130"
+        }
       ]
     },
     {
@@ -93,10 +197,24 @@
       "title": "A-MEM: Agentic Memory for LLM Agents",
       "url": "https://arxiv.org/abs/2502.12110",
       "summary": "Memoria tipo Zettelkasten: notas con atributos, enlaces dinamicos y evolucion de memorias previas.",
-      "authors": ["Wujiang Xu", "Zujie Liang", "Kai Mei", "Hang Gao", "Juntao Tan", "Yongfeng Zhang"],
+      "authors": [
+        "Wujiang Xu",
+        "Zujie Liang",
+        "Kai Mei",
+        "Hang Gao",
+        "Juntao Tan",
+        "Yongfeng Zhang"
+      ],
       "year": 2025,
-      "tags": ["agent-memory", "zettelkasten", "linking"],
-      "concepts": ["memory-evolution", "knowledge-network"],
+      "tags": [
+        "agent-memory",
+        "zettelkasten",
+        "linking"
+      ],
+      "concepts": [
+        "memory-evolution",
+        "knowledge-network"
+      ],
       "status": "evaluated",
       "source": "arxiv",
       "retrieved_at": "2026-11-11"
@@ -106,10 +224,24 @@
       "title": "Zep: A Temporal Knowledge Graph Architecture for Agent Memory",
       "url": "https://arxiv.org/abs/2501.13956",
       "summary": "Grafo bi-temporal (valid time + ingestion time) no-lossy; mejora LongMemEval y reduce latencia.",
-      "authors": ["Preston Rasmussen", "Pavlo Paliychuk", "Travis Beauvais", "Jack Ryan", "Daniel Chalef"],
+      "authors": [
+        "Preston Rasmussen",
+        "Pavlo Paliychuk",
+        "Travis Beauvais",
+        "Jack Ryan",
+        "Daniel Chalef"
+      ],
       "year": 2025,
-      "tags": ["agent-memory", "temporal-knowledge-graph", "graphiti"],
-      "concepts": ["bi-temporal", "provenance", "knowledge-graph"],
+      "tags": [
+        "agent-memory",
+        "temporal-knowledge-graph",
+        "graphiti"
+      ],
+      "concepts": [
+        "bi-temporal",
+        "provenance",
+        "knowledge-graph"
+      ],
       "status": "evaluated",
       "source": "arxiv",
       "retrieved_at": "2026-11-11"
@@ -120,13 +252,23 @@
       "url": "https://github.com/DEEP-PolyU/Awesome-GraphRAG",
       "summary": "Lista curada de surveys, papers, benchmarks y proyectos open-source de GraphRAG.",
       "year": 2025,
-      "tags": ["graph-rag", "awesome-list", "benchmarks"],
-      "concepts": ["survey", "open-source"],
+      "tags": [
+        "graph-rag",
+        "awesome-list",
+        "benchmarks"
+      ],
+      "concepts": [
+        "survey",
+        "open-source"
+      ],
       "status": "adopted",
       "source": "github",
       "retrieved_at": "2026-11-11",
       "links": [
-        {"relation": "related_to", "target": "paper:arxiv-2501.13958"}
+        {
+          "relation": "related_to",
+          "target": "paper:arxiv-2501.13958"
+        }
       ]
     },
     {
@@ -135,8 +277,15 @@
       "url": "https://help.openalex.org/api",
       "summary": "API REST abierta sobre 300M+ trabajos: IDs canonicos (DOI, arXiv, ORCID), citas y metadatos.",
       "year": 2025,
-      "tags": ["metadata", "scholarly", "openalex"],
-      "concepts": ["canonical-id", "citation-graph"],
+      "tags": [
+        "metadata",
+        "scholarly",
+        "openalex"
+      ],
+      "concepts": [
+        "canonical-id",
+        "citation-graph"
+      ],
       "status": "adopted",
       "source": "openalex",
       "retrieved_at": "2026-11-11"
@@ -146,8 +295,15 @@
       "title": "schema.org — ScholarlyArticle",
       "url": "https://schema.org/ScholarlyArticle",
       "summary": "Tipo schema.org para articulos academicos: titulo, autor, fecha, citas.",
-      "tags": ["vocabulary", "schema-org", "scholarly"],
-      "concepts": ["ontology", "metadata"],
+      "tags": [
+        "vocabulary",
+        "schema-org",
+        "scholarly"
+      ],
+      "concepts": [
+        "ontology",
+        "metadata"
+      ],
       "status": "adopted",
       "source": "schema.org",
       "retrieved_at": "2026-11-11"
@@ -157,8 +313,15 @@
       "title": "W3C — SKOS Simple Knowledge Organization System Reference",
       "url": "https://www.w3.org/TR/skos-reference",
       "summary": "Modelo para vocabularios controlados: conceptos, broader/narrower/related.",
-      "tags": ["vocabulary", "skos", "taxonomy"],
-      "concepts": ["ontology", "controlled-vocabulary"],
+      "tags": [
+        "vocabulary",
+        "skos",
+        "taxonomy"
+      ],
+      "concepts": [
+        "ontology",
+        "controlled-vocabulary"
+      ],
       "status": "adopted",
       "source": "w3c",
       "retrieved_at": "2026-11-11"
@@ -168,10 +331,103 @@
       "title": "W3C — PROV-O: The PROV Ontology",
       "url": "https://www.w3.org/TR/prov-o/",
       "summary": "Ontologia OWL2 para procedencia: derivacion, atribucion y tiempo de generacion.",
-      "tags": ["provenance", "prov-o", "ontology"],
-      "concepts": ["provenance", "trust"],
+      "tags": [
+        "provenance",
+        "prov-o",
+        "ontology"
+      ],
+      "concepts": [
+        "provenance",
+        "trust"
+      ],
       "status": "adopted",
       "source": "w3c",
+      "retrieved_at": "2026-11-11"
+    },
+    {
+      "kind": "technique",
+      "title": "Go at Google: Language Design in the Service of Software Engineering (SPLASH 2012)",
+      "url": "https://go.dev/talks/2012/splash.article",
+      "summary": "Simplicidad como requisito de ingenieria: composicion, legibilidad y menos mecanismos.",
+      "authors": [
+        "Rob Pike"
+      ],
+      "year": 2012,
+      "tags": [
+        "go",
+        "simplicity",
+        "language-design"
+      ],
+      "concepts": [
+        "composition",
+        "legibility"
+      ],
+      "status": "evaluated",
+      "source": "go.dev",
+      "retrieved_at": "2026-11-11"
+    },
+    {
+      "kind": "technique",
+      "title": "Go Proverbs (Gopherfest SV 2015)",
+      "url": "https://go-proverbs.github.io/",
+      "summary": "Aforismos de diseno: claridad, composicion, errores explicitos y concurrencia simple.",
+      "authors": [
+        "Rob Pike"
+      ],
+      "year": 2015,
+      "tags": [
+        "go",
+        "design-principles",
+        "simplicity"
+      ],
+      "concepts": [
+        "clarity",
+        "composition",
+        "explicit-errors"
+      ],
+      "status": "evaluated",
+      "source": "go-proverbs",
+      "retrieved_at": "2026-11-11"
+    },
+    {
+      "kind": "technique",
+      "title": "Go Code Review Comments",
+      "url": "https://go.dev/wiki/CodeReviewComments",
+      "summary": "Checklist canonica de revision: nombres, errores, contextos, concurrencia y tests.",
+      "year": 2025,
+      "tags": [
+        "go",
+        "code-review",
+        "checklist"
+      ],
+      "concepts": [
+        "review",
+        "quality"
+      ],
+      "status": "adopted",
+      "source": "go.dev",
+      "retrieved_at": "2026-11-11"
+    },
+    {
+      "kind": "technique",
+      "title": "Less is exponentially more (Rob Pike, 2012)",
+      "url": "https://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html",
+      "summary": "Menos features y mas composicion: la simplicidad deliberada como ventaja de ingenieria.",
+      "authors": [
+        "Rob Pike"
+      ],
+      "year": 2012,
+      "tags": [
+        "go",
+        "simplicity",
+        "bloat"
+      ],
+      "concepts": [
+        "composition",
+        "minimalism"
+      ],
+      "status": "evaluated",
+      "source": "commandcenter",
       "retrieved_at": "2026-11-11"
     }
   ]

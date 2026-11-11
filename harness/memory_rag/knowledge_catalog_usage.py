@@ -152,11 +152,12 @@ def summarize_usage(records: list[UsageRecord], top: int = 5) -> dict[str, objec
     by_outcome: dict[str, int] = {}
     por_id: dict[str, int] = {}
     gaps: list[dict[str, str]] = []
+    resueltas = {record.query for record in records if record.outcome == "useful"}
     for record in records:
         by_outcome[record.outcome] = by_outcome.get(record.outcome, 0) + 1
         for cid in record.catalog_ids:
             por_id[cid] = por_id.get(cid, 0) + 1
-        if record.outcome == "missing":
+        if record.outcome == "missing" and record.query not in resueltas:
             gaps.append({"query": record.query, "note": record.note})
     top_ids = sorted(por_id.items(), key=lambda par: (-par[1], par[0]))[:top]
     return {
