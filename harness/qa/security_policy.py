@@ -100,6 +100,10 @@ _SELF_FILES = {
     "harness/qa/security_policy.py",
     "harness/tests/test_security_policy.py",
     "docs/src/es/adr/adr0035-security-policy-portable-paths-2026.md",
+    # Define la politica (regex anti-rutas-personales) y su test de rechazo:
+    # los patrones de ejemplo son deliberados, no violaciones reales.
+    "harness/memory_rag/knowledge_catalog_types.py",
+    "harness/tests/test_knowledge_catalog.py",
 }
 
 

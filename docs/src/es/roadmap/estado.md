@@ -5,6 +5,25 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-11)
+
+### Estado 2026-11-11 (Ciclo 11.94 — catálogo de conocimiento embebido + grafo)
+- Nueva colección `knowledge_catalog` en la memoria central: repos, papers,
+  artículos, técnicas, arquitecturas y algoritmos, con ID canónico, procedencia
+  y estado (`adopted|evaluated|unverified|rejected`).
+- Dual-store: vectores + BM25 en RuscaDB (`hybrid_search` con RRF) y grafo
+  NetworkX (`about`, `instance_of`, `cites`, `implements`, `uses`).
+- Ingesta idempotente (13 → skip 13) y búsqueda con expansión 1-hop
+  (`sources = graph + hybrid`); degrada a híbrido si falta el grafo.
+- Seed público con 13 fuentes verificadas + 20 repos públicos y seed local
+  privado con 24 técnicas/arquitecturas de `DEV-SPACE`; CLI
+  `ingest|search|stats|graph|export|verify|feedback|gaps`.
+- Ciclo de vida obligatorio (consultar → usar → feedback → alimentar): el
+  feedback `useful|stale|missing` va a un JSONL y los `missing` forman la cola
+  de gaps; sin él el catálogo pierde efectividad.
+- Bug corregido: `KnowledgeGraph.query(reverse=True)` devolvía `[]`.
+- Evidencia: 53 tests, 57 entradas, grafo 247 nodos/352 aristas, `gaps=[]`.
+
 ## Estado Actual (2026-11-10)
 
 ### Estado 2026-11-10 (Ciclo 11.93 — xtask: deuda 0 por política)

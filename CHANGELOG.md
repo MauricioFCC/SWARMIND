@@ -1,3 +1,45 @@
+## [11.94] - 2026-11-11
+
+### Added
+- **Catálogo de conocimiento en la memoria central**
+  (`harness/memory_rag/knowledge_catalog.py` + `scripts/knowledge_catalog.py`):
+  colección tipada `knowledge_catalog` (RuscaDB vector + BM25) y grafo
+  NetworkX con repos, papers, artículos, técnicas, arquitecturas y algoritmos.
+  Ingesta idempotente por ID canónico (arXiv/DOI/GitHub) + hash de contenido;
+  búsqueda híbrida con RRF y expansión 1-hop del grafo; degradación a híbrido
+  si el grafo falta.
+- **CLI** `ingest|search|stats|graph|export|verify`, colección canónica en
+  `setup_memory_central.py` y seed público
+  (`docs/knowledge/catalog.seed.json`, 13 fuentes verificadas).
+- **Ciclo de vida consultar → feedback → alimentar**:
+  `knowledge_catalog_usage.py` registra cada consulta en un JSONL append-only
+  (`useful|stale|missing`) junto al índice; `feedback` y `gaps` en el CLI
+  convierten los huecos en cola de trabajo. Sin este bucle el catálogo
+  envejece y pierde efectividad.
+- **Seed de repos públicos** (`docs/knowledge/catalog.repos.seed.json`, 20
+  repos verificados con `git ls-remote`) y seed local privado en
+  `Memory_Proyects/data/knowledge/local_sources.seed.json` con 24
+  técnicas/arquitecturas extraídas de la documentación de `DEV-SPACE`.
+- Spec (`docs/specs/knowledge-catalog.md`) y research
+  (`docs/research/frontier-2026-11-11-knowledge-catalog.md`) con 4 hipótesis
+  comparadas y gap analysis.
+
+### Fixed
+- **`KnowledgeGraph.query(reverse=True)` devolvía `[]`**: el recorrido inverso
+  usaba `in_edges(neighbor)` en vez de las aristas entrantes del nodo.
+  Ahora devuelve los predecesores correctos; se añade `neighbors()` para
+  consultar vecinos salientes/entrantes sin duplicar lógica.
+
+### Evidence
+- `pytest test_knowledge_catalog.py test_knowledge_graph.py` → **53 passed**.
+- Ingesta real en la memoria central: **57 entradas** (8 papers, 4 artículos,
+  21 repos, 15 técnicas, 9 arquitecturas), **247 nodos / 352 aristas**; segunda
+  ingesta de los 3 seeds → `skipped` 13/20/24 (idempotente).
+- `search "graph rag multi-hop"` → 3 papers con `sources = graph + hybrid`.
+- Ciclo de vida: `feedback ... --outcome useful` escribe el JSONL; `gaps` → `[]`;
+  `stats` reporta `usage.total = 1`.
+- `knowledge_catalog.py verify` (3 seeds) → **exit 0**.
+
 ## [11.93] - 2026-11-10
 
 ### Added

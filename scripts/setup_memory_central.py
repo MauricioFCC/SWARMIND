@@ -75,6 +75,7 @@ _CANONICAL_COLLECTIONS: tuple[str, ...] = (
     "asi_cognition_store",
     "hitl_approval_log",
     "iteration_reports",
+    "knowledge_catalog",
     "procedural_skills",
     "prompt_evolution_log",
     "rag_chunks",

@@ -177,46 +177,51 @@ class KnowledgeGraph:
         for _ in range(max_depth):
             next_level: set[str] = set()
             for n in current:
-                # Obtener vecinos (salientes o entrantes)
-                neighbors = (
-                    self._graph.predecessors(n) if reverse
-                    else self._graph.successors(n)
+                # Vecinos directos y sus aristas en la dirección pedida.
+                aristas = (
+                    self._graph.in_edges(n, data=True)
+                    if reverse
+                    else self._graph.out_edges(n, data=True)
                 )
-                for neighbor in neighbors:
+                for src, dst, data in aristas:
+                    neighbor = src if reverse else dst
                     if neighbor in seen:
                         continue
                     seen.add(neighbor)
-
-                    # Obtener aristas entre n y neighbor
-                    edges = (
-                        list(self._graph.in_edges(neighbor, data=True))
-                        if reverse
-                        else list(self._graph.out_edges(n, data=True))
-                    )
-
-                    for _src, _dst, data in edges:
-                        if reverse:
-                            _src, _dst = _dst, _src
-                        if (_src == n or reverse) and _dst == neighbor:
-                            if relation and data.get("relation") != relation:
-                                continue
-                            if node_type:
-                                ndata = self._graph.nodes.get(neighbor, {})
-                                if ndata.get("type") != node_type:
-                                    continue
-
-                            results.append({
-                                "node": neighbor,
-                                "type": self._graph.nodes.get(neighbor, {}).get("type", "unknown"),
-                                "relation": data.get("relation", "unknown"),
-                                "weight": data.get("weight", 1.0),
-                                "metadata": data.get("metadata", {}),
-                            })
-                            next_level.add(neighbor)
+                    if relation and data.get("relation") != relation:
+                        continue
+                    if node_type:
+                        ndata = self._graph.nodes.get(neighbor, {})
+                        if ndata.get("type") != node_type:
+                            continue
+                    results.append({
+                        "node": neighbor,
+                        "type": self._graph.nodes.get(neighbor, {}).get("type", "unknown"),
+                        "relation": data.get("relation", "unknown"),
+                        "weight": data.get("weight", 1.0),
+                        "metadata": data.get("metadata", {}),
+                    })
+                    next_level.add(neighbor)
 
             current = next_level
 
         return results
+
+    def neighbors(self, node_id: str, *, reverse: bool = False) -> list[str]:
+        """IDs de vecinos directos de un nodo (salientes o entrantes).
+
+        Args:
+            node_id: Nodo de inicio.
+            reverse: Si True, devuelve predecesores (aristas entrantes).
+
+        Returns:
+            Lista de IDs de vecinos (vacía si el nodo no existe).
+        """
+        if not self._graph.has_node(node_id):
+            return []
+        if reverse:
+            return list(self._graph.predecessors(node_id))
+        return list(self._graph.successors(node_id))
 
     def find_path(
         self,

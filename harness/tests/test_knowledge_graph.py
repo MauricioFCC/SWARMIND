@@ -67,11 +67,17 @@ class TestQuery:
         assert kg.query("nonexistent") == []
 
     def test_query_reverse(self, kg: KnowledgeGraph) -> None:
-        """Busqueda reversa debe encontrar aristas entrantes."""
+        """Busqueda reversa encuentra quien apunta al nodo (aristas entrantes)."""
         kg.connect("agent:builder", "skill:rust", "uses")
-        # Reverse desde skill:rust debe encontrar agent:builder que apunta a el
-        results = kg.query("agent:builder", reverse=False)
-        assert len(results) >= 1
+        results = kg.query("skill:rust", reverse=True)
+        assert [r["node"] for r in results] == ["agent:builder"]
+
+    def test_neighbors_directions(self, kg: KnowledgeGraph) -> None:
+        """``neighbors`` devuelve salientes o entrantes segun ``reverse``."""
+        kg.connect("a:x", "b:y", "uses")
+        assert kg.neighbors("a:x") == ["b:y"]
+        assert kg.neighbors("b:y", reverse=True) == ["a:x"]
+        assert kg.neighbors("missing") == []
 
 
 class TestFindPath:

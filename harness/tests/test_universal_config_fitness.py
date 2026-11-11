@@ -83,7 +83,12 @@ _EXCLUDED_DIR_NAMES = frozenset({
 
 #: Auto-exclusion: el scanner de la politica contiene los patrones a proposito
 #: (docstring + regex de deteccion), por lo que no es una violacion real.
-_ALLOWED_SELF_FILES = frozenset({"harness/qa/security_policy.py"})
+_ALLOWED_SELF_FILES = frozenset({
+    "harness/qa/security_policy.py",
+    # Define la politica (regex anti-rutas-personales) y sus ejemplos: los
+    # patrones son deliberados, no violaciones reales.
+    "harness/memory_rag/knowledge_catalog_types.py",
+})
 
 #: Ruta de Google Drive con estructura personal (revela el layout del usuario).
 _MI_UNIDAD_RE = re.compile(r"~[/\\]Mi unidad", re.IGNORECASE)

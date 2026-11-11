@@ -580,6 +580,16 @@ def _ensure_docker_image(image: str) -> bool:
                     (pull.stderr or "").strip()[:200],
                 )
                 return False
+        # Calienta el arranque del contenedor (la primera ejecucion puede
+        # tardar >30 s en CI y agotar el timeout del codigo ejecutado).
+        subprocess.run(
+            ["docker", "run", "--rm", "--network", "none", image,
+             "python", "-c", "pass"],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=False,
+        )
     except (OSError, subprocess.SubprocessError) as exc:
         logger.warning("sandbox_executor: no se pudo preparar %s: %s", image, exc)
         return False
