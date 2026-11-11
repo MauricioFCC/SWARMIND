@@ -51,8 +51,9 @@
   `Memory_Proyects/data/ruscadb.db`; LanceDB archivada en
   `backups/lancedb_pre_rusca_20261110_193534` (no borrada) y `data/lancedb`
   reducida a `.gitkeep`.
-- **Binario versionado** (`ruscadb_ffi.dll` + `.sha256`): un clon limpio arranca
-  con backend nativo; `pin_ruscadb_binary.py` re-fija el checksum tras
+- **Binarios versionados** (`ruscadb_ffi.dll` Windows + `libruscadb_ffi.so`
+  Linux, con `.sha256`): un clon limpio arranca con backend nativo en ambas
+  plataformas; `pin_ruscadb_binary.py` re-fija el checksum tras
   recompilar.
 - Health-check con RuscaDB primario (readonly) y LanceDB como legado;
   bootstrap crea las colecciones canónicas y `vector_backend: ruscadb`.

@@ -70,3 +70,4 @@ poetry.lock      text eol=lf
 uv.lock          text eol=lf
 # RuscaDB: binario precompilado versionado (no normalizar EOL).
 harness/memory_rag/ruscadb_ffi.dll binary
+harness/memory_rag/libruscadb_ffi.so binary

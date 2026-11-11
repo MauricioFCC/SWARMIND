@@ -84,6 +84,7 @@ desktop.ini
 # Si se recompila el motor, actualiza el checksum con:
 #   python scripts/pin_ruscadb_binary.py
 !harness/memory_rag/ruscadb_ffi.dll
+!harness/memory_rag/libruscadb_ffi.so
 
 # Logs
 *.log

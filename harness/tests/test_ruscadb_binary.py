@@ -1,11 +1,15 @@
-"""Contrato del binario RuscaDB versionado (clon limpio = memoria nativa lista).
+"""Contrato de los binarios RuscaDB versionados (clon limpio = memoria nativa).
 
-El repo guarda ``harness/memory_rag/ruscadb_ffi.dll`` para que un clon limpio
-funcione sin el repo Rust ni cargo. Estos tests garantizan que:
+El repo guarda el C-ABI precompilado por plataforma:
 
-1. el binario sigue versionado (no lo borra un ``git clean`` mal hecho),
-2. su checksum coincide con ``ruscadb_ffi.dll.sha256``,
-3. carga por el ABI y expone las funciones core (solo Windows).
+- Windows: ``harness/memory_rag/ruscadb_ffi.dll``
+- Linux:   ``harness/memory_rag/libruscadb_ffi.so``
+
+Estos tests garantizan que:
+
+1. el binario de la plataforma actual está versionado,
+2. cada binario presente coincide con su sidecar ``.sha256``,
+3. el binario carga por el ABI y expone las funciones core.
 """
 
 from __future__ import annotations
@@ -17,8 +21,11 @@ from pathlib import Path
 import pytest
 
 _MEMORY_DIR = Path(__file__).resolve().parents[1] / "memory_rag"
-BINARY = _MEMORY_DIR / "ruscadb_ffi.dll"
-CHECKSUM = _MEMORY_DIR / "ruscadb_ffi.dll.sha256"
+BINARIES: dict[str, Path] = {
+    "windows": _MEMORY_DIR / "ruscadb_ffi.dll",
+    "linux": _MEMORY_DIR / "libruscadb_ffi.so",
+}
+_PLATFORM = "windows" if sys.platform.startswith("win") else "linux"
 
 #: Extensiones que ``capabilities()`` debe reportar como disponibles.
 _CORE_FUNCTIONS = (
@@ -41,37 +48,51 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _present() -> list[Path]:
+    """Binarios presentes en el checkout."""
+    return [path for path in BINARIES.values() if path.is_file()]
+
+
 class TestBinarioVersionado:
     """El binario precompilado debe viajar con el repo y ser integro."""
 
-    def test_binario_presente(self) -> None:
-        """El DLL existe y tiene tamano de binario real (no un placeholder)."""
-        assert BINARY.is_file(), f"falta el binario versionado: {BINARY}"
-        assert BINARY.stat().st_size > 1024 * 1024
+    def test_binario_de_la_plataforma_presente(self) -> None:
+        """Cada plataforma trae su binario (no un placeholder)."""
+        binary = BINARIES[_PLATFORM]
+        assert binary.is_file(), f"falta el binario versionado: {binary}"
+        assert binary.stat().st_size > 1024 * 1024
 
-    def test_sidecar_de_checksum_presente(self) -> None:
-        """Existe el sidecar con el SHA-256 fijado."""
-        assert CHECKSUM.is_file(), f"falta {CHECKSUM.name}; ejecuta --write"
+    def test_sidecars_presentes(self) -> None:
+        """Cada binario presente tiene su sidecar de checksum."""
+        for binary in _present():
+            checksum = binary.with_name(binary.name + ".sha256")
+            assert checksum.is_file(), f"falta {checksum.name}; ejecuta --write"
 
-    def test_checksum_coincide(self) -> None:
-        """Si se recompilo el motor hay que re-fijar el checksum con el script."""
-        esperado = CHECKSUM.read_text(encoding="utf-8").split()[0].strip()
-        assert _sha256(BINARY) == esperado, (
-            "El DLL cambio: ejecuta `python scripts/pin_ruscadb_binary.py --write`"
+    def test_checksums_coinciden(self) -> None:
+        """Si se recompilo un binario hay que re-fijar su checksum."""
+        for binary in _present():
+            checksum = binary.with_name(binary.name + ".sha256")
+            esperado = checksum.read_text(encoding="utf-8").split()[0].strip()
+            assert _sha256(binary) == esperado, (
+                f"El binario {binary.name} cambio: ejecuta "
+                "`python scripts/pin_ruscadb_binary.py --write`"
+            )
+
+    def test_no_estan_ignorados_por_git(self) -> None:
+        """Ambos binarios deben poder versionarse (reglas de negación)."""
+        ignore = (Path(__file__).resolve().parents[2] / ".gitignore").read_text(
+            encoding="utf-8"
         )
-
-    def test_no_esta_ignorado_por_git(self) -> None:
-        """El binario debe poder versionarse (regla de negacion en .gitignore)."""
-        ignore = Path(__file__).resolve().parents[2] / ".gitignore"
-        assert "!harness/memory_rag/ruscadb_ffi.dll" in ignore.read_text(encoding="utf-8")
+        assert "!harness/memory_rag/ruscadb_ffi.dll" in ignore
+        assert "!harness/memory_rag/libruscadb_ffi.so" in ignore
 
 
-@pytest.mark.skipif(not sys.platform.startswith("win"), reason="DLL solo Windows")
+@pytest.mark.skipif(not _present(), reason="sin binario RuscaDB en esta plataforma")
 class TestCargaDelBinario:
     """El binario cargado por ctypes debe exponer el ABI core."""
 
     def test_carga_y_capacidades_core(self) -> None:
-        """`load_library` funciona y las funciones core estan disponibles."""
+        """``load_library`` funciona y las funciones core están disponibles."""
         from harness.memory_rag import ruscadb
 
         ruscadb._LIB = None  # forzar recarga limpia del artefacto versionado
@@ -81,7 +102,6 @@ class TestCargaDelBinario:
         capacidades = ruscadb.capabilities()
         faltantes = [nombre for nombre in _CORE_FUNCTIONS if not capacidades.get(nombre)]
         assert not faltantes, f"ABI incompleto: {faltantes}"
-        # Las operaciones base del C-ABI se exponen como wrappers del modulo.
         assert callable(ruscadb.execute)
         assert callable(ruscadb.read_page)
         assert callable(ruscadb.write_page)

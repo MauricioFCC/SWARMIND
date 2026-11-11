@@ -33,7 +33,12 @@
 - **Consulta automática desde la copia global**: `KnowledgeCatalog(store)` no
   derivaba el índice/grafo del `db_path` del store, así que la copia instalada
   veía `total=0`. Ahora usa `<data>/knowledge_catalog*.json` por defecto; el
-  global consulta las 57 entradas y el grafo sin rutas explícitas.
+  global consulta todo el catálogo y el grafo sin rutas explícitas.
+- **Binario Linux de RuscaDB versionado** (`libruscadb_ffi.so`, glibc 2.36):
+  el CI de Ubuntu fallaba en `test_ensure_memory_structure_inicializa_ruscadb`
+  porque solo se versionaba el `.dll` de Windows y `_ensure_ruscadb` degradaba
+  a LanceDB sin crear `ruscadb.db`. Ahora ambos binarios viajan con su sidecar
+  y `pin_ruscadb_binary.py`/`test_ruscadb_binary.py` operan por plataforma.
 
 ### Evidence
 - `pytest test_knowledge_catalog.py test_knowledge_catalog_usage.py test_knowledge_graph.py`
