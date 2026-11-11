@@ -15,6 +15,13 @@
   de exit codes.
 
 ### Fixed
+- **Docker sin daemon ya no envenena los oráculos** (`sandbox_executor.py`):
+  `_detect_backend` elegía Docker solo por tener el CLI en PATH; con Docker
+  Desktop apagado, baseline y mutantes devolvían rc=1 y el kill rate caía a 0
+  (3 tests rojos en local y el job `test` del PR). Ahora el backend exige
+  daemon vivo (`docker info`), calienta la imagen una vez antes de ejecutar
+  (el pull frío agotaba el timeout de 30 s en CI) y degrada al sandbox nativo
+  ante fallos de infraestructura. +4 tests.
 - **Falsos positivos del scanner de seguridad** (`security_policy.py`): el gate
   de `xtask check` destapó 11 hallazgos, todos falsos positivos → se
   corrigieron en el scanner, no silenciándolos: `sk-` dentro de
@@ -33,6 +40,8 @@
 ### Evidence
 - `python scripts/xtask.py gate --fast` → 10 gates en verde (exit 0).
 - `python scripts/xtask.py check --skip tests` → 13 gates en verde.
+- Suite completa: **8045 passed**, 13 skipped, 1 xfailed; coverage **86.03 %**
+  (`--cov-fail-under=80`).
 - `pytest test_xtask.py test_install_hooks.py test_version_alignment.py` →
   **32 passed**; `ruff check harness scripts` → **All checks passed**;
   `check_ruff_ratchet.py --gate` → exit 0.

@@ -468,14 +468,138 @@ def _ensure_docker_readable(workdir: Path, script: Path) -> None:
             )
 
 
+#: Cache del probe del daemon docker (None = aun no medido).
+_DOCKER_DAEMON: bool | None = None
+
+#: Marcadores de fallo de INFRAESTRUCTURA docker (no del codigo ejecutado).
+#: Cuando aparecen, se degrada al sandbox nativo en vez de reportar rc != 0.
+_DOCKER_INFRA_MARKERS: tuple[str, ...] = (
+    "failed to connect to the docker api",
+    "cannot connect to the docker daemon",
+    "error during connect",
+    "is the docker daemon running",
+    "docker: not found",
+    "unable to find image",
+    "pull access denied",
+    "manifest unknown",
+    "no such image",
+    "error response from daemon",
+)
+
+
+def _docker_daemon_available() -> bool:
+    """True si el daemon docker responde (no basta con el CLI en PATH).
+
+    Ejecuta `docker info --format {{.ServerVersion}}` con timeout corto y
+    cachea el resultado para no pagar el probe en cada `SandboxExecutor`.
+
+    Returns:
+        True si el daemon responde y reporta version; False en cualquier otro
+        caso (CLI ausente, daemon apagado, timeout) — nunca lanza.
+    """
+    global _DOCKER_DAEMON
+    if _DOCKER_DAEMON is not None:
+        return _DOCKER_DAEMON
+    try:
+        proc = subprocess.run(
+            ["docker", "info", "--format", "{{.ServerVersion}}"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        _DOCKER_DAEMON = proc.returncode == 0 and bool(proc.stdout.strip())
+    except (OSError, subprocess.SubprocessError):
+        _DOCKER_DAEMON = False
+    if not _DOCKER_DAEMON:
+        logger.warning(
+            "sandbox_executor: CLI docker presente pero daemon no responde; "
+            "se usa el sandbox nativo (Job Object/bwrap/subprocess)"
+        )
+    return _DOCKER_DAEMON
+
+
+def _docker_infra_failure(stderr: str) -> bool:
+    """True si el stderr de `docker run` indica un fallo de infraestructura.
+
+    Args:
+        stderr: Salida de error del comando docker.
+
+    Returns:
+        True si coincide con un marcador conocido (daemon caido, imagen no
+        disponible); False si el fallo proviene del codigo ejecutado.
+    """
+    texto = (stderr or "").lower()
+    return any(marcador in texto for marcador in _DOCKER_INFRA_MARKERS)
+
+
+#: Imagenes docker ya verificadas/descargadas en este proceso.
+_DOCKER_IMAGE_READY: set[str] = set()
+
+
+def _ensure_docker_image(image: str) -> bool:
+    """Garantiza que la imagen exista ANTES de ejecutar codigo con timeout.
+
+    El primer `docker run` de una imagen fria descarga ~50 MB; si eso cae
+    dentro del timeout de ejecucion (30 s) el baseline y los mutantes expiran
+    con 124 y el kill rate se hunde a 0 (medido en CI 2026-11-10). El pull se
+    hace aqui, una sola vez por proceso y con un timeout propio.
+
+    Args:
+        image: Referencia de la imagen docker.
+
+    Returns:
+        True si la imagen esta disponible; False si el pull fallo o no hay
+        daemon (el caller debe degradar al sandbox nativo).
+    """
+    if image in _DOCKER_IMAGE_READY:
+        return True
+    try:
+        inspeccion = subprocess.run(
+            ["docker", "image", "inspect", image],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        if inspeccion.returncode != 0:
+            logger.info(
+                "sandbox_executor: imagen %s ausente; docker pull (una vez)", image
+            )
+            pull = subprocess.run(
+                ["docker", "pull", image],
+                capture_output=True,
+                text=True,
+                timeout=300,
+                check=False,
+            )
+            if pull.returncode != 0:
+                logger.warning(
+                    "sandbox_executor: docker pull %s fallo: %s",
+                    image,
+                    (pull.stderr or "").strip()[:200],
+                )
+                return False
+    except (OSError, subprocess.SubprocessError) as exc:
+        logger.warning("sandbox_executor: no se pudo preparar %s: %s", image, exc)
+        return False
+    _DOCKER_IMAGE_READY.add(image)
+    return True
+
+
 def _detect_backend() -> str:
     """Detecta el backend disponible por prioridad (nunca lanza).
+
+    Un CLI `docker` en PATH NO garantiza un daemon vivo: si Docker Desktop
+    esta instalado pero apagado, `docker run` devuelve rc=1 para baseline y
+    mutantes y el kill rate cae a 0 (bug medido 2026-11-10). Por eso docker
+    solo se elige si el daemon responde (`_docker_daemon_available`).
 
     Returns:
         `BACKEND_DOCKER` > `BACKEND_JOB_OBJECT` (Windows) > `BACKEND_BWRAP`
         (Linux) > `BACKEND_SUBPROCESS`.
     """
-    if shutil.which(BACKEND_DOCKER) is not None:
+    if shutil.which(BACKEND_DOCKER) is not None and _docker_daemon_available():
         return BACKEND_DOCKER
     if os.name == "nt" and _load_kernel32() is not None:
         return BACKEND_JOB_OBJECT
@@ -525,7 +649,22 @@ class SandboxExecutor:
             ValueError: Si cmd vacio o timeout invalido (WHAT+WHY+WHERE).
         """
         self._validate_request(cmd, timeout_s)
-        return self._execute(cmd, timeout_s, env or {}, workdir=None)
+        if self._backend == BACKEND_DOCKER and not _ensure_docker_image(self._image):
+            return self._run_host(cmd, timeout_s, env or {}, None)
+        result = self._execute(cmd, timeout_s, env or {}, workdir=None)
+        if (
+            self._backend == BACKEND_DOCKER
+            and result.returncode != 0
+            and _docker_infra_failure(result.stderr)
+        ):
+            logger.warning(
+                "sandbox_executor: docker fallo por infraestructura; "
+                "degradando a sandbox nativo (WHAT=fallback "
+                "WHY=%s WHERE=SandboxExecutor.run)",
+                result.stderr.strip()[:200],
+            )
+            return self._run_host(cmd, timeout_s, env or {}, None)
+        return result
 
     def run_script(
         self,
@@ -569,11 +708,27 @@ class SandboxExecutor:
             require_project_deps and not _docker_supplies_project_deps(target_image)
         )
         if docker_viable:
+            if not _ensure_docker_image(target_image):
+                return self._run_host(
+                    [sys.executable, str(script)], timeout_s, env or {}, parent
+                )
             _ensure_docker_readable(parent, script)
             cmd = [PYTHON_IN_CONTAINER, f"{SANDBOX_WORKDIR}/{script.name}"]
-            return self._execute(
+            result = self._execute(
                 cmd, timeout_s, env or {}, parent, target_image
             )
+            if result.returncode != 0 and _docker_infra_failure(result.stderr):
+                logger.warning(
+                    "sandbox_executor: docker no disponible para %s; "
+                    "degradando al interprete host con sandbox nativo "
+                    "(WHAT=fallback WHY=%s WHERE=SandboxExecutor.run_script)",
+                    script.name,
+                    result.stderr.strip()[:200],
+                )
+                return self._run_host(
+                    [sys.executable, str(script)], timeout_s, env or {}, parent
+                )
+            return result
         if require_project_deps and self._backend == BACKEND_DOCKER:
             logger.warning(
                 "sandbox_executor: docker no puede aportar deps del proyecto "

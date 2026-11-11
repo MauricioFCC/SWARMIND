@@ -71,6 +71,12 @@ def _force_backend(monkeypatch, backend: str) -> None:
             "which",
             lambda name: "docker" if name == "docker" else None,
         )
+        monkeypatch.setattr(
+            sandbox_executor, "_docker_daemon_available", lambda: True
+        )
+        monkeypatch.setattr(
+            sandbox_executor, "_ensure_docker_image", lambda image: True
+        )
     elif backend == "windows-jobobject":
         monkeypatch.setattr(sandbox_executor.shutil, "which", lambda name: None)
         monkeypatch.setattr(sandbox_executor.os, "name", "nt")
@@ -321,13 +327,30 @@ class TestBackendDetection:
     """`_detect_backend` respeta la prioridad docker > jobobject > bwrap > subprocess."""
 
     def test_docker_has_top_priority(self, monkeypatch) -> None:
-        """Con docker disponible se elige `docker` sin mirar lo demas."""
+        """Con docker disponible (daemon vivo) se elige `docker`."""
         monkeypatch.setattr(
             sandbox_executor.shutil,
             "which",
             lambda name: "docker" if name == "docker" else None,
         )
+        monkeypatch.setattr(
+            sandbox_executor, "_docker_daemon_available", lambda: True
+        )
         assert sandbox_executor._detect_backend() == "docker"
+
+    def test_docker_cli_without_daemon_falls_back(self, monkeypatch) -> None:
+        """CLI docker presente con daemon caido NO debe elegir docker."""
+        monkeypatch.setattr(
+            sandbox_executor.shutil,
+            "which",
+            lambda name: "docker" if name == "docker" else None,
+        )
+        monkeypatch.setattr(
+            sandbox_executor, "_docker_daemon_available", lambda: False
+        )
+        monkeypatch.setattr(sandbox_executor.os, "name", "nt")
+        monkeypatch.setattr(sandbox_executor, "_load_kernel32", lambda: object())
+        assert sandbox_executor._detect_backend() == "windows-jobobject"
 
     def test_nt_without_docker_uses_jobobject(self, monkeypatch) -> None:
         """Sin docker, en Windows con kernel32 se elige `windows-jobobject`."""
@@ -594,3 +617,89 @@ def test_real_jobobject_runs_script(tmp_path, monkeypatch) -> None:
     assert result.returncode == 0
     assert "ok" in result.stdout
     assert result.backend == "windows-jobobject"
+
+
+class TestDockerInfraFallback:
+    """Docker caido o imagen ausente NO debe envenenar el oraculo."""
+
+    def test_marcadores_de_infraestructura(self) -> None:
+        """Los fallos de daemon/imagen se reconocen; un assert no."""
+        assert sandbox_executor._docker_infra_failure(
+            "failed to connect to the docker API at npipe://..."
+        )
+        assert sandbox_executor._docker_infra_failure(
+            "Unable to find image 'python:3.12-slim' locally"
+        )
+        assert not sandbox_executor._docker_infra_failure("AssertionError: 2 != 5")
+
+    def test_run_degrada_a_host_si_docker_falla_por_infra(self, monkeypatch) -> None:
+        """`run` reintenta en el sandbox nativo cuando docker no esta disponible."""
+        ex = SandboxExecutor()
+        monkeypatch.setattr(ex, "_backend", "docker")
+        monkeypatch.setattr(sandbox_executor, "_ensure_docker_image", lambda image: True)
+        monkeypatch.setattr(
+            ex,
+            "_run_docker",
+            lambda *a, **k: SandboxResult(
+                "", "failed to connect to the docker API", 1, "docker"
+            ),
+        )
+        monkeypatch.setattr(
+            ex,
+            "_run_host",
+            lambda *a, **k: SandboxResult("42", "", 0, "subprocess"),
+        )
+
+        result = ex.run(["python", "-c", "print(42)"])
+
+        assert result.returncode == 0
+        assert result.stdout == "42"
+        assert result.backend == "subprocess"
+
+    def test_run_script_degrada_al_interprete_host(self, monkeypatch, tmp_path) -> None:
+        """`run_script` ejecuta el script con sys.executable si docker falla."""
+        script = tmp_path / "x.py"
+        script.write_text("print(1)", encoding="utf-8")
+        ex = SandboxExecutor()
+        monkeypatch.setattr(ex, "_backend", "docker")
+        monkeypatch.setattr(sandbox_executor, "_ensure_docker_image", lambda image: True)
+        monkeypatch.setattr(
+            ex,
+            "_execute",
+            lambda *a, **k: SandboxResult(
+                "", "error during connect: daemon down", 1, "docker"
+            ),
+        )
+        capturado: dict[str, object] = {}
+
+        def _host(cmd, timeout_s, env, workdir):
+            capturado["cmd"] = cmd
+            return SandboxResult("1", "", 0, "subprocess")
+
+        monkeypatch.setattr(ex, "_run_host", _host)
+
+        result = ex.run_script(script)
+
+        assert result.returncode == 0
+        assert capturado["cmd"][0] == sys.executable
+
+    def test_imagen_no_disponible_usa_host_sin_gastar_timeout(self, monkeypatch) -> None:
+        """Si el warm-up de la imagen falla, docker ni se invoca."""
+        ex = SandboxExecutor()
+        monkeypatch.setattr(ex, "_backend", "docker")
+        monkeypatch.setattr(
+            sandbox_executor, "_ensure_docker_image", lambda image: False
+        )
+        monkeypatch.setattr(
+            ex, "_run_docker", lambda *a, **k: pytest.fail("docker no debe correr")
+        )
+        monkeypatch.setattr(
+            ex,
+            "_run_host",
+            lambda *a, **k: SandboxResult("ok", "", 0, "subprocess"),
+        )
+
+        result = ex.run(["python", "-c", "print(1)"])
+
+        assert result.backend == "subprocess"
+        assert result.stdout == "ok"

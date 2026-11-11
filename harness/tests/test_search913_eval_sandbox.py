@@ -103,10 +103,11 @@ def test_sandbox_fallback_without_docker(monkeypatch) -> None:
 
 
 def test_sandbox_detects_docker(monkeypatch) -> None:
-    """Con docker disponible el backend es docker."""
+    """Con docker disponible y daemon vivo el backend es docker."""
     import shutil
 
     monkeypatch.setattr(shutil, "which", lambda name: "/usr/bin/docker" if name == "docker" else None)
+    monkeypatch.setattr(sandbox_executor, "_docker_daemon_available", lambda: True)
     ex = SandboxExecutor()
     assert ex.backend == "docker"
 
