@@ -18,8 +18,9 @@
   envejece y pierde efectividad.
 - **Seed de repos públicos** (`docs/knowledge/catalog.repos.seed.json`, 20
   repos verificados con `git ls-remote`) y seed local privado en
-  `Memory_Proyects/data/knowledge/local_sources.seed.json` con 24
-  técnicas/arquitecturas extraídas de la documentación de `DEV-SPACE`.
+  `Memory_Proyects/data/knowledge/` con 24 técnicas/arquitecturas de
+  `DEV-SPACE` + 43 entradas de `FRONTIER_RESEARCH` (métodos MESA/BUSEV,
+  papers, PDFs, repos y modelos GGUF).
 - Spec (`docs/specs/knowledge-catalog.md`) y research
   (`docs/research/frontier-2026-11-11-knowledge-catalog.md`) con 4 hipótesis
   comparadas y gap analysis.
@@ -37,9 +38,9 @@
 ### Evidence
 - `pytest test_knowledge_catalog.py test_knowledge_catalog_usage.py test_knowledge_graph.py`
   → **56 passed**.
-- Ingesta real en la memoria central: **61 entradas** (8 papers, 4 artículos,
-  21 repos, 19 técnicas, 9 arquitecturas), **264 nodos / 377 aristas**; segunda
-  ingesta de los 3 seeds → `skipped` (idempotente).
+- Ingesta real en la memoria central: **104 entradas** (45 repos, 11 papers,
+  16 artículos, 23 técnicas, 9 arquitecturas), **403 nodos / 594 aristas**;
+  reingesta de los seeds → `skipped` (idempotente).
 - `search "graph rag multi-hop"` → 3 papers con `sources = graph + hybrid`.
 - Ciclo de vida: `feedback useful` escribe el JSONL; un `missing` posterior se
   cierra con un `useful` de la misma query (el gap de Go quedó resuelto tras

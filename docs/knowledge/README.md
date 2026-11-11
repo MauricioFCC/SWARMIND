@@ -87,6 +87,9 @@ bloque = catalog.context_block("optimizar retrieval multi-hop", top_k=3)
   verificados con `git ls-remote`.
 - `$MEMORY_ROOT/data/knowledge/local_sources.seed.json` — conocimiento
   extraído de la documentación local de `DEV-SPACE` (privado, no se versiona).
+- `$MEMORY_ROOT/data/knowledge/frontier_research.seed.json` — 43 entradas de
+  `FRONTIER_RESEARCH` (MESA/BUSEV, papers, PDFs, repos y modelos GGUF;
+  privado).
 
 ## Reglas
 

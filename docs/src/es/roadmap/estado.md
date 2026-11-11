@@ -22,7 +22,7 @@
   feedback `useful|stale|missing` va a un JSONL y los `missing` forman la cola
   de gaps; sin él el catálogo pierde efectividad.
 - Bug corregido: `KnowledgeGraph.query(reverse=True)` devolvía `[]`.
-- Evidencia: 56 tests, 61 entradas, grafo 264 nodos/377 aristas, `gaps=[]`.
+- Evidencia: 56 tests, 104 entradas, grafo 403 nodos/594 aristas, `gaps=[]`.
 
 ## Estado Actual (2026-11-10)
 
