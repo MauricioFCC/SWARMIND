@@ -29,7 +29,7 @@ of claims.
 | | |
 |---|---|
 | **Agents** | 26 agents (specialist subagents) + coordinator (`.opencode/agents/`) |
-| **Skills** | 49 skills reusable with contracts, `SKILL.min.md` and digests |
+| **Skills** | 50 skills reusable with contracts, `SKILL.min.md` and digests |
 | **Engine** | Python 3.12+, hexagonal, `harness/` packages by domain |
 | **Validation** | TDD, property-based tests, mutation oracles, architecture ratchets |
 | **Memory** | LanceDB (optional) + SQLite-vec + federated search |
