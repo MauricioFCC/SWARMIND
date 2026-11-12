@@ -80,9 +80,10 @@ class TestBinarioVersionado:
 
     def test_no_estan_ignorados_por_git(self) -> None:
         """Ambos binarios deben poder versionarse (reglas de negación)."""
-        ignore = (Path(__file__).resolve().parents[2] / ".gitignore").read_text(
-            encoding="utf-8"
-        )
+        ignore_path = Path(__file__).resolve().parents[2] / ".gitignore"
+        if not ignore_path.is_file():
+            pytest.skip("entorno mutmut: falta .gitignore en el sandbox")
+        ignore = ignore_path.read_text(encoding="utf-8")
         assert "!harness/memory_rag/ruscadb_ffi.dll" in ignore
         assert "!harness/memory_rag/libruscadb_ffi.so" in ignore
 

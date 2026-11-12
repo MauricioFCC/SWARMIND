@@ -19,9 +19,18 @@ import re
 import tomllib
 from pathlib import Path
 
+import pytest
+
 from harness.self_update import fmt_version, parse_semver, parse_version
 
 ROOT = Path(__file__).resolve().parents[2]
+
+#: En el sandbox de mutmut solo se copia ``harness/``; sin estos fixtures el
+#: test no aplica (valida el repo, no el modulo mutado).
+pytestmark = pytest.mark.skipif(
+    not (ROOT / "pyproject.toml").is_file() or not (ROOT / "CHANGELOG.md").is_file(),
+    reason="entorno mutmut: faltan pyproject/CHANGELOG en el sandbox",
+)
 
 
 def _version_pyproject() -> tuple[int, ...]:
