@@ -72,7 +72,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -108,7 +108,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -148,7 +148,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -196,7 +196,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -243,7 +243,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -281,7 +281,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -315,7 +315,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -351,7 +351,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -398,7 +398,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -473,7 +473,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -525,7 +525,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -577,7 +577,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -622,7 +622,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -678,7 +678,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
@@ -730,7 +730,7 @@ jobs:
           python-version: "3.14"
 
       - name: Instalar uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.3
 
       - name: Cache uv
         uses: actions/cache@v6
