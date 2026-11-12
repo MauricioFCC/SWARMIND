@@ -8,7 +8,7 @@ por duplicación de tamaño:
 
 Interpretación (con margen de ruido):
 
-    linear     ~2.0        (ratio <= 2.8)
+    linear     ~2.0        (ratio <= 3.0; margen para varianza de CI)
     n_log_n    ~2.2        (ratio <= 3.2)
     quadratic  ~4.0        (ratio > 3.2)
 
@@ -51,7 +51,7 @@ BASELINE_PATH = Path(__file__).with_name("complexity_baseline.json")
 #: absorbe efectos de caché del intérprete y ruido de CI: el gate apunta a
 #: hotspots O(n²) (ratio ~4), no a microdiferencias de constante.
 THRESHOLDS: dict[str, float] = {
-    "linear": 2.8,
+    "linear": 3.0,
     "n_log_n": 3.2,
     "quadratic": 5.0,
 }

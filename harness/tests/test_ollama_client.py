@@ -642,6 +642,10 @@ def test_cache_expired_refetches(mocker: MockerFixture) -> None:
     client = _client()
     assert client.is_available() is True
     assert mock_request.call_count == 1
-    client._tags_cache = (0.0, [])  # fuerza expiracion (monotonic >> 0)
+    # Fuerza expiracion de forma determinista: en un runner recien arrancado
+    # time.monotonic() puede ser < TTL y el timestamp 0.0 pareceria fresco.
+    import time
+
+    client._tags_cache = (time.monotonic() - 1_000_000.0, [])
     assert client.is_available() is True
     assert mock_request.call_count == 2
