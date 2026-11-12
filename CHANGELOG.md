@@ -14,6 +14,11 @@
 - 14 tests (unit + property-based) y directiva compacta para inyectar en
   cualquier agente; no se activa en tareas de entrega.
 
+### Fixed
+- **Benchmark de complejidad flaky**: `alpha.ts_corr` midió `ratio=2.812` en
+  CI (local 2.221) contra el umbral linear de 2.8 y tumbó `lint`. Se calibra a
+  3.0: el O(n²) (~4.0) sigue detectándose y se absorbe la varianza del runner.
+
 ### Changed
 - **Conformidad Agent Skills (AAIF)**: nuevos gates `skills-standard`
   (`check_skills_standard.py`, L1 oficial) y `skills-spec`
