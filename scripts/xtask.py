@@ -127,6 +127,18 @@ POLICY: tuple[Gate, ...] = (
         "frontmatter, SKILL.min.md, registry y referencias",
     ),
     Gate(
+        "skills-standard", "gate",
+        (PY, "scripts/check_skills_standard.py"),
+        True, 300,
+        "conformidad Agent Skills L1 (agentskills.io / AAIF)",
+    ),
+    Gate(
+        "skills-spec", "gate",
+        (PY, "scripts/generate_skill_specs.py", "--check"),
+        True, 300,
+        "contratos SDD de skills sin drift (source_sha256)",
+    ),
+    Gate(
         "vulture", "gate",
         (PY, "-m", "vulture", "harness", "harness/vulture_whitelist.py"),
         False, 600,

@@ -2,7 +2,7 @@
 
 <!-- generado por scripts/gen_docs_index.py -->
 
-**49 skills** registradas en `.opencode/skills/skills_registry.yaml`.
+**50 skills** registradas en `.opencode/skills/skills_registry.yaml`.
 Cada una tiene `SKILL.md` (procedimiento) y `SKILL.min.md` (N1).
 
 | Skill | Dominio | Cuándo usarla | Fuente |
@@ -21,6 +21,7 @@ Cada una tiene `SKILL.md` (procedimiento) y `SKILL.min.md` (N1).
 | `behavioral-economics` | economics | Usar cuando el problema involucra decisiones humanas bajo incertidumbre. teoria de juegos, sesgos cognitivos,… | [skill](https://github.com/MauricioFCC/SWARMIND/blob/main/.opencode/skills/behavioral-economics/SKILL.md) |
 | `cert-master` | education | Usar cuando el usuario quiere convertir material de estudio (PDFs, programas, transcripciones) en apuntes para… | [skill](https://github.com/MauricioFCC/SWARMIND/blob/main/.opencode/skills/cert-master/SKILL.md) |
 | `education` | education | Usar cuando el usuario diseña material educativo o formacion. diseno instruccional, pedagogia, andragogia, Bloom,… | [skill](https://github.com/MauricioFCC/SWARMIND/blob/main/.opencode/skills/education/SKILL.md) |
+| `socratic-tutor` | education | Usar cuando el usuario quiere aprender o entender en vez de delegar (modo tutor, socr?tico, ?no me des la soluci?n?,… | [skill](https://github.com/MauricioFCC/SWARMIND/blob/main/.opencode/skills/socratic-tutor/SKILL.md) |
 | `sustainability` | environment | Usar cuando el usuario trabaja sostenibilidad o ESG. ESG, impacto ambiental, economia circular, cambio climatico,… | [skill](https://github.com/MauricioFCC/SWARMIND/blob/main/.opencode/skills/sustainability/SKILL.md) |
 | `hedgefund` | financial | Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital,… | [skill](https://github.com/MauricioFCC/SWARMIND/blob/main/.opencode/skills/hedgefund/SKILL.md) |
 | `diagram-design` | frontend | Usar cuando el usuario pide un diagrama visual editorial. arquitectura, flowchart, sequence, state machine, ER,… | [skill](https://github.com/MauricioFCC/SWARMIND/blob/main/.opencode/skills/diagram-design/SKILL.md) |

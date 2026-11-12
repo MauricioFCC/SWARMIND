@@ -69,12 +69,12 @@
     "body_keywords": [
       "portfolio",
       "kelly",
-      "cvar",
       "risk",
+      "cvar",
       "drawdown",
       "execute",
-      "rust",
-      "compute"
+      "compute",
+      "shortfall"
     ]
   },
   "source_sha256": "3fc7572c1ec2231c25c52ae52285dbac93af8e3554822a054aa1646718bfa2f0",
