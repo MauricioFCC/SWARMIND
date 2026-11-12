@@ -505,7 +505,7 @@ def _docker_daemon_available() -> bool:
             ["docker", "info", "--format", "{{.ServerVersion}}"],
             capture_output=True,
             text=True,
-            timeout=5,
+            timeout=20,
             check=False,
         )
         _DOCKER_DAEMON = proc.returncode == 0 and bool(proc.stdout.strip())
@@ -559,7 +559,7 @@ def _ensure_docker_image(image: str) -> bool:
             ["docker", "image", "inspect", image],
             capture_output=True,
             text=True,
-            timeout=10,
+            timeout=30,
             check=False,
         )
         if inspeccion.returncode != 0:
@@ -1008,12 +1008,24 @@ class SandboxExecutor:
             )
             return self._run_subprocess(cmd, timeout_s, env, workdir)
         parent = str(workdir)
+        # El interprete (venv) y sus librerias viven FUERA del workdir: sin
+        # binds read-only, `sys.executable` no existe dentro del namespace y
+        # baseline/mutante fallan igual (kill rate 0). Medido en CI 2026-11-12.
+        binds: list[str] = []
+        vistos: set[str] = set()
+        for ruta in ("/usr", "/bin", "/lib", "/lib64", "/etc",
+                     sys.prefix, sys.base_prefix):
+            if ruta in vistos or not Path(ruta).exists():
+                continue
+            vistos.add(ruta)
+            binds += ["--ro-bind", ruta, ruta]
         # `/tmp` es un tmpfs efimero DENTRO del namespace bwrap, no un temp del host.
         bwrap_cmd = [
             BACKEND_BWRAP,
             "--unshare-all",
             "--die-with-parent",
             "--new-session",
+            *binds,
             "--ro-bind", parent, parent,
             "--proc", "/proc",
             "--dev", "/dev",

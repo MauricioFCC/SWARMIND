@@ -703,3 +703,22 @@ class TestDockerInfraFallback:
 
         assert result.backend == "subprocess"
         assert result.stdout == "ok"
+
+
+class TestBwrapInterprete:
+    """El namespace bwrap debe ver el interprete (no solo el workdir)."""
+
+    def test_bwrap_binds_sistema_e_interprete(self, monkeypatch, tmp_path) -> None:
+        """Sin binds de /usr y sys.prefix, sys.executable no existe dentro."""
+        monkeypatch.setattr(sandbox_executor, "_detect_backend", lambda: "bwrap")
+        captured = _capture_run(monkeypatch)
+        script = tmp_path / "x.py"
+        script.write_text("print(1)", encoding="utf-8")
+        ex = SandboxExecutor()
+
+        result = ex.run_script(script)
+
+        cmd = captured["cmd"]
+        assert "--ro-bind" in cmd
+        assert sys.prefix in cmd or "/usr" in cmd
+        assert result.returncode == 0

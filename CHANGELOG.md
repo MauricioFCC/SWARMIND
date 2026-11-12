@@ -39,6 +39,10 @@
   porque solo se versionaba el `.dll` de Windows y `_ensure_ruscadb` degradaba
   a LanceDB sin crear `ruscadb.db`. Ahora ambos binarios viajan con su sidecar
   y `pin_ruscadb_binary.py`/`test_ruscadb_binary.py` operan por plataforma.
+- **Sandbox en CI (Docker/bwrap)**: el probe `docker info` expiraba a los 5 s
+  en un runner frío y caía a bwrap, que no veía `sys.executable` (kill_rate 0
+  en `test_strong_test_kills_mutants` y `coverage` en rojo). Ahora el probe
+  espera 20 s y bwrap bindea `/usr` + `sys.prefix`/`base_prefix` read-only.
 
 ### Evidence
 - `pytest test_knowledge_catalog.py test_knowledge_catalog_usage.py test_knowledge_graph.py`
