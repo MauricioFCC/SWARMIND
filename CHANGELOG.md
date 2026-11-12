@@ -1,3 +1,221 @@
+## [11.95] - 2026-11-12
+
+### Added
+- **Modo tutor socrático opt-in** (`harness/tutor/` + `scripts/tutor.py` +
+  skill `socratic-tutor`): máquina de estados determinista con intento
+  obligatorio, escalera de pistas P0 pregunta → P1 concepto → P2 local → P3
+  parcial y **solución solo con `tutor solve --confirm`**. Persistencia JSON
+  atómica en la memoria central y revisión espaciada 1/7/16/35 días.
+- **Evidencia pedagógica**: Harvard 2025 (>2× vs clase activa),
+  Wharton/PNAS 2025 (+48% práctica pero -17% examen al delegar),
+  Anthropic 2026 (<40% delegando vs 65-86% preguntando). Research y spec en
+  `docs/research/frontier-2026-11-12-socratic-tutor.md` y
+  `docs/specs/socratic-tutor.md`.
+- 14 tests (unit + property-based) y directiva compacta para inyectar en
+  cualquier agente; no se activa en tareas de entrega.
+
+### Changed
+- **Conformidad Agent Skills (AAIF)**: nuevos gates `skills-standard`
+  (`check_skills_standard.py`, L1 oficial) y `skills-spec`
+  (`generate_skill_specs.py --check`); 50/50 skills conformes y 50 contratos
+  SDD al día. `socratic-tutor` queda como implementación de referencia
+  (`compatibility`, PEC, mappings de router/agente y `SKILL.spec.json`).
+  Documentado en `docs/skills/AGENT_SKILLS_STANDARD.md`.
+
+## [11.94] - 2026-11-11
+
+### Added
+- **Catálogo de conocimiento en la memoria central**
+  (`harness/memory_rag/knowledge_catalog.py` + `scripts/knowledge_catalog.py`):
+  colección tipada `knowledge_catalog` (RuscaDB vector + BM25) y grafo
+  NetworkX con repos, papers, artículos, técnicas, arquitecturas y algoritmos.
+  Ingesta idempotente por ID canónico (arXiv/DOI/GitHub) + hash de contenido;
+  búsqueda híbrida con RRF y expansión 1-hop del grafo; degradación a híbrido
+  si el grafo falta.
+- **CLI** `ingest|search|stats|graph|export|verify`, colección canónica en
+  `setup_memory_central.py` y seed público
+  (`docs/knowledge/catalog.seed.json`, 13 fuentes verificadas).
+- **Ciclo de vida consultar → feedback → alimentar**:
+  `knowledge_catalog_usage.py` registra cada consulta en un JSONL append-only
+  (`useful|stale|missing`) junto al índice; `feedback` y `gaps` en el CLI
+  convierten los huecos en cola de trabajo. Sin este bucle el catálogo
+  envejece y pierde efectividad.
+- **Seed de repos públicos** (`docs/knowledge/catalog.repos.seed.json`, 20
+  repos verificados con `git ls-remote`) y seed local privado en
+  `Memory_Proyects/data/knowledge/` con 24 técnicas/arquitecturas de
+  `DEV-SPACE` + 43 entradas de `FRONTIER_RESEARCH` (métodos MESA/BUSEV,
+  papers, PDFs, repos y modelos GGUF).
+- Spec (`docs/specs/knowledge-catalog.md`) y research
+  (`docs/research/frontier-2026-11-11-knowledge-catalog.md`) con 4 hipótesis
+  comparadas y gap analysis.
+
+### Fixed
+- **`KnowledgeGraph.query(reverse=True)` devolvía `[]`**: el recorrido inverso
+  usaba `in_edges(neighbor)` en vez de las aristas entrantes del nodo.
+  Ahora devuelve los predecesores correctos; se añade `neighbors()` para
+  consultar vecinos salientes/entrantes sin duplicar lógica.
+- **Consulta automática desde la copia global**: `KnowledgeCatalog(store)` no
+  derivaba el índice/grafo del `db_path` del store, así que la copia instalada
+  veía `total=0`. Ahora usa `<data>/knowledge_catalog*.json` por defecto; el
+  global consulta todo el catálogo y el grafo sin rutas explícitas.
+- **Binario Linux de RuscaDB versionado** (`libruscadb_ffi.so`, glibc 2.36):
+  el CI de Ubuntu fallaba en `test_ensure_memory_structure_inicializa_ruscadb`
+  porque solo se versionaba el `.dll` de Windows y `_ensure_ruscadb` degradaba
+  a LanceDB sin crear `ruscadb.db`. Ahora ambos binarios viajan con su sidecar
+  y `pin_ruscadb_binary.py`/`test_ruscadb_binary.py` operan por plataforma.
+- **Sandbox en CI (Docker/bwrap)**: el probe `docker info` expiraba a los 5 s
+  en un runner frío y caía a bwrap, que no veía `sys.executable` (kill_rate 0
+  en `test_strong_test_kills_mutants` y `coverage` en rojo). Ahora el probe
+  espera 20 s y bwrap bindea `/usr` + `sys.prefix`/`base_prefix` read-only.
+
+### Evidence
+- `pytest test_knowledge_catalog.py test_knowledge_catalog_usage.py test_knowledge_graph.py`
+  → **56 passed**.
+- Ingesta real en la memoria central: **104 entradas** (45 repos, 11 papers,
+  16 artículos, 23 técnicas, 9 arquitecturas), **403 nodos / 594 aristas**;
+  reingesta de los seeds → `skipped` (idempotente).
+- `search "graph rag multi-hop"` → 3 papers con `sources = graph + hybrid`.
+- Ciclo de vida: `feedback useful` escribe el JSONL; un `missing` posterior se
+  cierra con un `useful` de la misma query (el gap de Go quedó resuelto tras
+  ingerir 4 fuentes); `gaps` → `[]`; `stats` reporta `usage.total = 4`.
+- `knowledge_catalog.py verify` (3 seeds) → **exit 0**.
+
+## [11.93] - 2026-11-10
+
+### Added
+- **`scripts/xtask.py`: política única de calidad, seguridad y buenas
+  prácticas** (SSOT ejecutable, datos en `POLICY`). 14 gates con tabla
+  PASS/FAIL/SKIP, `--fast` (pre-commit <2 min), `--only/--skip`, `--json` y
+  exit 0/1/2: `ruff`, `ruff-preview`, `ruff-ratchet`, `arquitectura`,
+  `complejidad`, `pep649`, `docs-links`, `docs-index`, `workflows`, `skills`,
+  `vulture`, `security` y `tests`.
+- **Cableado real**: el pre-commit (`install_hooks.py`) ejecuta
+  `xtask gate --fast` (con fallback a arquitectura + skills) y el job `lint`
+  de CI ejecuta `xtask check --skip tests`; se acaban los comandos sueltos.
+- 22 tests (`test_xtask.py`): política válida, selección por modo/`--fast`/
+  `--only`/`--skip`, clasificación PASS/FAIL/SKIP, timeout = FAIL y contrato
+  de exit codes.
+
+### Fixed
+- **Docker sin daemon ya no envenena los oráculos** (`sandbox_executor.py`):
+  `_detect_backend` elegía Docker solo por tener el CLI en PATH; con Docker
+  Desktop apagado, baseline y mutantes devolvían rc=1 y el kill rate caía a 0
+  (3 tests rojos en local y el job `test` del PR). Ahora el backend exige
+  daemon vivo (`docker info`), calienta la imagen una vez antes de ejecutar
+  (el pull frío agotaba el timeout de 30 s en CI) y degrada al sandbox nativo
+  ante fallos de infraestructura. +4 tests.
+- **Falsos positivos del scanner de seguridad** (`security_policy.py`): el gate
+  de `xtask check` destapó 11 hallazgos, todos falsos positivos → se
+  corrigieron en el scanner, no silenciándolos: `sk-` dentro de
+  “ri**sk-**management”/“xta**sk-**and” ya no es clave OpenAI (lookbehind);
+  placeholders `<user>`/`u`/`user` no son rutas personales; `$HOME` en `.sh`
+  es expansión legítima; un `.env` no trackeado no se escanea. +6 tests.
+- **Falsos positivos del trinquete Ruff**: `check_ruff_ratchet.py` restringe
+  `--select PERF,FURB,RUF`, y en ese contexto `RUF100`/`RUF105` marcan como
+  “no habilitado” todo `# noqa` de otra regla (438+ falsos positivos). Se
+  ignoran explícitamente en el trinquete; el lint principal sigue validando
+  las supresiones reales. Baseline regenerado sin esa entrada.
+- **Versión alineada con el ciclo** (`11.93.0`): antes `0.1.0` dejaba inerte
+  el gate anti-downgrade de `self_update`; `test_version_alignment.py` exige
+  coincidencia con el primer encabezado del CHANGELOG y prohíbe volver a `0.x`.
+
+### Evidence
+- `python scripts/xtask.py gate --fast` → 10 gates en verde (exit 0).
+- `python scripts/xtask.py check --skip tests` → 13 gates en verde.
+- Suite completa: **8045 passed**, 13 skipped, 1 xfailed; coverage **86.03 %**
+  (`--cov-fail-under=80`).
+- `pytest test_xtask.py test_install_hooks.py test_version_alignment.py` →
+  **32 passed**; `ruff check harness scripts` → **All checks passed**;
+  `check_ruff_ratchet.py --gate` → exit 0.
+
+## [11.92] - 2026-11-10
+
+### Added
+- **Auto-update de la instalación global de opencode**
+  (`harness/self_update/install.py`): la copia que carga opencode no tiene
+  `.git` ni `pyproject.toml`, así que el motor ff-only no podía ni comprobarla
+  (`--check` → exit 2, "sin fuente de version"). Ahora:
+  `sync_opencode_global.py` sella `<global>/.swarmind/install.json`
+  (`source`, `branch`, `commit`, `version`, `synced_at`); `check_install`
+  compara contra el remoto con `git ls-remote` (sin clonar); `apply_install`
+  clona la rama sellada en un temporal, ejecuta el sync oficial con
+  `OPENCODE_GLOBAL_DIR`, re-sella y limpia.
+- `install_notice` con cooldown de 24 h para el aviso de arranque; `!update`
+  y `self_update.py --check/--apply` detectan la copia instalada.
+- 18 tests nuevos (`test_self_update_install.py`) y spec ampliada
+  (`docs/specs/self-update.md` §8).
+
+### Changed
+- `run_support._render_notice` usa el sello cuando no hay `.git`;
+  `handlers_other._handle_update` enruta a `check_install`/`apply_install`
+  solo si existe sello (no altera la ruta del clon).
+
+### Fixed
+- **Gate anti-downgrade inerte por versión placeholder**: `pyproject.toml`
+  declaraba `version = "0.1.0"` mientras el ciclo iba por 11.91, así que
+  `_downgrade_blocked` comparaba `0.1.0` contra `0.1.0`. Ahora la versión es
+  `11.92.0` y un test (`test_version_alignment.py`) exige que coincida con el
+  primer encabezado del CHANGELOG y que no vuelva a un `0.x`.
+
+### Evidence
+- `pytest test_self_update*.py test_run_commands_update.py` → **79 passed**.
+- E2E real: `--check` sobre sello temporal → `modo=install
+  estado=up_to_date`, **exit 0**; `apply_install` con sello atrasado →
+  `accion=updated 34c42b3 → afa643d`, sync real (49 skills + harness + agents),
+  estado final `up_to_date`.
+
+## [11.91] - 2026-11-10
+
+### Fixed
+1. **FTS5 devolvía 0 hits en silencio**: `FTSSearchEngine` abría SQLite sin
+   `row_factory = sqlite3.Row`, así que `_search_fts` reventaba con
+   `tuple indices must be integers or slices, not str` y el `except` la
+   degradaba a lista vacía sin rastro. +2 tests de regresión con SQLite FTS5
+   real (`harness/tests/test_fts_search.py`, 49 passed).
+2. **`backup_memory.py` no respaldaba la memoria general**: abortaba si
+   `data/lancedb` no tenía colecciones, dejando el RuscaDB sin backup. Ahora
+   respalda `ruscadb.db` + `wal` + `manifest` + `blobs` en
+   `backups/ruscadb_<ts>/ruscadb/`, admite restauración de ese layout y ordena
+   la rotación por timestamp del nombre (no alfabéticamente: con prefijos
+   mixtos `ruscadb_*`/`lancedb_*` borraba backups recientes).
+
+### Added
+- **Binario RuscaDB versionado**: `harness/memory_rag/ruscadb_ffi.dll`
+  (2.8 MB) + `ruscadb_ffi.dll.sha256`
+  (`4bd2972b…f97274c`). Un clon limpio ya no cae a LanceDB: el motor nativo
+  está en el repo. `.gitignore` con excepción explícita, `.gitattributes`
+  `binary`, `scripts/pin_ruscadb_binary.py` (verifica/regenera) y contrato
+  en `harness/tests/test_ruscadb_binary.py` (5 passed).
+- **Migración LanceDB → RuscaDB**: `scripts/migrate_lance_to_rusca.py`
+  incorpora `--skip-volatile` (excluye caché regenerable) y
+  `--archive-lance` (archiva `data/lancedb` en `backups/` y deja `.gitkeep`,
+  no borra).
+- **Bootstrap con RuscaDB**: `ensure_memory_structure` crea las 16
+  colecciones canónicas del backend nativo y asegura
+  `vector_backend: ruscadb` en `.swarmind_config.json` **sin pisar** claves
+  existentes del usuario.
+- **Health-check RuscaDB primario**: `verify_swarmind_setup.py` valida
+  RuscaDB primero (apertura readonly), deja LanceDB como legado tolerado y
+  reporta filas por colección de valor en lugar de bytes.
+
+### Changed
+- Memoria central del equipo migrada a **RuscaDB único** (`16 colecciones`,
+  `iteration_reports`=1); LanceDB archivada en
+  `backups/lancedb_pre_rusca_20261110_193534` y `data/lancedb` reducida a
+  `.gitkeep`.
+- Tests nuevos: `test_backup_memory.py` (7) y ampliación de
+  `test_setup_verification.py` (+5: RuscaDB primario, legado, corrupción y
+  config no destructiva).
+
+### Evidence
+- Suite de memoria: **485 passed** (`-k "fts or memory or ruscadb or
+  knowledge_graph or parity or doc_ingest or backup_memory or
+  setup_verification"`).
+- `pin_ruscadb_binary.py` → `OK: ruscadb_ffi.dll (2795520 bytes) sha256=4bd2972b…`.
+- `verify_swarmind_setup.py` → **exit 0**: `16 colecciones RuscaDB`,
+  `1 con datos / 13 vacías`; `check_architecture.py --gate --ratchet` exit 0;
+  `vulture` exit 0; `ruff` → All checks passed.
+
 ## [11.90] - 2026-11-08
 
 ### Fixed

@@ -101,6 +101,10 @@ class FTSSearch:
             os.makedirs(str(self.db_path.parent), exist_ok=True)
 
             self._conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
+            # `_search_fts` accede por nombre (row["content"], row["metadata"]):
+            # sin row_factory sqlite3 devuelve TUPLAS y la busqueda reventaba con
+            # "tuple indices must be integers", devolviendo 0 hits en silencio.
+            self._conn.row_factory = sqlite3.Row
             self._conn.execute("PRAGMA journal_mode=WAL")
 
             # Try to create FTS5 table

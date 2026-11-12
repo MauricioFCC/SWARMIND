@@ -150,3 +150,51 @@ máquina tras la primera actualización.
 - [ ] `audit_log` del historial ⇒ 0 reversiones (invariante verificado).
 - [ ] Sin red/git/auth: degradación limpia, 0 excepciones no manejadas.
 - [ ] Windows/Linux/macOS: misma ruta de código (pathlib, sin shells).
+
+## 8. Extension: instalacion global de opencode (sello + clone, ciclo 11.92)
+
+**Problema que cierra.** La instalacion que opencode carga
+(`~/.config/opencode`) es una **copia** producida por `publish.py` →
+`sync_opencode_global.py`: no tiene `.git` ni `pyproject.toml`. El motor de
+`core.py` no puede hacer `fetch`/`merge` allí y, medido el 2026-11-10,
+`python scripts/self_update.py --check --repo ~/.config/opencode` terminaba
+en **exit 2** (`sin fuente de version`). Se instalaba el cerebro pero nunca se
+actualizaba solo.
+
+**Diseño (fuera de la ruta ff-only, que sigue siendo la del clon).**
+
+- **Sello** `<global>/.swarmind/install.json` (JSON versionado,
+  `stamp_version=1`) con `source`, `branch`, `commit`, `version`,
+  `synced_at`. Lo escribe `sync_opencode_global.py` al final de cada sync real
+  leyendo `origin`, la rama activa y `HEAD` del clon fuente.
+- **Check sin clonar**: `git ls-remote --heads <source> refs/heads/<branch>`
+  compara el tip remoto con el `commit` del sello (`UP_TO_DATE`/`BEHIND`);
+  `OFFLINE`, `NO_GIT` y `NO_REMOTE` degradan sin lanzar.
+- **Apply**: `git clone --depth 1 --branch <branch>` en un temporal, se
+  ejecuta el script oficial `scripts/sync_opencode_global.py --quiet` con
+  `OPENCODE_GLOBAL_DIR=<global>`, se re-sella con el `HEAD` clonado y se
+  limpia el temporal. La curaduría global se preserva (sin `--force`).
+- **Aviso**: `run_support` usa `install_notice` (mismo cooldown de 24 h y
+  state `.swarmind/update_notice.json`) cuando no hay `.git` pero sí sello.
+- **CLI**: `self_update.py --check|--apply --repo <global>` y `!update`
+  detectan la copia instalada y usan este camino.
+
+**Contratos testeables (18 tests en `test_self_update_install.py`).**
+
+1. Sello roundtrip; formatos inválidos ⇒ `None` (nunca lanza).
+2. `check_install`: mismo SHA ⇒ `up_to_date`; distinto ⇒ `behind`;
+   `ls-remote` 128 ⇒ `offline`; sello con origen `--flag` ⇒ `no_remote`.
+3. `apply_install` sin sello ⇒ `failed`; al día ⇒ no clona; camino feliz ⇒
+   clone + sync + sello nuevo (`updated`); clone fallido ⇒ `failed` y sello
+   previo intacto.
+4. `install_notice`: dentro del cooldown no hace red; con remoto avanzado
+   devuelve el mensaje con el SHA corto.
+
+**Evidencia (2026-11-10):** `--check` contra un sello temporal ⇒
+`modo=install estado=up_to_date`, exit 0; `apply_install` con sello atrasado
+⇒ `accion=updated 34c42b3 -> afa643d`, sync real (49 skills + harness +
+agents) y estado final `up_to_date`.
+
+**Límite declarado:** `apply_install` aplica la rama **sellada** (la que se
+publicó), no necesariamente `main`. Cambiar de canal exige re-sellar con
+`publish.py` desde otro clon/rama.

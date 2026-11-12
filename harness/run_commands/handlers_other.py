@@ -247,14 +247,13 @@ def _handle_update(cmd: str, harness_root: Path | None) -> None:
     default del repo (``.swarmind/update_log.jsonl``). El ``apply`` respeta los
     guards anti-reversion (ff-only, dirty worktree, max_seen); el downgrade
     forzado requiere ``--allow-downgrade`` y ``--justification=...``.
+
+    Si ``harness_root`` no es un clon git (instalacion global de opencode), usa
+    el camino de sello: ``check_install``/``apply_install``.
     """
     repo = Path(harness_root or Path.cwd()).resolve()
     log_path = repo / ".swarmind" / "update_log.jsonl"
     accion, allow_downgrade, justification = _parse_update_args(cmd)
-    check = check_remote(repo) if accion in {"check", "apply"} else None
-    if accion == "check":
-        _log_update_check(check)
-        return
     if accion == "audit":
         violations = audit_log(log_path)
         _rc.logger.info(
@@ -263,7 +262,50 @@ def _handle_update(cmd: str, harness_root: Path | None) -> None:
             violations[:5],
         )
         return
+    if not (repo / ".git").exists():
+        from harness.self_update.install import read_stamp
+
+        if read_stamp(repo) is not None:
+            _handle_install_update(repo, accion)
+            return
+    check = check_remote(repo) if accion in {"check", "apply"} else None
+    if accion == "check":
+        _log_update_check(check)
+        return
     _apply_update_with_guards(repo, log_path, check, allow_downgrade, justification)
+
+
+def _handle_install_update(repo: Path, accion: str) -> None:
+    """``!update`` sobre una copia instalada (sin ``.git``): sello + ls-remote.
+
+    Args:
+        repo: Directorio de la instalacion global.
+        accion: ``check`` o ``apply``.
+    """
+    from harness.self_update import apply_install, check_install
+
+    if accion == "check":
+        check = check_install(repo)
+        _rc.logger.info(
+            "!update install | estado=%s local=%s remote=%s branch=%s detalle=%s",
+            check.state.value,
+            check.local_commit[:7] or "?",
+            check.remote_commit[:7] or "?",
+            check.branch or "?",
+            check.detail,
+        )
+        return
+    result = apply_install(repo)
+    _rc.logger.info(
+        "!update install | accion=%s changed=%s detail=%s from=%s to=%s",
+        result.action,
+        result.changed,
+        result.detail,
+        result.from_commit[:7] or "?",
+        result.to_commit[:7] or "?",
+    )
+    if result.action == "failed":
+        _rc.logger.error("!update install | apply fallo: %s", result.detail)
 
 
 def _parse_update_args(cmd: str) -> tuple[str, bool, str]:

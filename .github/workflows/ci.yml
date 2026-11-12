@@ -86,20 +86,10 @@ jobs:
         # --extra dev: ruff/mypy/vulture viven en optional-dependencies (no en sync base)
         run: uv sync --extra dev
 
-      - name: Ruff lint
-        run: uv run ruff check harness/ scripts/ --output-format=github
-
-      - name: Docs (enlaces internos + índices generados)
-        run: |
-          uv run python scripts/check_docs_links.py
-          uv run python scripts/gen_docs_index.py --check
-
-      - name: Vulture (codigo muerto)
-        # v2.16: sin --whitelist-file; el whitelist va como PATH posicional
-        run: >
-          uv run vulture harness/ harness/vulture_whitelist.py
-          --exclude "*/test_*.py,harness/parallel/io_fusion.py"
-          --min-confidence 80
+      - name: Política única (xtask)
+        # SSOT de calidad/seguridad/buenas prácticas: en vez de pasos sueltos,
+        # un solo runner (gates + trinquetes). `tests` corre en el job `test`.
+        run: uv run python scripts/xtask.py check --skip tests
 
   # ---------------------------------------------------------------------------
   # T1.2: Type check (mypy) — ~30s

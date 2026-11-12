@@ -201,6 +201,47 @@ def test_ensure_memory_structure_crea_lancedb_y_config(tmp_path: Path) -> None:
         assert payload.get("memory_root"), "Config sin memory_root"
 
 
+def test_ensure_memory_structure_inicializa_ruscadb(tmp_path: Path) -> None:
+    """Una instalacion nueva queda con RuscaDB nativo y config apuntandole.
+
+    Contrato: ``ensure_memory_structure`` no solo crea directorios LanceDB
+    (legado) sino que inicializa las colecciones canonicas del backend nativo
+    y deja ``vector_backend: ruscadb`` en la config.
+    """
+    import json
+
+    result = setup_memory_central.ensure_memory_structure(memory_root=tmp_path)
+
+    rusca = tmp_path / "data" / "ruscadb.db"
+    assert rusca.is_file(), "No se creo el RuscaDB central"
+    assert result["ruscadb"]["ok"] is True
+    assert result["ruscadb"]["collections"] >= len(
+        setup_memory_central._CANONICAL_COLLECTIONS
+    )
+
+    payload = json.loads((tmp_path / ".swarmind_config.json").read_text(encoding="utf-8"))
+    assert payload["vector_backend"] == "ruscadb"
+    assert payload["ruscadb_path"]
+
+
+def test_ensure_config_no_pisa_valores_existentes(tmp_path: Path) -> None:
+    """La config existente del usuario se preserva (solo rellena ausentes)."""
+    import json
+
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".swarmind_config.json").write_text(
+        json.dumps({"memory_root": "C:/personalizado", "backup_keep": 9}),
+        encoding="utf-8",
+    )
+
+    setup_memory_central.ensure_memory_structure(memory_root=tmp_path)
+
+    payload = json.loads((tmp_path / ".swarmind_config.json").read_text(encoding="utf-8"))
+    assert payload["memory_root"] == "C:/personalizado", "Piso la raiz del usuario"
+    assert payload["backup_keep"] == 9, "Perdio claves ajenas a la memoria"
+    assert payload["vector_backend"] == "ruscadb"
+
+
 # ---------------------------------------------------------------------------
 # 3. verify_swarmind_setup.py health-check (WHAT+WHY+WHERE)
 # ---------------------------------------------------------------------------
@@ -248,6 +289,44 @@ def test_verify_memoria_ok_con_colecciones(tmp_path: Path) -> None:
         global_dir=tmp_path, memory_root=tmp_path
     )
     assert results["memory_central"]["ok"] is True
+
+
+def test_verify_memoria_ok_con_ruscadb_sin_lancedb(tmp_path: Path) -> None:
+    """RuscaDB es el check PRIMARIO: basta el backend nativo (LanceDB archivada).
+
+    Escenario real 2026-11: la memoria central quedo solo con
+    ``data/ruscadb.db`` y ``data/lancedb`` con ``.gitkeep``.
+    """
+    setup_memory_central.ensure_memory_structure(memory_root=tmp_path)
+
+    check = verify_swarmind_setup.check_memory_central(tmp_path)
+
+    assert check["ok"] is True, check["why"]
+    assert "RuscaDB" in check["why"]
+    assert check["where"].endswith("ruscadb.db")
+
+
+def test_verify_prefiere_ruscadb_sobre_lancedb(tmp_path: Path) -> None:
+    """Con ambos backends presentes, el reporte es RuscaDB (no legado)."""
+    (tmp_path / "data" / "lancedb" / "rag_chunks.lance" / "data").mkdir(parents=True)
+    setup_memory_central.ensure_memory_structure(memory_root=tmp_path)
+
+    check = verify_swarmind_setup.check_memory_central(tmp_path)
+
+    assert check["ok"] is True
+    assert "RuscaDB" in check["why"]
+
+
+def test_verify_ruscadb_ilegible_cae_a_lancedb(tmp_path: Path) -> None:
+    """Un ruscadb.db corrupto no rompe el health-check: degrada a LanceDB legado."""
+    (tmp_path / "data").mkdir(parents=True)
+    (tmp_path / "data" / "ruscadb.db").write_bytes(b"corrupto")
+    (tmp_path / "data" / "lancedb" / "rag_chunks.lance" / "data").mkdir(parents=True)
+
+    check = verify_swarmind_setup.check_memory_central(tmp_path)
+
+    assert check["ok"] is True
+    assert "LEGADO" in check["why"]
 
 
 @pytest.mark.parametrize(

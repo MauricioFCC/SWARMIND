@@ -34,6 +34,14 @@ BASELINE_PATH = Path(__file__).with_name("ruff_baseline.json")
 #: Reglas objetivo: rendimiento, modernización y refactors de Ruff.
 DEFAULT_SELECT = "PERF,FURB,RUF"
 
+#: Códigos que NO se evalúan en el trinquete. ``RUF100`` (noqa sin usar) y
+#: ``RUF105`` (estilo de noqa) solo tienen sentido con el set COMPLETO de
+#: reglas: bajo ``--select PERF,FURB,RUF`` cualquier supresión legítima de
+#: otra regla parece "non-enabled" y el conteo mide el tamaño del repo, no una
+#: regresión (medido 2026-11-10: 438+ falsos positivos). El lint principal ya
+#: valida las supresiones reales.
+IGNORED_CODES: tuple[str, ...] = ("RUF100", "RUF105")
+
 #: Rutas analizadas (mismo alcance que el lint del repo).
 TARGETS: tuple[str, ...] = ("harness", "scripts")
 
@@ -59,6 +67,8 @@ def run_ruff(select: str = DEFAULT_SELECT, preview: bool = True) -> list[dict[st
         *TARGETS,
         "--select",
         select,
+        "--ignore",
+        ",".join(IGNORED_CODES),
         "--output-format",
         "json",
     ]

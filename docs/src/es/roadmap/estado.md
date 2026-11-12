@@ -5,6 +5,76 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-12)
+
+### Estado 2026-11-12 (Ciclo 11.95 — modo tutor socrático opt-in)
+- El harness incorpora un modo **opt-in** de aprendizaje: estado de sesión,
+  intento obligatorio, escalera P0→P3 y solución solo con `tutor solve --confirm`.
+- CLI `start|status|attempt|hint|solve|review|off` y persistencia JSON atómica
+  en `Memory_Proyects/data/tutor/sessions.json`; repaso 1/7/16/35.
+- Skill `socratic-tutor` (50/50 validadas) con anti-triggers: no se activa en
+  tareas de entrega.
+- Gates `skills-standard` (Agent Skills L1 oficial) y `skills-spec` (contratos
+  SDD sin drift); 50/50 skills conformes y 50 specs al día.
+- Evidencia: 14 tests, `validate_skills --strict` OK; research con Harvard 2025,
+  Wharton/PNAS 2025 y Anthropic 2026.
+
+## Estado Actual (2026-11-11)
+
+### Estado 2026-11-11 (Ciclo 11.94 — catálogo de conocimiento embebido + grafo)
+- Nueva colección `knowledge_catalog` en la memoria central: repos, papers,
+  artículos, técnicas, arquitecturas y algoritmos, con ID canónico, procedencia
+  y estado (`adopted|evaluated|unverified|rejected`).
+- Dual-store: vectores + BM25 en RuscaDB (`hybrid_search` con RRF) y grafo
+  NetworkX (`about`, `instance_of`, `cites`, `implements`, `uses`).
+- Ingesta idempotente (13 → skip 13) y búsqueda con expansión 1-hop
+  (`sources = graph + hybrid`); degrada a híbrido si falta el grafo.
+- Seed público con 13 fuentes verificadas + 20 repos públicos y seed local
+  privado con 24 técnicas/arquitecturas de `DEV-SPACE`; CLI
+  `ingest|search|stats|graph|export|verify|feedback|gaps`.
+- Ciclo de vida obligatorio (consultar → usar → feedback → alimentar): el
+  feedback `useful|stale|missing` va a un JSONL y los `missing` forman la cola
+  de gaps; sin él el catálogo pierde efectividad.
+- Bug corregido: `KnowledgeGraph.query(reverse=True)` devolvía `[]`.
+- Evidencia: 56 tests, 104 entradas, grafo 403 nodos/594 aristas, `gaps=[]`.
+
+## Estado Actual (2026-11-10)
+
+### Estado 2026-11-10 (Ciclo 11.93 — xtask: deuda 0 por política)
+- `scripts/xtask.py` es la **SSOT ejecutable** de calidad/seguridad/buenas
+  prácticas: 14 gates con `check|gate|ratchet`, `--fast`, `--only/--skip`,
+  `--json` y exit 0/1/2. La política son datos (`POLICY`), no comandos sueltos.
+- Pre-commit → `xtask gate --fast`; CI `lint` → `xtask check --skip tests`.
+- Trinquete Ruff corregido: `RUF100`/`RUF105` ya no cuentan falsos positivos
+  bajo `--select` restringido; baseline regenerado.
+- `pyproject.toml` alineado a `11.93.0` con test anti-placeholder.
+- Evidencia: `gate --fast` 10/10, `check --skip tests` 13/13, 22 tests nuevos.
+
+### Estado 2026-11-10 (Ciclo 11.92 — auto-update de la instalación global)
+- La copia que carga opencode (`~/.config/opencode`, sin `.git`) ya puede
+  comprobar y aplicar updates: sello `.swarmind/install.json` +
+  `git ls-remote` + `clone --depth 1` + sync oficial + re-sello.
+- `!update` / `self_update.py --check|--apply` enrutan a `install.py` cuando
+  hay sello; aviso de arranque con cooldown de 24 h.
+- Evidencia E2E: `up_to_date` exit 0 contra GitHub y `updated 34c42b3 → afa643d`
+  con sync real; 79 tests de self-update en verde.
+- Límite: aplica la rama sellada; cambiar de canal exige re-sellar.
+
+### Estado 2026-11-10 (Ciclo 11.91 — memoria general solo RuscaDB + binario versionado)
+- **RuscaDB es la única memoria general**: 16 colecciones en
+  `Memory_Proyects/data/ruscadb.db`; LanceDB archivada en
+  `backups/lancedb_pre_rusca_20261110_193534` (no borrada) y `data/lancedb`
+  reducida a `.gitkeep`.
+- **Binarios versionados** (`ruscadb_ffi.dll` Windows + `libruscadb_ffi.so`
+  Linux, con `.sha256`): un clon limpio arranca con backend nativo en ambas
+  plataformas; `pin_ruscadb_binary.py` re-fija el checksum tras
+  recompilar.
+- Health-check con RuscaDB primario (readonly) y LanceDB como legado;
+  bootstrap crea las colecciones canónicas y `vector_backend: ruscadb`.
+- Backup/restore cubren RuscaDB (db + wal + manifest + blobs).
+- Bug FTS5 (`row_factory`) corregido con 2 tests de regresión.
+- Evidencia: 485 tests de memoria, ruff/vulture/arquitectura en 0.
+
 ## Estado Actual (2026-11-08b)
 
 ### Estado 2026-11-08 (Ciclo 11.90 — pre-commit, filelock y F5)

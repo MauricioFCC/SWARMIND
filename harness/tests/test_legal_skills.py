@@ -112,10 +112,10 @@ class TestRegistryAndRouting:
             assert name in entries
             assert len(str(entries[name].get("sha256", ""))) == 64
 
-    def test_config_cuenta_49(self) -> None:
-        """project_config declara 49 skills e incluye las nuevas."""
+    def test_config_cuenta_50(self) -> None:
+        """project_config declara 50 skills e incluye las nuevas."""
         config = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
-        assert config["SKILLS"]["total"] == 49
+        assert config["SKILLS"]["total"] == 50
         listed = set(config["SKILLS"]["skill_list"])
         assert set(LEGAL) <= listed
 

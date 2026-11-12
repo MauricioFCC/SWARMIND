@@ -77,6 +77,46 @@ Cierre obligatorio: gates verdes con evidencia real (pytest, ruff, vulture,
 arquitectura+ratchet, complejidad, ruff-ratchet, preview, pep649, skills) y
 declaración honesta de lo no aplicado y por qué.
 
+## Catálogo de conocimiento (MEM — obligatorio)
+
+La memoria primaria de conocimiento técnico vive en `Memory_Proyects/data/`
+(colección RuscaDB `knowledge_catalog` + grafo). **Se consulta antes de
+investigar y se alimenta después de usar**; sin feedback envejece y pierde
+efectividad.
+
+1. **Consultar**: `python scripts/knowledge_catalog.py search "<tema>"` (o
+   `KnowledgeCatalog.context_block(query)` desde código).
+2. **Usar**: aplica la entrada y anota su `catalog_id`.
+3. **Registrar**: `python scripts/knowledge_catalog.py feedback "<tema>" --ids <ids> --outcome useful|stale|missing --note "..."`.
+4. **Alimentar**: si `missing`, añade la fuente al seed local
+   (`Memory_Proyects/data/knowledge/local_sources.seed.json`); si es pública,
+   al seed del repo; reingiere.
+5. **Actualizar**: si `stale`, corrige la entrada (nuevo contenido = nueva
+   versión) y reingiere.
+6. **Comentar**: documenta en la nota qué se aplicó o qué faltó; revisa
+   `... gaps` para cerrar la cola.
+
+Regla: una consulta sin feedback es conocimiento perdido. Spec:
+`docs/specs/knowledge-catalog.md`.
+
+## Modo tutor (aprendizaje opt-in)
+
+Cuando el usuario pide **entender o aprender** (no entregar), activa el modo
+tutor en vez de resolver:
+
+1. `python scripts/tutor.py start "<tema>" --mode guide`.
+2. Una pregunta por turno; exige un intento antes de la pista.
+3. Escalera P0 pregunta → P1 concepto → P2 pista local → P3 parcial; la
+   solución **solo** con `tutor solve --confirm`.
+4. Registra `tutor attempt`/`tutor hint`; cierra con autoexplicación y
+   `tutor review` (1/7/16/35 días).
+5. **No** lo actives en tareas de implementación/entrega: ahí manda la
+   ejecución normal.
+
+Evidencia: Harvard 2025 (>2× vs clase activa), Wharton/PNAS 2025 (+48%
+práctica pero -17% examen al delegar), Anthropic 2026 (delegación <40% vs
+65-86% preguntando). Skill: `socratic-tutor`.
+
 ## Cómo trabajar aquí
 
 1. **Investigar antes de ejecutar** (RSF/FRS): lee el código existente, revisa

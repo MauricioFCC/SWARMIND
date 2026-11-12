@@ -218,7 +218,7 @@ AGENTS:
     - token-budget-auditor
 
 SKILLS:
-  total: 49
+  total: 50
   skill_list:
     - ads-optimizer
     - agent-rigor
@@ -267,6 +267,7 @@ SKILLS:
     - security-audit
     - skill-engineering
     - sociology
+    - socratic-tutor
     - sustainability
     - swarm-release-ops
     - mcp-toolkit
@@ -314,5 +315,6 @@ SKILLS:
     - security-audit
     - skill-engineering
     - sociology
+    - socratic-tutor
     - sustainability
     - swarm-release-ops

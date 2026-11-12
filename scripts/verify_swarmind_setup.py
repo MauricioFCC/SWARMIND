@@ -26,6 +26,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import subprocess
@@ -47,11 +48,59 @@ _MEMORY_ROOT = Path(os.environ.get(
     str(Path.home() / "Documents" / "Memory_Proyects"),
 ))
 
-# Colecciones LanceDB minimas esperadas (ADR-0038)
+# Colecciones LanceDB minimas esperadas (legado, ADR-0038)
 _EXPECTED_LANCE = [
     "rag_chunks.lance", "tasks_board.lance", "session_kpis.lance",
     "agent_interactions.lance",
 ]
+
+#: Colecciones volatiles (cache/logs regenerables) que no cuentan como "valor".
+_VOLATILE = frozenset({"semantic_cache", "agent_workspace_logs"})
+
+
+def _ruscadb_path(memory_root: Path) -> Path:
+    """Resuelve la ruta de RuscaDB (config de la memoria central o default).
+
+    Args:
+        memory_root: Raiz de la memoria central.
+
+    Returns:
+        Ruta del archivo ``ruscadb.db`` (exista o no).
+    """
+    config = memory_root / ".swarmind_config.json"
+    if config.is_file():
+        try:
+            data = json.loads(config.read_text(encoding="utf-8"))
+            configured = data.get("ruscadb_path")
+            if configured:
+                return Path(configured)
+        except (OSError, ValueError) as exc:
+            logger.debug("No se pudo leer/parsing %s: %s", config, exc)
+    return memory_root / "data" / "ruscadb.db"
+
+
+def _count_ruscadb_collections(db_path: Path) -> int:
+    """Cuenta colecciones abriendo RuscaDB en modo readonly (sin mutar).
+
+    Args:
+        db_path: Archivo RuscaDB.
+
+    Returns:
+        Numero de colecciones (0 si no existe o no se puede abrir).
+    """
+    if not db_path.is_file():
+        return 0
+    try:
+        from harness.memory_rag.ruscadb_store import RuscaDBStore
+
+        store = RuscaDBStore(db_path=str(db_path), readonly=True)
+        try:
+            return len(store.list_collections())
+        finally:
+            store.close()
+    except Exception as exc:  # noqa: BLE001 - health-check defensivo
+        logger.debug("RuscaDB no legible en %s: %s", db_path, exc)
+        return 0
 
 
 def _count_lance_collections(db_dir: Path) -> int:
@@ -96,7 +145,12 @@ def check_harness_global(global_dir: Path | None = None) -> dict:
 
 
 def check_memory_central(memory_root: Path | None = None) -> dict:
-    """Verifica que la memoria central exista con colecciones LanceDB.
+    """Verifica la memoria central: RuscaDB primario, LanceDB solo legado.
+
+    WHAT: a partir de 2026-11 el backend nativo (RuscaDB) es la unica memoria
+    general; ``data/lancedb`` queda como formato legado de una instalacion
+    antigua. WHY: dos SSOT en paralelo desbalancean caches-vs-valor y confunden
+    la verificacion. WHERE: setup + health-check.
 
     Args:
         memory_root: Raiz de memoria (default: env/Path.home()).
@@ -106,21 +160,34 @@ def check_memory_central(memory_root: Path | None = None) -> dict:
     """
     root = memory_root or _MEMORY_ROOT
     db_dir = root / "data" / "lancedb"
+    rusca_db = _ruscadb_path(root)
+    rusca_cols = _count_ruscadb_collections(rusca_db)
+    if rusca_cols > 0:
+        return {
+            "ok": True,
+            "why": f"Memoria central OK con {rusca_cols} colecciones RuscaDB "
+                   "(backend nativo, memoria general unica).",
+            "where": str(rusca_db),
+        }
+
     cols = _count_lance_collections(db_dir)
     if cols > 0:
         return {
             "ok": True,
-            "why": f"Memoria central OK con {cols} colecciones LanceDB.",
+            "why": f"Memoria central OK con {cols} colecciones LanceDB (LEGADO). "
+                   "Migrar a RuscaDB: python scripts/migrate_lance_to_rusca.py "
+                   "--skip-volatile --archive-lance",
             "where": str(db_dir),
         }
+
     present = [d.name for d in _EXPECTED_LANCE if (db_dir / d).is_dir()]
     return {
         "ok": False,
-        "why": f"Memoria central incompleta: 0 colecciones en data/lancedb "
-               f"({len(present)}/{len(_EXPECTED_LANCE)} esperadas presentes). "
+        "why": f"Memoria central incompleta: 0 colecciones RuscaDB ni LanceDB "
+               f"({len(present)}/{len(_EXPECTED_LANCE)} LanceDB esperadas). "
                "TDD falla al persistir/recuperar memoria (ADR-0038). "
                "Ejecutar: python scripts/setup_memory_central.py",
-        "where": str(db_dir),
+        "where": f"{rusca_db} | {db_dir}",
     }
 
 
@@ -235,13 +302,43 @@ def persist_env_vars() -> dict:
     }
 
 
+def _ruscadb_value_stats(db_path: Path) -> tuple[list[str], list[str]] | None:
+    """Clasifica colecciones RuscaDB en con-datos vs vacias (excluye volatiles).
+
+    Args:
+        db_path: Archivo RuscaDB.
+
+    Returns:
+        ``(con_datos, vacias)`` o ``None`` si no se puede abrir.
+    """
+    try:
+        from harness.memory_rag.ruscadb_store import RuscaDBStore
+
+        store = RuscaDBStore(db_path=str(db_path), readonly=True)
+        try:
+            con_datos: list[str] = []
+            vacias: list[str] = []
+            for col in store.list_collections():
+                if col in _VOLATILE:
+                    continue
+                stats = store.get_collection_stats(col)
+                (con_datos if stats.get("count", 0) > 0 else vacias).append(col)
+            return con_datos, vacias
+        finally:
+            store.close()
+    except Exception as exc:  # noqa: BLE001 - health-check defensivo
+        logger.debug("RuscaDB no auditable en %s: %s", db_path, exc)
+        return None
+
+
 def check_memory_parity(memory_root: Path | None = None) -> dict:
-    """Seccion NO fatal: paridad caches-vs-valor de la memoria central.
+    """Seccion NO fatal: estado de las colecciones de valor de la memoria.
 
     Item 4 (docs/specs/memory-optimality.md): alerta cuando las caches
-    regenerables dominan el almacenamiento mientras las colecciones de valor
-    (informacion que sostiene las decisiones) estan vacias. Es INFORMATIVA:
-    nunca hace fallar el exit code del health-check (``fatal=False``).
+    regenerables dominan el almacenamiento mientras las colecciones de VALOR
+    (datos que sostienen decisiones) estan vacias. Con RuscaDB como backend
+    unico se reportan filas por coleccion; con LanceDB (legado) se mantiene la
+    auditoria por bytes. Es INFORMATIVA: nunca hace fallar el exit code.
 
     Args:
         memory_root: Raiz de memoria (default: env/Path.home()).
@@ -250,6 +347,26 @@ def check_memory_parity(memory_root: Path | None = None) -> dict:
         Dict con ok, why, where y ``fatal=False``.
     """
     root = memory_root or _MEMORY_ROOT
+    rusca_db = _ruscadb_path(root)
+    if rusca_db.is_file():
+        stats = _ruscadb_value_stats(rusca_db)
+        if stats is None:
+            return {
+                "ok": True,
+                "why": "RuscaDB presente pero no auditable (se omite paridad).",
+                "where": str(rusca_db),
+                "fatal": False,
+            }
+        con_datos, vacias = stats
+        return {
+            "ok": True,
+            "why": f"RuscaDB: {len(con_datos)} colecciones de valor con datos, "
+                   f"{len(vacias)} vacias (normal en instalacion nueva). "
+                   "Caches volatiles excluidas del balance.",
+            "where": str(rusca_db),
+            "fatal": False,
+        }
+
     db_dir = root / "data" / "lancedb"
     try:
         from harness.memory_rag.memory_parity import audit_parity

@@ -60,8 +60,8 @@ class TestIndexes:
         agents = index._agents()
         skills = index._skills()
         assert len(agents) == 26
-        assert len(skills) == 49
-        assert "49 skills" in index.render_skills(skills)
+        assert len(skills) == 50
+        assert "50 skills" in index.render_skills(skills)
         assert "26 agentes" in index.render_agents(agents)
 
     def test_archivos_al_dia(self) -> None:
@@ -82,9 +82,9 @@ class TestReadme:
         assert "```mermaid" in text
 
     def test_conteos_reales(self) -> None:
-        """Declara 49 skills, 26 agentes y 7.7k tests; sin cifras viejas."""
+        """Declara 50 skills, 26 agentes y 7.7k tests; sin cifras viejas."""
         text = (ROOT / "README.md").read_text(encoding="utf-8")
-        assert "49 skills" in text
+        assert "50 skills" in text
         assert "26 agents" in text
         assert "7.7k" in text
         for stale in ("42 skills", "25 agents", "7000+", "0 files over 500"):

@@ -41,9 +41,14 @@ from pathlib import Path
 
 # Rutas absolutas personales: C:\\Users\\<user>, /Users/<user>, /home/<user>.
 # El lookbehind (?<![\w./-]) evita falsos positivos con paths de repo como
-# "docs/home/" o URLs de GitHub (precedidos por letras/slash).
+# "docs/home/" o URLs de GitHub (precedidos por letras/slash). Los segmentos
+# de usuario de PLACEHOLDER (`u`, `user`, `<user>`, `username`, ...) no son
+# datos de la maquina y se excluyen con lookahead negativos.
+_PLACEHOLDER_USERS = r"(?:<|\$|u[/\\]|user[/\\]|username[/\\]|usuario[/\\]|your|NAME)"
 _PERSONAL_PATH_RE = re.compile(
-    r"(?:[A-Za-z]:\\Users\\.+|(?<![\w./\-])/Users/[^/\"']+|(?<![\w./\-])/home/[^/\"']+)"
+    r"(?:[A-Za-z]:\\Users\\(?!" + _PLACEHOLDER_USERS + r")[^\\\s\"']+"
+    r"|(?<![\w./\-])/Users/(?!" + _PLACEHOLDER_USERS + r")[^/\"']+"
+    r"|(?<![\w./\-])/home/(?!" + _PLACEHOLDER_USERS + r")[^/\"']+)"
 )
 
 # $HOME literal en codigo (Path("$HOME...") o r"$HOME...")
@@ -63,7 +68,7 @@ _HOME_STRUCTURE_RE = re.compile(
 # Secretos: claves API, tokens, passwords, llaves privadas
 _SECRET_PATTERNS: list[tuple[str, re.Pattern]] = [
     ("api_key_assign", re.compile(r"(?:api[_-]?key|apikey)\s*=\s*[\"'][A-Za-z0-9_\-]{16,}[\"']", re.IGNORECASE)),
-    ("openai_key", re.compile(r"sk-[A-Za-z0-9\-]{20,}")),
+    ("openai_key", re.compile(r"(?<![A-Za-z])sk-[A-Za-z0-9\-]{20,}")),
     ("github_token", re.compile(r"ghp_[A-Za-z0-9]{30,}")),
     ("aws_access_key", re.compile(r"AKIA[0-9A-Z]{16}")),
     ("password_assign", re.compile(r"(?:password|passwd|pwd)\s*=\s*[\"'][^\"']{6,}[\"']", re.IGNORECASE)),
@@ -95,6 +100,10 @@ _SELF_FILES = {
     "harness/qa/security_policy.py",
     "harness/tests/test_security_policy.py",
     "docs/src/es/adr/adr0035-security-policy-portable-paths-2026.md",
+    # Define la politica (regex anti-rutas-personales) y su test de rechazo:
+    # los patrones de ejemplo son deliberados, no violaciones reales.
+    "harness/memory_rag/knowledge_catalog_types.py",
+    "harness/tests/test_knowledge_catalog.py",
 }
 
 
@@ -225,10 +234,15 @@ class SecurityPolicyScanner:
         except OSError:
             return []
         findings: list[SecurityFinding] = []
-        is_doc = fpath.suffix.lower() in _DOC_EXTENSIONS
+        es_env = fpath.name == ".env"
+        trackeado = self._is_git_tracked(fpath) if es_env else False
+        # Un .env local ignorado por git no es deuda del repo: no se escanea su
+        # contenido (sus rutas/secretos viven solo en la maquina del dev).
+        if es_env and not trackeado:
+            return []
 
         # 4) .env con credenciales TRACKEADO en git (no el .env local ignorado).
-        if fpath.name == ".env" and self._is_git_tracked(fpath):
+        if es_env and trackeado:
             findings.append(SecurityFinding(
                 rule="ENV_TRACKEADO", file=self._rel(fpath),
                 line=0, severity="CRITICAL",
@@ -248,8 +262,9 @@ class SecurityPolicyScanner:
                     message="ruta absoluta con nombre de usuario de la maquina; "
                             "usa env var + Path.home()",
                 ))
-            # 2) $HOME literal en codigo Python (no en docs/placeholders).
-            if not is_doc and _HOME_LITERAL_RE.search(line):
+            # 2) $HOME literal en codigo Python (no en docs/placeholders). Las
+            #    rutas de shell (`install.sh`) usan $HOME legitimo del shell.
+            if fpath.suffix.lower() == ".py" and _HOME_LITERAL_RE.search(line):
                 findings.append(SecurityFinding(
                     rule="HOME_LITERAL_PY", file=self._rel(fpath),
                     line=lineno, severity="HIGH",
