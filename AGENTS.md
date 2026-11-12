@@ -99,6 +99,24 @@ efectividad.
 Regla: una consulta sin feedback es conocimiento perdido. Spec:
 `docs/specs/knowledge-catalog.md`.
 
+## Modo tutor (aprendizaje opt-in)
+
+Cuando el usuario pide **entender o aprender** (no entregar), activa el modo
+tutor en vez de resolver:
+
+1. `python scripts/tutor.py start "<tema>" --mode guide`.
+2. Una pregunta por turno; exige un intento antes de la pista.
+3. Escalera P0 pregunta → P1 concepto → P2 pista local → P3 parcial; la
+   solución **solo** con `tutor solve --confirm`.
+4. Registra `tutor attempt`/`tutor hint`; cierra con autoexplicación y
+   `tutor review` (1/7/16/35 días).
+5. **No** lo actives en tareas de implementación/entrega: ahí manda la
+   ejecución normal.
+
+Evidencia: Harvard 2025 (>2× vs clase activa), Wharton/PNAS 2025 (+48%
+práctica pero -17% examen al delegar), Anthropic 2026 (delegación <40% vs
+65-86% preguntando). Skill: `socratic-tutor`.
+
 ## Cómo trabajar aquí
 
 1. **Investigar antes de ejecutar** (RSF/FRS): lee el código existente, revisa

@@ -343,3 +343,10 @@ skills:
     version: 1.0.0
     project_agnostic: true
     sha256: 0564b84fcfb144638f0efd28da156f592068940539ccba062098cfceb0cdee25
+
+  - name: socratic-tutor
+    domain: education
+    description: "Usar cuando el usuario quiere aprender o entender en vez de delegar (modo tutor, socr?tico, ?no me des la soluci?n?, ?hazme preguntas?, practicar). Preguntas gu?a, pistas P0-P3, intento y repaso. Alcance: tutor?a; NO usar para implementar/entregar."
+    version: 1.0.0
+    project_agnostic: true
+    sha256: 35ee3a132046c5a64a071de1b563a2a0d16a3bcd203dabd281577795b0cb9e3e

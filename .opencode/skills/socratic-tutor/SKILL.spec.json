@@ -1,0 +1,90 @@
+{
+  "name": "socratic-tutor",
+  "version": "1.0.0",
+  "description": "Usar cuando el usuario quiere aprender o entender en vez de delegar (modo tutor, socrático, «no me des la solución», «hazme preguntas», practicar). Preguntas guía, pistas P0-P3, intento y repaso. Alcance: tutoría; NO usar para implementar/entregar",
+  "contract": {
+    "input": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "Tarea explicita del usuario"
+        },
+        "context": {
+          "type": "string",
+          "description": "Contexto del proyecto (codigo, tests, config)"
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "artifacts",
+        "evidence"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Salida real de gates/tests (VER)"
+        }
+      }
+    }
+  },
+  "preconditions": [
+    "Peticion alineada con el disparador: Usar cuando el usuario quiere aprender o entender en vez de delegar (modo tutor, socrático, «no me des la solución», «hazme preguntas», practicar). Preguntas guía, pistas P0-P3, intento y repaso",
+    "Contexto del proyecto disponible (codigo, tests, configuracion)"
+  ],
+  "postconditions": [
+    "PERSONA: Eres un/a tutor socrático senior (10+ años) especializado en",
+    "CANON (estudiar ANTES de generar, regla RSF):",
+    "Kestin et al., *AI tutoring outperforms in-class active learning* (2025) —",
+    "Bastani et al., *Generative AI without guardrails can harm learning* (PNAS",
+    "Anthropic, *How AI assistance impacts the formation of coding skills*",
+    "Agent Skills specification — https://agentskills.io/specification",
+    "ANTI-HEDGING: sin fuente leída no hay claim; una técnica no aplicada se",
+    "Una pregunta por turno. No des una explicación larga ni la respuesta",
+    "Intento primero. No subas de pista hasta que el usuario intente",
+    "Escalera: P0 pregunta → P1 concepto → P2 pista local → P3 parcial",
+    "Autoexplicación: tras un acierto, pide «explícalo con tus palabras»",
+    "Recuperación: cierra con 2 preguntas de recall y tutor review"
+  ],
+  "invariants": [
+    "Una pregunta por turno. No des una explicación larga ni la respuesta",
+    "Intento primero. No subas de pista hasta que el usuario intente",
+    "Escalera: P0 pregunta → P1 concepto → P2 pista local → P3 parcial",
+    "Autoexplicación: tras un acierto, pide «explícalo con tus palabras»",
+    "Recuperación: cierra con 2 preguntas de recall y tutor review",
+    "Registra: tutor attempt --correct/--wrong --note ... y tutor hint"
+  ],
+  "failing_test": "harness/tests/test_skill_contracts.py",
+  "routing": {
+    "triggers": [
+      "Usar cuando el usuario quiere aprender o entender en vez de delegar (modo tutor, socrático, «no me des la solución», «hazme preguntas», practicar). Preguntas guía, pistas P0-P3, intento y repaso"
+    ],
+    "body_keywords": [
+      "pista",
+      "scripts",
+      "pnas",
+      "pide",
+      "activar",
+      "confirm",
+      "assistance",
+      "attempt"
+    ]
+  },
+  "source_sha256": "f994bcce15956bd4756fadcbf07606a3f74bd380d64893ea7faaa45cffd087d7",
+  "provenance": {
+    "generator": "scripts/generate_skill_specs.py",
+    "generator_version": "1.0.0",
+    "source": "SKILL.md"
+  }
+}

@@ -5,6 +5,20 @@
 > **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
+## Estado Actual (2026-11-12)
+
+### Estado 2026-11-12 (Ciclo 11.95 — modo tutor socrático opt-in)
+- El harness incorpora un modo **opt-in** de aprendizaje: estado de sesión,
+  intento obligatorio, escalera P0→P3 y solución solo con `tutor solve --confirm`.
+- CLI `start|status|attempt|hint|solve|review|off` y persistencia JSON atómica
+  en `Memory_Proyects/data/tutor/sessions.json`; repaso 1/7/16/35.
+- Skill `socratic-tutor` (50/50 validadas) con anti-triggers: no se activa en
+  tareas de entrega.
+- Gates `skills-standard` (Agent Skills L1 oficial) y `skills-spec` (contratos
+  SDD sin drift); 50/50 skills conformes y 50 specs al día.
+- Evidencia: 14 tests, `validate_skills --strict` OK; research con Harvard 2025,
+  Wharton/PNAS 2025 y Anthropic 2026.
+
 ## Estado Actual (2026-11-11)
 
 ### Estado 2026-11-11 (Ciclo 11.94 — catálogo de conocimiento embebido + grafo)

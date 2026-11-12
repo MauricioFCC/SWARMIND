@@ -1,3 +1,27 @@
+## [11.95] - 2026-11-12
+
+### Added
+- **Modo tutor socrático opt-in** (`harness/tutor/` + `scripts/tutor.py` +
+  skill `socratic-tutor`): máquina de estados determinista con intento
+  obligatorio, escalera de pistas P0 pregunta → P1 concepto → P2 local → P3
+  parcial y **solución solo con `tutor solve --confirm`**. Persistencia JSON
+  atómica en la memoria central y revisión espaciada 1/7/16/35 días.
+- **Evidencia pedagógica**: Harvard 2025 (>2× vs clase activa),
+  Wharton/PNAS 2025 (+48% práctica pero -17% examen al delegar),
+  Anthropic 2026 (<40% delegando vs 65-86% preguntando). Research y spec en
+  `docs/research/frontier-2026-11-12-socratic-tutor.md` y
+  `docs/specs/socratic-tutor.md`.
+- 14 tests (unit + property-based) y directiva compacta para inyectar en
+  cualquier agente; no se activa en tareas de entrega.
+
+### Changed
+- **Conformidad Agent Skills (AAIF)**: nuevos gates `skills-standard`
+  (`check_skills_standard.py`, L1 oficial) y `skills-spec`
+  (`generate_skill_specs.py --check`); 50/50 skills conformes y 50 contratos
+  SDD al día. `socratic-tutor` queda como implementación de referencia
+  (`compatibility`, PEC, mappings de router/agente y `SKILL.spec.json`).
+  Documentado en `docs/skills/AGENT_SKILLS_STANDARD.md`.
+
 ## [11.94] - 2026-11-11
 
 ### Added
