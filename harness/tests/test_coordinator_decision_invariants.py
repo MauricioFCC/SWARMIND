@@ -436,10 +436,11 @@ class TestMutationSentinels:
         # Act / Assert (baseline)
         assert dispatcher.dispatch("builder", "t")["used_skill"] is True
         # Act (mutación del umbral)
-        import harness.orchestrator.agent_dispatcher as dispatcher_module
+        import importlib
 
+        dispatcher_module = importlib.import_module("harness.orchestrator.agent_dispatcher")
         if not hasattr(dispatcher_module, "SIMILARITY_THRESHOLD"):
-            pytest.skip("sandbox mutmut: agent_dispatcher sin SIMILARITY_THRESHOLD")
+            pytest.skip("sandbox mutmut")
         monkeypatch.setattr(dispatcher_module, "SIMILARITY_THRESHOLD", 0.80)
         # Assert (la decisión cambia ⇒ el umbral es efectivo)
         assert dispatcher.dispatch("builder", "t")["used_skill"] is False
