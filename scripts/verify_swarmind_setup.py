@@ -74,8 +74,8 @@ def _ruscadb_path(memory_root: Path) -> Path:
             configured = data.get("ruscadb_path")
             if configured:
                 return Path(configured)
-        except (OSError, ValueError):
-            pass
+        except (OSError, ValueError) as exc:
+            logger.debug("No se pudo leer/parsing %s: %s", config, exc)
     return memory_root / "data" / "ruscadb.db"
 
 

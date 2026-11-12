@@ -349,7 +349,7 @@ class TestBackendDetection:
             sandbox_executor, "_docker_daemon_available", lambda: False
         )
         monkeypatch.setattr(sandbox_executor.os, "name", "nt")
-        monkeypatch.setattr(sandbox_executor, "_load_kernel32", lambda: object())
+        monkeypatch.setattr(sandbox_executor, "_load_kernel32", object)
         assert sandbox_executor._detect_backend() == "windows-jobobject"
 
     def test_nt_without_docker_uses_jobobject(self, monkeypatch) -> None:
