@@ -1,11 +1,12 @@
 ---
 name: legal-jurisprudence-co
-domain: legal
 description: "Usar cuando se analiza jurisprudencia colombiana. línea jurisprudencial, precedente, ratio decidendi, obiter dicta, relatoría, SUIN, Corte Suprema, Consejo de Estado, Corte Constitucional, radicado. Alcance: jurisprudencia; para análisis sustantivo ver legal-doc; para procedimiento ver legal-procedure-co."
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "legal"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Legal Jurisprudence CO — línea y precedente

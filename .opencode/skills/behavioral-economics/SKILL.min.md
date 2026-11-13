@@ -1,10 +1,11 @@
 ---
 name: behavioral-economics
-domain: economics
 description: "Usar cuando el problema involucra decisiones humanas bajo incertidumbre. teoria de juegos, sesgos cognitivos, heuristicas, incentivos, nudges. Alcance: decisiones economicas; para aprendizaje y equipo ver psychology. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "economics"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 # Behavioral Economics (min)
 

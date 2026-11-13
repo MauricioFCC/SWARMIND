@@ -71,7 +71,7 @@
       "candidatos"
     ]
   },
-  "source_sha256": "f633396a1d857d8fa909ad438368182f21d5cee56632b30940c23dced7cc2d0d",
+  "source_sha256": "047bcc6a437eff6a4ef18d4bcc8d75bbc533b5865d6d23638c67f15c20d84831",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

@@ -80,7 +80,7 @@
       "proj"
     ]
   },
-  "source_sha256": "5a012ae2690d25bbf44bef0acd4f95341e6e3566c4cd6c035a914915b4740c69",
+  "source_sha256": "f1ae9bf542a3c9176ceeed14dbdc7067b10c938897efb6b64ec605c615607568",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

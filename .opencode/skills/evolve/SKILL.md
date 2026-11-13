@@ -1,11 +1,8 @@
 ---
 name: evolve
-domain: meta
 description: "Usar cuando el usuario quiere mejorar el sistema o sus skills. auto-mejora, evolucion, ASI-Evolve, aprendizaje continuo, mejora de skills, FDE, meta-aprendizaje. Alcance: mejora del sistema y sus skills; para disciplina pre-merge ver agent-rigor. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
-version: 3.1.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
   - core/fde_principles.md
@@ -24,6 +21,9 @@ metadata:
   output_schema:
     type: object
     required: [result, metrics, cognition_added]
+  domain: "meta"
+  version: "3.1.0"
+  project_agnostic: "true"
 ---
 
 # EVOLVE | Meta-Skill de Auto-Mejora Continua

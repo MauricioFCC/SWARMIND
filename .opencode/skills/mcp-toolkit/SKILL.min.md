@@ -1,9 +1,10 @@
 ---
 name: mcp-toolkit
-domain: tooling
 description: "Usar cuando hay que elegir o cablear herramientas MCP para una tarea (browser, scraping, db, kubernetes, reverse engineering, observabilidad, data, devops)."
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "tooling"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # MCP Toolkit (min)

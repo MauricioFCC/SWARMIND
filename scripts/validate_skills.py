@@ -71,20 +71,34 @@ _TRIGGER_HINTS = ("diagrama", "campana", "factore", "estrategia", "comportamient
                   "interfaces", "visual")
 
 
-def _parse_frontmatter(text: str) -> tuple[dict[str, str], str | None]:
-    """Extrae el frontmatter YAML de un SKILL.md.
+def _parse_frontmatter(text: str) -> tuple[dict[str, object], str | None]:
+    """Extrae el frontmatter YAML de un SKILL.md (incluye ``metadata`` anidado).
 
     Args:
         text: Contenido del archivo.
 
     Returns:
-        Tupla (dict de campos, error o None).
+        Tupla (dict de campos, error o None). Las claves top-level son strings;
+        ``metadata`` es un dict string→string (spec Agent Skills).
     """
     m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
     if not m:
         return {}, "frontmatter faltante (debe iniciar con ---)"
-    fm = {}
+    fm: dict[str, object] = {}
+    meta: dict[str, str] = {}
+    en_meta = False
     for line in m.group(1).splitlines():
+        if line.startswith("metadata:"):
+            fm["metadata"] = meta
+            en_meta = True
+            continue
+        if en_meta:
+            if line.startswith("  ") and not line.startswith("    ") and ":" in line:
+                key, _, val = line.strip().partition(":")
+                meta[key.strip()] = val.strip().strip('"').strip("'")
+                continue
+            if line and not line.startswith(" "):
+                en_meta = False
         if ":" in line and not line.startswith(" ") and not line.startswith("-"):
             key, _, val = line.partition(":")
             fm[key.strip()] = val.strip().strip('"').strip("'")
@@ -169,20 +183,22 @@ def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
     fm, err = _parse_frontmatter(text)
     if err:
         errors.append(f"{name}: {err}")
+    meta = fm.get("metadata") if isinstance(fm.get("metadata"), dict) else {}
 
     # 2. name: coincide con directorio, formato spec
     if "name" in fm:
-        if fm["name"] != name:
-            errors.append(f"{name}: frontmatter name={fm['name']!r} != directorio {name!r}")
-        if not _NAME_RE.match(fm["name"]):
+        nombre = str(fm["name"])
+        if nombre != name:
+            errors.append(f"{name}: frontmatter name={nombre!r} != directorio {name!r}")
+        if not _NAME_RE.match(nombre):
             errors.append(f"{name}: name invalido (solo minusculas/digitos/hifens)")
-        if len(fm["name"]) > _MAX_NAME_LEN:
+        if len(nombre) > _MAX_NAME_LEN:
             errors.append(f"{name}: name excede {_MAX_NAME_LEN} chars")
     else:
         errors.append(f"{name}: campo 'name' faltante")
 
     # 3. description obligatoria, "pushy" con triggers, <=1024
-    desc = fm.get("description", "")
+    desc = str(fm.get("description", ""))
     if not desc:
         errors.append(f"{name}: campo 'description' faltante (obligatorio, debe incluir keywords de disparo)")
     elif len(desc) > _MAX_DESC_LEN:
@@ -201,12 +217,12 @@ def _validate_skill(skill_dir: Path, quiet: bool) -> list[str]:
                 f"empieza con: {desc[:50]!r}"
             )
 
-    # 4. version presente (convencion SWARMIND)
-    if "version" not in fm:
+    # 4. version presente (convencion SWARMIND; metadata o top-level legacy)
+    if "version" not in fm and "version" not in meta:
         errors.append(f"{name}: campo 'version' faltante (convencion SWARMIND)")
 
-    # 5. project_agnostic presente (convencion SWARMIND)
-    if "project_agnostic" not in fm:
+    # 5. project_agnostic presente (convencion SWARMIND; metadata o legacy)
+    if "project_agnostic" not in fm and "project_agnostic" not in meta:
         errors.append(f"{name}: campo 'project_agnostic' faltante (convencion SWARMIND)")
 
     # 6. SKILL.min.md presente (convencion SWARMIND)

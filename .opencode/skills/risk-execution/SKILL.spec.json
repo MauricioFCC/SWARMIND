@@ -77,7 +77,7 @@
       "shortfall"
     ]
   },
-  "source_sha256": "3fc7572c1ec2231c25c52ae52285dbac93af8e3554822a054aa1646718bfa2f0",
+  "source_sha256": "50b908e30468a21f3c25cb7d4861d2bd59a3379147d053e936d6d5fe3a55387f",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

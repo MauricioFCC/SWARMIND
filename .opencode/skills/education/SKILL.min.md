@@ -1,10 +1,11 @@
 ---
 name: education
-domain: education
 description: "Usar cuando el usuario diseña material educativo o formacion. diseno instruccional, pedagogia, andragogia, Bloom, microlearning, evaluacion educativa. Alcance: diseno instruccional y evaluacion; para comunicacion ver communication. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "education"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Education (min)

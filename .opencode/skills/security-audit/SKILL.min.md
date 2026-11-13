@@ -1,10 +1,11 @@
 ---
 name: security-audit
-domain: security
 description: "Usar cuando el usuario audita seguridad o cumple estandares. OWASP, STRIDE, SOC2, ISO27001, SAST, DAST, threat modeling, SBOM, pentesting. Alcance: auditoria AppSec/DevSecOps; para infraestructura ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "security"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Security-audit (min)

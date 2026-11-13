@@ -74,7 +74,7 @@
       "expediente"
     ]
   },
-  "source_sha256": "a498e5e384a3347a288361cb5fd3a4e0e3941529c227e4202452d2c199a50052",
+  "source_sha256": "b096fdc2fce346e1e03652817d46429a39e5737e4f7d94d7acd9096ad1e2746d",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

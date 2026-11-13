@@ -69,7 +69,7 @@
       "block"
     ]
   },
-  "source_sha256": "72dadc3ea991c9a9a32ea695babfaadf3638f2e1845f72da2bc7a841d69e282d",
+  "source_sha256": "82455c97ee28e8364d44e72312ded5f563bc48fd36cfb7ba1a7f2d5a141fac39",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

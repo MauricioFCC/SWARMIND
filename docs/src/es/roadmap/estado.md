@@ -7,6 +7,15 @@
 
 ## Estado Actual (2026-11-12)
 
+### Estado 2026-11-12 (Ciclo 11.96 — frontmatter de skills en `metadata`)
+- Las 50 skills declaran `domain`, `version` y `project_agnostic` dentro de
+  `metadata` (string→string, spec Agent Skills); `inherit`/`variables`/
+  `invocation`/`calls` se conservan como extensión documentada.
+- Migrador determinista e idempotente (`scripts/migrate_skills_metadata.py`,
+  segunda pasada = 0 cambios) y parsers dual-read para skills de terceros.
+- Registry (50 digests) y 50 `SKILL.spec.json` regenerados sin drift; gates
+  `skills`, `skills-standard` y `skills-spec` en verde.
+
 ### Estado 2026-11-12 (Ciclo 11.95 — modo tutor socrático opt-in)
 - El harness incorpora un modo **opt-in** de aprendizaje: estado de sesión,
   intento obligatorio, escalera P0→P3 y solución solo con `tutor solve --confirm`.

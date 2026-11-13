@@ -1,11 +1,12 @@
 ---
 name: mcp-security
-domain: security
 description: "Usar cuando se auditan, endurecen o instalan servidores MCP (mcp, owasp, supply-chain, rug-pull, ssrf, least-privilege, secrets). Alcance: seguridad de la capa MCP; para auditoria general ver security-audit; para elegir herramientas ver mcp-toolkit. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'harness/security/mcp_security_scan.py; opencode.jsonc; OWASP MCP Top-10 (2025)'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "security"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # MCP Security — endurecimiento de la capa de herramientas MCP

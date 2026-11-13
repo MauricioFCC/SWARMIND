@@ -69,7 +69,7 @@
       "metricas"
     ]
   },
-  "source_sha256": "ccc03f2925b81904635ab3361ff1aeb39d65aa83a40234f5e51cb671fcffa68b",
+  "source_sha256": "758d71a0d01ec69591ae0548688ded11daab6bfc99323656bee849ee98320656",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

@@ -69,7 +69,7 @@
       "racionalidad"
     ]
   },
-  "source_sha256": "8af29b1eeb62065083812909c9c38f820d9a811f54f9f9102b815ed057d2fed8",
+  "source_sha256": "9a644cb20881efc5306482969f3f6a1f889fb23954f2b8f853b3f4d9f635ada2",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

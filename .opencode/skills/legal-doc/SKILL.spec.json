@@ -69,7 +69,7 @@
       "corte"
     ]
   },
-  "source_sha256": "afa82df7e324f3bb62e9fcf8755b63f02d69b50aeac917d31949be2152165ef8",
+  "source_sha256": "2a5b44c5e3c0d5ead0d5de837dc0d2227c723184e0bb7105d8275a7759bafe01",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

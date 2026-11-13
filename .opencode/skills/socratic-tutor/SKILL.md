@@ -1,11 +1,12 @@
 ---
 name: socratic-tutor
-domain: education
 description: "Usar cuando el usuario quiere aprender o entender en vez de delegar (modo tutor, socrático, «no me des la solución», «hazme preguntas», practicar). Preguntas guía, pistas P0-P3, intento y repaso. Alcance: tutoría; NO usar para implementar/entregar."
 license: MIT
 compatibility: "Requires Python 3.12+ and uv (script scripts/tutor.py)"
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "education"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Socratic Tutor — aprender haciendo, no delegando

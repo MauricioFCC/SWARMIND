@@ -73,7 +73,7 @@
       "oraios"
     ]
   },
-  "source_sha256": "2472c036764f91ecef26bf2c02f71640a6829f4bfac592d404f98ef73ea6a616",
+  "source_sha256": "c37a4abbe0997cc12127211035af93a69687ac843451828a9d6c7c973820bb29",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

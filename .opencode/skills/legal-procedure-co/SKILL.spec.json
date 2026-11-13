@@ -74,7 +74,7 @@
       "hábiles"
     ]
   },
-  "source_sha256": "46ff0f1c304d89d143835de9cd9adff4aaa9f84837650c236d0179700fd140f5",
+  "source_sha256": "17e6ca5114d7c5cb466ed88aadb0cabd831e68e69e57adef6f7d94882972d910",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

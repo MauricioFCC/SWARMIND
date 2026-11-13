@@ -1,12 +1,9 @@
 ---
 
 name: frontend-uiux
-domain: frontend
 description: "Usar cuando el usuario construye interfaces o design systems. UI, UX, Generative UI, design systems, tokens, WCAG, componentes, A2UI, frontend. Alcance: UI/UX y design systems; para diagramas visuales ver diagram-design. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+; node.js para tooling frontend'
-version: 1.2.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
   - core/fde_principles.md
@@ -18,6 +15,9 @@ metadata:
   author: frontend-uiux-research
   tags: [ui, ux, frontend, generative-ui, design-system, hci, accessibility, a2ui, openui, styleseed, geeklego, web-vitals, visual-testing]
   dependencies: [hedgefund, evolve]
+  domain: "frontend"
+  version: "1.2.0"
+  project_agnostic: "true"
 ---
 
 # Frontend UI/UX | Generative Design System Professional

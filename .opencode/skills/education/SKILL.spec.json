@@ -70,7 +70,7 @@
       "objetivos"
     ]
   },
-  "source_sha256": "d378fbcca045021b7189978c993da73a907ee0a331daeb9ce84e36d9e32853f4",
+  "source_sha256": "9e237111c22e3f0dd741887c8b7d5fd5bfd6c82391983e88883faab8404c4f7e",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

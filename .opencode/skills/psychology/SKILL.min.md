@@ -1,10 +1,11 @@
 ---
 name: psychology
-domain: psychology
 description: "Usar cuando el problema involucra comportamiento o psicologia. psicologia cognitiva, organizacional, del aprendizaje, positiva, sistemas multi-agente. Alcance: individuo, equipo y aprendizaje; para decisiones economicas e incentivos ver behavioral-economics. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "psychology"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 # Psychology (min)
 

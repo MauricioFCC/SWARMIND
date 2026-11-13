@@ -4,12 +4,9 @@
 
 
 name: linguistics
-domain: linguistics
 description: "Usar cuando el problema involucra lenguaje, semiotica o NLP. linguistica cognitiva, semiotica, pragmatica, analisis del discurso, procesamiento de lenguaje natural. Alcance: lenguaje, semantica y NLP; para documentacion cientifica ver science-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
 variables:
@@ -25,6 +22,9 @@ metadata:
   output_schema:
     type: object
     required: [response, linguistic_analysis, communication_strategy]
+  domain: "linguistics"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 # Linguistics — Linguistica Aplicada
 

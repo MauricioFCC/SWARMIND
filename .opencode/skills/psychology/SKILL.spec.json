@@ -70,7 +70,7 @@
       "refuerzo"
     ]
   },
-  "source_sha256": "1c4869f470e32914912e9e6b93e2eafe7726e9e5c54e0f5b2cacea9445bf618a",
+  "source_sha256": "3ffcbe1eb1ef23ae7db58678ea88f0ee69a4d3651e69484b36a38ee7a2c245ee",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

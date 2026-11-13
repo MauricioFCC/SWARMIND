@@ -74,7 +74,7 @@
       "diseño"
     ]
   },
-  "source_sha256": "210cc35a74710e09a79eb3b4d7248cb20c6dc8afcea940a48bc54a0a61312838",
+  "source_sha256": "b138584aab41af6f1231cfec83f5419f08126ff1e404bb37ceb32a44f3b1c513",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

@@ -1,10 +1,11 @@
 ---
 name: architecture
-domain: architecture
 description: "Usar cuando se disena o evalúa la arquitectura de un sistema. GoF, clean architecture, hexagonal, DDD, C4, SOLID, decisiones arquitectonicas, diagramas, patrones. Alcance: diseno y decisiones de arquitectura; para infraestructura y despliegue ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "architecture"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Architecture (min)

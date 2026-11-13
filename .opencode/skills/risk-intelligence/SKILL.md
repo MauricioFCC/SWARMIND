@@ -4,17 +4,18 @@
 
 
 name: risk-intelligence
-domain: risk
 description: "Usar cuando el usuario analiza riesgos emergentes. CRO Forum, riesgos tecnologicos, geopoliticos, climaticos, salud, financieros. Alcance: riesgos emergentes y escenarios; para riesgo de mercado ver risk-execution. Cuando NO usar: ver Alcance. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
 variables:
   - RISK_FRAMEWORK: emerging-radar, cro-forum-2026, concentration-mapping
   - RISK_DOMAIN: technology, geopolitics, climate, health, finance
+metadata:
+  domain: "risk"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Risk Intelligence — Identificacion de Riesgos Emergentes

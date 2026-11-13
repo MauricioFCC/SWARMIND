@@ -1,9 +1,10 @@
 ---
 name: mcp-security
-domain: security
 description: "Usar cuando se auditan, endurecen o instalan servidores MCP (mcp, owasp, supply-chain, rug-pull, ssrf, least-privilege, pin de versiones)."
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "security"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # MCP Security (min)

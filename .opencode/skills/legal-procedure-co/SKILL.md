@@ -1,11 +1,12 @@
 ---
 name: legal-procedure-co
-domain: legal
 description: "Usar cuando se verifica el debido proceso en Colombia. competencia, términos, notificaciones, recursos, caducidad, prescripción, nulidades, CGP, CPACA, CPP, Ley 906. Alcance: procedimiento colombiano; para redacción de escritos ver legal-drafting-co; para análisis sustantivo ver legal-doc."
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "legal"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Legal Procedure CO — debido proceso en Colombia

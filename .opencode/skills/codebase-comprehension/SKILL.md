@@ -1,11 +1,12 @@
 ---
 name: codebase-comprehension
-domain: codebase-comprehension
 description: "Usar cuando el usuario quiere entender un codebase ajeno o mapear su arquitectura. onboarding, repo map, donde esta X, blast radius, call-graph, ctags, Serena, hotspots. Alcance: comprension y navegacion de codigo; para conformidad arquitectonica ver architecture-review. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.13+ y uv (Serena); ctags opcional'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "codebase-comprehension"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Codebase Comprehension — Onboarding y mapa de arquitectura (2026)

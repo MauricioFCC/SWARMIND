@@ -70,7 +70,7 @@
       "concepto"
     ]
   },
-  "source_sha256": "421bf4152cb48efe8b21d6f598e3200e253304f428e3509c12e38f1f547f6aa9",
+  "source_sha256": "c03ae9430d0a251dc7e4052a0a94d460e21f1dc4e05cd4d7281fbb82e50d66c8",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

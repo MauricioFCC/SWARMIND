@@ -75,7 +75,7 @@
       "semantic"
     ]
   },
-  "source_sha256": "6b4bf0e219f372429a738edfe60f86a5ccd38cc2797db4bbafbeb31a95844d7b",
+  "source_sha256": "42d5a190cf231efebb10e3cb5c0042189317644f11b6bbc00b8fe0de397556fb",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

@@ -69,7 +69,7 @@
       "carbon"
     ]
   },
-  "source_sha256": "4a159de4c52231ac7f8dfcbdf6f552f393fc4036fbce34c9ba12abc06ad00fcd",
+  "source_sha256": "0898ce3aca3ef7c9555081f511651c9068ee0d34a0b62840cecf48ebf53b525c",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

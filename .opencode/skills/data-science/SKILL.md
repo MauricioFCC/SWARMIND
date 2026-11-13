@@ -1,11 +1,8 @@
 ---
 name: data-science
-domain: data
 description: "Usar cuando el usuario trabaja con datos, ML o pipelines. pandas, numpy, scikit-learn, pytorch, feature engineering, model evaluation, GPU, analisis de datos. Alcance: pipelines y modelos ML; para factores de alpha ver alpha-research. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+; pandas/numpy/scikit-learn/pytorch en el venv'
-version: 1.0.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
   - core/fde_principles.md
@@ -23,6 +20,9 @@ metadata:
   output_schema:
     type: object
     required: [response, pipeline_code, model_card]
+  domain: "data"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # 📊 DATA-SCIENCE | Pipelines, Modelos y Experimentacion Cientifica

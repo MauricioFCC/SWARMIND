@@ -70,7 +70,7 @@
       "cuidado"
     ]
   },
-  "source_sha256": "693110ca1d89ef9db2d6d1e727bb9701d928b0900240337c8ef5cd1e8d6ce2fa",
+  "source_sha256": "dfd089eecfe935adcef0e3f84e8cc7d1cd35c42fd7f0de8a1bd8c1d9c7bd227f",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

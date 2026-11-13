@@ -52,11 +52,13 @@ class TestContract:
         """name/domain/version/license/project_agnostic son correctos."""
         for name in LEGAL:
             fm = _frontmatter(name)
+            meta = fm["metadata"]
+            assert isinstance(meta, dict)
             assert fm["name"] == name
-            assert fm["domain"] == "legal"
-            assert fm["version"] == "1.0.0"
+            assert meta["domain"] == "legal"
+            assert meta["version"] == "1.0.0"
             assert fm["license"] == "MIT"
-            assert fm["project_agnostic"] is True
+            assert meta["project_agnostic"] == "true"
 
     def test_description_pushy_y_acotada(self) -> None:
         """Empieza por 'Usar cuando', cabe en 320 y declara alcance."""

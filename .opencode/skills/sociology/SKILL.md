@@ -1,11 +1,8 @@
 ---
 name: sociology
-domain: sociology
 description: "Usar cuando el problema involucra dinamicas sociales o de grupos. sociologia, antropologia, redes, cultura digital, grupos, sistemas multi-agente. Alcance: dinamicas sociales y redes; para psicologia individual ver psychology. | UPG·NAM·FRS (reglas en base_principles.md) Ver healthtech para salud clinica."
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
 variables:
@@ -21,6 +18,9 @@ metadata:
   output_schema:
     type: object
     required: [response, sociological_analysis, network_assessment, cultural_factors]
+  domain: "sociology"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 # Sociology — Sociologia para Sistemas Multi-Agente
 

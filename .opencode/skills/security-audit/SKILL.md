@@ -5,12 +5,9 @@
 
 name: security-audit
 invocation: skill
-domain: security
 description: "Usar cuando el usuario audita seguridad o cumple estandares. OWASP, STRIDE, SOC2, ISO27001, SAST, DAST, threat modeling, SBOM, pentesting. Alcance: auditoria AppSec/DevSecOps; para infraestructura ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Requiere herramientas SAST/DAST (bandit, semgrep) y red'
-version: 1.0.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
   - core/fde_principles.md
@@ -18,6 +15,10 @@ variables:
   - SEC_STANDARD: owasp-top10, stride, soc2, iso27001, pci-dss ({{SEC_STANDARD}})
   - SEC_TOOL: bandit, semgrep, trufflehog, grype, snyk, sonarqube ({{SEC_TOOL}})
   - SEC_LANGUAGE: python, rust, go, typescript, javascript ({{SEC_LANGUAGE}})
+metadata:
+  domain: "security"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Security Audit — AppSec & DevSecOps Agent

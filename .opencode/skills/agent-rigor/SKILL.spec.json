@@ -73,7 +73,7 @@
       "trae"
     ]
   },
-  "source_sha256": "60c9b35ce80cefa59f7d3ccb3c7024a9dd8744381690f701ba17ef96afa3a318",
+  "source_sha256": "63d4689b8e23708c96a8af28ed1d706ea036e074dd3473c87b0f00c91b0b170d",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

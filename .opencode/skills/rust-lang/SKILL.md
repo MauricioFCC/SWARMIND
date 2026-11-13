@@ -1,11 +1,8 @@
 ---
 name: rust-lang
-domain: systems
 description: "Usar cuando el usuario programa en Rust o necesita sistemas seguros. ownership, borrowing, lifetimes, async, crates, optimizacion, sistemas concurrentes. Alcance: Rust y sistemas seguros; para arquitectura de sistemas ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Requiere toolchain Rust (cargo/rustc)'
-version: 1.0.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
   - core/fde_principles.md
@@ -23,6 +20,9 @@ metadata:
   output_schema:
     type: object
     required: [response, code_examples, lint_command]
+  domain: "systems"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # 🦀 RUST-LANG | Ingenieria de Sistemas Segura y Concurrente

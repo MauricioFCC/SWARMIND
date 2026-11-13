@@ -1,13 +1,14 @@
 ---
 name: process-over-tools
-domain: orchestration
-version: 1.0.0
-project_agnostic: true
 description: "Usar cuando se evalúa adoptar herramienta, modelo o agente en el proyecto: define objetivo, responsable, datos, medición y escalado, y enrútalo al harness. Alcance: adopcion de tools en el harness; para mejora del sistema ver evolve. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+; SWARMIND harness (orchestrator + memory_rag + validation)'
 inherit:
   - core/base_principles.md
+metadata:
+  domain: "orchestration"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Process Over Tools | La diferencia no es el modelo, es el harness

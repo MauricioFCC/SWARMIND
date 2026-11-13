@@ -69,7 +69,7 @@
       "strategy"
     ]
   },
-  "source_sha256": "d80a2526725834095406a5c0645ee1a975ac88487b96da77b2a86f5c4c5022d7",
+  "source_sha256": "218a0623251b9cce32b0fb99c53ea3e8571e63e48ad64540b4b11a45237b4782",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

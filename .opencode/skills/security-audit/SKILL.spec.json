@@ -70,7 +70,7 @@
       "autenticacion"
     ]
   },
-  "source_sha256": "7267d049676c42cefa15f0cdc4aeaf6a76bd946efdada127d7e3579ffd9f4455",
+  "source_sha256": "de4a68cb185a93aa79bb0d226cd662ec9c5578c13ed85b69490c199a5c3d9152",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

@@ -13,7 +13,7 @@ name = "Swarmind-harness"
 # Version alineada con el ciclo del CHANGELOG (antes 0.1.0 placeholder): el gate
 # anti-downgrade de self_update compara semver remoto vs local; con 0.1.0 fijo
 # nunca podia bloquear una reversion real.
-version = "11.95.0"
+version = "11.96.0"
 description = "Multi-Agent Evolutionary Harness"
 # Bump a >=3.12: Python 3.10 EOL 2026-10-31 (3 meses), 3.11 EOL 2027-10-31.
 # numpy 2.5.1 (latest stable) requiere >=3.12, pandas 3.x requiere 3.11+, networkx 3.6+ requiere 3.11+.

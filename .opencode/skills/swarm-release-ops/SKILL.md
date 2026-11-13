@@ -2,12 +2,13 @@
 name: swarm-release-ops
 invocation: user
 calls: [security-audit]
-domain: swarm-release-ops
-version: 1.0.0
-project_agnostic: true
 description: "Usar cuando el usuario opera releases o CI/CD del repo SWARMIND. GitHub Actions, uv, safety, bandit, auto-merge, branch protection, deploy, checks rojos. Alcance: releases y CI/CD del repo SWARMIND; para infra generica ver devops-infra. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Requiere gh (GitHub CLI) y uv; repo MauricioFCC/SWARMIND'
+metadata:
+  domain: "swarm-release-ops"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Swarm Release Ops | Release Engineering y CI/CD de SWARMIND

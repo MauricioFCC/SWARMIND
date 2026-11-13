@@ -1,11 +1,12 @@
 ---
 name: frontier-engineering
-domain: meta
 description: "Usar cuando el usuario pida ciclo frontera: cargar skills/agentes + tarea explícita, investigación web SOTA/papers, arquitecturas y algoritmos O(n²)→O(n), fórmulas, spec/SDD, TDD adversarial mutante y docs. Alcance: ciclo completo; para gates pre-merge ver agent-rigor. | UPG·NAM·FRS"
 license: MIT
 compatibility: 'Python 3.12+; SWARMIND harness; web research'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "meta"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Frontier Engineering — ciclo completo (load → research → design → spec → validate → docs)

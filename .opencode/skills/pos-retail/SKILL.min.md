@@ -1,10 +1,11 @@
 ---
 name: pos-retail
-domain: pos-retail
 description: "Usar cuando el dominio es punto de venta o retail. POS, retail, e-commerce, inventario, facturacion, pagos, logistica. Alcance: POS y retail omnicanal; para estrategia de negocio ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "pos-retail"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Pos-Retail Contextual Skill

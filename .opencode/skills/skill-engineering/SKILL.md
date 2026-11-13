@@ -1,13 +1,14 @@
 ---
 name: skill-engineering
-domain: meta
-version: 1.0.0
-project_agnostic: true
 license: MIT
 compatibility: 'Python 3.12+; SWARMIND harness (scripts/validate_skills.py, scripts/audit_skills_agents.py)'
 description: "Usar cuando el usuario quiere crear, revisar, mejorar o auditar skills o agentes del harness. skill engineering, frontmatter, description pushy, progressive disclosure, routing, evaluacion, lifecycle, drift. Alcance: mejora de skills; para mejora del sistema ver evolve. | UPG·NAM·FRS (reglas en base_principles.md)"
 inherit:
   - core/base_principles.md
+metadata:
+  domain: "meta"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Skill Engineering | Como mejorar y usar skills/agentes

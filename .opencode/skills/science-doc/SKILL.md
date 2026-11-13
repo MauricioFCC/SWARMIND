@@ -4,12 +4,13 @@
 
 
 name: science-doc
-domain: science
 description: "Usar cuando el usuario analiza papers o documentacion cientifica. papers academicos, tesis, informes tecnicos, revisiones sistematicas, investigacion. Alcance: analisis de papers y revisiones; para matematicas ver math-doc. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+ para analisis de papers'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "science"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Science-Doc: Procesamiento de Documentos Científicos

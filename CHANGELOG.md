@@ -1,3 +1,28 @@
+## [11.96] - 2026-11-12
+
+### Changed
+- **Migración del frontmatter de skills a `metadata` (expand/contract)**:
+  `domain`, `version` y `project_agnostic` pasan del nivel superior al mapa
+  `metadata` (string→string, spec Agent Skills) en las **50 skills** (88
+  archivos `SKILL.md`/`SKILL.min.md`). Se preservan `inherit`, `variables`,
+  `invocation`, `calls` y el body byte a byte; el migrador
+  `scripts/migrate_skills_metadata.py` es determinista e **idempotente**
+  (segunda pasada = 0 cambios).
+- **Parsers dual-read**: `validate_skills.py`, `audit_skills_agents.py` y
+  `generate_skill_specs.py` leen `metadata.*` y caen al top-level legacy para
+  skills de terceros; los validadores aceptan ambos layouts.
+- `skills_registry.yaml` (50 digests) y los 50 `SKILL.spec.json` regenerados
+  sin drift.
+
+### Added
+- `harness/context/skills_metadata.py` (helpers `O(F)` por archivo, sin
+  `O(n²)`) + CLI `scripts/migrate_skills_metadata.py` (`--write`, `--json`).
+- Spec `docs/specs/skills-metadata-migration.md` y research
+  `docs/research/frontier-2026-11-12-skills-metadata-migration.md` (H2
+  expand/contract; fuentes semver, Parallel Change, JSON Schema y FR-0009).
+- 11 tests (unit + property-based) en
+  `harness/tests/test_skills_metadata_migration.py`.
+
 ## [11.95] - 2026-11-12
 
 ### Added

@@ -69,7 +69,7 @@
       "toulmin"
     ]
   },
-  "source_sha256": "54010b2bd70a2d05855f73f1e4983abccecc8eb277c85fa59eaf1ac76d9dbf44",
+  "source_sha256": "ac3228885d807425b171e6dfb5ced98fe52f3ca8eb86041990d4f4d6d46a4c90",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

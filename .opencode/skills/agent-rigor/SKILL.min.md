@@ -1,10 +1,11 @@
 ---
 name: agent-rigor
-domain: quality
 description: "Usar cuando el usuario exige disciplina de ingeniería pre-merge. gates deterministas, anti-atajos, tests decorativos, verificación con evidencia, mutation score. Alcance: proceso de verificación; para mejora continua ver evolve. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "quality"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Agent Rigor (min)

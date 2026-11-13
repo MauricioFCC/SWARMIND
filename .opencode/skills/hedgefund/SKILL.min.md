@@ -1,10 +1,11 @@
 ---
 name: hedgefund
-domain: financial
 description: "Usar cuando se opera el proyecto como fondo institucional. riesgo/reward, mandato, stop-loss, asignacion de capital, riesgo institucional. Alcance: doctrina y estrategia; para motores ver quant-trading, para ejecucion ver risk-execution. Cuando NO usar: ver Alcance. | UPG-NAM-FRS (reglas en base_principles.md)"
 license: MIT
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "financial"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Hedgefund (min)

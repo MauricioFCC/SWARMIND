@@ -72,7 +72,7 @@
       "user"
     ]
   },
-  "source_sha256": "0e64d97dcb13f0b0190aaec75a30e18c62343df652de97d5a18b1dc42697a064",
+  "source_sha256": "c82b178defc2d9bf923dac78b2cad2d5bfaccf44a38c9cb390ef9845f9e03351",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

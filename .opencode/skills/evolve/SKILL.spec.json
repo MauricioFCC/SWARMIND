@@ -75,7 +75,7 @@
       "education"
     ]
   },
-  "source_sha256": "c3c2e7100021ee50709793e09c1f5d025938c6cfcdff666e087321bf79efcc34",
+  "source_sha256": "885aa257272e3ee388f8d896a81d623dddc6d0785364bb63ca9ccf5388f43c4f",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

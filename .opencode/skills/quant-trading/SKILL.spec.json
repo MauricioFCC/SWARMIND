@@ -77,7 +77,7 @@
       "backtest"
     ]
   },
-  "source_sha256": "bcaafb3ec2dadf30691765dec7daaadd1150389ee858b8c271a78366609d3b15",
+  "source_sha256": "dc7225d8ff4d11098ef9dd97822f2a26768d22ea637af20e9f71b30278ecc9bb",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

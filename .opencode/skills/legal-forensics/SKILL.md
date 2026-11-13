@@ -1,11 +1,12 @@
 ---
 name: legal-forensics
-domain: legal
 description: "Usar cuando se preserva, verifica o analiza documentación jurídica como evidencia. cadena de custodia, hash SHA-256, metadatos, OCR forense, PDF escaneado, integridad documental. Alcance: forense documental; para análisis jurídico ver legal-doc; para auditoría probatoria ver legal-evidence-audit."
 license: MIT
 compatibility: 'Python 3.12+; harness.reverse_engineering (SHA-256, triaje)'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "legal"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Legal Forensics — integridad documental y cadena de custodia

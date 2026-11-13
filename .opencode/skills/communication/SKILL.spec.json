@@ -70,7 +70,7 @@
       "redaccion"
     ]
   },
-  "source_sha256": "bfb8721ab68db4056c1abdf10d93c64086d7385cd47a4195a1f2b9d344835aef",
+  "source_sha256": "8cbee50fd039f872350fc8a49967931d2098ef5cd64e3161a6e3ec38f3b48222",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

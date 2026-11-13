@@ -1,10 +1,11 @@
 ---
 name: physical-sciences
-domain: science
 description: "Usar cuando el dominio son ciencias naturales experimentales. fisica, quimica, biologia, metodos cientificos, diseno experimental, analisis de datos cientificos. Alcance: ciencias naturales experimentales; para analisis de datos ver data-science. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "science"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 # Physical Sciences (min)
 

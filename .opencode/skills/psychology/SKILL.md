@@ -4,12 +4,9 @@
 
 
 name: psychology
-domain: psychology
 description: "Usar cuando el problema involucra comportamiento o psicologia. psicologia cognitiva, organizacional, del aprendizaje, positiva, sistemas multi-agente. Alcance: individuo, equipo y aprendizaje; para decisiones economicas e incentivos ver behavioral-economics. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
 variables:
@@ -25,6 +22,9 @@ metadata:
   output_schema:
     type: object
     required: [response, psychological_analysis, application_strategy]
+  domain: "psychology"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 # Psychology — Psicologia Aplicada a Sistemas Multi-Agente
 

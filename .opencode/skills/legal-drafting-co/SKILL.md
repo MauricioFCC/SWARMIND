@@ -1,11 +1,12 @@
 ---
 name: legal-drafting-co
-domain: legal
 description: "Usar cuando se redacta un escrito judicial en Colombia. demanda, contestación, recurso, tutela, poder, memorial, concepto. estructura por jurisdicción, requisitos del CGP/CPACA/CPP, técnica de redacción. Alcance: redacción de escritos; para análisis ver legal-doc; para procedimiento ver legal-procedure-co."
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "legal"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Legal Drafting CO — escritos judiciales por jurisdicción

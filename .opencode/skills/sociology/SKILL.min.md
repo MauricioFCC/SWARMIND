@@ -1,10 +1,11 @@
 ---
 name: sociology
-domain: sociology
 description: "Usar cuando el problema involucra dinamicas sociales o de grupos. sociologia, antropologia, redes, cultura digital, grupos, sistemas multi-agente. Alcance: dinamicas sociales y redes; para psicologia individual ver psychology. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "sociology"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 # Sociology (min)
 

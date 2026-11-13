@@ -4,12 +4,13 @@
 
 
 name: creative-design
-domain: design
 description: "Usar cuando el usuario busca ideacion o diseno creativo. design thinking, ideacion, prototipado, branding, identidad visual, UX, brainstorming. Alcance: ideacion y diseno creativo; para UI/design systems ver frontend-uiux. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "design"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 # Creative Design — Pensamiento Creativo y Diseno
 

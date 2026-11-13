@@ -4,17 +4,18 @@
 
 
 name: project-management
-domain: management
 description: "Usar cuando el usuario gestiona proyectos o metodologias. Scrum, Kanban, planificacion, seguimiento, riesgos, estimaciones, stakeholders. Alcance: gestion y metodologias de proyecto; para estrategia ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
 variables:
   - METHODOLOGY: scrum, kanban, waterfall, hybrid ({{METHODOLOGY}})
   - FRAMEWORK: pmp, prince2, agile, safe ({{FRAMEWORK}})
+metadata:
+  domain: "management"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 # Project Management — Gestion de Proyectos
 

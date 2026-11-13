@@ -74,7 +74,7 @@
       "fichas"
     ]
   },
-  "source_sha256": "9ee76dac3829649f17948303b29b01f28e9302132187f4f5a2f5dca9c6aac153",
+  "source_sha256": "41b2090d6b9c5dad565ef3cc4b910846ab2048b3ab1dc20f9d859e16b6a69697",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

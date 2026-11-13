@@ -81,7 +81,7 @@
       "attempt"
     ]
   },
-  "source_sha256": "f994bcce15956bd4756fadcbf07606a3f74bd380d64893ea7faaa45cffd087d7",
+  "source_sha256": "6338fb2fb6d8683397c5916f9508de602912e6dc3bbb35e7269d3a810a4033b4",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

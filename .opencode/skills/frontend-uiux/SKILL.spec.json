@@ -73,7 +73,7 @@
       "references"
     ]
   },
-  "source_sha256": "1fc558b830adab55989d5edebc4c90e54b3496760a44eef5c64bcae09dd0dff7",
+  "source_sha256": "2385db42089468616e8665c7b1a115a00c229829dda9e5797552dfe0a3a65bf8",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

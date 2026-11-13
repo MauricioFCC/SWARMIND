@@ -76,7 +76,7 @@
       "publicar"
     ]
   },
-  "source_sha256": "aa7e0ba57a407e842f242192f5228c0b4fe7255d7dc12b1462ed683d58a77919",
+  "source_sha256": "743a88b58c9297f7f0092b6017e75f14a0b02d26580e7797db23779136b6f866",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

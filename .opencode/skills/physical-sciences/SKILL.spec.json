@@ -70,7 +70,7 @@
       "falsable"
     ]
   },
-  "source_sha256": "ca6acf138375d00c965087a1af6ace2848591dc50d335147ceb2698be3db9525",
+  "source_sha256": "9fc0ba943b79c51728be17d0182eb809fcc8aebfa18cd71545f0c1b97b6d8b49",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

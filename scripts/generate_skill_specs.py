@@ -66,6 +66,12 @@ def _load(skill_dir: Path) -> tuple[dict[str, object], str]:
     return yaml.safe_load(front), body
 
 
+def _meta(front: dict[str, object]) -> dict[str, object]:
+    """Devuelve el mapa ``metadata`` (vacío si falta o no es un dict)."""
+    meta = front.get("metadata")
+    return meta if isinstance(meta, dict) else {}
+
+
 def _sections(body: str) -> list[tuple[str, str]]:
     """Divide el body en (heading, contenido) por secciones ``##``."""
     matches = list(_SECTION_RE.finditer(body))
@@ -163,7 +169,7 @@ def _build(
     description = _brief_description(str(front.get("description", "")))
     return {
         "name": name,
-        "version": str(front.get("version", "1.0.0")),
+        "version": str(front.get("version") or _meta(front).get("version") or "1.0.0"),
         "description": description,
         "contract": {
             "input": {

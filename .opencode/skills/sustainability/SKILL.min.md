@@ -1,10 +1,11 @@
 ---
 name: sustainability
-domain: environment
 description: "Usar cuando el usuario trabaja sostenibilidad o ESG. ESG, impacto ambiental, economia circular, cambio climatico, reportes sostenibilidad. Alcance: ESG e impacto ambiental; para estrategia de negocio ver business-strategy. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "environment"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 # Sustainability (min)
 

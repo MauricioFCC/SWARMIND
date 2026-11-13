@@ -70,7 +70,7 @@
       "evaluacion"
     ]
   },
-  "source_sha256": "e253b42924238656900f21ccfb7a3783bb9ac4d6ca2b083094330edeb5fd44e4",
+  "source_sha256": "365b74aef08f8ca652a5689f05f34b7de8c185ce3547f97f169af5204cfb5824",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

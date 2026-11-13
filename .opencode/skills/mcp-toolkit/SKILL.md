@@ -1,11 +1,12 @@
 ---
 name: mcp-toolkit
-domain: tooling
 description: "Usar cuando hay que elegir o cablear herramientas MCP para una tarea (browser, scraping, db, kubernetes, reverse engineering, observabilidad, data, devops). Alcance: seleccion de herramientas MCP del harness; para comprension de codigo ver codebase-comprehension; para RE ver reverse-engineering. | UPG·NAM·FRS"
 license: MIT
 compatibility: 'opencode + harness MCPManager; catalogo en harness/tools_sandbox/mcp_servers.yaml'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "tooling"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # MCP Toolkit — la herramienta correcta para el trabajo

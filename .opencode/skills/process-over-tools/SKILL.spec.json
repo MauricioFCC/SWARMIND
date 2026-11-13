@@ -71,7 +71,7 @@
       "proyects"
     ]
   },
-  "source_sha256": "efc6579c202ac53fbb315069d2210fe9d377153ea966b722ea1d4b25115cb9ee",
+  "source_sha256": "da044a389faf256adcac928763fd3badc703e4059d0f81e20f3c5c14d519670f",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

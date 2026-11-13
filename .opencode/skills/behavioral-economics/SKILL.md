@@ -4,12 +4,9 @@
 
 
 name: behavioral-economics
-domain: economics
 description: "Usar cuando el problema involucra decisiones humanas bajo incertidumbre. teoria de juegos, sesgos cognitivos, heuristicas, incentivos, nudges. Alcance: decisiones economicas; para aprendizaje y equipo ver psychology. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
 variables:
@@ -25,6 +22,9 @@ metadata:
   output_schema:
     type: object
     required: [response, game_analysis, bias_assessment, incentive_plan]
+  domain: "economics"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 # Behavioral Economics — Economia del Comportamiento
 

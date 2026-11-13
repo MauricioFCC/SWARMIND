@@ -74,7 +74,7 @@
       "saltos"
     ]
   },
-  "source_sha256": "02107d5e515868214d9e9749a5c5568fe3dec17259be4b123c826187310f65e2",
+  "source_sha256": "7666d3eadbc4b66b22641a6d3b1b48c1d16708ee2aec60a7204948979c556ee1",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

@@ -1,11 +1,12 @@
 ---
 name: alpha-mining
-domain: quantitative
 description: "Usar cuando se minan, generan o evaluan factores alpha con el harness (factor, dsl, rankic, ast, mcts, factor zoo, mining loop). Alcance: mineria operativa con harness/alpha_mining; para investigacion de factores ver alpha-research; para trading ver quant-trading. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'harness/alpha_mining/ (factor_dsl, factor_eval, alpha_zoo, mining_loop)'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "quantitative"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Alpha Mining — minería de factores con gates duros

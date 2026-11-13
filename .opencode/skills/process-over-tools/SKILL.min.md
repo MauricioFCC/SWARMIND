@@ -1,10 +1,11 @@
 ---
 name: process-over-tools
-domain: orchestration
-version: 1.0.0
-project_agnostic: true
 description: "Usar cuando se evalúa adoptar herramienta, modelo o agente en el proyecto: define objetivo, responsable, datos, medición y escalado, y enrútalo al harness. Alcance: adopcion de tools en el harness; para mejora del sistema ver evolve. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
+metadata:
+  domain: "orchestration"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Process Over Tools (min)

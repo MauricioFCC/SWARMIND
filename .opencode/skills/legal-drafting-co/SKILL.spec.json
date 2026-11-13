@@ -74,7 +74,7 @@
       "apócrifa"
     ]
   },
-  "source_sha256": "2dabbc4ff09e4df6db1cb99d1ddfb04e3baff3fff4048f6831602b25246cc1f0",
+  "source_sha256": "d1b4523244124507a72b242ff7c6b8701a22d65ff6db48e70d8f03c962e1f015",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

@@ -1,9 +1,10 @@
 ---
 name: alpha-mining
-domain: quantitative
 description: "Usar cuando se minan, generan o evaluan factores alpha con el harness (factor, dsl, rankic, ast, mcts, factor zoo, mining loop)."
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "quantitative"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Alpha Mining (min)

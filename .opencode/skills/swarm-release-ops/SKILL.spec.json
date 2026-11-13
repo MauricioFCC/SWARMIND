@@ -73,7 +73,7 @@
       "pyproject"
     ]
   },
-  "source_sha256": "ca1df9a31d1aac8b7cabf2879e1ea62c2216ac8eefe1ff3134a638aef5685a8b",
+  "source_sha256": "1f22daa1fe7fe971c31c5ab43371b569ad60cd7c6dc8f0670d677d0570eb6659",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

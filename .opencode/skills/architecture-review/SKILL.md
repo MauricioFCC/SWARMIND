@@ -1,11 +1,12 @@
 ---
 name: architecture-review
-domain: architecture
 description: "Usar cuando el usuario revisa conformidad de arquitectura o deuda arquitectonica. conformance, violaciones de capas, ciclos de imports, drift, fitness functions, tach, ArchGuard, hotspots. Alcance: revision de arquitectura; para DISENAR arquitectura nueva ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'tach o ArchGuard opcionales; python -x'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "architecture"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Architecture Review — Conformance, deuda y fitness functions (2026)

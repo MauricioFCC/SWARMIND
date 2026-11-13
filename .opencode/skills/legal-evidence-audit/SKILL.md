@@ -1,11 +1,12 @@
 ---
 name: legal-evidence-audit
-domain: legal
 description: "Usar cuando se audita el material probatorio de un caso. inventario probatorio, pruebas omitidas, contradicciones, carga de la prueba, valoración, completitud, debido proceso probatorio. Alcance: auditoría de evidencia; para cadena de custodia ver legal-forensics; para análisis jurídico ver legal-doc."
 license: MIT
 compatibility: 'Python 3.12+; harness.reverse_engineering (evidencia y ledger)'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "legal"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Legal Evidence Audit — auditoría del material probatorio

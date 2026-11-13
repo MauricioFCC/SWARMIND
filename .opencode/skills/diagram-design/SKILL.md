@@ -1,15 +1,15 @@
 ---
 name: diagram-design
-domain: frontend
 description: "Usar cuando el usuario pide un diagrama visual editorial. arquitectura, flowchart, sequence, state machine, ER, timeline, swimlane, quadrant, radar, org chart, mermaid, drawio, SVG, diagrama. Alcance: diagramas visuales editoriales; para arquitectura ver architecture. | UPG·NAM·FRS (reglas en base_principles.md)"
-version: 1.1.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
 license: MIT
 compatibility: 'Python 3.12+ (scripts/); import Mermaid/DrawIO opcional; export PNG requiere navegador'
 metadata:
   upstream: "cathrynlavery/diagram-design v2.3 (14.3k stars)"
+  domain: "frontend"
+  version: "1.1.0"
+  project_agnostic: "true"
 ---
 
 # Diagram Design

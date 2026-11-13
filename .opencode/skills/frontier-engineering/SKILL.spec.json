@@ -77,7 +77,7 @@
       "changelog"
     ]
   },
-  "source_sha256": "0debaa95a6035f15b58dc73a7d53406d0201c0816a243cc2fcfc0951174f151c",
+  "source_sha256": "69e16b16b8f3e05c272b95b71f20005d892138bd4aa3027267faba5ccafa3ec7",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

@@ -70,7 +70,7 @@
       "medibles"
     ]
   },
-  "source_sha256": "b4aed2c49cdc46681628d4338d527024449ec586b7aaa93f6dfa4110db18e529",
+  "source_sha256": "e050d6e5a488146aa34329af7786a73dbe1199c6ca3c7709257680fb4655ffa4",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

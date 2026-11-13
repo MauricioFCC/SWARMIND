@@ -4,12 +4,9 @@
 
 
 name: education
-domain: education
 description: "Usar cuando el usuario diseña material educativo o formacion. diseno instruccional, pedagogia, andragogia, Bloom, microlearning, evaluacion educativa. Alcance: diseno instruccional y evaluacion; para comunicacion ver communication. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
 variables:
@@ -25,6 +22,9 @@ metadata:
   output_schema:
     type: object
     required: [response, instructional_design, assessment_strategy]
+  domain: "education"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Education — Ciencias de la Educacion

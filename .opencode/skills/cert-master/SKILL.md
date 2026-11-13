@@ -1,11 +1,12 @@
 ---
 name: cert-master
-domain: education
-version: 1.0.0
-project_agnostic: true
 description: "Usar cuando el usuario quiere convertir material de estudio (PDFs, programas, transcripciones) en apuntes para Obsidian/Notion/Markdown, con quizzes y mapas de contenido. Alcance: notas de estudio, examenes, certificaciones, oposiciones; educacion. | UPG.NAM.FRS"
 license: MIT
 compatibility: 'Markdown editors (Obsidian, Notion, estandar); MCP opcional'
+metadata:
+  domain: "education"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 

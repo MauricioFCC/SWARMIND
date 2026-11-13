@@ -72,7 +72,7 @@
       "slos"
     ]
   },
-  "source_sha256": "a3430a6d3689e92870ff78eb8234e25ea7f119b5298d404eb185cb157255e4f5",
+  "source_sha256": "37db87aca7e5c161cd45b95a37fec3da9928eb96122a3409b80808dcad11e77f",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

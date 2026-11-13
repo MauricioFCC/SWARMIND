@@ -69,7 +69,7 @@
       "impacto"
     ]
   },
-  "source_sha256": "65dd71b786080eacea285df50323e2a9ccc8d62e8afb716b74be0ee65e1006e0",
+  "source_sha256": "cfd2c6eb56960ce3402dd71ce5262a80b30c5b84b7005f926d5121e6eacc72b8",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

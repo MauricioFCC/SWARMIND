@@ -3,12 +3,13 @@
 
 
 name: alpha-research
-domain: research
 description: "Usar cuando el usuario busca investigar o validar factores de alpha. alpha, factores, ML, feature engineering, validacion estadistica, backtesting. Alcance: investigacion (falsacion, walk-forward); para motor de datos ver quant-trading. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
-project_agnostic: true
+metadata:
+  domain: "research"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 
 # Alpha Research — Motor de Investigación Cuantitativa

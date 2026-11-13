@@ -70,7 +70,7 @@
       "account"
     ]
   },
-  "source_sha256": "277e7220d0a529dd61e20eb239362acc6f0a5c9b54115494cc01bbf85fca2354",
+  "source_sha256": "9f5459d069fca3f4931b808f906a390b4f73b9260d3e62ebb084aebee3d9476c",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

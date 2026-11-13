@@ -4,17 +4,18 @@
 
 
 name: business-strategy
-domain: business
 description: "Usar cuando el usuario pide analisis estrategico o modelo de negocio. DOFA, SWOT, Porter, canvas, plan de negocio, ROI, KPIs, OKRs, posicionamiento. Alcance: estrategia y modelo de negocio; para gestion de proyectos ver project-management. | UPG·NAM·FRS (reglas en base_principles.md)"
 license: MIT
 compatibility: 'Python 3.12+'
-version: 1.0.0
-project_agnostic: true
 inherit:
   - core/base_principles.md
 variables:
   - ANALISIS_TYPE: dofa-swot, porter, pestel, canvas, OKR ({{ANALISIS_TYPE}})
   - INDUSTRY: tecnologia, salud, retail, finanzas, educacion ({{INDUSTRY}})
+metadata:
+  domain: "business"
+  version: "1.0.0"
+  project_agnostic: "true"
 ---
 # Business Strategy — Analisis Estrategico de Negocios
 

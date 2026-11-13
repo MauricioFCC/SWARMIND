@@ -71,7 +71,7 @@
       "domain"
     ]
   },
-  "source_sha256": "abe7ca3653e702c66b71278c87d366907820d75c2ab64c4216224f6fb02f57bd",
+  "source_sha256": "ef65f3e1e609eb9138eec1a5ca427b3ba8806c5cbb238681f958438d04eecc01",
   "provenance": {
     "generator": "scripts/generate_skill_specs.py",
     "generator_version": "1.0.0",

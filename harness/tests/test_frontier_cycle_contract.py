@@ -48,10 +48,12 @@ class TestFrontierSkill:
     def test_frontmatter_obligatorio(self) -> None:
         """name/domain/version/project_agnostic/description cumplen la spec."""
         fm = _skill_frontmatter()
+        meta = fm["metadata"]
+        assert isinstance(meta, dict)
         assert fm["name"] == "frontier-engineering"
-        assert fm["domain"] == "meta"
-        assert fm["version"] == "1.0.0"
-        assert fm["project_agnostic"] is True
+        assert meta["domain"] == "meta"
+        assert meta["version"] == "1.0.0"
+        assert meta["project_agnostic"] == "true"
         description = str(fm["description"])
         assert description.lower().startswith("usar cuando")
         assert len(description) <= 320, f"description {len(description)} > 320"
