@@ -1,6 +1,7 @@
 # Spec: Integridad de principios (herencia de skills + N1/N3 + ADR-0098 formal)
 
 - **Estado:** propuesta + tests GREEN (2026-10-08; WS-1/WS-2/WS-3 integrados)
+- **Extensión v4.0.0:** `docs/specs/principles-v4-fdd-merge.md` (capa FDD/DDD, taxonomía biyectiva y guard O(n)).
 - **Principios rectores:** `SPE` (Spec-First / Proof-or-Stop) + `TST` (TDD adversarial/mutante) + `GATE` (Evidence-Gated) + `IDP` (Idempotencia)
 - **Alcance (3 workstreams en paralelo):**
   - **WS-1** Herencia real de skills: `harness/context/skill_inherit.py` + `inherit:` en `.opencode/skills/**/SKILL.md`.

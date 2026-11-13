@@ -24,6 +24,8 @@ from pathlib import Path
 
 import pytest
 
+from harness.context.principles_guard import duplicate_codes, taxonomy_map
+
 # ---------------------------------------------------------------------------
 # Rutas y constantes (MAG)
 # ---------------------------------------------------------------------------
@@ -50,7 +52,6 @@ N1_MAX_LINES = 60
 VALIDATE_SKILLS_TIMEOUT_SECONDS = 120
 
 _CODE_LINE_RE = re.compile(r"^([A-Z][A-Z0-9]{1,4}):")
-_TAXONOMY_ROW_RE = re.compile(r"^\|\s*([A-Z]{3})\s*\|([^|]*)\|([^|]*)\|([^|]*)\|")
 _VERSION_RE = re.compile(r"^version:\s*([0-9]+(?:\.[0-9]+)*)", re.MULTILINE)
 
 #: Bloque N1 sintetico minimo para probar los checkers (no depende del repo).
@@ -137,17 +138,6 @@ def _assert_n1_contains_codes(block: str, required: dict[str, str]) -> None:
     assert not missing, f"N1 no contiene los codigos: {missing}"
 
 
-def _normalize_taxonomy_token(token: str) -> str:
-    """Extrae el codigo de una celda de taxonomia (ignora anotaciones).
-
-    Args:
-        token: Celda cruda, p.ej. ``CLA (ADR-0098)`` o ``ARQ``.
-
-    Returns:
-        Codigo normalizado, p.ej. ``CLA``.
-    """
-    return re.split(r"[\s(]", token.strip().strip("`"), maxsplit=1)[0]
-
 def _taxonomy_map(text: str) -> dict[str, set[str]]:
     """Mapea categoria -> conjunto de codigos desde la tabla de taxonomia.
 
@@ -157,14 +147,7 @@ def _taxonomy_map(text: str) -> dict[str, set[str]]:
     Returns:
         Diccionario categoria -> codigos.
     """
-    taxonomy: dict[str, set[str]] = {}
-    for line in text.splitlines():
-        match = _TAXONOMY_ROW_RE.match(line)
-        if match:
-            category = match.group(1)
-            codes = {_normalize_taxonomy_token(code) for code in match.group(3).split(",") if code.strip()}
-            taxonomy.setdefault(category, set()).update(codes)
-    return taxonomy
+    return taxonomy_map(text)
 
 
 def _assert_taxonomy_mapping(text: str, expected: dict[str, str]) -> None:
@@ -195,8 +178,7 @@ def _assert_no_duplicate_codes(block: str) -> None:
     Raises:
         AssertionError: Si hay codigos duplicados.
     """
-    codes = _codes_in_block(block)
-    duplicates = sorted({code for code in codes if codes.count(code) > 1})
+    duplicates = duplicate_codes(_codes_in_block(block))
     assert not duplicates, f"N1 con codigos duplicados: {duplicates}"
 
 

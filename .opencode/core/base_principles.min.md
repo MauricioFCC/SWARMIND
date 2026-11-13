@@ -3,61 +3,63 @@ name: base-principles-min
 domain: core
 description: "N1 esencial para sesiones con modelos locales 9B (ctx 16K): principios sin N2/N3. | UPGÂ·NAMÂ·FRS (reglas en base_principles.md)"
 license: MIT
-version: 3.6.0
+version: 4.0.0
 project_agnostic: true
 ---
 
 # PRINCIPIOS UNIVERSALES (min) â€” solo N1
 
 Para sesiones locales con modelos 9B (ctx limitado): inyectar ESTE archivo
-en vez de `base_principles.md` completo (38KB). N2/N3 quedan bajo demanda
+en vez de `base_principles.md` completo. N2/N3 quedan bajo demanda
 via `base_principles.md` y `base_principles_full.md`. Modelos cloud/frontier
 usan el archivo completo.
 
 ```md
-RSF: Research First | investigar ANTES de ejecutar | vanguardia se renueva sola
-IDP: Idempotencia | si ya esta implementado NO reimplementar | solo mejorar
-ERR: Errores legibles y accionables | WHAT+WHY+WHERE | sin except silencioso
-ARQ: hexagonal + DI | KISS <500 | DRY | type hints | pathlib
-SEG: 0 secrets | mask logs | parametriza SQL | sys.path.insert(1)
-DOC: docstrings ES OBLIGATORIAS | 0 funciones sin docstring | template Args/Returns/Raises
-TST: core >=80% | TDD adversarial (test vs mutante) + mutantes + PBT + pairwise | coverage es piso no techo | pre-commit gates | 0 except silenciosos | logger.warning()
-CMT: conventional commit type(scope): descripcion
-FDE: bridge productâ†”reality | delta = gap to close | mission > persona
-EVO: learnâ†’designâ†’experimentâ†’analyze | cognition persists | loop repeats
-POC: Proceso > herramienta | sin harness = departamento aislado | 5 preguntas antes de adoptar
+RSF: Research First | estado del arte ANTES de ejecutar | no resolver de memoria
+IDP: Idempotencia | si ya existe NO reimplementar | solo mejorar con delta demostrable
+ERR: Errores legibles | WHAT+WHY+WHERE | sin except silencioso
+ARQ: hexagonal + DI | KISS + DRY + YAGNI | type hints | pathlib
+SEG: 0 secrets | mask logs | SQL parametrizada | sin eval/exec
+DOC: docstrings ES (Args/Returns/Raises) | 0 funciones sin docstring | docs 1:1 en API
+TST: core >=80% | TDD adversarial + mutantes + PBT + pairwise | coverage es piso | 0 except silenciosos
+CMT: conventional commit type(scope): descripcion | <=72 chars
+FDE: bridge product<->reality | delta = gap a cerrar | mission > persona
+EVO: learn->design->experiment->analyze | cognition persiste | loop se repite
+POC: proceso > herramienta | sin harness = silo | 5 preguntas antes de adoptar
 TKN: Cache-Shape | Structured Compact | Failure-Spend | Observation Masking
-WFP: Workflow Patterns | Evaluator-Optimizer | Voting | Critique-Revise | Parallel-Transform
-PBT: Property-Based Testing Templates | holes rellenables | invariantes | -59% alucinaciones
-CEN: Context Engineering | Least-Recent First | Progresivo | Chunking semantico
-BTR: Behavioral Tracing | decisiones registradas | fingerprints | consistencia
-AGR: Architectural Guardrails | layers | type hints | tamano | imports prohibidos
-SVE: Semantic Versioning | MAJOR.MINOR.PATCH | changelog | skills y prompts
-MCL: MetaClaw continual learning | skills evolucionan con RL | sin GPU local
-MKS: Memento-Skills | cognition store como skill library | router contrastivo
-UPG: Upgrade Continuo | siempre ultimas versiones estables | investigar antes | migrar si hay alternativa mas eficiente | mesa de trabajo para consenso
-NAM: Naming Convention | snake_case archivos+vars+funcs | PascalCase clases | UPPER_SNAKE_CASE constants | booleans is_/has_/can_ | verbs en funciones | sin magic numbers | nombres comprensibles
-TYP: Type Hints | type hints publicas | PEP 604 X|Y | generics TypeVar | type aliases | sin Any innecesario | mypy --strict
-IMM: Immutability | frozen dataclasses | NamedTuple | tuple sobre list | MappingProxyType | copy sobre mutar
-SOL: SOLID | SRP una responsabilidad | OCP abierto extension cerrado modificacion | LSP subtipos sustituibles | ISP interfaces segregadas | DIP depender de abstracciones
-MAG: Magic Numbers | sin literales magicos | constantes con nombre semantico | tablas deLookup | enums para valores discretos
-FSZ: Function Size | max 30 lineas | una responsabilidad | extraer helpers | guard clauses tempranas
-CMP: Composition over Inheritance | preferir composicion sobre herencia | estrategia + interfaces | evitar jerarquias profundas | HAS-A sobre IS-A
-DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un punto por linea | tell dont ask
-EDV: Evidence-Driven Development | investigar→hipotesis→probar→seleccionar→heredar→iterar | decisiones de modelo/arquitectura con evidencia medible (benchmark, ejecutar y validar), no preferencia | cada hallazgo se hereda en la SSOT/config y se itera
-FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | elegir la solucion mas avanzada/frontera/eficiente/confiable | al finalizar: actualizar docs + commit
-RSV: Roadmap Sync & Retrospectiva | cada N refactors (>=5) leer docs/src/es/roadmap/estado.md + analisis retrospectivo de calidad | features SIEMPRE de frontera (roadmap se actualiza con ultimas tecnicas)
-FND: Foundation-First | entorno antes que producto | walking skeleton + tracer bullet | spec + CI T1 (<90s) + gates + seguridad ANTES de features | identidad (org/dominio/registry) si publicas
-SPE: Spec-First (Proof-or-Stop) | spec ANTES de ejecutar | outcome medible | exit criteria definidos | sin spec = sin start
-GATE: Evidence-Gated Lifecycle | claimâ†’evidenceâ†’gate | 0 false-DONE | T1 deterministic + T2 LLM-judge + T3 regression
-FAIL: Failure Registry | registrar fallos en JSONL | distillar en skills | Socratic-SWE tracesâ†’tasks | aprender de errores
-SBX: Sandboxing | aislamiento de fallos | per-task environment | rollback plan | contenedor o timeout como minimo
-RPA: Re-Pin After compaction | tras CADA compactacion recargar N1+rol+skills+agentes | 65% fallos = drift | bloque <<RE-ANCHOR>>
-CPD: Fundamentos Competicion | checklist edges+invariants+BigO ANTES de codear | diagnoseâ†’repairâ†’regenerate | dual verification
-ADV: Verificacion adversarial SIEMPRE | atacante (halla gaps) â†’ steelman (defiende+propone) â†’ juez (veredicto+disenso) | T siempre ultimo movimiento | 1/5 "resuelto" es incorrecto: fortalecer antes de confiar
-CLA: Clean Architecture | Presentation->Application->Domain<-Infrastructure | domain puro (0 frameworks/DB) | ports/adapters + DIP
-VAL: Input Validation | TODO input externo (HTTP/CLI) validado contra schema ANTES del dominio | Zod/Pydantic
-FST: Fail-Fast tipado | errores tipados con cause + contexto | nunca swallow ni mensaje generico
-AAA: Test AAA | Arrange-Act-Assert | 1 test = 1 criterio | mocks (0 DB/red real en unit)
+PBT: property-based | invariantes + templates | -59% alucinaciones
+CEN: Context Engineering | relevancia primero | chunking + progressive disclosure
+BTR: Behavioral Tracing | decision + rationale + confidence | fingerprints por agente
+AGR: guardrails de arquitectura | layers | tamano | imports prohibidos
+SVE: SemVer MAJOR.MINOR.PATCH | changelog | skills y prompts versionados
+UPG: Upgrade Continuo | ultima version estable | investigar antes | migrar si hay alternativa mejor
+NAM: snake_case archivos+vars+funcs | PascalCase clases | UPPER_SNAKE constantes | nombres que se explican solos
+TYP: type hints publicas | PEP 604 X|Y | TypeVar/aliases | sin Any innecesario | mypy --strict
+IMM: frozen dataclasses | NamedTuple | tuple sobre list | copy sobre mutar
+SOL: SRP+OCP+LSP+ISP+DIP | una responsabilidad | depender de abstracciones
+MAG: sin literales magicos | constantes con nombre | Enum para discretos
+FSZ: max 30 lineas | una responsabilidad | guard clauses | complejidad <10
+CMP: composicion sobre herencia | HAS-A sobre IS-A | jerarquias <=2
+DEM: solo amigos directos | sin chains a.b.c.d | tell dont ask
+EDV: evidencia medible, no preferencia | benchmark -> decidir -> heredar en SSOT -> iterar
+FRS: Frontier Research | web research SIEMPRE | solucion mas avanzada/eficiente/confiable | docs + commit al final
+RSV: Roadmap Sync | cada >=5 refactors leer roadmap + retrospectiva | features de frontera
+FND: Foundation-First | entorno antes que producto | walking skeleton + CI <90s + seguridad ANTES de features
+SPE: Spec-First | spec ANTES de ejecutar | outcome + exit criteria | sin spec = sin start
+DOM: Mapa de dominio | docs/fdd/dominio.md vivo | entidades + lenguaje ubicuo | DDD si el dominio es complejo
+FIC: Ficha por feature | accion + resultado + objeto | corte vertical + criterios demostrables | estado para retomar
+FRC: Friccion proporcional | elegir -DD por requisito | irreversible = spec + ADR + rollback | puntual = fix + test
+OWN: Propiedad de archivos | un solo coordinador por ola | cada archivo con dueno | paralelo sin archivos compartidos
+GATE: Evidence-Gated | claim->evidence->gate | 0 false-DONE | T1 determinista + T2 judge + T3 regresion
+HIT: Hitos FDD | disenado->implementado->verificado->integrado | integrado SOLO lo marca una persona | sin evidencia = no hecho
+DEC: Decisiones cerradas | tema/decision/por que | invariantes con una sola puerta | el doc manda
+FAIL: Failure Registry | fallos en JSONL | destilar en skills | aprender del error
+SBX: Sandboxing | aislamiento por tarea | rollback plan | timeout/contenedor como minimo
+CPD: Fundamentos Competicion | edges+invariants+BigO ANTES de codear | diagnose->repair->regenerate | doble verificacion
+ADV: Verificacion adversarial | atacante->steelman->juez | T siempre ultimo | fortalecer antes de confiar
+CLA: Clean Architecture | Presentation->Application->Domain<-Infrastructure | dominio puro | ports/adapters + DIP
+VAL: Input Validation | todo input externo validado contra schema ANTES del dominio | Pydantic/Zod
+FST: Fail-Fast tipado | error tipado con cause + contexto | nunca swallow
+AAA: Test AAA | Arrange-Act-Assert | 1 test = 1 criterio | mocks en unit
 ATM: Atomic Changes | 1 commit/PR = 1 preocupacion logica
 ```

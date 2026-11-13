@@ -1,3 +1,51 @@
+## [11.97] - 2026-11-12
+
+### Added
+- **Capa de entrega FDD/DDD en los principios v4.0.0** (ADR-0106): seis
+  códigos N1 nuevos —`DOM` (mapa de dominio), `FIC` (ficha por feature con
+  nombre de resultado y corte vertical), `HIT` (hitos
+  diseñado→implementado→verificado→integrado; *integrado* solo lo marca una
+  persona), `FRC` (fricción proporcional), `OWN` (propiedad de archivos y un
+  solo coordinador por ola) y `DEC` (decisiones cerradas).
+- `harness/context/principles_guard.py`: guard único para extraer códigos N1,
+  detectar duplicados en **O(n)** con `Counter`, mapear la taxonomía y calcular
+  su deriva; incluye el mapa de alias de los códigos degradados.
+- `docs/fdd/`: README de la capa de entrega, plantilla de mapa de dominio y
+  plantilla de ficha con los cuatro hitos, dueños, evidencia y próximo paso.
+- Matriz de selección «-DD» en N2: FDD, DDD, SDD, CDD, TDD, BDD, ATDD y RDD
+  se eligen por requisito y riesgo, no por preferencia del agente.
+- Research `docs/research/frontier-2026-11-12-fdd-principles.md` (H1/H2/H3,
+  gap analysis y amenazas a la validez), spec
+  `docs/specs/principles-v4-fdd-merge.md` (AC-01…AC-12) y 15 tests nuevos en
+  `harness/tests/test_principles_fdd.py` (unitarios + property-based +
+  evidencia de escala por conteo de hashes).
+
+### Changed
+- **N1 más corto y más capaz**: 45 → 47 códigos y 5 262 → 4 139 caracteres
+  (−21,3 %), porque las reglas pasan a ser índices atómicos y el detalle vive
+  en N2/N3 (DRFR: densidad > detalle).
+- Las tres copias (`base_principles.md`, `.min.md`, `_full.md`) declaran
+  versión **4.0.0**; `_full.md` incorpora el checklist N3 de FDD (ficha,
+  hitos, dominio, decisiones, ownership, antípatrones).
+- `WFP`, `MCL`, `MKS` y `RPA` dejan de ser N1 (eran modo GUIDE según la propia
+  taxonomía) y pasan a N2 con alias explícito; siguen siendo códigos citables.
+
+### Fixed
+- **Taxonomía biyectiva**: se añaden `EDV` y `RSV`, se elimina el fantasma
+  `DOR` (era N2) y desaparece la categoría `SYS` vacía; 47 códigos N1 ↔ 47
+  entradas de taxonomía, verificadas por test.
+- **Duplicados N1 en O(n)**: `_assert_no_duplicate_codes` ya no usa
+  `codes.count(code)` por código (O(n²)); delega en `principles_guard`.
+- `_normalize_taxonomy_token` y `_TAXONOMY_ROW_RE` duplicados en la suite
+  ADR-0098 se sustituyen por el guard compartido (DRY, 0 código muerto).
+
+### Verification
+- `pytest harness/tests/test_principles_{fdd,integrity,adr0098,full_drift}.py`:
+  **48 passed**.
+- `xtask check`: **15/15 gates PASS** (ver evidencia en el cierre del ciclo).
+- `validate_skills --strict` y `generate_skill_specs --check` sin drift;
+  `pyproject.toml` y `uv.lock` alineados en 11.97.0.
+
 ## [11.96] - 2026-11-12
 
 ### Changed

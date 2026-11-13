@@ -1,11 +1,11 @@
 ﻿---
-description: Principios universales v3.5.0 - N1+N2 siempre, N3 bajo demanda + FND Foundation-First (entorno antes que producto) + taxonomia de adherencia (IFEval/DRFR) + RPA re-anclaje post-compaction + CPD fundamentos de competicion (ADR-0070) + TDD adversarial/mutante/PBT/pairwise/BVA/metamorphic/fuzz (ADR-0077) + DORA/ShapeUp/trunk/RFC/postmortem (ADR-0083) + ADV verificacion adversarial atacante/steelman/juez + SWE-ABS/RvB + convenciones de codigo Clean Architecture/validacion de input/fail-fast tipado/AAA/atomicos (ADR-0098)
+description: Principios universales v4.0.0 - N1+N2 siempre, N3 bajo demanda + capa de entrega FDD/DDD (ficha, mapa de dominio, hitos, propiedad de archivos, decisiones cerradas, friccion proporcional; ADR-0106) + FND Foundation-First (entorno antes que producto) + taxonomia de adherencia biyectiva (IFEval/DRFR) + RPA re-anclaje post-compaction (N2) + CPD fundamentos de competicion (ADR-0070) + TDD adversarial/mutante/PBT/pairwise/BVA/metamorphic/fuzz (ADR-0077) + DORA/ShapeUp/trunk/RFC/postmortem (ADR-0083) + ADV verificacion adversarial atacante/steelman/juez + SWE-ABS/RvB + convenciones de codigo Clean Architecture/validacion de input/fail-fast tipado/AAA/atomicos (ADR-0098)
 inherit:
   - core/base_principles.md
   - core/fde_principles.md
 name: base-principles
 project_agnostic: true
-version: 3.6.0
+version: 4.0.0
 ---
 
 # PRINCIPIOS UNIVERSALES | Multi-nivel
@@ -18,72 +18,78 @@ N1+N2 siempre inyectados; N3 bajo demanda (ver seccion final).
 ## NIVEL 1 -- ESENCIAL (siempre inyectado; reglas atomicas CHECK)
 
 ```md
-RSF: Research First | investigar ANTES de ejecutar | vanguardia se renueva sola
-IDP: Idempotencia | si ya esta implementado NO reimplementar | solo mejorar
-ERR: Errores legibles y accionables | WHAT+WHY+WHERE | sin except silencioso
-ARQ: hexagonal + DI | KISS <500 | DRY | type hints | pathlib
-SEG: 0 secrets | mask logs | parametriza SQL | sys.path.insert(1)
-DOC: docstrings ES OBLIGATORIAS | 0 funciones sin docstring | template Args/Returns/Raises
-TST: core >=80% | TDD adversarial (test vs mutante) + mutantes + PBT + pairwise | coverage es piso no techo | pre-commit gates | 0 except silenciosos | logger.warning()
-CMT: conventional commit type(scope): descripcion
-FDE: bridge productâ†”reality | delta = gap to close | mission > persona
-EVO: learnâ†’designâ†’experimentâ†’analyze | cognition persists | loop repeats
-POC: Proceso > herramienta | sin harness = departamento aislado | 5 preguntas antes de adoptar
+RSF: Research First | estado del arte ANTES de ejecutar | no resolver de memoria
+IDP: Idempotencia | si ya existe NO reimplementar | solo mejorar con delta demostrable
+ERR: Errores legibles | WHAT+WHY+WHERE | sin except silencioso
+ARQ: hexagonal + DI | KISS + DRY + YAGNI | type hints | pathlib
+SEG: 0 secrets | mask logs | SQL parametrizada | sin eval/exec
+DOC: docstrings ES (Args/Returns/Raises) | 0 funciones sin docstring | docs 1:1 en API
+TST: core >=80% | TDD adversarial + mutantes + PBT + pairwise | coverage es piso | 0 except silenciosos
+CMT: conventional commit type(scope): descripcion | <=72 chars
+FDE: bridge product<->reality | delta = gap a cerrar | mission > persona
+EVO: learn->design->experiment->analyze | cognition persiste | loop se repite
+POC: proceso > herramienta | sin harness = silo | 5 preguntas antes de adoptar
 TKN: Cache-Shape | Structured Compact | Failure-Spend | Observation Masking
-WFP: Workflow Patterns | Evaluator-Optimizer | Voting | Critique-Revise | Parallel-Transform
-PBT: Property-Based Testing Templates | holes rellenables | invariantes | -59% alucinaciones
-CEN: Context Engineering | Least-Recent First | Progresivo | Chunking semantico
-BTR: Behavioral Tracing | decisiones registradas | fingerprints | consistencia
-AGR: Architectural Guardrails | layers | type hints | tamano | imports prohibidos
-SVE: Semantic Versioning | MAJOR.MINOR.PATCH | changelog | skills y prompts
-MCL: MetaClaw continual learning | skills evolucionan con RL | sin GPU local
-MKS: Memento-Skills | cognition store como skill library | router contrastivo
-UPG: Upgrade Continuo | siempre ultimas versiones estables | investigar antes | migrar si hay alternativa mas eficiente | mesa de trabajo para consenso
-NAM: Naming Convention | snake_case archivos+vars+funcs | PascalCase clases | UPPER_SNAKE_CASE constants | booleans is_/has_/can_ | verbs en funciones | sin magic numbers | nombres comprensibles
-TYP: Type Hints | type hints publicas | PEP 604 X|Y | generics TypeVar | type aliases | sin Any innecesario | mypy --strict
-IMM: Immutability | frozen dataclasses | NamedTuple | tuple sobre list | MappingProxyType | copy sobre mutar
-SOL: SOLID | SRP una responsabilidad | OCP abierto extension cerrado modificacion | LSP subtipos sustituibles | ISP interfaces segregadas | DIP depender de abstracciones
-MAG: Magic Numbers | sin literales magicos | constantes con nombre semantico | tablas deLookup | enums para valores discretos
-FSZ: Function Size | max 30 lineas | una responsabilidad | extraer helpers | guard clauses tempranas
-CMP: Composition over Inheritance | preferir composicion sobre herencia | estrategia + interfaces | evitar jerarquias profundas | HAS-A sobre IS-A
-DEM: Law of Demeter | solo hablar con amigos directos | no chains a.b.c.d | un punto por linea | tell dont ask
-EDV: Evidence-Driven Development | investigar→hipotesis→probar→seleccionar→heredar→iterar | decisiones de modelo/arquitectura con evidencia medible (benchmark, ejecutar y validar), no preferencia | cada hallazgo se hereda en la SSOT/config y se itera
-FRS: Frontier Research & Solution | SIEMPRE web research antes de resolver | elegir la solucion mas avanzada/frontera/eficiente/confiable | al finalizar: actualizar docs + commit
-RSV: Roadmap Sync & Retrospectiva | cada N refactors (>=5) leer docs/src/es/roadmap/estado.md y hacer analisis retrospectivo de calidad | features SIEMPRE de frontera y estado del arte, no legacy | el roadmap se actualiza con las ultimas tecnicas frontera (ritmo tipo ARR: alinearse al hito antes de escalar)
-FND: Foundation-First | entorno antes que producto | walking skeleton + tracer bullet | spec + CI T1 (<90s) + gates + seguridad ANTES de features | identidad (org/dominio/registry) si publicas
-SPE: Spec-First (Proof-or-Stop) | spec ANTES de ejecutar | outcome medible | exit criteria definidos | sin spec = sin start
-GATE: Evidence-Gated Lifecycle | claimâ†’evidenceâ†’gate | 0 false-DONE | T1 deterministic + T2 LLM-judge + T3 regression
-FAIL: Failure Registry | registrar fallos en JSONL | distillar en skills | Socratic-SWE tracesâ†’tasks | aprender de errores
-SBX: Sandboxing | aislamiento de fallos | per-task environment | rollback plan | contenedor o timeout como minimo
-RPA: Re-Pin After compaction | tras CADA compactacion recargar N1+rol+skills+agentes | 65% fallos = drift | bloque <<RE-ANCHOR>>
-CPD: Fundamentos Competicion | checklist edges+invariants+BigO ANTES de codear | diagnoseâ†’repairâ†’regenerate | dual verification
-ADV: Verificacion adversarial SIEMPRE | atacante (halla gaps) â†’ steelman (defiende+propone) â†’ juez (veredicto+disenso) | T siempre ultimo movimiento | 1/5 "resuelto" es incorrecto: fortalecer antes de confiar
-CLA: Clean Architecture | Presentation->Application->Domain<-Infrastructure | domain puro (0 frameworks/DB) | ports/adapters + DIP
-VAL: Input Validation | TODO input externo (HTTP/CLI) validado contra schema ANTES del dominio | Zod/Pydantic
-FST: Fail-Fast tipado | errores tipados con cause + contexto | nunca swallow ni mensaje generico
-AAA: Test AAA | Arrange-Act-Assert | 1 test = 1 criterio | mocks (0 DB/red real en unit)
+PBT: property-based | invariantes + templates | -59% alucinaciones
+CEN: Context Engineering | relevancia primero | chunking + progressive disclosure
+BTR: Behavioral Tracing | decision + rationale + confidence | fingerprints por agente
+AGR: guardrails de arquitectura | layers | tamano | imports prohibidos
+SVE: SemVer MAJOR.MINOR.PATCH | changelog | skills y prompts versionados
+UPG: Upgrade Continuo | ultima version estable | investigar antes | migrar si hay alternativa mejor
+NAM: snake_case archivos+vars+funcs | PascalCase clases | UPPER_SNAKE constantes | nombres que se explican solos
+TYP: type hints publicas | PEP 604 X|Y | TypeVar/aliases | sin Any innecesario | mypy --strict
+IMM: frozen dataclasses | NamedTuple | tuple sobre list | copy sobre mutar
+SOL: SRP+OCP+LSP+ISP+DIP | una responsabilidad | depender de abstracciones
+MAG: sin literales magicos | constantes con nombre | Enum para discretos
+FSZ: max 30 lineas | una responsabilidad | guard clauses | complejidad <10
+CMP: composicion sobre herencia | HAS-A sobre IS-A | jerarquias <=2
+DEM: solo amigos directos | sin chains a.b.c.d | tell dont ask
+EDV: evidencia medible, no preferencia | benchmark -> decidir -> heredar en SSOT -> iterar
+FRS: Frontier Research | web research SIEMPRE | solucion mas avanzada/eficiente/confiable | docs + commit al final
+RSV: Roadmap Sync | cada >=5 refactors leer roadmap + retrospectiva | features de frontera
+FND: Foundation-First | entorno antes que producto | walking skeleton + CI <90s + seguridad ANTES de features
+SPE: Spec-First | spec ANTES de ejecutar | outcome + exit criteria | sin spec = sin start
+DOM: Mapa de dominio | docs/fdd/dominio.md vivo | entidades + lenguaje ubicuo | DDD si el dominio es complejo
+FIC: Ficha por feature | accion + resultado + objeto | corte vertical + criterios demostrables | estado para retomar
+FRC: Friccion proporcional | elegir -DD por requisito | irreversible = spec + ADR + rollback | puntual = fix + test
+OWN: Propiedad de archivos | un solo coordinador por ola | cada archivo con dueno | paralelo sin archivos compartidos
+GATE: Evidence-Gated | claim->evidence->gate | 0 false-DONE | T1 determinista + T2 judge + T3 regresion
+HIT: Hitos FDD | disenado->implementado->verificado->integrado | integrado SOLO lo marca una persona | sin evidencia = no hecho
+DEC: Decisiones cerradas | tema/decision/por que | invariantes con una sola puerta | el doc manda
+FAIL: Failure Registry | fallos en JSONL | destilar en skills | aprender del error
+SBX: Sandboxing | aislamiento por tarea | rollback plan | timeout/contenedor como minimo
+CPD: Fundamentos Competicion | edges+invariants+BigO ANTES de codear | diagnose->repair->regenerate | doble verificacion
+ADV: Verificacion adversarial | atacante->steelman->juez | T siempre ultimo | fortalecer antes de confiar
+CLA: Clean Architecture | Presentation->Application->Domain<-Infrastructure | dominio puro | ports/adapters + DIP
+VAL: Input Validation | todo input externo validado contra schema ANTES del dominio | Pydantic/Zod
+FST: Fail-Fast tipado | error tipado con cause + contexto | nunca swallow
+AAA: Test AAA | Arrange-Act-Assert | 1 test = 1 criterio | mocks en unit
 ATM: Atomic Changes | 1 commit/PR = 1 preocupacion logica
 ```
 
 ---
 
-## TAXONOMIA DE ADHERENCIA (v3.1.0)
+## TAXONOMIA DE ADHERENCIA (v4.0.0)
 
 Cada codigo N1 pertenece a UNA categoria y un modo de cumplimiento. Los
 CHECK son instrucciones verificables binarias (IFEval/DRFR: 1 regla = 1
 criterio atomico); los GUIDE son orientativos (se citan por ID, nunca se
 parafrasean â€” Ribeiro: el compliance es pattern matching fragil).
 
+La tabla es **biyectiva con el N1** (47 codigos): ningun codigo N1 queda sin
+categoria y ningun codigo de la tabla falta del N1. `tests/test_principles_fdd.py`
+lo verifica; `DOR`, `OPS` y `QLT` son N2 y no entran aqui.
+
 | Cat | Nombre | Codigos | Modo |
 |-----|--------|---------|------|
-| PRC | Proceso e investigacion | RSF, IDP, FRS, FND, SPE, UPG, POC, ATM (ADR-0098) | CHECK |
-| ARC | Arquitectura y codigo | ARQ, SOL, CMP, DEM, NAM, TYP, IMM, MAG, FSZ, AGR, CLA (ADR-0098) | CHECK |
-| QLT | Calidad y testing | TST, PBT, GATE, CPD, ADV, AAA (ADR-0098) | CHECK |
-| SEC | Seguridad y aislamiento | SEG, SBX, VAL (ADR-0098) | CHECK |
+| PRC | Proceso e investigacion | RSF, IDP, FRS, EDV, RSV, FND, SPE, UPG, POC, ATM | CHECK |
+| ARC | Arquitectura y codigo | ARQ, SOL, CMP, DEM, NAM, TYP, IMM, MAG, FSZ, AGR, CLA | CHECK |
+| QLT | Calidad y testing | TST, PBT, GATE, CPD, ADV, AAA | CHECK |
+| SEC | Seguridad y aislamiento | SEG, SBX, VAL | CHECK |
 | DOC | Documentacion y commits | DOC, CMT, SVE | CHECK |
 | CTX | Contexto y tokens | CEN, TKN | CHECK |
-| GOV | Gobernanza y evidencia | ERR, FAIL, BTR, EVO, FDE, DOR, FST (ADR-0098) | CHECK |
-| SYS | Sistema y evolucion | WFP, MCL, MKS, RPA | GUIDE |
+| GOV | Gobernanza y evidencia | ERR, FAIL, BTR, EVO, FDE, FST, HIT, DEC | CHECK |
+| FDD | Entrega por feature y dominio | DOM, FIC, FRC, OWN | CHECK |
 
 Reglas de uso (DRFR + SID + FollowBench):
 
@@ -115,7 +121,7 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 
 ---
 
-## NIVEL 2 -- ESTANDAR (17 lineas, ~150 tokens, inyectado si budget >70%)
+## NIVEL 2 -- ESTANDAR (inyectado si budget >70%; incluye la matriz -DD)
 
 | Cat | Reglas |
 |-----|--------|
@@ -131,7 +137,8 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 | __QLT__ | __DEPRECATED v2.4.0__: cubierto por NAM, TYP, IMM, SOL, MAG, FSZ. Mantener solo como referencia historica. Codigo listo/sin hardcode. Conciso: 1 responsabilidad por funcion. Sin constantes magicas (siempre con nombre). |
 | __ERR__ | Errores accionables: WHAT (que fallo) + WHY (causa) + WHERE (linea/archivo/funcion). Sin except silencioso. Logger siempre con contexto. Stack trace estructurado. __Sentry__ o similar para captura centralizada. __Error budgets__ (SRE). |
 | __TKN__ | Cache-Shape Discipline (-38% tokens), Structured Compaction (-41% costo), Scoped Context (-44% tiempo), Failure-Spend Governance, Observation Masking, Phase-Scheduled MAS (-27.3% tokens). Effective-Input-Price = inp * miss_ratio * price + out * price. __2026__: usar modelos small para tareas simples (router por complejidad), cache de tool results, batching de invocaciones, prompt caching (Anthropic/OpenAI), speculative decoding para inferencia. |
-| __WFP__ | 4 patrones de flujo reutilizables: Evaluator-Optimizer (generaâ†’evaluaâ†’loop), Voting (N variantesâ†’rankingâ†’mejor), Critique-Revise (generaâ†’criticaâ†’revisa), Parallel-Transform (fan-outâ†’transformaâ†’fan-in merge). Retry cost -51%. __2026__: aÃ±adir MapReduce para tareas grandes (dividir â†’ paralelo â†’ reducir). __R1 reasoning__ (DeepSeek destilado): reasonâ†’verifyâ†’reflectâ†’final con `verdict` explÃ­cito y longitud controlada (early-stop al verificar; anti-hedging). |
+| __WFP__ | __Workflow Patterns__: 4 patrones de flujo reutilizables: Evaluator-Optimizer (generaâ†’evaluaâ†’loop), Voting (N variantesâ†’rankingâ†’mejor), Critique-Revise (generaâ†’criticaâ†’revisa), Parallel-Transform (fan-outâ†’transformaâ†’fan-in merge). Retry cost -51%. __2026__: aÃ±adir MapReduce para tareas grandes (dividir â†’ paralelo â†’ reducir). __R1 reasoning__ (DeepSeek destilado): reasonâ†’verifyâ†’reflectâ†’final con `verdict` explÃ­cito y longitud controlada (early-stop al verificar; anti-hedging). |
+| __RPA__ | __Re-Pin After compaction__ (antes N1; v4.0.0 lo mueve a N2): tras CADA compactacion recargar N1 + rol + skills + agentes (`<<RE-ANCHOR>>` via `harness/memory_rag/reanchor.py`). El summary retiene ~17% de las restricciones; el bloque restaura >90%. 65% de los fallos post-compaction son drift. |
 | __PBT__ | Property-Based Testing con templates de holes rellenables. 7 templates predefinidos (sorting, idempotent, pure, boundary, roundtrip, commutative, associative). Reduce alucinaciones -59%, costo -3.8x. __2026__: `hypothesis` 6.x con `@given` + `assume()`, profiles, health checks, deadlines. __Adversarial refinement__ (PROBE ACL'26): Validator genera contra-implementaciones que pasan la propiedad debil -> Generator la endurece (+9.79pp MS, 95% vs 65% correctness). __Metamorphic__ como PBT sin oraculo: MR reversibles (`reverse(reverse(x))==x`, `encode(decode(x))==x`, `f(x+k)==f(x)+k`). __Fuzzing dirigido__: parsers/fronteras (JSON/URLs/regex) con oraculo no-crash+roundtrip+timeout. |
 | __CEN__ | Context Engineering: Least-Recent Context First (relevancia al inicio), Structured Chunking (metadatos por bloque), Progressive Disclosure (instruccionâ†’ejemplosâ†’datos). __2026__: usar `cache_control` breakpoints en prompts LLM, incluir timestamps en facts, versioning de system prompts. |
 | __BTR__ | Behavioral Tracing: cada decision registra action+chosen+rationale+confidence. Fingerprint de comportamiento por agente. Reportes de consistencia y auditoria. __2026__: OpenTelemetry spans + GenAI semantic conventions (`gen_ai.*` attrs). Langfuse/LangSmith para observability de agentes. |
@@ -163,6 +170,50 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 | __AAA__ | Test AAA (ADR-0098): Arrange-Act-Assert, 1 test = 1 criterio; mocks en unit (0 DB/red real). Complementa TST. |
 | __ATM__ | Atomic Changes (ADR-0098): 1 commit/PR = 1 preocupacion logica. Complementa CMT. |
 
+### FDD — entrega por feature y dominio (ADR-0106)
+
+La capa de entrega no reemplaza el N1: lo operacionaliza. Una feature es un
+corte vertical con nombre de resultado; la ficha es el estado que otra sesion
+puede retomar sin el chat. Plantillas en `docs/fdd/`.
+
+- **DOM**: `docs/fdd/dominio.md` es el mapa vivo (entidades, agregados,
+  lenguaje ubicuo, donde vive cada una). Se actualiza con la feature, no en un
+  relevamiento aparte. DDD aplica cuando las reglas del dominio son complejas.
+- **FIC**: una ficha por feature (`docs/fdd/ficha-template.md`). Nombre =
+  accion + resultado + objeto. Incluye objetivo, alcance, criterios con su
+  demostracion, dominio/arquitectura, archivos y duenos, decisiones, evidencia
+  y proximo paso. No copia codigo: apunta a el.
+- **HIT**: hitos `disenado -> implementado -> verificado -> integrado`.
+  *Integrado* lo marca una persona, nunca el agente. Un turno, un test aislado
+  o un merge no mueven un hito solos. Afirmar sin evidencia = no hecho.
+- **FRC**: la friccion crece con el costo de equivocarse. Cambio puntual =
+  fix + test de regresion; feature = ficha; cambio irreversible o de contrato
+  = spec + ADR + rollback + decision cerrada.
+- **OWN**: cada archivo tiene un dueno en la ficha; un solo coordinador escribe
+  por ola. Los frentes en paralelo no comparten archivos; si comparten, se
+  serializan.
+- **DEC**: tabla tema/decision/por que. Los invariantes tienen una sola puerta
+  (el doc manda antes que el codigo); reabrir una decision exige evidencia
+  nueva y una persona.
+
+### Matriz de seleccion «-DD» (FRC)
+
+| Requisito | Enfoque | Artefacto | Gate |
+|---|---|---|---|
+| Feature de usuario con valor | FDD | ficha con nombre de resultado y corte vertical | criterios demostrables + HIT |
+| Dominio con reglas complejas | DDD | `docs/fdd/dominio.md` (entidades, agregados, lenguaje ubicuo) | revision del mapa + DOM |
+| API publica o contrato entre servicios | CDD/SDD | OpenAPI/AsyncAPI + spec del cambio | contrato versionado + SPE/SVE |
+| Cambio de comportamiento | TDD/ATDD | test rojo con criterio de aceptacion | TST + GATE |
+| Comportamiento de negocio acordado | BDD | escenario condicion->accion->resultado | criterio aceptado por la persona |
+| Migracion irreversible o de datos | SDD | spec + ADR + rollback | SPE + SBX + DEC |
+| Libreria, SDK o CLI publica | RDD | README de uso antes del codigo | ejemplo ejecutable |
+| Bug puntual | Fix + regresion | test que reproduce + fix | TST (sin ficha completa) |
+| Cambio visual | Maqueta + BDD | recorrido con estados + escenario | aprobacion humana |
+| Infraestructura interna | FDD (ola 0) | ficha/tarea con criterio observable | GATE |
+
+Se elige el artefacto que minimiza el costo esperado
+`E = P(error)·C(error) + C(proceso)`, no el que mas guste al agente.
+
 ---
 
 ## NIVEL 3 (bajo demanda)
@@ -170,7 +221,8 @@ Fundamentos de competicion modernos (CPD, arXiv 2506.22954 + Wonda ICML 2026):
 > N3 completo (referencia detallada) movido a `.opencode/core/base_principles_full.md`
 > (Progressive Disclosure / Scoped Context: N1+N2 siempre, N3 solo cuando se necesita).
 > Contiene: checklists ARQ, SEG, DOC, TST, OPS, ERR, CMT, QLT, FDE, EVO, UPG, TYP,
-> IMM, SOL, MAG, FSZ, NAM, CMP, DEM, FRS + MAPA DE ROLES->CATEGORIAS + ABREVIACIONES.
+> IMM, SOL, MAG, FSZ, NAM, CMP, DEM, FRS, FDD (ficha/dominio/hitos/duenos) + MAPA
+> DE ROLES->CATEGORIAS + ABREVIACIONES.
 > Cargar SOLO si el agente necesita detalles de implementacion, tabla de roles o abreviaciones.
 > Sesiones locales 9B (ctx 16K): inyectar `.opencode/core/base_principles.min.md`
 > (solo N1) en vez de este archivo.

@@ -137,6 +137,10 @@ práctica pero -17% examen al delegar), Anthropic 2026 (delegación <40% vs
 6. **Commits**: conventional commit en español (`feat(scope): mensaje`).
 7. **Push**: los ADR (docs/src/es/adr/) se versionan localmente pero NO se
    pushean (`.githooks/pre-push` lo bloquea — permite solo borrados).
+8. **Entrega por feature** (`FIC`/`DOM`/`HIT`/`OWN`/`DEC`): una feature se
+   trabaja con ficha en `docs/fdd/`, mapa de dominio vivo y dueño de archivo;
+   *integrado* solo lo marca una persona. Un bug puntual no necesita ficha
+   completa, pero tampoco se sale de la constitución (`FRC`).
 
 ## Referencias rápidas
 
@@ -145,4 +149,5 @@ práctica pero -17% examen al delegar), Anthropic 2026 (delegación <40% vs
 - Agentes: `.opencode/agents/` (26 agentes, `mode` declarado; flota del
   coordinator sincronizada por contrato en `test_opencode_runtime_contract.py`)
 - Registry de skills: `.opencode/skills/skills_registry.yaml`
+- Capa de entrega FDD: `docs/fdd/` (dominio, ficha, estado)
 - Principios completos: `.opencode/core/base_principles.md`

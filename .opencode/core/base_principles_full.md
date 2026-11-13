@@ -1,7 +1,7 @@
 ﻿---
 name: base-principles-full
 description: Principios universales - SOLO N3 (detalle bajo demanda) con checklists extendidos, mapa de roles y abreviaciones. N1/N2 viven UNA vez en core/base_principles.md (SSOT).
-version: 3.6.0
+version: 4.0.0
 project_agnostic: true
 inherit:
   - core/base_principles.md
@@ -67,6 +67,69 @@ Cita: `FND` o `ADR-XXXX:FND`.
 - [ ] **Verificar**: primer commit = scaffold+spec+test; CI T1 verde; 0 secrets;
       ADR-0001 presente.
 - [ ] **Skills que aplican**: architect, devops, builder, guardian, product-manager.
+
+### FDD - Entrega por feature y dominio (ADR-0106, N3)
+
+Aplica cuando hay una feature que otra sesion debe poder retomar, o cuando el
+cambio cruza capas. Un cambio puntual y claro no necesita ficha completa, pero
+tampoco se sale de la constitucion ni de la arquitectura.
+
+**Ficha** (`docs/fdd/ficha-template.md`) — una por feature:
+- [ ] Nombre = accion + resultado + objeto («avisar cuando una regla queda
+      apagada», no «arreglar rules.py»).
+- [ ] Objetivo (que cambia para el usuario y por que) y alcance (que queda
+      fuera).
+- [ ] Criterios con su demostracion: condicion -> accion -> resultado
+      observable -> evidencia. Un adjetivo no es criterio.
+- [ ] Dominio, constitucion y arquitectura que toca; si cambia algo, que.
+- [ ] Archivos con dueno; efectos compartidos (contratos, hashes, pines,
+      esquemas) con quien los actualiza.
+- [ ] Decisiones tomadas con su motivo; preguntas HITL centralizadas (que se
+      pregunto, que opciones, que frena, con que se siguio).
+- [ ] Evidencia observada (que paso, que fallo, que no se corrio) y proximo
+      paso concreto para quien retome.
+- [ ] La ficha no copia codigo: apunta a el. Se actualiza en hitos, no en cada
+      herramienta. No crea otro backlog: enlaza el pendiente existente.
+- [ ] Olas: solo la proxima se detalla; cada ola termina con criterio
+      observable y algo usable de punta a punta.
+
+**Hitos**:
+- [ ] `disenado`: objetivo, alcance, criterios, dominio, duenos y olas.
+- [ ] `implementado`: cambio hecho en arbol o rama.
+- [ ] `verificado`: cada criterio con evidencia observada, al menos uno por el
+      camino real (no solo dobles o el arnes de tests).
+- [ ] `integrado`: **solo lo marca una persona**; la delegacion de olas no lo
+      cubre. Aprobar un plan no acepta entregas; verde no es aceptado.
+
+**Dominio y decisiones**:
+- [ ] `docs/fdd/dominio.md` vivo: entidades, agregados, lenguaje ubicuo y
+      donde vive cada una. Crece con la feature; no se hace un relevamiento
+      aparte.
+- [ ] Tabla de decisiones cerradas (tema, decision, por que); invariantes con
+      una sola puerta; reabrir exige evidencia nueva y una persona.
+- [ ] DDD solo si las reglas del dominio son complejas; si no, el mapa minimo
+      evita sobreingenieria.
+
+**Ownership y paralelismo**:
+- [ ] Un solo coordinador escribe por ola; los frentes paralelos no comparten
+      archivos. Si comparten, se serializan o se reparte por dueno explicito.
+- [ ] La ola cierra sobre el arbol integrado actual, no sobre la copia inicial.
+
+**Seleccion «-DD»** (ver matriz N2 y research
+`docs/research/frontier-2026-11-12-fdd-principles.md`):
+- [ ] FDD = entrega; DDD = modelo; SDD/CDD = contrato previo; TDD/BDD/ATDD =
+      verificacion y aceptacion; RDD = experiencia de uso.
+- [ ] La friccion escala con el riesgo: fix+test < ficha < spec+ADR+rollback.
+- [ ] No se aplica el mismo proceso a un typo que a una migracion de datos.
+
+**Anti-patrones**:
+- [ ] Cascada: disenar toda la arquitectura y todas las tareas antes de la
+      primera feature. Se decide la base minima y el resto aparece con su
+      motivo en la ficha.
+- [ ] Ficha que copia firmas/clases/pseudocodigo (se desactualiza sola).
+- [ ] Marcar `verificado` con tests verdes que no demuestran el requisito.
+- [ ] Dos fuentes editables del mismo plan; dos coordinadores escribiendo.
+- [ ] `SPE` universal: spec exhaustiva para un cambio de una linea.
 
 ### ARQ - Arquitectura
 - [ ] Hexagonal: puertos (interfaces) en domain/ -> adapters en infrastructure/

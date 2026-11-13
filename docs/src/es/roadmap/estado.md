@@ -2,10 +2,27 @@
 
 > Estado actual del sistema Swarmind Harness a 2026-10-15.
 > Documento vivo que refleja el progreso, hitos y proximos objetivos.
-> **Regla RSV (base_principles v3.6.0)**: se relee este roadmap cada N refactors (>=5)
+> **Regla RSV (base_principles v4.0.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
 ## Estado Actual (2026-11-12)
+
+### Estado 2026-11-12 (Ciclo 11.97 — principios v4.0.0 con capa FDD/DDD)
+- Merge selectivo del FDD (`arielelevy/fdd` v2.5) y de las metodologías «-DD»:
+  seis códigos N1 nuevos —`DOM`, `FIC`, `HIT`, `FRC`, `OWN`, `DEC`— con ficha
+  por feature, mapa de dominio vivo, cuatro hitos (el *integrado* solo lo marca
+  una persona), propiedad de archivos y decisiones cerradas.
+- Matriz de selección por requisito en N2: FDD para entrega, DDD para dominio,
+  SDD/CDD para contratos, TDD/BDD/ATDD para verificación y RDD para uso; la
+  fricción crece con el riesgo (`FRC`).
+- N1 45 → 47 códigos y 5 262 → 4 139 caracteres (−21,3 %); `WFP`/`MCL`/`MKS`/
+  `RPA` degradados a N2 con alias; taxonomía biyectiva (sin `EDV`/`RSV`
+  ausentes ni `DOR` fantasma).
+- Guard compartido `harness/context/principles_guard.py`: duplicados N1 de
+  O(n²) a O(n) y deriva de taxonomía O(n+m); 15 tests nuevos, 48 en las suites
+  de principios.
+- Artefactos `docs/fdd/{README.md,dominio.md,ficha-template.md}`; research y
+  spec con AC-01…AC-12. ADR-0106 local.
 
 ### Estado 2026-11-12 (Ciclo 11.96 — frontmatter de skills en `metadata`)
 - Las 50 skills declaran `domain`, `version` y `project_agnostic` dentro de
