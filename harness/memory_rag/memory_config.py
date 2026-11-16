@@ -144,12 +144,15 @@ class MemoryConfig:
         telemetry_level: Nivel de telemetría a registrar.
         kpi_collections: Conjunto de colecciones KPI activas.
         auto_create_collections: Crear colecciones automáticamente al iniciar.
+        ruscadb_pool_capacity: Marcos del buffer pool de RuscaDB (>= 1). Un
+            valor bajo provoca ``buffer pool lleno`` y pérdida de inserts.
     """
     backend: MemoryBackend = MemoryBackend.RUSCADB
 
     # Rutas
     lancedb_path: str = ""
     ruscadb_path: str = ""
+    ruscadb_pool_capacity: int = 64
 
     # Embeddings
     embedding_dim: int = 384
@@ -217,6 +220,9 @@ class MemoryConfig:
             backend=MemoryBackend(os.environ.get("MEMORY_BACKEND", "ruscadb")),
             lancedb_path=os.environ.get(_LANCEDB_PATH_ENV, ""),
             ruscadb_path=os.environ.get("RUSCADB_PATH", ""),
+            ruscadb_pool_capacity=int(
+                os.environ.get("RUSCADB_POOL_CAPACITY", "64") or 64
+            ),
             embedding_dim=int(os.environ.get("EMBEDDING_DIM", "384")),
             allow_fallback=os.environ.get("MEMORY_FALLBACK", "false").lower() == "true",
             telemetry_level=TelemetryLevel(

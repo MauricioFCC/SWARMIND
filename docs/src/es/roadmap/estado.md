@@ -7,6 +7,19 @@
 
 ## Estado Actual (2026-11-12)
 
+### Estado 2026-11-12 (Ciclo 11.98 — runtime Go-simplicity: RuscaDB real y tokens)
+- **Corrección**: el buffer pool de RuscaDB estaba fijo en 8 marcos y perdía
+  23 % de las filas al insertar fila a fila (231/300). Ahora es configurable
+  (default 64, env `RUSCADB_POOL_CAPACITY`) y `insert()` falla explícito sin
+  devolver ids fantasma.
+- **Simplicidad medida**: `list_collections` con caché (0 FFI por insert),
+  PageRank O(iter·(n+e)) con adyacencia inversa y router con IDF/TF/normas
+  precomputados: `p50` 19.703 ms → 0.103 ms (−99,5 %).
+- `build_skill_graph` baja de 3 a ≤2 lecturas por skill; `/frontera` y la
+  sección de `AGENTS.md` pasan a tabla terse (skill = SSOT).
+- Batching descartado con evidencia: 0.93x. Research + spec con AC-1…AC-10 y
+  7 tests de regresión nuevos.
+
 ### Estado 2026-11-12 (Ciclo 11.97 — principios v4.0.0 con capa FDD/DDD)
 - Merge selectivo del FDD (`arielelevy/fdd` v2.5) y de las metodologías «-DD»:
   seis códigos N1 nuevos —`DOM`, `FIC`, `HIT`, `FRC`, `OWN`, `DEC`— con ficha

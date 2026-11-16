@@ -8,6 +8,11 @@ from pathlib import Path
 import pytest
 
 from harness.context.token_budget_router import (
+    _PR_CONVERGENCE_EPSILON,
+    _PR_DAMPING,
+    _PR_MAX_ITERATIONS,
+    _PR_WEIGHT,
+    _TFIDF_WEIGHT,
     DEFAULT_BUDGET_TOKENS,
     SelectionItem,
     SkillGraph,
@@ -20,6 +25,55 @@ from harness.context.token_budget_router import (
     _tokenize,
     build_skill_graph,
 )
+
+
+def _oracle_pagerank(adjacency: dict[str, list[str]]) -> dict[str, float]:
+    """Implementacion de referencia O(iter·n·e) congelada como oraculo."""
+    nodes = list(adjacency)
+    size = len(nodes)
+    if size == 0:
+        return {}
+    ranks = {node_id: 1.0 / size for node_id in nodes}
+    for _ in range(_PR_MAX_ITERATIONS):
+        new_ranks: dict[str, float] = {}
+        dangling = sum(
+            ranks[node_id]
+            for node_id, targets in adjacency.items()
+            if not targets
+        )
+        for node_id in nodes:
+            incoming = sum(
+                ranks[source] / max(1, len(targets))
+                for source, targets in adjacency.items()
+                if node_id in targets
+            )
+            new_ranks[node_id] = (
+                (1 - _PR_DAMPING) / size
+                + _PR_DAMPING * (incoming + dangling / size)
+            )
+        delta = sum(abs(new_ranks[n] - ranks[n]) for n in nodes)
+        ranks = new_ranks
+        if delta < _PR_CONVERGENCE_EPSILON:
+            break
+    return ranks
+
+
+def _oracle_rank(graph: SkillGraph, query: str) -> dict[str, float]:
+    """Rank de referencia sin precomputacion (comportamiento historico)."""
+    node_ids = list(graph.nodes)
+    if not node_ids:
+        return {}
+    docs = [_tokenize(graph.nodes[node_id].text) for node_id in node_ids]
+    tfidf = _tfidf_scores(_tokenize(query), docs)
+    pagerank = _oracle_pagerank(graph.adjacency())
+    combined = {
+        node_id: (
+            _TFIDF_WEIGHT * tfidf[idx]
+            + _PR_WEIGHT * pagerank.get(node_id, 0.0)
+        )
+        for idx, node_id in enumerate(node_ids)
+    }
+    return _normalize(combined)
 
 
 @pytest.fixture
@@ -208,3 +262,87 @@ def test_save_graph_writes_json(tmp_path: Path, mini_graph: SkillGraph) -> None:
     router.save_graph(output)
     raw = json.loads(output.read_text(encoding="utf-8"))
     assert len(raw["nodes"]) == 3
+
+
+@pytest.mark.parametrize(
+    "adjacency",
+    [
+        {"a": ["b", "c"], "b": ["c"], "c": []},
+        {"a": ["b", "b"], "b": ["c"], "c": [], "d": ["a"]},
+        {
+            "a": ["b", "c", "d"],
+            "b": ["d"],
+            "c": ["a"],
+            "d": [],
+            "e": ["a", "d"],
+        },
+    ],
+)
+def test_pagerank_equivalente_al_oraculo(adjacency: dict[str, list[str]]) -> None:
+    """La version O(n+e) reproduce el oraculo O(n·e) (tol 1e-12)."""
+    optimized = _pagerank(adjacency)
+    oracle = _oracle_pagerank(adjacency)
+    assert optimized.keys() == oracle.keys()
+    for node_id, value in oracle.items():
+        assert optimized[node_id] == pytest.approx(value, abs=1e-12)
+
+
+def test_rank_equivalente_al_oraculo(mini_graph: SkillGraph) -> None:
+    """rank() precomputado reproduce el calculo completo por query."""
+    router = TokenBudgetRouter(mini_graph)
+    for query in ("seguridad owasp", "docker kubernetes", "pandas ML", "nada"):
+        optimized = router.rank(query)
+        oracle = _oracle_rank(mini_graph, query)
+        assert optimized.keys() == oracle.keys()
+        for node_id, value in oracle.items():
+            assert optimized[node_id] == pytest.approx(value, abs=1e-12)
+
+
+def test_pagerank_se_calcula_una_vez(mini_graph: SkillGraph, monkeypatch) -> None:
+    """El router precomputa PageRank en __init__ y no lo repite por query."""
+    import harness.context.token_budget_router as router_module
+
+    calls = {"n": 0}
+    original = router_module._pagerank
+
+    def counting(adjacency):
+        calls["n"] += 1
+        return original(adjacency)
+
+    monkeypatch.setattr(router_module, "_pagerank", counting)
+    router = TokenBudgetRouter(mini_graph)
+    assert calls["n"] == 1
+    router.rank("seguridad")
+    router.rank("docker")
+    assert calls["n"] == 1
+
+
+def test_build_skill_graph_lee_una_vez_por_archivo(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Cada SKILL.md/SKILL.min.md se lee como maximo una vez por construccion."""
+    skills_dir = tmp_path / "skills"
+    skills_dir.mkdir()
+    for name in ("alpha", "beta", "gamma"):
+        skill_dir = skills_dir / name
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text(
+            f"---\nname: {name}\ndomain: test\n---\n# {name}\n{name}",
+            encoding="utf-8",
+        )
+        (skill_dir / "SKILL.min.md").write_text(
+            f"{name} skill texto", encoding="utf-8"
+        )
+
+    reads: list[str] = []
+    original = Path.read_text
+
+    def counting(self, *args, **kwargs):
+        reads.append(str(self))
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", counting)
+    graph = build_skill_graph(skills_dir)
+    assert set(graph.nodes) == {"alpha", "beta", "gamma"}
+    assert len(reads) == len(set(reads)), f"lecturas duplicadas: {reads}"
+    assert len(reads) == 6

@@ -181,34 +181,41 @@ class SkillGraph:
 # ---------------------------------------------------------------------------
 
 
-def _skill_text(skill_dir: Path) -> str:
+def _skill_text(skill_dir: Path, fallback_text: str | None = None) -> str:
     """Compone el texto indexable de un skill (min.md + frontmatter).
 
     Args:
         skill_dir: Directorio del skill.
+        fallback_text: Contenido de ``SKILL.md`` ya leido por el llamador,
+            para no volver a tocar disco si no existe ``SKILL.min.md``.
 
     Returns:
         Texto combinado para TF-IDF (SKILL.min.md si existe, si no SKILL.md).
     """
     min_path = skill_dir / "SKILL.min.md"
+    if min_path.exists():
+        return min_path.read_text(encoding="utf-8", errors="replace")
+    if fallback_text is not None:
+        return fallback_text
     full_path = skill_dir / "SKILL.md"
-    source = min_path if min_path.exists() else full_path
-    return source.read_text(encoding="utf-8", errors="replace") if source.exists() else ""
+    return full_path.read_text(encoding="utf-8", errors="replace") if full_path.exists() else ""
 
 
-def _skill_domain(skill_dir: Path) -> str:
+def _skill_domain(skill_dir: Path, text: str | None = None) -> str:
     """Extrae el dominio del frontmatter del skill.
 
     Args:
         skill_dir: Directorio del skill.
+        text: Contenido de ``SKILL.md`` ya leido; si es None se lee aqui.
 
     Returns:
         Dominio declarado o 'general'.
     """
-    fm_path = skill_dir / "SKILL.md"
-    if not fm_path.exists():
-        return "general"
-    text = fm_path.read_text(encoding="utf-8", errors="replace")
+    if text is None:
+        fm_path = skill_dir / "SKILL.md"
+        if not fm_path.exists():
+            return "general"
+        text = fm_path.read_text(encoding="utf-8", errors="replace")
     match = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
     if not match:
         return "general"
@@ -218,17 +225,21 @@ def _skill_domain(skill_dir: Path) -> str:
     return "general"
 
 
-def _edges_from_text(skill_dir: Path, skill_id: str) -> list[tuple[str, str, str]]:
+def _edges_from_text(
+    skill_dir: Path, skill_id: str, text: str | None = None
+) -> list[tuple[str, str, str]]:
     """Deriva aristas ENHANCES al detectar menciones de otros skills.
 
     Args:
         skill_dir: Directorio del skill.
         skill_id: Nombre del skill fuente.
+        text: Texto ya leido del skill; si es None se lee aqui.
 
     Returns:
         Aristas (source, target, ENHANCES) para skills mencionados.
     """
-    text = _skill_text(skill_dir)
+    if text is None:
+        text = _skill_text(skill_dir)
     mentioned = {name for name in _SKILL_REF_RE.findall(text) if name != skill_id}
     return [(skill_id, name, _EDGE_ENHANCES) for name in sorted(mentioned)]
 
@@ -256,7 +267,13 @@ def build_skill_graph(skills_dir: Path) -> SkillGraph:
     for skill_dir in sorted(skills_dir.iterdir()):
         if not skill_dir.is_dir() or skill_dir.name.startswith("_"):
             continue
-        text = _skill_text(skill_dir)
+        full_path = skill_dir / "SKILL.md"
+        full_text = (
+            full_path.read_text(encoding="utf-8", errors="replace")
+            if full_path.exists()
+            else ""
+        )
+        text = _skill_text(skill_dir, fallback_text=full_text)
         if not text:
             continue
         skill_id = skill_dir.name
@@ -264,9 +281,9 @@ def build_skill_graph(skills_dir: Path) -> SkillGraph:
             skill_id=skill_id,
             text=text,
             tokens=max(_MIN_NODE_TOKENS, estimate_tokens(text)),
-            domain=_skill_domain(skill_dir),
+            domain=_skill_domain(skill_dir, text=full_text or None),
         )
-        edges.extend(_edges_from_text(skill_dir, skill_id))
+        edges.extend(_edges_from_text(skill_dir, skill_id, text=text))
     return SkillGraph(nodes=nodes, edges=edges)
 
 
@@ -306,30 +323,44 @@ def _compute_idf(docs: list[list[str]]) -> dict[str, float]:
     }
 
 
-def _tfidf_scores(query: list[str], docs: list[list[str]]) -> list[float]:
+def _tfidf_scores(
+    query: list[str],
+    docs: list[list[str]],
+    *,
+    idf: dict[str, float] | None = None,
+    doc_tfs: list[Counter[str]] | None = None,
+    doc_norms: list[float] | None = None,
+) -> list[float]:
     """Puntua cada documento por similitud coseno TF-IDF con la query.
 
     Args:
         query: Query tokenizada.
         docs: Documentos tokenizados del corpus.
+        idf: IDF precomputado; si es None se calcula sobre ``docs``.
+        doc_tfs: Frecuencias por documento precomputadas.
+        doc_norms: Normas TF-IDF por documento precomputadas.
 
     Returns:
         Score TF-IDF por documento (0 si sin coincidencia).
     """
-    idf = _compute_idf(docs)
+    if idf is None:
+        idf = _compute_idf(docs)
+    if doc_tfs is None:
+        doc_tfs = [Counter(doc) for doc in docs]
+    if doc_norms is None:
+        doc_norms = [
+            math.sqrt(sum((tf[term] * idf.get(term, 0.0)) ** 2 for term in tf))
+            for tf in doc_tfs
+        ]
     query_tf = Counter(query)
     query_vec = {term: query_tf[term] * idf.get(term, 0.0) for term in query_tf}
     query_norm = math.sqrt(sum(value * value for value in query_vec.values()))
     scores: list[float] = []
-    for doc in docs:
-        doc_tf = Counter(doc)
+    for doc_tf, doc_norm in zip(doc_tfs, doc_norms):
         dot = sum(
             query_vec[term] * doc_tf[term] * idf.get(term, 0.0)
             for term in query_vec
             if term in doc_tf
-        )
-        doc_norm = math.sqrt(
-            sum((doc_tf[term] * idf.get(term, 0.0)) ** 2 for term in doc_tf)
         )
         denom = max(query_norm * doc_norm, 1e-9)
         scores.append(dot / denom)
@@ -338,6 +369,9 @@ def _tfidf_scores(query: list[str], docs: list[list[str]]) -> list[float]:
 
 def _pagerank(adjacency: dict[str, list[str]]) -> dict[str, float]:
     """PageRank estructural puro (power iteration, stdlib).
+
+    Construye la adyacencia inversa una sola vez: el coste por iteracion baja
+    de O(n·e) a O(n+e).
 
     Args:
         adjacency: Lista de adyacencia source -> targets.
@@ -349,16 +383,24 @@ def _pagerank(adjacency: dict[str, list[str]]) -> dict[str, float]:
     size = len(nodes)
     if size == 0:
         return {}
+    out_degree = {node_id: len(adjacency.get(node_id) or ()) for node_id in nodes}
+    reverse: dict[str, list[str]] = {node_id: [] for node_id in nodes}
+    for source, targets in adjacency.items():
+        if source not in reverse:
+            continue
+        for target in set(targets):
+            if target in reverse:
+                reverse[target].append(source)
     ranks = {node_id: 1.0 / size for node_id in nodes}
     for _ in range(_PR_MAX_ITERATIONS):
+        dangling = sum(
+            ranks[node_id] for node_id in nodes if out_degree[node_id] == 0
+        )
         new_ranks: dict[str, float] = {}
-        dangling = sum(ranks[node_id] for node_id, targets in adjacency.items()
-                       if not targets)
         for node_id in nodes:
             incoming = sum(
-                ranks[source] / max(1, len(targets))
-                for source, targets in adjacency.items()
-                if node_id in targets
+                ranks[source] / max(1, out_degree[source])
+                for source in reverse[node_id]
             )
             new_ranks[node_id] = (
                 (1 - _PR_DAMPING) / size
@@ -406,6 +448,22 @@ class TokenBudgetRouter:
     ) -> None:
         self._graph = graph
         self._token_estimator = token_estimator
+        self._node_ids = list(graph.nodes)
+        self._doc_tokens = [
+            _tokenize(graph.nodes[node_id].text) for node_id in self._node_ids
+        ]
+        self._idf = _compute_idf(self._doc_tokens)
+        self._doc_tfs = [Counter(doc) for doc in self._doc_tokens]
+        self._doc_norms = [
+            math.sqrt(
+                sum(
+                    (tf[term] * self._idf.get(term, 0.0)) ** 2
+                    for term in tf
+                )
+            )
+            for tf in self._doc_tfs
+        ]
+        self._pagerank = _pagerank(graph.adjacency())
 
     def rank(self, query: str) -> dict[str, float]:
         """Puntua todos los nodos por relevancia combinada.
@@ -416,19 +474,21 @@ class TokenBudgetRouter:
         Returns:
             Dict skill_id -> score combinado normalizado [0, 1].
         """
-        node_ids = list(self._graph.nodes)
-        if not node_ids:
+        if not self._node_ids:
             return {}
-        docs = [_tokenize(self._graph.nodes[node_id].text) for node_id in node_ids]
-        tfidf = _tfidf_scores(_tokenize(query), docs)
-        adjacency = self._graph.adjacency()
-        pagerank = _pagerank(adjacency)
+        tfidf = _tfidf_scores(
+            _tokenize(query),
+            self._doc_tokens,
+            idf=self._idf,
+            doc_tfs=self._doc_tfs,
+            doc_norms=self._doc_norms,
+        )
         combined = {
             node_id: (
                 _TFIDF_WEIGHT * tfidf[idx]
-                + _PR_WEIGHT * pagerank.get(node_id, 0.0)
+                + _PR_WEIGHT * self._pagerank.get(node_id, 0.0)
             )
-            for idx, node_id in enumerate(node_ids)
+            for idx, node_id in enumerate(self._node_ids)
         }
         return _normalize(combined)
 

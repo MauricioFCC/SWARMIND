@@ -53,6 +53,7 @@ from harness.memory_rag.knowledge_catalog_usage import (
     usage_path,
 )
 from harness.memory_rag.knowledge_graph import KnowledgeGraph
+from harness.memory_rag.ruscadb import RuscadbError
 
 logger = logging.getLogger(__name__)
 
@@ -199,7 +200,7 @@ class KnowledgeCatalog:
         for entry in entries:
             try:
                 self._index_one(entry, report)
-            except (ValueError, OSError) as exc:
+            except (ValueError, OSError, RuscadbError) as exc:
                 report["errors"].append(f"{entry.url}: {exc}")
         self._save_index()
         self._save_graph()

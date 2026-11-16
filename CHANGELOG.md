@@ -1,3 +1,43 @@
+## [11.98] - 2026-11-12
+
+### Fixed
+- **RuscaDB perdía filas en silencio**: el buffer pool estaba fijado en 8
+  marcos y, al insertar fila a fila, el motor devolvía
+  `buffer pool lleno: capacidad 8`; medido 231/300 filas persistidas (23 % de
+  pérdida). El pool ahora es configurable (`MemoryConfig.ruscadb_pool_capacity`,
+  env `RUSCADB_POOL_CAPACITY`, default 64) y con ≥32 se persisten 300/300 y
+  1000/1000.
+- `RuscaDBStore.insert()` añadía el id lógico **antes** de insertar, por lo que
+  devolvía ids de filas no persistidas. Ahora el id se añade solo tras el
+  éxito; si alguna fila falla, se agrega el conteo y se lanza
+  `RuscadbError(RC_DOMAIN_ERROR)` con WHAT/WHY/WHERE. `knowledge_catalog` captura
+  el error por entrada en lugar de abortar el ingest completo.
+
+### Changed
+- `list_collections()` usa caché (O(1) por insert): no llama `list_tables` si
+  ya conoce las colecciones; `refresh=True` fuerza la consulta FFI.
+- `TokenBudgetRouter` precomputa en `__init__` tokens de documentos, IDF, TF por
+  documento, normas y PageRank; `rank()` solo tokeniza la query.
+- `_pagerank()` usa adyacencia inversa: O(iter·(n+e)) en vez de O(iter·n·e).
+- `build_skill_graph()` lee como máximo una vez `SKILL.md` y una vez
+  `SKILL.min.md` por skill (antes 3 lecturas).
+- `/frontera` y la sección "Ciclo Frontera" de `AGENTS.md` pasan a formato terse
+  con tabla de fases; la skill `frontier-engineering` queda como SSOT.
+
+### Performance
+- Router real (50 skills, 200 queries): `p50` 19.703 ms → **0.103 ms**
+  (−99,5 %), `total` 4 081.6 ms → **20.9 ms**.
+- Inserción con pool corregido: 300/300 filas (antes 231/300). El batching se
+  descartó con medición: 3.177 s fila a fila vs 3.425 s en lote (0.93x).
+
+### Added
+- Research `docs/research/frontier-2026-11-12-runtime-go-ruscadb.md` (H1/H2/H3,
+  gap analysis, fuentes y lo no aplicado) y spec
+  `docs/specs/runtime-optimization-go-2026-11.md` (AC-1…AC-10).
+- Tests de regresión: 300 inserts sin pérdida, fallo explícito sin ids fantasma,
+  validación de pool, caché de catálogo, equivalencia de PageRank/`rank` con
+  oráculo congelado y lectura única por archivo de skill.
+
 ## [11.97] - 2026-11-12
 
 ### Added

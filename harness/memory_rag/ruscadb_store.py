@@ -33,6 +33,7 @@ from typing import Any
 import numpy as np
 
 from .ruscadb import (
+    RC_DOMAIN_ERROR,
     RuscadbError,
     alter_table_add_column,
     capabilities,
@@ -182,6 +183,7 @@ class RuscaDBStore:
         index_governance: bool | None = None,
         oversample_tuner: Any = None,
         calibrate_bq: bool | None = None,
+        pool_capacity: int | None = None,
     ) -> None:
         """Abre la base y garantiza las colecciones base.
 
@@ -204,6 +206,10 @@ class RuscaDBStore:
             oversample_tuner: ``OversampleTuner`` opcional para el KNN binario.
             calibrate_bq: Muestrea recalls y ajusta el oversample
                 (env ``SWARMIND_BQ_CALIBRATE=1``).
+            pool_capacity: Marcos del buffer pool (>= 1). Si es None se toma de
+                ``config.ruscadb_pool_capacity``, luego de
+                ``RUSCADB_POOL_CAPACITY`` y por defecto 64. Un pool pequeño
+                provoca ``buffer pool lleno`` y pérdida de filas.
         """
         if db_path is None and config is None:
             try:
@@ -267,10 +273,22 @@ class RuscaDBStore:
         self._legacy_tables: set[str] = set()
         #: Tablas ya migradas/verificadas con columnas de gobernanza.
         self._governance_ready: set[str] = set()
+        if pool_capacity is None:
+            pool_capacity = getattr(config, "ruscadb_pool_capacity", None)
+        if pool_capacity is None:
+            pool_capacity = int(os.environ.get("RUSCADB_POOL_CAPACITY", "64") or 64)
+        pool_capacity = int(pool_capacity)
+        if pool_capacity < 1:
+            raise ValueError(
+                f"WHAT: pool_capacity invalido: {pool_capacity}"
+                f"WHY: el buffer pool necesita al menos un marco"
+                f"WHERE: RuscaDBStore.__init__()"
+            )
+        self._pool_capacity = pool_capacity
         with _OPEN_LOCK:
             self._handle = rdb_open_opts(
                 self.db_path,
-                pool_capacity=8,
+                pool_capacity=pool_capacity,
                 blob_path=None if readonly else self._blob_path,
                 readonly=readonly,
             )
@@ -304,8 +322,18 @@ class RuscaDBStore:
     # Catalog
     # ------------------------------------------------------------------
 
-    def list_collections(self) -> list[str]:
-        """Lista las colecciones visibles (excluye tablas internas ``_*``)."""
+    def list_collections(self, refresh: bool = False) -> list[str]:
+        """Lista las colecciones visibles (excluye tablas internas ``_*``).
+
+        Args:
+            refresh: Si True fuerza una consulta FFI ``list_tables``; si False
+                y la cache ya esta poblada, devuelve la cache (O(1)).
+
+        Returns:
+            Nombres de colecciones ordenados.
+        """
+        if self._collections and not refresh:
+            return sorted(self._collections)
         try:
             names = list_tables(self._handle)
             if names:
@@ -354,6 +382,7 @@ class RuscaDBStore:
     def _ensure_collections(self) -> None:
         """Crea las colecciones base y la tabla interna de mapeo (idempotente)."""
         existing = set(list_tables(self._handle))
+        self._collections = {name for name in existing if not name.startswith("_")}
         if "_rid_map" not in existing:
             try:
                 create_table(
@@ -438,7 +467,11 @@ class RuscaDBStore:
             texts: Texto indexable explicito por fila (opcional).
 
         Returns:
-            Lista de ids logicos insertados.
+            Lista de ids logicos de las filas persistidas.
+
+        Raises:
+            RuscadbError: Si alguna fila no persistio; el mensaje agrega el
+                conteo, el primer detalle y no se devuelven ids fantasma.
         """
         _safe_ident(collection)
         if collection not in self.list_collections():
@@ -446,12 +479,13 @@ class RuscaDBStore:
         column = self._text_column(collection)
         now = now or _dt.datetime.now(_dt.UTC).isoformat()
         ids: list[str] = []
+        failures: list[str] = []
         arr = np.asarray(vectors, dtype=np.float32)
         if arr.ndim == 1:
             arr = arr.reshape(1, -1)
-        for i in range(arr.shape[0]):
+        total = arr.shape[0]
+        for i in range(total):
             rid = str(uuid.uuid4())
-            ids.append(rid)
             meta = dict(metadata[i]) if i < len(metadata) else {}
             # Write gate (SSGM / MAPLE-Guard): valida antes de etiquetar.
             meta = self._apply_write_gate(collection, meta)
@@ -499,11 +533,27 @@ class RuscaDBStore:
                 rid_rusca = self._insert_row(collection, record)
                 if rid_rusca:
                     self._map_rid(collection, rid, rid_rusca)
+                ids.append(rid)
             except RuscadbError as exc:
-                logger.warning("insert en '%s' fallo: %s", collection, exc)
+                failures.append(f"fila {i} ({rid}): {exc}")
+                logger.debug("insert en '%s' fallo: %s", collection, exc)
         self._commit()
         self.invalidate_cache(collection)
         self._maybe_reconcile()
+        if failures:
+            logger.warning(
+                "insert en '%s': %d/%d filas no persistieron",
+                collection,
+                len(failures),
+                total,
+            )
+            raise RuscadbError(
+                RC_DOMAIN_ERROR,
+                f"WHAT: {len(failures)}/{total} inserts fallaron en '{collection}'"
+                f"WHY: el motor rechazo filas (p. ej. buffer pool lleno) y no se"
+                f" devuelven ids de filas no persistidas"
+                f"WHERE: RuscaDBStore.insert(); primer fallo: {failures[0]}",
+            )
         return ids
 
     @staticmethod

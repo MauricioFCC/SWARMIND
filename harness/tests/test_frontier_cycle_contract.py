@@ -97,6 +97,11 @@ class TestFrontierCommand:
         assert "publish.py" in text
         assert "docs/research/frontier-" in text
 
+    def test_comando_es_terso(self) -> None:
+        """El comando no duplica la skill completa (presupuesto de tokens)."""
+        text = COMMAND.read_text(encoding="utf-8")
+        assert len(text) <= 1200, f"comando {len(text)} chars > 1200"
+
 
 class TestAgentsHook:
     """`AGENTS.md` se inyecta en cada sesión: es la superficie de uso constante."""
@@ -116,6 +121,13 @@ class TestAgentsHook:
         for marker in PHASE_MARKERS:
             assert marker in section, f"fase ausente en AGENTS.md: {marker}"
         assert "publish.py" in section
+
+    def test_seccion_es_tersa(self) -> None:
+        """La sección inyectada cada sesión no duplica la skill completa."""
+        text = AGENTS_MD.read_text(encoding="utf-8")
+        section = text.split("## Ciclo Frontera (petición explícita)", 1)[1]
+        section = section.split("\n## ", 1)[0]
+        assert len(section) <= 1200, f"sección {len(section)} chars > 1200"
 
 
 class TestProjectConfigSync:

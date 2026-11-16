@@ -47,35 +47,23 @@ nunca afirma, verifica**. Al completar cualquier cambio:
 
 ## Ciclo Frontera (petición explícita)
 
-Cuando el usuario pida algo como:
+Si el usuario pide «carga skills/agentes + **<tarea>**, research SOTA,
+`O(n²)→O(n)`, spec/SDD, TDD adversarial, docs», ejecuta el ciclo completo. Atajo:
+`/frontera <tarea>`. Procedimiento canónico (SSOT):
+`.opencode/skills/frontier-engineering/SKILL.md`.
 
-> "Carga skills, agentes, **<tarea explícita>**. Investigación web frontera,
-> estado del arte; papers, artículos, técnicas, arquitecturas óptimas,
-> algoritmos, complejidad O(n²)→O(n), fórmulas; spec (mejorar/reimplementar si
-> aplica), SDD, TDD adversarial mutante, actualiza Docs."
+| Fase | Gate |
+|---|---|
+| **Load** | manifest de skills/agentes/specs/memoria + IDP (auditar antes de reimplementar) |
+| **Research** | `docs/research/frontier-<fecha>-<tema>.md`; ≥3 hipótesis, URLs o `[UNVERIFIED]`, gap analysis |
+| **Design** | trade-offs, fórmulas y complejidad `O(·)` antes→después |
+| **Spec** | `docs/specs/` con ACs testeables; solo si `Δquality > 0 ∧ Δcost < 0` |
+| **TDD** | oráculo congelado, rojo→verde, PBT + mutantes; gates: ruff, vulture, arquitectura+ratchet, complejidad, ruff-ratchet, preview, pep649, skills |
+| **Docs** | CHANGELOG + roadmap + MEJORAS + ADR; commit en español y `python scripts/publish.py` |
 
-…se ejecuta el ciclo completo, no una respuesta superficial. Atajo en OpenCode:
-`/frontera <tarea explícita>`. Procedimiento canónico: skill
-`frontier-engineering` (`.opencode/skills/frontier-engineering/SKILL.md`).
+Cierre obligatorio: evidencia real (pytest, exit codes) y declaración honesta de
+lo no aplicado y por qué.
 
-Fases (en orden, sin saltar gates):
-
-1. **Load** — manifest de skills/agentes/specs/memoria; IDP: si existe, mejorar
-   y reimplementar solo con mejora medible (`Δquality > 0 ∧ Δcost < 0`).
-2. **Research SOTA** — web + papers; paper trail en
-   `docs/research/frontier-<fecha>-<tema>.md` con URLs leídas o `[UNVERIFIED]`;
-   ≥3 hipótesis comparadas.
-3. **Design** — arquitectura + trade-offs + fórmulas y complejidad `O(·)`
-   antes→después.
-4. **Spec/SDD** — spec nueva o diff con rationale; ACs testeables.
-5. **TDD adversarial mutante** — oráculo congelado, rojo→verde, PBT, mutantes;
-   el `O(n²)→O(n)` se **mide** (gate N/2N/4N + test de equivalencia).
-6. **Docs** — CHANGELOG + roadmap + MEJORAS + ADR; commit convencional en
-   español y `python scripts/publish.py`.
-
-Cierre obligatorio: gates verdes con evidencia real (pytest, ruff, vulture,
-arquitectura+ratchet, complejidad, ruff-ratchet, preview, pep649, skills) y
-declaración honesta de lo no aplicado y por qué.
 
 ## Catálogo de conocimiento (MEM — obligatorio)
 

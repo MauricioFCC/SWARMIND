@@ -8,7 +8,11 @@ import tempfile
 import pytest
 
 try:
-    from harness.memory_rag.ruscadb import load_library
+    from harness.memory_rag.ruscadb import (
+        RC_DOMAIN_ERROR,
+        RuscadbError,
+        load_library,
+    )
     load_library()
     _RUSCADB_AVAILABLE = True
 except Exception:  # noqa: BLE001
@@ -16,6 +20,9 @@ except Exception:  # noqa: BLE001
 
 pytestmark = pytest.mark.skipif(not _RUSCADB_AVAILABLE, reason="RuscaDB C-ABI dll not available")
 
+import numpy as np
+
+from harness.memory_rag import ruscadb_store
 from harness.memory_rag.ruscadb_store import RuscaDBStore
 
 
@@ -157,5 +164,77 @@ def test_invalid_identifier_rejected(tmp_path):
             store.create_collection("docs; DROP TABLE memory")
         with pytest.raises(ValueError):
             store.insert("a b", [[1.0]], [{}])
+    finally:
+        store.close()
+
+
+def test_pool_capacity_invalido_raises(tmp_path):
+    """pool_capacity < 1 falla explicito (WHAT/WHY/WHERE)."""
+    with pytest.raises(ValueError, match="WHAT:"):
+        RuscaDBStore(db_path=str(tmp_path / "bad.db"), pool_capacity=0)
+
+
+def test_pool_capacity_desde_env(tmp_path, monkeypatch):
+    """RUSCADB_POOL_CAPACITY configura el buffer pool."""
+    monkeypatch.setenv("RUSCADB_POOL_CAPACITY", "32")
+    store = RuscaDBStore(db_path=str(tmp_path / "env.db"))
+    try:
+        assert store._pool_capacity == 32
+    finally:
+        store.close()
+
+
+def test_insert_many_rows_no_pierde_filas(tmp_path):
+    """300 inserts fila a fila persisten 300/300 con el pool por defecto."""
+    store = RuscaDBStore(db_path=str(tmp_path / "many.db"))
+    try:
+        store.create_collection("many")
+        vectors = np.ones((300, 4), dtype=np.float32)
+        metadata = [{"n": i} for i in range(300)]
+        ids = store.insert("many", vectors, metadata)
+        assert len(ids) == 300
+        assert store.get_collection_stats("many")["count"] == 300
+    finally:
+        store.close()
+
+
+def test_insert_falla_explicito_sin_ids_fantasma(tmp_path, monkeypatch):
+    """Un fallo del motor lanza RuscadbError y no devuelve ids fantasma."""
+    store = RuscaDBStore(db_path=str(tmp_path / "partial.db"))
+    original = store._insert_row
+    calls = {"n": 0}
+
+    def flaky(collection, record):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise RuscadbError(RC_DOMAIN_ERROR, "fallo simulado")
+        return original(collection, record)
+
+    monkeypatch.setattr(store, "_insert_row", flaky)
+    try:
+        with pytest.raises(RuscadbError, match="WHAT:"):
+            store.insert("partial", np.ones((3, 4)), [{"n": i} for i in range(3)])
+        assert store.get_collection_stats("partial")["count"] == 2
+    finally:
+        store.close()
+
+
+def test_list_collections_usa_cache(tmp_path, monkeypatch):
+    """list_collections no toca FFI si la cache esta poblada; refresh=True si."""
+    store = RuscaDBStore(db_path=str(tmp_path / "cache.db"))
+    store.create_collection("cached")
+    calls = {"n": 0}
+    original = ruscadb_store.list_tables
+
+    def counting(handle):
+        calls["n"] += 1
+        return original(handle)
+
+    monkeypatch.setattr(ruscadb_store, "list_tables", counting)
+    try:
+        assert "cached" in store.list_collections()
+        assert calls["n"] == 0
+        assert "cached" in store.list_collections(refresh=True)
+        assert calls["n"] == 1
     finally:
         store.close()
