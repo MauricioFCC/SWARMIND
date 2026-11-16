@@ -1,3 +1,33 @@
+## [11.99] - 2026-11-16
+
+### Added
+- **Caché de resultados cableada de verdad**: `search()` y
+  `full_text_search()` leen por `_cached_rows()`, que preserva la semántica
+  `RuscadbError → []` (antes `cached_execute()` tenía 0 llamadas de producción).
+  `QueryResultCache.stats()` expone `hits`/`misses`/`expired`.
+- `harness/observability/latency.py`: `LatencyWindow`, ventana acotada
+  (default 256 muestras) y thread-safe con `count/mean/p50/p95/p99/max` por
+  nearest-rank. `RuscaDBStore.latency_stats()` publica percentiles en ms para
+  `insert`, `search` y `full_text_search`.
+
+### Changed
+- Metadata se serializa como JSON compacto (`separators=(",", ":")`) en los
+  cuatro puntos de escritura del store (insert, update, blob, semantic cache).
+- `update_records`, `attach_blob` y `delete_collection` invalidan la caché de
+  su colección: un hit ya no puede servir metadata vieja.
+
+### Performance
+- Metadata por fila: −19.2 % en documentos mínimos, −8.3 % en skill típico,
+  −4.9 % en memoria con texto largo (medido con `json.dumps` sobre 4 formas).
+- Cache hit: la consulta no vuelve a cruzar la FFI del motor; ahorro = coste de
+  la consulta KNN/FTS evitada (no se declara un % sin workload repetitivo real).
+
+### Tests
+- `test_query_cache.py` (hit, miss, TTL→`expired`, invalidación por colección),
+  `test_latency.py` (percentiles nearest-rank, ventana acotada, muestras
+  inválidas, capacidad) y 3 casos en `test_ruscadb_store.py` (metadata compacta
+  persistida, miss→hit→invalidación, `latency_stats`).
+
 ## [11.98] - 2026-11-12
 
 ### Fixed

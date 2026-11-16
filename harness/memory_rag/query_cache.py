@@ -17,6 +17,9 @@ class QueryResultCache:
         self._ttl = ttl_sec
         self._store: dict[str, tuple[float, Any]] = {}
         self._collection_keys: dict[str, set[str]] = {}
+        self._hits = 0
+        self._misses = 0
+        self._expired = 0
 
     def key(self, sql: str, params: tuple[Any, ...] = ()) -> str:
         """Genera la clave de cache para una query."""
@@ -24,15 +27,27 @@ class QueryResultCache:
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     def get(self, sql: str, params: tuple[Any, ...] = ()) -> Any | None:
-        """Devuelve el resultado cacheado o None si expiro/no existe."""
+        """Devuelve el resultado cacheado o None si expiro/no existe.
+
+        Args:
+            sql: Consulta RQL usada como clave.
+            params: Parametros que completan la clave.
+
+        Returns:
+            El valor cacheado vigente, o ``None`` en miss/expiracion.
+        """
         k = self.key(sql, params)
         entry = self._store.get(k)
         if entry is None:
+            self._misses += 1
             return None
         ts, value = entry
         if (time.monotonic() - ts) > self._ttl:
             del self._store[k]
+            self._expired += 1
+            self._misses += 1
             return None
+        self._hits += 1
         return value
 
     def set(self, sql: str, value: Any, params: tuple[Any, ...] = (), collection: str | None = None) -> None:
@@ -58,7 +73,19 @@ class QueryResultCache:
         self._collection_keys.clear()
 
     def stats(self) -> dict[str, int]:
-        """Estadisticas basicas."""
-        return {"entries": len(self._store), "collections": len(self._collection_keys)}
+        """Estadisticas de uso de la cache.
+
+        Returns:
+            ``entries`` y ``collections`` vigentes, mas los contadores
+            acumulados ``hits``/``misses``/``expired`` (``expired`` es un
+            subconjunto de ``misses``).
+        """
+        return {
+            "entries": len(self._store),
+            "collections": len(self._collection_keys),
+            "hits": self._hits,
+            "misses": self._misses,
+            "expired": self._expired,
+        }
 
 __all__ = ["QueryResultCache"]

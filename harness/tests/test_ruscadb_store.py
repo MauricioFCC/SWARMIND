@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import tempfile
 
@@ -238,3 +239,46 @@ def test_list_collections_usa_cache(tmp_path, monkeypatch):
         assert calls["n"] == 1
     finally:
         store.close()
+
+def test_metadata_se_serializa_compacta(store):
+    """La metadata persistida no lleva espacios de JSON (menos bytes/fila)."""
+    store.insert("compact", [[0.0, 0.0]], [{"title": "gato casero"}])
+    rows = store.execute("SELECT * FROM compact")
+    parsed = json.loads(rows) if isinstance(rows, str) else rows
+    raw = store._unwrap_scalar(parsed[0]["metadata"])
+    assert isinstance(raw, str), "el motor debe devolver la metadata como Text"
+    assert ": " not in raw and ", " not in raw
+    assert json.loads(raw)["title"] == "gato casero"
+
+
+def test_search_usa_cache_e_invalida_al_actualizar(store):
+    """Dos busquedas identicas: miss + hit; update invalida la cache."""
+    store.insert("cache_test", [[1.0, 0.0]], [{"text": "uno"}])
+    store.search("cache_test", [1.0, 0.0], top_k=1)
+    first = store.query_cache_stats()
+    assert first["misses"] == 1
+    assert first["hits"] == 0
+
+    store.search("cache_test", [1.0, 0.0], top_k=1)
+    second = store.query_cache_stats()
+    assert second["hits"] == 1
+
+    hit = store.search("cache_test", [1.0, 0.0], top_k=1)[0]
+    store.update_records(
+        "cache_test",
+        [{"id": hit["id"], "metadata": {**hit["metadata"], "text": "dos"}}],
+    )
+    assert store.query_cache_stats()["entries"] == 0
+
+
+def test_latency_stats_por_operacion(store):
+    """insert/search/fts registran muestras con percentiles coherentes."""
+    store.insert("lat", [[0.0, 1.0]], [{"text": "hola"}])
+    store.search("lat", [0.0, 1.0], top_k=1)
+    store.full_text_search("lat", "hola")
+
+    stats = store.latency_stats()
+    assert set(stats) == {"insert", "search", "full_text_search"}
+    for operation in stats.values():
+        assert operation["count"] >= 1
+        assert operation["p95"] >= operation["p50"] >= 0.0

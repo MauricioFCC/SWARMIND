@@ -5,8 +5,23 @@
 > **Regla RSV (base_principles v4.0.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
-## Estado Actual (2026-11-12)
+## Estado Actual (2026-11-16)
 
+### Estado 2026-11-16 (Ciclo 11.99 — specs pendientes: caché real, metadata compacta, percentiles)
+- **Caché de resultados cableada**: `search()` y `full_text_search()` leen por
+  `_cached_rows()` (antes `cached_execute()` tenía 0 llamadas de producción) y
+  conservan la degradación `RuscadbError → []`. `update_records`, `attach_blob`
+  y `delete_collection` invalidan la colección; `stats()` expone
+  `hits`/`misses`/`expired`.
+- **Metadata compacta**: `_JSON_COMPACT` (`separators=(",", ":")`) en los cuatro
+  puntos de escritura; −19,2 % / −8,3 % / −4,9 % de bytes según la forma del
+  documento.
+- **Percentiles por operación**: `harness/observability/latency.py`
+  (`LatencyWindow`, ventana acotada y thread-safe) +
+  `RuscaDBStore.latency_stats()` con p50/p95/p99 para insert/search/fts.
+- **Descartado con motivo**: timestamps epoch-int y ULID (rompen esquema y
+  resolución de aristas); cachear `classify_complexity` (cuesta más que
+  recalcular).
 ### Estado 2026-11-12 (Ciclo 11.98 — runtime Go-simplicity: RuscaDB real y tokens)
 - **Corrección**: el buffer pool de RuscaDB estaba fijo en 8 marcos y perdía
   23 % de las filas al insertar fila a fila (231/300). Ahora es configurable

@@ -24,6 +24,7 @@ import math
 import os
 import re
 import threading
+import time
 
 _OPEN_LOCK = threading.RLock()
 import uuid
@@ -31,6 +32,8 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+from harness.observability.latency import LatencyWindow
 
 from .ruscadb import (
     RC_DOMAIN_ERROR,
@@ -94,6 +97,13 @@ _IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 #: Constante de Reciprocal Rank Fusion (Cormack et al., 2009).
 _RRF_K = 60
+
+#: Opciones de serializacion compacta de metadata (sin espacios): menos bytes
+#: por fila sin cambiar el contenido logico del documento JSON.
+_JSON_COMPACT: dict[str, Any] = {"ensure_ascii": False, "separators": (",", ":")}
+
+#: Operaciones con ventana de latencia (Spec performance-optimization).
+_LATENCY_OPS = ("insert", "search", "full_text_search")
 
 
 def _safe_ident(name: str) -> str:
@@ -299,6 +309,11 @@ class RuscaDBStore:
 
         self._query_cache = QueryResultCache(ttl_sec=300.0)
         self._query_cache_enabled = True
+        # Latencias por operacion (Spec performance-optimization): ventanas
+        # acotadas para p50/p95/p99 sin crecimiento sin limite.
+        self._latency_windows: dict[str, LatencyWindow] = {
+            op: LatencyWindow() for op in _LATENCY_OPS
+        }
         # Metricas del cache semantico persistente (Spec ruscadb-semantic-cache).
         self._cache_hits = 0
         self._cache_misses = 0
@@ -473,6 +488,7 @@ class RuscaDBStore:
             RuscadbError: Si alguna fila no persistio; el mensaje agrega el
                 conteo, el primer detalle y no se devuelven ids fantasma.
         """
+        started = time.perf_counter()
         _safe_ident(collection)
         if collection not in self.list_collections():
             self.create_collection(collection)
@@ -504,7 +520,7 @@ class RuscaDBStore:
                 logger.warning("memory_guard: entrada en cuarentena (posible poisoning)")
             scalars: dict[str, Any] = {
                 "id": rid,
-                "metadata": json.dumps(meta, ensure_ascii=False),
+                "metadata": json.dumps(meta, **_JSON_COMPACT),
                 "created_at": now,
             }
             # Columnas de gobernanza indexables (tablas nuevas). En tablas
@@ -540,6 +556,7 @@ class RuscaDBStore:
         self._commit()
         self.invalidate_cache(collection)
         self._maybe_reconcile()
+        self._record_latency("insert", started)
         if failures:
             logger.warning(
                 "insert en '%s': %d/%d filas no persistieron",
@@ -706,7 +723,7 @@ class RuscaDBStore:
             meta = dict(rec.get("metadata") or {})
             text = rec.get("text") or self._derive_text(meta)
             scalars = {
-                "metadata": json.dumps(meta, ensure_ascii=False),
+                "metadata": json.dumps(meta, **_JSON_COMPACT),
                 "text": text,
             }
             rid = meta.get("_rid")
@@ -718,6 +735,7 @@ class RuscaDBStore:
             except RuscadbError as exc:
                 logger.warning("update en '%s' fallo: %s", collection, exc)
         self._commit()
+        self.invalidate_cache(collection)
 
     def record_access(
         self, collection: str, ids: list[str], now: str | None = None
@@ -1164,22 +1182,26 @@ class RuscaDBStore:
             Lista de ``{id, metadata, score, trust_tier}`` ordenada por cercania.
         """
         qv = np.asarray(query_vector, dtype=np.float32).tolist()
+        sql = (
+            f"SELECT * FROM {_safe_ident(collection)} "  # nosec B608
+            f"KNN embedding <|{int(top_k)}|> {json.dumps(qv)}"
+        )
+        started = time.perf_counter()
         try:
-            rows = execute(
-                self._handle,
-                f"SELECT * FROM {_safe_ident(collection)} "  # nosec B608
-                f"KNN embedding <|{int(top_k)}|> {json.dumps(qv)}",
-            )
+            rows = self._cached_rows(sql, collection)
         except RuscadbError as exc:
+            self._record_latency("search", started)
             logger.warning("search en '%s' fallo: %s", collection, exc)
             return []
         out = self._parse_rows(rows)
         out = [item for item in out if self._matches_filters(item, kwargs.get("filters"))]
         for rank, item in enumerate(out):
             item["score"] = 1.0 / (rank + 1)
-        return self._apply_trust_and_recency(
+        result = self._apply_trust_and_recency(
             out, top_k, **self._retrieval_options(kwargs, collection)
         )
+        self._record_latency("search", started)
+        return result
 
     def _binary_factor(self, collection: str, oversample: int | None) -> int:
         """Oversample efectivo: explicito o el ajustado por el tuner."""
@@ -1438,22 +1460,26 @@ class RuscaDBStore:
         if not query.strip():
             return []
         column = self._text_column(collection)
+        sql = (
+            f"SELECT * FROM {_safe_ident(collection)} "  # nosec B608
+            f"WHERE MATCH({column}, '{_escape_literal(query)}')"
+        )
+        started = time.perf_counter()
         try:
-            rows = execute(
-                self._handle,
-                f"SELECT * FROM {_safe_ident(collection)} "  # nosec B608
-                f"WHERE MATCH({column}, '{_escape_literal(query)}')",
-            )
+            rows = self._cached_rows(sql, collection)
         except RuscadbError as exc:
+            self._record_latency("full_text_search", started)
             logger.warning("full_text_search en '%s' fallo: %s", collection, exc)
             return []
         out = self._parse_rows(rows)
         out = [item for item in out if self._matches_filters(item, kwargs.get("filters"))]
         for rank, item in enumerate(out):
             item["score"] = 1.0 / (rank + 1)
-        return self._apply_trust_and_recency(
+        result = self._apply_trust_and_recency(
             out, top_k, **self._retrieval_options(kwargs, collection)
         )
+        self._record_latency("full_text_search", started)
+        return result
 
     def hybrid_search(
         self,
@@ -1703,6 +1729,32 @@ class RuscaDBStore:
             logger.warning("execute fallo: %s", exc)
             return None
 
+    def _cached_rows(self, sql: str, collection: str) -> Any:
+        """Ejecuta una lectura RQL con cache de resultados por coleccion.
+
+        A diferencia de ``cached_execute``, propaga ``RuscadbError`` para que
+        cada llamador conserve su degradacion (``search``/``full_text_search``
+        devuelven ``[]``).
+
+        Args:
+            sql: Consulta RQL de solo lectura.
+            collection: Coleccion a la que pertenece el resultado.
+
+        Returns:
+            Filas crudas del motor, con la misma forma que ``execute``.
+
+        Raises:
+            RuscadbError: Si el motor falla.
+        """
+        if not self._query_cache_enabled:
+            return execute(self._handle, sql)
+        cached = self._query_cache.get(sql)
+        if cached is not None:
+            return cached
+        rows = execute(self._handle, sql)
+        self._query_cache.set(sql, rows, collection=collection)
+        return rows
+
     def cached_execute(self, sql: str, collection: str | None = None) -> Any:
         """Ejecuta RQL con cache de resultados (Spec ruscadb-query-cache).
 
@@ -1736,6 +1788,27 @@ class RuscaDBStore:
     def query_cache_stats(self) -> dict[str, int]:
         """Estadisticas de la cache de resultados."""
         return self._query_cache.stats()
+
+    def _record_latency(self, operation: str, started: float) -> None:
+        """Registra la latencia de una operacion medida con ``perf_counter``.
+
+        Args:
+            operation: Operacion instrumentada (``insert``, ``search``,
+                ``full_text_search``).
+            started: Marca de ``time.perf_counter()`` tomada al iniciar.
+        """
+        window = self._latency_windows.get(operation)
+        if window is not None:
+            window.observe((time.perf_counter() - started) * 1000.0)
+
+    def latency_stats(self) -> dict[str, dict[str, float | int]]:
+        """Percentiles de latencia por operacion en milisegundos.
+
+        Returns:
+            ``{operacion: {count, mean, p50, p95, p99, max}}`` para las
+            operaciones instrumentadas.
+        """
+        return {op: window.stats() for op, window in self._latency_windows.items()}
 
     # ------------------------------------------------------------------
     # Multimodal (blob store content-addressed)
@@ -1803,9 +1876,10 @@ class RuscaDBStore:
                 self._handle,
                 collection,
                 rid,
-                {"metadata": json.dumps(meta, ensure_ascii=False)},
+                {"metadata": json.dumps(meta, **_JSON_COMPACT)},
             )
             self._commit()
+            self.invalidate_cache(collection)
         except RuscadbError as exc:
             logger.warning("attach_blob fallo: %s", exc)
         return blob_hash
@@ -1911,6 +1985,7 @@ class RuscaDBStore:
         except RuscadbError as exc:
             logger.debug("delete_collection '%s' fallo: %s", name, exc)
         self._collections.discard(name)
+        self.invalidate_cache(name)
 
     def clear(self) -> None:
         """Vacia todas las colecciones visibles y el mapeo interno."""
@@ -2228,7 +2303,7 @@ class RuscaDBStore:
                     "scalars": {
                         "id": key,
                         "text": payload,
-                        "metadata": json.dumps(meta, ensure_ascii=False),
+                        "metadata": json.dumps(meta, **_JSON_COMPACT),
                         "created_at": meta["cached_at"],
                         "source": "cache",
                         "trust_tier": "derived",

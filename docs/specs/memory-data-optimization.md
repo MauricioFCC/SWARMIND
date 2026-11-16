@@ -1,9 +1,26 @@
 # Spec — Optimizacion de Memoria y Datos (RuscaDB + Token Economics)
 
-> Estado: proposed — Dueño: harness/memory_rag — Frontera: 2026-10.
+> Estado: **implementado parcial** (ciclo 11.99, 2026-11-16) — Dueño: harness/memory_rag — Frontera: 2026-10.
 > Referencias: Adaptive-RAG (arXiv:2403.14403), LightRAG (arXiv:2410.05779),
 > GraphRAG (arXiv:2404.16130), Summary-based communication (arXiv:2607.27942),
 > RRF (Cormack 2009).
+
+## 0. Estado de implementacion (evidencia)
+
+| Item | Estado | Evidencia / motivo |
+|---|---|---|
+| Embeddings float32 | implementado | `insert()` normaliza a `np.float32` |
+| Metadata JSON compacto (2.1) | implementado 11.99 | `_JSON_COMPACT` → `{"separators": (",", ":")}` en los 4 puntos de escritura de metadata |
+| Timestamps epoch-int (2.1) | descartado | `created_at` ISO es contrato del esquema y de `_age_days`; migrar rompe filas existentes sin ganancia medible (el coste dominante es el JSON, no la fecha) |
+| IDs ULID (2.1) | descartado | `_looks_like_ulid` y la resolucion de aristas (`_find_rid`) asumen ULID fisico del motor; el `id` logico es UUID por contrato de `insert()` |
+| Cache de clasificacion por query hash (3) | descartado | `classify_complexity` es O(len(query)) con `split()`; hashear + dict + eviction cuesta mas que recalcular |
+| Retrieval adaptativo (3) | implementado | `AdaptiveRetriever` en `adaptive_retriever.py` |
+| Fusion RRF k=60 (4) | implementado | `hybrid_search()` |
+| Token economics (5) | implementado | `structured_compact`, `observation_masking`, `failure_spend` |
+| Limpieza proactiva (6) | implementado | TTL sweep, `gc_blobs`, `reap` |
+
+Pendiente declarado: indice sobre `created_at` e indice configurable sobre
+metadata (2.2) no existen; no hay medicion que los justifique todavia.
 
 ## 1. Objetivo
 

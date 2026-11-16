@@ -1,7 +1,22 @@
 # Spec — Optimizacion de Rendimiento (GPU, async, batching, caching)
 
-> Estado: proposed — Dueño: harness/parallel + harness/observability — Frontera: 2026-10.
+> Estado: **implementado parcial** (ciclo 11.99, 2026-11-16) — Dueño: harness/parallel + harness/observability — Frontera: 2026-10.
 > Referencias: CUDA graph capture, async I/O, batching, LRU-K, memory pools.
+
+## 0. Estado de implementacion (evidencia)
+
+| Item | Estado | Evidencia / motivo |
+|---|---|---|
+| L1 in-memory TTL (§5) | implementado 11.99 | `QueryResultCache` cableada en `search()`/`full_text_search()`; contadores `hits/misses/expired` en `stats()` |
+| Invalidacion por version de datos (§5) | implementado 11.99 | `insert`, `update_records`, `delete`, `attach_blob`, `delete_collection` invalidan su coleccion |
+| p50/p95/p99 por operacion (§7) | implementado 11.99 | `harness/observability/latency.py::LatencyWindow` + `RuscaDBStore.latency_stats()` para `insert`/`search`/`full_text_search` |
+| Buffer pool LRU-K (§6) | implementado | pool configurable (default 64 marcos, ciclo 11.98) |
+| Batching (§4) | descartado | medicion 11.98: `insert_many` en lote rinde **0.93x** (peor) frente a inserts individuales por el coste de commit del motor |
+| L2 semantic cache (§5) | implementado | `semantic_cache_get/set` persistente |
+| CUDA / async I/O (§2, §3) | pendiente | requiere GPU y drivers fuera del entorno de gates; sin medicion no se declara |
+
+Objetivo de hit rate (>= 60%) queda como metrica a observar con
+`store.query_cache_stats()` en workloads reales; no se afirma alcanzado.
 
 ## 1. Objetivo
 
