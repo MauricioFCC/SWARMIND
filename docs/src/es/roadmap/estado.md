@@ -5,7 +5,17 @@
 > **Regla RSV (base_principles v4.0.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
-## Estado Actual (2026-11-16)
+## Estado Actual (2026-11-17)
+
+### Estado 2026-11-17 (Ciclo 11.100 — grafos correctos y rerank cableado)
+- **`graph_stats` deja de mentir**: leía `metadata["edges"]` (inexistente) y
+  devolvía ranking uniforme; ahora usa `edges.out` reales vía `_rid_map` +
+  `get_record`, devuelve `{}` sin aristas y solo degrada ante `RuscadbError`.
+- **PageRank conserva la masa** (redistribución *dangling*; antes 0,27 en suma)
+  y **`connected_components` es no dirigido** como promete su contrato.
+- **Rerank cableado**: `HybridRetriever.retrieve(rerank=True)` aplica MaxSim
+  ColBERT sobre el top-50 fusionado; `_sparse_retrieve` ya no se traga errores.
+- Coste medido: `graph_stats` en 300 nodos = 15,4 ms (0,05 ms/nodo de FFI).
 
 ### Estado 2026-11-16 (Ciclo 11.99 — specs pendientes: caché real, metadata compacta, percentiles)
 - **Caché de resultados cableada**: `search()` y `full_text_search()` leen por

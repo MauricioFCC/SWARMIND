@@ -1,3 +1,32 @@
+## [11.100] - 2026-11-17
+
+### Fixed
+- **`graph_stats()` calculaba PageRank sobre un grafo vacío**: leía
+  `metadata["edges"]` (que no existe; las aristas viven en `record["edges"]`)
+  y tragaba cualquier excepción con `except Exception`. Ahora lee `edges.out`
+  reales vía `_rid_map` + `get_record`, devuelve `{}` cuando la colección no
+  tiene aristas (antes inventaba rankings uniformes) y solo degrada ante
+  `RuscadbError`, con warning.
+- **PageRank no conservaba la masa**: los nodos sin salida la perdían en cada
+  iteración (cadena `a→b→c`: suma 0,27). Se redistribuye la masa *dangling*
+  como en la formulación estándar; el ranking suma 1.
+- **`connected_components` trataba el grafo como dirigido** aunque su contrato
+  dice no dirigido: `c→d` devolvía dos componentes. Ahora une en ambos sentidos.
+- `HybridRetriever._sparse_retrieve` ya no se traga la excepción: registra
+  warning y cae al `FTSSearch` inyectado.
+
+### Added
+- `HybridRetriever.retrieve(rerank=True)` y `aretrieve(rerank=True)`: stage 2
+  MaxSim sobre el top-50 fusionado (spec ColBERT, sin ONNX ni dependencias
+  nuevas). `RuscaDBStore.graph_stats()` acepta `limit` (tope 10 000) y avisa si
+  el análisis es parcial.
+- `harness/tests/test_graph_algorithms.py`: oráculos a mano para PageRank,
+  betweenness (Brandes), shortest path y componentes.
+
+### Performance
+- `graph_stats` en 300 nodos: **15,4 ms** (0,05 ms/nodo de FFI), medido con el
+  motor real. El coste es el escaneo de `get_record`; el cálculo es Python puro.
+
 ## [11.99] - 2026-11-16
 
 ### Added

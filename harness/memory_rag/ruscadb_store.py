@@ -105,6 +105,10 @@ _JSON_COMPACT: dict[str, Any] = {"ensure_ascii": False, "separators": (",", ":")
 #: Operaciones con ventana de latencia (Spec performance-optimization).
 _LATENCY_OPS = ("insert", "search", "full_text_search")
 
+#: Tope de nodos que escanea ``graph_stats`` (diagnostico, no ETL): 10k nodos
+#: cuestan ~0.5 s de FFI; por encima se declara analisis parcial.
+_GRAPH_STATS_LIMIT = 10_000
+
 
 def _safe_ident(name: str) -> str:
     """Valida un identificador RQL (tabla o columna).
@@ -2015,35 +2019,104 @@ class RuscaDBStore:
 
         return _rerank(query, candidates, top_k=top_k)
 
-    def graph_stats(self, collection: str) -> dict[str, Any]:
-        """Calcula PageRank sobre el grafo de la coleccion (Spec ruscadb-graph-algorithms).
+    def _rid_map_pairs(self, collection: str, limit: int) -> dict[str, str]:
+        """Lee el mapeo ULID -> id logico de una coleccion en una consulta.
 
         Args:
             collection: Coleccion origen.
+            limit: Maximo de filas.
 
         Returns:
-            Mapa nodo -> score PageRank.
+            Mapa ULID -> id logico.
+
+        Raises:
+            RuscadbError: Si la consulta del mapeo interno falla.
+        """
+        rows = execute(
+            self._handle,
+            "SELECT id, rid FROM _rid_map "  # nosec B608
+            f"WHERE collection = '{_escape_literal(collection)}' LIMIT {int(limit)}",
+        )
+        parsed = json.loads(rows) if isinstance(rows, str) else rows
+        pairs: dict[str, str] = {}
+        for row in parsed or []:
+            rid = self._unwrap_scalar(row.get("rid"))
+            logical = self._unwrap_scalar(row.get("id"))
+            if rid:
+                pairs[str(rid)] = str(logical or rid)
+        return pairs
+
+    @staticmethod
+    def _out_edge_targets(record: dict[str, Any]) -> list[str]:
+        """ULIDs destino de ``record['edges']['out']``.
+
+        Args:
+            record: Registro crudo de ``get_record``.
+
+        Returns:
+            Lista de ULIDs destino (ignora aristas sin ``node``).
+        """
+        edges = (record.get("edges") or {}).get("out") or []
+        targets: list[str] = []
+        for edge in edges:
+            target = edge.get("node") if isinstance(edge, dict) else None
+            if isinstance(target, str) and target:
+                targets.append(target)
+        return targets
+
+    def _graph_adjacency(self, collection: str, limit: int) -> dict[str, list[str]]:
+        """Construye la adyacencia real del grafo de una coleccion.
+
+        Las aristas se piden registro a registro porque ni ``SELECT *`` ni
+        ``TRAVERSE edges`` exponen la columna ``edges`` (solo ``get_record``).
+
+        Args:
+            collection: Coleccion origen.
+            limit: Maximo de nodos escaneados (acota el coste FFI).
+
+        Returns:
+            Mapa id logico -> lista de ids destino (ULID si no esta mapeado).
+
+        Raises:
+            RuscadbError: Si la consulta del mapeo interno falla.
+        """
+        rid_to_logical = self._rid_map_pairs(collection, limit)
+        adj: dict[str, list[str]] = {node: [] for node in rid_to_logical.values()}
+        for rid, logical in rid_to_logical.items():
+            record = self.get_record(collection, rid)
+            if not record:
+                continue
+            for target in self._out_edge_targets(record):
+                adj[logical].append(rid_to_logical.get(target, target))
+        return adj
+
+    def graph_stats(
+        self, collection: str, limit: int = _GRAPH_STATS_LIMIT
+    ) -> dict[str, float]:
+        """Calcula PageRank sobre las aristas reales del grafo (Spec ruscadb-graph-algorithms).
+
+        Args:
+            collection: Coleccion origen.
+            limit: Maximo de nodos escaneados (acota el coste FFI).
+
+        Returns:
+            Mapa id logico -> score PageRank. Vacio si la coleccion no tiene
+            aristas o si el motor falla (el fallo se registra como warning).
         """
         from .graph_algorithms import pagerank
 
-        adj: dict[str, list[str]] = {}
+        tope = max(1, int(limit))
         try:
-            rows = self.graph_traverse(collection, depth=3)
-        except Exception:  # noqa: BLE001
-            rows = []
-        for r in rows:
-            rid = str(r.get("id") or "")
-            if rid:
-                adj.setdefault(rid, [])
-        # inferir aristas desde metadata si existen
-        for r in rows:
-            meta = r.get("metadata") or {}
-            edges = meta.get("edges") or []
-            if isinstance(edges, list):
-                src = str(r.get("id") or "")
-                for e in edges:
-                    if isinstance(e, dict) and e.get("target"):
-                        adj.setdefault(src, []).append(str(e["target"]))
+            adj = self._graph_adjacency(collection, tope)
+        except RuscadbError as exc:
+            logger.warning("graph_stats en '%s' fallo: %s", collection, exc)
+            return {}
+        if not any(adj.values()):
+            return {}
+        if len(adj) >= tope:
+            logger.warning(
+                "graph_stats '%s': analisis parcial (tope de %d nodos)", collection, tope
+            )
         return pagerank(adj)
 
     def prepare(self, sql: str) -> str:

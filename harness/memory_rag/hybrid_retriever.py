@@ -18,6 +18,7 @@ Uso:
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -26,6 +27,8 @@ import numpy as np
 
 from harness.domain.ports import VectorStorePort
 from harness.memory_rag.fts_search import FTSSearch
+
+logger = logging.getLogger("harness.memory_rag.hybrid_retriever")
 
 # ---------------------------------------------------------------------------
 # Constantes (MAG)
@@ -37,6 +40,9 @@ _DEFAULT_COLLECTION = "memory"
 # Pesos de la fusion denso/disperso (complementarios, no excluyentes)
 _DENSE_WEIGHT = 0.5
 _SPARSE_WEIGHT = 0.5
+# Pool de candidatos que entra al rerank (stage 2 de ColBERT: top-50).
+_RERANK_POOL_FACTOR = 10
+_RERANK_MIN_POOL = 50
 
 
 @dataclass(frozen=True)
@@ -56,6 +62,92 @@ class HybridResult:
     dense_rank: int = 0
     sparse_rank: int = 0
     metadata: dict[str, Any] = field(default_factory=dict)
+
+
+def _item_text(item: HybridResult) -> str:
+    """Extrae el texto indexable de un resultado fusionado.
+
+    Args:
+        item: Resultado hibrido con metadata.
+
+    Returns:
+        Primer campo textual conocido, o cadena vacia.
+    """
+    meta = item.metadata or {}
+    for key in ("text", "content", "summary", "title"):
+        value = meta.get(key)
+        if isinstance(value, str) and value.strip():
+            return value
+    return ""
+
+
+def _validate_query(query: str, top_k: int) -> None:
+    """Valida los argumentos de retrieval (fail-fast tipado).
+
+    Args:
+        query: Consulta del usuario.
+        top_k: Numero de resultados pedidos.
+
+    Raises:
+        ValueError: Si top_k no es positivo o la query es vacia.
+    """
+    if top_k <= 0:
+        raise ValueError(
+            f"WHAT: top_k invalido: {top_k}"
+            f"WHY: debe ser un entero positivo"
+            f"WHERE: HybridRetriever.retrieve()"
+        )
+    if not query.strip():
+        raise ValueError(
+            "WHAT: query vacia"
+            "WHY: no se puede recuperar sin texto de consulta"
+            "WHERE: HybridRetriever.retrieve()"
+        )
+
+
+def _rerank_candidates(pool: list[HybridResult]) -> list[dict[str, Any]]:
+    """Candidatos minimos que consume el reranker MaxSim.
+
+    Args:
+        pool: Resultados fusionados que entran al stage 2.
+
+    Returns:
+        Lista de ``{id, text, metadata}``.
+    """
+    return [
+        {"id": item.doc_id, "text": _item_text(item), "metadata": item.metadata}
+        for item in pool
+    ]
+
+
+def _rerank_results(
+    scored: list[dict[str, Any]], pool: list[HybridResult]
+) -> list[HybridResult]:
+    """Reconstruye resultados con el score MaxSim, conservando los rangos RRF.
+
+    Args:
+        scored: Salida del reranker (``ID`` + ``rerank_score``).
+        pool: Candidatos originales del stage 2.
+
+    Returns:
+        Lista de HybridResult en el orden del reranker.
+    """
+    by_id = {item.doc_id: item for item in pool}
+    out: list[HybridResult] = []
+    for entry in scored:
+        base = by_id.get(str(entry.get("id")))
+        if base is None:
+            continue
+        out.append(
+            HybridResult(
+                doc_id=base.doc_id,
+                score=float(entry.get("rerank_score", 0.0)),
+                dense_rank=base.dense_rank,
+                sparse_rank=base.sparse_rank,
+                metadata=base.metadata,
+            )
+        )
+    return out
 
 
 class HybridRetriever:
@@ -80,37 +172,55 @@ class HybridRetriever:
         self._embed_fn = embed_fn
         self._collection = collection
 
-    def retrieve(self, query: str, top_k: int = 5) -> list[HybridResult]:
+    def retrieve(
+        self, query: str, top_k: int = 5, rerank: bool = False
+    ) -> list[HybridResult]:
         """Recupera documentos fusionando rankings denso y disperso (RRF).
 
         Args:
             query: Consulta del usuario.
             top_k: Maximo de resultados fusionados a devolver.
+            rerank: Si True, reordena la cola del ranking con MaxSim de ColBERT
+                (Spec ruscadb-colbert-rerank, stage 2).
 
         Returns:
-            Lista de HybridResult ordenada por score RRF descendente.
+            Lista de HybridResult ordenada por score descendente.
 
         Raises:
             ValueError: Si top_k no es positivo o la query es vacia.
         """
-        if top_k <= 0:
-            raise ValueError(
-                f"WHAT: top_k invalido: {top_k}"
-                f"WHY: debe ser un entero positivo"
-                f"WHERE: HybridRetriever.retrieve()"
-            )
-        if not query.strip():
-            raise ValueError(
-                "WHAT: query vacia"
-                "WHY: no se puede recuperar sin texto de consulta"
-                "WHERE: HybridRetriever.retrieve()"
-            )
+        _validate_query(query, top_k)
         dense_results = self._dense_retrieve(query, top_k)
         sparse_results = self._sparse_retrieve(query, top_k)
         fused = self._fuse(dense_results, sparse_results)
-        return sorted(fused, key=lambda item: item.score, reverse=True)[:top_k]
+        ranked = sorted(fused, key=lambda item: item.score, reverse=True)
+        if not rerank:
+            return ranked[:top_k]
+        return self._rerank(query, ranked, top_k)
 
-    async def aretrieve(self, query: str, top_k: int = 5) -> list[HybridResult]:
+    def _rerank(
+        self, query: str, ranked: list[HybridResult], top_k: int
+    ) -> list[HybridResult]:
+        """Reordena la cola del ranking con MaxSim (stage 2 de ColBERT).
+
+        Args:
+            query: Consulta del usuario.
+            ranked: Resultados ya fusionados por RRF.
+            top_k: Resultados finales.
+
+        Returns:
+            Lista reordenada por ``rerank_score``; los empates conservan el
+            orden RRF porque el ordenamiento de MaxSim es estable.
+        """
+        from harness.memory_rag.colbert_rerank import rerank as _maxsim
+
+        pool = ranked[: max(top_k * _RERANK_POOL_FACTOR, _RERANK_MIN_POOL)]
+        scored = _maxsim(query, _rerank_candidates(pool), top_k=top_k)
+        return _rerank_results(scored, pool)
+
+    async def aretrieve(
+        self, query: str, top_k: int = 5, rerank: bool = False
+    ) -> list[HybridResult]:
         """Version asincrona de :meth:`retrieve` (Spec ruscadb-async-io).
 
         Ejecuta retrieval denso + disperso en un hilo del executor para no
@@ -120,16 +230,17 @@ class HybridRetriever:
         Args:
             query: Consulta del usuario.
             top_k: Maximo de resultados fusionados a devolver.
+            rerank: Reordena con MaxSim de ColBERT (ver :meth:`retrieve`).
 
         Returns:
-            Lista de HybridResult ordenada por score RRF descendente.
+            Lista de HybridResult ordenada por score descendente.
 
         Raises:
             ValueError: Si top_k no es positivo o la query es vacia.
         """
         import asyncio
 
-        return await asyncio.to_thread(self.retrieve, query, top_k)
+        return await asyncio.to_thread(self.retrieve, query, top_k, rerank)
 
     def _dense_retrieve(self, query: str, top_k: int) -> list[dict[str, Any]]:
         """Ejecuta la busqueda vectorial densa.
@@ -156,8 +267,12 @@ class HybridRetriever:
         if vs is not None and hasattr(vs, "full_text_search"):
             try:
                 return vs.full_text_search(self._collection, query, top_k=top_k)
-            except Exception:  # noqa: BLE001, S110
-                pass
+            except Exception as exc:  # noqa: BLE001 - fallback explicito y visible
+                logger.warning(
+                    "full_text_search de '%s' fallo (%s); fallback a FTS5",
+                    type(vs).__name__,
+                    exc,
+                )
         return self._fts_search.search(query, top_k=top_k)
 
     @staticmethod

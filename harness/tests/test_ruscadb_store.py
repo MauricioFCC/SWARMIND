@@ -282,3 +282,28 @@ def test_latency_stats_por_operacion(store):
     for operation in stats.values():
         assert operation["count"] >= 1
         assert operation["p95"] >= operation["p50"] >= 0.0
+
+
+def test_graph_stats_usa_aristas_reales(store):
+    """PageRank se calcula sobre edges.out del motor, no sobre metadata."""
+    ids_a = store.insert("grafo", [[0.0, 0.0]], [{"text": "a"}])
+    rid_a = store.resolve_rid("grafo", ids_a[0])
+    ids_b = store.insert(
+        "grafo",
+        [[1.0, 1.0]],
+        [{"text": "b"}],
+        edges=[[{"label": "link", "target": rid_a}]],
+    )
+
+    stats = store.graph_stats("grafo")
+
+    assert set(stats) == {ids_a[0], ids_b[0]}
+    # b apunta a a: a acumula la masa del enlace.
+    assert stats[ids_a[0]] > stats[ids_b[0]]
+
+
+def test_graph_stats_sin_aristas_devuelve_vacio(store):
+    """Una coleccion sin aristas no inventa rankings uniformes."""
+    store.insert("sin_grafo", [[0.0, 0.0]], [{"text": "solo"}])
+
+    assert store.graph_stats("sin_grafo") == {}

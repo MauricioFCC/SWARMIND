@@ -160,3 +160,33 @@ def test_weights_exported() -> None:
     """Los pesos denso/disperso se exportan para consumidores."""
     assert DENSE_WEIGHT == 0.5
     assert SPARSE_WEIGHT == 0.5
+
+def test_retrieve_con_rerank_reordena_por_maxsim() -> None:
+    """El stage 2 pone primero el documento que cubre los tokens de la query."""
+    dense = [
+        {"id": "doc_top", "score": 0.9, "metadata": {"text": "manzana"}},
+        {"id": "doc_match", "score": 0.4, "metadata": {"text": "gato negro duerme"}},
+    ]
+    hybrid = HybridRetriever(
+        vector_store=FakeVectorStore(dense),
+        fts_search=FakeFTSSearch([]),
+        embed_fn=_embed,
+    )
+
+    sin_rerank = hybrid.retrieve("gato negro", top_k=2)
+    con_rerank = hybrid.retrieve("gato negro", top_k=2, rerank=True)
+
+    assert sin_rerank[0].doc_id == "doc_top"
+    assert con_rerank[0].doc_id == "doc_match"
+    assert con_rerank[0].score == pytest.approx(1.0)
+
+
+def test_retrieve_rerank_sin_candidatos_devuelve_vacio() -> None:
+    """Sin resultados el stage 2 no inventa documentos."""
+    hybrid = HybridRetriever(
+        vector_store=FakeVectorStore([]),
+        fts_search=FakeFTSSearch([]),
+        embed_fn=_embed,
+    )
+
+    assert hybrid.retrieve("gato", top_k=3, rerank=True) == []

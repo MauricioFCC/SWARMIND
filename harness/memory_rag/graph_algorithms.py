@@ -9,8 +9,44 @@ from collections import deque
 from typing import Any
 
 
+def _nodes(adj: dict[Any, list[Any]]) -> set[Any]:
+    """Nodos del grafo: claves mas destinos alcanzables.
+
+    Args:
+        adj: Mapa nodo -> vecinos salientes.
+
+    Returns:
+        Conjunto de nodos (claves y destinos).
+    """
+    nodes = set(adj.keys())
+    for neighbors in adj.values():
+        nodes.update(neighbors)
+    return nodes
+
+
+def _undirected(adj: dict[Any, list[Any]], nodes: set[Any]) -> dict[Any, set[Any]]:
+    """Adyacencia no dirigida (cada arista cuenta en ambos sentidos).
+
+    Args:
+        adj: Mapa nodo -> vecinos salientes.
+        nodes: Nodos del grafo.
+
+    Returns:
+        Mapa nodo -> conjunto de vecinos sin direccion.
+    """
+    undirected: dict[Any, set[Any]] = {n: set() for n in nodes}
+    for node, neighbors in adj.items():
+        for nb in neighbors:
+            undirected[node].add(nb)
+            undirected[nb].add(node)
+    return undirected
+
+
 def pagerank(adj: dict[Any, list[Any]], damping: float = 0.85, iterations: int = 20) -> dict[Any, float]:
     """Calcula PageRank sobre un grafo dirigido.
+
+    La masa de los nodos sin aristas salientes (dangling) se reparte uniforme
+    en cada iteracion, de modo que el ranking suma 1 (formulacion estandar).
 
     Args:
         adj: Mapa nodo -> lista de vecinos salientes.
@@ -18,25 +54,42 @@ def pagerank(adj: dict[Any, list[Any]], damping: float = 0.85, iterations: int =
         iterations: Numero de iteraciones.
 
     Returns:
-        Mapa nodo -> score PageRank.
+        Mapa nodo -> score PageRank (suma 1).
     """
-    nodes = set(adj.keys())
-    for neighbors in adj.values():
-        nodes.update(neighbors)
+    nodes = _nodes(adj)
     if not nodes:
         return {}
-    n = len(nodes)
-    rank = {node: 1.0 / n for node in nodes}
+    rank = {node: 1.0 / len(nodes) for node in nodes}
     for _ in range(iterations):
-        new_rank = {node: (1 - damping) / n for node in nodes}
-        for node, neighbors in adj.items():
-            if not neighbors:
-                continue
-            share = rank[node] / len(neighbors)
-            for neighbor in neighbors:
-                new_rank[neighbor] += damping * share
-        rank = new_rank
+        rank = _pagerank_iteration(rank, adj, nodes, damping)
     return rank
+
+
+def _pagerank_iteration(
+    rank: dict[Any, float], adj: dict[Any, list[Any]], nodes: set[Any], damping: float
+) -> dict[Any, float]:
+    """Una iteracion de PageRank con redistribucion de masa dangling.
+
+    Args:
+        rank: Ranking de la iteracion previa.
+        adj: Mapa nodo -> vecinos salientes.
+        nodes: Nodos del grafo.
+        damping: Factor de amortiguacion.
+
+    Returns:
+        Ranking actualizado.
+    """
+    n = len(nodes)
+    dangling = sum(rank[node] for node in nodes if not adj.get(node))
+    base = ((1.0 - damping) + damping * dangling) / n
+    new_rank = dict.fromkeys(nodes, base)
+    for node, neighbors in adj.items():
+        if not neighbors:
+            continue
+        share = damping * rank[node] / len(neighbors)
+        for neighbor in neighbors:
+            new_rank[neighbor] += share
+    return new_rank
 
 
 def betweenness_centrality(adj: dict[Any, list[Any]]) -> dict[Any, float]:
@@ -48,15 +101,9 @@ def betweenness_centrality(adj: dict[Any, list[Any]]) -> dict[Any, float]:
     Returns:
         Mapa nodo -> centralidad.
     """
-    nodes = set(adj.keys())
-    for neighbors in adj.values():
-        nodes.update(neighbors)
+    nodes = _nodes(adj)
     # construir grafo no dirigido
-    undirected: dict[Any, set[Any]] = {n: set() for n in nodes}
-    for node, neighbors in adj.items():
-        for nb in neighbors:
-            undirected[node].add(nb)
-            undirected[nb].add(node)
+    undirected = _undirected(adj, nodes)
     centrality = {n: 0.0 for n in nodes}
     for s in nodes:
         # BFS
@@ -120,7 +167,7 @@ def shortest_path(adj: dict[Any, list[Any]], source: Any, target: Any) -> list[A
 
 
 def connected_components(adj: dict[Any, list[Any]]) -> list[set[Any]]:
-    """Componentes conectados (no dirigido).
+    """Componentes conectados (grafo no dirigido).
 
     Args:
         adj: Mapa nodo -> vecinos.
@@ -128,9 +175,8 @@ def connected_components(adj: dict[Any, list[Any]]) -> list[set[Any]]:
     Returns:
         Lista de sets de nodos por componente.
     """
-    nodes = set(adj.keys())
-    for neighbors in adj.values():
-        nodes.update(neighbors)
+    nodes = _nodes(adj)
+    undirected = _undirected(adj, nodes)
     visited: set[Any] = set()
     components: list[set[Any]] = []
     for start in nodes:
@@ -142,7 +188,7 @@ def connected_components(adj: dict[Any, list[Any]]) -> list[set[Any]]:
         while queue:
             n = queue.popleft()
             comp.add(n)
-            for nb in adj.get(n, []):
+            for nb in undirected[n]:
                 if nb not in visited:
                     visited.add(nb)
                     queue.append(nb)
