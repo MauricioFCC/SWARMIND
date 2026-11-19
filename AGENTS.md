@@ -45,6 +45,24 @@ nunca afirma, verifica**. Al completar cualquier cambio:
 5. **Checks de código**: tras tocar `harness/`, ejecuta los tests del módulo
    afectado (p. ej. `pytest harness/tests/test_<modulo>.py -q`) + ruff.
 
+## Revisión ciega antes de pedir revisión (política)
+
+Un agente **no** pide revisión con la conversación del autor: quien revisa con
+todo el contexto hereda los mismos puntos ciegos (EGM). El paquete se genera
+con gates deterministas y solo entonces se envía:
+
+```bash
+git diff | python scripts/blind_review.py --spec docs/specs/<feature>.md --git-diff
+```
+
+- **Exit 0** = paquete aprobado; **exit 1** = bloqueado (secretos, rutas
+  personales, diff truncado o alcance excesivo). Un paquete bloqueado no se
+  revisa: primero se limpia el diff.
+- El autor no aprueba su propio diff (maker-checker / Binnacle).
+- Los checks deterministas van antes que cualquier juez de modelo.
+- El fan-out de subagentes se justifica por tarea: un equipo de agentes puede
+  consumir ~7× los tokens de una sesión; el coste se paga con resultado.
+
 ## Ciclo Frontera (petición explícita)
 
 Si el usuario pide «carga skills/agentes + **<tarea>**, research SOTA,

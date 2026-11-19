@@ -1833,7 +1833,7 @@ wheels = [
 
 [[package]]
 name = "swarmind-harness"
-version = "11.100.0"
+version = "11.101.0"
 source = { editable = "." }
 dependencies = [
     { name = "networkx" },

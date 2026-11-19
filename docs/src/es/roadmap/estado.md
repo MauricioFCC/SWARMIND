@@ -5,7 +5,27 @@
 > **Regla RSV (base_principles v4.0.0)**: se relee este roadmap cada N refactors (>=5)
 > y se actualiza con las tecnicas frontera del momento — features SIEMPRE de estado del arte.
 
-## Estado Actual (2026-11-17)
+## Estado Actual (2026-11-19)
+
+### Estado 2026-11-19 (Ciclo 11.101 — revisión ciega y gates antes del juez)
+
+- **Paquete de revisión ciega (EGM)**: `harness/validation/blind_review.py`
+  convierte `spec + diff` en un prompt reproducible sin la conversación del
+  autor; quien revisa con todo el contexto hereda los puntos ciegos de quien
+  escribió.
+- **Cinco gates deterministas antes de cualquier modelo** (Binnacle): criterios
+  de aceptación presentes, cero secretos, cero rutas personales, diff dentro de
+  presupuesto y alcance de archivos. Si un gate falla, el paquete no se envía.
+- **Redacción idempotente**: PEM, tokens de GitHub/OpenAI/AWS/Slack y
+  asignaciones entrecomilladas → `<redacted:tipo>`; rutas con nombre de usuario
+  → `<user>` (los nombres de ejemplo no bloquean).
+- **CLI**: `scripts/blind_review.py --spec s.md --diff d.diff|--git-diff`
+  (exit 0 aprobado, 1 bloqueado). Verificado sobre este mismo cambio: con el
+  presupuesto por defecto (20 000 caracteres) el diff de 57 758 caracteres
+  bloquea con truncado explícito; con `--max-diff-chars 80000` pasa (13
+  archivos, sin secretos ni rutas personales).
+- **Política**: el fan-out de agentes se justifica por tarea (~7× tokens en
+  equipos de agentes); el autor no aprueba su propio diff.
 
 ### Estado 2026-11-17 (Ciclo 11.100 — grafos correctos y rerank cableado)
 - **`graph_stats` deja de mentir**: leía `metadata["edges"]` (inexistente) y

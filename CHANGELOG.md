@@ -1,3 +1,41 @@
+## [11.101] - 2026-11-19
+
+### Added
+- **Paquete de revisión ciega (EGM) con gates deterministas**:
+  `harness/validation/blind_review.py` convierte `spec + diff` en un prompt
+  reproducible para que otro agente revise **sin** la conversación del autor
+  (quien revisa con el contexto hereda los mismos puntos ciegos). Los cinco
+  gates corren antes de cualquier modelo: criterios de aceptación presentes,
+  cero secretos, cero rutas personales, diff dentro de presupuesto y alcance de
+  archivos.
+- `redact()`: redacta secretos (PEM, GitHub, OpenAI, AWS, Slack, asignaciones
+  entrecomilladas) y rutas personales; idempotente (P1). Los nombres de ejemplo
+  (`alice`, `example`, `<x>`) se redactan pero no bloquean. La sanitización vive
+  en `harness/validation/prompt_sanitizer.py` (reutilizable por cualquier ruta
+  que componga prompts).
+- CLI `scripts/blind_review.py --spec <spec> --diff <archivo>|--git-diff`:
+  imprime el paquete y devuelve exit 0 (aprobado) o 1 (bloqueado).
+- Spec `docs/specs/blind-review-packet.md` (AC-BR1…AC-BR8 + propiedades),
+  research `docs/research/frontier-2026-11-19-harness-policies.md` y 37 tests
+  (`harness/tests/test_blind_review.py`) con PBT de idempotencia, monotonía y
+  cota de truncado.
+
+### Fixed
+- **Extracción de criterios sin duplicados ni ruido**: el regex solo aceptaba
+  ids `AC-<dígitos>` (perdía `AC-BR2`) y contaba cada mención en prosa como un
+  criterio nuevo; ahora exige línea estructural (viñeta, fila o id al inicio) y
+  una clave por línea.
+
+### Security
+- Un diff con secretos o rutas personales no se envía a ningún revisor: el
+  paquete queda bloqueado y el contenido se redacta a `<redacted:tipo>` /
+  `<user>`. El truncado es explícito (`[TRUNCADO: N caracteres omitidos]`),
+  nunca silencioso.
+
+### Docs
+- `AGENTS.md`: política de revisión ciega y coste del fan-out (~7× tokens en
+  equipos de agentes) como justificación obligatoria por tarea.
+
 ## [11.100] - 2026-11-17
 
 ### Fixed
